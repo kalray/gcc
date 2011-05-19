@@ -3493,7 +3493,9 @@ df_create_unused_note (rtx_insn *insn, df_ref def,
 	|| bitmap_bit_p (artificial_uses, dregno)
 	|| df_ignore_stack_reg (dregno)))
     {
-      rtx reg = (DF_REF_LOC (def))
+      rtx reg = (DF_REF_LOC (def)
+		 && !((DF_REF_FLAGS (def) & DF_REF_PARTIAL)
+		      && REG_P(DF_REF_REG (def))))
                 ? *DF_REF_REAL_LOC (def): DF_REF_REG (def);
       df_set_note (REG_UNUSED, insn, reg);
       dead_debug_insert_temp (debug, dregno, insn, DEBUG_TEMP_AFTER_WITH_REG);
@@ -3678,7 +3680,9 @@ df_note_bb_compute (unsigned int bb_index,
 		   && (!bitmap_bit_p (artificial_uses, uregno))
 		   && (!df_ignore_stack_reg (uregno)))
 		{
-		  rtx reg = (DF_REF_LOC (use))
+		    rtx reg = (DF_REF_LOC (use)
+			       && !((DF_REF_FLAGS (use) & DF_REF_PARTIAL)
+				     && REG_P(DF_REF_REG (use))))
                             ? *DF_REF_REAL_LOC (use) : DF_REF_REG (use);
 		  df_set_note (REG_DEAD, insn, reg);
 
