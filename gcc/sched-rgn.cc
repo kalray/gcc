@@ -1666,7 +1666,13 @@ check_live_1 (int src, rtx x)
 {
   int i;
   int regno;
-  rtx reg = SET_DEST (x);
+  rtx reg;
+
+  if (GET_CODE (x) == SET
+      || GET_CODE (x) == CLOBBER)
+    reg = SET_DEST (x);
+  else
+    reg = x;
 
   if (reg == 0)
     return 1;
