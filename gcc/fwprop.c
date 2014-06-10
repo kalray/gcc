@@ -1559,10 +1559,13 @@ fwprop_addr (void)
 
       df_ref use = DF_USES_GET (i);
       if (use)
-	if (DF_REF_TYPE (use) != DF_REF_REG_USE
+	if ((DF_REF_TYPE (use) != DF_REF_REG_USE
 	    && DF_REF_BB (use)->loop_father != NULL
 	    /* The outer most loop is not really a loop.  */
 	    && loop_outer (DF_REF_BB (use)->loop_father) != NULL)
+           || (DF_REF_TYPE (use) == DF_REF_REG_USE
+               || DF_REF_BB (use)->loop_father == NULL
+	       || loop_outer (DF_REF_BB (use)->loop_father) == NULL))
 	  forward_propagate_into (use);
     }
 
