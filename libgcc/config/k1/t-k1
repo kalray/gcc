@@ -1,22 +1,23 @@
 
 # Software emulation for integer div and mod
-LIB2FUNCS_EXCLUDE = _umodsi3 _udivsi3 _modsi3 _divsi3 \
-	            _umoddi3 _udivdi3 _moddi3 _divdi3
+# LIB2FUNCS_EXCLUDE = _umodsi3 _udivsi3 _modsi3 _divsi3 \
+# 	            _umoddi3 _udivdi3 _moddi3 _divdi3
 
-LIB2ADD_ST = $(srcdir)/config/k1/udivmodsi4.c \
-             $(srcdir)/config/k1/udivmoddi4.c \
-             $(srcdir)/config/k1/dual_divf.S \
-             $(srcdir)/config/k1/__invf.S 
+# LIB2ADD_ST = $(srcdir)/config/k1/udivmodsi4.c \
+#              $(srcdir)/config/k1/udivmoddi4.c \
+#              $(srcdir)/config/k1/__invf.S 
 
-LIB2ADD_ST += $(if $(findstring k1b, $(MULTISUBDIR)), \
-             $(srcdir)/config/k1/support_lib/fast_dirty_nearbyintf.c \
-             $(srcdir)/config/k1/support_lib/ml_multi_prec_lib.c \
-             $(srcdir)/config/k1/support_lib/ml_utils.c \
-             $(srcdir)/config/k1/support_lib/k1/k1a_utils.c \
-             $(srcdir)/config/k1/support_lib/k1/k1b_utils.c \
-             $(srcdir)/config/k1/divdf3.c, )
+#              # $(srcdir)/config/k1/dual_divf.S \
 
-LIB1ASMFUNCS = $(if $(findstring k1v1,$(MULTISUBDIR)),,_divsf3)
-LIB1ASMSRC = $(if $(findstring k1v1,$(MULTISUBDIR)),,k1/divsf3.S)
+# LIB2ADD_ST += $(if $(findstring k1b, $(MULTISUBDIR)), \
+#              $(srcdir)/config/k1/support_lib/fast_dirty_nearbyintf.c \
+#              $(srcdir)/config/k1/support_lib/ml_multi_prec_lib.c \
+#              $(srcdir)/config/k1/support_lib/ml_utils.c \
+#              $(srcdir)/config/k1/support_lib/k1/k1a_utils.c \
+#              $(srcdir)/config/k1/support_lib/k1/k1b_utils.c \
+#              $(srcdir)/config/k1/divdf3.c, )
 
-INCLUDES += -I${FAMDIR}/BE/GCC/k1b -I$(srcdir)/config/k1 -I$(srcdir)/../gcc/config/k1 -fstrict-align
+# LIB1ASMFUNCS = $(if $(findstring k1v1,$(MULTISUBDIR)),,_divsf3)
+# LIB1ASMSRC = $(if $(findstring k1v1,$(MULTISUBDIR)),,k1/divsf3.S)
+
+INCLUDES += -I${FAMDIR}/ -I$(srcdir)/config/k1 -I$(srcdir)/../gcc/config/k1 -fstrict-align

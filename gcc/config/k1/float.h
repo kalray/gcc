@@ -29,8 +29,8 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 #ifndef _FLOAT_H___
 #define _FLOAT_H___
 
-#include <HAL/hal/core/registers.h>
-#include <HAL/hal/core/cpu.h>
+/* #include <HAL/hal/core/registers.h> */
+/* #include <HAL/hal/core/cpu.h> */
 
 /* Radix of exponent representation, b. */
 #undef FLT_RADIX
