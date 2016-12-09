@@ -1,0 +1,36 @@
+MULTILIB_OPTIONS = mno-fdpic
+MULTILIB_DIRNAMES = nofdpic
+
+# Andey k1io 
+# MULTILIB_OSDIRNAMES  = mcore.k1io/mfdpic=!lib32-k1io
+# MULTILIB_OSDIRNAMES += mcore.k1io/mno-fdpic=!lib32-k1io/mmu
+
+MULTILIB_OSDIRNAMES = mno-fdpic=!nofdpic
+
+# Bostan k1bio 
+# MULTILIB_OSDIRNAMES += mcore.k1bio/mfdpic=!lib32-k1bio
+# MULTILIB_OSDIRNAMES += mcore.k1bio/mno-fdpic=!lib32-k1bio/mmu
+
+#MULTILIB_OSDIRNAMES += mcore.k1bio/mfdpic=!lib32-k1bio/nommu
+#MULTILIB_OSDIRNAMES += mcore.k1bio=!lib32-k1bio
+
+# do not build these alone
+# MULTILIB_EXCEPTIONS = mfdpic mno-fdpic mcore=k1bio mcore=k1io
+
+#MULTILIB_OSDIRNAMES = mcore.k1io=!lib32-k1io-nommu mcore.k1bio/mno-fdpic=!lib32-k1bio mcore.k1bio=!lib32-k1bio-nommu
+#MULTILIB_OSDIRNAMES =  mno-fdpic=!mmu mcore.k1bio=!lib32-k1bio mcore.k1bio/mno-fdpic=!lib32-k1bio/mmu
+#../lib32-k1io-nommu ../lib32-k1bio-nommu
+## MULTILIB_EXCEPTIONS = 
+MULTILIB_EXTRA_OPTS = fpic
+## MULTILIB_REUSE= mcore.k1io=. mcore.k1io/mno-fdpic=mno-fdpic
+
+CRTSTUFF_T_CFLAGS_S = -fpic
+
+driver-k1.o: $(srcdir)/config/k1/driver-k1.c \
+  $(CONFIG_H) $(SYSTEM_H) coretypes.h $(TM_H)
+	$(COMPILER) -c $(ALL_CFLAGS) $(ALL_CPPFLAGS) $(DRIVER_DEFINES) $(INCLUDES) $<
+
+
+INCLUDES += -I${FAMDIR}/BE/GCC/k1b -I$(abs_srcdir)/config/k1
+BUILD_CPPFLAGS += -I${FAMDIR}/BE/GCC/k1b -I$(abs_srcdir)/config/k1
+
