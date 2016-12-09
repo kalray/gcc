@@ -1,4 +1,4 @@
-C { dg-do run }
+C { dg-do run { target { ! { k1*-*-* } } } }
 C { dg-options "-O0 -ffloat-store" }
 C Tests fix for PR14994 - SECNDS intrinsic not supported.
 C

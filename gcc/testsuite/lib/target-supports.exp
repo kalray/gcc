@@ -872,7 +872,7 @@ proc check_effective_target_function_sections {} {
     }
     
     return [check_no_compiler_messages functionsections assembly {
- 	void foo (void) { }
+	void foo (void) { }
     } "-ffunction-sections"]
 }
 
@@ -2909,6 +2909,7 @@ proc check_effective_target_vect_int { } {
 	     || [istarget sparc*-*-*]
 	     || [istarget alpha*-*-*]
 	     || [istarget ia64-*-*] 
+	     || [istarget k1-*-*] 
 	     || [istarget aarch64*-*-*]
 	     || [check_effective_target_arm32]
 	     || ([istarget mips*-*-*]
@@ -4928,7 +4929,7 @@ proc check_effective_target_vect_shift { } {
 	if { ([istarget powerpc*-*-*]
 	      && ![istarget powerpc-*-linux*paired*])
 	     || [istarget ia64-*-*]
-	     || [istarget i?86-*-*] || [istarget x86_64-*-*]
+	     || [istarget i?86-*-*] || [istarget x86_64-*-*] || [istarget k1-*-*]
 	     || [istarget aarch64*-*-*]
 	     || [check_effective_target_arm32]
 	     || ([istarget mips*-*-*]
@@ -5793,6 +5794,7 @@ proc check_effective_target_vect_hw_misalign { } {
 	set et_vect_hw_misalign_saved($et_index) 0
 	if { [istarget i?86-*-*] || [istarget x86_64-*-*]
 	     || ([istarget powerpc*-*-*] && [check_p8vector_hw_available])
+             || [istarget k1-*-*] 
 	     || [istarget aarch64*-*-*]
 	     || ([istarget mips*-*-*] && [et-is-effective-target mips_msa]) } {
 	  set et_vect_hw_misalign_saved($et_index) 1
@@ -5815,7 +5817,8 @@ proc check_effective_target_vect_aligned_arrays { } {
     if { (([istarget i?86-*-*] || [istarget x86_64-*-*])
 	  && !([is-effective-target ia32]
 	       || ([check_avx_available] && ![check_prefer_avx128])))
-	 || [istarget spu-*-*] } {
+	 || [istarget spu-*-*]
+         || [istarget k1-*-*]  } {
 	set et_vect_aligned_arrays 1
     }
 
@@ -5966,6 +5969,7 @@ proc check_effective_target_vect_condition { } {
 	     || [istarget ia64-*-*]
 	     || [istarget i?86-*-*] || [istarget x86_64-*-*]
 	     || [istarget spu-*-*]
+	     || [istarget k1-*-*]
 	     || ([istarget mips*-*-*]
 		 && [et-is-effective-target mips_msa])
 	     || ([istarget arm*-*-*]
@@ -6070,7 +6074,7 @@ proc check_effective_target_vect_int_mult { } {
 	set et_vect_int_mult_saved($et_index) 0
 	if { ([istarget powerpc*-*-*] && ![istarget powerpc-*-linux*paired*])
 	     || [istarget spu-*-*]
-	     || [istarget i?86-*-*] || [istarget x86_64-*-*]
+	     || [istarget i?86-*-*] || [istarget x86_64-*-*] || [istarget k1-*-*]
 	     || [istarget ia64-*-*]
 	     || [istarget aarch64*-*-*]
 	     || ([istarget mips*-*-*]
@@ -7834,6 +7838,8 @@ proc check_vect_support_and_set_flags { } {
             set dg-do-what-default compile
         }
     } elseif [istarget ia64-*-*] {
+        set dg-do-what-default run
+    } elseif [istarget "k1-*-*"] {
         set dg-do-what-default run
     } elseif [is-effective-target arm_neon_ok] {
         eval lappend DEFAULT_VECTCFLAGS [add_options_for_arm_neon ""]

@@ -1,5 +1,6 @@
 // { dg-do run }
 // { dg-options "-fpic" { target fpic } }
+// { dg-skip-if "PLT not supported yet" { k1-*-* } }
 
 typedef __SIZE_TYPE__ size_t;
 
