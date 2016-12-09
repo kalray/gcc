@@ -35,6 +35,8 @@
    Solaris requires this for C99 and later.  */
 #define _XOPEN_SOURCE 600
 
+extern void abort(void);
+
 #include "libgomp.h"
 
 #ifdef HAVE_BROKEN_POSIX_SEMAPHORES
@@ -125,13 +127,15 @@ gomp_test_nest_lock_30 (omp_nest_lock_t *lock)
 void
 gomp_init_lock_30 (omp_lock_t *lock)
 {
-  sem_init (lock, 0, 1);
+  if(sem_init (lock, 0, 1))
+    abort();
 }
 
 void
 gomp_destroy_lock_30 (omp_lock_t *lock)
 {
-  sem_destroy (lock);
+  if(sem_destroy (lock))
+    abort();
 }
 
 void
@@ -144,7 +148,8 @@ gomp_set_lock_30 (omp_lock_t *lock)
 void
 gomp_unset_lock_30 (omp_lock_t *lock)
 {
-  sem_post (lock);
+  if(sem_post (lock))
+    abort();;
 }
 
 int
@@ -156,7 +161,8 @@ gomp_test_lock_30 (omp_lock_t *lock)
 void
 gomp_init_nest_lock_30 (omp_nest_lock_t *lock)
 {
-  sem_init (&lock->lock, 0, 1);
+  if(sem_init (&lock->lock, 0, 1))
+    abort();
   lock->count = 0;
   lock->owner = NULL;
 }
@@ -164,7 +170,8 @@ gomp_init_nest_lock_30 (omp_nest_lock_t *lock)
 void
 gomp_destroy_nest_lock_30 (omp_nest_lock_t *lock)
 {
-  sem_destroy (&lock->lock);
+  if(sem_destroy (&lock->lock))
+    abort();
 }
 
 void
@@ -187,7 +194,8 @@ gomp_unset_nest_lock_30 (omp_nest_lock_t *lock)
   if (--lock->count == 0)
     {
       lock->owner = NULL;
-      sem_post (&lock->lock);
+      if(sem_post (&lock->lock))
+        abort();;
     }
 }
 
