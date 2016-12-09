@@ -28,6 +28,7 @@
 
 #ifndef GOMP_MUTEX_H
 #define GOMP_MUTEX_H 1
+extern void abort(void);
 
 #include <pthread.h>
 
@@ -37,22 +38,26 @@ typedef pthread_mutex_t gomp_mutex_t;
 
 static inline void gomp_mutex_init (gomp_mutex_t *mutex)
 {
-  pthread_mutex_init (mutex, NULL);
+  if(pthread_mutex_init (mutex, NULL))
+    abort();
 }
 
 static inline void gomp_mutex_lock (gomp_mutex_t *mutex)
 {
-  pthread_mutex_lock (mutex);
+  if(pthread_mutex_lock (mutex))
+    abort();
 }
 
 static inline void gomp_mutex_unlock (gomp_mutex_t *mutex)
 {
-   pthread_mutex_unlock (mutex);
+   if(pthread_mutex_unlock (mutex))
+     abort();
 }
 
 static inline void gomp_mutex_destroy (gomp_mutex_t *mutex)
 {
-  pthread_mutex_destroy (mutex);
+  if(pthread_mutex_destroy (mutex))
+    abort();
 }
 
 #endif /* GOMP_MUTEX_H */
