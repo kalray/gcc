@@ -16,7 +16,11 @@ int main () {
 
   logfile = new ofstream("bar", ios::out);
 
+#ifdef STACK_SIZE
+  char expList[STACK_SIZE/2]
+#else
   char expList[20000];
+#endif
   strcpy(expList, "foo");
 
   delete logfile;
