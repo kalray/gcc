@@ -66,23 +66,27 @@ extern void gomp_sem_destroy (gomp_sem_t *sem);
 
 #else /* HAVE_BROKEN_POSIX_SEMAPHORES  */
 
+extern void abort(void);
 typedef sem_t gomp_sem_t;
 
 static inline void gomp_sem_init (gomp_sem_t *sem, int value)
 {
-  sem_init (sem, 0, value);
+  if(sem_init (sem, 0, value))
+    abort();
 }
 
 extern void gomp_sem_wait (gomp_sem_t *sem);
 
 static inline void gomp_sem_post (gomp_sem_t *sem)
 {
-  sem_post (sem);
+  if(sem_post (sem))
+    abort();
 }
 
 static inline void gomp_sem_destroy (gomp_sem_t *sem)
 {
-  sem_destroy (sem);
+  if(sem_destroy (sem))
+    abort();
 }
 #endif /* doesn't HAVE_BROKEN_POSIX_SEMAPHORES  */
 #endif /* GOMP_SEM_H  */
