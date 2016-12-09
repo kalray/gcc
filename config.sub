@@ -804,6 +804,11 @@ case $basic_machine in
 			;;
 		esac
 		;;
+	k1)
+	    cpu=k1
+	    vendor=kalray
+	    os=${os:-elf}
+	    ;;
 	miniframe)
 		cpu=m68000
 		vendor=convergent
@@ -1030,6 +1035,9 @@ case $cpu-$vendor in
 		cpu=powerpc
 		basic_os=${basic_os}"spe"
 		;;
+	k1-*)
+	    cpu=k1
+	    ;;
 	mips3*-*)
 		cpu=mips64
 		;;
@@ -1182,7 +1190,7 @@ case $cpu-$vendor in
 			| hexagon \
 			| i370 | i*86 | i860 | i960 | ia16 | ia64 \
 			| ip2k | iq2000 \
-			| k1om \
+			| k1om | k1 \
 			| le32 | le64 \
 			| lm32 \
 			| loongarch32 | loongarch64 | loongarchx32 \
@@ -1331,6 +1339,9 @@ case $os in
 	bluegene*)
 		os=cnk
 		;;
+	cos*)
+	    os=cos
+	    ;;
 	solaris1 | solaris1.*)
 		os=$(echo $os | sed -e 's|solaris1|sunos4|')
 		;;
@@ -1529,6 +1540,9 @@ case $cpu-$vendor in
 	hexagon-*)
 		os=elf
 		;;
+	k1-*)
+	    os=elf
+	    ;;
 	tic54x-*)
 		os=coff
 		;;
@@ -1803,7 +1817,10 @@ case $vendor in
 			*-dgux*)
 				vendor=dg
 				;;
-			*-luna*)
+			k1*)
+			    vendor=kalray
+			    ;;
+			luna*)
 				vendor=omron
 				;;
 			*-genix*)
