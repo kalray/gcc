@@ -1,0 +1,4 @@
+MULTILIB_OPTIONS = mcore=k1bio fno-exceptions
+MULTILIB_DIRNAMES = k1bio/le/bare no-exceptions
+
+MULTILIB_EXCEPTIONS =
