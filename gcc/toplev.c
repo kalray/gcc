@@ -898,7 +898,9 @@ print_switch_values (print_switch_fn_type print_fn)
 static void
 init_asm_output (const char *name)
 {
-  if (name == NULL && asm_file_name == 0)
+  if (flag_tirex)
+    asm_out_file = fopen("/dev/null", "w+b");
+  else if (name == NULL && asm_file_name == 0)
     asm_out_file = stdout;
   else
     {

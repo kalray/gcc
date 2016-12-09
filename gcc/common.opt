@@ -207,6 +207,10 @@ unsigned int help_columns
 Variable
 bool flag_opts_finished
 
+; The activation flag of Tirex dumping
+Variable
+int flag_tirex = 0
+
 ; What the sanitizer should instrument
 Variable
 unsigned int flag_sanitize
@@ -429,6 +433,10 @@ Driver Separate Alias(-sysroot=)
 -sysroot=
 Driver JoinedOrMissing
 
+-tirex
+Driver
+Use the Tirex plugin to generate a Tirex representation
+
 -version
 Common Driver
 
@@ -440,6 +448,10 @@ Driver
 
 L
 Driver Joined Separate
+
+-LAO
+Driver
+Use the LAO tool to perform additional optimizations
 
 N
 Driver
@@ -2610,6 +2622,10 @@ Driver Joined
 
 t
 Driver
+
+tirex-internal-switch
+Common RejectDriver Report Var(flag_tirex) Undocumented
+Internal switch passed to cc1 to prevent the compiler from opening an assembler dump file
 
 time
 Driver Var(report_times)

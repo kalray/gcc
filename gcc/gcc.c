@@ -158,6 +158,10 @@ static const char *const spec_version = DEFAULT_TARGET_VERSION;
 
 static const char *spec_machine = DEFAULT_TARGET_MACHINE;
 
+/* Flag telling if we need to go beyond compiling in case of Tirex & LAO */
+
+static int tirex_dumping = 0;
+
 /* Nonzero if cross-compiling.
    When -b is used, the value comes from the `specs' file.  */
 
@@ -205,6 +209,7 @@ static void add_prefix (struct path_prefix *, const char *, const char *,
 static void add_sysrooted_prefix (struct path_prefix *, const char *,
 				  const char *, int, int, int);
 static char *skip_whitespace (char *);
+static void activate_tirex_spec_function (void);
 static void delete_if_ordinary (const char *);
 static void delete_temp_files (void);
 static void delete_failure_queue (void);
@@ -880,7 +885,7 @@ static const char *cc1_options =
  %{-target-help:--target-help}\
  %{-version:--version}\
  %{-help=*:--help=%*}\
- %{!fsyntax-only:%{S:%W{o*}%{!o*:-o %b.s}}}\
+ %{!fsyntax-only:%{S:%{!-tirex:%{!-LAO:%W{o*}%{!o*:-o %b.s}}}}} \
  %{fsyntax-only:-o %j} %{-param*}\
  %{coverage:-fprofile-arcs -ftest-coverage}";
 
@@ -905,6 +910,19 @@ static const char *invoke_as =
    %{!S:-o %|.s |\n as %(asm_options) %m.s %A }\
   }";
 #endif
+
+
+static const char *invoke_tirex_lao = 
+"cc1 -o %{save-temps:%b.gccasm;:%g.gccasm} %(cc1_options) \
+ %{!save-temps:%(cpp_unique_options);:%(cpp_options)}\n\
+ k1-tirex --input=%{save-temps:%b.gccasm;:%g.gccasm} \
+ --output=%{!-LAO|save-temps|-tirex:%b.tirex;:%g.tirex}\
+ %{-LAO:\n\
+   k1-lao3 --input=%{-tirex|save-temps:%b.tirex;:%g.tirex} \
+   --asm=%{S|save-temps:%b.s;:%|.s}\
+   %{!S:\n\
+     as %(asm_options) %{save-temps:%b.s;:%m.s} %A }}";
+
 
 /* Some compilers have limits on line lengths, and the multilib_select
    and/or multilib_matches strings can be very long, so we build them at
@@ -1041,15 +1059,16 @@ static const struct compiler default_compilers[] =
       external preprocessor if -save-temps is given.  */
      "%{E|M|MM:%(trad_capable_cpp) %(cpp_options) %(cpp_debug_options)}\
       %{!E:%{!M:%{!MM:\
-          %{traditional:\
-%eGNU C no longer supports -traditional without -E}\
-      %{save-temps*|traditional-cpp|no-integrated-cpp:%(trad_capable_cpp) \
+        %{traditional:%eGNU C no longer supports -traditional without -E}\
+        %{save-temps*|traditional-cpp|no-integrated-cpp:%(trad_capable_cpp) \
 	  %(cpp_options) -o %{save-temps*:%b.i} %{!save-temps*:%g.i} \n\
-	    cc1 -fpreprocessed %{save-temps*:%b.i} %{!save-temps*:%g.i} \
-	  %(cc1_options)}\
-      %{!save-temps*:%{!traditional-cpp:%{!no-integrated-cpp:\
-	  cc1 %(cpp_unique_options) %(cc1_options)}}}\
-      %{!fsyntax-only:%(invoke_as)}}}}", 0, 0, 1},
+	  %{-tirex|-LAO:%(invoke_tirex_lao)%{!-LAO:%V};\
+            :cc1 -fpreprocessed %{save-temps*:%b.i} %{!save-temps*:%g.i} \
+	  %(cc1_options)}}\
+        %{!save-temps*:%{!traditional-cpp:%{!no-integrated-cpp: \
+          %{-tirex|-LAO:%(invoke_tirex_lao)%{!-LAO:%V}; \
+                     :cc1 %(cpp_unique_options) %(cc1_options)}}}} \
+        %{!fsyntax-only:%{!-tirex:%{!-LAO:%(invoke_as)}}}}}}", 0, 0, 1},
   {"-",
    "%{!E:%e-E or -x required when input is from standard input}\
     %(trad_capable_cpp) %(cpp_options) %(cpp_debug_options)", 0, 0, 0},
@@ -1299,6 +1318,7 @@ static struct spec_list static_specs[] =
   INIT_STATIC_SPEC ("link_gcc_c_sequence",	&link_gcc_c_sequence_spec),
   INIT_STATIC_SPEC ("link_ssp",			&link_ssp_spec),
   INIT_STATIC_SPEC ("endfile",			&endfile_spec),
+  INIT_STATIC_SPEC ("invoke_tirex_lao",		&invoke_tirex_lao),
   INIT_STATIC_SPEC ("link",			&link_spec),
   INIT_STATIC_SPEC ("lib",			&lib_spec),
   INIT_STATIC_SPEC ("link_gomp",		&link_gomp_spec),
@@ -3130,6 +3150,8 @@ display_help (void)
   fputs (_("  -S                       Compile only; do not assemble or link\n"), stdout);
   fputs (_("  -c                       Compile and assemble, but do not link\n"), stdout);
   fputs (_("  -o <file>                Place the output into <file>\n"), stdout);
+  fputs (_("  --tirex                  Use the Tirex tool to generate a Tirex representation\n"), stdout);
+  fputs (_("  --LAO                    Use the LAO tool to perform additional optimizations\n"), stdout); 
   fputs (_("  -pie                     Create a position independent executable\n"), stdout);
   fputs (_("  -shared                  Create a shared library\n"), stdout);
   fputs (_("\
