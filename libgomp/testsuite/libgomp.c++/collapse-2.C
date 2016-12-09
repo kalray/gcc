@@ -345,11 +345,12 @@ f10 (J<T> x, J<T> y, J<T> z)
     abort ();
 }
 
+static int a[2000];
+static long b[2000];
+
 int
 main ()
 {
-  int a[2000];
-  long b[2000];
   for (int i = 0; i < 2000; i++)
     {
       a[i] = i - 1000;

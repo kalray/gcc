@@ -19,7 +19,7 @@ static volatile int hold;
 S::S (const S &s)
 {
   #pragma omp master
-    sleep (1);
+    usleep (500);
 
   assert (s.x == -1);
   x = 0;

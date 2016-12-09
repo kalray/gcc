@@ -1,9 +1,15 @@
 ! { dg-do run }
 
       SUBROUTINE SKIP(ID)
+        INTERFACE 
+           SUBROUTINE sched_yield() bind(C, name="sched_yield")
+           END SUBROUTINE sched_yield
+        END INTERFACE
+        CALL sched_yield ()
       END SUBROUTINE SKIP
       SUBROUTINE WORK(ID)
       END SUBROUTINE WORK
+
       PROGRAM A39
         INCLUDE "omp_lib.h"      ! or USE OMP_LIB
         INTEGER(OMP_LOCK_KIND) LCK

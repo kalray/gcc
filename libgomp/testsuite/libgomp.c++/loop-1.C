@@ -5,10 +5,11 @@
 
 #define MAX	1000
 
+static int a[MAX], b[MAX];
+
 void main1()
 {
   int i, N1, N2, step;
-  int a[MAX], b[MAX];
 
   N1 = rand () % 13;
   N2 = rand () % (MAX - 51) + 50;

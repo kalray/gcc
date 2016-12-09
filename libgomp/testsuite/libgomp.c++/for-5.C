@@ -245,11 +245,12 @@ f12 (const T &x, const T &y)
     else if (results[i])				\
       abort ()
 
+static int a[2000];
+static long b[2000];
+
 int
 main ()
 {
-  int a[2000];
-  long b[2000];
   for (int i = 0; i < 2000; i++)
     {
       a[i] = i;

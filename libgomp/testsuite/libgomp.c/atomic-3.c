@@ -1,5 +1,6 @@
 /* { dg-do run } */
 /* { dg-options "-fopenmp -O0" } */
+/* { dg-timeout-factor 4.0 } */
 
 #include <omp.h>
 #include <stdlib.h>

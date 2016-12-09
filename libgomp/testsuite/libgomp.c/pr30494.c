@@ -59,6 +59,6 @@ main (void)
 {
 #pragma omp parallel num_threads (3)
   foo (128, 128);
-  bar (256, 256);
+  bar (128, 128);
   return 0;
 }
