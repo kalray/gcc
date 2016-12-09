@@ -1,0 +1,176 @@
+HeaderInclude
+config/k1/k1-opts.h
+
+ffixed-reg
+Target RejectNegative Report Joined Var(k1_deferred_options) Defer
+Set the passed register range as fixed
+
+mboard=
+Target RejectNegative Joined Report Var(k1_board_name) Init(K1_BOARD_DEFAULT)
+-mboard=BOARD  Compile for specified BOARD [ csp_generic, explorer, large_memory ]
+
+mprocessing=
+Target RejectNegative Joined Report Enum(k1_processing_type) Var(k1_processing_name) Init(K1_PROCESSING_SINGLE)
+-mprocessing=PROCESSING  Compile for specified PROCESSING
+
+Enum
+Name(k1_processing_type) Type(enum k1_processing_type)
+Known K1 processing types (for use with the -mprocessing option):
+
+EnumValue
+Enum(k1_processing_type) String(single) Value(K1_PROCESSING_SINGLE)
+
+EnumValue
+Enum(k1_processing_type) String(multi) Value(K1_PROCESSING_MULTI)
+
+mcluster=
+Target RejectNegative Joined Report Enum(k1_cluster_type) Var(k1_cluster_name) Init(K1_CLUSTER_NODE)
+-mcluster=CLUSTER  Compile for specified CLUSTER
+
+Enum
+Name(k1_cluster_type) Type(enum k1_cluster_type)
+Known K1 cluster types (for use with the -mcluster option):
+
+EnumValue
+Enum(k1_cluster_type) String(ioddr) Value(K1_CLUSTER_IODDR)
+
+EnumValue
+Enum(k1_cluster_type) String(ioddr_ddr) Value(K1_CLUSTER_IODDR_DDR)
+
+EnumValue
+Enum(k1_cluster_type) String(ioeth) Value(K1_CLUSTER_IOETH)
+
+EnumValue
+Enum(k1_cluster_type) String(node) Value(K1_CLUSTER_NODE)
+
+EnumValue
+Enum(k1_cluster_type) String(node_msd) Value(K1_CLUSTER_NODE_MSD)
+
+mos=
+Target RejectNegative Joined Report Enum(k1_os_type) Var(k1_os_name) Init(K1_OS_BARE)
+-mos=OS  Compile for specified OS
+
+Enum
+Name(k1_os_type) Type(enum k1_os_type)
+Known K1 os types (for use with the -mos option):
+
+EnumValue
+Enum(k1_os_type) String(bare) Value(K1_OS_BARE)
+
+EnumValue
+Enum(k1_os_type) String(nodeos) Value(K1_OS_NODEOS)
+
+EnumValue
+Enum(k1_os_type) String(rtems) Value(K1_OS_RTEMS)
+
+EnumValue
+Enum(k1_os_type) String(linux) Value(K1_OS_LINUX)
+
+march=
+Target RejectNegative Joined Report Enum(k1_arch_type) Var(k1_arch_name) Init(K1_ARCH_A)
+-march=ARCHITECTURE  Compile for specified ARCHITECTURE
+
+Enum
+Name(k1_arch_type) Type(enum k1_arch_type)
+Known K1 architecture types (for use with the -march option):
+
+EnumValue
+Enum(k1_arch_type) String(k1a) Value(K1_ARCH_A)
+
+EnumValue
+Enum(k1_arch_type) String(k1b) Value(K1_ARCH_B)
+
+Enum
+Name(k1_soc_type) Type(enum k1_soc_type)
+Known K1 SoC types (for use with the -msoc option):
+
+EnumValue
+Enum(k1_soc_type) String(bostan) Value(K1_SOC_BOSTAN)
+
+EnumValue
+Enum(k1_soc_type) String(bostanS) Value(K1_SOC_BOSTANS)
+
+msoc=
+Target RejectNegative Joined Report Enum(k1_soc_type) Var(k1_soc_name) Init(K1_SOC_BOSTAN)
+-msoc=SOC_NAME  Compile for specified SOC
+
+
+mreload
+Target RejectNegative Report Mask(RELOAD)
+Use the deprecated reload pass to fixup the register allocation
+
+mfarcall
+Target Report Var(K1_FARCALL)
+Avoid all range limits on call instructions
+
+mforce-uncached-lsu
+Target Report Var(K1_FORCE_UNCACHED_LSU)
+Force the use of uncached instructions for all memory accesses. 
+
+mcore=k1dp
+Target RejectNegative Report Mask(K1DP)
+Compile for K1DP ISA
+
+mcore=k1io
+Target RejectNegative Report Mask(K1IO)
+Compile for K1IO ISA
+
+mcore=k1bdp
+Target RejectNegative Report Mask(K1BDP)
+Compile for K1BDP ISA
+
+mcore=k1bio
+Target RejectNegative Report Mask(K1BIO)
+Compile for K1BIO ISA
+
+m64
+Target Report Mask(64)
+Use 64bits pointers and associated ISA.
+
+mfdpic
+Target Report Mask(FDPIC)
+Enable Function Descriptor PIC mode
+
+mgprel
+Target Report Mask(GPREL)
+Enable use of Global Pointer relative data
+
+mlocal-sdata
+Target Report Var(TARGET_LOCAL_SDATA) Init(0)
+Enable use of small data for local objects
+
+minline-plt
+Target Report Mask(INLINE_PLT)
+Enable inlining of PLT in function calls
+
+fbundling
+Target Report Mask(BUNDLING)
+Enable bundling when optimizing (active by default)
+
+fhwloop
+Target Report Mask(HWLOOP)
+Enable hwloop generation when optimizing (active by default)
+
+fstrict-align
+Target Report Mask(STRICT_ALIGN)
+Do not generate misaligned memory accesses 
+
+fstack-check-use-tls
+Target RejectNegative Report Mask(STACK_CHECK_USE_TLS)
+Use a TLS slot named __stack_end to store the stack boundary instead of $sr1
+
+mhypervisor
+Target Report Mask(HYPERVISOR)
+Compile with support for Kalray's hypervisor
+
+keep
+Target RejectNegative
+Compatibility with the old Open64 compiler. Equivalent to -save-temps.
+
+show
+Driver Target RejectNegative
+Compatibility with the old Open64 compiler. Equivalent to -v.
+
+pthread
+Target RejectNegative
+Equivalent to -qrtems.

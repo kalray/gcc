@@ -1,0 +1,30 @@
+/* Definitions of target machine for GNU compiler for Kalray MPPA.
+   Copyright (C) 2009-2014 Kalray SA.
+
+This file is part of GCC.
+
+GCC is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3, or (at your option)
+any later version.
+
+GCC is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
+
+INT_MODE (OI, 32);
+
+/* Vector modes.  */
+VECTOR_MODE (INT, HI, 2);        /* V2HI */
+VECTOR_MODE (INT, HI, 4);        /* V4HI */
+VECTOR_MODE (INT, SI, 2);        /* V2SI */
+VECTOR_MODE (INT, SI, 8);        /* V8SI */
+
+VECTOR_MODE (FLOAT, SF, 2);        /* V2SF */
+VECTOR_MODE (FLOAT, SF, 4);        /* V4SF */
+VECTOR_MODE (FLOAT, SF, 8);        /* V8SF */

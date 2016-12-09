@@ -1,0 +1,23 @@
+MULTILIB_OPTIONS = mcore=k1bdp/mcore=k1bio fPIC mhypervisor
+MULTILIB_DIRNAMES = k1bdp/le/bare k1bio/le/bare pic mOS
+
+MULTILIB_EXTRA_OPTS = fdata-sections ffunction-sections
+
+DRIVER_DEFINES = \
+  -DSTANDARD_STARTFILE_PREFIX=\"$(unlibsubdir)/\" \
+  -DSTANDARD_EXEC_PREFIX=\"$(libdir)/gcc/\" \
+  -DSTANDARD_LIBEXEC_PREFIX=\"$(libexecdir)/gcc/\" \
+  -DDEFAULT_TARGET_VERSION=\"$(version)\" \
+  -DDEFAULT_TARGET_MACHINE=\"$(target_noncanonical)\" \
+  -DSTANDARD_BINDIR_PREFIX=\"$(bindir)/\" \
+  -DTOOLDIR_BASE_PREFIX=\"$(libsubdir_to_prefix)$(prefix_to_exec_prefix)\"
+  
+driver-k1.o: $(srcdir)/config/k1/driver-k1.c \
+  $(CONFIG_H) $(SYSTEM_H) coretypes.h $(TM_H)
+	$(COMPILER) -c $(ALL_CFLAGS) $(ALL_CPPFLAGS) $(DRIVER_DEFINES) $(INCLUDES) $<
+
+
+#INCLUDES += -I${FAMDIR}/BE/GCC/k1b -isystem ${TOOLROOT}/${target_noncanonical}/include -I$(abs_srcdir)/config/k1
+INCLUDES += -I${FAMDIR}/BE/GCC/k1b -I$(abs_srcdir)/config/k1
+#BUILD_CPPFLAGS += -I${FAMDIR}/BE/GCC/k1b -isystem ${TOOLROOT}/${target_noncanonical}/include -I$(abs_srcdir)/config/k1
+BUILD_CPPFLAGS += -I${FAMDIR}/BE/GCC/k1b -I$(abs_srcdir)/config/k1
