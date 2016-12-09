@@ -56,15 +56,16 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
     type_info *t = __cxa_current_exception_type();
     if (t)
       {
+        fputs("terminate called after throwing an instance of '", stderr);
+
 	// Note that "name" is the mangled name.
 	char const *name = t->name();
+#ifdef __EXCEPTIONS
 	{
 	  int status = -1;
-	  char *dem = 0;
-	  
-	  dem = __cxa_demangle(name, 0, 0, &status);
+	  char *dem;
 
-	  fputs("terminate called after throwing an instance of '", stderr);
+	  dem = __cxa_demangle(name, 0, 0, &status);
 	  if (status == 0)
 	    fputs(dem, stderr);
 	  else
@@ -74,6 +75,10 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	  if (status == 0)
 	    free(dem);
 	}
+#else
+	fputs(name, stderr);
+#endif
+	fputs("'\n", stderr);
 
 	// If the exception is derived from std::exception, we can
 	// give more information.
