@@ -1,0 +1,15 @@
+set host_triplet x86_64-unknown-linux-gnu
+set build_triplet x86_64-unknown-linux-gnu
+set target_triplet k1-rtems-elf
+set target_alias k1-rtems
+set blddir ""
+set libiconv ""
+set CFLAGS ""
+set CXXFLAGS ""
+set HOSTCC "gcc"
+set HOSTCFLAGS "-g "
+set HAVE_LIBSTDCXX_V3 1
+set ENABLE_PLUGIN 1
+set PLUGINCC "gcc"
+set PLUGINCFLAGS "-g "
+set ENABLE_LTO 1
