@@ -1,4 +1,4 @@
-! { dg-do run }
+! { dg-do run { xfail k1-*-* } }
 ! Test for ITIME and IDATE intrinsics
       integer x(3)
       call itime(x)
