@@ -189,6 +189,7 @@ case $target in
 	ia64-*-* | \
 	hppa*64*-*-* | \
 	i[34567]86-*-* | x86_64-*-solaris2.1[0-9]* | \
+	k1-*-* | \
 	mips*-*-* | \
 	mmix-*-* | \
 	powerpc*-*-* | \
