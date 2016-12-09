@@ -24,13 +24,13 @@ program allocate_assign
    integer(ik8) s
    call foo
    s = 0
-   do k = 1, 10000
+   do k = 1, 1000
       x = x1
       s = s+x(2)%headers(2)%parts(2)
       x = x2
       s = s+x(2)%headers(2)%parts(2)
    end do
-   if (s .ne. 40000) call abort
+   if (s .ne. 4000) call abort
 contains
 !
 ! TODO - these assignments lose 1872 bytes on x86_64/FC17

@@ -704,7 +704,7 @@ proc check_effective_target_function_sections {} {
     }
     
     return [check_no_compiler_messages functionsections assembly {
- 	void foo (void) { }
+	void foo (void) { }
     } "-ffunction-sections"]
 }
 
@@ -2130,6 +2130,7 @@ proc check_effective_target_vect_int { } {
 	      || [istarget sparc*-*-*]
 	      || [istarget alpha*-*-*]
 	      || [istarget ia64-*-*] 
+	      || [istarget k1-*-*] 
 	      || [istarget aarch64*-*-*]
 	      || [check_effective_target_arm32]
 	      || ([istarget mips*-*-*]
@@ -3387,6 +3388,7 @@ proc check_effective_target_vect_shift { } {
 	     || [istarget ia64-*-*]
 	     || [istarget i?86-*-*]
 	     || [istarget x86_64-*-*]
+             || [istarget k1-*-*]
 	     || [istarget aarch64*-*-*]
 	     || [check_effective_target_arm32]
 	     || ([istarget mips*-*-*]
@@ -4104,6 +4106,7 @@ proc check_effective_target_vect_hw_misalign { } {
         set et_vect_hw_misalign_saved 0
        if { ([istarget x86_64-*-*] 
              || ([istarget powerpc*-*-*] && [check_p8vector_hw_available])
+             || [istarget k1-*-*] 
  	     || [istarget aarch64*-*-*]
              || [istarget i?86-*-*]) } {
           set et_vect_hw_misalign_saved 1
@@ -4133,7 +4136,8 @@ proc check_effective_target_vect_aligned_arrays { } {
 	         set et_vect_aligned_arrays_saved 1
 	    }
 	}
-        if [istarget spu-*-*] {
+        if { [istarget spu-*-*] 
+             || [istarget k1-*-*] } {
 	    set et_vect_aligned_arrays_saved 1
 	}
     }
@@ -4279,6 +4283,7 @@ proc check_effective_target_vect_condition { } {
 	     || [istarget ia64-*-*]
 	     || [istarget i?86-*-*]
 	     || [istarget spu-*-*]
+	     || [istarget k1-*-*]
 	     || [istarget x86_64-*-*]
 	     || ([istarget arm*-*-*] && [check_effective_target_arm_neon_ok]) } {
 	   set et_vect_cond_saved 1
@@ -4370,6 +4375,7 @@ proc check_effective_target_vect_int_mult { } {
 	if { ([istarget powerpc*-*-*] && ![istarget powerpc-*-linux*paired*])
 	     || [istarget spu-*-*]
 	     || [istarget i?86-*-*]
+	     || [istarget k1-*-*]
 	     || [istarget x86_64-*-*]
 	     || [istarget ia64-*-*]
 	     || [istarget aarch64*-*-*]
@@ -5751,6 +5757,8 @@ proc check_vect_support_and_set_flags { } {
             set dg-do-what-default compile
         }
     } elseif [istarget ia64-*-*] {
+        set dg-do-what-default run
+    } elseif [istarget "k1-*-*"] {
         set dg-do-what-default run
     } elseif [is-effective-target arm_neon_ok] {
         eval lappend DEFAULT_VECTCFLAGS [add_options_for_arm_neon ""]

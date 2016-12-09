@@ -1,4 +1,5 @@
-! { dg-do run }
+! { dg-do run { target { ! { k1*-*-* } } } }
+! { dg-timeout-factor 2.0 }
 ! PR25828 Stream IO test 4, Tests string read and writes, single byte.
 ! Verifies buffering is working correctly and position="append"
 ! Contributed by Jerry DeLisle <jvdelisle@verizon.net>.
