@@ -40,3 +40,11 @@ core
 !core/
 
 lost+found
+k1_elf_Debug_build_64
+k1_elf_bootstrap_Debug_build_64
+k1_nodeos_Debug_build_64
+k1_nodeos_bootstrap_Debug_build_64
+k1_rtems_Debug_build_64
+k1_rtems_bootstrap_Debug_build_64
+
+gcc/REVISION
