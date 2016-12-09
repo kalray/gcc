@@ -1,0 +1,2 @@
+# Don't use fast FMA based division on k1v1. fsdiv wasn't fully accurate.
+softfp_wrap_start := -e "\#define __divsf3 __softfp_divsf3\n"
