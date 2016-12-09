@@ -1,4 +1,5 @@
 * { dg-do run }
+* { dg-timeout-factor 4.0 }
 
       program main 
 ************************************************************
@@ -53,11 +54,11 @@
 *     read(5,*) tol 
       write(*,*) tol
       write(*,*) "Input mits - Maximum iterations for solver" 
-      mits = 100
+      mits = 10
 *     read(5,*) mits
       write(*,*) mits
 
-      call omp_set_num_threads (2)
+      call omp_set_num_threads (16)
 
 *
 * Calls a driver routine 

@@ -26,21 +26,23 @@ a16 (float *x, float *y, int *index, int n)
       y[i] += work2 (i);
     }
 }
+
+static float x[1000];
+static float y[10000];
+static int idx[10000];
+
 int
 main ()
 {
-  float x[1000];
-  float y[10000];
-  int index[10000];
   int i;
   for (i = 0; i < 10000; i++)
     {
-      index[i] = i % 1000;
+      idx[i] = i % 1000;
       y[i] = 0.0;
     }
   for (i = 0; i < 1000; i++)
     x[i] = 0.0;
-  a16 (x, y, index, 10000);
+  a16 (x, y, idx, 10000);
   for (i = 0; i < 10; i++)
     printf ("x[%d] = %f, y[%d] = %f\n", i, x[i], i, y[i]);
   return 0;

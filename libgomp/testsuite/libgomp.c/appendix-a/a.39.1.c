@@ -5,6 +5,7 @@
 void
 skip (int i)
 {
+    sched_yield ();
 }
 
 void

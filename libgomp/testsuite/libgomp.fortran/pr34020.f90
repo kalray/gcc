@@ -13,8 +13,8 @@
       lhs = 0
       rhs = 1
 !$omp parallel do num_threads(8) shared(lhs, rhs)
-      do i = 1, 300000
+      do i = 1, 30000
         call atomic_add(lhs, rhs)
       enddo
-      if (lhs .ne. 300000) call abort
+      if (lhs .ne. 30000) call abort
       end

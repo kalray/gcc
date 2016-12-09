@@ -24,9 +24,11 @@
       END SUBROUTINE SUBA16
 
       PROGRAM A16
+        INTEGER I
+        COMMON X, Y, INDEX
         REAL X(1000), Y(10000)
         INTEGER INDEX(10000)
-        INTEGER I
+
         DO I=1,10000
           INDEX(I) = MOD(I, 1000) + 1
           Y(I) = 0.0

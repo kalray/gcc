@@ -58,7 +58,7 @@ foo (int do_sleep)
 	}
     }
     if (do_sleep)
-      sleep (1);
+      usleep (100);
   }
 }
 

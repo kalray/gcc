@@ -7,7 +7,7 @@ __attribute__((noinline, noclone, noreturn))
 void
 foo ()
 {
-  sleep (4);
+  usleep (40);
   exit (0);
 }
 

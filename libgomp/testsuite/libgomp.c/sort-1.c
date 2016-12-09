@@ -105,6 +105,10 @@ busy_wait (void)
   __asm volatile ("hint @pause" : : : "memory");
 #elif defined __sparc__ && (defined __arch64__ || defined __sparc_v9__)
   __asm volatile ("membar #LoadLoad" : : : "memory");
+#elif defined __k1dp__ || defined __k1bdp__
+  __builtin_k1_wpurge();
+  __builtin_k1_dinval();
+  __builtin_k1_fence();
 #else
   __asm volatile ("" : : : "memory");
 #endif
@@ -333,7 +337,7 @@ sort3 (int *array, int count)
 int
 main (int argc, char **argv)
 {
-  int i, count = 1000000;
+  int i, count = 1000;
   double stime;
   int *unsorted, *sorted, num_threads;
   if (argc >= 2)
