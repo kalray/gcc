@@ -23735,6 +23735,10 @@ if test $gcc_cv_as_tls = yes; then
 fi
 fi
 case "$target" in
+  k1-*-*)
+    # Don't have any version restriction for TLS support
+    set_have_as_tls=yes
+    ;;
   # TLS was introduced in the Solaris 9 FCS release.  Support for GNU-style
   # TLS on x86 was only introduced in Solaris 9 4/04, replacing the earlier
   # Sun style that Sun ld and GCC don't support any longer.

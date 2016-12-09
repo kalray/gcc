@@ -118,8 +118,8 @@ along with GCC; see the file COPYING3.	If not see
 #include "lra-int.h"
 #include "df.h"
 
-/* Hard registers currently not available for allocation.  It can
-   changed after some hard  registers become not eliminable.  */
+/* Hard registers currently not available for allocation.  It canp
+   change after some hard  registers become not eliminable.  */
 HARD_REG_SET lra_no_alloc_regs;
 
 static int get_new_reg_value (void);
