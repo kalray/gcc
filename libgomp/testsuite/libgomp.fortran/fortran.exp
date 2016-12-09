@@ -43,9 +43,23 @@ if { $blddir != "" } {
     puts "GFORTRAN_UNDER_TEST not defined, will not execute fortran tests"
 }
 
+
+proc lremove {list matches} {
+    foreach match $matches {
+	set idx_list [lsearch -regexp $list $match]
+	foreach idx [lreverse $idx_list] {
+	    set list [lreplace $list $idx $idx]
+	}
+    }
+    return $list
+}
+
+set removed_tests {nestedfn5.f90 simd7.f90 target7.f90 target8.f90}
+puts "Removed tests: $removed_tests"
+
 if { $lang_test_file_found } {
     # Gather a list of all tests.
-    set tests [lsort [find $srcdir/$subdir *.\[fF\]{,90,95,03,08}]]
+    set tests [lsort [lremove [find $srcdir/$subdir *.\[fF\]{,90,95,03,08}] $removed_tests]]
 
     if { $blddir != "" } {
 	if { [file exists "${blddir}/${quadmath_library_path}/libquadmath.a"]

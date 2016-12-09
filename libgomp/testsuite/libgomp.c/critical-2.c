@@ -7,9 +7,10 @@
 
 #define N       2000
 
+static int A[N];
+
 int main()
 {
-  int A[N];
   int nthreads;
   int i;
 

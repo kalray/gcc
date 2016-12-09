@@ -19,7 +19,7 @@ foo ()
 int
 main (void)
 {
-#pragma omp parallel num_threads (64)
+#pragma omp parallel num_threads (16) //(64)
   foo ();
 
   return 0;

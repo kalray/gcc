@@ -38,7 +38,7 @@ nqueens (char *a, int n, int pos)
 int
 main (int argc, char **argv)
 {
-  int n = 8;
+  int n = 6;
   if (argc >= 2)
     n = strtoul (argv[1], NULL, 0);
   if (n < 1 || n > 127)

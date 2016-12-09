@@ -61,7 +61,7 @@ main ()
     }
   for (i = 0; i < 50; i++)
     {
-      int v = random () & size;
+      int v = rand () & size;
       if (searchp (&trees[0], v) != &trees[v])
 	abort ();
     }

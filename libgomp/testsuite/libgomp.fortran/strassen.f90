@@ -3,7 +3,7 @@
 
 program strassen_matmul
   use omp_lib
-  integer, parameter :: N = 1024
+  integer, parameter :: N = 64
   double precision, save :: A(N,N), B(N,N), C(N,N), D(N,N)
   double precision :: start, end
 

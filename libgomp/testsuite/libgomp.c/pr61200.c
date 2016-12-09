@@ -23,14 +23,14 @@ foo ()
 	    else
 	      {
 		#pragma omp single
-		  sleep (2);
+		usleep (2);
 	      }
 	}
       else
 	{
 	  #pragma omp task shared(var)
 	  {
-	    sleep (1);
+	    usleep (1);
 	    var = 2;
 	  }
 	}
@@ -52,7 +52,7 @@ bar ()
 	{
 	  #pragma omp task shared(var)
 	  {
-	    sleep (1);
+	    usleep (1);
 	    var = 2;
 	  }
 	}
@@ -64,7 +64,7 @@ bar ()
 	    else
 	      {
 		#pragma omp single
-		  sleep (2);
+	        usleep (2);
 	      }
 	}
     }

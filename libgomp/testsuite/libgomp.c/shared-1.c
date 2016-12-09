@@ -12,11 +12,13 @@ struct X
   float b[10];
 };
 
+struct X A[10][5];
+
 void
 parallel (int a, int b)
 {
   int i, j;
-  struct X A[10][5];
+
   a = b = 3;
 
   for (i = 0; i < 10; i++)

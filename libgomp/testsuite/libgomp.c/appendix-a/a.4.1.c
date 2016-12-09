@@ -25,11 +25,13 @@ sub (float *x, int npoints)
     subdomain (x, istart, ipoints);
   }
 }
+
+static float array[10000];
+
 int
 main ()
 {
   int i;
-  float array[10000];
   sub (array, 10000);
   for (i = 0; i < 10000; i++)
     if (array[i] < 123.45 || array[i] > 123.46)

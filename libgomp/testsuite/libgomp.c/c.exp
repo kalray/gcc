@@ -23,8 +23,21 @@ dg-init
 # Turn on OpenMP.
 lappend ALWAYS_CFLAGS "additional_flags=-fopenmp"
 
+proc lremove {list matches} {
+    foreach match $matches {
+	set idx_list [lsearch -regexp $list $match]
+	foreach idx [lreverse $idx_list] {
+	    set list [lreplace $list $idx $idx]
+	}
+    }
+    return $list
+}
+
+set removed_tests {target-8.c}
+puts "Removed tests: $removed_tests"
+
 # Gather a list of all tests.
-set tests [lsort [find $srcdir/$subdir *.c]]
+set tests [lsort [lremove [find $srcdir/$subdir *.c] $removed_tests]]
 
 set ld_library_path $always_ld_library_path
 append ld_library_path [gcc-set-multilib-library-path $GCC_UNDER_TEST]
