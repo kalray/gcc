@@ -32,7 +32,22 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 #define __GTHREADS 1
 #define __GTHREADS_CXX0X 1
 
+/* Some implementations of <pthread.h> require this to be defined.  */
+#if !defined(_REENTRANT) && defined(__osf__)
+#define _REENTRANT 1
+#endif
+
+#ifdef __nodeos__
+  #ifdef GTHREAD_USE_WEAK
+  #undef GTHREAD_USE_WEAK
+  #endif
+#define GTHREAD_USE_WEAK 0
+#else
+#error nok
+#endif
+
 #include <pthread.h>
+#include <sched.h>
 
 #if ((defined(_LIBOBJC) || defined(_LIBOBJC_WEAK)) \
      || !defined(_GTHREAD_USE_MUTEX_TIMEDLOCK))
