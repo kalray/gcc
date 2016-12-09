@@ -921,6 +921,10 @@ iq2000*-*-elf*)
 	# Don't use default.
 	extra_parts=
         ;;
+k1-*-*)
+        extra_parts="$extra_parts crtbegin.o crtend.o crti.o crtn.o"
+	tmake_file="k1/t-k1 t-softfp-sfdf k1/t-softfp-k1 t-softfp"
+	;;
 lm32-*-elf*)
         extra_parts="$extra_parts crti.o crtn.o"
         tmake_file="lm32/t-lm32 lm32/t-elf t-softfp-sfdf t-softfp"
