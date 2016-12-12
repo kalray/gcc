@@ -200,6 +200,7 @@ b.target("build" + s_bootstrap + target_variant) do
 
     if variant == "linux" then
       newlib = ""
+      libatomic_toggle = "--disable-libatomic"
       threads = "--disable-threads"
       quadmath = "--disable-libquadmath"
       languages = "c,c++,fortran"
@@ -207,7 +208,8 @@ b.target("build" + s_bootstrap + target_variant) do
       include_path = "include"
       multilib = "--enable-multilib"
     elsif variant == "nodeos"       
-      newlib = "--with-newlib" 
+      newlib = "--with-newlib"
+      libatomic_toggle = ""
       threads = "--enable-threads=posix"
       quadmath = ""
       languages = "c,c++,fortran"
@@ -215,9 +217,20 @@ b.target("build" + s_bootstrap + target_variant) do
       sysroot_option = "--with-build-time-tools=#{toolroot}/#{variant_dir}/bin" # --with-headers=#{toolroot}/#{variant_dir}/include"
       multilib = "--enable-multilib"
       include_path = "sys-include"
-    else
-      newlib = "--with-newlib" 
+    elsif variant == "rtems"
+      newlib = "--with-newlib"
       threads = "--enable-threads"
+      libatomic_toggle = "--disable-libatomic"
+      quadmath = ""
+      languages = "c,c++,fortran"
+#      sysroot_option = "--with-build-time-tools=#{toolroot}/#{variant_dir}/bin --with-sysroot=#{toolroot} --with-native-system-header-dir=/#{variant_dir}/include"
+      sysroot_option = "--with-build-time-tools=#{toolroot}/#{variant_dir}/bin" # --with-headers=#{toolroot}/#{variant_dir}/include"
+      multilib = "--enable-multilib"
+      include_path = "sys-include"
+    else
+      newlib = "--with-newlib"
+      threads = "--enable-threads"
+      libatomic_toggle = ""
       quadmath = ""
       languages = "c,c++,fortran"
 #      sysroot_option = "--with-build-time-tools=#{toolroot}/#{variant_dir}/bin --with-sysroot=#{toolroot} --with-native-system-header-dir=/#{variant_dir}/include"
@@ -228,6 +241,7 @@ b.target("build" + s_bootstrap + target_variant) do
 
     configure_common = "#{with_extra_flags} " +
                        "--prefix=#{toolroot} " +
+                       "#{libatomic_toggle} " +
                        "#{configure_with} " +
                        "--disable-bootstrap " +
                        "--disable-shared " +
@@ -249,7 +263,6 @@ b.target("build" + s_bootstrap + target_variant) do
          b.run(:cmd => "../configure " +
                        "#{configure_common} " +
                        "--disable-libgomp " +
-                       "--disable-libatomic " +
                        "--disable-threads " +
                        "--enable-languages=c " +
                        "#{sysroot_option}",
@@ -257,7 +270,6 @@ b.target("build" + s_bootstrap + target_variant) do
       else
         b.run(:cmd => "../configure " +
                       "#{configure_common} " +
-                      "--disable-libatomic " +
                       "#{threads} " +
                       "--with-libelf=#{kalray_internal} " +
                       "--enable-lto " +
