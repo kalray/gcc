@@ -2933,11 +2933,14 @@ enum k1_builtin
   K1_BUILTIN_CMOVEF,
   K1_BUILTIN_CTZ,
   K1_BUILTIN_CTZDL,
-  K1_BUILTIN_CWS,
-  K1_BUILTIN_ACWSU,
   K1_BUILTIN_ACWS,
+  K1_BUILTIN_ACWSU,
+  K1_BUILTIN_CWS,
   K1_BUILTIN_AFDA,
   K1_BUILTIN_AFDAU,
+  K1_BUILTIN_ALDC,
+  K1_BUILTIN_ALDCU,
+  K1_BUILTIN_LDC,
   K1_BUILTIN_DFLUSH,
   K1_BUILTIN_DFLUSHL,
   K1_BUILTIN_DINVAL,
@@ -2953,14 +2956,14 @@ enum k1_builtin
   K1_BUILTIN_FADDRNWP,
   K1_BUILTIN_FCDIV,
   K1_BUILTIN_FCDIVD,
-  K1_BUILTIN_FCMAWD,
   K1_BUILTIN_FCMA,
-  K1_BUILTIN_FCMSWD,
+  K1_BUILTIN_FCMAWD,
   K1_BUILTIN_FCMS,
-  K1_BUILTIN_FDMAWD,
+  K1_BUILTIN_FCMSWD,
   K1_BUILTIN_FDMA,
-  K1_BUILTIN_FDMSWD,
+  K1_BUILTIN_FDMAWD,
   K1_BUILTIN_FDMS,
+  K1_BUILTIN_FDMSWD,
   K1_BUILTIN_FENCE,
   K1_BUILTIN_FFMA,
   K1_BUILTIN_FFMARN,
@@ -2969,8 +2972,8 @@ enum k1_builtin
   K1_BUILTIN_FFMAWP,
   K1_BUILTIN_FFMARNWP,
   K1_BUILTIN_FFMAN,
-  K1_BUILTIN_FFMAND,
   K1_BUILTIN_FFMANRN,
+  K1_BUILTIN_FFMAND,
   K1_BUILTIN_FFMANRND,
   K1_BUILTIN_FFMAWD,
   K1_BUILTIN_FFMARNWD,
@@ -3046,6 +3049,7 @@ enum k1_builtin
     K1_BUILTIN_HFXT_PS,
 #endif
   K1_BUILTIN_IINVAL,
+  K1_BUILTIN_IINVALS,
   K1_BUILTIN_IINVALL,
   K1_BUILTIN_ITOUCHL,
   K1_BUILTIN_INDEXJTLB,
@@ -3065,8 +3069,6 @@ enum k1_builtin
   K1_BUILTIN_LHPZU,
   K1_BUILTIN_LHPZN,
   K1_BUILTIN_LHPZUN,
-  K1_BUILTIN_LDC,
-  K1_BUILTIN_ALDC,
   K1_BUILTIN_LDU,
   K1_BUILTIN_LWU,
   K1_BUILTIN_MADUUCIWD,
@@ -3076,8 +3078,10 @@ enum k1_builtin
   K1_BUILTIN_READTLB,
   K1_BUILTIN_RXOR,
   K1_BUILTIN_SBFHP,
+  K1_BUILTIN_SBMM8,
   K1_BUILTIN_SBMM8_D,
-  K1_BUILTIN_SBMM8_L,
+  K1_BUILTIN_SBMM8L,
+  K1_BUILTIN_SBMMT8,
   K1_BUILTIN_SBMMT8_D,
   K1_BUILTIN_SCALL,
   K1_BUILTIN_SBU,
@@ -3089,7 +3093,9 @@ enum k1_builtin
   K1_BUILTIN_SETD,
   K1_BUILTIN_SETD_PS,
   K1_BUILTIN_SLLHPS,
+  K1_BUILTIN_SLLHPS_R,
   K1_BUILTIN_SRAHPS,
+  K1_BUILTIN_SRAHPS_R,
   K1_BUILTIN_STSU,
   K1_BUILTIN_STSUD,
   K1_BUILTIN_SYNCGROUP,
@@ -3178,6 +3184,7 @@ k1_target_init_builtins (void)
 #define VOID void_type_node
 
 #define voidPTR ptr_type_node
+#define constVoidPTR const_ptr_type_node
 
 #define ADD_K1_BUILTIN_VARAGS(UC_NAME, LC_NAME, ...)                           \
   builtin_fndecls[K1_BUILTIN_##UC_NAME]                                        \
@@ -3199,36 +3206,40 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (ADDS, "adds", intSI, intSI, intSI);
   ADD_K1_BUILTIN (BARRIER, "barrier", VOID);
   ADD_K1_BUILTIN (BWLU, "bwlu", uintSI, uintSI, uintSI, uintSI, uintSI, uintHI);
-  ADD_K1_BUILTIN (BWLUHP, "bwluhp", intSI, intSI, intSI, uintSI);
-  ADD_K1_BUILTIN (BWLUWP, "bwluwp", intDI, intDI, intDI, uintSI);
+  ADD_K1_BUILTIN (BWLUHP, "bwluhp", uintSI, uintSI, uintSI, uintSI);
+  ADD_K1_BUILTIN (BWLUWP, "bwluwp", uintDI, uintDI, uintDI, uintSI);
   ADD_K1_BUILTIN (CLEAR1, "clear1", VOID, uintSI);
-  ADD_K1_BUILTIN (CBS, "cbs", uintSI, uintSI);
-  ADD_K1_BUILTIN (CBSDL, "cbsdl", uintSI, uintDI);
+  ADD_K1_BUILTIN (CBS, "cbs", intSI, uintSI);
+  ADD_K1_BUILTIN (CBSDL, "cbsdl", intSI, uintDI);
   ADD_K1_BUILTIN (CLZ, "clz", intSI, uintSI);
   ADD_K1_BUILTIN (CLZDL, "clzdl", intSI, uintDI);
   ADD_K1_BUILTIN (CMOVE, "cmove", intSI, intSI, intSI, intSI);
   ADD_K1_BUILTIN (CMOVEF, "cmovef", floatSF, intSI, floatSF, floatSF);
   ADD_K1_BUILTIN (CTZ, "ctz", intSI, uintSI);
   ADD_K1_BUILTIN (CTZDL, "ctzdl", intSI, uintDI);
-  ADD_K1_BUILTIN (CWS, "cws", intDI, voidPTR, uintSI, intSI);
-  ADD_K1_BUILTIN (ACWSU, "acwsu", intDI, voidPTR, uintSI, intSI);
   if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (ACWS, "acws", intDI, voidPTR, uintSI, intSI);
+    ADD_K1_BUILTIN (ACWS, "acws", uintDI, voidPTR, uintSI, uintSI);
+  ADD_K1_BUILTIN (ACWSU, "acwsu", uintDI, voidPTR, uintSI, uintSI);
+  ADD_K1_BUILTIN (CWS, "cws", uintDI, voidPTR, uintSI, uintSI);
   if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (AFDA, "afda", intDI, intDI_pointer_node, intDI);
+    ADD_K1_BUILTIN (AFDA, "afda", uintDI, voidPTR, intDI);
   if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (AFDAU, "afdau", intDI, intDI_pointer_node, intDI);
+    ADD_K1_BUILTIN (AFDAU, "afdau", uintDI, voidPTR, intDI);
+  if (k1_architecture () >= K1B)
+    ADD_K1_BUILTIN (ALDC, "aldc", uintDI, voidPTR);
+  ADD_K1_BUILTIN (ALDCU, "aldcu", uintDI, voidPTR);
+  ADD_K1_BUILTIN (LDC, "ldc", uintDI, voidPTR);
   if (k1_architecture () < K1B)
     ADD_K1_BUILTIN (DFLUSH, "dflush", VOID);
   if (k1_architecture () < K1B)
-    ADD_K1_BUILTIN (DFLUSHL, "dflushl", VOID, voidPTR);
+    ADD_K1_BUILTIN (DFLUSHL, "dflushl", VOID, constVoidPTR);
   ADD_K1_BUILTIN (DINVAL, "dinval", VOID);
-  ADD_K1_BUILTIN (DINVALL, "dinvall", VOID, voidPTR);
+  ADD_K1_BUILTIN (DINVALL, "dinvall", VOID, constVoidPTR);
   if (k1_architecture () < K1B)
     ADD_K1_BUILTIN (DPURGE, "dpurge", VOID);
   if (k1_architecture () < K1B)
-    ADD_K1_BUILTIN (DPURGEL, "dpurgel", VOID, voidPTR);
-  ADD_K1_BUILTIN (DTOUCHL, "dtouchl", VOID, voidPTR);
+    ADD_K1_BUILTIN (DPURGEL, "dpurgel", VOID, constVoidPTR);
+  ADD_K1_BUILTIN (DTOUCHL, "dtouchl", VOID, constVoidPTR);
   ADD_K1_BUILTIN (DZEROL, "dzerol", VOID, voidPTR);
   ADD_K1_BUILTIN (EXTFZ, "extfz", uintSI, uintSI, uintSI, uintSI);
   ADD_K1_BUILTIN (FADDRN, "faddrn", floatSF, floatSF, floatSF);
@@ -3357,44 +3368,40 @@ k1_target_init_builtins (void)
     ADD_K1_BUILTIN (FSISRD, "fsisrd", floatDF, floatDF);
   ADD_K1_BUILTIN (GET, "get", uintSI, intSI);
   ADD_K1_BUILTIN (GET_R, "get_r", uintSI, intSI);
-
   if (k1_architecture () >= K1B)
     ADD_K1_BUILTIN (GETD, "getd", uintDI, intSI);
   if (k1_architecture () >= K1B)
     ADD_K1_BUILTIN (GETD_R, "getd_r", uintDI, intSI);
-
   ADD_K1_BUILTIN (HFXB, "hfxb", VOID, uintQI, intSI);
   ADD_K1_BUILTIN (HFXT, "hfxt", VOID, uintQI, intSI);
 #if 0
     ADD_K1_BUILTIN (HFX,     "hfx",         VOID,   uintQI, intSI, uintHI, uintHI);
 #endif
   ADD_K1_BUILTIN (IINVAL, "iinval", VOID);
-  ADD_K1_BUILTIN (IINVALL, "iinvall", VOID, voidPTR);
+  ADD_K1_BUILTIN (IINVALS, "iinvals", VOID, constVoidPTR);
+  ADD_K1_BUILTIN (IINVALL, "iinvall", VOID, constVoidPTR);
   ADD_K1_BUILTIN (INDEXJTLB, "indexjtlb", VOID);
   ADD_K1_BUILTIN (INDEXLTLB, "indexltlb", VOID);
   ADD_K1_BUILTIN (INVALDTLB, "invaldtlb", VOID);
   ADD_K1_BUILTIN (INVALITLB, "invalitlb", VOID);
   ADD_K1_BUILTIN (ITOUCHL, "itouchl", VOID, voidPTR);
   ADD_K1_BUILTIN (LANDHP, "landhp", intSI, intSI, intSI);
-  ADD_K1_BUILTIN (LBQS, "lbqs", intDI, voidPTR);
+  ADD_K1_BUILTIN (LBQS, "lbqs", uintDI, constVoidPTR);
   if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (LBQSU, "lbqsu", intDI, voidPTR);
-  ADD_K1_BUILTIN (LBQZ, "lbqz", intDI, intSI_pointer_node);
+    ADD_K1_BUILTIN (LBQSU, "lbqsu", uintDI, constVoidPTR);
+  ADD_K1_BUILTIN (LBQZ, "lbqz", uintDI, constVoidPTR);
   if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (LBQZU, "lbqzu", intDI, intSI_pointer_node);
+    ADD_K1_BUILTIN (LBQZU, "lbqzu", uintDI, constVoidPTR);
   if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (LBSU, "lbsu", intQI, voidPTR);
+    ADD_K1_BUILTIN (LBSU, "lbsu", intQI, constVoidPTR);
   if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (LBZU, "lbzu", uintQI, voidPTR);
+    ADD_K1_BUILTIN (LBZU, "lbzu", uintQI, constVoidPTR);
   if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (LHSU, "lhsu", intHI, voidPTR);
+    ADD_K1_BUILTIN (LHSU, "lhsu", intHI, constVoidPTR);
   if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (LHZU, "lhzu", uintHI, voidPTR);
-  ADD_K1_BUILTIN (LDC, "ldc", intDI, voidPTR);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (ALDC, "aldc", intDI, voidPTR);
-  ADD_K1_BUILTIN (LDU, "ldu", intDI, voidPTR);
-  ADD_K1_BUILTIN (LWU, "lwu", uintSI, voidPTR);
+    ADD_K1_BUILTIN (LHZU, "lhzu", uintHI, constVoidPTR);
+  ADD_K1_BUILTIN (LDU, "ldu", uintDI, constVoidPTR);
+  ADD_K1_BUILTIN (LWU, "lwu", uintSI, constVoidPTR);
   ADD_K1_BUILTIN (MADUUCIWD, "maduuciwd", uintDI, uintDI, uintSI, uintSI);
   ADD_K1_BUILTIN (NOTIFY1, "notify1", VOID, uintSI);
   ADD_K1_BUILTIN (PROBETLB, "probetlb", VOID);
@@ -3402,8 +3409,10 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (READTLB, "readtlb", VOID);
   ADD_K1_BUILTIN (RXOR, "r_xord", VOID, uintQI, uintDI, uintHI);
   ADD_K1_BUILTIN (SBFHP, "sbfhp", intSI, intSI, intSI);
+  ADD_K1_BUILTIN (SBMM8, "sbmm8", uintDI, uintDI, uintDI);
   ADD_K1_BUILTIN (SBMM8_D, "sbmm8_d", uintDI, uintDI, uintDI);
-  ADD_K1_BUILTIN (SBMM8_L, "sbmm8l", uintDI, uintDI, uintDI);
+  ADD_K1_BUILTIN (SBMM8L, "sbmm8l", uintSI, uintDI, uintDI);
+  ADD_K1_BUILTIN (SBMMT8, "sbmmt8", uintDI, uintDI, uintDI);
   ADD_K1_BUILTIN (SBMMT8_D, "sbmmt8_d", uintDI, uintDI, uintDI);
   ADD_K1_BUILTIN (SAT, "sat", intSI, intSI, uintQI);
   ADD_K1_BUILTIN (SATD, "satd", intDI, intDI, uintQI);
@@ -3414,12 +3423,14 @@ k1_target_init_builtins (void)
   if (k1_architecture () >= K1B)
     ADD_K1_BUILTIN (SETD_PS, "setd_ps", VOID, intSI, uintDI);
   if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (SBU, "sbu", VOID, voidPTR, intQI);
+    ADD_K1_BUILTIN (SBU, "sbu", VOID, voidPTR, uintQI);
   ADD_K1_BUILTIN (SDU, "sdu", VOID, voidPTR, uintDI);
   if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (SHU, "shu", VOID, intHI_pointer_node, intHI);
-  ADD_K1_BUILTIN (SLLHPS, "sllhps_r", intSI, intSI, intSI);
-  ADD_K1_BUILTIN (SRAHPS, "srahps_r", intSI, intSI, intSI);
+    ADD_K1_BUILTIN (SHU, "shu", VOID, voidPTR, uintHI);
+  ADD_K1_BUILTIN (SLLHPS, "sllhps", uintSI, uintSI, uintSI);
+  ADD_K1_BUILTIN (SLLHPS_R, "sllhps_r", uintSI, uintSI, uintSI);
+  ADD_K1_BUILTIN (SRAHPS, "srahps", uintSI, uintSI, uintSI);
+  ADD_K1_BUILTIN (SRAHPS_R, "srahps_r", uintSI, uintSI, uintSI);
   ADD_K1_BUILTIN (STSU, "stsu", uintSI, uintSI, uintSI);
   ADD_K1_BUILTIN (STSUD, "stsud", uintDI, uintDI, uintDI);
   ADD_K1_BUILTIN (SWU, "swu", VOID, voidPTR, uintSI);
@@ -6292,16 +6303,20 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_cbs (target, exp);
     case K1_BUILTIN_CBSDL:
       return k1_expand_builtin_cbsdl (target, exp);
-    case K1_BUILTIN_CWS:
-      return k1_expand_builtin_cws (target, exp);
-    case K1_BUILTIN_ACWSU:
-      return k1_expand_builtin_cws (target, exp);
     case K1_BUILTIN_ACWS:
       return k1_expand_builtin_acws (target, exp);
+    case K1_BUILTIN_ACWSU:
+    case K1_BUILTIN_CWS:
+      return k1_expand_builtin_cws (target, exp);
     case K1_BUILTIN_AFDA:
       return k1_expand_builtin_afda_cachemode (target, exp, true);
     case K1_BUILTIN_AFDAU:
       return k1_expand_builtin_afda_cachemode (target, exp, false);
+    case K1_BUILTIN_ALDC:
+      return k1_expand_builtin_aldc (target, exp);
+    case K1_BUILTIN_ALDCU:
+    case K1_BUILTIN_LDC:
+      return k1_expand_builtin_ldc (target, exp);
     case K1_BUILTIN_CLEAR1:
       return k1_expand_builtin_clear1 (target, exp);
     case K1_BUILTIN_CLZ:
@@ -6504,6 +6519,7 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_invalitlb ();
     case K1_BUILTIN_IINVAL:
       return k1_expand_builtin_iinval ();
+    case K1_BUILTIN_IINVALS:
     case K1_BUILTIN_IINVALL:
       return k1_expand_builtin_iinvall (target, exp);
     case K1_BUILTIN_ITOUCHL:
@@ -6518,10 +6534,6 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_lbqz_cachemode (target, exp, true);
     case K1_BUILTIN_LBQZU:
       return k1_expand_builtin_lbqz_cachemode (target, exp, false);
-    case K1_BUILTIN_LDC:
-      return k1_expand_builtin_ldc (target, exp);
-    case K1_BUILTIN_ALDC:
-      return k1_expand_builtin_aldc (target, exp);
     case K1_BUILTIN_LBSU:
       return k1_expand_builtin_lbsu (target, exp);
     case K1_BUILTIN_LBZU:
@@ -6552,10 +6564,12 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_satd (target, exp);
     case K1_BUILTIN_SBFHP:
       return k1_expand_builtin_sbfhp (target, exp);
+    case K1_BUILTIN_SBMM8:
     case K1_BUILTIN_SBMM8_D:
       return k1_expand_builtin_sbmm8_d (target, exp);
-    case K1_BUILTIN_SBMM8_L:
+    case K1_BUILTIN_SBMM8L:
       return k1_expand_builtin_sbmm8l (target, exp);
+    case K1_BUILTIN_SBMMT8:
     case K1_BUILTIN_SBMMT8_D:
       return k1_expand_builtin_sbmmt8_d (target, exp);
     case K1_BUILTIN_SBU:
@@ -6573,8 +6587,10 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_set (target, exp, fcode == K1_BUILTIN_SET_PS,
 				    DImode);
     case K1_BUILTIN_SLLHPS:
+    case K1_BUILTIN_SLLHPS_R:
       return k1_expand_builtin_sllhps (target, exp);
     case K1_BUILTIN_SRAHPS:
+    case K1_BUILTIN_SRAHPS_R:
       return k1_expand_builtin_srahps (target, exp);
     case K1_BUILTIN_STSU:
       return k1_expand_builtin_stsu (target, exp);
