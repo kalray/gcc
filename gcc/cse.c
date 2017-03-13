@@ -2715,6 +2715,18 @@ exp_equiv_p (const_rtx x, const_rtx y, int validate, bool for_gcse)
     case XOR:
     case NE:
     case EQ:
+    case SMAX:
+    case SMIN:
+    case UMAX:
+    case UMIN:
+    case SS_PLUS:
+    case US_PLUS:
+    case SS_MULT:
+    case US_MULT:
+    case ORDERED:
+    case UNORDERED:
+    case UNEQ:
+    case LTGT:
       return ((exp_equiv_p (XEXP (x, 0), XEXP (y, 0),
 			     validate, for_gcse)
 	       && exp_equiv_p (XEXP (x, 1), XEXP (y, 1),
