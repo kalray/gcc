@@ -362,4 +362,10 @@ GCOV_LINKAGE time_t gcov_time (void);
 
 #endif /* !inhibit_libc  */
 
+#ifdef __k1__
+#undef GCOV_LOCKED
+#define GCOV_LOCKED 0
+#endif
+
 #endif /* GCC_GCOV_IO_H */
+
