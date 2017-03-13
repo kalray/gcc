@@ -3483,9 +3483,9 @@ update_equiv_regs (void)
 	  /* See if this is setting up the equivalence between an argument
 	     register and its stack slot.  */
 	  note = find_reg_note (insn, REG_EQUIV, NULL_RTX);
-	  if (note)
+	  /* dest might be a subreg.  */
+	  if (note && REG_P (dest))
 	    {
-	      gcc_assert (REG_P (dest));
 	      regno = REGNO (dest);
 
 	      /* Note that we don't want to clear init_insns in
