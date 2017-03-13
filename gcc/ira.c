@@ -3060,6 +3060,12 @@ validate_equiv_mem_from_store (rtx dest, const_rtx set ATTRIBUTE_UNUSED,
     equiv_mem_modified = 1;
 }
 
+static int
+contains_subreg_p (rtx *r, void *d ATTRIBUTE_UNUSED)
+{
+    return GET_CODE (*r) == SUBREG ? 1 : 0;
+}
+
 /* Verify that no store between START and the death of REG invalidates
    MEMREF.  MEMREF is invalidated by modifying a register used in MEMREF,
    by storing into an overlapping memory location, or with a non-const
@@ -3078,6 +3084,12 @@ validate_equiv_mem (rtx start, rtx reg, rtx memref)
   /* If the memory reference has side effects or is volatile, it isn't a
      valid equivalence.  */
   if (side_effects_p (memref))
+    return 0;
+
+  /* IRA+reload have issues with sub-register liveness. Simply do not
+     generate memory equivalences when the MEM contains a subreg. 
+     See http://gcc.gnu.org/ml/gcc/2012-10/msg00039.html */
+  if (for_each_rtx (&XEXP (memref, 0), contains_subreg_p, 0))
     return 0;
 
   for (insn = start; insn && ! equiv_mem_modified; insn = NEXT_INSN (insn))
