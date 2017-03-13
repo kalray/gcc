@@ -117,6 +117,7 @@ along with GCC; see the file COPYING3.	If not see
 #include "ira.h"
 #include "lra-int.h"
 #include "df.h"
+#include "optabs.h"
 
 /* Hard registers currently not available for allocation.  It canp
    change after some hard  registers become not eliminable.  */
@@ -273,7 +274,34 @@ emit_add3_insn (rtx x, rtx y, rtx z)
     {
       delete_insns_since (last);
       insn = NULL_RTX;
-    }
+  
+      if (GET_MODE_SIZE (GET_MODE (x)) < GET_MODE_SIZE (SImode))
+	  {
+	      enum mode_class mclass;
+	      enum machine_mode wider_mode;
+	      
+	      mclass = GET_MODE_CLASS (GET_MODE (x));
+	      
+	      if (CLASS_HAS_WIDER_MODES_P (mclass)) {
+		  
+		  for (wider_mode = GET_MODE_WIDER_MODE (GET_MODE (x));
+		       wider_mode != VOIDmode;
+		       wider_mode = GET_MODE_WIDER_MODE (wider_mode))
+		      {
+			  if (optab_handler(code_to_optab(PLUS), wider_mode) == CODE_FOR_nothing)
+			      continue;
+			  
+			  insn = gen_add3_insn (simplify_gen_subreg (wider_mode, x, GET_MODE(x), 0),
+						simplify_gen_subreg (wider_mode, y, GET_MODE(x), 0),
+						simplify_gen_subreg (wider_mode, z, GET_MODE(x), 0));
+			  if (insn != NULL_RTX) {
+			      emit_insn (insn);
+			      return insn;
+			  }
+		      }	      
+	      }
+	  }
+      }
   return insn;
 }
 
@@ -286,11 +314,38 @@ emit_add2_insn (rtx x, rtx y)
 
   insn = emit_add3_insn (x, x, y);
   if (insn == NULL_RTX)
-    {
-      insn = gen_add2_insn (x, y);
-      if (insn != NULL_RTX)
-	emit_insn (insn);
-    }
+      if (optab_handler(code_to_optab(PLUS), GET_MODE (x)) != CODE_FOR_nothing)
+	  {
+	      insn = gen_add2_insn (x, y);
+	      if (insn != NULL_RTX)
+		  emit_insn (insn);
+	  }
+      else
+	  {
+	      enum mode_class mclass;
+	      enum machine_mode wider_mode;
+	      
+	      mclass = GET_MODE_CLASS (GET_MODE (x));
+	      
+	      if (CLASS_HAS_WIDER_MODES_P (mclass)) {
+		  
+		  for (wider_mode = GET_MODE_WIDER_MODE (GET_MODE (x));
+		       wider_mode != VOIDmode;
+		       wider_mode = GET_MODE_WIDER_MODE (wider_mode))
+		      {
+			  if (optab_handler(code_to_optab(PLUS), wider_mode) == CODE_FOR_nothing)
+			      continue;
+
+			  insn = gen_add2_insn (simplify_gen_subreg (wider_mode, x, GET_MODE(x), 0),
+						simplify_gen_subreg (wider_mode, y, GET_MODE(x), 0));
+			  if (insn != NULL_RTX) {
+			      emit_insn (insn);
+			      break;
+			  }
+		      }
+		  
+	      }
+	  }
   return insn;
 }
 

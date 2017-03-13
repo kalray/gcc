@@ -271,7 +271,7 @@ get_elimination (rtx reg)
   if ((hard_regno = REGNO (reg)) < 0 || hard_regno >= FIRST_PSEUDO_REGISTER)
     return NULL;
   if ((ep = elimination_map[hard_regno]) != NULL)
-    return ep->from_rtx != reg ? NULL : ep;
+    return /* ep->from_rtx != reg ? NULL : */ ep;
   if ((offset = self_elim_offsets[hard_regno]) == 0)
     return NULL;
   /* This is an iteration to restore offsets just after HARD_REGNO

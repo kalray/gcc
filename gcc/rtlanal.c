@@ -3570,6 +3570,7 @@ simplify_subreg_regno (unsigned int xregno, enum machine_mode xmode,
 
   /* We shouldn't simplify stack-related registers.  */
   if ((!reload_completed || frame_pointer_needed)
+      && (!lra_in_progress || frame_pointer_needed)
       && xregno == FRAME_POINTER_REGNUM)
     return -1;
 
