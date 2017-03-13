@@ -2546,7 +2546,7 @@ synth_mult (struct algorithm *alg_out, unsigned HOST_WIDE_INT t,
   /* Be prepared for vector modes.  */
   imode = GET_MODE_INNER (mode);
 
-  maxm = MIN (BITS_PER_WORD, GET_MODE_BITSIZE (imode));
+  maxm = MIN (MAX_BITS_PER_WORD, GET_MODE_BITSIZE (imode));
 
   /* Restrict the bits of "t" to the multiplication's mode.  */
   t &= GET_MODE_MASK (imode);
@@ -3623,7 +3623,7 @@ expmed_mult_highpart_optab (machine_mode mode, rtx op0, rtx op1,
 
   /* Secondly, same as above, but use sign flavor opposite of unsignedp.
      Need to adjust the result after the multiplication.  */
-  if (size - 1 < BITS_PER_WORD
+  if (size - 1 < MAX_BITS_PER_WORD
       && (mul_highpart_cost (speed, mode)
 	  + 2 * shift_cost (speed, mode, size-1)
 	  + 4 * add_cost (speed, mode) < max_cost))
@@ -3650,7 +3650,7 @@ expmed_mult_highpart_optab (machine_mode mode, rtx op0, rtx op1,
 
   /* Try widening the mode and perform a non-widening multiplication.  */
   if (optab_handler (smul_optab, wider_mode) != CODE_FOR_nothing
-      && size - 1 < BITS_PER_WORD
+      && size - 1 < MAX_BITS_PER_WORD
       && (mul_cost (speed, wider_mode) + shift_cost (speed, mode, size-1)
 	  < max_cost))
     {
@@ -3679,7 +3679,7 @@ expmed_mult_highpart_optab (machine_mode mode, rtx op0, rtx op1,
   /* Try widening multiplication of opposite signedness, and adjust.  */
   moptab = unsignedp ? smul_widen_optab : umul_widen_optab;
   if (widening_optab_handler (moptab, wider_mode, mode) != CODE_FOR_nothing
-      && size - 1 < BITS_PER_WORD
+      && size - 1 < MAX_BITS_PER_WORD
       && (mul_widen_cost (speed, wider_mode)
 	  + 2 * shift_cost (speed, mode, size-1)
 	  + 4 * add_cost (speed, mode) < max_cost))
@@ -4246,7 +4246,7 @@ expand_divmod (int rem_flag, enum tree_code code, machine_mode mode,
 			  {
 			    rtx t1, t2, t3, t4;
 
-			    if (post_shift - 1 >= BITS_PER_WORD)
+			    if (post_shift - 1 >= MAX_BITS_PER_WORD)
 			      goto fail1;
 
 			    extra_cost
@@ -4275,8 +4275,8 @@ expand_divmod (int rem_flag, enum tree_code code, machine_mode mode,
 			  {
 			    rtx t1, t2;
 
-			    if (pre_shift >= BITS_PER_WORD
-				|| post_shift >= BITS_PER_WORD)
+			    if (pre_shift >= MAX_BITS_PER_WORD
+				|| post_shift >= MAX_BITS_PER_WORD)
 			      goto fail1;
 
 			    t1 = expand_shift
@@ -4411,8 +4411,8 @@ expand_divmod (int rem_flag, enum tree_code code, machine_mode mode,
 		      {
 			rtx t1, t2, t3;
 
-			if (post_shift >= BITS_PER_WORD
-			    || size - 1 >= BITS_PER_WORD)
+			if (post_shift >= MAX_BITS_PER_WORD
+			    || size - 1 >= MAX_BITS_PER_WORD)
 			  goto fail1;
 
 			extra_cost = (shift_cost (speed, compute_mode, post_shift)
@@ -4444,8 +4444,8 @@ expand_divmod (int rem_flag, enum tree_code code, machine_mode mode,
 		      {
 			rtx t1, t2, t3, t4;
 
-			if (post_shift >= BITS_PER_WORD
-			    || size - 1 >= BITS_PER_WORD)
+			if (post_shift >= MAX_BITS_PER_WORD
+			    || size - 1 >= MAX_BITS_PER_WORD)
 			  goto fail1;
 
 			ml |= HOST_WIDE_INT_M1U << (size - 1);
@@ -4533,8 +4533,8 @@ expand_divmod (int rem_flag, enum tree_code code, machine_mode mode,
 					    &ml, &post_shift, &lgup);
 		    gcc_assert (!mh);
 
-		    if (post_shift < BITS_PER_WORD
-			&& size - 1 < BITS_PER_WORD)
+		    if (post_shift < MAX_BITS_PER_WORD
+			&& size - 1 < MAX_BITS_PER_WORD)
 		      {
 			t1 = expand_shift
 			  (RSHIFT_EXPR, compute_mode, op0,
