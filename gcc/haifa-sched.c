@@ -8542,7 +8542,7 @@ sched_create_empty_bb_1 (basic_block after)
 rtx
 sched_emit_insn (rtx pat)
 {
-  rtx insn = emit_insn_before (pat, nonscheduled_insns_begin);
+  rtx insn = emit_insn_after (pat, last_scheduled_insn);
   haifa_init_insn (insn);
 
   if (current_sched_info->add_remove_insn)
