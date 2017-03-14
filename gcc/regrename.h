@@ -58,7 +58,7 @@ struct du_chain
   /* The insn where the register appears.  */
   rtx insn;
   /* The location inside the insn.  */
-  rtx *loc;
+  rtx *loc, *loc2;
   /* The register class required by the insn at this location.  */
   ENUM_BITFIELD(reg_class) cl : 16;
 };

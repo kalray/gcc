@@ -221,10 +221,38 @@ static du_head_p
 create_new_chain (unsigned this_regno, unsigned this_nregs, rtx *loc,
 		  rtx insn, enum reg_class cl)
 {
-  struct du_head *head = XOBNEW (&rename_obstack, struct du_head);
+  struct du_head *head, *chain = open_chains;
   struct du_chain *this_du;
   int nregs;
 
+  /* The k1 target uses patterns like these:
+     (define_insn "*double_loadhis"
+         [(set (subreg:SI (match_operand:DI 0 "register_operand" "=r,=r") 0)
+              (sign_extend:SI (match_operand:HI 1 "memory_operand" "a,m")))
+         (set (subreg:SI (match_dup 0) 4)
+              (sign_extend:SI (match_operand:HI 2 "packed_memory_operand" "a,m")))
+         (unspec [(const_int 0)] UNSPEC_LOAD)])
+
+      We must not create 2 chains for the 2 writes to the subparts of
+      operand 0, otherwise the second chain will look like a kill of
+      the first definition. Look in the last registered chains for one
+      chain with the same register and definition instruction and do
+      not create a new chain if it's already registered. Instead
+      record the location for the second definition in the instruction
+      and store it along the first one. */
+  while (chain
+         && chain->first
+         && chain->first->insn == insn) {
+    if (chain->regno == this_regno) {
+      gcc_assert (this_nregs == chain->nregs);
+      gcc_assert (chain->first->loc2 == NULL);
+      chain->first->loc2 = loc;
+      return chain;
+    }
+    chain = chain->next_chain;
+  }
+
+  head = XOBNEW (&rename_obstack, struct du_head);
   head->next_chain = open_chains;
   head->regno = this_regno;
   head->nregs = this_nregs;
@@ -273,6 +301,7 @@ create_new_chain (unsigned this_regno, unsigned this_nregs, rtx *loc,
 
   this_du->next_use = 0;
   this_du->loc = loc;
+  this_du->loc2 = NULL;
   this_du->insn = insn;
   this_du->cl = cl;
   record_operand_use (head, this_du);
@@ -1101,6 +1130,7 @@ scan_rtx_reg (rtx insn, rtx *loc, enum reg_class cl, enum scan_actions action,
 	      this_du = XOBNEW (&rename_obstack, struct du_chain);
 	      this_du->next_use = 0;
 	      this_du->loc = loc;
+	      this_du->loc2 = NULL;
 	      this_du->insn = insn;
 	      this_du->cl = cl;
 	      if (head->first == NULL)
