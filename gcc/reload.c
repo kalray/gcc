@@ -4873,9 +4873,9 @@ find_reloads_address (machine_mode mode, rtx *memrefloc, rtx ad,
      reload if not.  We first handle the cases where we need not reload
      or where we must reload in a non-standard way.  */
 
-  if (REG_P (ad))
+  if (REG_P (ad) || GET_CODE (ad) == SUBREG)
     {
-      regno = REGNO (ad);
+      regno = reg_or_subregno (ad);
 
       if (reg_equiv_constant (regno) != 0)
 	{
