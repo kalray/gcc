@@ -512,9 +512,9 @@ gen_conditions_for_pow_int_base (tree base, tree expn,
   stmt1 = gimple_build_assign (temp, base_val0);
   tempn = make_ssa_name (temp, stmt1);
   gimple_assign_set_lhs (stmt1, tempn);
+  conds.quick_push (stmt1);
   stmt2 = gimple_build_cond (LE_EXPR, tempn, cst0, NULL_TREE, NULL_TREE);
 
-  conds.quick_push (stmt1);
   conds.quick_push (stmt2);
   (*nconds)++;
 }
