@@ -2013,7 +2013,9 @@ dom_opt_dom_walker::optimize_stmt (basic_block bb, gimple_stmt_iterator *si,
 
   /* Check for redundant computations.  Do this optimization only
      for assignments that have no volatile ops and conditionals.  */
-  may_optimize_p = (!gimple_has_side_effects (stmt)
+  may_optimize_p = (!(gimple_has_side_effects (stmt)
+                      && !(is_gimple_call (stmt)
+                           && (gimple_call_flags (stmt) & ECF_LOOPING_CONST_OR_PURE)))
                     && (is_gimple_assign (stmt)
                         || (is_gimple_call (stmt)
                             && gimple_call_lhs (stmt) != NULL_TREE)
