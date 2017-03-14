@@ -4238,7 +4238,6 @@ remove_notes (rtx_insn *head, rtx_insn *tail)
 	case NOTE_INSN_EPILOGUE_BEG:
 	  if (insn != tail)
 	    {
-	      remove_insn (insn);
 	      /* If an insn was split just before the EPILOGUE_BEG note and
 		 that split created new basic blocks, we could have a
 		 BASIC_BLOCK note here.  Safely advance over it in that case
@@ -4248,8 +4247,9 @@ remove_notes (rtx_insn *head, rtx_insn *tail)
 		  && next != next_tail)
 		next = NEXT_INSN (next);
 	      gcc_assert (INSN_P (next));
-	      add_reg_note (next, REG_SAVE_NOTE,
+	      add_reg_note (next_nonnote_insn(insn), REG_SAVE_NOTE,
 			    GEN_INT (NOTE_INSN_EPILOGUE_BEG));
+	      remove_insn (insn);
 	      break;
 	    }
 	  /* FALLTHRU */
