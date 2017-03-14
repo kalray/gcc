@@ -2744,6 +2744,9 @@ sched_analyze_2 (class deps_desc *deps, rtx x, rtx_insn *insn)
       break;
 
     case UNSPEC_VOLATILE:
+      /* Do not apply unspec side-effects if this is a debug insn. */
+      if (DEBUG_INSN_P (insn))
+        break;
       flush_pending_lists (deps, insn, true, true);
       /* FALLTHRU */
 
