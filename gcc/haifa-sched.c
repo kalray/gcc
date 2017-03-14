@@ -4001,9 +4001,9 @@ remove_notes (rtx head, rtx tail)
 	case NOTE_INSN_EPILOGUE_BEG:
 	  if (insn != tail)
 	    {
-	      remove_insn (insn);
-	      add_reg_note (next, REG_SAVE_NOTE,
+	      add_reg_note (next_nonnote_insn(insn), REG_SAVE_NOTE,
 			    GEN_INT (NOTE_INSN_EPILOGUE_BEG));
+	      remove_insn (insn);
 	      break;
 	    }
 	  /* FALLTHRU */
