@@ -437,7 +437,7 @@ may_trap_exp (const_rtx x, int is_store)
   code = GET_CODE (x);
   if (is_store)
     {
-      if (code == MEM && may_trap_p (x))
+      if (code == MEM && may_trap_or_fault_p (x))
 	return TRAP_RISKY;
       else
 	return TRAP_FREE;
@@ -448,7 +448,7 @@ may_trap_exp (const_rtx x, int is_store)
       if (MEM_VOLATILE_P (x))
 	return IRISKY;
       /* An exception-free load.  */
-      if (!may_trap_p (x))
+      if (!may_trap_or_fault_p (x))
 	return IFREE;
       /* A load with 1 base register, to be further checked.  */
       if (CONST_BASED_ADDRESS_P (XEXP (x, 0)))
