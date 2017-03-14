@@ -854,6 +854,13 @@ copyprop_hardreg_forward_1 (basic_block bb, struct value_data *vd)
 	 scan_rtx treats them like that...  */
       kill_clobbered_values (insn, vd);
 
+      if (CALL_P (insn)) {
+          rtx note;
+          for (note = CALL_INSN_FUNCTION_USAGE (insn); note;
+               note = XEXP (note, 1))
+              note_stores (XEXP (note, 0), kill_clobbered_value, vd);
+      }
+
       /* Kill all auto-incremented values.  */
       /* ??? REG_INC is useless, since stack pushes aren't done that way.  */
       kill_autoinc_value (insn, vd);
