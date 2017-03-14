@@ -6075,22 +6075,46 @@ simplify_subreg (enum machine_mode outermode, rtx op,
     return adjust_address_nv (op, outermode, byte);
 
   /* Handle complex values represented as CONCAT
-     of real and imaginary part.  */
-  if (GET_CODE (op) == CONCAT)
+     of real and imaginary part. 
+     Also, reload might generate (subreg:SI (concatn:DI ...)) when
+     reloading (subreg:SI (reg:DI) xxx)
+  */
+  if (GET_CODE (op) == CONCAT || GET_CODE (op) == CONCATN)
     {
       unsigned int part_size, final_offset;
       rtx part, res;
 
-      part_size = GET_MODE_UNIT_SIZE (GET_MODE (XEXP (op, 0)));
-      if (byte < part_size)
+      if (GET_CODE (op) == CONCAT)
 	{
-	  part = XEXP (op, 0);
-	  final_offset = byte;
+	  part_size = GET_MODE_UNIT_SIZE (GET_MODE (XEXP (op, 0)));
+	  if (byte < part_size)
+	    {
+	      part = XEXP (op, 0);
+	      final_offset = byte;
+	    }
+	  else
+	    {
+	      part = XEXP (op, 1);
+	      final_offset = byte - part_size;
+	    }
 	}
       else
 	{
-	  part = XEXP (op, 1);
-	  final_offset = byte - part_size;
+	  unsigned int cur_offset = 0;
+	  int i = 0, byte_offset = byte;
+
+	  while (cur_offset <= byte) {
+	    if (i >= XVECLEN (op, 0))
+	      return NULL_RTX;
+
+	    part_size = GET_MODE_UNIT_SIZE (GET_MODE (XVECEXP (op, 0, i)));
+	    cur_offset += part_size;
+	    byte_offset -= part_size;
+	    i++;
+	  }
+
+	  part = XVECEXP (op, 0, i-1);
+	  final_offset = part_size + byte_offset;
 	}
 
       if (final_offset + GET_MODE_SIZE (outermode) > part_size)
