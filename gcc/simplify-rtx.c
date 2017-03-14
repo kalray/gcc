@@ -5218,8 +5218,20 @@ simplify_context::simplify_plus_minus (rtx_code code, machine_mode mode,
 		    tem = simplify_binary_operation (ncode, mode, tem_lhs,
 						     tem_rhs);
 
-		    if (tem && !CONSTANT_P (tem))
-		      tem = gen_rtx_CONST (GET_MODE (tem), tem);
+		    if (tem 
+                        && !CONSTANT_P (tem)) {
+                      rtx tem2 = gen_rtx_CONST (GET_MODE (tem), tem);
+                      /* CONST with a NEG inside might be invalid, but
+                         the simplification might still be useful. If
+                         the NEG inside CONST is an invalid, build a
+                         NEG of CONST instead. */
+                      if (!targetm.legitimate_constant_p (GET_MODE (tem2), tem2)
+                          && GET_CODE (tem) == NEG) {
+                        XEXP (tem, 0) = gen_rtx_CONST (GET_MODE (XEXP (tem, 0)), XEXP (tem, 0));
+                      } else {
+                        tem = tem2;
+                      }
+                    }
 		  }
 		else
 		  tem = simplify_binary_operation (ncode, mode, lhs, rhs);
