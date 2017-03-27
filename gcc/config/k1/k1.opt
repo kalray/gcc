@@ -67,7 +67,7 @@ EnumValue
 Enum(k1_os_type) String(linux) Value(K1_OS_LINUX)
 
 march=
-Target RejectNegative Joined Report Enum(k1_arch_type) Var(k1_arch_name) Init(K1_ARCH_A)
+Target RejectNegative Joined Report Enum(k1_arch_type) Var(k1_arch_name) Init(K1_ARCH_C)
 -march=ARCHITECTURE  Compile for specified ARCHITECTURE
 
 Enum
@@ -75,25 +75,7 @@ Name(k1_arch_type) Type(enum k1_arch_type)
 Known K1 architecture types (for use with the -march option):
 
 EnumValue
-Enum(k1_arch_type) String(k1a) Value(K1_ARCH_A)
-
-EnumValue
-Enum(k1_arch_type) String(k1b) Value(K1_ARCH_B)
-
-Enum
-Name(k1_soc_type) Type(enum k1_soc_type)
-Known K1 SoC types (for use with the -msoc option):
-
-EnumValue
-Enum(k1_soc_type) String(bostan) Value(K1_SOC_BOSTAN)
-
-EnumValue
-Enum(k1_soc_type) String(bostanS) Value(K1_SOC_BOSTANS)
-
-msoc=
-Target RejectNegative Joined Report Enum(k1_soc_type) Var(k1_soc_name) Init(K1_SOC_BOSTAN)
--msoc=SOC_NAME  Compile for specified SOC
-
+Enum(k1_arch_type) String(k1c) Value(K1_ARCH_C)
 
 mreload
 Target RejectNegative Report Mask(RELOAD)
@@ -107,29 +89,17 @@ mforce-uncached-lsu
 Target Report Var(K1_FORCE_UNCACHED_LSU)
 Force the use of uncached instructions for all memory accesses. 
 
-mcore=k1dp
-Target RejectNegative Report Mask(K1DP)
-Compile for K1DP ISA
+mcore=k1pe
+Target RejectNegative Report Mask(K1PE)
+Compile for K1PE ISA
 
-mcore=k1io
-Target RejectNegative Report Mask(K1IO)
-Compile for K1IO ISA
-
-mcore=k1bdp
-Target RejectNegative Report Mask(K1BDP)
-Compile for K1BDP ISA
-
-mcore=k1bio
-Target RejectNegative Report Mask(K1BIO)
-Compile for K1BIO ISA
+mcore=k1rm
+Target RejectNegative Report Mask(K1RM)
+Compile for K1RM ISA
 
 m64
 Target Report Mask(64)
 Use 64bits pointers and associated ISA.
-
-mfdpic
-Target Report Mask(FDPIC)
-Enable Function Descriptor PIC mode
 
 mgprel
 Target Report Mask(GPREL)
