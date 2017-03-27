@@ -41,15 +41,14 @@ enum k1_cluster_type
 
 enum k1_arch_type
 {
-  K1_ARCH_A,
-  K1_ARCH_B
+  K1_ARCH_C
 };
 
-enum k1_soc_type
-{
-  K1_SOC_BOSTAN,
-  K1_SOC_BOSTANS
-};
+/* enum k1_soc_type */
+/* { */
+/*   K1_SOC_BOSTAN, */
+/*   K1_SOC_BOSTANS */
+/* }; */
 
 enum k1_os_type
 {

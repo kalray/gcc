@@ -160,19 +160,19 @@
                 || (INTVAL (op) >= 0 && INTVAL (op) < (1<<7)));
 })
 
-(define_predicate "non_modulo_memory_operand"
-  (match_code "mem")
-{
-	return memory_operand(op, mode) 
-	   && !k1_legitimate_modulo_addressing_p(XEXP (op, 0), reload_completed);
-})
+;; (define_predicate "non_modulo_memory_operand"
+;;   (match_code "mem")
+;; {
+;; 	return memory_operand(op, mode) 
+;; 	   && !k1_legitimate_modulo_addressing_p(XEXP (op, 0), reload_completed);
+;; })
 
-(define_predicate "non_modulo_address_operand"
-  (match_code "subreg,reg,plus")
-{
-	return address_operand(op, mode) 
-	   && !k1_legitimate_modulo_addressing_p(op, reload_completed);
-})
+;; (define_predicate "non_modulo_address_operand"
+;;   (match_code "subreg,reg,plus")
+;; {
+;; 	return address_operand(op, mode) 
+;; 	   && !k1_legitimate_modulo_addressing_p(op, reload_completed);
+;; })
 
 (define_predicate "small_operand"
   (match_code "const_int,reg,subreg")
