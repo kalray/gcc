@@ -55,15 +55,13 @@ k1_handle_option (struct gcc_options *opts ATTRIBUTE_UNUSED,
 
     switch (code) {
     case OPT_ffixed_reg:  /* defer this option */
-    case OPT_mcore_k1dp:
-    case OPT_mcore_k1io:
-    case OPT_mcore_k1bdp:
-    case OPT_mcore_k1bio:
-    case OPT_march_:
-    case OPT_msoc_:
+    case OPT_mcore_k1pe:
+    case OPT_mcore_k1rm:
+    /* case OPT_march_: */
+    /* case OPT_msoc_: */
     case OPT_mboard_:
     case OPT_mcluster_:
-    case OPT_mfdpic:    
+    /* case OPT_mfdpic:     */
     case OPT_mgprel:
     case OPT_m64:
     case OPT_mlocal_sdata:

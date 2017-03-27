@@ -2,7 +2,7 @@
 (define_expand "movv2sf"
    [(set (match_operand:V2SI 0 "nonimmediate_operand" "")
          (match_operand:V2SI 1 "general_operand" " "))]
-   "k1_architecture () >= K1B"
+   ""
 {
         if (MEM_P(operands[0]) && can_create_pseudo_p()) {
            rtx reg = gen_reg_rtx(V2SFmode);
@@ -15,8 +15,7 @@
 (define_insn "*movv2sf_real"
    [(set (match_operand:V2SF 0 "nonimmediate_operand" "=r,=r,=r,=a,=m,=r,=r,=r")
          (match_operand:V2SF 1 "general_operand" "r, a, m, r, r,I16,D37,i"))]
-   "k1_architecture () >= K1B
-    && (!immediate_operand(operands[1], V2SFmode) || !memory_operand(operands[0], V2SFmode))
+    "  (!immediate_operand(operands[1], V2SFmode) || !memory_operand(operands[0], V2SFmode))
     && !((memory_operand(operands[0], V2SFmode) || memory_operand(operands[1], V2SFmode)) && K1_FORCE_UNCACHED_LSU)"
 {
     switch (which_alternative) {
@@ -38,8 +37,7 @@
 (define_insn "*movv2sf_uncached"
    [(set (match_operand:V2SF 0 "nonimmediate_operand" "=r,r,a,m")
          (match_operand:V2SF 1 "nonimmediate_operand" " a,m,r,r"))]
-   "k1_architecture () >= K1B
-    && !(memory_operand(operands[0], V2SFmode) && memory_operand(operands[1], V2SFmode))
+    "  !(memory_operand(operands[0], V2SFmode) && memory_operand(operands[1], V2SFmode))
     && K1_FORCE_UNCACHED_LSU"
 {
     switch (which_alternative) {
@@ -57,7 +55,7 @@
 (define_expand "movv8sf"
    [(set (match_operand:V8SF 0 "nonimmediate_operand" "")
          (match_operand:V8SF 1 "general_operand" " "))]
-   "k1_architecture () >= K1B"
+   ""
 {
         int i;
         
@@ -75,7 +73,7 @@
 (define_insn "fsinvwp"
   [(set (match_operand:V2SF 0 "register_operand" "=r")
     (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")] UNSPEC_FSINVWP))]
-   "k1_architecture () >= K1B"
+   ""
    "fsinvwp %0 = %1"
    [(set_attr "type" "alud")
     (set_attr "length"  "4")]
@@ -85,7 +83,7 @@
 (define_insn "fsinvnwp"
   [(set (match_operand:V2SF 0 "register_operand" "=r")
     (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")] UNSPEC_FSINVNWP))]
-   "k1_architecture () >= K1B"
+   ""
    "fsinvnwp %0 = %1"
    [(set_attr "type" "alud")
     (set_attr "length"  "4")]
@@ -94,7 +92,7 @@
 (define_insn "fsisrwp"
   [(set (match_operand:V2SF 0 "register_operand" "=r")
     (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")] UNSPEC_FSISRWP))]
-   "k1_architecture () >= K1B"
+   ""
    "fsisrwp %0 = %1"
    [(set_attr "type" "alud")
     (set_attr "length"  "4")]
@@ -104,7 +102,7 @@
   [(set (match_operand:V2SF 0 "register_operand" "=r")
     (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")
                   (match_operand:V2SF 2 "register_operand" "r")] UNSPEC_FSDIVWP))]
-   "k1_architecture () >= K1B"
+   ""
    "fsdivwp %0 = %1"
    [(set_attr "type" "alud")
     (set_attr "length"  "4")]
@@ -114,7 +112,7 @@
   [(set (match_operand:V2SF 0 "register_operand" "=r")
     (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")
                   (match_operand:V2SF 2 "register_operand" "r")] UNSPEC_FCDIVWP))]
-  "k1_architecture () >= K1B"
+  ""
    "fcdivwp %0 = %1"
    [(set_attr "type" "alud")
     (set_attr "length"  "4")]
@@ -124,7 +122,7 @@
   [(set (match_operand:V2SF 0 "register_operand" "=r")
 	(plus:V2SF (match_operand:V2SF 1 "register_operand" "r")
 		   (match_operand:V2SF 2 "register_operand" "r")))]
-  "k1_architecture () >= K1B"
+  ""
   "faddwp %0 = %1, %2"
   [(set_attr "type" "mau_fpu")
    (set_attr "length" "4")]
@@ -134,7 +132,7 @@
   [(set (match_operand:V2SF 0 "register_operand" "=r")
 	(plus:V2SF (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")] UNSPEC_FPRN)
 		   (unspec:V2SF [(match_operand:V2SF 2 "register_operand" "r")] UNSPEC_FPRN)))]
-  "k1_architecture () >= K1B"
+  ""
   "faddrnwp %0 = %1, %2"
   [(set_attr "type" "mau_fpu")
    (set_attr "length" "4")]
@@ -144,14 +142,14 @@
   [(set (match_operand:V2SF 0 "register_operand" "=r")
 	(minus:V2SF (match_operand:V2SF 1 "register_operand" "r")
 	            (match_operand:V2SF 2 "register_operand" "r")))]
-  "k1_architecture () >= K1B"
+  ""
 {})
 
 (define_insn "fsbfwp"
   [(set (match_operand:V2SF 0 "register_operand" "=r")
 	(minus:V2SF (match_operand:V2SF 2 "register_operand" "r")
 	            (match_operand:V2SF 1 "register_operand" "r")))]
-  "k1_architecture () >= K1B"
+  ""
   "fsbfwp %0 = %1, %2"
   [(set_attr "type" "mau_fpu")
    (set_attr "length" "4")]
@@ -161,7 +159,7 @@
   [(set (match_operand:V2SF 0 "register_operand" "=r")
 	(minus:V2SF (unspec:V2SF [(match_operand:V2SF 2 "register_operand" "r")] UNSPEC_FPRN)
 	            (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")] UNSPEC_FPRN)))]
-  "k1_architecture () >= K1B"
+  ""
   "fsbfrnwp %0 = %1, %2"
   [(set_attr "type" "mau_fpu")
    (set_attr "length" "4")]
@@ -171,7 +169,7 @@
   [(set (match_operand:V2SF 0 "register_operand" "=r")
 	(mult:V2SF (match_operand:V2SF 1 "register_operand" "r")
 		   (match_operand:V2SF 2 "register_operand" "r")))]
-  "k1_architecture () >= K1B"
+  ""
   "fmulwp %0 = %1, %2"
   [(set_attr "type" "mau_fpu")
    (set_attr "length" "4")]
@@ -181,7 +179,7 @@
   [(set (match_operand:V2SF 0 "register_operand" "=r")
 	(mult:V2SF (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")] UNSPEC_FPRN)
 		   (unspec:V2SF [(match_operand:V2SF 2 "register_operand" "r")] UNSPEC_FPRN)))]
-  "k1_architecture () >= K1B"
+  ""
   "fmulrnwp %0 = %1, %2"
   [(set_attr "type" "mau_fpu")
    (set_attr "length" "4")]
@@ -191,7 +189,7 @@
   [(set (match_operand:V2SF 0 "register_operand" "=r")
 	(neg:V2SF (mult:V2SF (match_operand:V2SF 1 "register_operand" "r")
 		             (match_operand:V2SF 2 "register_operand" "r"))))]
-  "k1_architecture () >= K1B"
+  ""
   "fmulnwp %0 = %1, %2"
 [(set_attr "type" "mau_fpu")
  (set_attr "length" "4")]
@@ -201,7 +199,7 @@
   [(set (match_operand:V2SF 0 "register_operand" "=r")
 	(neg:V2SF (mult:V2SF (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")] UNSPEC_FPRN)
 		             (unspec:V2SF [(match_operand:V2SF 2 "register_operand" "r")] UNSPEC_FPRN))))]
-  "k1_architecture () >= K1B"
+  ""
   "fmulnrnwp %0 = %1, %2"
 [(set_attr "type" "mau_fpu")
  (set_attr "length" "4")]
@@ -212,7 +210,7 @@
         (neg:V2SF (plus:V2SF (mult:V2SF (match_operand:V2SF 1 "register_operand" "r")
                                         (match_operand:V2SF 2 "register_operand" "r"))
                              (match_operand:V2SF 3 "register_operand" "r"))))]
-  "k1_architecture () >= K1B"
+  ""
   {}
 )
 
@@ -221,7 +219,7 @@
         (neg:V2SF (plus:V2SF (mult:V2SF (match_operand:V2SF 2 "register_operand" "r")
                                         (match_operand:V2SF 3 "register_operand" "r"))
                              (match_operand:V2SF 1 "register_operand" "r"))))]
-  "k1_architecture () >= K1B"
+  ""
   "ffmanwp %0 = %1, %2, %3"
   [(set_attr "type" "mau_lsu_fpu")
    (set_attr "length" "4")]
@@ -232,7 +230,7 @@
         (minus:V2SF (neg:V2SF (mult:V2SF (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")] UNSPEC_FPRN)
                                          (unspec:V2SF [(match_operand:V2SF 2 "register_operand" "r")] UNSPEC_FPRN)))
                     (unspec:V2SF [(match_operand:V2SF 3 "register_operand" "r")] UNSPEC_FPRN)))]
-  "k1_architecture () >= K1B"
+  ""
   {}
 )
 
@@ -241,7 +239,7 @@
         (minus:V2SF (neg:V2SF (mult:V2SF (unspec:V2SF [(match_operand:V2SF 2 "register_operand" "r")] UNSPEC_FPRN)
                                          (unspec:V2SF [(match_operand:V2SF 3 "register_operand" "r")] UNSPEC_FPRN)))
                     (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")] UNSPEC_FPRN)))]
-  "k1_architecture () >= K1B"
+  ""
   "ffmanrnwp %0 = %1, %2, %3"
   [(set_attr "type" "mau_lsu_fpu")
    (set_attr "length" "4")]
@@ -253,7 +251,7 @@
         (plus:V2SF (mult:V2SF (match_operand:V2SF 1 "register_operand" "r")
                               (match_operand:V2SF 2 "register_operand" "r"))
                    (match_operand:V2SF 3 "register_operand" "r")))]
-  "k1_architecture () >= K1B"
+  ""
   {}
 )
 
@@ -262,7 +260,7 @@
         (plus:V2SF (mult:V2SF (match_operand:V2SF 2 "register_operand" "r")
                               (match_operand:V2SF 3 "register_operand" "r"))
                    (match_operand:V2SF 1 "register_operand" "r")))]
-  "k1_architecture () >= K1B"
+  ""
   "ffmawp %0 = %1, %2, %3"
   [(set_attr "type" "mau_lsu_fpu")
    (set_attr "length" "4")]
@@ -274,7 +272,7 @@
         (plus:V2SF (mult:V2SF (unspec: V2SF [(match_operand:V2SF 1 "register_operand" "r")] UNSPEC_FPRN)
                               (unspec: V2SF [(match_operand:V2SF 2 "register_operand" "r")] UNSPEC_FPRN))
                    (unspec: V2SF [(match_operand:V2SF 3 "register_operand" "r")] UNSPEC_FPRN)))]
-  "k1_architecture () >= K1B"
+  ""
   {}
 )
 
@@ -283,7 +281,7 @@
         (plus:V2SF (mult:V2SF (unspec: V2SF [(match_operand:V2SF 2 "register_operand" "r")] UNSPEC_FPRN)
                               (unspec: V2SF [(match_operand:V2SF 3 "register_operand" "r")] UNSPEC_FPRN))
                    (unspec: V2SF [(match_operand:V2SF 1 "register_operand" "r")] UNSPEC_FPRN)))]
-  "k1_architecture () >= K1B"
+  ""
   "ffmarnwp %0 = %1, %2, %3"
   [(set_attr "type" "mau_lsu_fpu")
    (set_attr "length" "4")]
@@ -295,7 +293,7 @@
         (minus:V2SF (mult:V2SF (match_operand:V2SF 1 "register_operand" "r")
                                (match_operand:V2SF 2 "register_operand" "r"))
                     (match_operand:V2SF 3 "register_operand" "r")))]
-  "k1_architecture () >= K1B"
+  ""
   {}
 )
 
@@ -304,7 +302,7 @@
         (minus:V2SF (mult:V2SF (match_operand:V2SF 2 "register_operand" "r")
                                (match_operand:V2SF 3 "register_operand" "r"))
                     (match_operand:V2SF 1 "register_operand" "r")))]
-  "k1_architecture () >= K1B"
+  ""
   "ffmsnwp %0 = %1, %2, %3"
   [(set_attr "type" "mau_lsu_fpu")
    (set_attr "length" "4")]
@@ -316,7 +314,7 @@
         (minus:V2SF (mult:V2SF (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")] UNSPEC_FPRN)
                                (unspec:V2SF [(match_operand:V2SF 2 "register_operand" "r")] UNSPEC_FPRN))
                      (unspec:V2SF [(match_operand:V2SF 3 "register_operand" "r")] UNSPEC_FPRN)))]
-  "k1_architecture () >= K1B"
+  ""
   {}
 )
 
@@ -325,7 +323,7 @@
         (minus:V2SF (mult:V2SF (unspec:V2SF [(match_operand:V2SF 2 "register_operand" "r")] UNSPEC_FPRN)
                                (unspec:V2SF [(match_operand:V2SF 3 "register_operand" "r")] UNSPEC_FPRN))
                     (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")] UNSPEC_FPRN)))]
-  "k1_architecture () >= K1B"
+  ""
   "ffmsnrnwp %0 = %1, %2, %3"
   [(set_attr "type" "mau_lsu_fpu")
    (set_attr "length" "4")]
@@ -338,7 +336,7 @@
         (minus:V2SF (match_operand:V2SF 3 "register_operand" "r")
                     (mult:V2SF (match_operand:V2SF 1 "register_operand" "r")
 		               (match_operand:V2SF 2 "register_operand" "r"))))]
-  "k1_architecture () >= K1B"
+  ""
   {}
 )
 
@@ -347,7 +345,7 @@
         (minus:V2SF (match_operand:V2SF 1 "register_operand" "r")
                     (mult:V2SF (match_operand:V2SF 2 "register_operand" "r")
                                (match_operand:V2SF 3 "register_operand" "r"))))]
-  "k1_architecture () >= K1B"
+  ""
   "ffmswp %0 = %1, %2, %3"
   [(set_attr "type" "mau_lsu_fpu")
    (set_attr "length" "4")]
@@ -360,7 +358,7 @@
         (minus:V2SF (unspec:V2SF [(match_operand:V2SF 3 "register_operand" "r")] UNSPEC_FPRN)
                     (mult:V2SF (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")] UNSPEC_FPRN)
 		               (unspec:V2SF [(match_operand:V2SF 2 "register_operand" "r")] UNSPEC_FPRN))))]
-  "k1_architecture () >= K1B"
+  ""
   {}
 )
 
@@ -369,7 +367,7 @@
         (minus:V2SF (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")] UNSPEC_FPRN)
                     (mult:V2SF (unspec:V2SF [(match_operand:V2SF 2 "register_operand" "r")] UNSPEC_FPRN)
                                (unspec:V2SF [(match_operand:V2SF 3 "register_operand" "r")] UNSPEC_FPRN))))]
-  "k1_architecture () >= K1B"
+  ""
   "ffmsrnwp %0 = %1, %2, %3"
   [(set_attr "type" "mau_lsu_fpu")
    (set_attr "length" "4")]
@@ -378,7 +376,7 @@
 (define_insn "fix_truncv2sfv2si2"
   [(set (match_operand:V2SI 0 "register_operand" "=r")
         (fix:V2SI (match_operand:V2SF 1 "register_operand" "r")))]
-  "k1_architecture () >= K1B"
+  ""
   "fixedwp.rz %0 = %1, 0"
 [(set_attr "type" "mau_fpu")
  (set_attr "length" "4")]
@@ -387,7 +385,7 @@
 (define_insn "fixuns_truncv2sfv2si2"
   [(set (match_operand:V2SI 0 "register_operand" "=r")
         (unsigned_fix:V2SI (match_operand:V2SF 1 "register_operand" "r")))]
-  "k1_architecture () >= K1B"
+  ""
   "fixeduwp.rz %0 = %1, 0"
 [(set_attr "type" "mau_fpu")
  (set_attr "length" "4")]
@@ -396,7 +394,7 @@
 (define_insn "floatv2siv2sf2" 
   [(set (match_operand:V2SF 0 "register_operand" "=r")
         (float:V2SF (match_operand:V2SI 1 "register_operand" "r")))]
-  "k1_architecture () >= K1B"
+  ""
   "floatwp.rn %0 = %1, 0"
 [(set_attr "type" "mau_fpu")
  (set_attr "length" "4")]
@@ -405,7 +403,7 @@
 (define_insn "floatunsv2siv2sf2" 
   [(set (match_operand:V2SF 0 "register_operand" "=r")
         (unsigned_float:V2SF (match_operand:V2SI 1 "register_operand" "r")))]
-  "k1_architecture () >= K1B"
+  ""
   "floatuwp.rn %0 = %1, 0"
 [(set_attr "type" "mau_fpu")
  (set_attr "length" "4")]
@@ -417,7 +415,7 @@
         (match_operator:SI 1 "comparison_operator"
 	        [(match_operand:V8SF 2 "register_operand" "")
 	         (match_operand:V8SF 3 "register_operand" "")]))]
-  "k1_architecture () >= K1B"
+  ""
 {
         int i;
 gcc_unreachable();
@@ -442,7 +440,7 @@ gcc_unreachable();
 (define_expand "<v8sf_name>v8sf2"
   [(set (match_operand:V8SF 0 "register_operand" "=r")
 	(v8sf_op:V8SF (match_operand:V8SF 1 "register_operand" "r")))]
-  "k1_architecture () >= K1B"
+  ""
 {
         int i;
 
@@ -467,7 +465,7 @@ gcc_unreachable();
 (define_expand "<v8sf2_name>v8<v8sf2_orig>v8<v8sf2_dest>2"
   [(set (match_operand 0 "register_operand" "=r")
 	(v8sf2_op (match_operand 1 "register_operand" "r")))]
-  "k1_architecture () >= K1B"
+  ""
 {
         int i;
 
@@ -491,7 +489,7 @@ gcc_unreachable();
   [(set (match_operand:V8SF 0 "register_operand" "=r")
 	(v8sf3_op:V8SF (match_operand:V8SF 1 "register_operand" "r")
 		       (match_operand:V8SF 2 "register_operand" "r")))]
-  "k1_architecture () >= K1B"
+  ""
 {
         int i;
 
@@ -519,7 +517,7 @@ gcc_unreachable();
    (use (match_operand:V8SF 2 "register_operand" "r"))
    (use (match_operand:V8SF 3 "register_operand" "r"))
    (use (v8sf4_op:V8SF (const_int 0) (const_int 0)))]
-  "k1_architecture () >= K1B"
+  ""
 {
         int i;
 
@@ -541,7 +539,7 @@ gcc_unreachable();
 (define_insn "popcountv2si2"
   [(set (match_operand:V2SI            0 "register_operand" "=r")
 	(popcount:V2SI (match_operand:V2SI 1 "register_operand" "r")))]
-  "k1_architecture()>=K1B"
+  ""
   "cbswp %0 = %1"
 [(set_attr "type" "alud_lite")
  (set_attr "length" "4")])
