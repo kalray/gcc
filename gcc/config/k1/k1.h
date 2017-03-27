@@ -7,38 +7,38 @@
 #include "vec.h"
 #endif
 
-#define K1B_NO_EXT_MASK 0x0
-#define K1B_PRF_EXT_MASK 0x0
-#define K1B_GRF_EXT_MASK 0x0
-#define K1B_SRF_EXT_MASK 0x1
-#define K1B_SRF32_EXT_MASK 0x1
-#define K1B_SRF64_EXT_MASK 0x0
-#define K1B_ALL_EXT_MASK 0x1
+#define K1C_NO_EXT_MASK 0x0
+#define K1C_PRF_EXT_MASK 0x0
+#define K1C_GRF_EXT_MASK 0x0
+#define K1C_SRF_EXT_MASK 0x1
+#define K1C_SRF32_EXT_MASK 0x1
+#define K1C_SRF64_EXT_MASK 0x0
+#define K1C_ALL_EXT_MASK 0x1
 
 #ifndef _K1_REGS
 #define _K1_REGS
-#include "k1b-registers.h"
+#include "k1c-registers.h"
 #endif
 
-#define TARGET_K1B (TARGET_K1BDP | TARGET_K1BIO)
+//#define TARGET_K1C (TARGET_K1CDP | TARGET_K1CIO)
 
-#define K1B_SCRATCH_AREA_SIZE 16
+#define K1C_SCRATCH_AREA_SIZE 16
 
 #define TEST_REGNO(R, TEST, VALUE, STRICT)                                     \
   ((!(STRICT) && R >= FIRST_PSEUDO_REGISTER) || (R TEST VALUE)                 \
    || (reg_renumber && ((unsigned) reg_renumber[R] TEST VALUE)))
 
-/* (K1B_MDS_REGISTERS+1) is used as part of
+/* (K1C_MDS_REGISTERS+1) is used as part of
    k1_legitimize_reload_address () because reload wants real addresses
    when it reloads MEMs. This register shouldn't be generated anywhere
    else, thus it causes no correctness issue. */
 #define IS_GENERAL_REGNO(num, strict)                                          \
   (TEST_REGNO (num, <, 64, strict)                                             \
-   || TEST_REGNO (num, ==, (K1B_MDS_REGISTERS + 1), strict))
+   || TEST_REGNO (num, ==, (K1C_MDS_REGISTERS + 1), strict))
 #define IS_PRF_REGNO(num, strict)                                              \
   (!(num % 2)                                                                  \
    && (TEST_REGNO (num, <, 64, strict)                                         \
-       || TEST_REGNO (num, ==, (K1B_MDS_REGISTERS + 1), strict)))
+       || TEST_REGNO (num, ==, (K1C_MDS_REGISTERS + 1), strict)))
 
 /* Do not use Transactionnal Memory as it makes the linux
  * build fail */
@@ -54,37 +54,36 @@
       builtin_assert ("cpu=k1");                                               \
       builtin_define ("__K1__");                                               \
       builtin_define ("__k1__");                                               \
-      if (TARGET_K1BDP)                                                        \
+      if (TARGET_K1PE)                                                         \
 	{                                                                      \
+	  builtin_define ("__K1PE__");                                         \
+	  builtin_define ("__k1pe__");                                         \
 	  builtin_define ("__K1DP__");                                         \
 	  builtin_define ("__k1dp__");                                         \
-	  builtin_define ("__K1BDP__");                                        \
-	  builtin_define ("__k1bdp__");                                        \
-	  builtin_define ("__K1B__");                                          \
-	  builtin_define ("__k1b__");                                          \
-	  builtin_assert ("machine=k1bdp");                                    \
-	  builtin_define ("__k1arch=k1bdp");                                   \
+	  builtin_define ("__K1CDP__");                                        \
+	  builtin_define ("__k1cdp__");                                        \
+	  builtin_define ("__K1C__");                                          \
+	  builtin_define ("__k1c__");                                          \
+	  builtin_assert ("machine=k1pe");                                     \
+	  builtin_define ("__k1arch=k1c");                                     \
 	}                                                                      \
-      else if (TARGET_K1BIO)                                                   \
+      else if (TARGET_K1RM)                                                    \
 	{                                                                      \
+	  builtin_define ("__K1RM__");                                         \
+	  builtin_define ("__k1rm__");                                         \
 	  builtin_define ("__K1IO__");                                         \
 	  builtin_define ("__k1io__");                                         \
-	  builtin_define ("__K1BIO__");                                        \
-	  builtin_define ("__k1bio__");                                        \
-	  builtin_define ("__K1B__");                                          \
-	  builtin_define ("__k1b__");                                          \
-	  builtin_assert ("machine=k1bio");                                    \
-	  builtin_define ("__k1arch=k1bio");                                   \
+	  builtin_define ("__K1CIO__");                                        \
+	  builtin_define ("__k1cio__");                                        \
+	  builtin_define ("__K1C__");                                          \
+	  builtin_define ("__k1c__");                                          \
+	  builtin_assert ("machine=k1rm");                                     \
+	  builtin_define ("__k1arch=k1c");                                     \
 	}                                                                      \
       if (TARGET_STRICT_ALIGN)                                                 \
 	builtin_define ("__STRICT_ALIGN__");                                   \
       if (TARGET_STACK_CHECK_USE_TLS)                                          \
 	builtin_define ("__K1_STACK_LIMIT_TLS");                               \
-      if (TARGET_FDPIC)                                                        \
-	{                                                                      \
-	  builtin_define ("__K1_FDPIC__");                                     \
-	  builtin_define ("__FDPIC__");                                        \
-	}                                                                      \
       if (TARGET_GPREL)                                                        \
 	builtin_define ("__K1_GPREL__");                                       \
       if (TARGET_64)                                                           \
@@ -95,12 +94,9 @@
 #define DRIVER_SELF_SPECS_COMMON                                               \
   K1_OS_SELF_SPECS                                                             \
   "%{!mboard*:" K1_DEFAULT_BOARD "} ", "%{mcore=k1io: -fstrict-align} ",       \
-    "%{mcore=k1bio: -fstrict-align} ",                                         \
-    "%{mfdpic:%{!fpic:%{!fpie:%{!fPIC:%{!fPIE:                    \
-        %{!fno-pic:%{!fno-pie:%{!fno-PIC:%{!fno-PIE:-fpie}}}}}}}}} ",          \
-    "%{fpic: %{!fPIC:-fPIC}} %<fpic", "%{fPIC: %<fpic}",                       \
-    "%{keep: -save-temps}  %<keep", "%{fpic: %<mgprel } %{fPIC: %<mgprel }",   \
-    "%{show: -v} %<show"
+    "%{mcore=k1bio: -fstrict-align} ", "%{fpic: %{!fPIC:-fPIC}} %<fpic",       \
+    "%{fPIC: %<fpic}", "%{keep: -save-temps}  %<keep",                         \
+    "%{fpic: %<mgprel } %{fPIC: %<mgprel }", "%{show: -v} %<show"
 /*
 	"%{!mno-gprel: -mgprel}"                        \
 */
@@ -120,7 +116,7 @@
   " %{G*}"
 
 /*%{mno-fdpic:-mnopic}*/
-#define ASM_SPEC "%{mcore*} %{mfdpic} --no-check-resources %{m64}"
+#define ASM_SPEC "%{mcore*} --no-check-resources %{m64}"
 
 #define TARGET_PREFIX(dir) "%:tooldir(" DEFAULT_TARGET_MACHINE " " dir ")"
 
@@ -291,7 +287,7 @@ extern const char *k1_board_to_startfile_prefix (int argc, const char **argv);
    numbers 0 through FIRST_PSEUDO_REGISTER-1; thus, the first pseudo
    register's number really is assigned the number
    FIRST_PSEUDO_REGISTER.  */
-#define FIRST_PSEUDO_REGISTER (K1B_MDS_REGISTERS + 1)
+#define FIRST_PSEUDO_REGISTER (K1C_MDS_REGISTERS + 1)
 
 /* An initializer that says which registers are used for fixed
    purposes all throughout the compiled code and are therefore not
@@ -313,7 +309,7 @@ extern const char *k1_board_to_startfile_prefix (int argc, const char **argv);
     options -ffixed-reg, -fcall-used-reg and -fcall-saved-reg.  */
 #define FIXED_REGISTERS                                                        \
   {                                                                            \
-    K1B_FIXED_REGISTERS                                                        \
+    K1C_FIXED_REGISTERS                                                        \
     1,                                                                         \
   }
 
@@ -327,7 +323,7 @@ extern const char *k1_board_to_startfile_prefix (int argc, const char **argv);
    function exit, if the register is used within the function.  */
 #define CALL_USED_REGISTERS                                                    \
   {                                                                            \
-    K1B_CALL_USED_REGISTERS                                                    \
+    K1C_CALL_USED_REGISTERS                                                    \
     1,                                                                         \
   }
 
@@ -338,13 +334,13 @@ extern const char *k1_board_to_startfile_prefix (int argc, const char **argv);
    defaults to the value of CALL_USED_REGISTERS. */
 #define CALL_REALLY_USED_REGISTERS                                             \
   {                                                                            \
-    K1B_CALL_REALLY_USED_REGISTERS                                             \
+    K1C_CALL_REALLY_USED_REGISTERS                                             \
     1,                                                                         \
   }
 
 /* If the program counter has a register number, define this as that
    register number. Otherwise, do not define it. */
-#define PC_REGNUM K1B_PROGRAM_POINTER_REGNO
+#define PC_REGNUM K1C_PROGRAM_POINTER_REGNO
 
 /* A C expression for the number of consecutive hard registers,
    starting at register number regno, required to hold a value of mode
@@ -528,7 +524,7 @@ extern const char *k1_board_to_startfile_prefix (int argc, const char **argv);
    the first slot's length from STARTING_FRAME_OFFSET. Otherwise, it
    is found by adding the length of the first slot to the value
    STARTING_FRAME_OFFSET. */
-#define STARTING_FRAME_OFFSET K1B_SCRATCH_AREA_SIZE
+#define STARTING_FRAME_OFFSET K1C_SCRATCH_AREA_SIZE
 
 /* Offset from the stack pointer register to the first location at
    which outgoing arguments are placed. If not specified, the default
@@ -536,7 +532,7 @@ extern const char *k1_board_to_startfile_prefix (int argc, const char **argv);
 
    If ARGS_GROW_DOWNWARD, this is the offset to the location above the
    first location at which outgoing arguments are placed. */
-#define STACK_POINTER_OFFSET K1B_SCRATCH_AREA_SIZE
+#define STACK_POINTER_OFFSET K1C_SCRATCH_AREA_SIZE
 
 /* Offset from the argument pointer register to the first argument's
    address. On some machines it may depend on the data type of the function.
@@ -544,8 +540,8 @@ extern const char *k1_board_to_startfile_prefix (int argc, const char **argv);
    If ARGS_GROW_DOWNWARD, this is the offset to the location above the
    first argument's address. */
 #define FIRST_PARM_OFFSET(funcdecl)                                            \
-  (((cfun->stdarg && crtl->args.info < K1B_ARG_REG_SLOTS)                      \
-      ? (UNITS_PER_WORD * ((K1B_ARG_REG_SLOTS - crtl->args.info + 1) & ~1))    \
+  (((cfun->stdarg && crtl->args.info < K1C_ARG_REG_SLOTS)                      \
+      ? (UNITS_PER_WORD * ((K1C_ARG_REG_SLOTS - crtl->args.info + 1) & ~1))    \
       : 0)                                                                     \
    + STARTING_FRAME_OFFSET)
 
@@ -560,7 +556,7 @@ extern const char *k1_board_to_startfile_prefix (int argc, const char **argv);
    the return address of other frames. */
 #define RETURN_ADDR_RTX(COUNT, FRAMEADDR) k1_return_addr_rtx (COUNT, FRAMEADDR)
 
-#define FRAME_ADDR_RTX(rtx) plus_constant (Pmode, rtx, K1B_SCRATCH_AREA_SIZE)
+#define FRAME_ADDR_RTX(rtx) plus_constant (Pmode, rtx, K1C_SCRATCH_AREA_SIZE)
 
 #define DWARF2_UNWIND_INFO 1
 #define DWARF2_ASM_LINE_DEBUG_INFO 1
@@ -576,11 +572,11 @@ extern const char *k1_board_to_startfile_prefix (int argc, const char **argv);
 
    If this RTL is a REG, you should also define
    DWARF_FRAME_RETURN_COLUMN to DWARF_FRAME_REGNUM (REGNO). */
-#define INCOMING_RETURN_ADDR_RTX gen_rtx_REG (Pmode, K1B_RETURN_POINTER_REGNO)
+#define INCOMING_RETURN_ADDR_RTX gen_rtx_REG (Pmode, K1C_RETURN_POINTER_REGNO)
 
 #define DBX_REGISTER_NUMBER(NUM) (NUM)
 
-#define DWARF_FRAME_RETURN_COLUMN DBX_REGISTER_NUMBER (K1B_RETURN_POINTER_REGNO)
+#define DWARF_FRAME_RETURN_COLUMN DBX_REGISTER_NUMBER (K1C_RETURN_POINTER_REGNO)
 
 /* A C expression whose value is an integer giving the offset, in
    bytes, from the value of the stack pointer register to the top of
@@ -591,7 +587,7 @@ extern const char *k1_board_to_startfile_prefix (int argc, const char **argv);
 
    You only need to define this macro if you want to support call
    frame debugging information like that provided by DWARF 2. */
-#define INCOMING_FRAME_SP_OFFSET K1B_SCRATCH_AREA_SIZE
+#define INCOMING_FRAME_SP_OFFSET K1C_SCRATCH_AREA_SIZE
 
 /* A C expression whose value is an integer giving the offset, in
    bytes, from the argument pointer to the canonical frame address
@@ -610,9 +606,9 @@ extern const char *k1_board_to_startfile_prefix (int argc, const char **argv);
    you want to support call frame debugging information like that
    provided by DWARF 2. */
 #define ARG_POINTER_CFA_OFFSET(funcdecl)                                       \
-  K1B_SCRATCH_AREA_SIZE + crtl->args.pretend_args_size                         \
-    + (cfun->stdarg && crtl->args.info < K1B_ARG_REG_SLOTS                     \
-	 ? UNITS_PER_WORD * ((K1B_ARG_REG_SLOTS - crtl->args.info + 1) & ~1)   \
+  K1C_SCRATCH_AREA_SIZE + crtl->args.pretend_args_size                         \
+    + (cfun->stdarg && crtl->args.info < K1C_ARG_REG_SLOTS                     \
+	 ? UNITS_PER_WORD * ((K1C_ARG_REG_SLOTS - crtl->args.info + 1) & ~1)   \
 	 : 0)
 
 /* If defined, a C expression whose value is an integer giving the
@@ -627,14 +623,14 @@ extern const char *k1_board_to_startfile_prefix (int argc, const char **argv);
    be based on the frame pointer instead of the argument pointer. Only
    one of FRAME_POINTER_CFA_OFFSET and ARG_POINTER_CFA_OFFSET should
    be defined. */
-/* #define FRAME_POINTER_CFA_OFFSET(func) K1B_SCRATCH_AREA_SIZE +
+/* #define FRAME_POINTER_CFA_OFFSET(func) K1C_SCRATCH_AREA_SIZE +
  * crtl->args.pretend_args_size + (cfun->stdarg && crtl->args.info <
- * K1B_ARG_REG_SLOTS ? UNITS_PER_WORD * ((K1B_ARG_REG_SLOTS - crtl->args.info +
+ * K1C_ARG_REG_SLOTS ? UNITS_PER_WORD * ((K1C_ARG_REG_SLOTS - crtl->args.info +
  * 1) & ~1) : 0) */
 
-#define STACK_POINTER_REGNUM K1B_STACK_POINTER_REGNO
+#define STACK_POINTER_REGNUM K1C_STACK_POINTER_REGNO
 
-#define FRAME_POINTER_REGNUM K1B_FRAME_POINTER_REGNO
+#define FRAME_POINTER_REGNUM K1C_FRAME_POINTER_REGNO
 
 /* The register number of the arg pointer register, which is used to
    access the function's argument list. On some machines, this is the
@@ -657,7 +653,7 @@ extern const char *k1_board_to_startfile_prefix (int argc, const char **argv);
 
    If the static chain is passed in memory, these macros should not be
    defined; instead, the TARGET_STATIC_CHAIN hook should be used. */
-#define STATIC_CHAIN_REGNUM K1B_STATIC_POINTER_REGNO
+#define STATIC_CHAIN_REGNUM K1C_STATIC_POINTER_REGNO
 
 /* ********** Elimination ********** */
 
@@ -672,7 +668,7 @@ extern const char *k1_board_to_startfile_prefix (int argc, const char **argv);
    TARGET_FRAME_POINTER_REQUIRED always returns true; in that case,
    you may set depth-var to anything. */
 #define INITIAL_FRAME_POINTER_OFFSET(depth_var)                                \
-  (depth_var) = k1_frame_size () + K1B_SCRATCH_AREA_SIZE - STARTING_FRAME_OFFSET
+  (depth_var) = k1_frame_size () + K1C_SCRATCH_AREA_SIZE - STARTING_FRAME_OFFSET
 
 /* ********** Stack Arguments ********** */
 
@@ -728,8 +724,8 @@ extern const char *k1_board_to_startfile_prefix (int argc, const char **argv);
    used for this purpose since all function arguments are pushed on‰
    the stack. */
 #define FUNCTION_ARG_REGNO_P(regno)                                            \
-  ((int) (regno) >= K1B_ARGUMENT_POINTER_REGNO                                 \
-   && (regno) < K1B_ARGUMENT_POINTER_REGNO + K1B_ARG_REG_SLOTS)
+  ((int) (regno) >= K1C_ARGUMENT_POINTER_REGNO                                 \
+   && (regno) < K1C_ARGUMENT_POINTER_REGNO + K1C_ARG_REG_SLOTS)
 
 /* ********** Scalar Return ********** */
 
@@ -740,7 +736,7 @@ extern const char *k1_board_to_startfile_prefix (int argc, const char **argv);
    support routine, used to perform arithmetic, whose name is known
    specially by the compiler and was not mentioned in the C code being
    compiled. */
-#define LIBCALL_VALUE(MODE) gen_rtx_REG (MODE, K1B_ARGUMENT_POINTER_REGNO)
+#define LIBCALL_VALUE(MODE) gen_rtx_REG (MODE, K1C_ARGUMENT_POINTER_REGNO)
 
 /* A C expression that is nonzero if REGNO is the number of a hard register in
    which the values of called function may come back.  */
@@ -777,7 +773,7 @@ extern const char *k1_board_to_startfile_prefix (int argc, const char **argv);
    and frame pointer registers are already assumed to be used as
    needed. */
 #define EPILOGUE_USES(regno)                                                   \
-  (reload_completed && regno == K1B_RETURN_POINTER_REGNO)
+  (reload_completed && regno == K1C_RETURN_POINTER_REGNO)
 
 /* ********** Tail calls ********** */
 
@@ -893,7 +889,7 @@ int k1_adjust_insn_length (rtx insn, int length);
 #define PIC_OFFSET_TABLE_REGNUM                                                \
   (!flag_pic ? INVALID_REGNUM                                                  \
 	     : reload_completed ? REGNO (pic_offset_table_rtx)                 \
-				: K1B_GLOBAL_POINTER_REGNO)
+				: K1C_GLOBAL_POINTER_REGNO)
 
 /* Define this macro if the register defined by
    PIC_OFFSET_TABLE_REGNUM is clobbered by calls. Do not define this
@@ -1037,7 +1033,7 @@ int k1_adjust_insn_length (rtx insn, int length);
    register numbers in the compiler into assembler language. */
 #define REGISTER_NAMES                                                         \
   {                                                                            \
-    K1B_REGISTER_NAMES                                                         \
+    K1C_REGISTER_NAMES                                                         \
     ".sync.",                                                                  \
   }
 
@@ -1079,8 +1075,8 @@ int k1_adjust_insn_length (rtx insn, int length);
 /* ********** Miscellaneous Parameters ********** */
 
 /* Default Small Data treshold to -G 8 */
-#ifndef K1B_DEFAULT_GVALUE
-#define K1B_DEFAULT_GVALUE 8
+#ifndef K1C_DEFAULT_GVALUE
+#define K1C_DEFAULT_GVALUE 8
 #endif
 
 /* An alias for a machine mode name.  This is the machine mode that elements of
@@ -1258,12 +1254,5 @@ extern GTY (()) rtx k1_sync_reg_rtx;
 extern GTY (()) rtx k1_link_reg_rtx;
 
 extern rtx k1_get_stack_check_block (void);
-
-enum k1_arch
-{
-  K1B
-};
-
-extern enum k1_arch k1_architecture (void);
 
 #endif
