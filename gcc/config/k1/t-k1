@@ -18,6 +18,6 @@ driver-k1.o: $(srcdir)/config/k1/driver-k1.c \
 
 
 #INCLUDES += -I${FAMDIR}/BE/GCC/k1b -isystem ${TOOLROOT}/${target_noncanonical}/include -I$(abs_srcdir)/config/k1
-INCLUDES += -I${FAMDIR}/BE/GCC/k1b -I$(abs_srcdir)/config/k1
+INCLUDES += -I${FAMDIR}/ -I$(abs_srcdir)/config/k1
 #BUILD_CPPFLAGS += -I${FAMDIR}/BE/GCC/k1b -isystem ${TOOLROOT}/${target_noncanonical}/include -I$(abs_srcdir)/config/k1
-BUILD_CPPFLAGS += -I${FAMDIR}/BE/GCC/k1b -I$(abs_srcdir)/config/k1
+BUILD_CPPFLAGS += -I${FAMDIR} -I$(abs_srcdir)/config/k1
