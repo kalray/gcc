@@ -1,3 +1,28 @@
+/* Definitions of target machine for GNU compiler, for K1 MPPA.
+   Copyright (C) 1991-2014 Free Software Foundation, Inc.
+   Copyright (C) 2017 Kalray
+
+   This file is part of GCC.
+
+   GCC is free software; you can redistribute it and/or modify it
+   under the terms of the GNU General Public License as published
+   by the Free Software Foundation; either version 3, or (at your
+   option) any later version.
+
+   GCC is distributed in the hope that it will be useful, but WITHOUT
+   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+   or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+   License for more details.
+
+   Under Section 7 of GPL version 3, you are granted additional
+   permissions described in the GCC Runtime Library Exception, version
+   3.1, as published by the Free Software Foundation.
+
+   You should have received a copy of the GNU General Public License and
+   a copy of the GCC Runtime Library Exception along with this program;
+   see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
+   <http://www.gnu.org/licenses/>.  */
+
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
@@ -48,9 +73,9 @@ static bool scheduling = false;
 static int emit_colon;
 
 /* interface with MDS */
-enum k1b_abi k1b_cur_abi;
+enum k1c_abi k1c_cur_abi;
 
-#define K1B_SYNC_REG_REGNO (K1B_MDS_REGISTERS + 0)
+#define K1C_SYNC_REG_REGNO (K1C_MDS_REGISTERS + 0)
 
 rtx k1_sync_reg_rtx;
 rtx k1_link_reg_rtx;
@@ -75,17 +100,18 @@ static int k1_flag_var_tracking;
 /* Which arch are we scheduling for */
 enum attr_arch k1_arch_schedule;
 
-static const char *prf_reg_names[] = {K1B_K1BDP_PRF_REGISTER_NAMES};
+// FIXME FOR COOLIDGE
+static const char *prf_reg_names[] = {K1C_K1PE_PRF_REGISTER_NAMES};
 
 bool
 k1_cannot_change_mode_class (enum machine_mode from, enum machine_mode to,
 			     enum reg_class reg_class)
 {
-  if ((TARGET_K1B && !TARGET_64)
-      && (reg_class == SRF_REGS && (from == SImode && to == SImode)))
+  // FIXME FOR COOLIDGE
+  if (!TARGET_64 && (reg_class == SRF_REGS && (from == SImode && to == SImode)))
     return true; // SRF in 32bits mode can't be anything else than SI
 
-  if (TARGET_K1B && TARGET_64)
+  if (TARGET_64)
     {
       if ((reg_class == SRF32_REGS) && (from == SImode || to == SImode))
 	return true;
@@ -155,11 +181,22 @@ struct k1_address
   int mod;
 };
 
-enum k1_arch
-k1_architecture (void)
+/* A processor implementing K1.  */
+// FIXME FOR COOLIDGE
+struct processor
 {
-  return K1B;
-}
+  const char *const name;
+  //  enum aarch64_processor core;
+  const char *arch;
+  const unsigned long flags;
+  /* const struct tune_params *const tune; */
+};
+
+/* Target specification.  These are populated as commandline arguments
+   are processed, or NULL if not specified.  */
+static const struct processor *selected_arch;
+static const struct processor *selected_cpu;
+// static const struct processor *selected_tune;
 
 static bool
 k1_tls_symbol_p (rtx x)
@@ -188,8 +225,9 @@ k1_has_unspec_reference_1 (rtx *x, void *data ATTRIBUTE_UNUSED)
 	  && (XINT (*x, 1) == UNSPEC_GOT || XINT (*x, 1) == UNSPEC_GOTOFF
 	      || XINT (*x, 1) == UNSPEC_GPREL || XINT (*x, 1) == UNSPEC_GPREL10
 	      || XINT (*x, 1) == UNSPEC_TLS
-	      || XINT (*x, 1) == UNSPEC_FUNCDESC_GOT
-	      || XINT (*x, 1) == UNSPEC_FUNCDESC_GOTOFF));
+	      /* || XINT (*x, 1) == UNSPEC_FUNCDESC_GOT */
+	      /* || XINT (*x, 1) == UNSPEC_FUNCDESC_GOTOFF) */
+	      ));
 }
 
 static int
@@ -279,140 +317,131 @@ k1_legitimate_address_offset_register_p (rtx reg, bool strict)
 static bool
 k1_assemble_integer (rtx value, unsigned int size, int aligned_p)
 {
-  if (TARGET_FDPIC /*&& !flag_pic*/ && size == UNITS_PER_WORD)
-    {
-      if (GET_CODE (value) == CONST || GET_CODE (value) == SYMBOL_REF
-	  || GET_CODE (value) == LABEL_REF)
-	{
+  /* if (TARGET_FDPIC /\*&& !flag_pic*\/ && size == UNITS_PER_WORD) { */
+  /*     if (GET_CODE (value) == CONST */
+  /*         || GET_CODE (value) == SYMBOL_REF */
+  /*         || GET_CODE (value) == LABEL_REF) { */
 
-	  if (GET_CODE (value) == SYMBOL_REF && SYMBOL_REF_FUNCTION_P (value))
-	    {
-	      fputs ("\t.picptr\tfuncdesc(", asm_out_file);
-	      output_addr_const (asm_out_file, value);
-	      fputs (")\n", asm_out_file);
-	      return true;
-	    }
-	  else if (GET_CODE (value) == CONST
-		   && function_symbol_referenced_p (value))
-	    {
-	      gcc_unreachable ();
-	    }
-	  else if (GET_CODE (value) == SYMBOL_REF || GET_CODE (value) == CONST)
-	    {
-	      rtx symbol = GET_CODE (value) == SYMBOL_REF ? value : NULL_RTX;
+  /*         if (GET_CODE (value) == SYMBOL_REF */
+  /*             && SYMBOL_REF_FUNCTION_P (value)) { */
+  /*             fputs ("\t.picptr\tfuncdesc(", asm_out_file); */
+  /*             output_addr_const (asm_out_file, value); */
+  /*             fputs (")\n", asm_out_file); */
+  /*             return true; */
+  /*         } else if (GET_CODE (value) == CONST */
+  /*                    && function_symbol_referenced_p (value)) { */
+  /*             gcc_unreachable (); */
+  /*         } else if (GET_CODE (value) == SYMBOL_REF */
+  /*                    || GET_CODE (value) == CONST) { */
+  /*             rtx symbol = GET_CODE (value) == SYMBOL_REF */
+  /*                 ? value : NULL_RTX; */
 
-	      if (symbol == NULL_RTX && GET_CODE (XEXP (value, 0)) == PLUS
-		  && GET_CODE (XEXP (XEXP (value, 0), 0)) == SYMBOL_REF)
-		symbol = XEXP (XEXP (value, 0), 0);
+  /*             if (symbol == NULL_RTX */
+  /*                 && GET_CODE (XEXP (value, 0)) == PLUS */
+  /*                 && GET_CODE (XEXP (XEXP (value, 0), 0)) == SYMBOL_REF) */
+  /*                 symbol = XEXP (XEXP (value, 0), 0); */
 
-	      if (symbol && SYMBOL_REF_DECL (symbol)
-		  && DECL_P (SYMBOL_REF_DECL (symbol)))
-		{
-		  /* If we don't special case symbols with DECL, then
-		     every reference to a label become a picptr. This is
-		     an issue when emitting the debug information as it
-		     globalizes the local labels, and it clutters the
-		     objdump output when disassembling. */
-		  assemble_integer_with_op ("\t.picptr\t", value);
-		  return true;
-		}
-	    }
-	}
-      if (!aligned_p)
-	{
-	  /* We've set the unaligned SI op to NULL, so we always have to
-	     handle the unaligned case here.  */
-	  assemble_integer_with_op ("\t.4byte\t", value);
-	  return true;
-	}
-    }
+  /*             if (symbol */
+  /*                 && SYMBOL_REF_DECL (symbol) */
+  /*                 && DECL_P (SYMBOL_REF_DECL (symbol))) { */
+  /*                 /\* If we don't special case symbols with DECL, then */
+  /*                    every reference to a label become a picptr. This is */
+  /*                    an issue when emitting the debug information as it */
+  /*                    globalizes the local labels, and it clutters the */
+  /*                    objdump output when disassembling. *\/ */
+  /*                 assemble_integer_with_op ("\t.picptr\t", value); */
+  /*                 return true; */
+  /*             } */
+  /*         } */
+  /*     } */
+  /*     if (!aligned_p) { */
+  /*         /\* We've set the unaligned SI op to NULL, so we always have to */
+  /*            handle the unaligned case here.  *\/ */
+  /*         assemble_integer_with_op ("\t.4byte\t", value); */
+  /*         return true; */
+  /*     } */
+  /* } */
 
   return default_assemble_integer (value, size, aligned_p);
 }
 
-static bool
-k1_analyze_modulo_address (rtx x, bool strict, struct k1_address *addr)
-{
-  unsigned HOST_WIDE_INT mul = 0, mod;
+/* static bool */
+/* k1_analyze_modulo_address (rtx x, bool strict, struct k1_address *addr) */
+/* { */
+/*     unsigned HOST_WIDE_INT mul = 0, mod; */
 
-  // Modulo addressing not supported on k1b
-  if (TARGET_K1BDP || TARGET_K1BIO)
-    {
-      return false;
-    }
+/*     // Modulo addressing not supported on k1b */
+/*     if(TARGET_K1BDP || TARGET_K1BIO) { */
+/*       return false; */
+/*     } */
 
-  addr->mode = ADDR_INVALID;
+/*     addr->mode = ADDR_INVALID; */
 
-  if (GET_CODE (x) != PLUS
-      || !k1_legitimate_address_register_p (XEXP (x, 1), strict))
-    return false;
+/*     if (GET_CODE (x) != PLUS */
+/*         || !k1_legitimate_address_register_p (XEXP (x, 1), strict)) */
+/*         return false; */
 
-  x = XEXP (x, 0);
+/*     x = XEXP (x, 0); */
 
-  if (GET_CODE (x) == ZERO_EXTEND)
-    {
-      if (GET_MODE (XEXP (x, 0)) == QImode)
-	mod = 255;
-      else if (GET_MODE (XEXP (x, 0)) == HImode)
-	mod = 65535;
-      else
-	return false;
-      if (GET_CODE (XEXP (x, 0)) == SUBREG)
-	x = XEXP (x, 0);
-    }
-  else if (GET_CODE (x) == AND && GET_CODE (XEXP (x, 1)) == CONST_INT)
-    {
-      mod = INTVAL (XEXP (x, 1));
-    }
-  else
-    return false;
+/*     if (GET_CODE (x) == ZERO_EXTEND) { */
+/* 	if (GET_MODE (XEXP (x, 0)) == QImode) */
+/* 	    mod = 255; */
+/* 	else if (GET_MODE (XEXP (x, 0)) == HImode) */
+/* 	    mod = 65535; */
+/* 	else */
+/* 	    return false; */
+/* 	if (GET_CODE (XEXP (x, 0)) == SUBREG) */
+/* 	    x = XEXP (x, 0); */
+/*     } else if (GET_CODE (x) == AND */
+/* 	       && GET_CODE (XEXP (x, 1)) == CONST_INT) { */
+/* 	mod = INTVAL (XEXP (x, 1)); */
+/*     } else */
+/* 	return false; */
 
-  x = XEXP (x, 0);
+/*     x = XEXP (x, 0); */
 
-  if (k1_legitimate_address_register_p (x, strict))
-    {
-      mul = 1;
-      addr->mult = 1;
-      addr->offset_reg = x;
-    }
-  else if (GET_CODE (x) == ASHIFT
-	   && (INTVAL (XEXP (x, 1)) == 0 || INTVAL (XEXP (x, 1)) == 1
-	       || INTVAL (XEXP (x, 1)) == 2 || INTVAL (XEXP (x, 1)) == 3)
-	   && k1_legitimate_address_register_p (XEXP (x, 0), strict))
-    {
-      mul = 1 << INTVAL (XEXP (x, 1));
-      addr->mult = mul;
-      addr->offset_reg = XEXP (x, 0);
-    }
-  else if (GET_CODE (x) == MULT
-	   && (INTVAL (XEXP (x, 1)) == 1 || INTVAL (XEXP (x, 1)) == 2
-	       || INTVAL (XEXP (x, 1)) == 4 || INTVAL (XEXP (x, 1)) == 8)
-	   && k1_legitimate_address_register_p (XEXP (x, 0), strict))
-    {
-      mul = INTVAL (XEXP (x, 1));
-      addr->mult = mul;
-      addr->offset_reg = XEXP (x, 0);
-    }
-  else
-    {
-      return false;
-    }
+/*     if (k1_legitimate_address_register_p (x, strict)) { */
+/*         mul = 1; */
+/*         addr->mult = 1; */
+/*         addr->offset_reg = x; */
+/*     } else if (GET_CODE (x) == ASHIFT */
+/*                && (INTVAL (XEXP (x, 1)) == 0 */
+/*                    || INTVAL (XEXP (x, 1)) == 1 */
+/*                    || INTVAL (XEXP (x, 1)) == 2 */
+/*                    || INTVAL (XEXP (x, 1)) == 3) */
+/*                && k1_legitimate_address_register_p (XEXP (x, 0), strict)) {
+ */
+/*         mul = 1 << INTVAL (XEXP (x, 1)) ; */
+/*         addr->mult = mul; */
+/*         addr->offset_reg = XEXP (x, 0); */
+/*     } else if (GET_CODE (x) == MULT */
+/*                && (INTVAL (XEXP (x, 1)) == 1 */
+/*                    || INTVAL (XEXP (x, 1)) == 2 */
+/*                    || INTVAL (XEXP (x, 1)) == 4 */
+/*                    || INTVAL (XEXP (x, 1)) == 8) */
+/*                && k1_legitimate_address_register_p (XEXP (x, 0), strict)) {
+ */
+/*         mul = INTVAL (XEXP (x, 1)); */
+/*         addr->mult = mul; */
+/*         addr->offset_reg = XEXP (x, 0); */
+/*     } else { */
+/*         return false; */
+/*     } */
 
-  if (mul == 0)
-    mul = INTVAL (XEXP (x, 1));
-  mod /= mul;
-  mod += 1;
-  addr->mod = mod;
+/*     if (mul == 0) */
+/*         mul = INTVAL (XEXP (x, 1)); */
+/*     mod /= mul; */
+/*     mod += 1; */
+/*     addr->mod = mod; */
 
-  if (__builtin_popcount (mod) == 1 && mod <= 65536)
-    {
-      addr->mode = ADDR_MOD;
-      addr->base_reg = XEXP (x, 1);
-      return true;
-    }
+/*     if (__builtin_popcount (mod) == 1 && mod <= 65536) { */
+/*         addr->mode = ADDR_MOD; */
+/*         addr->base_reg = XEXP (x, 1); */
+/*         return true; */
+/*     } */
 
-  return false;
-}
+/*     return false; */
+/* } */
 
 /**
  * Legitimate address :
@@ -504,7 +533,7 @@ k1_analyze_address (rtx x, bool strict, struct k1_address *addr)
       return true;
     }
 
-  return k1_analyze_modulo_address (x, strict, addr);
+  return false;
 }
 
 #define SET_ABI_PARAMS(ARCH, CORE, CONV)                                       \
@@ -548,98 +577,60 @@ k1_analyze_address (rtx x, bool strict, struct k1_address *addr)
 static void
 k1_target_conditional_register_usage (void)
 {
-  const int is_k1b = k1_architecture () >= K1B;
+  const int is_k1c = true;
 
+  // FIXME FOR COOLIDGE
+  // FIXME AUTO: rework ABI selection
   if (flag_pic && !TARGET_64)
     {
-      k1b_cur_abi = K1B_ABI_K1BDP_PIC;
-      if (is_k1b)
-	{
-	  SET_ABI_PARAMS (K1B, K1BDP, PIC);
-	}
-      else
-	{
-	  error ("k1a cores no longer supported");
-	}
-    }
-  else if (TARGET_FDPIC && !TARGET_64)
-    {
-      /* k1b_cur_abi = K1B_ABI_K1BDP_FDPIC; */
-      /* /\* if we're in FDPIC, fix the r9 register *\/ */
-      /* fix_register ("r9", 1, 1); */
-    }
+      k1c_cur_abi = K1C_ABI_K1PE_PIC;
+      SET_ABI_PARAMS (K1C, K1PE, PIC);
+    } /* else if (TARGET_FDPIC && !TARGET_64){ */
+  /*   /\* k1b_cur_abi = K1B_ABI_K1BDP_FDPIC; *\/ */
+  /*   /\* /\\* if we're in FDPIC, fix the r9 register *\\/ *\/ */
+  /*   /\* fix_register ("r9", 1, 1); *\/ */
+  /* }  */
   else if (flag_pic && TARGET_64)
     {
-      k1b_cur_abi = K1B_ABI_K1BDP_PIC64;
-      if (is_k1b)
-	{
-	  SET_ABI_PARAMS (K1B, K1BDP, PIC64);
-	}
-      else
-	{
-	  error ("64bits only allowed for K1B arch cores");
-	}
-    }
-  else if (TARGET_FDPIC && TARGET_64)
-    {
-      error ("64bits does not support FDPIC");
-    }
+      k1c_cur_abi = K1C_ABI_K1PE_PIC64;
+      SET_ABI_PARAMS (K1C, K1PE, PIC64);
+    } /* else if (TARGET_FDPIC && TARGET_64) { */
+  /*     error ("64bits does not support FDPIC"); */
+  /* }  */
   else if (TARGET_64)
     {
-      k1b_cur_abi = K1B_ABI_K1BDP_EMBEDDED64;
-      if (is_k1b)
-	{
-	  SET_ABI_PARAMS (K1B, K1BDP, EMBEDDED64);
-	}
-      else
-	{
-	  error ("64bits only allowed for K1B arch cores");
-	}
+      k1c_cur_abi = K1C_ABI_K1PE_EMBEDDED64;
+      SET_ABI_PARAMS (K1C, K1PE, EMBEDDED64);
     }
   else
     {
-      k1b_cur_abi = K1B_ABI_K1BDP_EMBEDDED;
-      if (is_k1b)
-	{
-	  SET_ABI_PARAMS (K1B, K1BDP, EMBEDDED);
-	}
-      else
-	{
-	  error ("k1a cores no longer supported");
-	}
+      k1c_cur_abi = K1C_ABI_K1PE_EMBEDDED;
+      SET_ABI_PARAMS (K1C, K1PE, EMBEDDED);
     }
 
   /* the following exists because there is no FDPIC ABI, simply patch the
    * default one */
-  if (TARGET_FDPIC)
-    {
-      /* if we're in FDPIC, fix the r9 register */
-      fix_register ("r9", 1, 1);
-    }
+  /* if (TARGET_FDPIC){ */
+  /*   /\* if we're in FDPIC, fix the r9 register *\/ */
+  /*   fix_register ("r9", 1, 1); */
+  /* } */
 
-  k1_sync_reg_rtx = gen_rtx_REG (SImode, K1B_SYNC_REG_REGNO);
+  k1_sync_reg_rtx = gen_rtx_REG (SImode, K1C_SYNC_REG_REGNO);
 
-  k1_link_reg_rtx = gen_rtx_REG (Pmode, K1B_RETURN_POINTER_REGNO);
+  k1_link_reg_rtx = gen_rtx_REG (Pmode, K1C_RETURN_POINTER_REGNO);
   k1_data_start_symbol
     = gen_rtx_SYMBOL_REF (Pmode,
 			  IDENTIFIER_POINTER (get_identifier ("_data_start")));
-  K1B_ADJUST_REGISTER_NAMES;
+  K1C_ADJUST_REGISTER_NAMES;
 
-  if (is_k1b)
-    {
-      const char *prf_names[] = {K1B_K1BDP_PRF_REGISTER_NAMES};
-      memcpy (prf_reg_names, prf_names, sizeof (prf_reg_names));
-    }
-  else
-    {
-      error ("k1a cores no longer supported");
-    }
+  const char *prf_names[] = {K1C_K1PE_PRF_REGISTER_NAMES};
+  memcpy (prf_reg_names, prf_names, sizeof (prf_reg_names));
 }
 
 rtx
 k1_return_addr_rtx (int count, rtx frameaddr ATTRIBUTE_UNUSED)
 {
-  return count == 0 ? get_hard_reg_initial_val (Pmode, K1B_RETURN_POINTER_REGNO)
+  return count == 0 ? get_hard_reg_initial_val (Pmode, K1C_RETURN_POINTER_REGNO)
 		    : NULL_RTX;
 }
 
@@ -661,12 +652,12 @@ k1_function_arg (cumulative_args_t cum_v, enum machine_mode mode,
     offset = 1;
 
   /* If all argument slots are used, then it must go on the stack.  */
-  if (*cum + offset >= K1B_ARG_REG_SLOTS)
+  if (*cum + offset >= K1C_ARG_REG_SLOTS)
     return 0;
 
   *cum += offset;
 
-  return gen_rtx_REG (mode, K1B_ARGUMENT_POINTER_REGNO + *cum);
+  return gen_rtx_REG (mode, K1C_ARGUMENT_POINTER_REGNO + *cum);
 }
 
 /* Worker function for TARGET_FUNCTION_ARG_BOUNDARY.  */
@@ -698,13 +689,13 @@ k1_arg_partial_bytes (cumulative_args_t cum_v, enum machine_mode mode,
     offset = 1;
 
   /* If all argument slots are already used, then it must go on the stack.  */
-  if ((*cum + offset) >= K1B_ARG_REG_SLOTS)
+  if ((*cum + offset) >= K1C_ARG_REG_SLOTS)
     return 0;
 
   /* If some argument slots are still available, but not
      sufficient, part of the argument must go on the stack */
-  else if ((*cum + offset + words) > K1B_ARG_REG_SLOTS)
-    return UNITS_PER_WORD * (K1B_ARG_REG_SLOTS - (*cum + offset));
+  else if ((*cum + offset + words) > K1C_ARG_REG_SLOTS)
+    return UNITS_PER_WORD * (K1C_ARG_REG_SLOTS - (*cum + offset));
 
   /* Otherwise, the argument entirely fits into registers */
   return 0;
@@ -748,12 +739,12 @@ k1_target_function_value (const_tree ret_type, const_tree func ATTRIBUTE_UNUSED,
 	XVECEXP (ret, 0, i)
 	  = gen_rtx_EXPR_LIST (VOIDmode,
 			       gen_rtx_REG (SImode,
-					    K1B_ARGUMENT_POINTER_REGNO + i),
+					    K1C_ARGUMENT_POINTER_REGNO + i),
 			       GEN_INT (i * UNITS_PER_WORD));
       return ret;
     }
   else
-    return gen_rtx_REG (TYPE_MODE (ret_type), K1B_ARGUMENT_POINTER_REGNO);
+    return gen_rtx_REG (TYPE_MODE (ret_type), K1C_ARGUMENT_POINTER_REGNO);
 }
 
 static bool
@@ -773,7 +764,7 @@ static rtx
 k1_target_struct_value_rtx (tree fndecl ATTRIBUTE_UNUSED,
 			    int incoming ATTRIBUTE_UNUSED)
 {
-  return gen_rtx_REG (Pmode, K1B_STRUCT_POINTER_REGNO);
+  return gen_rtx_REG (Pmode, K1C_STRUCT_POINTER_REGNO);
 }
 
 static void
@@ -832,14 +823,14 @@ k1_target_expand_builtin_saveregs (void)
   rtx area;
 
   /* Allocate the va_list constructor */
-  if (crtl->args.info >= K1B_ARG_REG_SLOTS)
-    base += (crtl->args.info - K1B_ARG_REG_SLOTS) * UNITS_PER_WORD;
+  if (crtl->args.info >= K1C_ARG_REG_SLOTS)
+    base += (crtl->args.info - K1C_ARG_REG_SLOTS) * UNITS_PER_WORD;
   else if (crtl->args.info & 1)
     base += UNITS_PER_WORD;
 
   area = gen_rtx_PLUS (Pmode, arg_pointer_rtx, GEN_INT (base));
 
-  if (crtl->args.info >= K1B_ARG_REG_SLOTS)
+  if (crtl->args.info >= K1C_ARG_REG_SLOTS)
     return area;
 
   slot = 0;
@@ -852,18 +843,18 @@ k1_target_expand_builtin_saveregs (void)
 	gen_rtx_MEM (SImode,
 		     gen_rtx_PLUS (Pmode, arg_pointer_rtx,
 				   GEN_INT (base + slot * UNITS_PER_WORD))),
-	gen_rtx_REG (SImode, K1B_ARGUMENT_POINTER_REGNO + regno));
+	gen_rtx_REG (SImode, K1C_ARGUMENT_POINTER_REGNO + regno));
       ++regno;
       ++slot;
     }
 
-  for (; regno < K1B_ARG_REG_SLOTS; regno += 2, slot += 2)
+  for (; regno < K1C_ARG_REG_SLOTS; regno += 2, slot += 2)
     {
       emit_move_insn (
 	gen_rtx_MEM (DImode,
 		     gen_rtx_PLUS (Pmode, arg_pointer_rtx,
 				   GEN_INT (base + slot * UNITS_PER_WORD))),
-	gen_rtx_REG (DImode, K1B_ARGUMENT_POINTER_REGNO + regno));
+	gen_rtx_REG (DImode, K1C_ARGUMENT_POINTER_REGNO + regno));
     }
 
   return area;
@@ -914,11 +905,8 @@ k1_target_fixed_point_supported_p (void)
 static bool
 k1_target_vector_mode_supported_p (enum machine_mode mode)
 {
-  if (k1_architecture () >= K1B)
-    return V4HImode == mode || V2SImode == mode || V8SFmode == mode
-	   || V4SFmode == mode || V2SFmode == mode || V8SImode == mode;
-  else
-    return V4HImode == mode || V2SImode == mode || V4SFmode == mode;
+  return V4HImode == mode || V2SImode == mode || V8SFmode == mode
+	 || V4SFmode == mode || V2SFmode == mode || V8SImode == mode;
 }
 
 static bool
@@ -1414,12 +1402,12 @@ k1_target_print_operand (FILE *file, rtx x, int code)
 		  fprintf (file, "64");
 		fprintf (file, "(");
 		break;
-	      case UNSPEC_FUNCDESC_GOTOFF:
-		fprintf (file, "@gotoff_funcdesc(");
-		break;
-	      case UNSPEC_FUNCDESC_GOT:
-		fprintf (file, "@got_funcdesc(");
-		break;
+	      /* case UNSPEC_FUNCDESC_GOTOFF: */
+	      /*   fprintf (file, "@gotoff_funcdesc("); */
+	      /*   break; */
+	      /* case UNSPEC_FUNCDESC_GOT: */
+	      /*   fprintf (file, "@got_funcdesc("); */
+	      /*   break; */
 	      case UNSPEC_GPREL:
 		fprintf (file, "@gprel(");
 		break;
@@ -1804,12 +1792,12 @@ k1_expand_stack_check_allocate_stack (rtx target, rtx adjust)
 	stack_end_val,
 	gen_rtx_MEM (Pmode,
 		     gen_rtx_PLUS (Pmode,
-				   gen_rtx_REG (Pmode, K1B_LOCAL_POINTER_REGNO),
+				   gen_rtx_REG (Pmode, K1C_LOCAL_POINTER_REGNO),
 				   gen_rtx_CONST (Pmode, stack_end_sym))));
     }
   else
     {
-      emit_move_insn (stack_end_val, gen_rtx_REG (Pmode, K1B_SR2_REGNO));
+      emit_move_insn (stack_end_val, gen_rtx_REG (Pmode, K1C_SR2_REGNO));
     }
   emit_insn (
     gen_rtx_SET (Pmode, tmp,
@@ -1828,7 +1816,7 @@ static bool
 should_be_saved (int regno)
 {
   return df_regs_ever_live_p (regno) && !call_really_used_regs[regno]
-	 && (regno == K1B_RETURN_POINTER_REGNO || !fixed_regs[regno]);
+	 && (regno == K1C_RETURN_POINTER_REGNO || !fixed_regs[regno]);
 }
 
 enum spill_action
@@ -1844,7 +1832,7 @@ k1_emit_single_spill (int regno, enum spill_action action, int *offset,
 {
   rtx reg, insn, mem, base = stack_pointer_rtx;
   enum machine_mode spill_mode
-    = (regno == K1B_RETURN_POINTER_REGNO) ? Pmode : SImode;
+    = (regno == K1C_RETURN_POINTER_REGNO) ? Pmode : SImode;
   gcc_assert (spill_mode == SImode);
 
   if (action != SPILL_COMPUTE_SIZE)
@@ -1852,7 +1840,7 @@ k1_emit_single_spill (int regno, enum spill_action action, int *offset,
       reg = gen_rtx_REG (spill_mode, regno);
 
       /* Generate a simple stack spill */
-      if (regno == K1B_RETURN_POINTER_REGNO)
+      if (regno == K1C_RETURN_POINTER_REGNO)
 	{
 	  rtx reg2 = gen_rtx_REG (spill_mode, 8);
 	  if (action == SPILL_SAVE)
@@ -1871,7 +1859,7 @@ k1_emit_single_spill (int regno, enum spill_action action, int *offset,
 
 	  // if ftrace active: save in r8 the stack address where RA was saved
 	  // (will be the first parameter of __mcount call)
-	  if (regno == K1B_RETURN_POINTER_REGNO && crtl->profile)
+	  if (regno == K1C_RETURN_POINTER_REGNO && crtl->profile)
 	    {
 	      rtx reg_src = gen_rtx_PLUS (Pmode, base, GEN_INT (*offset));
 	      rtx reg_dst = gen_rtx_REG (spill_mode, 38);
@@ -1884,10 +1872,10 @@ k1_emit_single_spill (int regno, enum spill_action action, int *offset,
 	  insn = emit_move_insn (reg, mem);
 	}
 
-      if (regno == K1B_RETURN_POINTER_REGNO && action == SPILL_RESTORE)
+      if (regno == K1C_RETURN_POINTER_REGNO && action == SPILL_RESTORE)
 	{
 	  insn = emit_move_insn (gen_rtx_REG (spill_mode,
-					      K1B_RETURN_POINTER_REGNO),
+					      K1C_RETURN_POINTER_REGNO),
 				 reg);
 	}
     }
@@ -1914,7 +1902,7 @@ k1_emit_pair_spill (int regno, enum spill_action action, int *offset,
     {
       reg = gen_rtx_REG (DImode, regno);
 
-      if (regno == K1B_RETURN_POINTER_REGNO)
+      if (regno == K1C_RETURN_POINTER_REGNO)
 	{
 	  rtx reg2 = gen_rtx_REG (DImode, 8);
 	  if (action == SPILL_SAVE)
@@ -1937,9 +1925,9 @@ k1_emit_pair_spill (int regno, enum spill_action action, int *offset,
 	  insn = emit_move_insn (reg, mem);
 	}
 
-      if (regno == K1B_RETURN_POINTER_REGNO && action == SPILL_RESTORE)
+      if (regno == K1C_RETURN_POINTER_REGNO && action == SPILL_RESTORE)
 	{
-	  insn = emit_move_insn (gen_rtx_REG (DImode, K1B_RETURN_POINTER_REGNO),
+	  insn = emit_move_insn (gen_rtx_REG (DImode, K1C_RETURN_POINTER_REGNO),
 				 reg);
 	}
     }
@@ -1960,7 +1948,7 @@ static int
 k1_spill (enum spill_action action)
 {
   int regno, spill_reg;
-  int stack_size = 0, offset = K1B_SCRATCH_AREA_SIZE + crtl->outgoing_args_size;
+  int stack_size = 0, offset = K1C_SCRATCH_AREA_SIZE + crtl->outgoing_args_size;
   char my_regs_ever_live_p[FIRST_PSEUDO_REGISTER];
   rtx insn, reg, mem;
   char *save_reg;
@@ -1986,7 +1974,7 @@ k1_spill (enum spill_action action)
 
   for (regno = 0; regno < FIRST_PSEUDO_REGISTER; regno++)
     {
-      if ((!no_save || regno == K1B_RETURN_POINTER_REGNO)
+      if ((!no_save || regno == K1C_RETURN_POINTER_REGNO)
 	  && should_be_saved (regno))
 	{
 
@@ -1995,19 +1983,19 @@ k1_spill (enum spill_action action)
 	  // == K1B_RETURN_POINTER_REGNO) ? Pmode : SImode;
 
 	  /* Try to find a free scratch reg */
-	  for (spill_reg = 0; spill_reg < K1B_SRF_FIRST_REGNO; spill_reg++)
+	  for (spill_reg = 0; spill_reg < K1C_SRF_FIRST_REGNO; spill_reg++)
 	    {
 
 	      bool grf_free
 		= !save_reg[spill_reg] // spill_reg not used in func (as scratch
 				       // or for computation)
-		  && !save_reg[K1B_RETURN_POINTER_REGNO] // $ra not saved
+		  && !save_reg[K1C_RETURN_POINTER_REGNO] // $ra not saved
 		  && call_used_regs[spill_reg] // spill_reg is caller saved
 		  && !fixed_regs[spill_reg];
 
 	      bool prf_free
 		= grf_free && (regno % 2 == 0)
-		  && (spill_reg + 1) < K1B_SRF_FIRST_REGNO
+		  && (spill_reg + 1) < K1C_SRF_FIRST_REGNO
 		  && !save_reg[spill_reg + 1] // spill_reg not used in func (as
 					      // scratch or for computation)
 		  && call_used_regs[spill_reg + 1] // spill_reg is caller saved
@@ -2083,8 +2071,8 @@ k1_spill (enum spill_action action)
 	      k1_emit_pair_spill (regno, action, &offset, &stack_size);
 	      if (free_pair < 0 && !fixed_regs[regno] && !fixed_regs[regno + 1]
 		  && regno
-		       != K1B_STRUCT_POINTER_REGNO // do not use struct pointer
-		  && (regno + 1) != K1B_STRUCT_POINTER_REGNO
+		       != K1C_STRUCT_POINTER_REGNO // do not use struct pointer
+		  && (regno + 1) != K1C_STRUCT_POINTER_REGNO
 		  && call_used_regs[regno] && call_used_regs[regno + 1])
 		{
 		  /*
@@ -2180,7 +2168,7 @@ k1_expand_prologue (void)
   rtx (*gen_set_gotp) (rtx target, rtx op1, rtx op2, rtx op3)
     = TARGET_64 ? gen_set_gotp_di : gen_set_gotp_si;
 
-  if (flag_pic && !TARGET_FDPIC && crtl->uses_pic_offset_table)
+  if (flag_pic /* && !TARGET_FDPIC */ && crtl->uses_pic_offset_table)
     {
 
       /* In FPIC emit the code that will initialize our Global Pointer.
@@ -2196,7 +2184,7 @@ k1_expand_prologue (void)
        * the offset between the beginning of this function and the Global Offset
        * Table
        */
-      rtx tmp1_reg = gen_rtx_REG (Pmode, K1B_R32_REGNO);
+      rtx tmp1_reg = gen_rtx_REG (Pmode, K1C_R32_REGNO);
       tree gpdisp = get_identifier ("_gp_disp");
 
       rtx gp_disp = gen_rtx_SYMBOL_REF (Pmode, IDENTIFIER_POINTER (gpdisp));
@@ -2210,7 +2198,7 @@ k1_expand_prologue (void)
        */
       insn = emit_insn (
 	gen_add (pic_offset_table_rtx, pic_offset_table_rtx, tmp1_reg));
-      df_set_regs_ever_live (K1B_GLOBAL_POINTER_REGNO, true);
+      df_set_regs_ever_live (K1C_GLOBAL_POINTER_REGNO, true);
     }
   else if (TARGET_GPREL)
     {
@@ -2219,9 +2207,9 @@ k1_expand_prologue (void)
 
   cfun->machine->frame_size = frame_size;
 
-  if (cfun->stdarg && crtl->args.info < K1B_ARG_REG_SLOTS)
+  if (cfun->stdarg && crtl->args.info < K1C_ARG_REG_SLOTS)
     frame_size
-      += UNITS_PER_WORD * ((K1B_ARG_REG_SLOTS - crtl->args.info + 1) & ~1);
+      += UNITS_PER_WORD * ((K1C_ARG_REG_SLOTS - crtl->args.info + 1) & ~1);
 
   frame_size += crtl->args.pretend_args_size;
 
@@ -2257,12 +2245,12 @@ k1_expand_prologue (void)
 	    stack_end_val,
 	    gen_rtx_MEM (
 	      Pmode,
-	      gen_rtx_PLUS (Pmode, gen_rtx_REG (Pmode, K1B_LOCAL_POINTER_REGNO),
+	      gen_rtx_PLUS (Pmode, gen_rtx_REG (Pmode, K1C_LOCAL_POINTER_REGNO),
 			    gen_rtx_CONST (Pmode, stack_end_sym))));
 	}
       else
 	{
-	  emit_move_insn (stack_end_val, gen_rtx_REG (Pmode, K1B_SR2_REGNO));
+	  emit_move_insn (stack_end_val, gen_rtx_REG (Pmode, K1C_SR2_REGNO));
 	}
       emit_insn (
 	gen_rtx_SET (VOIDmode, stack_end_val,
@@ -2299,9 +2287,9 @@ k1_expand_epilogue (void)
       RTX_FRAME_RELATED_P (insn) = 1;
     }
 
-  if (cfun->stdarg && crtl->args.info < K1B_ARG_REG_SLOTS)
+  if (cfun->stdarg && crtl->args.info < K1C_ARG_REG_SLOTS)
     frame_size
-      += UNITS_PER_WORD * ((K1B_ARG_REG_SLOTS - crtl->args.info + 1) & ~1);
+      += UNITS_PER_WORD * ((K1C_ARG_REG_SLOTS - crtl->args.info + 1) & ~1);
 
   frame_size += crtl->args.pretend_args_size;
 
@@ -2330,7 +2318,7 @@ k1_legitimize_tls_reference (rtx x)
 		  gen_rtx_CONST (Pmode, gen_rtx_UNSPEC (Pmode, gen_rtvec (1, x),
 							UNSPEC_TLS)));
 
-  emit_insn (gen_add (reg, gen_rtx_REG (Pmode, K1B_LOCAL_POINTER_REGNO), reg));
+  emit_insn (gen_add (reg, gen_rtx_REG (Pmode, K1C_LOCAL_POINTER_REGNO), reg));
   return reg;
 }
 
@@ -2381,7 +2369,7 @@ k1_legitimize_gp_address (rtx x, rtx reg)
 
       emit_move_insn (reg, gen_rtx_PLUS (Pmode,
 					 get_hard_reg_initial_val (
-					   Pmode, K1B_GLOBAL_POINTER_REGNO),
+					   Pmode, K1C_GLOBAL_POINTER_REGNO),
 					 reg));
       return reg;
     }
@@ -2506,9 +2494,10 @@ k1_handle_symbol (rtx addr, rtx reg)
 
   /* In FDPIC it is either a global data pointer -- UNSPEC_GOT,
    * or function pointer, being in fact function descriptor */
-  if (TARGET_FDPIC && GET_CODE (addr) == SYMBOL_REF
-      && SYMBOL_REF_FUNCTION_P (addr))
-    unspec = UNSPEC_FUNCDESC_GOT;
+  /* if (TARGET_FDPIC */
+  /*      && GET_CODE (addr) == SYMBOL_REF */
+  /*      && SYMBOL_REF_FUNCTION_P (addr)) */
+  /*       unspec = UNSPEC_FUNCDESC_GOT; */
 
   if (reg == 0)
     {
@@ -2538,8 +2527,8 @@ k1_target_legitimize_pic_address (rtx orig, rtx reg)
   rtx addr = orig;
   rtx new_rtx = orig;
 
-  if (TARGET_FDPIC && GET_CODE (addr) == LABEL_REF)
-    return k1_handle_label_or_readonly (addr, reg);
+  /* if (TARGET_FDPIC && GET_CODE (addr) == LABEL_REF) */
+  /*     return k1_handle_label_or_readonly(addr, reg); */
 
   /* Local symbol references in (FD)PIC/PIE mode are relative to global
    * offset table, but do not require GOT entry.
@@ -2563,12 +2552,12 @@ k1_target_legitimize_pic_address (rtx orig, rtx reg)
       int unspec = UNSPEC_GOTOFF;
 
       /* @gotoff_funcdesc for function in FDPIC */
-      if (TARGET_FDPIC && SYMBOL_REF_FUNCTION_P (addr))
-	unspec = UNSPEC_FUNCDESC_GOTOFF;
+      /* if (TARGET_FDPIC && SYMBOL_REF_FUNCTION_P (addr)) */
+      /*     unspec = UNSPEC_FUNCDESC_GOTOFF; */
       /* try to decide what case we really have here */
-      else if (SYMBOL_REF_DECL (addr)
-	       && (!DECL_P (SYMBOL_REF_DECL (addr))
-		   || !DECL_COMMON (SYMBOL_REF_DECL (addr))))
+      /* else */ if (SYMBOL_REF_DECL (addr)
+		     && (!DECL_P (SYMBOL_REF_DECL (addr))
+			 || !DECL_COMMON (SYMBOL_REF_DECL (addr))))
 	{
 	  tree decl = SYMBOL_REF_DECL (addr);
 	  tree init = TREE_CODE (decl) == VAR_DECL
@@ -2595,8 +2584,8 @@ k1_target_legitimize_pic_address (rtx orig, rtx reg)
 	  /* read-only in FDPIC -- we need to find our .rodata section
 	   * so go through the _gp symbol
 	   */
-	  else if (readonly && TARGET_FDPIC)
-	    return k1_handle_label_or_readonly (addr, reg);
+	  /* else if (readonly && TARGET_FDPIC) */
+	  /*   return k1_handle_label_or_readonly(addr, reg); */
 	}
 
       if (reg == NULL_RTX)
@@ -2674,7 +2663,7 @@ k1_expand_mov (rtx operands[])
     }
   else if (!register_operand (operands[0], GET_MODE (operands[0])))
     operands[1] = force_reg (GET_MODE (operands[0]), operands[1]);
-  else if (flag_pic || TARGET_FDPIC)
+  else if (flag_pic /* || TARGET_FDPIC */)
     {
       if (SYMBOLIC_CONST (operands[1]))
 	operands[1]
@@ -3215,41 +3204,25 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (CMOVEF, "cmovef", floatSF, intSI, floatSF, floatSF);
   ADD_K1_BUILTIN (CTZ, "ctz", intSI, uintSI);
   ADD_K1_BUILTIN (CTZDL, "ctzdl", intSI, uintDI);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (ACWS, "acws", uintDI, voidPTR, uintSI, uintSI);
+  ADD_K1_BUILTIN (ACWS, "acws", uintDI, voidPTR, uintSI, uintSI);
   ADD_K1_BUILTIN (ACWSU, "acwsu", uintDI, voidPTR, uintSI, uintSI);
   ADD_K1_BUILTIN (CWS, "cws", uintDI, voidPTR, uintSI, uintSI);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (AFDA, "afda", uintDI, voidPTR, intDI);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (AFDAU, "afdau", uintDI, voidPTR, intDI);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (ALDC, "aldc", uintDI, voidPTR);
+  ADD_K1_BUILTIN (AFDA, "afda", uintDI, voidPTR, intDI);
+  ADD_K1_BUILTIN (AFDAU, "afdau", uintDI, voidPTR, intDI);
+  ADD_K1_BUILTIN (ALDC, "aldc", uintDI, voidPTR);
   ADD_K1_BUILTIN (ALDCU, "aldcu", uintDI, voidPTR);
   ADD_K1_BUILTIN (LDC, "ldc", uintDI, voidPTR);
-  if (k1_architecture () < K1B)
-    ADD_K1_BUILTIN (DFLUSH, "dflush", VOID);
-  if (k1_architecture () < K1B)
-    ADD_K1_BUILTIN (DFLUSHL, "dflushl", VOID, constVoidPTR);
   ADD_K1_BUILTIN (DINVAL, "dinval", VOID);
   ADD_K1_BUILTIN (DINVALL, "dinvall", VOID, constVoidPTR);
-  if (k1_architecture () < K1B)
-    ADD_K1_BUILTIN (DPURGE, "dpurge", VOID);
-  if (k1_architecture () < K1B)
-    ADD_K1_BUILTIN (DPURGEL, "dpurgel", VOID, constVoidPTR);
   ADD_K1_BUILTIN (DTOUCHL, "dtouchl", VOID, constVoidPTR);
   ADD_K1_BUILTIN (DZEROL, "dzerol", VOID, voidPTR);
   ADD_K1_BUILTIN (EXTFZ, "extfz", uintSI, uintSI, uintSI, uintSI);
   ADD_K1_BUILTIN (FADDRN, "faddrn", floatSF, floatSF, floatSF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FADDRND, "faddrnd", floatDF, floatDF, floatDF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FADDWP, "faddwp", vect2SF, vect2SF, vect2SF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FADDRNWP, "faddrnwp", vect2SF, vect2SF, vect2SF);
+  ADD_K1_BUILTIN (FADDRND, "faddrnd", floatDF, floatDF, floatDF);
+  ADD_K1_BUILTIN (FADDWP, "faddwp", vect2SF, vect2SF, vect2SF);
+  ADD_K1_BUILTIN (FADDRNWP, "faddrnwp", vect2SF, vect2SF, vect2SF);
   ADD_K1_BUILTIN (FCDIV, "fcdiv", floatSF, floatSF, floatSF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FCDIVD, "fcdivd", floatDF, floatDF, floatDF);
+  ADD_K1_BUILTIN (FCDIVD, "fcdivd", floatDF, floatDF, floatDF);
   ADD_K1_BUILTIN (FCMA, "fcma", floatSF, floatSF, floatSF, floatSF, floatSF);
   ADD_K1_BUILTIN (FCMAWD, "fcmawd", floatDF, floatSF, floatSF, floatSF,
 		  floatSF);
@@ -3264,57 +3237,37 @@ k1_target_init_builtins (void)
 		  floatSF);
   ADD_K1_BUILTIN (FENCE, "fence", VOID);
   ADD_K1_BUILTIN (FFMA, "ffma", floatSF, floatSF, floatSF, floatSF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FFMAD, "ffmad", floatDF, floatDF, floatDF, floatDF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FFMARND, "ffmarnd", floatDF, floatDF, floatDF, floatDF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FFMAWP, "ffmawp", vect2SF, vect2SF, vect2SF, vect2SF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FFMARNWP, "ffmarnwp", vect2SF, vect2SF, vect2SF, vect2SF);
+  ADD_K1_BUILTIN (FFMAD, "ffmad", floatDF, floatDF, floatDF, floatDF);
+  ADD_K1_BUILTIN (FFMARND, "ffmarnd", floatDF, floatDF, floatDF, floatDF);
+  ADD_K1_BUILTIN (FFMAWP, "ffmawp", vect2SF, vect2SF, vect2SF, vect2SF);
+  ADD_K1_BUILTIN (FFMARNWP, "ffmarnwp", vect2SF, vect2SF, vect2SF, vect2SF);
   ADD_K1_BUILTIN (FFMAN, "ffman", floatSF, floatSF, floatSF, floatSF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FFMAND, "ffmand", floatDF, floatDF, floatDF, floatDF);
+  ADD_K1_BUILTIN (FFMAND, "ffmand", floatDF, floatDF, floatDF, floatDF);
   ADD_K1_BUILTIN (FFMANRN, "ffmanrn", floatSF, floatSF, floatSF, floatSF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FFMANRND, "ffmanrnd", floatDF, floatDF, floatDF, floatDF);
+  ADD_K1_BUILTIN (FFMANRND, "ffmanrnd", floatDF, floatDF, floatDF, floatDF);
   ADD_K1_BUILTIN (FFMAWD, "ffmawd", floatDF, floatDF, floatSF, floatSF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FFMARNWD, "ffmarnwd", floatDF, floatDF, floatSF, floatSF);
+  ADD_K1_BUILTIN (FFMARNWD, "ffmarnwd", floatDF, floatDF, floatSF, floatSF);
   ADD_K1_BUILTIN (FFMANWD, "ffmanwd", floatDF, floatDF, floatSF, floatSF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FFMANRNWD, "ffmanrnwd", floatDF, floatDF, floatSF, floatSF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FFMANWP, "ffmanwp", vect2SF, vect2SF, vect2SF, vect2SF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FFMANRNWP, "ffmanrnwp", vect2SF, vect2SF, vect2SF, vect2SF);
+  ADD_K1_BUILTIN (FFMANRNWD, "ffmanrnwd", floatDF, floatDF, floatSF, floatSF);
+  ADD_K1_BUILTIN (FFMANWP, "ffmanwp", vect2SF, vect2SF, vect2SF, vect2SF);
+  ADD_K1_BUILTIN (FFMANRNWP, "ffmanrnwp", vect2SF, vect2SF, vect2SF, vect2SF);
   ADD_K1_BUILTIN (FFMARN, "ffmarn", floatSF, floatSF, floatSF, floatSF);
   ADD_K1_BUILTIN (FFMS, "ffms", floatSF, floatSF, floatSF, floatSF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FFMSWP, "ffmswp", vect2SF, vect2SF, vect2SF, vect2SF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FFMSRNWP, "ffmsrnwp", vect2SF, vect2SF, vect2SF, vect2SF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FFMSD, "ffmsd", floatDF, floatDF, floatDF, floatDF);
+  ADD_K1_BUILTIN (FFMSWP, "ffmswp", vect2SF, vect2SF, vect2SF, vect2SF);
+  ADD_K1_BUILTIN (FFMSRNWP, "ffmsrnwp", vect2SF, vect2SF, vect2SF, vect2SF);
+  ADD_K1_BUILTIN (FFMSD, "ffmsd", floatDF, floatDF, floatDF, floatDF);
   ADD_K1_BUILTIN (FFMSN, "ffmsn", floatSF, floatSF, floatSF, floatSF);
   ADD_K1_BUILTIN (FFMSNRN, "ffmsnrn", floatSF, floatSF, floatSF, floatSF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FFMSNWP, "ffmsnwp", vect2SF, vect2SF, vect2SF, vect2SF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FFMSNRNWP, "ffmsnrnwp", vect2SF, vect2SF, vect2SF, vect2SF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FFMSND, "ffmsnd", floatDF, floatDF, floatDF, floatDF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FFMSNRND, "ffmsnrnd", floatDF, floatDF, floatDF, floatDF);
+  ADD_K1_BUILTIN (FFMSNWP, "ffmsnwp", vect2SF, vect2SF, vect2SF, vect2SF);
+  ADD_K1_BUILTIN (FFMSNRNWP, "ffmsnrnwp", vect2SF, vect2SF, vect2SF, vect2SF);
+  ADD_K1_BUILTIN (FFMSND, "ffmsnd", floatDF, floatDF, floatDF, floatDF);
+  ADD_K1_BUILTIN (FFMSNRND, "ffmsnrnd", floatDF, floatDF, floatDF, floatDF);
   ADD_K1_BUILTIN (FFMSRN, "ffmsrn", floatSF, floatSF, floatSF, floatSF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FFMSRND, "ffmsrnd", floatDF, floatDF, floatDF, floatDF);
+  ADD_K1_BUILTIN (FFMSRND, "ffmsrnd", floatDF, floatDF, floatDF, floatDF);
   ADD_K1_BUILTIN (FFMSNWD, "ffmsnwd", floatDF, floatDF, floatSF, floatSF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FFMSNRNWD, "ffmsnrnwd", floatDF, floatDF, floatSF, floatSF);
+  ADD_K1_BUILTIN (FFMSNRNWD, "ffmsnrnwd", floatDF, floatDF, floatSF, floatSF);
   ADD_K1_BUILTIN (FFMSWD, "ffmswd", floatDF, floatDF, floatSF, floatSF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FFMSRNWD, "ffmsrnwd", floatDF, floatDF, floatSF, floatSF);
+  ADD_K1_BUILTIN (FFMSRNWD, "ffmsrnwd", floatDF, floatDF, floatSF, floatSF);
   ADD_K1_BUILTIN (FLOAT, "float", floatSF, uintQI, intSI, uintQI);
   ADD_K1_BUILTIN (FLOATD, "floatd", floatDF, uintQI, intDI, uintQI);
   ADD_K1_BUILTIN (FLOATU, "floatu", floatSF, uintQI, uintSI, uintQI);
@@ -3324,52 +3277,33 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (FIXEDU, "fixedu", uintSI, uintQI, floatSF, uintQI);
   ADD_K1_BUILTIN (FIXEDUD, "fixedud", uintDI, uintQI, floatDF, uintQI);
   ADD_K1_BUILTIN (FMULRN, "fmulrn", floatSF, floatSF, floatSF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FMULRND, "fmulrnd", floatDF, floatDF, floatDF);
+  ADD_K1_BUILTIN (FMULRND, "fmulrnd", floatDF, floatDF, floatDF);
   ADD_K1_BUILTIN (FMULNRN, "fmulnrn", floatSF, floatSF, floatSF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FMULNRND, "fmulnrnd", floatDF, floatDF, floatDF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FMULNWP, "fmulnwp", vect2SF, vect2SF, vect2SF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FMULNRNWP, "fmulnrnwp", vect2SF, vect2SF, vect2SF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FMULWP, "fmulwp", vect2SF, vect2SF, vect2SF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FMULRNWP, "fmulrnwp", vect2SF, vect2SF, vect2SF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FMULWD, "fmulwd", floatDF, floatSF, floatSF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FMULNWD, "fmulnwd", floatDF, floatSF, floatSF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FMULNRNWD, "fmulnrnwd", floatDF, floatSF, floatSF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FMULRNWD, "fmulrnwd", floatDF, floatSF, floatSF);
+  ADD_K1_BUILTIN (FMULNRND, "fmulnrnd", floatDF, floatDF, floatDF);
+  ADD_K1_BUILTIN (FMULNWP, "fmulnwp", vect2SF, vect2SF, vect2SF);
+  ADD_K1_BUILTIN (FMULNRNWP, "fmulnrnwp", vect2SF, vect2SF, vect2SF);
+  ADD_K1_BUILTIN (FMULWP, "fmulwp", vect2SF, vect2SF, vect2SF);
+  ADD_K1_BUILTIN (FMULRNWP, "fmulrnwp", vect2SF, vect2SF, vect2SF);
+  ADD_K1_BUILTIN (FMULWD, "fmulwd", floatDF, floatSF, floatSF);
+  ADD_K1_BUILTIN (FMULNWD, "fmulnwd", floatDF, floatSF, floatSF);
+  ADD_K1_BUILTIN (FMULNRNWD, "fmulnrnwd", floatDF, floatSF, floatSF);
+  ADD_K1_BUILTIN (FMULRNWD, "fmulrnwd", floatDF, floatSF, floatSF);
   ADD_K1_BUILTIN (FSBFRN, "fsbfrn", floatSF, floatSF, floatSF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FSBFRND, "fsbfrnd", floatDF, floatDF, floatDF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FSBFWP, "fsbfwp", vect2SF, vect2SF, vect2SF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FSBFRNWP, "fsbfrnwp", vect2SF, vect2SF, vect2SF);
+  ADD_K1_BUILTIN (FSBFRND, "fsbfrnd", floatDF, floatDF, floatDF);
+  ADD_K1_BUILTIN (FSBFWP, "fsbfwp", vect2SF, vect2SF, vect2SF);
+  ADD_K1_BUILTIN (FSBFRNWP, "fsbfrnwp", vect2SF, vect2SF, vect2SF);
   ADD_K1_BUILTIN (FSDIV, "fsdiv", floatSF, floatSF, floatSF);
   ADD_K1_BUILTIN (FSINV, "fsinv", floatSF, floatSF);
   ADD_K1_BUILTIN (FSINVN, "fsinvn", floatSF, floatSF);
   ADD_K1_BUILTIN (FSISR, "fsisr", floatSF, floatSF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FSDIVD, "fsdivd", floatDF, floatDF, floatDF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FSINVD, "fsinvd", floatDF, floatDF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FSINVND, "fsinvnd", floatDF, floatDF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FSISRD, "fsisrd", floatDF, floatDF);
+  ADD_K1_BUILTIN (FSDIVD, "fsdivd", floatDF, floatDF, floatDF);
+  ADD_K1_BUILTIN (FSINVD, "fsinvd", floatDF, floatDF);
+  ADD_K1_BUILTIN (FSINVND, "fsinvnd", floatDF, floatDF);
+  ADD_K1_BUILTIN (FSISRD, "fsisrd", floatDF, floatDF);
   ADD_K1_BUILTIN (GET, "get", uintSI, intSI);
   ADD_K1_BUILTIN (GET_R, "get_r", uintSI, intSI);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (GETD, "getd", uintDI, intSI);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (GETD_R, "getd_r", uintDI, intSI);
+  ADD_K1_BUILTIN (GETD, "getd", uintDI, intSI);
+  ADD_K1_BUILTIN (GETD_R, "getd_r", uintDI, intSI);
   ADD_K1_BUILTIN (HFXB, "hfxb", VOID, uintQI, intSI);
   ADD_K1_BUILTIN (HFXT, "hfxt", VOID, uintQI, intSI);
 #if 0
@@ -3383,19 +3317,13 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (ITOUCHL, "itouchl", VOID, voidPTR);
   ADD_K1_BUILTIN (LANDHP, "landhp", intSI, intSI, intSI);
   ADD_K1_BUILTIN (LBQS, "lbqs", uintDI, constVoidPTR);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (LBQSU, "lbqsu", uintDI, constVoidPTR);
+  ADD_K1_BUILTIN (LBQSU, "lbqsu", uintDI, constVoidPTR);
   ADD_K1_BUILTIN (LBQZ, "lbqz", uintDI, constVoidPTR);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (LBQZU, "lbqzu", uintDI, constVoidPTR);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (LBSU, "lbsu", intQI, constVoidPTR);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (LBZU, "lbzu", uintQI, constVoidPTR);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (LHSU, "lhsu", intHI, constVoidPTR);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (LHZU, "lhzu", uintHI, constVoidPTR);
+  ADD_K1_BUILTIN (LBQZU, "lbqzu", uintDI, constVoidPTR);
+  ADD_K1_BUILTIN (LBSU, "lbsu", intQI, constVoidPTR);
+  ADD_K1_BUILTIN (LBZU, "lbzu", uintQI, constVoidPTR);
+  ADD_K1_BUILTIN (LHSU, "lhsu", intHI, constVoidPTR);
+  ADD_K1_BUILTIN (LHZU, "lhzu", uintHI, constVoidPTR);
   ADD_K1_BUILTIN (LDU, "ldu", uintDI, constVoidPTR);
   ADD_K1_BUILTIN (LWU, "lwu", uintSI, constVoidPTR);
   ADD_K1_BUILTIN (MADUUCIWD, "maduuciwd", uintDI, uintDI, uintSI, uintSI);
@@ -3414,15 +3342,11 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (SATD, "satd", intDI, intDI, uintQI);
   ADD_K1_BUILTIN (SET, "set", VOID, intSI, uintSI);
   ADD_K1_BUILTIN (SET_PS, "set_ps", VOID, intSI, uintSI);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (SETD, "setd", VOID, intSI, uintDI);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (SETD_PS, "setd_ps", VOID, intSI, uintDI);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (SBU, "sbu", VOID, voidPTR, uintQI);
+  ADD_K1_BUILTIN (SETD, "setd", VOID, intSI, uintDI);
+  ADD_K1_BUILTIN (SETD_PS, "setd_ps", VOID, intSI, uintDI);
+  ADD_K1_BUILTIN (SBU, "sbu", VOID, voidPTR, uintQI);
   ADD_K1_BUILTIN (SDU, "sdu", VOID, voidPTR, uintDI);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (SHU, "shu", VOID, voidPTR, uintHI);
+  ADD_K1_BUILTIN (SHU, "shu", VOID, voidPTR, uintHI);
   ADD_K1_BUILTIN (SLLHPS, "sllhps", uintSI, uintSI, uintSI);
   ADD_K1_BUILTIN (SLLHPS_R, "sllhps_r", uintSI, uintSI, uintSI);
   ADD_K1_BUILTIN (SRAHPS, "srahps", uintSI, uintSI, uintSI);
@@ -3437,26 +3361,16 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (WPURGE, "wpurge", VOID);
   ADD_K1_BUILTIN (WRITETLB, "writetlb", VOID);
 
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FWIDENB, "fwidenb", floatSF, uintSI);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FWIDENT, "fwident", floatSF, uintSI);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FWIDENBWP, "fwidenbwp", vect2SF, uintDI);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FWIDENTWP, "fwidentwp", vect2SF, uintDI);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FNARROWH, "fnarrowh", uintHI, floatSF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (FNARROWHWP, "fnarrowhwp", vect2SI, vect2SF);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (LHPZ, "lhpz", vect2SI, unsigned_vect2HI_pointer_node);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (LHPZU, "lhpzu", vect2SI, unsigned_vect2HI_pointer_node);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (LHPZN, "lhpzn", vect2SI, unsigned_vect2HI_pointer_node);
-  if (k1_architecture () >= K1B)
-    ADD_K1_BUILTIN (LHPZUN, "lhpzun", vect2SI, unsigned_vect2HI_pointer_node);
+  ADD_K1_BUILTIN (FWIDENB, "fwidenb", floatSF, uintSI);
+  ADD_K1_BUILTIN (FWIDENT, "fwident", floatSF, uintSI);
+  ADD_K1_BUILTIN (FWIDENBWP, "fwidenbwp", vect2SF, uintDI);
+  ADD_K1_BUILTIN (FWIDENTWP, "fwidentwp", vect2SF, uintDI);
+  ADD_K1_BUILTIN (FNARROWH, "fnarrowh", uintHI, floatSF);
+  ADD_K1_BUILTIN (FNARROWHWP, "fnarrowhwp", vect2SI, vect2SF);
+  ADD_K1_BUILTIN (LHPZ, "lhpz", vect2SI, unsigned_vect2HI_pointer_node);
+  ADD_K1_BUILTIN (LHPZU, "lhpzu", vect2SI, unsigned_vect2HI_pointer_node);
+  ADD_K1_BUILTIN (LHPZN, "lhpzn", vect2SI, unsigned_vect2HI_pointer_node);
+  ADD_K1_BUILTIN (LHPZUN, "lhpzun", vect2SI, unsigned_vect2HI_pointer_node);
 
   ADD_K1_BUILTIN (SRFSIZE, "srfsize", intSI, intSI);
 }
@@ -3507,9 +3421,9 @@ k1_expand_builtin_get (rtx target, tree args, enum machine_mode mode)
       error ("__builtin_k1_get expects a 6 bits immediate argument.");
       return NULL_RTX;
     }
-  const int regno = INTVAL (arg1) + K1B_SRF_FIRST_REGNO;
+  const int regno = INTVAL (arg1) + K1C_SRF_FIRST_REGNO;
 
-  if (regno > K1B_SRF_LAST_REGNO)
+  if (regno > K1C_SRF_LAST_REGNO)
     {
       error ("__builtin_k1_get%s called with illegal SRF register index : %d",
 	     mode == SImode ? "" : "d", INTVAL (arg1));
@@ -3518,7 +3432,7 @@ k1_expand_builtin_get (rtx target, tree args, enum machine_mode mode)
   /* 32bits mode, double access to 64bits register : may be sign of
      error except for $ps */
   if (mode == DImode && (REGNO_REG_CLASS_INSENSITIVE (regno) == SRF64_REGS)
-      && !TARGET_64 && (regno != K1B_PS_REGNO))
+      && !TARGET_64 && (regno != K1C_PS_REGNO))
     {
       warning (0, "__builtin_k1_getd should only be used in 64bits mode. Maybe "
 		  "use __builtin_k1_get.");
@@ -3533,21 +3447,21 @@ k1_expand_builtin_get (rtx target, tree args, enum machine_mode mode)
       warning (0,
 	       "__builtin_k1_get used with a 64bits SRF $%s (%d). Maybe use "
 	       "__builtin_k1_getd instead",
-	       reg_names[regno], regno - K1B_SRF_FIRST_REGNO);
+	       reg_names[regno], regno - K1C_SRF_FIRST_REGNO);
     }
 
   if (mode == DImode && ((REGNO_REG_CLASS_INSENSITIVE (regno) == SRF32_REGS)))
     {
       error ("__builtin_k1_getd must only be used on 64bits SRF. $%s (%d) is "
 	     "32bits (use __builtin_k1_get instead)",
-	     reg_names[regno], regno - K1B_SRF_FIRST_REGNO);
+	     reg_names[regno], regno - K1C_SRF_FIRST_REGNO);
     }
 
   if (!target)
     target = gen_reg_rtx (mode);
   target = force_reg (mode, target);
   reg = gen_rtx_REG (mode, regno);
-  if (INTVAL (arg1) == K1B_PCR_REGNO - K1B_SRF_FIRST_REGNO)
+  if (INTVAL (arg1) == K1C_PCR_REGNO - K1C_SRF_FIRST_REGNO)
     emit_move_insn (target, reg);
   else if (mode == SImode)
     emit_insn (gen_get_volatile (target, reg, k1_sync_reg_rtx));
@@ -3599,13 +3513,13 @@ k1_expand_builtin_set (rtx target ATTRIBUTE_UNUSED, tree args, bool ps,
       return NULL_RTX;
     }
 
-  if (ps && INTVAL (arg1) != K1B_PS_REGNO - K1B_SRF_FIRST_REGNO)
+  if (ps && INTVAL (arg1) != K1C_PS_REGNO - K1C_SRF_FIRST_REGNO)
     {
       error ("__builtin_k1_set_ps must be called on the $ps register.");
     }
-  int regno = INTVAL (arg1) + K1B_SRF_FIRST_REGNO;
+  int regno = INTVAL (arg1) + K1C_SRF_FIRST_REGNO;
 
-  if (regno > K1B_SRF_LAST_REGNO)
+  if (regno > K1C_SRF_LAST_REGNO)
     {
       error ("__builtin_k1_set%s called with illegal SRF register index : %d",
 	     mode == SImode ? "" : "d", INTVAL (arg1));
@@ -3614,12 +3528,12 @@ k1_expand_builtin_set (rtx target ATTRIBUTE_UNUSED, tree args, bool ps,
   /* 32bits mode, double access to 64bits register : may be sign of
      error except for $ps */
   if (mode == DImode && (REGNO_REG_CLASS_INSENSITIVE (regno) == SRF64_REGS)
-      && !TARGET_64 && (regno != K1B_PS_REGNO))
+      && !TARGET_64 && (regno != K1C_PS_REGNO))
     {
       warning (0,
 	       "__builtin_k1_setd on $%s (%d) should only be used in 64bits "
 	       "mode. Maybe use __builtin_k1_set instead",
-	       reg_names[regno], regno - K1B_SRF_FIRST_REGNO);
+	       reg_names[regno], regno - K1C_SRF_FIRST_REGNO);
     }
 
   /*
@@ -3631,17 +3545,17 @@ k1_expand_builtin_set (rtx target ATTRIBUTE_UNUSED, tree args, bool ps,
       warning (0,
 	       "__builtin_k1_set used with a 64bits SRF $%s (%d). Maybe use "
 	       "__builtin_k1_setd instead",
-	       reg_names[regno], regno - K1B_SRF_FIRST_REGNO);
+	       reg_names[regno], regno - K1C_SRF_FIRST_REGNO);
     }
 
   if (mode == DImode && ((REGNO_REG_CLASS_INSENSITIVE (regno) == SRF32_REGS)))
     {
       error ("__builtin_k1_setd must only be used on 64bits SRF. $%s (%d) is "
 	     "32bits (use __builtin_k1_set instead)",
-	     reg_names[regno], regno - K1B_SRF_FIRST_REGNO);
+	     reg_names[regno], regno - K1C_SRF_FIRST_REGNO);
     }
 
-  if (!ps && INTVAL (arg1) == K1B_PS_REGNO - K1B_SRF_FIRST_REGNO)
+  if (!ps && INTVAL (arg1) == K1C_PS_REGNO - K1C_SRF_FIRST_REGNO)
     {
       ps = true;
     }
@@ -3671,7 +3585,7 @@ k1_expand_builtin_srfsize (rtx target, tree args)
       error ("__builtin_k1_srfsize expects a 6 bits immediate argument.");
       return NULL_RTX;
     }
-  const int regno = INTVAL (arg1) + K1B_SRF_FIRST_REGNO;
+  const int regno = INTVAL (arg1) + K1C_SRF_FIRST_REGNO;
 
   if (!target)
     target = gen_reg_rtx (SImode);
@@ -3698,7 +3612,7 @@ k1_expand_builtin_hfxb (rtx target ATTRIBUTE_UNUSED, tree args)
       error ("__builtin_k1_hfxb expects a 6 bits immediate first argument.");
       return NULL_RTX;
     }
-  int regno = INTVAL (arg1) + K1B_SRF_FIRST_REGNO;
+  int regno = INTVAL (arg1) + K1C_SRF_FIRST_REGNO;
   enum machine_mode mode = SImode;
   rtx (*gen_hfxb_ps) (rtx op1, rtx op2, rtx op3) = gen_hfxb_ps_si;
   rtx (*gen_hfxb) (rtx op1, rtx op2, rtx op3) = gen_hfxb_si;
@@ -3713,7 +3627,7 @@ k1_expand_builtin_hfxb (rtx target ATTRIBUTE_UNUSED, tree args)
   arg = gen_rtx_REG (mode, regno);
   arg2 = force_reg (SImode, arg2);
 
-  if (INTVAL (arg1) == K1B_PS_REGNO - K1B_SRF_FIRST_REGNO)
+  if (INTVAL (arg1) == K1C_PS_REGNO - K1C_SRF_FIRST_REGNO)
     {
       emit_insn (gen_hfxb_ps (arg, arg2, k1_sync_reg_rtx));
     }
@@ -3738,7 +3652,7 @@ k1_expand_builtin_hfxt (rtx target ATTRIBUTE_UNUSED, tree args)
       return NULL_RTX;
     }
 
-  int regno = INTVAL (arg1) + K1B_SRF_FIRST_REGNO;
+  int regno = INTVAL (arg1) + K1C_SRF_FIRST_REGNO;
   enum machine_mode mode = SImode;
   rtx (*gen_hfxt_ps) (rtx op1, rtx op2, rtx op3) = gen_hfxt_ps_si;
   rtx (*gen_hfxt) (rtx op1, rtx op2, rtx op3) = gen_hfxt_si;
@@ -3753,7 +3667,7 @@ k1_expand_builtin_hfxt (rtx target ATTRIBUTE_UNUSED, tree args)
   arg = gen_rtx_REG (mode, regno);
   arg2 = force_reg (SImode, arg2);
 
-  if (INTVAL (arg1) == K1B_PS_REGNO - K1B_SRF_FIRST_REGNO)
+  if (INTVAL (arg1) == K1C_PS_REGNO - K1C_SRF_FIRST_REGNO)
     {
       emit_insn (gen_hfxt_ps (arg, arg2, k1_sync_reg_rtx));
     }
@@ -3789,10 +3703,10 @@ k1_expand_builtin_hfx (rtx target ATTRIBUTE_UNUSED, tree args)
         return NULL_RTX;
     }
 
-    dest = gen_rtx_REG (SImode, K1B_SRF_FIRST_REGNO + INTVAL (arg2));
+    dest = gen_rtx_REG (SImode, K1C_SRF_FIRST_REGNO + INTVAL (arg2));
     val = force_reg(SImode, GEN_INT(INTVAL(arg3)<<16 | INTVAL(arg4)));
 
-    if (INTVAL(arg2) == K1B_PS_REGNO - K1B_SRF_FIRST_REGNO) {
+    if (INTVAL(arg2) == K1C_PS_REGNO - K1C_SRF_FIRST_REGNO) {
         if (INTVAL(arg1) == 0)
             emit_insn (gen_hfxb_ps (dest, val, k1_sync_reg_rtx));
         else
@@ -3954,22 +3868,7 @@ k1_expand_builtin_barrier (void)
 static rtx
 k1_expand_builtin_dinval (void)
 {
-  if (TARGET_HYPERVISOR && k1_architecture () < K1B)
-    emit_insn (gen_mos_dinval_scall ());
-  else
-    emit_insn (gen_dinval (k1_sync_reg_rtx));
-
-  return NULL_RTX;
-}
-
-static rtx
-k1_expand_builtin_dflush (void)
-{
-  if (TARGET_HYPERVISOR)
-    emit_insn (gen_mos_dflush_scall ());
-  else
-    emit_insn (gen_dflush (k1_sync_reg_rtx));
-
+  emit_insn (gen_dinval (k1_sync_reg_rtx));
   return NULL_RTX;
 }
 
@@ -4461,42 +4360,12 @@ k1_expand_builtin_fence (void)
 }
 
 static rtx
-k1_expand_builtin_dpurge (void)
-{
-  emit_insn (gen_dpurge (k1_sync_reg_rtx));
-
-  return NULL_RTX;
-}
-
-static rtx
-k1_expand_builtin_dpurgel (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-
-  arg1 = gen_rtx_MEM (SImode, force_reg (Pmode, arg1));
-  emit_insn (gen_dpurgel (arg1, k1_sync_reg_rtx));
-
-  return target;
-}
-
-static rtx
 k1_expand_builtin_dinvall (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
 
   arg1 = gen_rtx_MEM (SImode, force_reg (Pmode, arg1));
   emit_insn (gen_dinvall (arg1, k1_sync_reg_rtx));
-
-  return target;
-}
-
-static rtx
-k1_expand_builtin_dflushl (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-
-  arg1 = gen_rtx_MEM (SImode, force_reg (Pmode, arg1));
-  emit_insn (gen_dflushl (arg1, k1_sync_reg_rtx));
 
   return target;
 }
@@ -6311,18 +6180,10 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_ctz (target, exp);
     case K1_BUILTIN_CTZDL:
       return k1_expand_builtin_ctzdl (target, exp);
-    case K1_BUILTIN_DFLUSH:
-      return k1_expand_builtin_dflush ();
-    case K1_BUILTIN_DFLUSHL:
-      return k1_expand_builtin_dflushl (target, exp);
     case K1_BUILTIN_DINVAL:
       return k1_expand_builtin_dinval ();
     case K1_BUILTIN_DINVALL:
       return k1_expand_builtin_dinvall (target, exp);
-    case K1_BUILTIN_DPURGE:
-      return k1_expand_builtin_dpurge ();
-    case K1_BUILTIN_DPURGEL:
-      return k1_expand_builtin_dpurgel (target, exp);
     case K1_BUILTIN_DTOUCHL:
       return k1_expand_builtin_dtouchl (target, exp);
     case K1_BUILTIN_DZEROL:
@@ -6622,10 +6483,13 @@ k1_target_extra_pre_includes (const char *sysroot ATTRIBUTE_UNUSED,
 {
 #if defined(K1_BARE) || defined(K1_RTEMS) || defined(K1_NODEOS)
   char *str;
+
+  // FIXME AUTO: path len is hardcoded
   char path[1024];
   ssize_t sz;
   const char *board, *core;
 
+  // FIXME AUTO: board list has nothing to do in compiler
   /* Seamlessly change the board to csp_generic if developer, emb01, ab04,
    * konic80, or tc */
   if (strcmp (k1_board_name, "developer") == 0
@@ -6646,14 +6510,19 @@ k1_target_extra_pre_includes (const char *sysroot ATTRIBUTE_UNUSED,
 
   board = k1_board_name;
 
-  if (TARGET_K1IO)
-    core = "k1io";
-  else if (TARGET_K1BDP)
-    core = "k1bdp";
-  else if (TARGET_K1BIO)
-    core = "k1bio";
-  else
-    core = "k1dp";
+  /* if (TARGET_K1IO) */
+  /*     core = "k1io"; */
+  /* else if(TARGET_K1BDP) */
+  /*     core = "k1bdp"; */
+  /* else if (TARGET_K1BIO) */
+  /*     core = "k1bio"; */
+  /* else */
+  /*     core = "k1dp"; */
+
+  if (TARGET_K1PE)
+    core = "k1pe";
+  else /* TARGET_K1RM */
+    core = "k1rm";
 
   /* We do not do anything if we do not want the standard includes. */
   if (!stdinc)
@@ -8969,24 +8838,13 @@ k1_target_trampoline_init (rtx m_tramp, tree fndecl, rtx static_chain)
   emit_move_insn (scratch2, XEXP (m_tramp, 0));
   emit_insn (gen_subsi3 (scratch2, fun_addr, scratch2));
   emit_insn (gen_extzv (scratch2, scratch2, GEN_INT (27), GEN_INT (2)));
-  emit_insn (
-    gen_iorsi3 (scratch2, scratch2,
-		GEN_INT (k1_architecture () >= K1B ? (int) 0x90000000
-						   : (int) 0x88000000)));
+  emit_insn (gen_iorsi3 (scratch2, scratch2, GEN_INT ((int) 0x90000000)));
 
   emit_move_insn (mem, scratch2);
   mem = adjust_address (m_tramp, Pmode, 4);
   emit_move_insn (mem, scratch);
   mem = adjust_address (m_tramp, Pmode, 8);
   emit_move_insn (mem, chain);
-
-  if (k1_architecture () < K1B)
-    {
-      if (TARGET_HYPERVISOR)
-	emit_insn (gen_mos_dflush_scall ());
-      else
-	emit_insn (gen_dflush (k1_sync_reg_rtx));
-    }
 
   emit_insn (gen_iinvall (adjust_address (m_tramp, Pmode, 0), k1_sync_reg_rtx));
   emit_insn (gen_iinvall (mem, k1_sync_reg_rtx));
@@ -8996,12 +8854,12 @@ k1_target_trampoline_init (rtx m_tramp, tree fndecl, rtx static_chain)
 /* We recognize patterns that aren't canonical addresses, because we
    might generate those with our use of simplify_replace_rtx() in our
    mem access packing. */
-bool
-k1_legitimate_modulo_addressing_p (rtx x, bool strict)
-{
-  struct k1_address addr;
-  return k1_analyze_modulo_address (x, strict, &addr);
-}
+/* bool */
+/* k1_legitimate_modulo_addressing_p (rtx x, bool strict) */
+/* { */
+/*     struct k1_address addr; */
+/*     return k1_analyze_modulo_address (x, strict, &addr); */
+/* } */
 
 static void
 clobber_reg (rtx *call_fusage, rtx reg)
@@ -9027,28 +8885,24 @@ k1_expand_call (rtx fnaddr, rtx arg, rtx retval, bool sibcall)
   rtx call;
   rtx use = NULL_RTX;
 
-  if (TARGET_FDPIC)
-    {
-      crtl->uses_pic_offset_table = TRUE;
-      use_reg (&use, pic_offset_table_rtx);
+  /* if (TARGET_FDPIC) { */
+  /*     crtl->uses_pic_offset_table = TRUE; */
+  /*     use_reg (&use, pic_offset_table_rtx); */
 
-      if (!jump_operand (fnaddr, Pmode))
-	{
-	  rtx funcdesc_addr = XEXP (fnaddr, 0);
-	  /* Load the real function pointer */
-	  fnaddr = gen_rtx_MEM (Pmode, force_reg (Pmode, fnaddr));
-	  /* Load the fdpic register for the destination */
-	  emit_move_insn (
-	    pic_offset_table_rtx,
-	    gen_rtx_MEM (SImode, plus_constant (Pmode, funcdesc_addr, 4)));
-	}
-      else
-	{
-	  /* Make sure the fdpic register is set to our current GOT */
-	  emit_move_insn (pic_offset_table_rtx, k1_pic_register_initial_val ());
-	}
-    }
-  else if (TARGET_GPREL)
+  /*     if (!jump_operand (fnaddr, Pmode)) { */
+  /*         rtx funcdesc_addr = XEXP (fnaddr, 0); */
+  /*         /\* Load the real function pointer *\/ */
+  /*         fnaddr = gen_rtx_MEM (Pmode, force_reg(Pmode, fnaddr)); */
+  /*         /\* Load the fdpic register for the destination *\/ */
+  /*         emit_move_insn (pic_offset_table_rtx, gen_rtx_MEM (SImode,
+   * plus_constant (Pmode, funcdesc_addr, 4))); */
+  /*     } else { */
+  /*         /\* Make sure the fdpic register is set to our current GOT *\/ */
+  /*         emit_move_insn (pic_offset_table_rtx, k1_pic_register_initial_val
+   * ()); */
+  /*     } */
+  /* } else */
+  if (TARGET_GPREL)
     {
       rtx callee = XEXP (fnaddr, 0);
 
@@ -9312,8 +9166,8 @@ k1_invalid_within_doloop (const_rtx insn)
 
 	  if (GET_CODE (clobber) == CLOBBER && REG_P (XEXP (clobber, 0))
 	      && (regno = REGNO (XEXP (clobber, 0)))
-	      && (regno == K1B_LC_REGNO || regno == K1B_LS_REGNO
-		  || regno == K1B_LE_REGNO))
+	      && (regno == K1C_LC_REGNO || regno == K1C_LS_REGNO
+		  || regno == K1C_LE_REGNO))
 	    return "HW Loop register clobbered by asm.";
 	}
     }
@@ -10087,7 +9941,7 @@ k1_units_preffered_simd_mode (enum machine_mode mode)
     case HImode:
       return V4HImode;
     case SFmode:
-      return k1_architecture () >= K1B ? V8SFmode : V4SFmode;
+      return V8SFmode;
     default:;
     }
 
@@ -10173,21 +10027,25 @@ k1_option_override (void)
 	  }
       }
 
-  if (k1_architecture () >= K1B)
-    k1_arch_schedule = ARCH_BOSTAN;
-  else
-    k1_arch_schedule = ARCH_ANDEY;
+  // FIXME FOR COOLIDGE
+
+  /* if (k1_architecture() >= K1B) */
+  /*   k1_arch_schedule = ARCH_BOSTAN; */
+  /* else */
+  /*   k1_arch_schedule = ARCH_ANDEY; */
+
+  k1_arch_schedule = ARCH_COOLIDGE;
 
   /* There is no single unaligned SI op for PIC code.  Sometimes we
    need to use ".4byte" and sometimes we need to use ".picptr".
    See k1_assemble_integer for details.  */
-  if (TARGET_FDPIC)
-    targetm.asm_out.unaligned_op.si = 0;
+  /* if (TARGET_FDPIC) */
+  /*     targetm.asm_out.unaligned_op.si = 0; */
 
   /* Set the small data limit.  */
   k1_small_data_threshold
     = (global_options_set.x_g_switch_value ? g_switch_value
-					   : K1B_DEFAULT_GVALUE);
+					   : K1C_DEFAULT_GVALUE);
   g_switch_value = k1_small_data_threshold;
 }
 
@@ -10223,16 +10081,16 @@ k1_output_addr_const_extra (FILE *fp, rtx x)
 	  output_addr_const ((fp), XVECEXP ((x), 0, 0));
 	  fputs (")", (fp));
 	  return true;
-	case UNSPEC_FUNCDESC_GOT:
-	  fputs ("@got_funcdesc(", (fp));
-	  output_addr_const ((fp), XVECEXP ((x), 0, 0));
-	  fputs (")", (fp));
-	  return true;
-	case UNSPEC_FUNCDESC_GOTOFF:
-	  fputs ("@gotoff_funcdesc(", (fp));
-	  output_addr_const ((fp), XVECEXP ((x), 0, 0));
-	  fputs (")", (fp));
-	  return true;
+	/* case UNSPEC_FUNCDESC_GOT: */
+	/*   fputs ("@got_funcdesc(", (fp)); */
+	/*   output_addr_const ((fp), XVECEXP ((x), 0, 0)); */
+	/*   fputs (")", (fp)); */
+	/*   return true; */
+	/* case UNSPEC_FUNCDESC_GOTOFF: */
+	/*   fputs ("@gotoff_funcdesc(", (fp)); */
+	/*   output_addr_const ((fp), XVECEXP ((x), 0, 0)); */
+	/*   fputs (")", (fp)); */
+	/*   return true; */
 	case UNSPEC_TLS:
 	  fputs ("@tprel", (fp));
 	  if (TARGET_64)
