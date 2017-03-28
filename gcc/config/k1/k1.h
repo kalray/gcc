@@ -43,7 +43,8 @@
 
 /* Do not use Transactionnal Memory as it makes the linux
  * build fail */
-#define USE_TM_CLONE_REGISTRY 0
+// FIXME AUTO COOLIDGE disable atypical define
+//#define USE_TM_CLONE_REGISTRY 0
 
 #define NO_IMPLICIT_EXTERN_C
 
