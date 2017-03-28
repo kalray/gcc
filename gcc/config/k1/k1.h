@@ -8,7 +8,8 @@
 #endif
 
 #define K1C_NO_EXT_MASK 0x0
-#define K1C_PRF_EXT_MASK 0x0
+// FIXME AUTO PRF DISABLED
+/* #define K1C_PRF_EXT_MASK 0x0 */
 #define K1C_GRF_EXT_MASK 0x0
 #define K1C_SRF_EXT_MASK 0x1
 #define K1C_SRF32_EXT_MASK 0x1
@@ -35,10 +36,10 @@
 #define IS_GENERAL_REGNO(num, strict)                                          \
   (TEST_REGNO (num, <, 64, strict)                                             \
    || TEST_REGNO (num, ==, (K1C_MDS_REGISTERS + 1), strict))
-#define IS_PRF_REGNO(num, strict)                                              \
-  (!(num % 2)                                                                  \
-   && (TEST_REGNO (num, <, 64, strict)                                         \
-       || TEST_REGNO (num, ==, (K1C_MDS_REGISTERS + 1), strict)))
+
+// FIXME AUTO PRF DISABLED
+/* #define IS_PRF_REGNO(num, strict)     (!(num % 2) && (TEST_REGNO(num, <, 64,
+ * strict) || TEST_REGNO(num, ==, (K1C_MDS_REGISTERS+1), strict))) */
 
 /* Do not use Transactionnal Memory as it makes the linux
  * build fail */
@@ -401,7 +402,9 @@ extern const char *k1_board_to_startfile_prefix (int argc, const char **argv);
 /* A macro whose definition is the name of the class to which a valid
    base register must belong. A base register is one used in an
    address which is the register value plus a displacement. */
-#define BASE_REG_CLASS (TARGET_64 ? PRF_REGS : GENERAL_REGS)
+// FIXME AUTO PRF DISABLED
+/* #define BASE_REG_CLASS (TARGET_64 ? PRF_REGS : GENERAL_REGS) */
+#define BASE_REG_CLASS (GENERAL_REGS)
 
 /* A macro whose definition is the name of the class to which a valid
    index register must belong. An index register is one used in an
@@ -431,12 +434,19 @@ extern const char *k1_board_to_startfile_prefix (int argc, const char **argv);
    and other macros define the macro REG_OK_STRICT. You should use an
    #ifdef REG_OK_STRICT conditional to define the strict variant in
    that case and the non-strict variant otherwise. */
+
+// FIXME AUTO PRF DISABLED
+/* #ifdef REG_OK_STRICT */
+/* #define REGNO_OK_FOR_BASE_P(num) (TARGET_64 ? IS_PRF_REGNO(num, 1) :
+ * IS_GENERAL_REGNO(num, 1)) */
+/* #else */
+/* #define REGNO_OK_FOR_BASE_P(num) (TARGET_64 ? IS_PRF_REGNO(num, 0) :
+ * IS_GENERAL_REGNO(num, 0)) */
+/* #endif */
 #ifdef REG_OK_STRICT
-#define REGNO_OK_FOR_BASE_P(num)                                               \
-  (TARGET_64 ? IS_PRF_REGNO (num, 1) : IS_GENERAL_REGNO (num, 1))
+#define REGNO_OK_FOR_BASE_P(num) (IS_GENERAL_REGNO (num, 1))
 #else
-#define REGNO_OK_FOR_BASE_P(num)                                               \
-  (TARGET_64 ? IS_PRF_REGNO (num, 0) : IS_GENERAL_REGNO (num, 0))
+#define REGNO_OK_FOR_BASE_P(num) (IS_GENERAL_REGNO (num, 0))
 #endif
 
 /* A C expression which is nonzero if register number num is suitable

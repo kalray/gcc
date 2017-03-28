@@ -100,8 +100,8 @@ static int k1_flag_var_tracking;
 /* Which arch are we scheduling for */
 enum attr_arch k1_arch_schedule;
 
-// FIXME FOR COOLIDGE
-static const char *prf_reg_names[] = {K1C_K1PE_PRF_REGISTER_NAMES};
+// FIXME AUTO PRF DISABLED
+// static const char *prf_reg_names[] = { K1C_K1PE_PRF_REGISTER_NAMES };
 
 bool
 k1_cannot_change_mode_class (enum machine_mode from, enum machine_mode to,
@@ -623,8 +623,9 @@ k1_target_conditional_register_usage (void)
 			  IDENTIFIER_POINTER (get_identifier ("_data_start")));
   K1C_ADJUST_REGISTER_NAMES;
 
-  const char *prf_names[] = {K1C_K1PE_PRF_REGISTER_NAMES};
-  memcpy (prf_reg_names, prf_names, sizeof (prf_reg_names));
+  // FIXME AUTO PRF DISABLED
+  /* const char *prf_names[] = { K1C_K1PE_PRF_REGISTER_NAMES }; */
+  /* memcpy(prf_reg_names, prf_names, sizeof(prf_reg_names)); */
 }
 
 rtx
@@ -1481,10 +1482,11 @@ k1_regname (rtx x)
   switch (GET_CODE (x))
     {
     case REG:
-      if (GET_MODE (x) == DImode)
-	return prf_reg_names[REGNO (x)];
-      else
-	return reg_names[REGNO (x)];
+      // FIXME AUTO PRF DISABLED
+      /* if (GET_MODE(x) == DImode) */
+      /* 	return prf_reg_names[REGNO (x)]; */
+      /* else */
+      return reg_names[REGNO (x)];
     case SUBREG:
       gcc_assert (!TARGET_64);
       gcc_assert (GET_MODE (x) == SImode);
