@@ -93,12 +93,12 @@
     }                                                                          \
   while (0)
 
+/* "%{mcore=k1io: -fstrict-align} ",                             \ */
+/* "%{mcore=k1bio: -fstrict-align} ",			      \ */
 #define DRIVER_SELF_SPECS_COMMON                                               \
   K1_OS_SELF_SPECS                                                             \
-  "%{!mboard*:" K1_DEFAULT_BOARD "} ", "%{mcore=k1io: -fstrict-align} ",       \
-    "%{mcore=k1bio: -fstrict-align} ", "%{fpic: %{!fPIC:-fPIC}} %<fpic",       \
-    "%{fPIC: %<fpic}", "%{keep: -save-temps}  %<keep",                         \
-    "%{fpic: %<mgprel } %{fPIC: %<mgprel }", "%{show: -v} %<show"
+  "%{!mboard*:" K1_DEFAULT_BOARD "} ", "%{fpic: %{!fPIC:-fPIC}} %<fpic",       \
+    "%{fPIC: %<fpic}", "%{fpic: %<mgprel } %{fPIC: %<mgprel }"
 /*
 	"%{!mno-gprel: -mgprel}"                        \
 */
