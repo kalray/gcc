@@ -25,6 +25,9 @@
 
 #define K1C_SCRATCH_AREA_SIZE 16
 
+// FIXME AUTO: aarch64 uses a reg class for stack register. Maybe do the same ?
+
+// FIXME AUTO: Coolidge: what is this MDS+1 register.
 #define TEST_REGNO(R, TEST, VALUE, STRICT)                                     \
   ((!(STRICT) && R >= FIRST_PSEUDO_REGISTER) || (R TEST VALUE)                 \
    || (reg_renumber && ((unsigned) reg_renumber[R] TEST VALUE)))
@@ -148,17 +151,17 @@ extern const char *k1_board_to_startfile_prefix (int argc, const char **argv);
 
 #define WORDS_BIG_ENDIAN 0
 
-#define UNITS_PER_WORD 4
+/* Number of storage units in a word; normally 4. */
+#define UNITS_PER_WORD 8
 
-/* This is a lie, but we have good 64bits arithmetic, and we want
-   expmed.c to consider the cases where we have to use shifts of more
-   than 32 bits. */
-#define MAX_BITS_PER_WORD 64
-
-/* FIXME */
 #define PROMOTE_MODE(MODE, UNSIGNEDP, TYPE)                                    \
   if (GET_MODE_CLASS (MODE) == MODE_INT && GET_MODE_SIZE (MODE) < 4)           \
-    (MODE) = SImode;
+    {                                                                          \
+      if (MODE == QImode || MODE == HImode)                                    \
+	{                                                                      \
+	  MODE = SImode;                                                       \
+	}                                                                      \
+    }
 
 /* Normal alignment required for function parameters on the stack, in
    bits. All stack parameters receive at least this much alignment
@@ -350,9 +353,7 @@ extern const char *k1_board_to_startfile_prefix (int argc, const char **argv);
    hold the requested mode - indicate that with HARD_REGNO_MODE_OK
    and/or CANNOT_CHANGE_MODE_CLASS instead.  */
 #define HARD_REGNO_NREGS(REGNO, MODE)                                          \
-  ((REGNO_REG_CLASS (REGNO) == SRF64_REGS && MODE == DImode)                   \
-     ? 1                                                                       \
-     : ((GET_MODE_SIZE (MODE) + UNITS_PER_WORD - 1) / (UNITS_PER_WORD)))
+  ((GET_MODE_SIZE (MODE) + UNITS_PER_WORD - 1) / UNITS_PER_WORD)
 
 /* If defined, a C expression that returns nonzero for a class for
    which a change from mode from to mode to is invalid. */
@@ -362,10 +363,7 @@ extern const char *k1_board_to_startfile_prefix (int argc, const char **argv);
 /* A C expression that is nonzero if it is permissible to store a
    value of mode mode in hard register number regno (or in several
    registers starting with that one). */
-#define HARD_REGNO_MODE_OK(REGNO, MODE)                                        \
-  ((GET_MODE_SIZE (MODE) <= 4 && REGNO_REG_CLASS (REGNO) != SRF64_REGS)        \
-   || (GET_MODE_SIZE (MODE) == 8 && REGNO <= 64 && REGNO % 2 == 0)             \
-   || (GET_MODE_SIZE (MODE) == 8 && REGNO_REG_CLASS (REGNO) == SRF64_REGS))
+#define HARD_REGNO_MODE_OK(REGNO, MODE) k1_hard_regno_mode_ok (REGNO, MODE)
 
 /* A C expression that is nonzero if a value of mode mode1 is
    accessible in mode mode2 without copying.
@@ -379,11 +377,17 @@ extern const char *k1_board_to_startfile_prefix (int argc, const char **argv);
    You should define this macro to return nonzero in as many cases as
    possible since doing so will allow GCC to perform better register
    allocation. */
-#define MODES_TIEABLE_P(mode1, mode2)                                          \
-  ((mode1 == mode2)                                                            \
-   || ((!VECTOR_MODE_P (mode1) && !VECTOR_MODE_P (mode2))                      \
-       && ((INTEGRAL_MODE_P (mode1) && INTEGRAL_MODE_P (mode2))                \
-	   || (FLOAT_MODE_P (mode1) && FLOAT_MODE_P (mode2)))))
+// FIXME AUTO: Check modes tieable is correct. Float part seems suspicious.
+#define MODES_TIEABLE_P(MODE1, MODE2)                                          \
+  (GET_MODE_CLASS (MODE1) == GET_MODE_CLASS (MODE2))
+
+// This looks a bit problematic for mode with different sizes. A float
+// is hardly accessed without a copy when changing its mode.
+
+/* ((mode1 == mode2)					   \ */
+/*     || ((!VECTOR_MODE_P (mode1) && !VECTOR_MODE_P (mode2)) \ */
+/* 	&& ((INTEGRAL_MODE_P (mode1) && INTEGRAL_MODE_P (mode2))	\ */
+/* 	    || (FLOAT_MODE_P (mode1) && FLOAT_MODE_P (mode2))))) */
 
 /* The number of distinct register classes, defined as follows: */
 
@@ -392,13 +396,16 @@ extern const char *k1_board_to_startfile_prefix (int argc, const char **argv);
 /* Provide the GENERAL_REGS definitions */
 #define GENERAL_REGS GRF_REGS
 
-#define REG_ALLOC_ORDER                                                        \
-  {                                                                            \
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 32, 33, 34, 35, 36, 37, 38,  \
-      39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56,  \
-      57, 58, 59, 60, 61, 62, 63, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,  \
-      27, 28, 29, 30, 31, 10, 15,                                              \
-  }
+/* use r16..r33 before r10 and r15, because the former are more easily stored by
+ * pair */
+// FIXME AUTO: Coolidge may need to change this when packing to 128bits ld/st
+/* #define REG_ALLOC_ORDER { \ */
+/*          0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  11, 12, 13 ,14, 	\ */
+/* 	32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, \ */
+/* 	48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, \ */
+/* 	16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, \ */
+/* 	10, 15, \ */
+/* 	} */
 
 /* A macro whose definition is the name of the class to which a valid
    base register must belong. A base register is one used in an
@@ -515,7 +522,7 @@ extern const char *k1_board_to_startfile_prefix (int argc, const char **argv);
 
    This macro helps control the handling of multiple-word values in
    the reload pass. */
-#define CLASS_MAX_NREGS(CLASS, MODE) HARD_REGNO_NREGS (0, MODE)
+// #define CLASS_MAX_NREGS(CLASS, MODE) HARD_REGNO_NREGS(0, MODE)
 /*#define CLASS_MAX_NREGS(CLASS, MODE) (HARD_REGNO_NREGS(0, MODE) / (CLASS ==
  * PRF_REGS ? 2 : 1))*/
 
