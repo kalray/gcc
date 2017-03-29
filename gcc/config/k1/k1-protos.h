@@ -23,7 +23,8 @@ along with GCC; see the file COPYING3.  If not see
 
 #ifndef _K1_REGS
 #define _K1_REGS
-#include "k1b-registers.h"
+#error This is dubious.
+//#include "k1b-registers.h"
 #endif
 
 #ifdef HAVE_ATTR_arch
@@ -36,6 +37,8 @@ extern bool k1_cannot_change_mode_class (enum machine_mode from,
 
 #ifdef RTX_CODE
 #include "tree-pass.h"
+
+int k1_hard_regno_mode_ok (unsigned regno, enum machine_mode mode);
 
 extern void k1_expand_call (rtx fnaddr, rtx arg, rtx retval, bool sibcall);
 
