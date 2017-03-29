@@ -102,6 +102,40 @@ enum attr_arch k1_arch_schedule;
 
 // FIXME AUTO PRF DISABLED
 // static const char *prf_reg_names[] = { K1C_K1PE_PRF_REGISTER_NAMES };
+/* Implement HARD_REGNO_MODE_OK.  */
+
+int
+k1_hard_regno_mode_ok (unsigned regno, enum machine_mode mode)
+{
+  if ((GET_MODE_SIZE (mode) <= 8)
+      && ((regno <= 64)
+	  || (TARGET_64 && REGNO_REG_CLASS (regno) == SRF64_REGS)))
+    return true;
+
+  return false;
+}
+
+static unsigned char
+k1_class_max_nregs (reg_class_t regclass, enum machine_mode mode)
+{
+  switch (regclass)
+    {
+    case GRF_REGS:
+      // FIXME AUTO PRF DISABLED
+      /* case PRF_REGS: */
+    case ALL_REGS:
+      return HARD_REGNO_NREGS (0, mode);
+
+    case SRF_REGS:
+    case SRF32_REGS:
+    case SRF64_REGS:
+      return 1;
+
+    default:
+      break;
+    }
+  gcc_unreachable ();
+}
 
 bool
 k1_cannot_change_mode_class (enum machine_mode from, enum machine_mode to,
@@ -10223,6 +10257,9 @@ k1_profile_hook (void)
 }
 
 /* Initialize the GCC target structure.  */
+
+#undef TARGET_CLASS_MAX_NREGS
+#define TARGET_CLASS_MAX_NREGS k1_class_max_nregs
 
 #undef TARGET_LRA_P
 #define TARGET_LRA_P k1_lra_p
