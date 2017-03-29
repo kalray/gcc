@@ -41,21 +41,27 @@
 
 #define DRIVER_SELF_SPECS DRIVER_SELF_SPECS_COMMON, "%{lpthread: -pthread}"
 
-#define DEFAULT_IO_CORE "k1bio"
-#define DEFAULT_DP_CORE "k1bdp"
+/* #define DEFAULT_RM_CORE "k1rm" */
+/* #define DEFAULT_PE_CORE "k1pe" */
+/* #define K1_SELECT_RM_CORE "%{march=k1c:-mcore=k1rm;:-mcore=" DEFAULT_IO_CORE
+ * "}" */
+/* #define K1_SELECT_PE_CORE "%{march=k1b:-mcore=k1bdp;:-mcore=" DEFAULT_DP_CORE
+ * "}" */
 
-#define K1_SELECT_IO_CORE                                                      \
-  "%{march=k1b:-mcore=k1bio;:-mcore=" DEFAULT_IO_CORE "}"
-#define K1_SELECT_DP_CORE                                                      \
-  "%{march=k1b:-mcore=k1bdp;:-mcore=" DEFAULT_DP_CORE "}"
-#define K1_DEFAULT_ARCH "k1b"
+#define K1_DEFAULT_ARCH "k1c"
+#define K1_DEFAULT_CORE "k1pe"
+#define K1_DEFAULT_CLUSTER "node"
+
+/* "%{!march*:%{mcore=k1b*:-march=k1b;:-march=" K1_DEFAULT_ARCH "}} ",
+ * \ */
+/* "%{!mcore*:%{mcluster=io*:" K1_SELECT_IO_CORE ";:%{mboard=iocomm_*:"
+ * K1_SELECT_IO_CORE ";:" K1_SELECT_DP_CORE "}}} ", \ */
 
 #define K1_OS_SELF_SPECS                                                       \
-  "%{!march*:%{mcore=k1b*:-march=k1b;:-march=" K1_DEFAULT_ARCH "}} ",          \
-    "%{!mcore*:%{mcluster=io*:" K1_SELECT_IO_CORE                              \
-    ";:%{mboard=iocomm_*:" K1_SELECT_IO_CORE ";:" K1_SELECT_DP_CORE "}}} ",    \
-    "%{fpic:-fno-jump-tables} ", "%{fPIC:-fno-jump-tables} ",                  \
-    "%{!mcluster*:%{mcore=k1bdp:-mcluster=node;mcore=k1bio:-mcluster=ioddr;:-" \
-    "mcluster=node}} ",
+  "%{!march*:-march=" K1_DEFAULT_ARCH " } "                                    \
+  "%{!mcore*:-mcore=" K1_DEFAULT_CORE " } "                                    \
+  "%{fpic:-fno-jump-tables} ",                                                 \
+    "%{fPIC:-fno-jump-tables} ",                                               \
+    "%{!mcluster*:-mcluster=" K1_DEFAULT_CLUSTER "}",
 
 #define LINK_SPEC "%{pthread:-lpthread}" LINK_SPEC_COMMON
