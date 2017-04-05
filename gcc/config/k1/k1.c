@@ -131,6 +131,9 @@ k1_class_max_nregs (reg_class_t regclass, enum machine_mode mode)
     case SRF64_REGS:
       return 1;
 
+    case NO_REGS:
+      return 0;
+
     default:
       break;
     }
