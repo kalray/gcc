@@ -1022,13 +1022,13 @@ void
 k1_target_print_operand (FILE *file, rtx x, int code)
 {
     rtx operand = x;
-    bool paired_reg = false;
+    /* bool paired_reg = false; */
     bool u32 = false;
     bool addressing_mode = false;
     bool as_address = false;
     bool is_float = false;
-    bool low = false;
-    bool high = false;
+    /* bool low = false; */
+    /* bool high = false; */
     bool lowbit_highbit = false;
     bool signed10 = false;
     /* bool want_plt = false; */
@@ -1044,9 +1044,9 @@ k1_target_print_operand (FILE *file, rtx x, int code)
     case 'b':
         lowbit_highbit = true;
         break;
-    case 'd':
-        paired_reg = true;
-        break;
+    /* case 'd': */
+    /*     paired_reg = true; */
+    /*     break; */
     case 'f':
         is_float = true;
         break;
@@ -1054,12 +1054,14 @@ k1_target_print_operand (FILE *file, rtx x, int code)
         signed10 = true;
         break;
     case 'S':
-        high = true;
+        /* high = true; */
+	error("Using %S (high) in asm format");
         break;
     case 'P':
         break;
     case 's':
-        low = true;
+        /* low = true; */
+	error("Using %s (low) in asm format");
         break;
     case 'u':
         u32 = true;
@@ -1115,18 +1117,20 @@ k1_target_print_operand (FILE *file, rtx x, int code)
     case REG:
         if (REGNO (operand) >= FIRST_PSEUDO_REGISTER)
             error ("internal error: bad register: %d", REGNO (operand));
-        else if (paired_reg){
-	  if (GET_MODE_SIZE(GET_MODE(x)) <= 4){
-	    warning (0, "using %%d format with non-double operand");
-	  }
-            fprintf (file, "$%s:$%s",
-                     reg_names[REGNO (operand)], reg_names[REGNO (operand)+1]);
-	}
-        else if (low)
-            fprintf (file, "$%s", reg_names[REGNO (operand)]);
-        else if (high)
-            fprintf (file, "$%s", reg_names[REGNO (operand)+1]);
-        else if ((GET_MODE_SIZE (GET_MODE (x)) == 8)
+        /* else if (paired_reg){ */
+	/*   if (GET_MODE_SIZE(GET_MODE(x)) <= 4){ */
+	/*     warning (0, "using %%d format with non-double operand"); */
+	/*   } */
+        /*     fprintf (file, "$%s:$%s", */
+        /*              reg_names[REGNO (operand)], reg_names[REGNO (operand)+1]); */
+	/* } */
+        /* else if (low) */
+        /*     fprintf (file, "$%s", reg_names[REGNO (operand)]); */
+        /* else if (high) */
+        /*     fprintf (file, "$%s", reg_names[REGNO (operand)+1]); */
+
+	// FIXME AUTO: coolidge, monoquadruple ?
+        else if ((GET_MODE_SIZE (GET_MODE (x)) == 16)
 		 && (!system_register_operand(operand, VOIDmode))){
 	  gcc_assert(!(REGNO(operand) % 2));
             fprintf (file, "$r%ir%i", REGNO (operand), REGNO (operand)+1);
@@ -1189,24 +1193,24 @@ k1_target_print_operand (FILE *file, rtx x, int code)
         return;
 
     case CONST_DOUBLE:
-        if (paired_reg) {
-            if (GET_MODE (operand) == VOIDmode) {
-                fprintf (file, "0x%x:0x%x",
-                         (unsigned int)CONST_DOUBLE_LOW (x),
-                         (unsigned int)CONST_DOUBLE_HIGH (x));
-            } else if (GET_MODE (operand) == DFmode) {
-                REAL_VALUE_TYPE r;
-                long l[2];
-                REAL_VALUE_FROM_CONST_DOUBLE (r, operand);
-                REAL_VALUE_TO_TARGET_DOUBLE (r, l);
-                fprintf (file, "0x%x:0x%x",
-                         (unsigned int)l[0], (unsigned int)l[1]);
+        /* if (paired_reg) { */
+        /*     if (GET_MODE (operand) == VOIDmode) { */
+        /*         fprintf (file, "0x%x:0x%x", */
+        /*                  (unsigned int)CONST_DOUBLE_LOW (x), */
+        /*                  (unsigned int)CONST_DOUBLE_HIGH (x)); */
+        /*     } else if (GET_MODE (operand) == DFmode) { */
+        /*         REAL_VALUE_TYPE r; */
+        /*         long l[2]; */
+        /*         REAL_VALUE_FROM_CONST_DOUBLE (r, operand); */
+        /*         REAL_VALUE_TO_TARGET_DOUBLE (r, l); */
+        /*         fprintf (file, "0x%x:0x%x", */
+        /*                  (unsigned int)l[0], (unsigned int)l[1]); */
 
-            } else {
-                gcc_unreachable ();
-            }
-            return;
-        } else if (GET_MODE (x) == SFmode) {
+        /*     } else { */
+        /*         gcc_unreachable (); */
+        /*     } */
+        /*     return; */
+        /* } else */ if (GET_MODE (x) == SFmode) {
             REAL_VALUE_TYPE r;
             long l;
             REAL_VALUE_FROM_CONST_DOUBLE (r, operand);
@@ -1234,16 +1238,16 @@ k1_target_print_operand (FILE *file, rtx x, int code)
             return;
         }
         /* FIXME, MAKED can take 16 bits immediates */
-        if (paired_reg) {
-            /* [JV]: ??? It doesn't work with value 0...:
-               && (INTVAL (x) < -512 || INTVAL (x) > 511)) {
-            */
-            long long val = INTVAL (x);
-            fprintf (file, "0x%x:0x%x",
-                     (unsigned int)(val & 0xFFFFFFFF),
-                     (unsigned int)(val >> 32));
-            return;
-        }
+        /* if (paired_reg) { */
+        /*     /\* [JV]: ??? It doesn't work with value 0...: */
+        /*        && (INTVAL (x) < -512 || INTVAL (x) > 511)) { */
+        /*     *\/ */
+        /*     long long val = INTVAL (x); */
+        /*     fprintf (file, "0x%x:0x%x", */
+        /*              (unsigned int)(val & 0xFFFFFFFF), */
+        /*              (unsigned int)(val >> 32)); */
+        /*     return; */
+        /* } */
         if(u32) {
             /* Unsigned 32 bits value. */
             fprintf (file, "0x%x", (unsigned int)INTVAL (x));
