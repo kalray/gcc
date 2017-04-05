@@ -1,6 +1,7 @@
 
 #define K1_BARE
 
+// FIXME AUTO: handle kdebug better (use a -m[no-]debug for example
 #define LINK_GCC_C_SEQUENCE_SPEC                                               \
   "%{!nostdlib:-( %G %L -lgloss %{mcluster=ioddr: %{!m64: -whole-archive "     \
   "-lk1_debug_server -no-whole-archive}} %{mhypervisor: -whole-archive -lmOS " \
