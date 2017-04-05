@@ -623,11 +623,11 @@ extern const char *k1_board_to_startfile_prefix (int argc, const char **argv);
    You only need to define this macro if the default is incorrect, and
    you want to support call frame debugging information like that
    provided by DWARF 2. */
-#define ARG_POINTER_CFA_OFFSET(funcdecl)                                       \
-  K1C_SCRATCH_AREA_SIZE + crtl->args.pretend_args_size                         \
-    + (cfun->stdarg && crtl->args.info < K1C_ARG_REG_SLOTS                     \
-	 ? UNITS_PER_WORD * ((K1C_ARG_REG_SLOTS - crtl->args.info + 1) & ~1)   \
-	 : 0)
+// FIXME AUTO: disabled for coolidge
+//#define ARG_POINTER_CFA_OFFSET(funcdecl) K1C_SCRATCH_AREA_SIZE +
+//crtl->args.pretend_args_size + (cfun->stdarg && crtl->args.info <
+//K1C_ARG_REG_SLOTS ? UNITS_PER_WORD * ((K1C_ARG_REG_SLOTS - crtl->args.info +
+//1) & ~1) : 0)
 
 /* If defined, a C expression whose value is an integer giving the
    offset in bytes from the frame pointer to the canonical frame
