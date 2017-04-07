@@ -3126,7 +3126,7 @@ enum k1_builtin
   K1_BUILTIN_PROBETLB,
   K1_BUILTIN_RAISE1,
   K1_BUILTIN_READTLB,
-  K1_BUILTIN_RXOR,
+  /* K1_BUILTIN_RXOR, */
   K1_BUILTIN_SBFHP,
   K1_BUILTIN_SBMM8,
   K1_BUILTIN_SBMM8_D,
@@ -3394,7 +3394,7 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (PROBETLB, "probetlb", VOID);
   ADD_K1_BUILTIN (RAISE1, "raise1", VOID, uintSI);
   ADD_K1_BUILTIN (READTLB, "readtlb", VOID);
-  ADD_K1_BUILTIN (RXOR, "r_xord", VOID, uintQI, uintDI, uintHI);
+  /* ADD_K1_BUILTIN (RXOR,    "r_xord",      VOID,   uintQI, uintDI, uintHI); */
   ADD_K1_BUILTIN (SBFHP, "sbfhp", intSI, intSI, intSI);
   ADD_K1_BUILTIN (SBMM8, "sbmm8", uintDI, uintDI, uintDI);
   ADD_K1_BUILTIN (SBMM8_D, "sbmm8_d", uintDI, uintDI, uintDI);
@@ -4038,29 +4038,29 @@ k1_expand_builtin_satd (rtx target, tree args)
   return target;
   } */
 
-static rtx
-k1_expand_builtin_rxor (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-  rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
+/* static rtx */
+/* k1_expand_builtin_rxor (rtx target, tree args) */
+/* { */
+/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
+/*     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1)); */
+/*     rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2)); */
 
-  if (!verify_const_int_arg (arg1, 6, false))
-    {
-      error ("__builtin_k1_r_xor expects a 6 bits immediate first argument.");
-      return NULL_RTX;
-    }
+/*     if (!verify_const_int_arg (arg1, 6, false)) { */
+/*         error ("__builtin_k1_r_xor expects a 6 bits immediate first
+ * argument."); */
+/*         return NULL_RTX; */
+/*     } */
 
-  if (!verify_const_int_arg (arg3, 10, false))
-    {
-      error ("__builtin_k1_r_xor expects a 10 bits immediate third argument.");
-      return NULL_RTX;
-    }
+/*     if (!verify_const_int_arg (arg3, 10, false)) { */
+/*         error ("__builtin_k1_r_xor expects a 10 bits immediate third
+ * argument."); */
+/*         return NULL_RTX; */
+/*     } */
 
-  arg2 = force_reg (DImode, arg2);
-  emit_insn (gen_remote_xord (arg1, arg2, arg3, k1_sync_reg_rtx));
-  return target;
-}
+/*     arg2 = force_reg (DImode, arg2); */
+/*     emit_insn (gen_remote_xord (arg1, arg2, arg3, k1_sync_reg_rtx)); */
+/*     return target; */
+/* } */
 
 static rtx
 k1_expand_builtin_abdhp (rtx target, tree args)
@@ -6456,8 +6456,8 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_raise1 (target, exp);
     case K1_BUILTIN_READTLB:
       return k1_expand_builtin_readtlb ();
-    case K1_BUILTIN_RXOR:
-      return k1_expand_builtin_rxor (target, exp);
+    /* case K1_BUILTIN_RXOR: */
+    /*     return k1_expand_builtin_rxor (target, exp); */
     case K1_BUILTIN_SAT:
       return k1_expand_builtin_sat (target, exp);
     case K1_BUILTIN_SATD:
