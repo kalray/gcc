@@ -3260,7 +3260,7 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (BWLUWP, "bwluwp", uintDI, uintDI, uintDI, uintSI);
   ADD_K1_BUILTIN (CLEAR1, "clear1", VOID, uintSI);
   ADD_K1_BUILTIN (CBS, "cbs", intSI, uintSI);
-  ADD_K1_BUILTIN (CBSDL, "cbsdl", intSI, uintDI);
+  ADD_K1_BUILTIN (CBSDL, "cbsdl", intDI, uintDI);
   ADD_K1_BUILTIN (CLZ, "clz", intSI, uintSI);
   ADD_K1_BUILTIN (CLZDL, "clzdl", intSI, uintDI);
   ADD_K1_BUILTIN (CMOVE, "cmove", intSI, intSI, intSI, intSI);
@@ -4187,11 +4187,11 @@ k1_expand_builtin_cbsdl (rtx target, tree args)
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
 
   if (!target)
-    target = gen_reg_rtx (SImode);
+    target = gen_reg_rtx (DImode);
 
-  target = force_reg (SImode, target);
+  target = force_reg (DImode, target);
   arg1 = force_reg (DImode, arg1);
-  emit_insn (gen_cbsdl (target, arg1));
+  emit_insn (gen_popcountdi2 (target, arg1));
   return target;
 }
 
