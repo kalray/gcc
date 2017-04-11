@@ -9413,6 +9413,53 @@ k1_handle_one_block_loop (struct loop *loop, rtx entry,
     if (e->dest != loop->header)
       break;
 
+  /*
+   * /!\ We are forced to count the number of reg counter inside the
+   * loop because there is something not correct with the loop data
+   * we are handed.
+   *
+   * This code should (and did) kill the counter decrement and
+   * handle the case of counter usage outside the loop (by set the
+   * reg to 0).
+   *
+   * The very strong asumption is that insn using this
+   * register in the loop is the decrement and the jump: so
+   * we kill everything (in this block, should be the
+   * decrement). It relies on this part of the documentation:
+   *
+   * «The essential difference between the
+   * ‘decrement_and_branch_until_zero’ and the ‘doloop_end’
+   * patterns is that the loop optimizer allocates an
+   * additional pseudo register for the latter as an
+   * iteration counter. This pseudo register cannot be used
+   * within the loop (i.e., general induction variables
+   * cannot be derived from it), however, in many cases the
+   * loop induction variable may become redundant and
+   * removed by the flow pass. »
+   *
+   * Obviously, this is not correct or something we have make this
+   * not possible :
+   *
+   * We can have these insn in the loop:
+   * (insn 250 116 234 4 (set (reg:SI 9 r9 [184])
+   *                           (plus:SI (reg:SI 9 r9 [184])
+   *                                    (const_int -1 [0xffffffffffffffff])))
+   * io_main.cpp:8 7 {*addsi3_small} (nil))
+   *
+   * (insn:TI 271 254 251 4 (set (mem/c:SI (plus:SI (reg/f:SI 10 r10)
+   *                                       (const_int 12 [0xc])) [6 %sfp+12 S4
+   * A32]) (reg:SI 9 r9 [184])) io_main.cpp:8 228 {*real_movsi} (nil))
+   *
+   * With the memory being read after the loop.
+   *
+   * The internal issue is T2920 "C/C++ code may crash when compiling with -03
+   * due to bad hw loop generation"
+   *
+   * The second part of the loop is moved in a second loop that is
+   * conditioned by the number of reg counter usage.
+   */
+  int number_of_counter_usage = 0;
+  bool jump_removed = false;
   FOR_BB_INSNS_SAFE (loop->header, insn, next)
     if (insn != entry && INSN_P (insn))
       {
@@ -9425,40 +9472,76 @@ k1_handle_one_block_loop (struct loop *loop, rtx entry,
 	    exit = emit_jump_insn_after (gen_loopdo_end (label), insn);
 	    mark_jump_label (PATTERN (exit), exit, 0);
 	    delete_insn (insn);
+	    jump_removed = true;
 	  }
 	else if (reg_mentioned_p (SET_DEST (PATTERN (entry)), PATTERN (insn)))
 	  {
-	    df_ref ref = df_find_def (insn, regno_reg_rtx[counter_regno]);
-	    struct df_link *uses = ref ? DF_REF_CHAIN (ref) : NULL;
-
-	    /* The counter register is referenced in insn. As the
-	       loopdo conversition ensures that the register is used
-	       only as loop counter and nowhere else, we can delete
-	       this instruction which must be either: the decrement
-	       or the conditional branch out of the loop. */
-	    if (uses && uses->next && uses->next->next)
-	      {
-		/* The counter should have only 2 uses which are the
-		   decrement and the condjump. Otherwise this means
-		   the counter register is used after the loop.
-		   In a single basic-block loop, the counter will
-		   always be zero at end of iteration, thus we can
-		   just emit that new definition on the loop exit
-		   edge.  */
-		basic_block b, prev, succ;
-		rtx ctr_reg = gen_rtx_REG (SImode, counter_regno);
-		prev = e->src;
-		succ = (basic_block) loop->latch->aux;
-		b = split_edge_and_insert (e, gen_movsi (ctr_reg, const0_rtx));
-		if (prev == ENTRY_BLOCK_PTR_FOR_FN (cfun))
-		  ENTRY_BLOCK_PTR_FOR_FN (cfun)->next_bb = b;
-		else
-		  prev->aux = b;
-		b->aux = succ;
-	      }
-	    delete_insn (insn);
+	    number_of_counter_usage++;
 	  }
       }
+
+  if (number_of_counter_usage == 1)
+    {
+      FOR_BB_INSNS_SAFE (loop->header, insn, next)
+	{
+	  if (insn != entry && INSN_P (insn))
+	    {
+	      if (reg_mentioned_p (SET_DEST (PATTERN (entry)), PATTERN (insn)))
+		{
+		  df_ref ref = df_find_def (insn, regno_reg_rtx[counter_regno]);
+		  struct df_link *uses = ref ? DF_REF_CHAIN (ref) : NULL;
+
+		  /* The counter register is referenced in insn. As the
+		     loopdo conversition ensures that the register is used
+		     only as loop counter and nowhere else, we can delete
+		     this instruction which must be either: the decrement
+		     or the conditional branch out of the loop. */
+		  if (jump_removed && uses && uses->next)
+		    {
+		      /* The counter should have only 2 uses which are the
+			 decrement and the condjump. Otherwise this means
+			 the counter register is used after the loop.
+			 In a single basic-block loop, the counter will
+			 always be zero at end of iteration, thus we can
+			 just emit that new definition on the loop exit
+			 edge.  */
+
+		      basic_block b, prev, succ;
+		      rtx ctr_reg = gen_rtx_REG (SImode, counter_regno);
+		      prev = e->src;
+		      succ = (basic_block) loop->latch->aux;
+		      b = split_edge_and_insert (e, gen_movsi (ctr_reg,
+							       const0_rtx));
+		      if (prev == ENTRY_BLOCK_PTR_FOR_FN (cfun))
+			ENTRY_BLOCK_PTR_FOR_FN (cfun)->next_bb = b;
+		      else
+			prev->aux = b;
+		      b->aux = succ;
+		    }
+		  /* The instruction we need to remove should be similar to: */
+		  /*      (set (reg:SI 2 r2 [1177]) */
+		  /*                     (plus:SI (reg:SI 2 r2 [1177]) */
+		  /*                              (const_int -1
+		   * [0xffffffffffffffff]))) */
+		  const bool is_counter_decr
+		    = (GET_CODE (PATTERN (insn)) == SET)
+		      && REG_P (SET_DEST (PATTERN (insn)))
+		      && (REGNO (SET_DEST (PATTERN (insn)))
+			  == counter_regno) /* target is counter */
+		      && (GET_CODE (SET_SRC (PATTERN (insn))) == PLUS)
+		      && REG_P (XEXP (SET_SRC (PATTERN (insn)), 0))
+		      && REGNO (XEXP (SET_SRC (PATTERN (insn)), 0))
+			   == counter_regno
+		      && CONST_INT_P (XEXP (SET_SRC (PATTERN (insn)), 1));
+
+		  /* be safe, do not kill insn if it does not look like the
+		   * decrement */
+		  if (is_counter_decr)
+		    delete_insn (insn);
+		}
+	    }
+	}
+    }
 
   /* Setup the loopgtz instruction with the right end label.  */
   exit = emit_label_before (gen_label_rtx (), exit);
@@ -9870,9 +9953,11 @@ k1_reorg_hwloops (void)
   FOR_EACH_LOOP (loop, LI_ONLY_INNERMOST)
     {
 
+      // Sanity check
       if (!loop->header || !loop->latch)
 	continue;
 
+      // Only 1 BB can reach HEADER BB apart from LATCH
       if (EDGE_COUNT (loop->header->preds) != 2
 	  || EDGE_COUNT (loop->header->succs) != 2)
 	continue;
@@ -9882,6 +9967,7 @@ k1_reorg_hwloops (void)
 	     : EDGE_PRED (loop->header, 0)->src;
       where = entry = BB_END (bb);
 
+      // Locate LOOPDO insn in ENTRY BB
       while (entry
 	     && (!INSN_P (entry) || recog_memoized (entry) != CODE_FOR_loopdo))
 	{
@@ -9890,7 +9976,9 @@ k1_reorg_hwloops (void)
 
       if (!entry)
 	continue;
+      // entry is LOOPDO insn in HEADER BB
 
+      // Get the register counter
       reg = XVECEXP (SET_SRC (PATTERN (entry)), 0, 2);
 
       if (!REG_P (reg))
@@ -9911,6 +9999,8 @@ k1_reorg_hwloops (void)
       if (mentioned)
 	continue;
 
+      // Move LOOPDO as last insn in BB (or before the last insn in
+      // case it is a jump)
       if (where != entry)
 	{
 	  remove_insn (entry);
