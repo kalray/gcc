@@ -1,13 +1,19 @@
 ;; Iterator for SI, QI and HI modes
 (define_mode_iterator SHORT [QI HI SI])
 
-(define_mode_attr lsusize [(QI "b") (HI "h") (SI "w") (DI "d")])
+(define_mode_attr lsusize [(QI "b") (HI "h") (SI "w") (DI "d") (SF "w") (DF "d")])
 
-(define_mode_attr lsusext [(QI "s") (HI "s") (SI "s") (DI "")])
+(define_mode_attr lsusext [(QI "z") (HI "z") (SI "z") (DI "") (SF "z") (DF "")])
 (define_mode_attr hq [(HI "h") (QI "q")])
 
 ;; Iterator for all integer modes (up to 64-bit)
 (define_mode_iterator ALLI [QI HI SI DI])
+
+;; Iterator for all float modes (up to 64-bit)
+(define_mode_iterator ALLF [SF DF])
+
+;; All modes that fit in 1 register. Used for LSU.
+(define_mode_iterator ALLIF [QI HI SI DI SF DF])
 
 (define_mode_iterator ALLP [SI DI])
 
