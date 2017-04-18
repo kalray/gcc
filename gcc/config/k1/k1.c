@@ -3286,18 +3286,23 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (FADDRNWP, "faddrnwp", vect2SF, vect2SF, vect2SF);
   ADD_K1_BUILTIN (FCDIV, "fcdiv", floatSF, floatSF, floatSF);
   ADD_K1_BUILTIN (FCDIVD, "fcdivd", floatDF, floatDF, floatDF);
-  ADD_K1_BUILTIN (FCMA, "fcma", floatSF, floatSF, floatSF, floatSF, floatSF);
-  ADD_K1_BUILTIN (FCMAWD, "fcmawd", floatDF, floatSF, floatSF, floatSF,
-		  floatSF);
-  ADD_K1_BUILTIN (FCMS, "fcms", floatSF, floatSF, floatSF, floatSF, floatSF);
-  ADD_K1_BUILTIN (FCMSWD, "fcmswd", floatDF, floatSF, floatSF, floatSF,
-		  floatSF);
-  ADD_K1_BUILTIN (FDMA, "fdma", floatSF, floatSF, floatSF, floatSF, floatSF);
-  ADD_K1_BUILTIN (FDMAWD, "fdmawd", floatDF, floatSF, floatSF, floatSF,
-		  floatSF);
-  ADD_K1_BUILTIN (FDMS, "fdms", floatSF, floatSF, floatSF, floatSF, floatSF);
-  ADD_K1_BUILTIN (FDMSWD, "fdmswd", floatDF, floatSF, floatSF, floatSF,
-		  floatSF);
+  /* FIXME AUTO : Disable use of create_SC_* */
+  /* ADD_K1_BUILTIN (FCMA,    "fcma",
+   * floatSF,floatSF,floatSF,floatSF,floatSF); */
+  /* ADD_K1_BUILTIN (FCMAWD,  "fcmawd",
+   * floatDF,floatSF,floatSF,floatSF,floatSF); */
+  /* ADD_K1_BUILTIN (FCMS,    "fcms",
+   * floatSF,floatSF,floatSF,floatSF,floatSF); */
+  /* ADD_K1_BUILTIN (FCMSWD,  "fcmswd",
+   * floatDF,floatSF,floatSF,floatSF,floatSF); */
+  /* ADD_K1_BUILTIN (FDMA,    "fdma",
+   * floatSF,floatSF,floatSF,floatSF,floatSF); */
+  /* ADD_K1_BUILTIN (FDMAWD,  "fdmawd",
+   * floatDF,floatSF,floatSF,floatSF,floatSF); */
+  /* ADD_K1_BUILTIN (FDMS,    "fdms",
+   * floatSF,floatSF,floatSF,floatSF,floatSF); */
+  /* ADD_K1_BUILTIN (FDMSWD,  "fdmswd",
+   * floatDF,floatSF,floatSF,floatSF,floatSF); */
   ADD_K1_BUILTIN (FENCE, "fence", VOID);
   ADD_K1_BUILTIN (FFMA, "ffma", floatSF, floatSF, floatSF, floatSF);
   ADD_K1_BUILTIN (FFMAD, "ffmad", floatDF, floatDF, floatDF, floatDF);
@@ -5218,99 +5223,102 @@ k1_expand_builtin_fsisrd (rtx target, tree args)
   return target;
 }
 
-static rtx
-k1_expand_builtin_complex_product (rtx target, tree args, int builtin)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-  rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
-  rtx arg4 = expand_normal (CALL_EXPR_ARG (args, 3));
+/* FIXME AUTO : Disable use of create_SC_* */
+/* static rtx */
+/* k1_expand_builtin_complex_product (rtx target, tree args, int builtin) */
+/* { */
+/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
+/*     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1)); */
+/*     rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2)); */
+/*     rtx arg4 = expand_normal (CALL_EXPR_ARG (args, 3)); */
 
-  rtx sc1, sc2;
-  rtx last = get_last_insn_anywhere ();
+/*     rtx sc1, sc2; */
+/*     rtx last = get_last_insn_anywhere (); */
 
-  arg1 = force_reg (SFmode, arg1);
-  arg2 = force_reg (SFmode, arg2);
-  arg3 = force_reg (SFmode, arg3);
-  arg4 = force_reg (SFmode, arg4);
+/*     arg1 = force_reg (SFmode, arg1); */
+/*     arg2 = force_reg (SFmode, arg2); */
+/*     arg3 = force_reg (SFmode, arg3); */
+/*     arg4 = force_reg (SFmode, arg4); */
 
-  sc1 = force_reg (SCmode, k1_find_or_create_SC_register (last, arg1, arg2));
-  sc2 = force_reg (SCmode, k1_find_or_create_SC_register (last, arg3, arg4));
+/*     sc1 = force_reg (SCmode, k1_find_or_create_SC_register (last, arg1,
+ * arg2)); */
+/*     sc2 = force_reg (SCmode, k1_find_or_create_SC_register (last, arg3,
+ * arg4)); */
 
-  if (!target)
-    target = gen_reg_rtx (SFmode);
-  if (!REG_P (target) || GET_MODE (target) != SFmode)
-    {
-      target = force_reg (SFmode, target);
-    }
+/*     if (!target) */
+/*         target = gen_reg_rtx (SFmode); */
+/*     if (!REG_P(target) || GET_MODE (target) != SFmode) { */
+/*         target = force_reg (SFmode, target); */
+/*     } */
 
-  switch (builtin)
-    {
-    case K1_BUILTIN_FDMA:
-      emit_insn (gen_fdma (target, sc1, sc2));
-      break;
-    case K1_BUILTIN_FDMS:
-      emit_insn (gen_fdms (target, sc1, sc2));
-      break;
-    case K1_BUILTIN_FCMA:
-      emit_insn (gen_fcma (target, sc1, sc2));
-      break;
-    case K1_BUILTIN_FCMS:
-      emit_insn (gen_fcms (target, sc1, sc2));
-      break;
-    default:
-      gcc_unreachable ();
-    }
+/*     switch (builtin) { */
+/*     case K1_BUILTIN_FDMA: */
+/*         emit_insn (gen_fdma (target, sc1, sc2)); */
+/*         break; */
+/*     case K1_BUILTIN_FDMS: */
+/*         emit_insn (gen_fdms (target, sc1, sc2)); */
+/*         break; */
+/*     case K1_BUILTIN_FCMA: */
+/*         emit_insn (gen_fcma (target, sc1, sc2)); */
+/*         break; */
+/*     case K1_BUILTIN_FCMS: */
+/*         emit_insn (gen_fcms (target, sc1, sc2)); */
+/*         break; */
+/*     default: */
+/*         gcc_unreachable (); */
+/*     } */
 
-  return target;
-}
+/*     return target; */
+/* } */
 
-static rtx
-k1_expand_builtin_double_complex_product (rtx target, tree args, int builtin)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-  rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
-  rtx arg4 = expand_normal (CALL_EXPR_ARG (args, 3));
+/* FIXME AUTO : Disable use of create_SC_* */
+/* static rtx */
+/* k1_expand_builtin_double_complex_product (rtx target, tree args, int builtin)
+ */
+/* { */
+/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
+/*     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1)); */
+/*     rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2)); */
+/*     rtx arg4 = expand_normal (CALL_EXPR_ARG (args, 3)); */
 
-  rtx sc1, sc2;
-  rtx last = get_last_insn_anywhere ();
+/*     rtx sc1, sc2; */
+/*     rtx last = get_last_insn_anywhere (); */
 
-  arg1 = force_reg (SFmode, arg1);
-  arg2 = force_reg (SFmode, arg2);
-  arg3 = force_reg (SFmode, arg3);
-  arg4 = force_reg (SFmode, arg4);
+/*     arg1 = force_reg (SFmode, arg1); */
+/*     arg2 = force_reg (SFmode, arg2); */
+/*     arg3 = force_reg (SFmode, arg3); */
+/*     arg4 = force_reg (SFmode, arg4); */
 
-  sc1 = force_reg (SCmode, k1_find_or_create_SC_register (last, arg1, arg2));
-  sc2 = force_reg (SCmode, k1_find_or_create_SC_register (last, arg3, arg4));
+/*     sc1 = force_reg (SCmode, k1_find_or_create_SC_register (last, arg1,
+ * arg2)); */
+/*     sc2 = force_reg (SCmode, k1_find_or_create_SC_register (last, arg3,
+ * arg4)); */
 
-  if (!target)
-    target = gen_reg_rtx (DFmode);
-  if (!REG_P (target) || GET_MODE (target) != DFmode)
-    {
-      target = force_reg (DFmode, target);
-    }
+/*     if (!target) */
+/*         target = gen_reg_rtx (DFmode); */
+/*     if (!REG_P(target) || GET_MODE (target) != DFmode) { */
+/*         target = force_reg (DFmode, target); */
+/*     } */
 
-  switch (builtin)
-    {
-    case K1_BUILTIN_FDMAWD:
-      emit_insn (gen_fdmawd (target, sc1, sc2));
-      break;
-    case K1_BUILTIN_FDMSWD:
-      emit_insn (gen_fdmswd (target, sc1, sc2));
-      break;
-    case K1_BUILTIN_FCMAWD:
-      emit_insn (gen_fcmawd (target, sc1, sc2));
-      break;
-    case K1_BUILTIN_FCMSWD:
-      emit_insn (gen_fcmswd (target, sc1, sc2));
-      break;
-    default:
-      gcc_unreachable ();
-    }
+/*     switch (builtin) { */
+/*     case K1_BUILTIN_FDMAWD: */
+/*         emit_insn (gen_fdmawd (target, sc1, sc2)); */
+/*         break; */
+/*     case K1_BUILTIN_FDMSWD: */
+/*         emit_insn (gen_fdmswd (target, sc1, sc2)); */
+/*         break; */
+/*     case K1_BUILTIN_FCMAWD: */
+/*         emit_insn (gen_fcmawd (target, sc1, sc2)); */
+/*         break; */
+/*     case K1_BUILTIN_FCMSWD: */
+/*         emit_insn (gen_fcmswd (target, sc1, sc2)); */
+/*         break; */
+/*     default: */
+/*         gcc_unreachable (); */
+/*     } */
 
-  return target;
-}
+/*     return target; */
+/* } */
 
 static rtx
 k1_expand_builtin_ffma (rtx target, tree args, int rn)
@@ -6269,16 +6277,18 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case K1_BUILTIN_FSBFRNWP:
       return k1_expand_builtin_fsbfwp (target, exp,
 				       fcode == K1_BUILTIN_FSBFRNWP);
-    case K1_BUILTIN_FDMA:
-    case K1_BUILTIN_FDMS:
-    case K1_BUILTIN_FCMA:
-    case K1_BUILTIN_FCMS:
-      return k1_expand_builtin_complex_product (target, exp, fcode);
-    case K1_BUILTIN_FDMAWD:
-    case K1_BUILTIN_FDMSWD:
-    case K1_BUILTIN_FCMAWD:
-    case K1_BUILTIN_FCMSWD:
-      return k1_expand_builtin_double_complex_product (target, exp, fcode);
+    /* FIXME AUTO : Disable use of create_SC_* */
+    /* case K1_BUILTIN_FDMA: */
+    /* case K1_BUILTIN_FDMS: */
+    /* case K1_BUILTIN_FCMA: */
+    /* case K1_BUILTIN_FCMS: */
+    /*     return k1_expand_builtin_complex_product (target, exp, fcode); */
+    /* case K1_BUILTIN_FDMAWD: */
+    /* case K1_BUILTIN_FDMSWD: */
+    /* case K1_BUILTIN_FCMAWD: */
+    /* case K1_BUILTIN_FCMSWD: */
+    /*     return k1_expand_builtin_double_complex_product (target, exp, fcode);
+     */
     case K1_BUILTIN_FENCE:
       return k1_expand_builtin_fence ();
     case K1_BUILTIN_FFMA:
@@ -9104,72 +9114,69 @@ k1_function_epilogue (FILE *file ATTRIBUTE_UNUSED,
   dfa_finish ();
 }
 
-rtx
-k1_find_or_create_SC_register (rtx curr_insn, rtx low, rtx high)
-{
-  int i, generating_concat = generating_concat_p;
-  struct fake_SC sc;
-  struct fake_SC *elt;
+/* FIXME AUTO : Disable use of create_SC_* */
+/* rtx */
+/* k1_find_or_create_SC_register (rtx curr_insn, rtx low, rtx high) */
+/* { */
+/*     int i, generating_concat = generating_concat_p; */
+/*     struct fake_SC sc; */
+/*     struct fake_SC *elt; */
 
-  if (cfun->machine->fake_SC_registers)
-    FOR_EACH_VEC_ELT (*cfun->machine->fake_SC_registers, i, elt)
-      {
-	if (rtx_equal_p (low, elt->low) && rtx_equal_p (high, elt->high))
-	  {
-	    rtx l = SET_DEST (PATTERN (elt->low_insn));
-	    rtx h = SET_DEST (PATTERN (elt->high_insn));
-	    rtx p;
-	    int parts = 0;
+/*     if (cfun->machine->fake_SC_registers) */
+/*     FOR_EACH_VEC_ELT (*cfun->machine->fake_SC_registers, i, elt) { */
+/*        if (rtx_equal_p (low, elt->low) */
+/*             && rtx_equal_p (high, elt->high)) { */
+/*             rtx l = SET_DEST (PATTERN (elt->low_insn)); */
+/*             rtx h = SET_DEST (PATTERN (elt->high_insn)); */
+/*             rtx p; */
+/*             int parts = 0; */
 
-	    for (p = prev_nonnote_insn_bb (curr_insn); p != NULL_RTX;
-		 p = prev_nonnote_insn_bb (p))
-	      if (INSN_P (p))
-		{
-		  rtx set = single_set (p);
+/*             for (p = prev_nonnote_insn_bb (curr_insn); p != NULL_RTX ; */
+/*                  p = prev_nonnote_insn_bb (p)) */
+/*                 if (INSN_P (p)) { */
+/*                     rtx set = single_set (p); */
 
-		  if (reg_set_p (low, p) || reg_set_p (high, p))
-		    break;
+/* 		    if (reg_set_p (low, p) */
+/* 			|| reg_set_p (high, p)) */
+/* 		      break; */
 
-		  if (set && elt->low_insn == p
-		      && rtx_equal_p (l, SET_DEST (set)))
-		    {
-		      parts |= 1;
-		    }
-		  else if (set && elt->high_insn == p
-			   && rtx_equal_p (h, SET_DEST (set)))
-		    {
-		      parts |= 2;
-		    }
+/*                     if (set */
+/*                         && elt->low_insn == p */
+/*                         && rtx_equal_p (l, SET_DEST (set))) { */
+/*                         parts |= 1; */
+/*                     } else if (set */
+/*                                && elt->high_insn == p */
+/*                                && rtx_equal_p (h, SET_DEST (set))) { */
+/*                         parts |= 2; */
+/*                     } */
 
-		  if (parts == 3)
-		    break;
-		}
+/*                     if (parts == 3) break; */
+/*                 } */
 
-	    if (parts == 3)
-	      return elt->sc;
-	  }
-      }
+/*             if (parts == 3) return elt->sc; */
+/*         } */
+/*     } */
 
-  /* If we want the RTL patterns to match, don't generate a SC register
-     containing a concat. */
-  generating_concat_p = 0;
-  sc.sc = gen_reg_rtx (SCmode);
-  /* We'll access the register only by subparts. Emit a
-     clobber of the whole register so that the liveness
-     analysis can deduce that it's live only from this point
-     on. */
-  emit_insn (gen_rtx_CLOBBER (SCmode, sc.sc));
-  generating_concat_p = generating_concat;
-  sc.low = low;
-  sc.high = high;
+/*     /\* If we want the RTL patterns to match, don't generate a SC register */
+/*        containing a concat. *\/ */
+/*     generating_concat_p = 0; */
+/*     sc.sc = gen_reg_rtx (SCmode); */
+/*     /\* We'll access the register only by subparts. Emit a */
+/*        clobber of the whole register so that the liveness */
+/*        analysis can deduce that it's live only from this point */
+/*        on. *\/ */
+/*     emit_insn (gen_rtx_CLOBBER (SCmode, sc.sc)); */
+/*     generating_concat_p = generating_concat; */
+/*     sc.low = low; */
+/*     sc.high = high; */
 
-  sc.low_insn = emit_move_insn (gen_lowpart (SFmode, sc.sc), low);
-  sc.high_insn = emit_move_insn (gen_highpart (SFmode, sc.sc), high);
+/*     sc.low_insn = emit_move_insn (gen_lowpart(SFmode, sc.sc), low); */
+/*     sc.high_insn = emit_move_insn (gen_highpart(SFmode, sc.sc), high); */
 
-  vec_safe_push (cfun->machine->fake_SC_registers, sc);
+/*     vec_safe_push (cfun->machine->fake_SC_registers, sc); */
 
-  return sc.sc;
-}
+/*     return sc.sc; */
+/* } */
 
 static void
 k1_dependencies_evaluation_hook (rtx head, rtx tail)
