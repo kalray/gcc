@@ -133,15 +133,16 @@
    (subreg:SI (concatn:DI ...) xxx). This will get cleaned up in
    cleanup_subreg_operands, but the pattern needs to be accepted as the 
    instruction will be extract_insn'd first.  */
-(define_predicate "movsi_operand"
-    (match_code "const,const_int,reg,subreg,mem,symbol_ref,label_ref")
+/* FIXME AUTO: should not be needed anymore as we won't play with subreg«
+/*(define_predicate "movsi_operand"
+   (match_code "const,const_int,reg,subreg,mem,symbol_ref,label_ref")
 {
 	return general_operand (op,mode) 
                || immediate_operand (op, VOIDmode)
                || (GET_CODE (op) == SUBREG
                    && GET_CODE (SUBREG_REG (op)) == CONCATN);
 })
-
+*/
 
 
 (define_predicate "shift_operand"
