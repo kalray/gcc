@@ -3262,11 +3262,11 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (CBS, "cbs", intSI, uintSI);
   ADD_K1_BUILTIN (CBSDL, "cbsdl", intDI, uintDI);
   ADD_K1_BUILTIN (CLZ, "clz", intSI, uintSI);
-  ADD_K1_BUILTIN (CLZDL, "clzdl", intSI, uintDI);
+  ADD_K1_BUILTIN (CLZDL, "clzdl", intDI, uintDI);
   ADD_K1_BUILTIN (CMOVE, "cmove", intSI, intSI, intSI, intSI);
   ADD_K1_BUILTIN (CMOVEF, "cmovef", floatSF, intSI, floatSF, floatSF);
   ADD_K1_BUILTIN (CTZ, "ctz", intSI, uintSI);
-  ADD_K1_BUILTIN (CTZDL, "ctzdl", intSI, uintDI);
+  ADD_K1_BUILTIN (CTZDL, "ctzdl", intDI, uintDI);
   ADD_K1_BUILTIN (ACWS, "acws", uintDI, voidPTR, uintSI, uintSI);
   ADD_K1_BUILTIN (ACWSU, "acwsu", uintDI, voidPTR, uintSI, uintSI);
   ADD_K1_BUILTIN (CWS, "cws", uintDI, voidPTR, uintSI, uintSI);
@@ -4352,9 +4352,9 @@ k1_expand_builtin_ctzdl (rtx target, tree args)
 
   if (!target)
     target = gen_reg_rtx (SImode);
-  target = force_reg (SImode, target);
+  target = force_reg (DImode, target);
   arg1 = force_reg (DImode, arg1);
-  emit_insn (gen_ctzdl (target, arg1));
+  emit_insn (gen_ctzdi2 (target, arg1));
 
   return target;
 }
@@ -4366,9 +4366,9 @@ k1_expand_builtin_clzdl (rtx target, tree args)
 
   if (!target)
     target = gen_reg_rtx (SImode);
-  target = force_reg (SImode, target);
+  target = force_reg (DImode, target);
   arg1 = force_reg (DImode, arg1);
-  emit_insn (gen_clzdl (target, arg1));
+  emit_insn (gen_clzdi2 (target, arg1));
 
   return target;
 }
