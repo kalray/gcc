@@ -430,6 +430,8 @@ extern const char *k1_board_to_startfile_prefix (int argc, const char **argv);
       goto win;                                                                \
   }
 
+#define LEGITIMATE_PIC_OPERAND_P(X) k1_legitimate_pic_operand_p (X)
+
 /* A C expression which is nonzero if register number num is suitable
    for use as a base register in operand addresses. Like
    TARGET_LEGITIMATE_ADDRESS_P, this macro should also define a strict
