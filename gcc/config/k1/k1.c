@@ -2365,6 +2365,19 @@ k1_handle_symbol(rtx addr, rtx reg)
   return reg;
 }
 
+bool
+k1_legitimate_pic_operand_p (rtx x)
+{
+  if (GET_CODE (x) == SYMBOL_REF
+      || (GET_CODE (x) == CONST
+          && GET_CODE (XEXP (x, 0)) == PLUS
+          && GET_CODE (XEXP (XEXP (x, 0), 0)) == SYMBOL_REF))
+     return false;
+
+  return true;
+}
+
+
 static rtx
 k1_target_legitimize_pic_address (rtx orig, rtx reg)
 {

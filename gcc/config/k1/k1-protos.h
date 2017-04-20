@@ -76,6 +76,8 @@ extern bool k1_expand_mov (rtx operands[]);
 
 extern rtx k1_find_or_create_SC_register (rtx curr_insn, rtx low, rtx high);
 
+extern bool k1_legitimate_pic_operand_p (rtx x);
+
 extern bool k1_legitimate_modulo_addressing_p (rtx x, bool strict);
 
 extern bool k1_lowbit_highbit_constant_p (HOST_WIDE_INT val, int *lowbit, int *highbit);

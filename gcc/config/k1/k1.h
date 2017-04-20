@@ -418,6 +418,9 @@ K1C_FIXED_REGISTERS \
         if (k1_legitimize_reload_address (&x, opnum, type)) goto win;   \
     }
 
+#define LEGITIMATE_PIC_OPERAND_P(X) \
+  k1_legitimate_pic_operand_p (X)
+
 /* A C expression which is nonzero if register number num is suitable
    for use as a base register in operand addresses. Like
    TARGET_LEGITIMATE_ADDRESS_P, this macro should also define a strict
