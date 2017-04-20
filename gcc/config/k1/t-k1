@@ -1,5 +1,8 @@
-MULTILIB_OPTIONS = mcore=k1pe/mcore=k1rm fPIC
-MULTILIB_DIRNAMES = k1pe/le/bare k1rm/le/bare pic mOS
+MULTILIB_OPTIONS = mcore=k1pe/mcore=k1rm
+#fPIC
+
+MULTILIB_DIRNAMES = k1pe/le/bare k1rm/le/bare
+# pic
 
 MULTILIB_EXTRA_OPTS = fdata-sections ffunction-sections
 
