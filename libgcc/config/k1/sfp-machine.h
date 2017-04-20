@@ -33,10 +33,10 @@ void __k1_fpu_raise_exceptions (int excepts);
  * End of part of HAL duplicated here for coolidge
  */
 
-#define _FP_W_TYPE_SIZE 64
-#define _FP_W_TYPE unsigned long long
-#define _FP_WS_TYPE signed long long
-#define _FP_I_TYPE long long
+#define _FP_W_TYPE_SIZE 32
+#define _FP_W_TYPE unsigned int
+#define _FP_WS_TYPE signed int
+#define _FP_I_TYPE int
 
 /* The type of the result of a floating point comparison.  This must
    match `__libgcc_cmp_return__' in GCC for the target.  */
