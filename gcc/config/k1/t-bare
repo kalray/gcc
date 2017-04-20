@@ -1,2 +1,2 @@
-MULTILIB_OPTIONS = mcore=k1rm fno-exceptions m64 fPIC
-MULTILIB_DIRNAMES = k1rm/le/bare mOS noexceptions 64 pic
+MULTILIB_OPTIONS = mcore=k1rm fno-exceptions # m64 fPIC
+MULTILIB_DIRNAMES = k1rm/le/bare noexceptions # 64 pic
