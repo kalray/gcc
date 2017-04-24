@@ -3098,8 +3098,6 @@ enum k1_builtin
   K1_BUILTIN_FSISRD,
   K1_BUILTIN_GET,
   K1_BUILTIN_GET_R,
-  K1_BUILTIN_GETD,
-  K1_BUILTIN_GETD_R,
 #if 0
     K1_BUILTIN_HFX,
 #endif
@@ -3146,8 +3144,6 @@ enum k1_builtin
   K1_BUILTIN_SCALL,
   K1_BUILTIN_SET,
   K1_BUILTIN_SET_PS,
-  K1_BUILTIN_SETD,
-  K1_BUILTIN_SETD_PS,
   K1_BUILTIN_SLLHPS,
   K1_BUILTIN_SLLHPS_R,
   K1_BUILTIN_SRAHPS,
@@ -3159,7 +3155,6 @@ enum k1_builtin
   K1_BUILTIN_WAITANY,
   K1_BUILTIN_WAITCLR1,
   K1_BUILTIN_WANTANY,
-  K1_BUILTIN_WPURGE,
   K1_BUILTIN_WRITETLB,
   K1_BUILTIN_SAT,
   K1_BUILTIN_SATD,
@@ -3376,8 +3371,6 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (FSISRD, "fsisrd", floatDF, floatDF);
   ADD_K1_BUILTIN (GET, "get", uintSI, intSI);
   ADD_K1_BUILTIN (GET_R, "get_r", uintSI, intSI);
-  ADD_K1_BUILTIN (GETD, "getd", uintDI, intSI);
-  ADD_K1_BUILTIN (GETD_R, "getd_r", uintDI, intSI);
   ADD_K1_BUILTIN (HFXB, "hfxb", VOID, uintQI, intSI);
   ADD_K1_BUILTIN (HFXT, "hfxt", VOID, uintQI, intSI);
 #if 0
@@ -3403,7 +3396,6 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (MADUUCIWD, "maduuciwd", uintDI, uintDI, uintSI, uintSI);
   ADD_K1_BUILTIN (NOTIFY1, "notify1", VOID, uintSI);
   ADD_K1_BUILTIN (PROBETLB, "probetlb", VOID);
-  ADD_K1_BUILTIN (RAISE1, "raise1", VOID, uintSI);
   ADD_K1_BUILTIN (READTLB, "readtlb", VOID);
   /* ADD_K1_BUILTIN (RXOR,    "r_xord",      VOID,   uintQI, uintDI, uintHI); */
   ADD_K1_BUILTIN (SBFHP, "sbfhp", intSI, intSI, intSI);
@@ -3416,8 +3408,6 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (SATD, "satd", intDI, intDI, uintQI);
   ADD_K1_BUILTIN (SET, "set", VOID, intSI, uintSI);
   ADD_K1_BUILTIN (SET_PS, "set_ps", VOID, intSI, uintSI);
-  ADD_K1_BUILTIN (SETD, "setd", VOID, intSI, uintDI);
-  ADD_K1_BUILTIN (SETD_PS, "setd_ps", VOID, intSI, uintDI);
 
   ADD_K1_BUILTIN (SLLHPS, "sllhps", uintSI, uintSI, uintSI);
   ADD_K1_BUILTIN (SLLHPS_R, "sllhps_r", uintSI, uintSI, uintSI);
@@ -3429,7 +3419,6 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (WAITCLR1, "waitclr1", VOID, uintSI);
   ADD_K1_BUILTIN (WAITANY, "waitany", uintSI, uintSI, uintQI);
   ADD_K1_BUILTIN (WANTANY, "wantany", uintSI, uintSI, uintQI);
-  ADD_K1_BUILTIN (WPURGE, "wpurge", VOID);
   ADD_K1_BUILTIN (WRITETLB, "writetlb", VOID);
 
   ADD_K1_BUILTIN (FWIDENB, "fwidenb", floatSF, uintSI);
@@ -5942,17 +5931,6 @@ k1_expand_builtin_notify1 (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_raise1 (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-
-  arg1 = force_reg (SImode, arg1);
-  emit_insn (gen_raise1 (arg1, k1_sync_reg_rtx));
-
-  return target;
-}
-
-static rtx
 k1_expand_builtin_waitclr1 (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
@@ -6005,14 +5983,6 @@ k1_expand_builtin_wantany (rtx target, tree args)
   emit_insn (gen_wantany (target, arg1, arg2, k1_sync_reg_rtx));
 
   return target;
-}
-
-static rtx
-k1_expand_builtin_wpurge (void)
-{
-  emit_insn (gen_wpurge (k1_sync_reg_rtx));
-
-  return NULL_RTX;
 }
 
 static rtx
@@ -6348,10 +6318,6 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_get (target, exp, SImode);
     case K1_BUILTIN_GET_R:
       return k1_expand_builtin_get_r (target, exp, SImode);
-    case K1_BUILTIN_GETD:
-      return k1_expand_builtin_get (target, exp, DImode);
-    case K1_BUILTIN_GETD_R:
-      return k1_expand_builtin_get_r (target, exp, DImode);
 #if 0
     case K1_BUILTIN_HFX:
         return k1_expand_builtin_hfx (target, exp);
@@ -6399,8 +6365,6 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_notify1 (target, exp);
     case K1_BUILTIN_PROBETLB:
       return k1_expand_builtin_probetlb ();
-    case K1_BUILTIN_RAISE1:
-      return k1_expand_builtin_raise1 (target, exp);
     case K1_BUILTIN_READTLB:
       return k1_expand_builtin_readtlb ();
     /* case K1_BUILTIN_RXOR: */
@@ -6423,10 +6387,6 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case K1_BUILTIN_SET_PS:
       return k1_expand_builtin_set (target, exp, fcode == K1_BUILTIN_SET_PS,
 				    SImode);
-    case K1_BUILTIN_SETD:
-    case K1_BUILTIN_SETD_PS:
-      return k1_expand_builtin_set (target, exp, fcode == K1_BUILTIN_SET_PS,
-				    DImode);
     case K1_BUILTIN_SLLHPS:
     case K1_BUILTIN_SLLHPS_R:
       return k1_expand_builtin_sllhps (target, exp);
@@ -6447,8 +6407,6 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_waitclr1 (target, exp);
     case K1_BUILTIN_WRITETLB:
       return k1_expand_builtin_writetlb ();
-    case K1_BUILTIN_WPURGE:
-      return k1_expand_builtin_wpurge ();
     case K1_BUILTIN_FWIDENB:
       return k1_expand_builtin_fwiden (target, exp, 1);
     case K1_BUILTIN_FWIDENBWP:
@@ -8850,7 +8808,6 @@ k1_target_trampoline_init (rtx m_tramp, tree fndecl, rtx static_chain)
 
   emit_insn (gen_iinvall (adjust_address (m_tramp, Pmode, 0), k1_sync_reg_rtx));
   emit_insn (gen_iinvall (mem, k1_sync_reg_rtx));
-  emit_insn (gen_wpurge (k1_sync_reg_rtx));
 }
 
 /* We recognize patterns that aren't canonical addresses, because we
