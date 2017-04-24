@@ -2997,7 +2997,6 @@ enum k1_builtin
   K1_BUILTIN_CTZ,
   K1_BUILTIN_CTZDL,
   K1_BUILTIN_ACWS,
-  K1_BUILTIN_ACWSU,
   K1_BUILTIN_CWS,
   K1_BUILTIN_AFDA,
   K1_BUILTIN_AFDAU,
@@ -3268,8 +3267,7 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (CMOVEF, "cmovef", floatSF, intSI, floatSF, floatSF);
   ADD_K1_BUILTIN (CTZ, "ctz", intSI, uintSI);
   ADD_K1_BUILTIN (CTZDL, "ctzdl", intDI, uintDI);
-  ADD_K1_BUILTIN (ACWS, "acws", uintDI, voidPTR, uintSI, uintSI);
-  ADD_K1_BUILTIN (ACWSU, "acwsu", uintDI, voidPTR, uintSI, uintSI);
+  ADD_K1_BUILTIN (ACWS, "acws", uintDI, voidPTR, uintDI, uintDI);
   ADD_K1_BUILTIN (CWS, "cws", uintDI, voidPTR, uintSI, uintSI);
   ADD_K1_BUILTIN (AFDA, "afda", uintDI, voidPTR, intDI);
   ADD_K1_BUILTIN (AFDAU, "afdau", uintDI, voidPTR, intDI);
@@ -4256,24 +4254,39 @@ k1_expand_builtin_afda_cachemode (rtx target, tree args, bool usecache)
 static rtx
 k1_expand_builtin_acws (rtx target, tree args)
 {
+  /* FIXME AUTO: quadruple registers not yet handled correctly */
+  /*  _____________________ */
+  /* < TI mode not correct > */
+  /*  --------------------- */
+  /*         \   ^__^ */
+  /*          \  (oo)\_______ */
+  /*             (__)\       )\/\ */
+  /*                 ||----w | */
+  /*                 ||     || */
+  /*  ____  _     _____    _    ____  _____  //\    _____ _____  __ */
+  /* |  _ \| |   | ____|  / \  / ___|| ____||/_\|  |  ___|_ _\ \/ / */
+  /* | |_) | |   |  _|   / _ \ \___ \|  _|   /_\   | |_   | | \  /  */
+  /* |  __/| |___| |___ / ___ \ ___) | |___ / _ \  |  _|  | | /  \  */
+  /* |_|   |_____|_____/_/   \_\____/|_____/_/ \_\ |_|   |___/_/\_\ */
+
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
   rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
-  rtx tmp = gen_reg_rtx (DImode);
+  rtx tmp = gen_reg_rtx (TImode);
 
   if (!target)
-    target = gen_reg_rtx (DImode);
-  if (!REG_P (target) || GET_MODE (target) != DImode)
+    target = gen_reg_rtx (TImode);
+  if (!REG_P (target) || GET_MODE (target) != TImode)
     {
-      target = force_reg (DImode, target);
+      target = force_reg (TImode, target);
     }
 
   emit_clobber (tmp);
-  emit_move_insn (gen_lowpart (SImode, tmp), arg2);
-  emit_move_insn (gen_highpart (SImode, tmp), arg3);
+  emit_move_insn (gen_lowpart (DImode, tmp), arg2);
+  emit_move_insn (gen_highpart (DImode, tmp), arg3);
 
   arg1 = force_reg (Pmode, arg1);
-  arg1 = gen_rtx_MEM (SImode, arg1);
+  arg1 = gen_rtx_MEM (DImode, arg1);
 
   emit_insn (gen_acws (tmp, arg1, tmp));
   emit_move_insn (target, tmp);
@@ -6132,7 +6145,6 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_cbsdl (target, exp);
     case K1_BUILTIN_ACWS:
       return k1_expand_builtin_acws (target, exp);
-    case K1_BUILTIN_ACWSU:
     case K1_BUILTIN_CWS:
       return k1_expand_builtin_cws (target, exp);
     case K1_BUILTIN_AFDA:
