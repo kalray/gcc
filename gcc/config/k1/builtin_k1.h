@@ -203,21 +203,11 @@ extern unsigned int __builtin_k1_lwu(const void *addr);
 /* SB */
 /* SBQ */
 /* SBQU */
-/* SBU */
-extern void __builtin_k1_sbu(void *addr, unsigned char data);
 /* SD */
-/* SDU */
-extern void __builtin_k1_sdu(void *addr, unsigned long long value);
-static __inline__ __attribute__((deprecated)) void __builtin_k1_sdu_s10_p(int s10, unsigned int addr, unsigned long long val)
-{ __builtin_k1_sdu((void *)(addr + s10), val); }
 /* SH */
 /* SHP */
 /* SHPU */
-/* SHU */
-extern void __builtin_k1_shu(void *addr, unsigned short data);
 /* SW */
-/* SWU */
-extern void __builtin_k1_swu(void *addr, unsigned int data);
 /* WPURGE */
 extern void __builtin_k1_wpurge(void);
 
