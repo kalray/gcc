@@ -2914,7 +2914,7 @@ k1_generic_expand_sync_instruction (enum rtx_code code, rtx dest, rtx addr,
 
   emit_insn (gen_rtx_CLOBBER (DImode, reg));
   emit_insn (gen_memory_barrier ());
-  emit_insn (gen_lwu (lowpart, addr));
+  emit_insn (gen_lwzu (lowpart, addr));
   emit_label (label);
   emit_move_insn (highpart, lowpart);
 
@@ -3131,11 +3131,10 @@ enum k1_builtin
   K1_BUILTIN_LHPZN,
   K1_BUILTIN_LHPZUN,
   K1_BUILTIN_LDU,
-  K1_BUILTIN_LWU,
+  K1_BUILTIN_LWZU,
   K1_BUILTIN_MADUUCIWD,
   K1_BUILTIN_NOTIFY1,
   K1_BUILTIN_PROBETLB,
-  K1_BUILTIN_RAISE1,
   K1_BUILTIN_READTLB,
   /* K1_BUILTIN_RXOR, */
   K1_BUILTIN_SBFHP,
@@ -3145,10 +3144,6 @@ enum k1_builtin
   K1_BUILTIN_SBMMT8,
   K1_BUILTIN_SBMMT8_D,
   K1_BUILTIN_SCALL,
-  K1_BUILTIN_SBU,
-  K1_BUILTIN_SDU,
-  K1_BUILTIN_SHU,
-  K1_BUILTIN_SWU,
   K1_BUILTIN_SET,
   K1_BUILTIN_SET_PS,
   K1_BUILTIN_SETD,
@@ -3404,7 +3399,7 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (LHSU, "lhsu", intHI, constVoidPTR);
   ADD_K1_BUILTIN (LHZU, "lhzu", uintHI, constVoidPTR);
   ADD_K1_BUILTIN (LDU, "ldu", uintDI, constVoidPTR);
-  ADD_K1_BUILTIN (LWU, "lwu", uintSI, constVoidPTR);
+  ADD_K1_BUILTIN (LWZU, "lwzu", uintSI, constVoidPTR);
   ADD_K1_BUILTIN (MADUUCIWD, "maduuciwd", uintDI, uintDI, uintSI, uintSI);
   ADD_K1_BUILTIN (NOTIFY1, "notify1", VOID, uintSI);
   ADD_K1_BUILTIN (PROBETLB, "probetlb", VOID);
@@ -3423,16 +3418,13 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (SET_PS, "set_ps", VOID, intSI, uintSI);
   ADD_K1_BUILTIN (SETD, "setd", VOID, intSI, uintDI);
   ADD_K1_BUILTIN (SETD_PS, "setd_ps", VOID, intSI, uintDI);
-  ADD_K1_BUILTIN (SBU, "sbu", VOID, voidPTR, uintQI);
-  ADD_K1_BUILTIN (SDU, "sdu", VOID, voidPTR, uintDI);
-  ADD_K1_BUILTIN (SHU, "shu", VOID, voidPTR, uintHI);
+
   ADD_K1_BUILTIN (SLLHPS, "sllhps", uintSI, uintSI, uintSI);
   ADD_K1_BUILTIN (SLLHPS_R, "sllhps_r", uintSI, uintSI, uintSI);
   ADD_K1_BUILTIN (SRAHPS, "srahps", uintSI, uintSI, uintSI);
   ADD_K1_BUILTIN (SRAHPS_R, "srahps_r", uintSI, uintSI, uintSI);
   ADD_K1_BUILTIN (STSU, "stsu", uintSI, uintSI, uintSI);
   ADD_K1_BUILTIN (STSUD, "stsud", uintDI, uintDI, uintDI);
-  ADD_K1_BUILTIN (SWU, "swu", VOID, voidPTR, uintSI);
   ADD_K1_BUILTIN (SYNCGROUP, "syncgroup", VOID, uintSI);
   ADD_K1_BUILTIN (WAITCLR1, "waitclr1", VOID, uintSI);
   ADD_K1_BUILTIN (WAITANY, "waitany", uintSI, uintSI, uintQI);
@@ -5825,7 +5817,7 @@ k1_expand_builtin_lhzu (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_lwu (rtx target, tree args)
+k1_expand_builtin_lwzu (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
 
@@ -5838,73 +5830,7 @@ k1_expand_builtin_lwu (rtx target, tree args)
 
   arg1 = gen_rtx_MEM (SImode, force_reg (Pmode, arg1));
 
-  emit_insn (gen_lwu (target, arg1));
-
-  return target;
-}
-
-static rtx
-k1_expand_builtin_sbu (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-
-  arg2 = force_reg (QImode, arg2);
-
-  if (GET_MODE (arg2) == SImode)
-    {
-      arg2 = simplify_gen_subreg (QImode, arg2, SImode, 0);
-    }
-  else if (GET_MODE (arg2) != QImode)
-    {
-      error ("__builtin_k1_sbu expects a byte as second argument.");
-      return NULL_RTX;
-    }
-
-  arg1 = gen_rtx_MEM (QImode, force_reg (Pmode, arg1));
-  emit_insn (gen_sbu (arg1, arg2));
-
-  return target;
-}
-
-static rtx
-k1_expand_builtin_sdu (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-
-  arg2 = force_reg (DImode, arg2);
-  arg1 = gen_rtx_MEM (DImode, force_reg (Pmode, arg1));
-  emit_insn (gen_sdu (arg1, arg2));
-
-  return target;
-}
-
-static rtx
-k1_expand_builtin_shu (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-
-  arg2 = force_reg (HImode, arg2);
-  arg2 = simplify_gen_subreg (HImode, arg2, GET_MODE (arg2), 0);
-  arg1 = gen_rtx_MEM (HImode, force_reg (Pmode, arg1));
-  emit_insn (gen_shu (arg1, arg2));
-
-  return target;
-}
-
-static rtx
-k1_expand_builtin_swu (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-
-  arg1 = force_reg (Pmode, arg1);
-  arg2 = force_reg (SImode, arg2);
-  arg1 = gen_rtx_MEM (SImode, arg1);
-
-  emit_insn (gen_swu (arg1, arg2));
+  emit_insn (gen_lwzu (target, arg1));
 
   return target;
 }
@@ -6465,8 +6391,8 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_lhsu (target, exp);
     case K1_BUILTIN_LHZU:
       return k1_expand_builtin_lhzu (target, exp);
-    case K1_BUILTIN_LWU:
-      return k1_expand_builtin_lwu (target, exp);
+    case K1_BUILTIN_LWZU:
+      return k1_expand_builtin_lwzu (target, exp);
     case K1_BUILTIN_MADUUCIWD:
       return k1_expand_builtin_maduuciwd (target, exp);
     case K1_BUILTIN_NOTIFY1:
@@ -6493,12 +6419,6 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case K1_BUILTIN_SBMMT8:
     case K1_BUILTIN_SBMMT8_D:
       return k1_expand_builtin_sbmmt8_d (target, exp);
-    case K1_BUILTIN_SBU:
-      return k1_expand_builtin_sbu (target, exp);
-    case K1_BUILTIN_SDU:
-      return k1_expand_builtin_sdu (target, exp);
-    case K1_BUILTIN_SHU:
-      return k1_expand_builtin_shu (target, exp);
     case K1_BUILTIN_SET:
     case K1_BUILTIN_SET_PS:
       return k1_expand_builtin_set (target, exp, fcode == K1_BUILTIN_SET_PS,
@@ -6517,8 +6437,6 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_stsu (target, exp);
     case K1_BUILTIN_STSUD:
       return k1_expand_builtin_stsud (target, exp);
-    case K1_BUILTIN_SWU:
-      return k1_expand_builtin_swu (target, exp);
     case K1_BUILTIN_SYNCGROUP:
       return k1_expand_builtin_syncgroup (target, exp);
     case K1_BUILTIN_WAITANY:
