@@ -60,17 +60,13 @@ extern void __builtin_k1_clear1 (unsigned int event);
 /* DOZE */
 /* GET */
 extern unsigned int __builtin_k1_get (int);
-/* GETD */
-extern unsigned long long __builtin_k1_getd (int);
 /* GOTO */
 /* HFXB */
 extern void __builtin_k1_hfxb (unsigned char, int);
 /* HFXT */
 extern void __builtin_k1_hfxt (unsigned char, int);
 /* ICALL */
-/* ICALLD */
 /* IGET */
-/* IGETD */
 /* IGOTO */
 /* IGOTOD */
 /* INVALDTLB */
@@ -84,16 +80,12 @@ extern void __builtin_k1_invalitlb (void);
 extern void __builtin_k1_notify1 (unsigned int);
 /* PROBETLB */
 extern void __builtin_k1_probetlb (void);
-/* RAISE1 */
-extern void
-__builtin_k1_raise1 (unsigned int /* event = event_reg * 32 + event_index */);
 /* READTLB */
 extern void __builtin_k1_readtlb (void);
 /* RET */
 /* RFE */
 /* SCALL */
 /* SET */
-/* SETD */
 /* SLEEP */
 /* STOP */
 /* SYNCGROUP */
@@ -228,8 +220,6 @@ extern unsigned int __builtin_k1_lwu (const void *addr);
 /* SHP */
 /* SHPU */
 /* SW */
-/* WPURGE */
-extern void __builtin_k1_wpurge (void);
 
 /*
  * ALU Instruction (non-FPU)
