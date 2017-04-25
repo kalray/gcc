@@ -6,7 +6,7 @@
 
               .section .init
               LOAD_PTR    $r0 = 16[$r12]
-              addd   $r12 = $r12, 8
+              add   $r12 = $r12, 8
               ;;
               set   $ra = $r0
               ;;
@@ -16,7 +16,7 @@
 
               .section .fini
               LOAD_PTR    $r0 = 16[$r12]
-              addd  $r12 = $r12, 8
+              add  $r12 = $r12, 8
               ;;
               set  $ra = $r0
               ;;
