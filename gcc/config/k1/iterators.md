@@ -37,6 +37,9 @@
 
 (define_mode_iterator I [(SI "") (DI "")])
 (define_mode_attr lite_prefix [(SI "") (DI "alud_")])
+
+(define_mode_attr suffix32b [(SI "w") (DI "")])
+
 (define_mode_attr suffix [(SI "") (DI "d")])
 (define_mode_attr suffix_opx [(SI "") (DI "d_x")])
 (define_mode_attr suffix2 [(SI "") (DI "dl")])
