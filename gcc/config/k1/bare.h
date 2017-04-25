@@ -51,7 +51,7 @@
 
 #define K1_DEFAULT_ARCH "k1c"
 #define K1_DEFAULT_CORE "k1pe"
-#define K1_DEFAULT_CLUSTER "node"
+#define K1_DEFAULT_CLUSTER "ioddr"
 
 /* "%{!march*:%{mcore=k1b*:-march=k1b;:-march=" K1_DEFAULT_ARCH "}} ",
  * \ */
