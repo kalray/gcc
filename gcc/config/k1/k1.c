@@ -10295,8 +10295,9 @@ k1_profile_hook (void)
 #undef TARGET_SCHED_DFA_NEW_CYCLE
 #define TARGET_SCHED_DFA_NEW_CYCLE k1_target_sched_dfa_new_cycle
 
-#undef TARGET_SCHED_REORDER
-#define TARGET_SCHED_REORDER k1_target_sched_reorder
+/* FIXME AUTO: do not pack mem on coolidge yet */
+/* #undef TARGET_SCHED_REORDER */
+/* #define TARGET_SCHED_REORDER k1_target_sched_reorder */
 
 #undef TARGET_SCHED_REASSOCIATION_WIDTH
 #define TARGET_SCHED_REASSOCIATION_WIDTH k1_reassociation_width
