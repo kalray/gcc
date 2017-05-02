@@ -1,8 +1,4 @@
-#ifdef __K1_64__
-#define STR_PTR sd
-#else
-#define STR_PTR sw
-#endif
+#include "32_64_macros.S"
 
               .section .init
               .globl _init
@@ -10,8 +6,12 @@
               .align 8
 _init:	
               get   $r0 = $ra
-              add  $r12 = $r12, -8
+              ADD_PTR  $r12 = $r12, -8
               ;;
+#ifndef __K1_64__
+	      sxw $r12 = $r12
+              ;;
+#endif
               STR_PTR 16[$r12] = $r0
               ;;
               .previous
@@ -22,8 +22,14 @@ _init:
               .align 8
 _fini:
               get   $r0 = $ra
-              add   $r12 = $r12, -8
+              ADD_PTR   $r12 = $r12, -8
               ;;
+
+#ifndef __K1_64__
+	      sxw $r12 = $r12
+              ;;
+#endif
+
               STR_PTR 16[$r12] = $r0
               ;;
               .previous
