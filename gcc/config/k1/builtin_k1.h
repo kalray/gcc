@@ -73,10 +73,6 @@ extern void __builtin_k1_hfxt (unsigned char, int);
 /* IGETD */
 /* IGOTO */
 /* IGOTOD */
-/* INDEXJTLB */
-extern void __builtin_k1_indexjtlb (void);
-/* INDEXLTLB */
-extern void __builtin_k1_indexltlb (void);
 /* INVALDTLB */
 extern void __builtin_k1_invaldtlb (void);
 /* INVALITLB */
