@@ -3052,8 +3052,6 @@ enum k1_builtin
   K1_BUILTIN_IINVALS,
   K1_BUILTIN_IINVALL,
   K1_BUILTIN_ITOUCHL,
-  K1_BUILTIN_INDEXJTLB,
-  K1_BUILTIN_INDEXLTLB,
   K1_BUILTIN_INVALDTLB,
   K1_BUILTIN_INVALITLB,
   K1_BUILTIN_LANDHP,
@@ -3380,8 +3378,6 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (IINVAL, "iinval", VOID);
   ADD_K1_BUILTIN (IINVALS, "iinvals", VOID, constVoidPTR);
   ADD_K1_BUILTIN (IINVALL, "iinvall", VOID, constVoidPTR);
-  ADD_K1_BUILTIN (INDEXJTLB, "indexjtlb", VOID);
-  ADD_K1_BUILTIN (INDEXLTLB, "indexltlb", VOID);
   ADD_K1_BUILTIN (INVALDTLB, "invaldtlb", VOID);
   ADD_K1_BUILTIN (INVALITLB, "invalitlb", VOID);
   ADD_K1_BUILTIN (ITOUCHL, "itouchl", VOID, voidPTR);
@@ -3981,22 +3977,6 @@ static rtx
 k1_expand_builtin_iinval (void)
 {
   emit_insn (gen_iinval (k1_sync_reg_rtx));
-
-  return NULL_RTX;
-}
-
-static rtx
-k1_expand_builtin_indexjtlb (void)
-{
-  emit_insn (gen_indexjtlb (k1_sync_reg_rtx));
-
-  return NULL_RTX;
-}
-
-static rtx
-k1_expand_builtin_indexltlb (void)
-{
-  emit_insn (gen_indexltlb (k1_sync_reg_rtx));
 
   return NULL_RTX;
 }
@@ -6509,10 +6489,6 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_hfxb (target, exp);
     case K1_BUILTIN_HFXT:
       return k1_expand_builtin_hfxt (target, exp);
-    case K1_BUILTIN_INDEXJTLB:
-      return k1_expand_builtin_indexjtlb ();
-    case K1_BUILTIN_INDEXLTLB:
-      return k1_expand_builtin_indexltlb ();
     case K1_BUILTIN_INVALDTLB:
       return k1_expand_builtin_invaldtlb ();
     case K1_BUILTIN_INVALITLB:
