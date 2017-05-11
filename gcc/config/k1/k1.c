@@ -4873,9 +4873,9 @@ k1_expand_builtin_float (rtx target, tree args, bool usigned)
   arg2 = force_reg (SImode, arg2);
 
   if (usigned)
-    emit_insn (gen_floatu (target, arg1, arg2, arg3));
+    emit_insn (gen_floatuw (target, arg1, arg2, arg3));
   else
-    emit_insn (gen_float (target, arg1, arg2, arg3));
+    emit_insn (gen_floatw (target, arg1, arg2, arg3));
 
   return target;
 }
@@ -4953,9 +4953,9 @@ k1_expand_builtin_fixed (rtx target, tree args, bool usigned)
   arg2 = force_reg (SFmode, arg2);
 
   if (usigned)
-    emit_insn (gen_fixedu (target, arg1, arg2, arg3));
+    emit_insn (gen_fixeduw (target, arg1, arg2, arg3));
   else
-    emit_insn (gen_fixed (target, arg1, arg2, arg3));
+    emit_insn (gen_fixedw (target, arg1, arg2, arg3));
 
   return target;
 }
