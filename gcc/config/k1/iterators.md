@@ -23,9 +23,9 @@
 (define_mode_attr SRFSIZEp [(SI "32") (DI "64")])
 
 (define_code_iterator cb_cond [eq ne gt ge lt le])
-;; (define_mode_iterator SIDI_cond_arch [SI DI "k1_architecture() >= K1B")])
-(define_mode_iterator SIDI_cond [SI DI])
-(define_mode_attr cbvar [(SI "") (DI "d")])
+(define_mode_iterator SIDI [SI DI])
+
+(define_mode_attr cbvar [(SI "w") (DI "d") (SF "w") (DF "d")])
 
 (define_mode_iterator SISIZE [SI SF V2HI])
 (define_mode_iterator SISIZESCALAR [SI SF])
