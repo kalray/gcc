@@ -40,9 +40,10 @@
 
 (define_mode_attr suffix32b [(SI "w") (DI "")])
 
-(define_mode_attr suffix [(SI "") (DI "d")])
+(define_mode_attr suffix [(SI "w") (DI "d")])
+
 (define_mode_attr suffix_opx [(SI "") (DI "d_x")])
-(define_mode_attr suffix2 [(SI "") (DI "dl")])
+(define_mode_attr suffix2 [(SI "w") (DI "d")])
 (define_mode_attr regclass [(SI "r") (DI "r")])
 (define_mode_attr size [(SI "4") (DI "8")])
 
