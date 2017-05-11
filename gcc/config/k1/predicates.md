@@ -26,6 +26,10 @@
                                  && !SYMBOL_REF_WEAK (XEXP (op, 0))));
 })
 
+(define_special_predicate "k1_branch_comparison_operator"
+  (match_code "eq,ne,le,lt,ge,gt"))
+
+
 (define_predicate "float_comparison_operator"
   (match_code "ne,eq,ge,lt,uneq,unge,unlt,ltgt"))
 
