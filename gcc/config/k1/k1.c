@@ -2770,7 +2770,7 @@ enum k1_builtin {
     K1_BUILTIN_CBSDL,
     K1_BUILTIN_CLZ,
     K1_BUILTIN_CLZDL,
-    K1_BUILTIN_CMOVE,
+    K1_BUILTIN_CWMOVED,
     K1_BUILTIN_CMOVEF,
     K1_BUILTIN_CTZ,
     K1_BUILTIN_CTZDL,
@@ -3047,7 +3047,7 @@ k1_target_init_builtins (void)
     ADD_K1_BUILTIN (CBSDL,   "cbsdl",       intDI, uintDI);
     ADD_K1_BUILTIN (CLZ,     "clz",         intSI,  uintSI);
     ADD_K1_BUILTIN (CLZDL,   "clzdl",       intDI,  uintDI);
-    ADD_K1_BUILTIN (CMOVE,   "cmove",       intSI,  intSI,  intSI, intSI);
+    ADD_K1_BUILTIN (CWMOVED, "cwmoved",     intDI,  intSI,  intDI, intDI);
     ADD_K1_BUILTIN (CMOVEF,  "cmovef",      floatSF,intSI,  floatSF, floatSF);
     ADD_K1_BUILTIN (CTZ,     "ctz",         intSI,  uintSI);
     ADD_K1_BUILTIN (CTZDL,   "ctzdl",       intDI,  uintDI);
@@ -4112,7 +4112,7 @@ k1_expand_builtin_clzdl (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_cmove (rtx target, tree args)
+k1_expand_builtin_cwmoved (rtx target, tree args)
 {
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
@@ -4122,9 +4122,9 @@ k1_expand_builtin_cmove (rtx target, tree args)
     if (!target)
         target = gen_reg_rtx (SImode);
     target = force_reg (SImode, target);
-    arg1 = force_reg (SImode, arg1);
-    arg2 = force_reg (SImode, arg2);
-    arg3 = force_reg (SImode, arg3);
+    arg1 = force_reg (DImode, arg1);
+    arg2 = force_reg (DImode, arg2);
+    arg3 = force_reg (DImode, arg3);
 
     cond = gen_rtx_NE (VOIDmode, arg1, GEN_INT (0));
 
@@ -4134,28 +4134,29 @@ k1_expand_builtin_cmove (rtx target, tree args)
     return target;
 }
 
-static rtx
-k1_expand_builtin_cmovef (rtx target, tree args)
-{
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-    rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
-    rtx cond;
+// FIXME AUTO: cmovef is not a K1 insn, not a builtin
+/* static rtx */
+/* k1_expand_builtin_cmovef (rtx target, tree args) */
+/* { */
+/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
+/*     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1)); */
+/*     rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2)); */
+/*     rtx cond; */
 
-    if (!target)
-        target = gen_reg_rtx (SFmode);
-    target = force_reg (SFmode, target);
-    arg1 = force_reg (SImode, arg1);
-    arg2 = force_reg (SFmode, arg2);
-    arg3 = force_reg (SFmode, arg3);
+/*     if (!target) */
+/*         target = gen_reg_rtx (SFmode); */
+/*     target = force_reg (SFmode, target); */
+/*     arg1 = force_reg (SImode, arg1); */
+/*     arg2 = force_reg (SFmode, arg2); */
+/*     arg3 = force_reg (SFmode, arg3); */
 
-    cond = gen_rtx_NE (VOIDmode, arg1, GEN_INT (0));
+/*     cond = gen_rtx_NE (VOIDmode, arg1, GEN_INT (0)); */
 
-    emit_move_insn (target, arg3);
-    emit_insn (gen_cmovesf (target, cond, arg1, arg2, target));
+/*     emit_move_insn (target, arg3); */
+/*     emit_insn (gen_cmovesf (target, cond, arg1, arg2, target)); */
 
-    return target;
-}
+/*     return target; */
+/* } */
 
 static rtx
 k1_expand_builtin_fence (void)
@@ -5805,10 +5806,10 @@ k1_target_expand_builtin (tree exp,
         return k1_expand_builtin_clz (target, exp);
     case K1_BUILTIN_CLZDL:
         return k1_expand_builtin_clzdl (target, exp);
-    case K1_BUILTIN_CMOVE:
-        return k1_expand_builtin_cmove (target, exp);
-    case K1_BUILTIN_CMOVEF:
-        return k1_expand_builtin_cmovef (target, exp);
+    case K1_BUILTIN_CWMOVED:
+        return k1_expand_builtin_cwmoved (target, exp);
+    /* case K1_BUILTIN_CMOVEF: */
+    /*     return k1_expand_builtin_cwmovef (target, exp); */
     case K1_BUILTIN_CTZ:
         return k1_expand_builtin_ctz (target, exp);
     case K1_BUILTIN_CTZDL:
