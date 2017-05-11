@@ -114,8 +114,8 @@ k1_class_max_nregs(reg_class_t regclass, enum machine_mode mode)
 {
   switch(regclass){
   case GRF_REGS:
-// FIXME AUTO PRF DISABLED
-    /* case PRF_REGS: */
+// FIXME AUTO PRF DISABLED and re-enabled
+  case PRF_REGS:
   case ALL_REGS:
     return HARD_REGNO_NREGS(0, mode);
 
