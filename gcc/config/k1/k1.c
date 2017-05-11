@@ -3522,9 +3522,9 @@ k1_expand_builtin_get (rtx target, tree args, enum machine_mode mode)
   if (INTVAL (arg1) == K1C_PCR_REGNO - K1C_SRF_FIRST_REGNO)
     emit_move_insn (target, reg);
   else if (mode == SImode)
-    emit_insn (gen_get_volatile (target, reg, k1_sync_reg_rtx));
+    emit_insn (gen_getsi_volatile (target, reg, k1_sync_reg_rtx));
   else if (mode == DImode)
-    emit_insn (gen_getd_volatile (target, reg, k1_sync_reg_rtx));
+    emit_insn (gen_getdi_volatile (target, reg, k1_sync_reg_rtx));
   else
     gcc_unreachable ();
 
@@ -3544,9 +3544,9 @@ k1_expand_builtin_get_r (rtx target, tree args, enum machine_mode mode)
   target = force_reg (mode, target);
   arg1 = force_reg (mode, arg1);
   if (mode == SImode)
-    emit_insn (gen_get_r (target, arg1, k1_sync_reg_rtx));
+    emit_insn (gen_getsi_r (target, arg1, k1_sync_reg_rtx));
   else if (mode == DImode)
-    emit_insn (gen_getd_r (target, arg1, k1_sync_reg_rtx));
+    emit_insn (gen_getdi_r (target, arg1, k1_sync_reg_rtx));
   else
     gcc_unreachable ();
 
@@ -3561,9 +3561,9 @@ k1_expand_builtin_set (rtx target ATTRIBUTE_UNUSED, tree args, bool ps,
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
 
   rtx (*my_gen_set_ps_volatile) (rtx op1, rtx op2, rtx op3)
-    = (mode == DImode) ? gen_setd_ps_volatile : gen_set_ps_volatile;
+    = (mode == DImode) ? gen_setdi_ps_volatile : gen_setsi_ps_volatile;
   rtx (*my_gen_set_volatile) (rtx op1, rtx op2, rtx op3)
-    = (mode == DImode) ? gen_setd_volatile : gen_set_volatile;
+    = (mode == DImode) ? gen_setdi_volatile : gen_setsi_volatile;
 
   if (!verify_const_int_arg (arg1, 6, false))
     {
