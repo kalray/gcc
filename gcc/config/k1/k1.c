@@ -2890,93 +2890,84 @@ k1_expand_vcondv4hi (rtx *operands)
 			    gen_highpart (V2HImode, operands[2])));
 }
 
-enum sync_insn_type
-{
-  SYNC_OLD,
-  SYNC_NEW,
-  SYNC
-};
+// FIXME AUTO: disabling legacy code for atomic
+/* enum sync_insn_type { SYNC_OLD, SYNC_NEW, SYNC }; */
 
-static void
-k1_generic_expand_sync_instruction (enum rtx_code code, rtx dest, rtx addr,
-				    rtx val, enum sync_insn_type type)
-{
-  rtx reg = gen_reg_rtx (DImode);
-  rtx res = gen_reg_rtx (SImode);
-  rtx label = gen_label_rtx ();
-  rtx lowpart = gen_lowpart (SImode, reg);
-  rtx highpart = gen_highpart (SImode, reg);
+/* static void */
+/* k1_generic_expand_sync_instruction (enum rtx_code code, rtx dest, rtx addr,
+ * rtx val, */
+/*                                     enum sync_insn_type type) */
+/* { */
+/*     rtx reg = gen_reg_rtx (DImode); */
+/*     rtx res = gen_reg_rtx (SImode); */
+/*     rtx label = gen_label_rtx (); */
+/*     rtx lowpart = gen_lowpart (SImode, reg); */
+/*     rtx highpart = gen_highpart (SImode, reg); */
 
-  /* Force a register operand. If that's not necessary, a following
-     pass will simplify it. */
-  if (!REG_P (val))
-    val = force_reg (SImode, val);
+/*     /\* Force a register operand. If that's not necessary, a following */
+/*        pass will simplify it. *\/ */
+/*     if (!REG_P (val)) */
+/*         val = force_reg (SImode, val); */
 
-  emit_insn (gen_rtx_CLOBBER (DImode, reg));
-  emit_insn (gen_memory_barrier ());
-  emit_insn (gen_lwzu (lowpart, addr));
-  emit_label (label);
-  emit_move_insn (highpart, lowpart);
+/*     emit_insn (gen_rtx_CLOBBER (DImode, reg)); */
+/*     emit_insn (gen_memory_barrier ()); */
+/*     emit_insn (gen_lwzu (lowpart, addr)); */
+/*     emit_label (label); */
+/*     emit_move_insn (highpart, lowpart); */
 
-  switch (code)
-    {
-    case PLUS:
-      emit_insn (gen_addsi3 (lowpart, highpart, val));
-      break;
-    case MINUS:
-      emit_insn (gen_sub3_insn (lowpart, highpart, val));
-      break;
-    case IOR:
-      emit_insn (gen_iorsi3 (lowpart, highpart, val));
-      break;
-    case AND:
-      emit_insn (gen_andsi3 (lowpart, highpart, val));
-      break;
-    case XOR:
-      emit_insn (gen_xorsi3 (lowpart, highpart, val));
-      break;
-    case NOT:
-      emit_insn (gen_nand (lowpart, highpart, val));
-      break;
-    case SET:
-      emit_move_insn (lowpart, val);
-      break;
-    default:
-      gcc_unreachable ();
-    };
+/*     switch (code) { */
+/*     case PLUS: */
+/*         emit_insn (gen_addsi3 (lowpart, highpart, val)); break; */
+/*     case MINUS: */
+/*         emit_insn (gen_sub3_insn (lowpart, highpart, val)); break; */
+/*     case IOR: */
+/*         emit_insn (gen_iorsi3 (lowpart, highpart, val)); break; */
+/*     case AND: */
+/*         emit_insn (gen_andsi3 (lowpart, highpart, val)); break; */
+/*     case XOR: */
+/*         emit_insn (gen_xorsi3 (lowpart, highpart, val)); break; */
+/*     case NOT: */
+/*         emit_insn (gen_nand (lowpart, highpart, val)); break; */
+/*     case SET: */
+/*         emit_move_insn (lowpart, val); break; */
+/*     default: */
+/*         gcc_unreachable (); */
+/*     }; */
 
-  if (type == SYNC_NEW)
-    emit_move_insn (res, lowpart);
+/*     if (type == SYNC_NEW) */
+/*         emit_move_insn (res, lowpart); */
 
-  emit_insn (gen_cws (reg, addr, reg));
-  emit_cmp_and_jump_insns (lowpart, highpart, NE, NULL_RTX, SImode, 0, label);
+/*     emit_insn (gen_cws (reg, addr, reg)); */
+/*     emit_cmp_and_jump_insns (lowpart, highpart, NE, NULL_RTX, SImode, 0,
+ * label); */
 
-  if (dest)
-    {
-      if (type == SYNC_NEW)
-	emit_move_insn (dest, res);
-      else if (type == SYNC_OLD)
-	emit_move_insn (dest, lowpart);
-    }
-}
+/*     if (dest) { */
+/*         if (type == SYNC_NEW) */
+/*             emit_move_insn (dest, res); */
+/*         else if (type == SYNC_OLD) */
+/*             emit_move_insn (dest, lowpart); */
+/*     } */
+/* } */
 
-void
-k1_expand_old_sync_instruction (enum rtx_code code, rtx dest, rtx addr, rtx val)
-{
-  k1_generic_expand_sync_instruction (code, dest, addr, val, SYNC_OLD);
-}
+/* void */
+/* k1_expand_old_sync_instruction (enum rtx_code code, rtx dest, rtx addr, rtx
+ * val) */
+/* { */
+/*     k1_generic_expand_sync_instruction (code, dest, addr, val, SYNC_OLD); */
+/* } */
 
-void
-k1_expand_new_sync_instruction (enum rtx_code code, rtx dest, rtx addr, rtx val)
-{
-  k1_generic_expand_sync_instruction (code, dest, addr, val, SYNC_NEW);
-}
+/* void */
+/* k1_expand_new_sync_instruction (enum rtx_code code, rtx dest, rtx addr, rtx
+ * val) */
+/* { */
+/*     k1_generic_expand_sync_instruction (code, dest, addr, val, SYNC_NEW); */
+/* } */
 
-void
-k1_expand_sync_instruction (enum rtx_code code, rtx addr, rtx val)
-{
-  k1_generic_expand_sync_instruction (code, NULL, addr, val, SYNC);
-}
+/* void */
+/* k1_expand_sync_instruction (enum rtx_code code, rtx addr, rtx val) */
+/* { */
+/*     k1_generic_expand_sync_instruction (code, NULL, addr, val, SYNC); */
+/* } */
 
 enum k1_builtin
 {
