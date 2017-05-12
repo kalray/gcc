@@ -792,22 +792,24 @@ k1_target_asm_output_mi_thunk (FILE *file ATTRIBUTE_UNUSED,
     rtx xops[1];
     if (TARGET_64){
       if (delta)
-        fprintf (file, "\taddd $r0r1 = $r0r1, %i\n", (int)delta);
+	/* FIXME AUTO: this is fixed for build, not checked for correctness ! */
+        fprintf (file, "\taddd $r0 = $r0, %i\n", (int)delta);
 
       if (vcall_offset) {
-        fprintf (file, "\tld $r32r33 = %i[$r0r1]\n\t;;\n", (int)delta);
-        fprintf (file, "\tld $r32r33 = %i[$r32r33]\n\t;;\n", (int)vcall_offset);
-        fprintf (file, "\taddd $r0r1 = $r0r1, $r32r33\n");
+	/* FIXME AUTO: this is fixed for build, not checked for correctness ! */
+        fprintf (file, "\tld $r32 = %i[$r0]\n\t;;\n", (int)delta);
+        fprintf (file, "\tld $r32 = %i[$r32]\n\t;;\n", (int)vcall_offset);
+        fprintf (file, "\taddd $r0 = $r0, $r32\n");
       }
     } else {
       
       if (delta)
-        fprintf (file, "\tadd $r0 = $r0, %i\n", (int)delta);
+        fprintf (file, "\taddw $r0 = $r0, %i\n", (int)delta);
 
       if (vcall_offset) {
-        fprintf (file, "\tlw $r32 = %i[$r0]\n\t;;\n", (int)delta);
-        fprintf (file, "\tlw $r32 = %i[$r32]\n\t;;\n", (int)vcall_offset);
-        fprintf (file, "\tadd $r0 = $r0, $r32\n");
+        fprintf (file, "\tlwz $r32 = %i[$r0]\n\t;;\n", (int)delta);
+        fprintf (file, "\tlwz $r32 = %i[$r32]\n\t;;\n", (int)vcall_offset);
+        fprintf (file, "\taddw $r0 = $r0, $r32\n");
       }
     }
     xops[0] = XEXP (DECL_RTL (function), 0);
