@@ -71,6 +71,7 @@
 	  builtin_define ("__k1c__");                                          \
 	  builtin_assert ("machine=k1pe");                                     \
 	  builtin_define ("__k1arch=k1c");                                     \
+	  builtin_define ("__k1core=k1pe");                                    \
 	}                                                                      \
       else if (TARGET_K1RM)                                                    \
 	{                                                                      \
@@ -84,6 +85,7 @@
 	  builtin_define ("__k1c__");                                          \
 	  builtin_assert ("machine=k1rm");                                     \
 	  builtin_define ("__k1arch=k1c");                                     \
+	  builtin_define ("__k1core=k1rm");                                    \
 	}                                                                      \
       if (TARGET_STRICT_ALIGN)                                                 \
 	builtin_define ("__STRICT_ALIGN__");                                   \
