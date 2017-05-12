@@ -27,13 +27,22 @@
 
 (define_mode_attr cbvar [(SI "w") (DI "d") (SF "w") (DF "d")])
 
-(define_mode_iterator SISIZE [SI SF V2HI])
+;; FIXME AUTO: disabling vector support
+;;(define_mode_iterator SISIZE [SI SF V2HI])
+(define_mode_iterator SISIZE [SI SF ])
+
 (define_mode_iterator SISIZESCALAR [SI SF])
 
-(define_mode_iterator DISIZE [DI DF V2SI V4HI])
+;; FIXME AUTO: disabling vector support
+;;(define_mode_iterator DISIZE [DI DF V2SI V4HI])
+(define_mode_iterator DISIZE [DI DF])
+
 (define_mode_iterator DISIZESCALAR [DI DF])
 
-(define_mode_iterator ALLMODES [DI DF V4HI V2SI SI SF V2HI HI QI])
+;; FIXME AUTO: disabling vector support
+;;(define_mode_iterator ALLMODES [DI DF V4HI V2SI SI SF V2HI HI QI])
+
+(define_mode_iterator ALLMODES [DI DF SI SF HI QI])
 
 (define_mode_iterator I [(SI "") (DI "")])
 (define_mode_attr lite_prefix [(SI "") (DI "alud_")])
