@@ -2,7 +2,9 @@
 #define K1_BARE
 
 // FIXME AUTO: handle kdebug better (use a -m[no-]debug for example
-#define LINK_GCC_C_SEQUENCE_SPEC "%{!nostdlib:-( %G %L -lgloss %{mcluster=ioddr: %{!m64: -whole-archive -lk1_debug_server -no-whole-archive}} %{mhypervisor: -whole-archive -lmOS -no-whole-archive -lvbsp -lutask} %{mcluster=node_msd:-lboard_msd -lmppa_fdt;:-lboard -lmppa_fdt} -lcore %{!T*: %{mhypervisor: %Tlink.ld;: %Tplatform.ld}}  %G %L -) }"
+// FIXME AUTO: disabled debug server
+/* %{mcluster=ioddr: %{!m64: -whole-archive -lk1_debug_server -no-whole-archive}} */
+#define LINK_GCC_C_SEQUENCE_SPEC "%{!nostdlib:-( %G %L -lgloss %{mhypervisor: -whole-archive -lmOS -no-whole-archive -lvbsp -lutask} %{mcluster=node_msd:-lboard_msd -lmppa_fdt;:-lboard -lmppa_fdt} -lcore %{!T*: %{mhypervisor: %Tlink.ld;: %Tplatform.ld}}  %G %L -) }"
 
 #define STARTFILE_SPEC "crti%O%s crtbegin%O%s crt0%O%s -lcore \
                         %{!nostdlib:%{msoc=*:%:post_suffix_soc(/soc/%{msoc=*:%*} %D)}}"
