@@ -76,6 +76,7 @@ extern void k1_emit_stack_overflow_block (rtx *seq, rtx *last);
 extern void k1_final_prescan_insn (rtx insn, rtx *opvec, int nops);
 
 extern bool k1_expand_mov (rtx operands[]);
+extern bool k1_expand_mov_immediate (rtx operands[]);
 
 extern rtx k1_find_or_create_SC_register (rtx curr_insn, rtx low, rtx high);
 
