@@ -2706,6 +2706,19 @@ k1_target_legitimize_pic_address (rtx orig, rtx reg)
 }
 
 bool
+k1_expand_mov_immediate (rtx operands[])
+{
+  if (k1_has_tls_reference (operands[1]))
+    {
+      rtx src = operands[1];
+      operands[1] = k1_legitimize_tls_reference (src);
+      gcc_assert (operands[1] != src);
+      return true;
+    }
+  return false;
+}
+
+bool
 k1_expand_mov (rtx operands[])
 {
   if (k1_has_tls_reference (operands[1]))
