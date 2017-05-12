@@ -909,7 +909,9 @@ k1_target_fixed_point_supported_p (void)
 static bool
 k1_target_vector_mode_supported_p (enum machine_mode mode)
 {
-  return V4HImode == mode || V2SImode == mode || V8SFmode == mode || V4SFmode == mode || V2SFmode == mode || V8SImode == mode;
+  return false;
+  /* FIXME AUTO: disabling vector support */
+  /* return V4HImode == mode || V2SImode == mode || V8SFmode == mode || V4SFmode == mode || V2SFmode == mode || V8SImode == mode; */
 }
 
 static bool
@@ -1268,32 +1270,33 @@ k1_target_print_operand (FILE *file, rtx x, int code)
         }
         return;
 
-    case CONST_VECTOR:
-        if (GET_MODE (x) == V2HImode) {
-            gcc_assert (CONST_INT_P (CONST_VECTOR_ELT (x, 0))
-                        && CONST_INT_P (CONST_VECTOR_ELT (x, 1)));
+	/* FIXME AUTO: disabling vector support */
+    /* case CONST_VECTOR: */
+    /*     if (GET_MODE (x) == V2HImode) { */
+    /*         gcc_assert (CONST_INT_P (CONST_VECTOR_ELT (x, 0)) */
+    /*                     && CONST_INT_P (CONST_VECTOR_ELT (x, 1))); */
 
-            fprintf (file, HOST_WIDE_INT_PRINT_DEC,
-                     (INTVAL (CONST_VECTOR_ELT (x, 0)) & 0xFFFF)
-                     | (INTVAL (CONST_VECTOR_ELT (x, 1)) & 0xFFFF) << 16);
-        } else if (GET_MODE (x) == V4HImode) {
-            gcc_assert (CONST_INT_P (CONST_VECTOR_ELT (x, 0))
-                        && CONST_INT_P (CONST_VECTOR_ELT (x, 1))
-                        && CONST_INT_P (CONST_VECTOR_ELT (x, 2))
-                        && CONST_INT_P (CONST_VECTOR_ELT (x, 3)));
+    /*         fprintf (file, HOST_WIDE_INT_PRINT_DEC, */
+    /*                  (INTVAL (CONST_VECTOR_ELT (x, 0)) & 0xFFFF) */
+    /*                  | (INTVAL (CONST_VECTOR_ELT (x, 1)) & 0xFFFF) << 16); */
+    /*     } else if (GET_MODE (x) == V4HImode) { */
+    /*         gcc_assert (CONST_INT_P (CONST_VECTOR_ELT (x, 0)) */
+    /*                     && CONST_INT_P (CONST_VECTOR_ELT (x, 1)) */
+    /*                     && CONST_INT_P (CONST_VECTOR_ELT (x, 2)) */
+    /*                     && CONST_INT_P (CONST_VECTOR_ELT (x, 3))); */
 
-            fprintf (file, "0x%x:0x%x",
-                     (uint32_t)((INTVAL (CONST_VECTOR_ELT (x, 0)) & 0xFFFF)
-                                | ((INTVAL (CONST_VECTOR_ELT (x, 1)) & 0xFFFF) << 16)),
-                     (uint32_t)((INTVAL (CONST_VECTOR_ELT (x, 2)) & 0xFFFF)
-                                | ((INTVAL (CONST_VECTOR_ELT (x, 3)) & 0xFFFF) << 16)));
-        } else {
-            gcc_assert (GET_MODE (x) == V2SImode || GET_MODE (x) == V2SFmode);
-            k1_target_print_operand (file, CONST_VECTOR_ELT (x, 0), 'u');
-            fprintf (file, ":");
-            k1_target_print_operand (file, CONST_VECTOR_ELT (x, 1), 'u');
-        }
-        return;
+    /*         fprintf (file, "0x%x:0x%x", */
+    /*                  (uint32_t)((INTVAL (CONST_VECTOR_ELT (x, 0)) & 0xFFFF) */
+    /*                             | ((INTVAL (CONST_VECTOR_ELT (x, 1)) & 0xFFFF) << 16)), */
+    /*                  (uint32_t)((INTVAL (CONST_VECTOR_ELT (x, 2)) & 0xFFFF) */
+    /*                             | ((INTVAL (CONST_VECTOR_ELT (x, 3)) & 0xFFFF) << 16))); */
+    /*     } else { */
+    /*         gcc_assert (GET_MODE (x) == V2SImode || GET_MODE (x) == V2SFmode); */
+    /*         k1_target_print_operand (file, CONST_VECTOR_ELT (x, 0), 'u'); */
+    /*         fprintf (file, ":"); */
+    /*         k1_target_print_operand (file, CONST_VECTOR_ELT (x, 1), 'u'); */
+    /*     } */
+    /*     return; */
 
     default: {
         int is_unspec = 0, unspec;
@@ -2583,50 +2586,52 @@ k1_target_register_move_cost (enum machine_mode mode,
    (match_operand:V2SI 5 "nonimmediate_operand" "")])
    (match_operand:V2SI 1 "general_operand" "")
    (match_operand:V2SI 2 "general_operand" "")))] */
-void
-k1_expand_vcondv2si (rtx *operands)
-{
-    bool invert = false;
 
-    if (operands[2] != operands[0]) {
-        if (operands[1] != operands[0]) {
-            emit_move_insn (operands[0], operands[2]);
-            operands[2] = operands[0];
-        } else {
-            invert = true;
-        }
-    }
+/* FIXME AUTO: disabling vector support */
+/* void */
+/* k1_expand_vcondv2si (rtx *operands) */
+/* { */
+/*     bool invert = false; */
 
-    if (operands[5] != CONST0_RTX (V2SImode)) {
-        rtx reg = gen_reg_rtx (V2SImode);
-        emit_insn (gen_cstorev2si4 (reg, operands[3], operands[4], operands[5]));
+/*     if (operands[2] != operands[0]) { */
+/*         if (operands[1] != operands[0]) { */
+/*             emit_move_insn (operands[0], operands[2]); */
+/*             operands[2] = operands[0]; */
+/*         } else { */
+/*             invert = true; */
+/*         } */
+/*     } */
 
-        PUT_CODE (operands[3], NE);
-        operands[4] = reg;
-        operands[5] = CONST0_RTX (V2SImode);
-    }
+/*     if (operands[5] != CONST0_RTX (V2SImode)) { */
+/*         rtx reg = gen_reg_rtx (V2SImode); */
+/*         emit_insn (gen_cstorev2si4 (reg, operands[3], operands[4], operands[5])); */
 
-    if (invert) {
-        rtx tmp;
+/*         PUT_CODE (operands[3], NE); */
+/*         operands[4] = reg; */
+/*         operands[5] = CONST0_RTX (V2SImode); */
+/*     } */
 
-        PUT_CODE (operands[3], reverse_condition (GET_CODE (operands[3])));
-        tmp = operands[1];
-        operands[1] = operands[2];
-        operands[2] = tmp;
-    }
+/*     if (invert) { */
+/*         rtx tmp; */
 
-    PUT_MODE (operands[3], SImode);
-    emit_insn (gen_cmovesi (gen_lowpart (SImode, operands[0]),
-                            operands[3],
-                            gen_lowpart (SImode, operands[4]),
-                            gen_lowpart (SImode, operands[1]),
-                            gen_lowpart (SImode, operands[2])));
-    emit_insn (gen_cmovesi (gen_highpart (SImode, operands[0]),
-                            operands[3],
-                            gen_highpart (SImode, operands[4]),
-                            gen_highpart (SImode, operands[1]),
-                            gen_highpart (SImode, operands[2])));
-}
+/*         PUT_CODE (operands[3], reverse_condition (GET_CODE (operands[3]))); */
+/*         tmp = operands[1]; */
+/*         operands[1] = operands[2]; */
+/*         operands[2] = tmp; */
+/*     } */
+
+/*     PUT_MODE (operands[3], SImode); */
+/*     emit_insn (gen_cmovesi (gen_lowpart (SImode, operands[0]), */
+/*                             operands[3], */
+/*                             gen_lowpart (SImode, operands[4]), */
+/*                             gen_lowpart (SImode, operands[1]), */
+/*                             gen_lowpart (SImode, operands[2]))); */
+/*     emit_insn (gen_cmovesi (gen_highpart (SImode, operands[0]), */
+/*                             operands[3], */
+/*                             gen_highpart (SImode, operands[4]), */
+/*                             gen_highpart (SImode, operands[1]), */
+/*                             gen_highpart (SImode, operands[2]))); */
+/* } */
 
 
 /* Expander for vector cmove with the pattern:
@@ -2638,50 +2643,52 @@ k1_expand_vcondv2si (rtx *operands)
    (match_operand:V4HI 5 "nonimmediate_operand" "")])
    (match_operand:V4HI 1 "general_operand" "")
    (match_operand:V4HI 2 "general_operand" "")))] */
-void
-k1_expand_vcondv4hi (rtx *operands)
-{
-    bool invert = false;
 
-    if (operands[2] != operands[0]) {
-        if (operands[1] != operands[0]) {
-            emit_move_insn (operands[0], operands[2]);
-            operands[2] = operands[0];
-        } else {
-            invert = true;
-        }
-    }
+/* FIXME AUTO: disabling vector support */
+/* void */
+/* k1_expand_vcondv4hi (rtx *operands) */
+/* { */
+/*     bool invert = false; */
 
-    if (operands[5] != CONST0_RTX (V4HImode)) {
-        rtx reg = gen_reg_rtx (V4HImode);
-        emit_insn (gen_cstorev4hi4 (reg, operands[3], operands[4], operands[5]));
+/*     if (operands[2] != operands[0]) { */
+/*         if (operands[1] != operands[0]) { */
+/*             emit_move_insn (operands[0], operands[2]); */
+/*             operands[2] = operands[0]; */
+/*         } else { */
+/*             invert = true; */
+/*         } */
+/*     } */
 
-        PUT_CODE (operands[3], NE);
-        operands[4] = reg;
-        operands[5] = CONST0_RTX (V4HImode);
-    }
+/*     if (operands[5] != CONST0_RTX (V4HImode)) { */
+/*         rtx reg = gen_reg_rtx (V4HImode); */
+/*         emit_insn (gen_cstorev4hi4 (reg, operands[3], operands[4], operands[5])); */
 
-    if (invert) {
-        rtx tmp;
+/*         PUT_CODE (operands[3], NE); */
+/*         operands[4] = reg; */
+/*         operands[5] = CONST0_RTX (V4HImode); */
+/*     } */
 
-        PUT_CODE (operands[3], reverse_condition (GET_CODE (operands[3])));
-        tmp = operands[1];
-        operands[1] = operands[2];
-        operands[2] = tmp;
-    }
+/*     if (invert) { */
+/*         rtx tmp; */
 
-    PUT_MODE (operands[3], V2HImode);
-    emit_insn (gen_cmovev2hi (gen_lowpart (V2HImode, operands[0]),
-                              operands[3],
-                              gen_lowpart (V2HImode, operands[4]),
-                              gen_lowpart (V2HImode, operands[1]),
-                              gen_lowpart (V2HImode, operands[2])));
-    emit_insn (gen_cmovev2hi (gen_highpart (V2HImode, operands[0]),
-                              operands[3],
-                              gen_highpart (V2HImode, operands[4]),
-                              gen_highpart (V2HImode, operands[1]),
-                              gen_highpart (V2HImode, operands[2])));
-}
+/*         PUT_CODE (operands[3], reverse_condition (GET_CODE (operands[3]))); */
+/*         tmp = operands[1]; */
+/*         operands[1] = operands[2]; */
+/*         operands[2] = tmp; */
+/*     } */
+
+/*     PUT_MODE (operands[3], V2HImode); */
+/*     emit_insn (gen_cmovev2hi (gen_lowpart (V2HImode, operands[0]), */
+/*                               operands[3], */
+/*                               gen_lowpart (V2HImode, operands[4]), */
+/*                               gen_lowpart (V2HImode, operands[1]), */
+/*                               gen_lowpart (V2HImode, operands[2]))); */
+/*     emit_insn (gen_cmovev2hi (gen_highpart (V2HImode, operands[0]), */
+/*                               operands[3], */
+/*                               gen_highpart (V2HImode, operands[4]), */
+/*                               gen_highpart (V2HImode, operands[1]), */
+/*                               gen_highpart (V2HImode, operands[2]))); */
+/* } */
 
 // FIXME AUTO: disabling legacy code for atomic
 /* enum sync_insn_type { SYNC_OLD, SYNC_NEW, SYNC }; */
@@ -2759,13 +2766,15 @@ k1_expand_vcondv4hi (rtx *operands)
 /* } */
 
 enum k1_builtin {
-    K1_BUILTIN_ABDHP,
-    K1_BUILTIN_ADDHP,
+  /* FIXME AUTO: disabling vector support */
+    /* K1_BUILTIN_ABDHP, */
+    /* K1_BUILTIN_ADDHP, */
     K1_BUILTIN_ADDS,
     K1_BUILTIN_BARRIER,
     K1_BUILTIN_BWLU,
-    K1_BUILTIN_BWLUHP,
-    K1_BUILTIN_BWLUWP,
+    /* FIXME AUTO: disabling vector support */
+    /* K1_BUILTIN_BWLUHP, */
+    /* K1_BUILTIN_BWLUWP, */
     K1_BUILTIN_CLEAR1,
     K1_BUILTIN_CBS,
     K1_BUILTIN_CBSDL,
@@ -2793,8 +2802,9 @@ enum k1_builtin {
     K1_BUILTIN_EXTFZ,
     K1_BUILTIN_FADDRN,
     K1_BUILTIN_FADDRND,
-    K1_BUILTIN_FADDWP,
-    K1_BUILTIN_FADDRNWP,
+    /* FIXME AUTO: disabling vector support */
+    /* K1_BUILTIN_FADDWP, */
+    /* K1_BUILTIN_FADDRNWP, */
     K1_BUILTIN_FCDIV,
     K1_BUILTIN_FCDIVD,
     K1_BUILTIN_FCMA,
@@ -2810,8 +2820,9 @@ enum k1_builtin {
     K1_BUILTIN_FFMARN,
     K1_BUILTIN_FFMAD,
     K1_BUILTIN_FFMARND,
-    K1_BUILTIN_FFMAWP,
-    K1_BUILTIN_FFMARNWP,
+    /* FIXME AUTO: disabling vector support */
+    /* K1_BUILTIN_FFMAWP, */
+    /* K1_BUILTIN_FFMARNWP, */
     K1_BUILTIN_FFMAN,
     K1_BUILTIN_FFMANRN,
     K1_BUILTIN_FFMAND,
@@ -2820,8 +2831,9 @@ enum k1_builtin {
     K1_BUILTIN_FFMARNWD,
     K1_BUILTIN_FFMANWD,
     K1_BUILTIN_FFMANRNWD,
-    K1_BUILTIN_FFMANWP,
-    K1_BUILTIN_FFMANRNWP,
+    /* FIXME AUTO: disabling vector support */
+    /* K1_BUILTIN_FFMANWP, */
+    /* K1_BUILTIN_FFMANRNWP, */
     K1_BUILTIN_FFMS,
     K1_BUILTIN_FFMSRN,
     K1_BUILTIN_FFMSWP,
@@ -2830,8 +2842,9 @@ enum k1_builtin {
     K1_BUILTIN_FFMSRND,
     K1_BUILTIN_FFMSN,
     K1_BUILTIN_FFMSNRN,
-    K1_BUILTIN_FFMSNWP,
-    K1_BUILTIN_FFMSNRNWP,
+    /* FIXME AUTO: disabling vector support */
+    /* K1_BUILTIN_FFMSNWP, */
+    /* K1_BUILTIN_FFMSNRNWP, */
     K1_BUILTIN_FFMSND,
     K1_BUILTIN_FFMSNRND,
     K1_BUILTIN_FFMSNWD,
@@ -2902,10 +2915,11 @@ enum k1_builtin {
     K1_BUILTIN_LBZU,
     K1_BUILTIN_LHSU,
     K1_BUILTIN_LHZU,
-    K1_BUILTIN_LHPZ,
-    K1_BUILTIN_LHPZU,
-    K1_BUILTIN_LHPZN,
-    K1_BUILTIN_LHPZUN,
+    /* FIXME AUTO: disabling vector support */
+    /* K1_BUILTIN_LHPZ, */
+    /* K1_BUILTIN_LHPZU, */
+    /* K1_BUILTIN_LHPZN, */
+    /* K1_BUILTIN_LHPZUN, */
     K1_BUILTIN_LDU,
     K1_BUILTIN_LWZU,
     K1_BUILTIN_MADUUCIWD,
@@ -2913,7 +2927,9 @@ enum k1_builtin {
     K1_BUILTIN_PROBETLB,
     K1_BUILTIN_READTLB,
     /* K1_BUILTIN_RXOR, */
-    K1_BUILTIN_SBFHP,
+
+    /* FIXME AUTO: disabling vector support */
+    /* K1_BUILTIN_SBFHP, */
     K1_BUILTIN_SBMM8,
     K1_BUILTIN_SBMM8_D,
     /* K1_BUILTIN_SBMM8L, */
@@ -2922,10 +2938,11 @@ enum k1_builtin {
     K1_BUILTIN_SCALL,
     K1_BUILTIN_SET,
     K1_BUILTIN_SET_PS,
-    K1_BUILTIN_SLLHPS,
-    K1_BUILTIN_SLLHPS_R,
-    K1_BUILTIN_SRAHPS,
-    K1_BUILTIN_SRAHPS_R,
+	/* FIXME AUTO: disabling vector support */
+    /* K1_BUILTIN_SLLHPS, */
+    /* K1_BUILTIN_SLLHPS_R, */
+    /* K1_BUILTIN_SRAHPS, */
+    /* K1_BUILTIN_SRAHPS_R, */
     K1_BUILTIN_STSU,
     K1_BUILTIN_STSUD,
     K1_BUILTIN_SYNCGROUP,
@@ -3036,13 +3053,17 @@ k1_target_init_builtins (void)
                               K1_BUILTIN_##UC_NAME,                     \
                               BUILT_IN_MD, NULL, NULL_TREE)
 
-    ADD_K1_BUILTIN (ABDHP,   "abdhp",       intSI,  intSI, intSI);
-    ADD_K1_BUILTIN (ADDHP,   "addhp",       intSI,  intSI, intSI);
+  /* FIXME AUTO: disabling vector support */
+    /* ADD_K1_BUILTIN (ABDHP,   "abdhp",       intSI,  intSI, intSI); */
+    /* ADD_K1_BUILTIN (ADDHP,   "addhp",       intSI,  intSI, intSI); */
+
     ADD_K1_BUILTIN (ADDS,    "adds",        intSI,  intSI, intSI);
     ADD_K1_BUILTIN (BARRIER, "barrier",     VOID);
     ADD_K1_BUILTIN (BWLU,    "bwlu",        uintSI, uintSI, uintSI, uintSI, uintSI, uintHI);
-    ADD_K1_BUILTIN (BWLUHP,  "bwluhp",      uintSI,  uintSI,  uintSI, uintSI);
-    ADD_K1_BUILTIN (BWLUWP,  "bwluwp",      uintDI,  uintDI,  uintDI, uintSI);
+
+    /* FIXME AUTO: disabling vector support */
+    /* ADD_K1_BUILTIN (BWLUHP,  "bwluhp",      uintSI,  uintSI,  uintSI, uintSI); */
+    /* ADD_K1_BUILTIN (BWLUWP,  "bwluwp",      uintDI,  uintDI,  uintDI, uintSI); */
     ADD_K1_BUILTIN (CLEAR1,  "clear1",      VOID,   uintSI);
     ADD_K1_BUILTIN (CBS,     "cbs",         intSI, uintSI);
     ADD_K1_BUILTIN (CBSDL,   "cbsdl",       intDI, uintDI);
@@ -3066,8 +3087,11 @@ k1_target_init_builtins (void)
     ADD_K1_BUILTIN (EXTFZ,   "extfz",       uintSI, uintSI, uintSI, uintSI);
     ADD_K1_BUILTIN (FADDRN,  "faddrn",      floatSF,floatSF,floatSF);
     ADD_K1_BUILTIN (FADDRND, "faddrnd",     floatDF,floatDF,floatDF);
-    ADD_K1_BUILTIN (FADDWP,  "faddwp",      vect2SF,vect2SF,vect2SF);
-    ADD_K1_BUILTIN (FADDRNWP,"faddrnwp",    vect2SF,vect2SF,vect2SF);
+
+    /* FIXME AUTO: disabling vector support */
+    /* ADD_K1_BUILTIN (FADDWP,  "faddwp",      vect2SF,vect2SF,vect2SF); */
+    /* ADD_K1_BUILTIN (FADDRNWP,"faddrnwp",    vect2SF,vect2SF,vect2SF); */
+
     ADD_K1_BUILTIN (FCDIV,   "fcdiv",       floatSF,floatSF,floatSF);
     ADD_K1_BUILTIN (FCDIVD,   "fcdivd",       floatDF,floatDF,floatDF);
     /* FIXME AUTO : Disable use of create_SC_* */
@@ -3083,8 +3107,11 @@ k1_target_init_builtins (void)
     ADD_K1_BUILTIN (FFMA,    "ffma",        floatSF,floatSF,floatSF,floatSF);
     ADD_K1_BUILTIN (FFMAD,    "ffmad",      floatDF,floatDF,floatDF,floatDF);
     ADD_K1_BUILTIN (FFMARND,  "ffmarnd",    floatDF,floatDF,floatDF,floatDF);
-    ADD_K1_BUILTIN (FFMAWP,  "ffmawp",      vect2SF,vect2SF,vect2SF,vect2SF);
-    ADD_K1_BUILTIN (FFMARNWP,"ffmarnwp",    vect2SF,vect2SF,vect2SF,vect2SF);
+
+    /* FIXME AUTO: disabling vector support */
+    /* ADD_K1_BUILTIN (FFMAWP,  "ffmawp",      vect2SF,vect2SF,vect2SF,vect2SF); */
+    /* ADD_K1_BUILTIN (FFMARNWP,"ffmarnwp",    vect2SF,vect2SF,vect2SF,vect2SF); */
+
     ADD_K1_BUILTIN (FFMAN,   "ffman",       floatSF,floatSF,floatSF,floatSF);
     ADD_K1_BUILTIN (FFMAND,  "ffmand",      floatDF,floatDF,floatDF,floatDF);
     ADD_K1_BUILTIN (FFMANRN, "ffmanrn",     floatSF,floatSF,floatSF,floatSF);
@@ -3093,17 +3120,26 @@ k1_target_init_builtins (void)
     ADD_K1_BUILTIN (FFMARNWD,"ffmarnwd",    floatDF,floatDF,floatSF,floatSF);
     ADD_K1_BUILTIN (FFMANWD, "ffmanwd",     floatDF,floatDF,floatSF,floatSF);
     ADD_K1_BUILTIN (FFMANRNWD,"ffmanrnwd",  floatDF,floatDF,floatSF,floatSF);
-    ADD_K1_BUILTIN (FFMANWP, "ffmanwp",     vect2SF,vect2SF,vect2SF,vect2SF);
-    ADD_K1_BUILTIN (FFMANRNWP, "ffmanrnwp", vect2SF,vect2SF,vect2SF,vect2SF);
+
+    /* FIXME AUTO: disabling vector support */
+    /* ADD_K1_BUILTIN (FFMANWP, "ffmanwp",     vect2SF,vect2SF,vect2SF,vect2SF); */
+    /* ADD_K1_BUILTIN (FFMANRNWP, "ffmanrnwp", vect2SF,vect2SF,vect2SF,vect2SF); */
+
     ADD_K1_BUILTIN (FFMARN,  "ffmarn",      floatSF,floatSF,floatSF,floatSF);
     ADD_K1_BUILTIN (FFMS,    "ffms",        floatSF,floatSF,floatSF,floatSF);
-    ADD_K1_BUILTIN (FFMSWP,  "ffmswp",      vect2SF,vect2SF,vect2SF,vect2SF);
-    ADD_K1_BUILTIN (FFMSRNWP,"ffmsrnwp",    vect2SF,vect2SF,vect2SF,vect2SF);
+
+    /* FIXME AUTO: disabling vector support */
+    /* ADD_K1_BUILTIN (FFMSWP,  "ffmswp",      vect2SF,vect2SF,vect2SF,vect2SF); */
+    /* ADD_K1_BUILTIN (FFMSRNWP,"ffmsrnwp",    vect2SF,vect2SF,vect2SF,vect2SF); */
+
     ADD_K1_BUILTIN (FFMSD,   "ffmsd",       floatDF,floatDF,floatDF,floatDF);
     ADD_K1_BUILTIN (FFMSN,   "ffmsn",       floatSF,floatSF,floatSF,floatSF);
     ADD_K1_BUILTIN (FFMSNRN, "ffmsnrn",     floatSF,floatSF,floatSF,floatSF);
-    ADD_K1_BUILTIN (FFMSNWP, "ffmsnwp",     vect2SF,vect2SF,vect2SF,vect2SF);
-    ADD_K1_BUILTIN (FFMSNRNWP,"ffmsnrnwp",  vect2SF,vect2SF,vect2SF,vect2SF);
+
+    /* FIXME AUTO: disabling vector support */
+    /* ADD_K1_BUILTIN (FFMSNWP, "ffmsnwp",     vect2SF,vect2SF,vect2SF,vect2SF); */
+    /* ADD_K1_BUILTIN (FFMSNRNWP,"ffmsnrnwp",  vect2SF,vect2SF,vect2SF,vect2SF); */
+
     ADD_K1_BUILTIN (FFMSND,  "ffmsnd",      floatDF,floatDF,floatDF,floatDF);
     ADD_K1_BUILTIN (FFMSNRND,"ffmsnrnd",    floatDF,floatDF,floatDF,floatDF);
     ADD_K1_BUILTIN (FFMSRN,  "ffmsrn",      floatSF,floatSF,floatSF,floatSF);
@@ -3124,18 +3160,24 @@ k1_target_init_builtins (void)
     ADD_K1_BUILTIN (FMULRND, "fmulrnd",     floatDF,floatDF,floatDF);
     ADD_K1_BUILTIN (FMULNRN, "fmulnrn",     floatSF,floatSF,floatSF);
     ADD_K1_BUILTIN (FMULNRND,"fmulnrnd",    floatDF,floatDF,floatDF);
-    ADD_K1_BUILTIN (FMULNWP, "fmulnwp",     vect2SF,vect2SF,vect2SF);
-    ADD_K1_BUILTIN (FMULNRNWP,"fmulnrnwp",  vect2SF,vect2SF,vect2SF);
-    ADD_K1_BUILTIN (FMULWP,  "fmulwp",      vect2SF,vect2SF,vect2SF);
-    ADD_K1_BUILTIN (FMULRNWP,"fmulrnwp",    vect2SF,vect2SF,vect2SF);
+
+    /* FIXME AUTO: disabling vector support */
+    /* ADD_K1_BUILTIN (FMULNWP, "fmulnwp",     vect2SF,vect2SF,vect2SF); */
+    /* ADD_K1_BUILTIN (FMULNRNWP,"fmulnrnwp",  vect2SF,vect2SF,vect2SF); */
+    /* ADD_K1_BUILTIN (FMULWP,  "fmulwp",      vect2SF,vect2SF,vect2SF); */
+    /* ADD_K1_BUILTIN (FMULRNWP,"fmulrnwp",    vect2SF,vect2SF,vect2SF); */
+
     ADD_K1_BUILTIN (FMULWD,  "fmulwd",      floatDF,floatSF,floatSF);
     ADD_K1_BUILTIN (FMULNWD, "fmulnwd",     floatDF,floatSF,floatSF);
     ADD_K1_BUILTIN (FMULNRNWD,"fmulnrnwd",  floatDF,floatSF,floatSF);
     ADD_K1_BUILTIN (FMULRNWD,"fmulrnwd",    floatDF,floatSF,floatSF);
     ADD_K1_BUILTIN (FSBFRN,  "fsbfrn",      floatSF,floatSF,floatSF);
     ADD_K1_BUILTIN (FSBFRND,  "fsbfrnd",    floatDF,floatDF,floatDF);
-    ADD_K1_BUILTIN (FSBFWP,  "fsbfwp",      vect2SF,vect2SF,vect2SF);
-    ADD_K1_BUILTIN (FSBFRNWP,"fsbfrnwp",    vect2SF,vect2SF,vect2SF);
+
+    /* FIXME AUTO: disabling vector support */
+    /* ADD_K1_BUILTIN (FSBFWP,  "fsbfwp",      vect2SF,vect2SF,vect2SF); */
+    /* ADD_K1_BUILTIN (FSBFRNWP,"fsbfrnwp",    vect2SF,vect2SF,vect2SF); */
+
     ADD_K1_BUILTIN (FSDIV,   "fsdiv",       floatSF,floatSF,floatSF);
     ADD_K1_BUILTIN (FSINV,   "fsinv",       floatSF,floatSF);
     ADD_K1_BUILTIN (FSINVN,  "fsinvn",      floatSF,floatSF);
@@ -3157,7 +3199,8 @@ k1_target_init_builtins (void)
     ADD_K1_BUILTIN (INVALDTLB, "invaldtlb", VOID);
     ADD_K1_BUILTIN (INVALITLB, "invalitlb", VOID);
     ADD_K1_BUILTIN (ITOUCHL, "itouchl", VOID,  voidPTR);
-    ADD_K1_BUILTIN (LANDHP,  "landhp",      intSI,  intSI,  intSI);
+	/* FIXME AUTO: disabling vector support */
+    /* ADD_K1_BUILTIN (LANDHP,  "landhp",      intSI,  intSI,  intSI); */
     ADD_K1_BUILTIN (LBQS,    "lbqs",  uintDI,  constVoidPTR);
     ADD_K1_BUILTIN (LBQSU,   "lbqsu", uintDI,  constVoidPTR);
     ADD_K1_BUILTIN (LBQZ,    "lbqz",  uintDI,  constVoidPTR);
@@ -3173,21 +3216,25 @@ k1_target_init_builtins (void)
     ADD_K1_BUILTIN (PROBETLB,"probetlb",    VOID);
     ADD_K1_BUILTIN (READTLB, "readtlb",     VOID);
     /* ADD_K1_BUILTIN (RXOR,    "r_xord",      VOID,   uintQI, uintDI, uintHI); */
-    ADD_K1_BUILTIN (SBFHP,   "sbfhp",       intSI,  intSI,  intSI);
+
+    /* FIXME AUTO: disabling vector support */
+    /* ADD_K1_BUILTIN (SBFHP,   "sbfhp",       intSI,  intSI,  intSI); */
     ADD_K1_BUILTIN (SBMM8,   "sbmm8",       uintDI, uintDI, uintDI);
     ADD_K1_BUILTIN (SBMM8_D, "sbmm8_d",     uintDI, uintDI, uintDI);
     /* ADD_K1_BUILTIN (SBMM8L,  "sbmm8l",      uintSI, uintDI, uintDI); */
     ADD_K1_BUILTIN (SBMMT8,  "sbmmt8",      uintDI, uintDI, uintDI);
     ADD_K1_BUILTIN (SBMMT8_D,"sbmmt8_d",    uintDI, uintDI, uintDI);
-    ADD_K1_BUILTIN (SAT,     "sat",         intSI,  intSI,  uintQI);
+    /* FIXME AUTO: sat does not exist in k1c yet  */
+    /* ADD_K1_BUILTIN (SAT,     "sat",         intSI,  intSI,  uintQI); */
     ADD_K1_BUILTIN (SATD,    "satd",        intDI,  intDI,  uintQI);
     ADD_K1_BUILTIN (SET,     "set",         VOID,   intSI,  uintSI);
     ADD_K1_BUILTIN (SET_PS,  "set_ps",      VOID,   intSI,  uintSI);
 
-    ADD_K1_BUILTIN (SLLHPS,  "sllhps",      uintSI,  uintSI,  uintSI);
-    ADD_K1_BUILTIN (SLLHPS_R,"sllhps_r",    uintSI,  uintSI,  uintSI);
-    ADD_K1_BUILTIN (SRAHPS,  "srahps",      uintSI,  uintSI,  uintSI);
-    ADD_K1_BUILTIN (SRAHPS_R,"srahps_r",    uintSI,  uintSI,  uintSI);
+	/* FIXME AUTO: disabling vector support */
+    /* ADD_K1_BUILTIN (SLLHPS,  "sllhps",      uintSI,  uintSI,  uintSI); */
+    /* ADD_K1_BUILTIN (SLLHPS_R,"sllhps_r",    uintSI,  uintSI,  uintSI); */
+    /* ADD_K1_BUILTIN (SRAHPS,  "srahps",      uintSI,  uintSI,  uintSI); */
+    /* ADD_K1_BUILTIN (SRAHPS_R,"srahps_r",    uintSI,  uintSI,  uintSI); */
     ADD_K1_BUILTIN (STSU,    "stsu",        uintSI, uintSI, uintSI);
     ADD_K1_BUILTIN (STSUD,   "stsud",       uintDI, uintDI, uintDI);
     ADD_K1_BUILTIN (SYNCGROUP,"syncgroup",  VOID, uintSI);
@@ -3198,14 +3245,19 @@ k1_target_init_builtins (void)
 
     ADD_K1_BUILTIN (FWIDENB,  "fwidenb", floatSF , uintSI);
     ADD_K1_BUILTIN (FWIDENT,  "fwident", floatSF , uintSI);
-    ADD_K1_BUILTIN (FWIDENBWP,  "fwidenbwp", vect2SF , uintDI);
-    ADD_K1_BUILTIN (FWIDENTWP,  "fwidentwp", vect2SF , uintDI);
+
+    /* FIXME AUTO: disabling vector support */
+    /* ADD_K1_BUILTIN (FWIDENBWP,  "fwidenbwp", vect2SF , uintDI); */
+    /* ADD_K1_BUILTIN (FWIDENTWP,  "fwidentwp", vect2SF , uintDI); */
+    /* ADD_K1_BUILTIN (FNARROWHWP,  "fnarrowhwp", vect2SI , vect2SF); */
+
     ADD_K1_BUILTIN (FNARROWH,  "fnarrowh", uintHI , floatSF);
-    ADD_K1_BUILTIN (FNARROWHWP,  "fnarrowhwp", vect2SI , vect2SF);
-    ADD_K1_BUILTIN (LHPZ,    "lhpz",  vect2SI, unsigned_vect2HI_pointer_node);
-    ADD_K1_BUILTIN (LHPZU,   "lhpzu", vect2SI, unsigned_vect2HI_pointer_node);
-    ADD_K1_BUILTIN (LHPZN,   "lhpzn",  vect2SI, unsigned_vect2HI_pointer_node);
-    ADD_K1_BUILTIN (LHPZUN,  "lhpzun", vect2SI, unsigned_vect2HI_pointer_node);
+
+    /* FIXME AUTO: disabling vector support */
+    /* ADD_K1_BUILTIN (LHPZ,    "lhpz",  vect2SI, unsigned_vect2HI_pointer_node); */
+    /* ADD_K1_BUILTIN (LHPZU,   "lhpzu", vect2SI, unsigned_vect2HI_pointer_node); */
+    /* ADD_K1_BUILTIN (LHPZN,   "lhpzn",  vect2SI, unsigned_vect2HI_pointer_node); */
+    /* ADD_K1_BUILTIN (LHPZUN,  "lhpzun", vect2SI, unsigned_vect2HI_pointer_node); */
 
     ADD_K1_BUILTIN (SRFSIZE,"srfsize",    intSI,  intSI);
 }
@@ -3795,95 +3847,99 @@ k1_expand_builtin_satd (rtx target, tree args)
 /*     return target; */
 /* } */
 
-static rtx
-k1_expand_builtin_abdhp (rtx target, tree args)
-{
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+/* FIXME AUTO: disabling vector support */
+/* static rtx */
+/* k1_expand_builtin_abdhp (rtx target, tree args) */
+/* { */
+/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
+/*     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1)); */
 
-    if (!target)
-        target = gen_reg_rtx (SImode);
-    target = force_reg (SImode, target);
-    arg1 = force_reg (SImode, arg1);
-    arg2 = force_reg (SImode, arg2);
-    emit_insn (gen_abdhp (target, arg1, arg2));
-    return target;
-}
+/*     if (!target) */
+/*         target = gen_reg_rtx (SImode); */
+/*     target = force_reg (SImode, target); */
+/*     arg1 = force_reg (SImode, arg1); */
+/*     arg2 = force_reg (SImode, arg2); */
+/*     emit_insn (gen_abdhp (target, arg1, arg2)); */
+/*     return target; */
+/* } */
 
-static rtx
-k1_expand_builtin_addhp (rtx target, tree args)
-{
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+/* static rtx */
+/* k1_expand_builtin_addhp (rtx target, tree args) */
+/* { */
+/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
+/*     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1)); */
 
-    if (!target)
-        target = gen_reg_rtx (SImode);
-    target = force_reg (SImode, target);
-    arg1 = force_reg (SImode, arg1);
-    arg2 = force_reg (SImode, arg2);
-    emit_insn (gen_addhp (target, arg1, arg2));
-    return target;
-}
+/*     if (!target) */
+/*         target = gen_reg_rtx (SImode); */
+/*     target = force_reg (SImode, target); */
+/*     arg1 = force_reg (SImode, arg1); */
+/*     arg2 = force_reg (SImode, arg2); */
+/*     emit_insn (gen_addhp (target, arg1, arg2)); */
+/*     return target; */
+/* } */
 
-static rtx
-k1_expand_builtin_sbfhp (rtx target, tree args)
-{
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+/* static rtx */
+/* k1_expand_builtin_sbfhp (rtx target, tree args) */
+/* { */
+/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
+/*     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1)); */
 
-    if (!target)
-        target = gen_reg_rtx (SImode);
-    target = force_reg (SImode, target);
-    arg1 = force_reg (SImode, arg1);
-    arg2 = force_reg (SImode, arg2);
-    emit_insn (gen_sbfhp (target, arg1, arg2));
-    return target;
-}
+/*     if (!target) */
+/*         target = gen_reg_rtx (SImode); */
+/*     target = force_reg (SImode, target); */
+/*     arg1 = force_reg (SImode, arg1); */
+/*     arg2 = force_reg (SImode, arg2); */
+/*     emit_insn (gen_sbfhp (target, arg1, arg2)); */
+/*     return target; */
+/* } */
 
-static rtx
-k1_expand_builtin_landhp (rtx target, tree args)
-{
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+	/* FIXME AUTO: disabling vector support */
+/* static rtx */
+/* k1_expand_builtin_landhp (rtx target, tree args) */
+/* { */
+/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
+/*     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1)); */
 
-    if (!target)
-        target = gen_reg_rtx (SImode);
-    target = force_reg (SImode, target);
-    arg1 = force_reg (SImode, arg1);
-    arg2 = force_reg (SImode, arg2);
-    emit_insn (gen_landhp (target, arg1, arg2));
-    return target;
-}
+/*     if (!target) */
+/*         target = gen_reg_rtx (SImode); */
+/*     target = force_reg (SImode, target); */
+/*     arg1 = force_reg (SImode, arg1); */
+/*     arg2 = force_reg (SImode, arg2); */
+/*     emit_insn (gen_landhp (target, arg1, arg2)); */
+/*     return target; */
+/* } */
 
-static rtx
-k1_expand_builtin_sllhps (rtx target, tree args)
-{
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+/* FIXME AUTO: disabling vector support */
+/* static rtx */
+/* k1_expand_builtin_sllhps (rtx target, tree args) */
+/* { */
+/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
+/*     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1)); */
 
-    if (!target)
-        target = gen_reg_rtx (SImode);
-    target = force_reg (SImode, target);
-    arg1 = force_reg (SImode, arg1);
-    arg2 = force_reg (SImode, arg2);
-    emit_insn (gen_sllhps (target, arg1, arg2));
-    return target;
-}
+/*     if (!target) */
+/*         target = gen_reg_rtx (SImode); */
+/*     target = force_reg (SImode, target); */
+/*     arg1 = force_reg (SImode, arg1); */
+/*     arg2 = force_reg (SImode, arg2); */
+/*     emit_insn (gen_sllhps (target, arg1, arg2)); */
+/*     return target; */
+/* } */
 
-static rtx
-k1_expand_builtin_srahps (rtx target, tree args)
-{
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+	/* FIXME AUTO: disabling vector support */
+/* static rtx */
+/* k1_expand_builtin_srahps (rtx target, tree args) */
+/* { */
+/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
+/*     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1)); */
 
-    if (!target)
-        target = gen_reg_rtx (SImode);
-    target = force_reg (SImode, target);
-    arg1 = force_reg (SImode, arg1);
-    arg2 = force_reg (SImode, arg2);
-    emit_insn (gen_srahps (target, arg1, arg2));
-    return target;
-}
+/*     if (!target) */
+/*         target = gen_reg_rtx (SImode); */
+/*     target = force_reg (SImode, target); */
+/*     arg1 = force_reg (SImode, arg1); */
+/*     arg2 = force_reg (SImode, arg2); */
+/*     emit_insn (gen_srahps (target, arg1, arg2)); */
+/*     return target; */
+/* } */
 
 static rtx
 k1_expand_builtin_adds (rtx target, tree args)
@@ -4349,27 +4405,28 @@ k1_expand_builtin_faddrnd (rtx target, tree args)
     return target;
 }
 
-static rtx
-k1_expand_builtin_faddwp (rtx target, tree args, bool rn)
-{
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+/* FIXME AUTO: disabling vector support */
+/* static rtx */
+/* k1_expand_builtin_faddwp (rtx target, tree args, bool rn) */
+/* { */
+/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
+/*     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1)); */
 
-    arg1 = force_reg (V2SFmode, arg1);
-    arg2 = force_reg (V2SFmode, arg2);
+/*     arg1 = force_reg (V2SFmode, arg1); */
+/*     arg2 = force_reg (V2SFmode, arg2); */
 
-    if (!target)
-        target = gen_reg_rtx (V2SFmode);
-    if (!REG_P(target) || GET_MODE (target) != V2SFmode) {
-        target = force_reg (V2SFmode, target);
-    }
-    if (rn)
-        emit_insn (gen_faddrnwp (target, arg1, arg2));
-    else
-        emit_insn (gen_addv2sf3 (target, arg1, arg2));
+/*     if (!target) */
+/*         target = gen_reg_rtx (V2SFmode); */
+/*     if (!REG_P(target) || GET_MODE (target) != V2SFmode) { */
+/*         target = force_reg (V2SFmode, target); */
+/*     } */
+/*     if (rn) */
+/*         emit_insn (gen_faddrnwp (target, arg1, arg2)); */
+/*     else */
+/*         emit_insn (gen_addv2sf3 (target, arg1, arg2)); */
 
-    return target;
-}
+/*     return target; */
+/* } */
 
 static rtx
 k1_expand_builtin_fsbfrn (rtx target, tree args)
@@ -4409,27 +4466,28 @@ k1_expand_builtin_fsbfrnd (rtx target, tree args)
     return target;
 }
 
-static rtx
-k1_expand_builtin_fsbfwp (rtx target, tree args, bool rn)
-{
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+/* FIXME AUTO: disabling vector support */
+/* static rtx */
+/* k1_expand_builtin_fsbfwp (rtx target, tree args, bool rn) */
+/* { */
+/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
+/*     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1)); */
 
-    arg1 = force_reg (V2SFmode, arg1);
-    arg2 = force_reg (V2SFmode, arg2);
+/*     arg1 = force_reg (V2SFmode, arg1); */
+/*     arg2 = force_reg (V2SFmode, arg2); */
 
-    if (!target)
-        target = gen_reg_rtx (V2SFmode);
-    if (!REG_P(target) || GET_MODE (target) != V2SFmode) {
-        target = force_reg (V2SFmode, target);
-    }
-    if (rn)
-        emit_insn (gen_fsbfrnwp (target, arg1, arg2));
-    else
-        emit_insn (gen_fsbfwp (target, arg1, arg2));
+/*     if (!target) */
+/*         target = gen_reg_rtx (V2SFmode); */
+/*     if (!REG_P(target) || GET_MODE (target) != V2SFmode) { */
+/*         target = force_reg (V2SFmode, target); */
+/*     } */
+/*     if (rn) */
+/*         emit_insn (gen_fsbfrnwp (target, arg1, arg2)); */
+/*     else */
+/*         emit_insn (gen_fsbfwp (target, arg1, arg2)); */
 
-    return target;
-}
+/*     return target; */
+/* } */
 
 static rtx
 k1_expand_builtin_fmulrn (rtx target, tree args)
@@ -4469,49 +4527,51 @@ k1_expand_builtin_fmulrnd (rtx target, tree args)
     return target;
 }
 
-static rtx
-k1_expand_builtin_fmulnwp (rtx target, tree args, bool rn)
-{
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+/* FIXME AUTO: disabling vector support2 */
+/* static rtx */
+/* k1_expand_builtin_fmulnwp (rtx target, tree args, bool rn) */
+/* { */
+/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
+/*     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1)); */
 
-    arg1 = force_reg (V2SFmode, arg1);
-    arg2 = force_reg (V2SFmode, arg2);
+/*     arg1 = force_reg (V2SFmode, arg1); */
+/*     arg2 = force_reg (V2SFmode, arg2); */
 
-    if (!target)
-        target = gen_reg_rtx (V2SFmode);
-    if (!REG_P(target) || GET_MODE (target) != V2SFmode) {
-        target = force_reg (V2SFmode, target);
-    }
-    if (rn)
-        emit_insn (gen_fmulnrnwp (target, arg1, arg2));
-    else
-        emit_insn (gen_fmulnwp (target, arg1, arg2));
+/*     if (!target) */
+/*         target = gen_reg_rtx (V2SFmode); */
+/*     if (!REG_P(target) || GET_MODE (target) != V2SFmode) { */
+/*         target = force_reg (V2SFmode, target); */
+/*     } */
+/*     if (rn) */
+/*         emit_insn (gen_fmulnrnwp (target, arg1, arg2)); */
+/*     else */
+/*         emit_insn (gen_fmulnwp (target, arg1, arg2)); */
 
-    return target;
-}
+/*     return target; */
+/* } */
 
-static rtx
-k1_expand_builtin_fmulwp (rtx target, tree args, bool rn)
-{
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+/* FIXME AUTO: disabling vector support */
+/* static rtx */
+/* k1_expand_builtin_fmulwp (rtx target, tree args, bool rn) */
+/* { */
+/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
+/*     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1)); */
 
-    arg1 = force_reg (V2SFmode, arg1);
-    arg2 = force_reg (V2SFmode, arg2);
+/*     arg1 = force_reg (V2SFmode, arg1); */
+/*     arg2 = force_reg (V2SFmode, arg2); */
 
-    if (!target)
-        target = gen_reg_rtx (V2SFmode);
-    if (!REG_P(target) || GET_MODE (target) != V2SFmode) {
-        target = force_reg (V2SFmode, target);
-    }
-    if (rn)
-        emit_insn (gen_fmulrnwp (target, arg1, arg2));
-    else
-        emit_insn (gen_mulv2sf3 (target, arg1, arg2));
+/*     if (!target) */
+/*         target = gen_reg_rtx (V2SFmode); */
+/*     if (!REG_P(target) || GET_MODE (target) != V2SFmode) { */
+/*         target = force_reg (V2SFmode, target); */
+/*     } */
+/*     if (rn) */
+/*         emit_insn (gen_fmulrnwp (target, arg1, arg2)); */
+/*     else */
+/*         emit_insn (gen_mulv2sf3 (target, arg1, arg2)); */
 
-    return target;
-}
+/*     return target; */
+/* } */
 
 static rtx
 k1_expand_builtin_fmulwd (rtx target, tree args, bool rn)
@@ -5056,29 +5116,30 @@ k1_expand_builtin_ffmad (rtx target, tree args, int rn)
     return target;
 }
 
-static rtx
-k1_expand_builtin_ffmawp (rtx target, tree args, int rn)
-{
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-    rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
+/* FIXME AUTO: disabling vector support */
+/* static rtx */
+/* k1_expand_builtin_ffmawp (rtx target, tree args, int rn) */
+/* { */
+/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
+/*     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1)); */
+/*     rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2)); */
 
-    arg1 = force_reg (V2SFmode, arg1);
-    arg2 = force_reg (V2SFmode, arg2);
-    arg3 = force_reg (V2SFmode, arg3);
+/*     arg1 = force_reg (V2SFmode, arg1); */
+/*     arg2 = force_reg (V2SFmode, arg2); */
+/*     arg3 = force_reg (V2SFmode, arg3); */
 
-    if (!target)
-        target = gen_reg_rtx (V2SFmode);
-    if (!REG_P(target) || GET_MODE (target) != V2SFmode) {
-        target = force_reg (V2SFmode, target);
-    }
-    if (rn)
-        emit_insn (gen_ffmarnwp (target, arg2, arg3, arg1));
-    else
-        emit_insn (gen_fmav2sf4 (target, arg2, arg3, arg1));
+/*     if (!target) */
+/*         target = gen_reg_rtx (V2SFmode); */
+/*     if (!REG_P(target) || GET_MODE (target) != V2SFmode) { */
+/*         target = force_reg (V2SFmode, target); */
+/*     } */
+/*     if (rn) */
+/*         emit_insn (gen_ffmarnwp (target, arg2, arg3, arg1)); */
+/*     else */
+/*         emit_insn (gen_fmav2sf4 (target, arg2, arg3, arg1)); */
 
-    return target;
-}
+/*     return target; */
+/* } */
 
 static rtx
 k1_expand_builtin_ffman (rtx target, tree args, int rn)
@@ -5104,29 +5165,30 @@ k1_expand_builtin_ffman (rtx target, tree args, int rn)
     return target;
 }
 
-static rtx
-k1_expand_builtin_ffmanwp (rtx target, tree args, int rn)
-{
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-    rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
+/* FIXME AUTO: disabling vector support */
+/* static rtx */
+/* k1_expand_builtin_ffmanwp (rtx target, tree args, int rn) */
+/* { */
+/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
+/*     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1)); */
+/*     rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2)); */
 
-    arg1 = force_reg (V2SFmode, arg1);
-    arg2 = force_reg (V2SFmode, arg2);
-    arg3 = force_reg (V2SFmode, arg3);
+/*     arg1 = force_reg (V2SFmode, arg1); */
+/*     arg2 = force_reg (V2SFmode, arg2); */
+/*     arg3 = force_reg (V2SFmode, arg3); */
 
-    if (!target)
-        target = gen_reg_rtx (V2SFmode);
-    if (!REG_P(target) || GET_MODE (target) != V2SFmode) {
-        target = force_reg (V2SFmode, target);
-    }
-    if (rn)
-        emit_insn (gen_ffmanrnwp (target, arg2, arg3, arg1));
-    else
-        emit_insn (gen_fnmsv2sf4 (target, arg2, arg3, arg1));
+/*     if (!target) */
+/*         target = gen_reg_rtx (V2SFmode); */
+/*     if (!REG_P(target) || GET_MODE (target) != V2SFmode) { */
+/*         target = force_reg (V2SFmode, target); */
+/*     } */
+/*     if (rn) */
+/*         emit_insn (gen_ffmanrnwp (target, arg2, arg3, arg1)); */
+/*     else */
+/*         emit_insn (gen_fnmsv2sf4 (target, arg2, arg3, arg1)); */
 
-    return target;
-}
+/*     return target; */
+/* } */
 
 static rtx
 k1_expand_builtin_ffmanwd (rtx target, tree args, int rn)
@@ -5275,30 +5337,31 @@ k1_expand_builtin_ffms (rtx target, tree args, int rn)
 }
 
 
-static rtx
-k1_expand_builtin_ffmswp (rtx target, tree args, int rn)
-{
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-    rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
+/* FIXME AUTO: disabling vector support */
+/* static rtx */
+/* k1_expand_builtin_ffmswp (rtx target, tree args, int rn) */
+/* { */
+/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
+/*     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1)); */
+/*     rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2)); */
 
-    arg1 = force_reg (V2SFmode, arg1);
-    arg2 = force_reg (V2SFmode, arg2);
-    arg3 = force_reg (V2SFmode, arg3);
+/*     arg1 = force_reg (V2SFmode, arg1); */
+/*     arg2 = force_reg (V2SFmode, arg2); */
+/*     arg3 = force_reg (V2SFmode, arg3); */
 
-    if (!target)
-        target = gen_reg_rtx (V2SFmode);
-    if (!REG_P(target) || GET_MODE (target) != V2SFmode) {
-        target = force_reg (V2SFmode, target);
-    }
+/*     if (!target) */
+/*         target = gen_reg_rtx (V2SFmode); */
+/*     if (!REG_P(target) || GET_MODE (target) != V2SFmode) { */
+/*         target = force_reg (V2SFmode, target); */
+/*     } */
 
-    if (rn)
-        emit_insn (gen_ffmsrnwp (target, arg2, arg3, arg1));
-    else
-        emit_insn (gen_fnmav2sf4 (target, arg2, arg3, arg1));
+/*     if (rn) */
+/*         emit_insn (gen_ffmsrnwp (target, arg2, arg3, arg1)); */
+/*     else */
+/*         emit_insn (gen_fnmav2sf4 (target, arg2, arg3, arg1)); */
 
-    return target;
-}
+/*     return target; */
+/* } */
 
 static rtx
 k1_expand_builtin_ffmsd (rtx target, tree args, int rn)
@@ -5349,29 +5412,30 @@ k1_expand_builtin_ffmsn (rtx target, tree args, int rn)
     return target;
 }
 
-static rtx
-k1_expand_builtin_ffmsnwp (rtx target, tree args, int rn)
-{
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-    rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
+/* FIXME AUTO: disabling vector support */
+/* static rtx */
+/* k1_expand_builtin_ffmsnwp (rtx target, tree args, int rn) */
+/* { */
+/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
+/*     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1)); */
+/*     rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2)); */
 
-    arg1 = force_reg (V2SFmode, arg1);
-    arg2 = force_reg (V2SFmode, arg2);
-    arg3 = force_reg (V2SFmode, arg3);
+/*     arg1 = force_reg (V2SFmode, arg1); */
+/*     arg2 = force_reg (V2SFmode, arg2); */
+/*     arg3 = force_reg (V2SFmode, arg3); */
 
-    if (!target)
-        target = gen_reg_rtx (V2SFmode);
-    if (!REG_P(target) || GET_MODE (target) != V2SFmode) {
-        target = force_reg (V2SFmode, target);
-    }
-    if (rn)
-        emit_insn (gen_ffmsnrnwp (target, arg2, arg3, arg1));
-    else
-        emit_insn (gen_fmsv2sf4 (target, arg2, arg3, arg1));
+/*     if (!target) */
+/*         target = gen_reg_rtx (V2SFmode); */
+/*     if (!REG_P(target) || GET_MODE (target) != V2SFmode) { */
+/*         target = force_reg (V2SFmode, target); */
+/*     } */
+/*     if (rn) */
+/*         emit_insn (gen_ffmsnrnwp (target, arg2, arg3, arg1)); */
+/*     else */
+/*         emit_insn (gen_fmsv2sf4 (target, arg2, arg3, arg1)); */
 
-    return target;
-}
+/*     return target; */
+/* } */
 
 static rtx
 k1_expand_builtin_ffmsnd (rtx target, tree args, int rn)
@@ -5676,25 +5740,26 @@ k1_expand_builtin_fwiden (rtx target, tree args, int low_bits)
   return target;
 }
 
-static rtx
-k1_expand_builtin_fwiden_wp (rtx target, tree args, int low_bits)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+/* FIXME AUTO: disabling vector support */
+/* static rtx */
+/* k1_expand_builtin_fwiden_wp (rtx target, tree args, int low_bits) */
+/* { */
+/*   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
 
-  arg1 = force_reg (DImode, arg1);
+/*   arg1 = force_reg (DImode, arg1); */
 
-  if (!target)
-    target = gen_reg_rtx (V2SFmode);
-  if (!REG_P(target) || GET_MODE (target) != V2SFmode) {
-    target = force_reg (V2SFmode, target);
-  }
-  if(low_bits)
-    emit_insn (gen_builtin_extendv2hfv2sf2 (target, arg1));
-  else
-    emit_insn (gen_builtin_extendv2hfv2sf2_tophalf (target, arg1));
+/*   if (!target) */
+/*     target = gen_reg_rtx (V2SFmode); */
+/*   if (!REG_P(target) || GET_MODE (target) != V2SFmode) { */
+/*     target = force_reg (V2SFmode, target); */
+/*   } */
+/*   if(low_bits) */
+/*     emit_insn (gen_builtin_extendv2hfv2sf2 (target, arg1)); */
+/*   else */
+/*     emit_insn (gen_builtin_extendv2hfv2sf2_tophalf (target, arg1)); */
 
-  return target;
-}
+/*   return target; */
+/* } */
 
 static rtx
 k1_expand_builtin_fnarrowh (rtx target, tree args)
@@ -5713,51 +5778,53 @@ k1_expand_builtin_fnarrowh (rtx target, tree args)
   return target;
 }
 
-static rtx
-k1_expand_builtin_fnarrowhwp (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+/* FIXME AUTO: disabling vector support */
+/* static rtx */
+/* k1_expand_builtin_fnarrowhwp (rtx target, tree args) */
+/* { */
+/*   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
 
-  arg1 = force_reg (V2SFmode, arg1);
+/*   arg1 = force_reg (V2SFmode, arg1); */
 
-  if (!target)
-    target = gen_reg_rtx (V2SImode);
-  if (!REG_P(target) || GET_MODE (target) != V2SImode) {
-    target = force_reg (HImode, target);
-  }
-  emit_insn (gen_builtin_truncv2sf_2hf2(target, arg1));
+/*   if (!target) */
+/*     target = gen_reg_rtx (V2SImode); */
+/*   if (!REG_P(target) || GET_MODE (target) != V2SImode) { */
+/*     target = force_reg (HImode, target); */
+/*   } */
+/*   emit_insn (gen_builtin_truncv2sf_2hf2(target, arg1)); */
 
-  return target;
-}
+/*   return target; */
+/* } */
 
-static rtx
-k1_expand_builtin_lhpz (rtx target, tree args, int uncached, int no_trap)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+/* FIXME AUTO: disabling vector support */
+/* static rtx */
+/* k1_expand_builtin_lhpz (rtx target, tree args, int uncached, int no_trap) */
+/* { */
+/*   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
 
-  if (!target)
-    target = gen_reg_rtx (V2SImode);
-  if (!REG_P(target) || GET_MODE (target) != V2SImode) {
-    target = force_reg (V2SImode, target);
-  }
+/*   if (!target) */
+/*     target = gen_reg_rtx (V2SImode); */
+/*   if (!REG_P(target) || GET_MODE (target) != V2SImode) { */
+/*     target = force_reg (V2SImode, target); */
+/*   } */
 
-  arg1 = gen_rtx_MEM (V2HImode, force_reg (Pmode, arg1));
-  if (no_trap){
-    if (uncached){
-      emit_insn(gen_builtin_lhpzun(target, arg1));
-    } else {
-      emit_insn(gen_builtin_lhpzn(target, arg1));
-    }
-  } else {
+/*   arg1 = gen_rtx_MEM (V2HImode, force_reg (Pmode, arg1)); */
+/*   if (no_trap){ */
+/*     if (uncached){ */
+/*       emit_insn(gen_builtin_lhpzun(target, arg1)); */
+/*     } else { */
+/*       emit_insn(gen_builtin_lhpzn(target, arg1)); */
+/*     } */
+/*   } else { */
 
-    if (uncached){
-      emit_insn(gen_builtin_lhpzu(target, arg1));
-    } else {
-      emit_insn(gen_builtin_lhpz(target, arg1));
-    }
-  }
-  return target;
-}
+/*     if (uncached){ */
+/*       emit_insn(gen_builtin_lhpzu(target, arg1)); */
+/*     } else { */
+/*       emit_insn(gen_builtin_lhpz(target, arg1)); */
+/*     } */
+/*   } */
+/*   return target; */
+/* } */
 
 static rtx
 k1_target_expand_builtin (tree exp,
@@ -5770,20 +5837,25 @@ k1_target_expand_builtin (tree exp,
     unsigned int fcode = DECL_FUNCTION_CODE (fndecl);
 
     switch (fcode) {
-    case K1_BUILTIN_ABDHP:
-        return k1_expand_builtin_abdhp (target, exp);
-    case K1_BUILTIN_ADDHP:
-        return k1_expand_builtin_addhp (target, exp);
+      /* FIXME AUTO: disabling vector support */
+    /* case K1_BUILTIN_ABDHP: */
+    /*     return k1_expand_builtin_abdhp (target, exp); */
+    /* case K1_BUILTIN_ADDHP: */
+    /*     return k1_expand_builtin_addhp (target, exp); */
     case K1_BUILTIN_ADDS:
         return k1_expand_builtin_adds (target, exp);
     case K1_BUILTIN_BARRIER:
         return k1_expand_builtin_barrier ();
     case K1_BUILTIN_BWLU:
         return k1_expand_builtin_bwlu (target, exp);
-    case K1_BUILTIN_BWLUHP:
-        return k1_expand_builtin_bwluhp (target, exp);
-    case K1_BUILTIN_BWLUWP:
-        return k1_expand_builtin_bwluwp (target, exp);
+
+	/* FIXME AUTO: disabling vector support */
+    /* case K1_BUILTIN_BWLUHP: */
+    /*     return k1_expand_builtin_bwluhp (target, exp); */
+
+	/* FIXME AUTO: disabling vector support */
+    /* case K1_BUILTIN_BWLUWP: */
+    /*     return k1_expand_builtin_bwluwp (target, exp); */
     case K1_BUILTIN_CBS:
         return k1_expand_builtin_cbs (target, exp);
     case K1_BUILTIN_CBSDL:
@@ -5829,16 +5901,22 @@ k1_target_expand_builtin (tree exp,
         return k1_expand_builtin_faddrn (target, exp);
     case K1_BUILTIN_FADDRND:
         return k1_expand_builtin_faddrnd (target, exp);
-    case K1_BUILTIN_FADDWP:
-    case K1_BUILTIN_FADDRNWP:
-        return k1_expand_builtin_faddwp (target, exp, fcode == K1_BUILTIN_FADDRNWP);
+
+	/* FIXME AUTO: disabling vector support */
+    /* case K1_BUILTIN_FADDWP: */
+    /* case K1_BUILTIN_FADDRNWP: */
+    /*     return k1_expand_builtin_faddwp (target, exp, fcode == K1_BUILTIN_FADDRNWP); */
+
     case K1_BUILTIN_FSBFRN:
         return k1_expand_builtin_fsbfrn (target, exp);
     case K1_BUILTIN_FSBFRND:
         return k1_expand_builtin_fsbfrnd (target, exp);
-    case K1_BUILTIN_FSBFWP:
-    case K1_BUILTIN_FSBFRNWP:
-        return k1_expand_builtin_fsbfwp (target, exp, fcode == K1_BUILTIN_FSBFRNWP);
+
+	/* FIXME AUTO: disabling vector support */
+    /* case K1_BUILTIN_FSBFWP: */
+    /* case K1_BUILTIN_FSBFRNWP: */
+    /*     return k1_expand_builtin_fsbfwp (target, exp, fcode == K1_BUILTIN_FSBFRNWP); */
+
     /* FIXME AUTO : Disable use of create_SC_* */
     /* case K1_BUILTIN_FDMA: */
     /* case K1_BUILTIN_FDMS: */
@@ -5858,15 +5936,20 @@ k1_target_expand_builtin (tree exp,
     case K1_BUILTIN_FFMAD:
     case K1_BUILTIN_FFMARND:
         return k1_expand_builtin_ffmad (target, exp, fcode == K1_BUILTIN_FFMARND);
-    case K1_BUILTIN_FFMAWP:
-    case K1_BUILTIN_FFMARNWP:
-        return k1_expand_builtin_ffmawp (target, exp, fcode == K1_BUILTIN_FFMARNWP);
+
+	/* FIXME AUTO: disabling vector support */
+    /* case K1_BUILTIN_FFMAWP: */
+    /* case K1_BUILTIN_FFMARNWP: */
+    /*     return k1_expand_builtin_ffmawp (target, exp, fcode == K1_BUILTIN_FFMARNWP); */
+
     case K1_BUILTIN_FFMAN:
     case K1_BUILTIN_FFMANRN:
         return k1_expand_builtin_ffman (target, exp, fcode == K1_BUILTIN_FFMANRN);
-    case K1_BUILTIN_FFMANWP:
-    case K1_BUILTIN_FFMANRNWP:
-        return k1_expand_builtin_ffmanwp (target, exp, fcode == K1_BUILTIN_FFMANRNWP);
+
+	/* FIXME AUTO: disabling vector support */
+    /* case K1_BUILTIN_FFMANWP: */
+    /* case K1_BUILTIN_FFMANRNWP: */
+    /*     return k1_expand_builtin_ffmanwp (target, exp, fcode == K1_BUILTIN_FFMANRNWP); */
     case K1_BUILTIN_FFMANWD:
     case K1_BUILTIN_FFMANRNWD:
         return k1_expand_builtin_ffmanwd (target, exp, fcode == K1_BUILTIN_FFMANRNWD);
@@ -5879,18 +5962,21 @@ k1_target_expand_builtin (tree exp,
     case K1_BUILTIN_FFMS:
     case K1_BUILTIN_FFMSRN:
         return k1_expand_builtin_ffms (target, exp, fcode == K1_BUILTIN_FFMSRN);
-    case K1_BUILTIN_FFMSWP:
-    case K1_BUILTIN_FFMSRNWP:
-        return k1_expand_builtin_ffmswp (target, exp, fcode == K1_BUILTIN_FFMSRNWP);
+	/* FIXME AUTO: disabling vector support */
+    /* case K1_BUILTIN_FFMSWP: */
+    /* case K1_BUILTIN_FFMSRNWP: */
+    /*     return k1_expand_builtin_ffmswp (target, exp, fcode == K1_BUILTIN_FFMSRNWP); */
     case K1_BUILTIN_FFMSD:
     case K1_BUILTIN_FFMSRND:
         return k1_expand_builtin_ffmsd (target, exp, fcode == K1_BUILTIN_FFMSRND);
     case K1_BUILTIN_FFMSN:
     case K1_BUILTIN_FFMSNRN:
         return k1_expand_builtin_ffmsn (target, exp, fcode == K1_BUILTIN_FFMSNRN);
-    case K1_BUILTIN_FFMSNWP:
-    case K1_BUILTIN_FFMSNRNWP:
-        return k1_expand_builtin_ffmsnwp (target, exp, fcode == K1_BUILTIN_FFMSNRNWP);
+
+	/* FIXME AUTO: disabling vector support */
+    /* case K1_BUILTIN_FFMSNWP: */
+    /* case K1_BUILTIN_FFMSNRNWP: */
+    /*     return k1_expand_builtin_ffmsnwp (target, exp, fcode == K1_BUILTIN_FFMSNRNWP); */
     case K1_BUILTIN_FFMSND:
     case K1_BUILTIN_FFMSNRND:
         return k1_expand_builtin_ffmsnd (target, exp, fcode == K1_BUILTIN_FFMSNRND);
@@ -5920,18 +6006,24 @@ k1_target_expand_builtin (tree exp,
         return k1_expand_builtin_fmulnrn (target, exp);
     case K1_BUILTIN_FMULNRND:
         return k1_expand_builtin_fmulnrnd (target, exp);
-    case K1_BUILTIN_FMULWP:
-    case K1_BUILTIN_FMULRNWP:
-        return k1_expand_builtin_fmulwp (target, exp, fcode == K1_BUILTIN_FMULRNWP);
+
+	/* FIXME AUTO: disabling vector support */
+    /* case K1_BUILTIN_FMULWP: */
+    /* case K1_BUILTIN_FMULRNWP: */
+    /*     return k1_expand_builtin_fmulwp (target, exp, fcode == K1_BUILTIN_FMULRNWP); */
+
     case K1_BUILTIN_FMULWD:
     case K1_BUILTIN_FMULRNWD:
         return k1_expand_builtin_fmulwd (target, exp, fcode == K1_BUILTIN_FMULRNWD);
     case K1_BUILTIN_FMULNWD:
     case K1_BUILTIN_FMULNRNWD:
         return k1_expand_builtin_fmulnwd (target, exp, fcode == K1_BUILTIN_FMULNRNWD);
-    case K1_BUILTIN_FMULNWP:
-    case K1_BUILTIN_FMULNRNWP:
-        return k1_expand_builtin_fmulnwp (target, exp, fcode == K1_BUILTIN_FMULNRNWP);
+
+	/* FIXME AUTO: disabling vector support */
+    /* case K1_BUILTIN_FMULNWP: */
+    /* case K1_BUILTIN_FMULNRNWP: */
+    /*     return k1_expand_builtin_fmulnwp (target, exp, fcode == K1_BUILTIN_FMULNRNWP); */
+
     case K1_BUILTIN_FCDIV:
         return k1_expand_builtin_fcdiv (target, exp);
     case K1_BUILTIN_FSDIV:
@@ -5975,8 +6067,9 @@ k1_target_expand_builtin (tree exp,
         return k1_expand_builtin_iinvall (target, exp);
     case K1_BUILTIN_ITOUCHL:
         return k1_expand_builtin_itouchl (target, exp);
-    case K1_BUILTIN_LANDHP:
-        return k1_expand_builtin_landhp (target, exp);
+	/* FIXME AUTO: disabling vector support */
+    /* case K1_BUILTIN_LANDHP: */
+    /*     return k1_expand_builtin_landhp (target, exp); */
     case K1_BUILTIN_LBQS:
         return k1_expand_builtin_lbqs (target, exp);
     case K1_BUILTIN_LBQSU:
@@ -6011,8 +6104,9 @@ k1_target_expand_builtin (tree exp,
         return k1_expand_builtin_sat (target, exp);
     case K1_BUILTIN_SATD:
         return k1_expand_builtin_satd (target, exp);
-    case K1_BUILTIN_SBFHP:
-        return k1_expand_builtin_sbfhp (target, exp);
+	/* FIXME AUTO: disabling vector support */
+    /* case K1_BUILTIN_SBFHP: */
+    /*     return k1_expand_builtin_sbfhp (target, exp); */
     case K1_BUILTIN_SBMM8:
     case K1_BUILTIN_SBMM8_D:
         return k1_expand_builtin_sbmm8_d (target, exp);
@@ -6024,12 +6118,13 @@ k1_target_expand_builtin (tree exp,
     case K1_BUILTIN_SET:
     case K1_BUILTIN_SET_PS:
       return k1_expand_builtin_set (target, exp, fcode == K1_BUILTIN_SET_PS, SImode);
-    case K1_BUILTIN_SLLHPS:
-    case K1_BUILTIN_SLLHPS_R:
-        return k1_expand_builtin_sllhps (target, exp);
-    case K1_BUILTIN_SRAHPS:
-    case K1_BUILTIN_SRAHPS_R:
-        return k1_expand_builtin_srahps (target, exp);
+	/* FIXME AUTO: disabling vector support */
+    /* case K1_BUILTIN_SLLHPS: */
+    /* case K1_BUILTIN_SLLHPS_R: */
+    /*     return k1_expand_builtin_sllhps (target, exp); */
+    /* case K1_BUILTIN_SRAHPS: */
+    /* case K1_BUILTIN_SRAHPS_R: */
+    /*     return k1_expand_builtin_srahps (target, exp); */
     case K1_BUILTIN_STSU:
         return k1_expand_builtin_stsu (target, exp);
     case K1_BUILTIN_STSUD:
@@ -6046,24 +6141,32 @@ k1_target_expand_builtin (tree exp,
         return k1_expand_builtin_writetlb ();
     case K1_BUILTIN_FWIDENB:
       return k1_expand_builtin_fwiden (target, exp, 1);
-    case K1_BUILTIN_FWIDENBWP:
-      return k1_expand_builtin_fwiden_wp (target, exp, 1);
+
+      /* FIXME AUTO: disabling vector support */
+    /* case K1_BUILTIN_FWIDENBWP: */
+    /*   return k1_expand_builtin_fwiden_wp (target, exp, 1); */
+
     case K1_BUILTIN_FWIDENT:
       return k1_expand_builtin_fwiden (target, exp, 0);
-    case K1_BUILTIN_FWIDENTWP:
-      return k1_expand_builtin_fwiden_wp (target, exp, 0);
+
+      /* FIXME AUTO: disabling vector support */
+    /* case K1_BUILTIN_FWIDENTWP: */
+    /*   return k1_expand_builtin_fwiden_wp (target, exp, 0); */
+
     case K1_BUILTIN_FNARROWH:
       return k1_expand_builtin_fnarrowh (target, exp);
-    case K1_BUILTIN_FNARROWHWP:
-      return k1_expand_builtin_fnarrowhwp (target, exp);
-    case K1_BUILTIN_LHPZ:
-      return k1_expand_builtin_lhpz (target, exp, 0, 0);
-    case K1_BUILTIN_LHPZU:
-      return k1_expand_builtin_lhpz (target, exp, 1, 0);
-    case K1_BUILTIN_LHPZN:
-      return k1_expand_builtin_lhpz (target, exp, 0, 1);
-    case K1_BUILTIN_LHPZUN:
-      return k1_expand_builtin_lhpz (target, exp, 1, 1);
+
+    /* FIXME AUTO: disabling vector support */
+    /* case K1_BUILTIN_FNARROWHWP: */
+    /*   return k1_expand_builtin_fnarrowhwp (target, exp); */
+    /* case K1_BUILTIN_LHPZ: */
+    /*   return k1_expand_builtin_lhpz (target, exp, 0, 0); */
+    /* case K1_BUILTIN_LHPZU: */
+    /*   return k1_expand_builtin_lhpz (target, exp, 1, 0); */
+    /* case K1_BUILTIN_LHPZN: */
+    /*   return k1_expand_builtin_lhpz (target, exp, 0, 1); */
+    /* case K1_BUILTIN_LHPZUN: */
+    /*   return k1_expand_builtin_lhpz (target, exp, 1, 1); */
 
     case K1_BUILTIN_SRFSIZE:
       return k1_expand_builtin_srfsize (target, exp);
@@ -6531,9 +6634,12 @@ k1_gen_reg_copy (rtx reg, rtx reg2)
         insn = gen_movsi (reg, reg2);
     } else if (GET_MODE (reg) == SFmode){
         insn = gen_movsf (reg, reg2);
-    } else if (GET_MODE (reg) == V2HImode){
-        insn = gen_movv2hi (reg, reg2);
-    } else {
+    }
+    /* FIXME AUTO: disabling vector support */
+ /* else if (GET_MODE (reg) == V2HImode){ */
+    /*     insn = gen_movv2hi (reg, reg2); */
+    /* }  */
+    else {
         gcc_unreachable ();
     }
 
@@ -6789,8 +6895,9 @@ k1_pack_mems (enum machine_mode mode,
     mem_y = k1_patch_mem_for_double_access (mem_x);
 
     {
-
-	enum machine_mode memmode = mode == HImode ? V2HImode : DImode;
+      /* FIXME AUTO: disabling vector support */
+	/* enum machine_mode memmode = mode == HImode ? V2HImode : DImode; */
+	enum machine_mode memmode = DImode;
 	int subreg_offset = GET_MODE_SIZE (memmode) / 2;
 	enum machine_mode x_mode = GET_MODE (mem_x);
 	enum machine_mode y_mode = GET_MODE (mem_y);
@@ -9256,21 +9363,22 @@ k1_target_machine_dependent_reorg (void)
 }
 
 
-static enum machine_mode
-k1_units_preffered_simd_mode (enum machine_mode mode)
-{
-    switch (mode) {
-    case SImode:
-        return V2SImode;
-    case HImode:
-        return V4HImode;
-    case SFmode:
-        return V8SFmode;
-    default:;
-    }
+/* FIXME AUTO: disabling vector support */
+/* static enum machine_mode */
+/* k1_units_preffered_simd_mode (enum machine_mode mode) */
+/* { */
+/*     switch (mode) { */
+/*     case SImode: */
+/*         return V2SImode; */
+/*     case HImode: */
+/*         return V4HImode; */
+/*     case SFmode: */
+/*         return V8SFmode; */
+/*     default:; */
+/*     } */
 
-    return SImode;
-}
+/*     return SImode; */
+/* } */
 
 static bool
 k1_handle_fixed_reg_option (const char *arg)
@@ -9680,8 +9788,9 @@ void k1_profile_hook (void)
 #undef  TARGET_ATTRIBUTE_TABLE
 #define TARGET_ATTRIBUTE_TABLE k1_attribute_table
 
-#undef TARGET_VECTORIZE_PREFERRED_SIMD_MODE
-#define TARGET_VECTORIZE_PREFERRED_SIMD_MODE k1_units_preffered_simd_mode
+/* FIXME AUTO: disabling vector support */
+/* #undef TARGET_VECTORIZE_PREFERRED_SIMD_MODE */
+/* #define TARGET_VECTORIZE_PREFERRED_SIMD_MODE k1_units_preffered_simd_mode */
 
 #undef TARGET_FUNCTION_ARG
 #define TARGET_FUNCTION_ARG k1_function_arg
