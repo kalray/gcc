@@ -138,7 +138,7 @@ processor_path = File.join(workspace,processor_clone)
 
 case arch
   when "k1" then 
-  family_prefix = "#{processor_path}/#{arch}-family"
+  family_prefix = "#{processor_path}/#{arch}-family/BE/GCC/k1c"
   else raise "Unknown target: #{arch}"
 end
 
