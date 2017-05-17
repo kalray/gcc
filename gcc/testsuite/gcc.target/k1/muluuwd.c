@@ -1,5 +1,6 @@
 /* { dg-do  compile } */
 /* { dg-options "-O3 -save-temps -fdump-rtl-reload"  } */
+/* { dg-skip-if "Test valid only on Andey/Bostan" { *-*-* }  { "*" } { "-march=k1a" "-march=k1b" } } */
 
 #define UNSIGNED_9BIT 512U
 #define SIGNED_32BIT -150994942
