@@ -1,5 +1,6 @@
 /* { dg-do run } */
 /* { dg-options "-Os -save-temps -Wall -Werror" } */
+/* { dg-skip-if "Test valid only on Andey/Bostan" { *-*-* }  {  "*" } { "-march=k1a" "-march=k1b" } } */
 
 #include <builtin_k1.h>
 
