@@ -6,6 +6,32 @@
 ;;   (match_test "k1_architecture () >= K1B")
 ;; )
 
+(define_predicate "nonmemory64_register32_d_operand"
+   (match_code "const,const_int,reg,subreg,mem,symbol_ref,label_ref")
+{
+	return nonmemory_operand (op,mode);
+})
+
+
+(define_predicate "k1_zero"
+  (and (match_code "const_int")
+       (match_test "op == const0_rtx")))
+
+;; register or signed10 or signed 37
+(define_predicate "register_signed10_37_operand"
+ (ior (match_code "reg")
+      (and (match_code "const,const_int")
+           (ior (match_test "satisfies_constraint_I10(op)")
+                (match_test "satisfies_constraint_D37(op)")))))
+
+
+(define_predicate "nonmemory64_register32_w_operand"
+   (match_code "const,const_int,reg,subreg,mem,symbol_ref,label_ref")
+{
+	return register_operand (op,mode);
+})
+
+
 (define_predicate "jump_operand"
   (match_code "mem")
 {
@@ -208,9 +234,20 @@
                 && (INTVAL (op) >= 0 && INTVAL (op) < (1<<6));
 })
 
+/*
+ * (define_predicate "immediate_float_43bits_operand"
+ *  (and (match_code "const_double")
+ *       (match_test "k1_float_fits_bits(CONST_DOUBLE_REAL_VALUE(op),43,mode)")))
+ */
+
 (define_predicate "immediate_unsigned_32bits_operand"
   (and (match_code "const_int")
        (match_test "INTVAL (op) >= 0 && INTVAL (op) < (1LL << 32)")))
+
+(define_predicate "immediate_unsigned_37bits_operand"
+  (and (match_code "const_int")
+       (match_test "INTVAL (op) >= 0 && INTVAL (op) < (1LL << 37)")))
+
 
 (define_predicate "const_int_43b_operand"
   (and (match_code "const_int")
@@ -232,9 +269,9 @@
                     && (INTVAL (op) >= 0 && INTVAL (op) < (1<<5)));
 })
 
-(define_predicate "unsigned_mul_immediate"
+(define_predicate "unsigned_mul_immediate_37"
  (ior (match_test "satisfies_constraint_J10(op)")
-      (match_test "satisfies_constraint_U32(op)")))
+      (match_test "satisfies_constraint_U37(op)")))
 
 (define_predicate "unsigned_mul_reg_or_immediate"
   (ior (match_operand 0 "register_operand")
