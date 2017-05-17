@@ -1,6 +1,6 @@
 /* { dg-do  compile } */
 /* { dg-options "-O3 -save-temps"  } */
-
+/* { dg-skip-if "Test valid only on Andey/Bostan" { *-*-* }  { "*"  } { "-march=k1a" "-march=k1b" } } */
 
 unsigned sbfx8(unsigned a, unsigned b) {
   return a - (b << 3);

@@ -1,5 +1,6 @@
 /* { dg-do  run } */
 /* { dg-options "-O2 -save-temps"  } */
+/* { dg-skip-if "Test valid only on Andey/Bostan" { *-*-* }  {  "*" } { "-march=k1a" "-march=k1b" } } */
 
 #define TESTSF(rounding) \
         sf = __builtin_k1_float (rounding, 2, 0);   \
