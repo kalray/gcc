@@ -1,5 +1,6 @@
 /* { dg-do  compile } */
 /* { dg-options "-O3 -save-temps -fdump-rtl-reload"  } */
+/* { dg-skip-if "Test valid only on Andey/Bostan" { *-*-* }  { "*" } { "-march=k1a" "-march=k1b" } } */
 
 char movqi_reg_reg(char x, char y) { 
   return y;
