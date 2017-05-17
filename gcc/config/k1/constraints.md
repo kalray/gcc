@@ -39,6 +39,13 @@
        (and (match_code "const_double")
             (match_test "hval == 0"))))
 
+(define_constraint "U37"  
+  "A 37-bits unsigned constant."
+  (ior (and (match_code "const_int")
+            (match_test "ival >= 0 && ival <= 4294967295u"))
+       (and (match_code "const_double")
+            (match_test "hval >=0 && hval <= 4294967295u"))))
+
 (define_constraint "I10"  
   "A signed 10-bit constant."
   (and (match_code "const_int")
