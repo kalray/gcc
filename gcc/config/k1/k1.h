@@ -614,6 +614,17 @@ K1C_FIXED_REGISTERS \
 // FIXME AUTO: disabled for coolidge
 //#define ARG_POINTER_CFA_OFFSET(funcdecl) K1C_SCRATCH_AREA_SIZE + crtl->args.pretend_args_size + (cfun->stdarg && crtl->args.info < K1C_ARG_REG_SLOTS ? UNITS_PER_WORD * ((K1C_ARG_REG_SLOTS - crtl->args.info + 1) & ~1) : 0)
 
+/* This macro need only be defined if the target might save registers
+   in the function prologue at an offset to the stack pointer that is
+   not aligned to UNITS_PER_WORD. The definition should be the
+   negative minimum alignment if STACK_GROWS_DOWNWARD is true, and the
+   positive minimum alignment otherwise. See SDB and DWARF. Only
+   applicable if the target supports DWARF 2 frame unwind
+   information. */
+
+#define DWARF_CIE_DATA_ALIGNMENT (-(TARGET_64 ? 8 : 4))
+
+
 /* If defined, a C expression whose value is an integer giving the
    offset in bytes from the frame pointer to the canonical frame
    address (cfa). The final value should coincide with that calculated
