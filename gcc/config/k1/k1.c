@@ -4053,20 +4053,21 @@ k1_expand_builtin_writetlb (void)
   return NULL_RTX;
 }
 
-static rtx
-k1_expand_builtin_sat (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+/* FIXME AUTO: sat does not exist in k1c yet */
+/* static rtx */
+/* k1_expand_builtin_sat (rtx target, tree args) */
+/* { */
+/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
+/*     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1)); */
 
-  if (!target)
-    target = gen_reg_rtx (SImode);
-  target = force_reg (SImode, target);
-  arg1 = force_reg (SImode, arg1);
-  arg2 = force_reg (SImode, arg2);
-  emit_insn (gen_sat (target, arg1, arg2));
-  return target;
-}
+/*     if (!target) */
+/*         target = gen_reg_rtx (SImode); */
+/*     target = force_reg (SImode, target); */
+/*     arg1 = force_reg (SImode, arg1); */
+/*     arg2 = force_reg (SImode, arg2); */
+/*     emit_insn (gen_sat (target, arg1, arg2)); */
+/*     return target; */
+/* } */
 
 static rtx
 k1_expand_builtin_satd (rtx target, tree args)
@@ -6478,10 +6479,12 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_probetlb ();
     case K1_BUILTIN_READTLB:
       return k1_expand_builtin_readtlb ();
-    /* case K1_BUILTIN_RXOR: */
-    /*     return k1_expand_builtin_rxor (target, exp); */
-    case K1_BUILTIN_SAT:
-      return k1_expand_builtin_sat (target, exp);
+      /* case K1_BUILTIN_RXOR: */
+      /*     return k1_expand_builtin_rxor (target, exp); */
+
+      /* FIXME AUTO: sat does not exist in k1c yet  */
+    /* case K1_BUILTIN_SAT: */
+    /*     return k1_expand_builtin_sat (target, exp); */
     case K1_BUILTIN_SATD:
       return k1_expand_builtin_satd (target, exp);
       /* FIXME AUTO: disabling vector support */
