@@ -2996,7 +2996,8 @@ enum k1_builtin
   /* K1_BUILTIN_ADDHP, */
   K1_BUILTIN_ADDS,
   K1_BUILTIN_BARRIER,
-  K1_BUILTIN_BWLU,
+  /* FIXME AUTO: no more bwlu */
+  /* K1_BUILTIN_BWLU, */
   /* FIXME AUTO: disabling vector support */
   /* K1_BUILTIN_BWLUHP, */
   /* K1_BUILTIN_BWLUWP, */
@@ -3278,7 +3279,9 @@ k1_target_init_builtins (void)
 
   ADD_K1_BUILTIN (ADDS, "adds", intSI, intSI, intSI);
   ADD_K1_BUILTIN (BARRIER, "barrier", VOID);
-  ADD_K1_BUILTIN (BWLU, "bwlu", uintSI, uintSI, uintSI, uintSI, uintSI, uintHI);
+  /* FIXME AUTO: no more bwlu */
+  /* ADD_K1_BUILTIN (BWLU,    "bwlu",        uintSI, uintSI, uintSI, uintSI,
+   * uintSI, uintHI); */
 
   /* FIXME AUTO: disabling vector support */
   /* ADD_K1_BUILTIN (BWLUHP,  "bwluhp",      uintSI,  uintSI,  uintSI, uintSI);
@@ -3898,81 +3901,83 @@ k1_expand_builtin_sbmmt8_d (rtx target, tree args)
   return target;
 }
 
-static rtx
-k1_expand_builtin_bwlu (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-  rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
-  rtx arg4 = expand_normal (CALL_EXPR_ARG (args, 3));
-  rtx arg5 = expand_normal (CALL_EXPR_ARG (args, 4));
+/* FIXME AUTO: no more bwlu */
+/* static rtx */
+/* k1_expand_builtin_bwlu (rtx target, tree args) */
+/* { */
+/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
+/*     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1)); */
+/*     rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2)); */
+/*     rtx arg4 = expand_normal (CALL_EXPR_ARG (args, 3)); */
+/*     rtx arg5 = expand_normal (CALL_EXPR_ARG (args, 4)); */
 
-  if (!target)
-    target = gen_reg_rtx (SImode);
-  target = force_reg (SImode, target);
-  arg1 = force_reg (SImode, arg1);
-  arg2 = force_reg (SImode, arg2);
-  arg3 = force_reg (SImode, arg3);
-  arg4 = force_reg (SImode, arg4);
+/*     if (!target) */
+/*         target = gen_reg_rtx (SImode); */
+/*     target = force_reg (SImode, target); */
+/*     arg1 = force_reg (SImode, arg1); */
+/*     arg2 = force_reg (SImode, arg2); */
+/*     arg3 = force_reg (SImode, arg3); */
+/*     arg4 = force_reg (SImode, arg4); */
 
-  if (!verify_const_int_arg (arg5, 16, false))
-    {
-      error ("__builtin_k1_bwlu expects a 16 bits immediate third argument.");
-      return NULL_RTX;
-    }
+/*     if (!verify_const_int_arg (arg5, 16, false)) { */
+/*         error ("__builtin_k1_bwlu expects a 16 bits immediate third
+ * argument."); */
+/*         return NULL_RTX; */
+/*     } */
 
-  emit_insn (gen_bwlu (target, arg1, arg2, arg3, arg4, arg5));
+/*     emit_insn (gen_bwlu (target, arg1, arg2, arg3, arg4, arg5)); */
 
-  return target;
-}
+/*     return target; */
+/* } */
 
-static rtx
-k1_expand_builtin_bwluhp (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-  rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
+/* FIXME AUTO: disabling vector support */
+/* static rtx */
+/* k1_expand_builtin_bwluhp (rtx target, tree args) */
+/* { */
+/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
+/*     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1)); */
+/*     rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2)); */
 
-  if (!target)
-    target = gen_reg_rtx (SImode);
-  target = force_reg (SImode, target);
-  arg1 = force_reg (SImode, arg1);
-  arg2 = force_reg (SImode, arg2);
+/*     if (!target) */
+/*         target = gen_reg_rtx (SImode); */
+/*     target = force_reg (SImode, target); */
+/*     arg1 = force_reg (SImode, arg1); */
+/*     arg2 = force_reg (SImode, arg2); */
 
-  if (!verify_const_int_arg (arg3, 32, false))
-    {
-      error ("__builtin_k1_bwluhp expects a 32 bits immediate third argument.");
-      return NULL_RTX;
-    }
+/*     if (!verify_const_int_arg (arg3, 32, false)) { */
+/*         error ("__builtin_k1_bwluhp expects a 32 bits immediate third
+ * argument."); */
+/*         return NULL_RTX; */
+/*     } */
 
-  emit_insn (gen_bwluhp (target, arg1, arg2, arg3));
+/*     emit_insn (gen_bwluhp (target, arg1, arg2, arg3)); */
 
-  return target;
-}
+/*     return target; */
+/* } */
 
-static rtx
-k1_expand_builtin_bwluwp (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-  rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
+/* static rtx */
+/* k1_expand_builtin_bwluwp (rtx target, tree args) */
+/* { */
+/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
+/*     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1)); */
+/*     rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2)); */
 
-  if (!target)
-    target = gen_reg_rtx (DImode);
-  target = force_reg (DImode, target);
-  arg1 = force_reg (DImode, arg1);
-  arg2 = force_reg (DImode, arg2);
+/*     if (!target) */
+/*         target = gen_reg_rtx (DImode); */
+/*     target = force_reg (DImode, target); */
+/*     arg1 = force_reg (DImode, arg1); */
+/*     arg2 = force_reg (DImode, arg2); */
 
-  if (!verify_const_int_arg (arg3, 32, false))
-    {
-      error ("__builtin_k1_bwluwp expects a 32 bits immediate third argument.");
-      return NULL_RTX;
-    }
+/*     if (!verify_const_int_arg (arg3, 32, false)) { */
+/*         error ("__builtin_k1_bwluwp expects a 32 bits immediate third
+ * argument."); */
+/*         return NULL_RTX; */
+/*     } */
 
-  emit_insn (gen_bwluwp (target, arg1, arg2, arg3));
+/*     emit_insn (gen_bwluwp (target, arg1, arg2, arg3)); */
 
-  return target;
-}
+/*     return target; */
+/* } */
 
 static rtx
 k1_expand_builtin_syncgroup (rtx target ATTRIBUTE_UNUSED, tree args)
@@ -6200,8 +6205,10 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_adds (target, exp);
     case K1_BUILTIN_BARRIER:
       return k1_expand_builtin_barrier ();
-    case K1_BUILTIN_BWLU:
-      return k1_expand_builtin_bwlu (target, exp);
+
+      /* FIXME AUTO: no more bwlu */
+      /* case K1_BUILTIN_BWLU: */
+      /*     return k1_expand_builtin_bwlu (target, exp); */
 
       /* FIXME AUTO: disabling vector support */
       /* case K1_BUILTIN_BWLUHP: */
