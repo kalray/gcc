@@ -29,9 +29,6 @@
 (absence_set "k1c_tiny_mau_u" "k1c_mau_u, k1c_lite_mau_u")
 (absence_set "k1c_lite_mau_u" "k1c_tiny_mau_u, k1c_mau_u")
 
-(absence_set "k1c_lite_mau_u" "k1c_tiny_mau_u, k1c_mau_u")
-
-
 ;; k1c_lsu_store_u, k1c_tiny_lsu_u
 
 ;; ALU > LITE > TINY
@@ -48,61 +45,55 @@
 
 ;; (define_reservation "k1c_lsu_store_r" "k1c_acc_u")
 
-(define_reservation "k1c_alu_r" "(k1c_alu0_u | k1c_alu1_u)")
+(define_reservation "k1c_alu_r"  "(k1c_alu0_u      | k1c_alu1_u                                        )")
+(define_reservation "k1c_lite_r" "(k1c_lite_alu0_u | k1c_lite_alu1_u | k1c_lite_mau_u                  )")
+(define_reservation "k1c_tiny_r" "(k1c_tiny_alu0_u | k1c_tiny_alu1_u | k1c_tiny_lsu_u | k1c_tiny_mau_u )")
 
-;;(define_reservation "k1c_lite_r" "( k1c_lite_mau_r | k1c_lite_lsu_r | k1c_lite_alu_r)")
-
-(define_reservation "k1c_lite_simple_r" "( k1c_lite_mau_u | k1c_lite_alu0_u | k1c_lite_alu1_u)")
-(define_reservation "k1c_lite_double_r" "( k1c_lite_mau_u | (k1c_lite_alu0_u + k1c_lite_alu1_u))")
-
-;;(define_reservation "k1c_tiny_r" "(k1c_tiny_alu0_r | k1c_tiny_alu1_r | k1c_tiny_lsu_r | k1c_tiny_mau_r)")
-
-(define_reservation "k1c_tiny_simple_r" "(k1c_tiny_alu0_u | k1c_tiny_alu1_u | k1c_tiny_lsu_u | k1c_tiny_mau_u)")
-(define_reservation "k1c_tiny_double_r" "((k1c_tiny_alu0_u + k1c_tiny_alu1_u) | k1c_tiny_lsu_u | k1c_tiny_mau_u)")
+;;(define_reservation "k1c_lite_double_r" "( k1c_lite_mau_u | (k1c_lite_alu0_u + k1c_lite_alu1_u))")
+;;(define_reservation "k1c_tiny_simple_r" "(k1c_tiny_alu0_u | k1c_tiny_alu1_u | k1c_tiny_lsu_u | k1c_tiny_mau_u)")
+;;(define_reservation "k1c_tiny_double_r" "((k1c_tiny_alu0_u + k1c_tiny_alu1_u) | k1c_tiny_lsu_u | k1c_tiny_mau_u)")
 
 (define_reservation "k1c_issue_r" "(k1c_issue0|k1c_issue1|k1c_issue2|k1c_issue3|k1c_issue4|k1c_issue5|k1c_issue6|k1c_issue7)")
 (define_reservation "k1c_issue_x2_r" "(k1c_issue0+k1c_issue1)|(k1c_issue1+k1c_issue2)|(k1c_issue2+k1c_issue3)|(k1c_issue3+k1c_issue4)|(k1c_issue4+k1c_issue5)|(k1c_issue5+k1c_issue6)|(k1c_issue6+k1c_issue7)")
-(define_reservation "k1c_issue_x3_r" "(k1c_issue0+k1c_issue1+k1c_issue2)|(k1c_issue1+k1c_issue2+k1c_issue3)|(k1c_issue2+k1c_issue3+k1c_issue4)|(k1c_issue3+k1c_issue4+k1c_issue5)|(k1c_issue4+k1c_issue5+k1c_issue6)|(k1c_issue5+k1c_issue6+k1c_issue7)")
-(define_reservation "k1c_issue_x4_r" "(k1c_issue0+k1c_issue1+k1c_issue2+k1c_issue3)|(k1c_issue1+k1c_issue2+k1c_issue3+k1c_issue4)|(k1c_issue2+k1c_issue3+k1c_issue4+k1c_issue5)|(k1c_issue3+k1c_issue4+k1c_issue5+k1c_issue6)|(k1c_issue4+k1c_issue5+k1c_issue6+k1c_issue7)")
 
-;; (define_reservation "k1c_tiny" "(k1c_tiny_alu0|k1c_tiny_alu1|k1c_tiny_mau|k1c_tiny_lsu)")
-;; (define_reservation "k1c_lite" "(k1c_lite_alu|k1c_lite_mau|k1c_lite_lsu)")
+(define_reservation "k1c_issue_x3_r" "(k1c_issue0+k1c_issue1+k1c_issue2)|(k1c_issue1+k1c_issue2+k1c_issue3)|(k1c_issue2+k1c_issue3+k1c_issue4)|(k1c_issue3+k1c_issue4+k1c_issue5)|(k1c_issue4+k1c_issue5+k1c_issue6)|(k1c_issue5+k1c_issue6+k1c_issue7)")
+
+;; temp disable
+;;(define_reservation "k1c_issue_x4_r" "(k1c_issue0+k1c_issue1+k1c_issue2+k1c_issue3)|(k1c_issue1+k1c_issue2+k1c_issue3+k1c_issue4)|(k1c_issue2+k1c_issue3+k1c_issue4+k1c_issue5)|(k1c_issue3+k1c_issue4+k1c_issue5+k1c_issue6)|(k1c_issue4+k1c_issue5+k1c_issue6+k1c_issue7)")
 
 (define_reservation "k1c_all_r"
  "(k1c_issue0 + k1c_issue1 + k1c_issue2 + k1c_issue3 + k1c_issue4 + k1c_issue5 + k1c_issue6 + k1c_issue7)")
 
-;; "(k1c_issue_r + k1c_issue_r + k1c_issue_r + k1c_issue_r + k1c_issue_r + k1c_issue_r + k1c_issue_r + k1c_issue_r)")
+;; (define_reservation "k1c_alud_full_r"
+;;  "(k1c_alu0_u + k1c_alu1_u) + k1c_issue_r")
 
-(define_reservation "k1c_alud_full_r"
- "(k1c_alu0_u + k1c_alu1_u) + k1c_issue_r")
+;; (define_reservation "k1c_alud_full.x_r"
+;;  "(k1c_alu0_u + k1c_alu1_u) + k1c_issue_x2_r")
 
-(define_reservation "k1c_alud_full.x_r"
- "(k1c_alu0_u + k1c_alu1_u) + k1c_issue_x2_r")
+;; (define_reservation "k1c_alud_full.y_r"
+;;  "k1c_alu0_u + k1c_alu1_u + k1c_issue_x3_r")
 
-(define_reservation "k1c_alud_full.y_r"
- "k1c_alu0_u + k1c_alu1_u + k1c_issue_x3_r")
-
-(define_reservation "k1c_alud_full.z_r"
- "k1c_alu0_u + k1c_alu1_u + k1c_issue_x4_r")
+;; (define_reservation "k1c_alud_full.z_r"
+;;  "k1c_alu0_u + k1c_alu1_u + k1c_issue_x4_r")
 
 ;; Should be used when addcd/sbfcd/addcid/sbfcid are introduced with monodouble fmts
-(define_reservation "k1c_alud_full_odd_r"
-    "k1c_alu0_u + k1c_alu1_u + k1c_odd_u + k1c_issue_r")
+;; (define_reservation "k1c_alud_full_odd_r"
+;;     "k1c_alu0_u + k1c_alu1_u + k1c_odd_u + k1c_issue_r")
 
-(define_reservation "k1c_alud_full_odd.x_r"
-    "k1c_alu0_u + k1c_alu1_u + k1c_odd_u + k1c_issue_x2_r")
+;; (define_reservation "k1c_alud_full_odd.x_r"
+;;     "k1c_alu0_u + k1c_alu1_u + k1c_odd_u + k1c_issue_x2_r")
 
-(define_reservation "k1c_alud_lite_r"
-   "(k1c_lite_double_r + k1c_issue_r)")
+;; (define_reservation "k1c_alud_lite_r"
+;;    "(k1c_lite_double_r + k1c_issue_r)")
 
-(define_reservation "k1c_alud_lite.x_r"
-   "(k1c_lite_double_r | k1c_mau_u) + k1c_issue_x2_r")
+;; (define_reservation "k1c_alud_lite.x_r"
+;;    "(k1c_lite_double_r | k1c_mau_u) + k1c_issue_x2_r")
 
-(define_reservation "k1c_alud_tiny_r"
-   "k1c_tiny_double_r + k1c_issue_r")
+;; (define_reservation "k1c_alud_tiny_r"
+;;    "k1c_tiny_double_r + k1c_issue_r")
 
-(define_reservation "k1c_alud_tiny.x_r"
-   "k1c_tiny_double_r + k1c_issue_x2_r")
+;; (define_reservation "k1c_alud_tiny.x_r"
+;;    "k1c_tiny_double_r + k1c_issue_x2_r")
 
 (define_reservation "k1c_alu_full_r"
   "k1c_alu_r + k1c_issue_r")
@@ -114,16 +105,19 @@
   "k1c_alu0_u + k1c_odd_u + k1c_issue_r")
 
 (define_reservation "k1c_alu_lite_r"
-  "k1c_lite_simple_r + k1c_issue_r")
+  "k1c_lite_r + k1c_issue_r")
 
 (define_reservation "k1c_alu_lite.x_r"
-  "k1c_lite_simple_r + k1c_issue_x2_r")
+  "k1c_lite_r + k1c_issue_x2_r")
 
 (define_reservation "k1c_alu_tiny_r"
-  "k1c_tiny_simple_r + k1c_issue_r")
+  "k1c_tiny_r + k1c_issue_r")
 
 (define_reservation "k1c_alu_tiny.x_r"
-  "k1c_tiny_simple_r + k1c_issue_x2_r")
+  "k1c_tiny_r + k1c_issue_x2_r")
+
+(define_reservation "k1c_alu_tiny.y_r"
+  "k1c_tiny_r + k1c_issue_x3_r")
 
 (define_reservation "k1c_bcu_r"
   "k1c_bcu_u + k1c_issue_r")
@@ -165,13 +159,13 @@
                          "k1c_all_r")
 
 
-(define_insn_reservation "k1c_tiny_double" 1 (and (eq_attr "arch" "coolidge")
-                                                  (eq_attr "type" "alud_tiny"))
-                         "k1c_alud_tiny_r")
+;; (define_insn_reservation "k1c_tiny_double" 1 (and (eq_attr "arch" "coolidge")
+;;                                                   (eq_attr "type" "alud_tiny"))
+;;                          "k1c_alud_tiny_r")
 
-(define_insn_reservation "k1c_tiny_double.x" 1 (and (eq_attr "arch" "coolidge")
-                                                    (eq_attr "type" "alud_tiny_x"))
-                         "k1c_alud_tiny.x_r")
+;; (define_insn_reservation "k1c_tiny_double.x" 1 (and (eq_attr "arch" "coolidge")
+;;                                                     (eq_attr "type" "alud_tiny_x"))
+;;                          "k1c_alud_tiny.x_r")
 
 
 (define_insn_reservation "k1c_tiny" 1 (and (eq_attr "arch" "coolidge")
@@ -184,14 +178,18 @@
                                              (eq_attr "type" "tiny_x"))
                          "k1c_alu_tiny.x_r")
 
+(define_insn_reservation "k1c_tiny.y" 1 (and (eq_attr "arch" "coolidge")
+                                             (eq_attr "type" "tiny_y"))
+                         "k1c_alu_tiny.y_r")
 
-(define_insn_reservation "k1c_lite_double" 1 (and (eq_attr "arch" "coolidge")
-                                                  (eq_attr "type" "alud_lite,addshp"))
-                         "k1c_alud_lite_r")
 
-(define_insn_reservation "k1c_lite_double.x" 1 (and (eq_attr "arch" "coolidge")
-                                                    (eq_attr "type" "alud_lite_x"))
-                         "k1c_alud_lite.x_r")
+;; (define_insn_reservation "k1c_lite_double" 1 (and (eq_attr "arch" "coolidge")
+;;                                                   (eq_attr "type" "alud_lite,addshp"))
+;;                          "k1c_alud_lite_r")
+
+;; (define_insn_reservation "k1c_lite_double.x" 1 (and (eq_attr "arch" "coolidge")
+;;                                                     (eq_attr "type" "alud_lite_x"))
+;;                          "k1c_alud_lite.x_r")
 
 
 (define_insn_reservation "k1c_lite" 1 (and (eq_attr "arch" "coolidge")
@@ -206,10 +204,6 @@
                                              (eq_attr "type" "abd_x,cmove_x,bwluhp,lite_x"))
                          "k1c_alu_lite.x_r")
 
-;; (define_insn_reservation "k1c_alu0" 1 (and (eq_attr "arch" "coolidge")
-;;                                            (eq_attr "type" "alu0"))
-;;                          "k1c_alu0_u + k1c_issue_r")
-
 (define_insn_reservation "k1c_alu" 1 (and (eq_attr "arch" "coolidge")
                                            (eq_attr "type" "alu"))
                          "k1c_alu_full_r")
@@ -222,29 +216,29 @@
                                            (eq_attr "type" "alu_x"))
                          "k1c_alu_full.x_r")
 
-(define_insn_reservation "k1c_alud" 1 (and (eq_attr "arch" "coolidge")
-                                           (eq_attr "type" "alud"))
-                         "k1c_alud_full_r")
+;; (define_insn_reservation "k1c_alud" 1 (and (eq_attr "arch" "coolidge")
+;;                                            (eq_attr "type" "alud"))
+;;                          "k1c_alud_full_r")
 
-(define_insn_reservation "k1c_alud_full_odd" 1 (and (eq_attr "arch" "coolidge")
-                                                    (eq_attr "type" "alud_full_odd"))
-                         "k1c_alud_full_odd_r")
+;; (define_insn_reservation "k1c_alud_full_odd" 1 (and (eq_attr "arch" "coolidge")
+;;                                                     (eq_attr "type" "alud_full_odd"))
+;;                          "k1c_alud_full_odd_r")
 
-(define_insn_reservation "k1c_alud_full_odd.x" 1 (and (eq_attr "arch" "coolidge")
-                                                      (eq_attr "type" "alud_full_odd_x"))
-                         "k1c_alud_full_odd.x_r")
+;; (define_insn_reservation "k1c_alud_full_odd.x" 1 (and (eq_attr "arch" "coolidge")
+;;                                                       (eq_attr "type" "alud_full_odd_x"))
+;;                          "k1c_alud_full_odd.x_r")
 
-(define_insn_reservation "k1c_alud.x" 1 (and (eq_attr "arch" "coolidge")
-                                             (eq_attr "type" "alud_x"))
-                         "k1c_alud_full.x_r")
+;; (define_insn_reservation "k1c_alud.x" 1 (and (eq_attr "arch" "coolidge")
+;;                                              (eq_attr "type" "alud_x"))
+;;                          "k1c_alud_full.x_r")
 
-(define_insn_reservation "k1c_alud.y" 1 (and (eq_attr "arch" "coolidge")
-                                             (eq_attr "type" "alud_y"))
-                         "k1c_alud_full.y_r")
+;; (define_insn_reservation "k1c_alud.y" 1 (and (eq_attr "arch" "coolidge")
+;;                                              (eq_attr "type" "alud_y"))
+;;                          "k1c_alud_full.y_r")
 
-(define_insn_reservation "k1c_alud.z" 1 (and (eq_attr "arch" "coolidge")
-                                             (eq_attr "type" "alud_z"))
-                         "k1c_alud_full.z_r")
+;; (define_insn_reservation "k1c_alud.z" 1 (and (eq_attr "arch" "coolidge")
+;;                                              (eq_attr "type" "alud_z"))
+;;                          "k1c_alud_full.z_r")
 
 (define_insn_reservation "k1c_bcu" 1 (and (eq_attr "arch" "coolidge")
                                           (eq_attr "type" "bcu"))
@@ -382,10 +376,11 @@
 
 /* The bcus read their input 1 cycle earlier */
 (define_bypass 2 "k1c_alu,k1c_alu.x" "k1c_bcu,k1c_bcu_get")
-(define_bypass 2 "k1c_alud,k1c_alud.x,k1c_alud.y,k1c_alud.z" "k1c_bcu,k1c_bcu_get")
+;; (define_bypass 2 "k1c_alud,k1c_alud.x,k1c_alud.y,k1c_alud.z" "k1c_bcu,k1c_bcu_get")
 (define_bypass 2 "k1c_lite,k1c_lite.x" "k1c_bcu,k1c_bcu_get")
-(define_bypass 2 "k1c_tiny,k1c_tiny.x,k1c_tiny_double,k1c_tiny_double.x" "k1c_bcu,k1c_bcu_get")
-(define_bypass 2 "k1c_lite_double,k1c_lite_double.x" "k1c_bcu,k1c_bcu_get")
+(define_bypass 2 "k1c_tiny,k1c_tiny.x" "k1c_bcu,k1c_bcu_get")
+;; (define_bypass 2 "k1c_tiny,k1c_tiny.x,k1c_tiny_double,k1c_tiny_double.x" "k1c_bcu,k1c_bcu_get")
+;; (define_bypass 2 "k1c_lite_double,k1c_lite_double.x" "k1c_bcu,k1c_bcu_get")
 
 (define_bypass 5 "k1c_mau_fpu,k1c_mau_lsu_fpu" "k1c_bcu,k1c_bcu_get")
 (define_bypass 3 "k1c_mau,k1c_mau.x,k1c_mau_lsu" "k1c_bcu,k1c_bcu_get")
