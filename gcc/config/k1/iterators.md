@@ -12,6 +12,9 @@
 ;; Iterator for all float modes (up to 64-bit)
 (define_mode_iterator ALLF [SF DF])
 
+(define_mode_attr sfx [(SF "w") (DF "d") (SI "w") (DI "d")] )
+(define_mode_attr fmasfx [(SF "") (DF "d")] )
+
 ;; All modes that fit in 1 register. Used for LSU.
 (define_mode_iterator ALLIF [QI HI SI DI SF DF])
 
