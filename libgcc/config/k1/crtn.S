@@ -5,7 +5,7 @@
               ADD_PTR   $r12 = $r12, 8
               ;;
 #ifndef __K1_64__
-	      sxw $r12 = $r12
+	      sxwd $r12 = $r12
               ;;
 #endif
 
@@ -20,7 +20,7 @@
               ADD_PTR  $r12 = $r12, 8
               ;;
 #ifndef __K1_64__
-	      sxw $r12 = $r12
+	      sxwd $r12 = $r12
               ;;
 #endif
 
