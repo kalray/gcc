@@ -622,8 +622,7 @@ K1C_FIXED_REGISTERS \
    applicable if the target supports DWARF 2 frame unwind
    information. */
 
-#define DWARF_CIE_DATA_ALIGNMENT (-(TARGET_64 ? 8 : 4))
-
+#define DWARF_CIE_DATA_ALIGNMENT (- 4) //(TARGET_64 ? 8 : 4))
 
 /* If defined, a C expression whose value is an integer giving the
    offset in bytes from the frame pointer to the canonical frame
