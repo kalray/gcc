@@ -639,7 +639,7 @@ extern const char *k1_board_to_startfile_prefix (int argc, const char **argv);
    applicable if the target supports DWARF 2 frame unwind
    information. */
 
-#define DWARF_CIE_DATA_ALIGNMENT (-(TARGET_64 ? 8 : 4))
+#define DWARF_CIE_DATA_ALIGNMENT (-4) //(TARGET_64 ? 8 : 4))
 
 /* If defined, a C expression whose value is an integer giving the
    offset in bytes from the frame pointer to the canonical frame
