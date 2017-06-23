@@ -1,10 +1,12 @@
 
 # Software emulation for integer div and mod
-# LIB2FUNCS_EXCLUDE = _umodsi3 _udivsi3 _modsi3 _divsi3 \
-# 	            _umoddi3 _udivdi3 _moddi3 _divdi3
+LIB2FUNCS_EXCLUDE = _umodsi3 _udivsi3 _modsi3 _divsi3 \
+	            _umoddi3 _udivdi3 _moddi3 _divdi3
 
-# LIB2ADD_ST = $(srcdir)/config/k1/udivmodsi4.c \
-#              $(srcdir)/config/k1/udivmoddi4.c \
+LIB2ADD = $(srcdir)/config/k1/udivmodsi4.c \
+          $(srcdir)/config/k1/udivmoddi4.c \
+	  $(srcdir)/config/k1/fpu_hal.c
+
 #              $(srcdir)/config/k1/__invf.S 
 
 #              # $(srcdir)/config/k1/dual_divf.S \
