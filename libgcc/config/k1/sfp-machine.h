@@ -1,5 +1,4 @@
 #include <HAL/hal/core/registers.h>
-/* #include <HAL/hal/core/cpu.h> */
 
 /*
  * FIXME AUTO: part of HAL duplicated here for coolidge
