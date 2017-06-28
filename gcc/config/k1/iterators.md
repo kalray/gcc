@@ -9,6 +9,9 @@
 ;; Iterator for all integer modes (up to 64-bit)
 (define_mode_iterator ALLI [QI HI SI DI])
 
+;; Iterator for all integer modes smaller than 64bits
+(define_mode_iterator ALL_SMALL_I [QI HI SI])
+
 ;; Iterator for all float modes (up to 64-bit)
 (define_mode_iterator ALLF [SF DF])
 
