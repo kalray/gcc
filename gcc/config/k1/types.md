@@ -34,6 +34,7 @@
   alu_full_odd, \
   mau_acc, \
   mau_acc_x, \
+  mau_acc_y, \
   mau_acc_odd, \
   and_Ilh, \
   extfz, \
