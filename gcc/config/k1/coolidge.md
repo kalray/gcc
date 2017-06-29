@@ -46,7 +46,7 @@
 ;; (define_reservation "k1c_lsu_store_r" "k1c_acc_u")
 
 (define_reservation "k1c_alu_r"  "(k1c_alu0_u      | k1c_alu1_u                                        )")
-(define_reservation "k1c_lite_r" "(k1c_lite_alu0_u | k1c_lite_alu1_u | k1c_lite_mau_u                  )")
+(define_reservation "k1c_lite_r" "(k1c_lite_alu0_u | k1c_lite_alu1_u                  | k1c_lite_mau_u )")
 (define_reservation "k1c_tiny_r" "(k1c_tiny_alu0_u | k1c_tiny_alu1_u | k1c_tiny_lsu_u | k1c_tiny_mau_u )")
 
 ;;(define_reservation "k1c_lite_double_r" "( k1c_lite_mau_u | (k1c_lite_alu0_u + k1c_lite_alu1_u))")
@@ -110,6 +110,9 @@
 (define_reservation "k1c_alu_lite.x_r"
   "k1c_lite_r + k1c_issue_x2_r")
 
+(define_reservation "k1c_alu_lite.y_r"
+  "k1c_lite_r + k1c_issue_x3_r")
+
 (define_reservation "k1c_alu_tiny_r"
   "k1c_tiny_r + k1c_issue_r")
 
@@ -150,6 +153,9 @@
 
 (define_reservation "k1c_mau_acc.x_r"
   "k1c_mau_u + k1c_lsu_store_u + k1c_issue_x2_r")
+
+(define_reservation "k1c_mau_acc.y_r"
+  "k1c_mau_u + k1c_lsu_store_u + k1c_issue_x3_r")
 
 (define_reservation "k1c_mau_acc_odd_r"
    "k1c_mau_u + k1c_lsu_store_u + k1c_issue_r")
@@ -203,6 +209,10 @@
 (define_insn_reservation "k1c_lite.x" 1 (and (eq_attr "arch" "coolidge")
                                              (eq_attr "type" "abd_x,cmove_x,bwluhp,lite_x"))
                          "k1c_alu_lite.x_r")
+
+(define_insn_reservation "k1c_lite.y" 1 (and (eq_attr "arch" "coolidge")
+                                             (eq_attr "type" "lite_y"))
+                         "k1c_alu_lite.y_r")
 
 (define_insn_reservation "k1c_alu" 1 (and (eq_attr "arch" "coolidge")
                                            (eq_attr "type" "alu"))
@@ -275,6 +285,11 @@
 (define_insn_reservation "k1c_acc.x" 2 (and (eq_attr "arch" "coolidge")
                                             (eq_attr "type" "mau_acc_x"))
                          "k1c_mau_acc.x_r,nothing")
+
+(define_insn_reservation "k1c_acc.y" 2 (and (eq_attr "arch" "coolidge")
+                                            (eq_attr "type" "mau_acc_y"))
+                         "k1c_mau_acc.y_r,nothing")
+
 
 ;; Bug workaround : insn issuing a FPU must not be bundled with store insn
 (define_insn_reservation "k1c_mau_fpu" 4 (and (eq_attr "arch" "coolidge")
@@ -377,8 +392,8 @@
 /* The bcus read their input 1 cycle earlier */
 (define_bypass 2 "k1c_alu,k1c_alu.x" "k1c_bcu,k1c_bcu_get")
 ;; (define_bypass 2 "k1c_alud,k1c_alud.x,k1c_alud.y,k1c_alud.z" "k1c_bcu,k1c_bcu_get")
-(define_bypass 2 "k1c_lite,k1c_lite.x" "k1c_bcu,k1c_bcu_get")
-(define_bypass 2 "k1c_tiny,k1c_tiny.x" "k1c_bcu,k1c_bcu_get")
+(define_bypass 2 "k1c_lite,k1c_lite.x,k1c_lite.y" "k1c_bcu,k1c_bcu_get")
+(define_bypass 2 "k1c_tiny,k1c_tiny.x,k1c_tiny.y" "k1c_bcu,k1c_bcu_get")
 ;; (define_bypass 2 "k1c_tiny,k1c_tiny.x,k1c_tiny_double,k1c_tiny_double.x" "k1c_bcu,k1c_bcu_get")
 ;; (define_bypass 2 "k1c_lite_double,k1c_lite_double.x" "k1c_bcu,k1c_bcu_get")
 
