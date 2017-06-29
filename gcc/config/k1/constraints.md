@@ -17,41 +17,41 @@
   (and (match_code "const_int") 
        (match_test "ival >= 0 && ival <= 3")))
 
-(define_constraint "U05"  
+(define_constraint "U05"
   "A signed 5-bits unsigned constant."
   (and (match_code "const_int") 
        (match_test "ival >= 0 && ival <= 31")))
 
-(define_constraint "U06"  
+(define_constraint "U06"
   "A signed 6-bits unsigned constant."
   (and (match_code "const_int")
        (match_test "ival >= 0 && ival <= 63")))
 
-(define_constraint "U10"  
+(define_constraint "U10"
   "A signed 6-bits unsigned constant."
   (and (match_code "const_int")
        (match_test "ival >= 0 && ival <= 1023")))
 
-(define_constraint "U32"  
+(define_constraint "U32"
   "A 32-bits unsigned constant."
   (ior (and (match_code "const_int")
             (match_test "ival >= 0 && ival <= 4294967295u"))
        (and (match_code "const_double")
             (match_test "hval == 0"))))
 
-(define_constraint "U37"  
+(define_constraint "U37"
   "A 37-bits unsigned constant."
   (ior (and (match_code "const_int")
             (match_test "ival >= 0 && ival <= 4294967295u"))
        (and (match_code "const_double")
             (match_test "hval >=0 && hval <= 4294967295u"))))
 
-(define_constraint "I10"  
+(define_constraint "I10"
   "A signed 10-bit constant."
   (and (match_code "const_int")
        (match_test "ival >= -512 && ival <= 511")))
 
-(define_constraint "J10"  
+(define_constraint "J10"
   "An unsigned 32-bit constant expressible as a signed 10."
   (and (match_code "const_int")
        (match_test "(ival >= 0 && ival <= 511) || (__builtin_clz (~ival) >= 23)")))
