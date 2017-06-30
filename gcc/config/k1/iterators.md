@@ -6,6 +6,12 @@
 (define_mode_attr lsusext [(QI "z") (HI "z") (SI "z") (DI "") (SF "z") (DF "")])
 (define_mode_attr hq [(HI "h") (QI "q")])
 
+;; Code iterator for sign/zero extension
+(define_code_iterator ANY_EXTEND [sign_extend zero_extend])
+
+;; Sign- or zero-extending data-op
+(define_code_attr su [(sign_extend "s") (zero_extend "z")])
+
 ;; Iterator for all integer modes (up to 64-bit)
 (define_mode_iterator ALLI [QI HI SI DI])
 
