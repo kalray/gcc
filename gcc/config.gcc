@@ -2310,8 +2310,8 @@ iq2000*-*-elf*)
         md_file=iq2000/iq2000.md
         ;;
 k1-*-elf*)
-	tm_file="${tm_file} elfos.h dbxelf.h k1/bare.h newlib-stdint.h"
-	tmake_file="k1/t-k1 k1/t-bare"
+	tm_file="${tm_file} elfos.h dbxelf.h k1/k1-elf.h newlib-stdint.h"
+	tmake_file="k1/t-k1 k1/t-elf"
 	extra_gcc_objs="driver-k1.o"
 	extra_headers="float.h"
 	;;
