@@ -100,41 +100,28 @@
 /* "%{mcore=k1bio: -fstrict-align} ",			      \ */
 #define DRIVER_SELF_SPECS_COMMON                                               \
   K1_OS_SELF_SPECS                                                             \
-  "%{!mboard*:" K1_DEFAULT_BOARD "} ", "%{fpic: %{!fPIC:-fPIC}} %<fpic",       \
-    "%{fPIC: %<fpic}", "%{fpic: %<mgprel } %{fPIC: %<mgprel }"
+  "%{fpic: %{!fPIC:-fPIC}} %<fpic", "%{fPIC: %<fpic}"
+
 /*
 	"%{!mno-gprel: -mgprel}"                        \
 */
+/* "%{!mboard*:" K1_DEFAULT_BOARD "} ",                          \ */
 
-#define CPP_SPEC_COMMON                                                        \
-  "%{mcluster=*:%:cluster_to_define(%{mcluster=*:%*})} "                       \
-  "%{mcluster=ioddr: -D__iocomm__}"                                            \
-  "%{mcluster=ioeth: -D__iocomm__}"                                            \
-  "%{mcluster=ioddr_ddr: -D__iocomm__}"                                        \
-  "%{mcluster=node_msd: -D__node__}"
+//#define CPP_SPEC_COMMON
+
+/* "%{mcluster=*:%:cluster_to_define(%{mcluster=*:%*})} "			\
+ */
+/*     "%{mcluster=ioddr: -D__iocomm__}"                                   \ */
+/*     "%{mcluster=ioeth: -D__iocomm__}"                                   \ */
+/*     "%{mcluster=ioddr_ddr: -D__iocomm__}"                                   \
+ */
+/*     "%{mcluster=node_msd: -D__node__}" */
 
 #define LINK_SPEC_COMMON "%{shared} %{m64:-melf64k1}"
 
-#define CC1_SPEC                                                               \
-  " %{!mcluster=node:%{!mcluster=node_msd:%{!mcluster=ioddr:%{!mcluster="      \
-  "ioddr_ddr:%{!mcluster=ioeth:%eincorrect mcluster flag}}}}}"                 \
-  " %{G*}"
+#define CC1_SPEC " %{G*}"
 
-/*%{mno-fdpic:-mnopic}*/
 #define ASM_SPEC "%{mcore*} --no-check-resources %{m64}"
-
-#define TARGET_PREFIX(dir) "%:tooldir(" DEFAULT_TARGET_MACHINE " " dir ")"
-
-extern const char *k1_tooldir (int argc, const char **argv);
-extern const char *k1_concat (int argc, const char **argv);
-extern const char *k1_cluster_to_define (int argc, const char **argv);
-extern const char *k1_cluster_board_to_bsp (int argc, const char **argv);
-extern const char *k1_board_to_startfile_prefix (int argc, const char **argv);
-#define EXTRA_SPEC_FUNCTIONS                                                   \
-  {"tooldir", k1_tooldir},                                                     \
-    {"board_to_startfile_prefix", k1_board_to_startfile_prefix},               \
-    {"concat", k1_concat}, {"cluster_to_define", k1_cluster_to_define},        \
-    {"cluster_board_to_bsp", k1_cluster_board_to_bsp},
 
 #define CRT_CALL_STATIC_FUNCTION(SECTION_OP, FUNC)                             \
   asm(SECTION_OP "\ncall " #FUNC "\n;;\n.previous\n");
@@ -1211,13 +1198,8 @@ int k1_adjust_insn_length (rtx insn, int length);
 #define CTZ_DEFINED_VALUE_AT_ZERO(mode, value)                                 \
   CLZ_DEFINED_VALUE_AT_ZERO (mode, value)
 
-#define TARGET_EXTRA_PRE_INCLUDES k1_target_extra_pre_includes
-
 #define FINAL_PRESCAN_INSN(insn, ops, nops)                                    \
   k1_final_prescan_insn (insn, ops, nops)
-
-extern void k1_target_extra_pre_includes (const char *sysroot,
-					  const char *iprefix, int stdinc);
 
 #define k1_strict_to_nonstrict_comparison_operator(code)                       \
   __extension__({                                                              \

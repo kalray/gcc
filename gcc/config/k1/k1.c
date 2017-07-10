@@ -6565,112 +6565,114 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     }
 }
 
-void
-k1_target_extra_pre_includes (const char *sysroot ATTRIBUTE_UNUSED,
-			      const char *iprefix ATTRIBUTE_UNUSED, int stdinc)
-{
-#if defined(K1_BARE) || defined(K1_RTEMS) || defined(K1_NODEOS)
-  char *str;
+/* void k1_target_extra_pre_includes (const char *sysroot ATTRIBUTE_UNUSED, */
+/*                                    const char *iprefix ATTRIBUTE_UNUSED, */
+/*                                    int stdinc) */
+/* { */
+/* #if defined(K1_BARE) || defined(K1_RTEMS) || defined(K1_NODEOS) */
+/*     char *str; */
 
-  // FIXME AUTO: path len is hardcoded
-  char path[1024];
-  ssize_t sz;
-  const char *board, *core;
+/*     // FIXME AUTO: path len is hardcoded  */
+/*     char path[1024]; */
+/*     ssize_t sz; */
+/*     const char *board, *core; */
 
-  // FIXME AUTO: board list has nothing to do in compiler
-  /* Seamlessly change the board to csp_generic if developer, emb01, ab04,
-   * konic80, or tc */
-  if (strcmp (k1_board_name, "developer") == 0
-      || strcmp (k1_board_name, "emb01") == 0
-      || strcmp (k1_board_name, "ab04") == 0
-      || strcmp (k1_board_name, "tc2") == 0
-      || strcmp (k1_board_name, "tc3") == 0
-      || strcmp (k1_board_name, "konic80") == 0)
-    {
-      k1_board_name = "csp_generic";
-    }
+/*     // FIXME AUTO: board list has nothing to do in compiler */
+/* 	/\* Seamlessly change the board to csp_generic if developer, emb01,
+ * ab04, konic80, or tc *\/ */
+/* 	if (strcmp(k1_board_name, "developer") == 0 ||  */
+/* 			strcmp(k1_board_name, "emb01") == 0 || */
+/* 			strcmp(k1_board_name, "ab04") == 0 || */
+/* 			strcmp(k1_board_name, "tc2") == 0 || */
+/* 			strcmp(k1_board_name, "tc3") == 0 || */
+/* 			strcmp(k1_board_name, "konic80") == 0) { */
+/* 		k1_board_name = "csp_generic"; */
+/* 	} */
 
-  /* FIXME: For now assume that we don't have to verify if default
-   * board exists. Otherwise we have crash while compiling gcc itself.
-   * We should move the check to driver-k1.c */
-  bool found_board = strcmp (k1_board_name, K1_BOARD_DEFAULT) == 0
-		     || strcmp (k1_board_name, K1_BOARD_VERIF) == 0;
+/*     /\* FIXME: For now assume that we don't have to verify if default */
+/*      * board exists. Otherwise we have crash while compiling gcc itself. */
+/*      * We should move the check to driver-k1.c *\/ */
+/*     bool found_board = strcmp(k1_board_name, K1_BOARD_DEFAULT) == 0 */
+/*       || strcmp(k1_board_name, K1_BOARD_VERIF) == 0; */
 
-  board = k1_board_name;
+/*     board = k1_board_name; */
 
-  /* if (TARGET_K1IO) */
-  /*     core = "k1io"; */
-  /* else if(TARGET_K1BDP) */
-  /*     core = "k1bdp"; */
-  /* else if (TARGET_K1BIO) */
-  /*     core = "k1bio"; */
-  /* else */
-  /*     core = "k1dp"; */
+/*     /\* if (TARGET_K1IO) *\/ */
+/*     /\*     core = "k1io"; *\/ */
+/*     /\* else if(TARGET_K1BDP) *\/ */
+/*     /\*     core = "k1bdp"; *\/ */
+/*     /\* else if (TARGET_K1BIO) *\/ */
+/*     /\*     core = "k1bio"; *\/ */
+/*     /\* else *\/ */
+/*     /\*     core = "k1dp"; *\/ */
 
-  if (TARGET_K1PE)
-    core = "k1pe";
-  else /* TARGET_K1RM */
-    core = "k1rm";
+/*     if (TARGET_K1PE) */
+/*       core = "k1pe"; */
+/*     else 			/\* TARGET_K1RM *\/ */
+/*       core = "k1rm"; */
 
-  /* We do not do anything if we do not want the standard includes. */
-  if (!stdinc)
-    return;
+/*     /\* We do not do anything if we do not want the standard includes. *\/ */
+/*     if (!stdinc) */
+/*         return; */
 
-  sz = readlink ("/proc/self/exe", path, 1023);
-  path[sz] = 0;
+/*     sz = readlink ("/proc/self/exe", path, 1023); */
+/*     path[sz] = 0; */
 
-  dirname (path);
-  dirname (path);
-  dirname (path);
-  dirname (path);
+/*     dirname (path); */
+/*     dirname (path); */
+/*     dirname (path); */
+/*     dirname (path); */
 
-  str = concat (path, "/", TARGET_DIR, "/board/", board, "/", core, "/le/bare",
-		NULL);
-  add_path (str, SYSTEM, /*c++aware=*/true, false);
+/*     str = concat (path, "/", TARGET_DIR, "/board/", */
+/*                   board, "/", core, "/le/bare", NULL); */
+/*     add_path (str, SYSTEM, /\*c++aware=*\/true, false); */
 
-  str = concat (path, "/", TARGET_DIR, "/board/", board, NULL);
+/*     str = concat (path, "/", TARGET_DIR, "/board/", */
+/*                   board, NULL); */
 
-  /* Check if we can find a bsp */
-  if (!found_board)
-    found_board = access (str, F_OK) == 0;
+/*     /\* Check if we can find a bsp *\/ */
+/*     if (!found_board) */
+/*       found_board = access(str, F_OK) == 0; */
 
-  add_path (str, SYSTEM, /*c++aware=*/true, false);
+/*     add_path (str, SYSTEM, /\*c++aware=*\/true, false); */
 
-  str = concat (path, "/", TARGET_DIR, "/core/", core, NULL);
-  add_path (str, SYSTEM, /*c++aware=*/true, false);
+/*     str = concat (path, "/", TARGET_DIR, "/core/", */
+/*                   core, NULL); */
+/*     add_path (str, SYSTEM, /\*c++aware=*\/true, false); */
 
-  if (iprefix)
-    {
-      strcpy (path, iprefix);
+/*     if (iprefix) { */
+/*         strcpy (path, iprefix); */
 
-      dirname (path);
-      dirname (path);
-      dirname (path);
-      dirname (path);
+/*         dirname (path); */
+/*         dirname (path); */
+/*         dirname (path); */
+/*         dirname (path); */
 
-      str = concat (path, "/", TARGET_DIR, "/board/", board, "/", core,
-		    "/le/bare", NULL);
-      add_path (str, SYSTEM, /*c++aware=*/true, false);
+/*         str = concat (path, "/", TARGET_DIR, "/board/", */
+/*                       board, "/", core, "/le/bare", NULL); */
+/*         add_path (str, SYSTEM, /\*c++aware=*\/true, false); */
 
-      str = concat (path, "/", TARGET_DIR, "/board/", board, NULL);
+/*         str = concat (path, "/", TARGET_DIR, "/board/", */
+/*                       board, NULL); */
 
-      /* Check if we can find a bsp in another path*/
-      if (!found_board && access (str, F_OK) == 0)
-	found_board = true;
+/*         /\* Check if we can find a bsp in another path*\/ */
+/*         if (!found_board && access(str, F_OK) == 0) */
+/*           found_board = true; */
 
-      add_path (str, SYSTEM, /*c++aware=*/true, false);
+/*         add_path (str, SYSTEM, /\*c++aware=*\/true, false); */
 
-      str = concat (path, "/", TARGET_DIR, "/core/", core, NULL);
-      add_path (str, SYSTEM, /*c++aware=*/true, false);
-    }
+/*         str = concat (path, "/", TARGET_DIR, "/core/", */
+/*                       core, NULL); */
+/*         add_path (str, SYSTEM, /\*c++aware=*\/true, false); */
+/*     } */
 
-  /* FIXME: we assume that sysroot and iprefix are NULL while
-   * we compile gcc itself. So for now don't look for bsp
-   * if they are NULL */
-  if ((sysroot || iprefix) && !found_board)
-    error ("BSP for board \'%s\' passed to -mboard not found.", board);
-#endif
-}
+/*     /\* FIXME: we assume that sysroot and iprefix are NULL while */
+/*      * we compile gcc itself. So for now don't look for bsp */
+/*      * if they are NULL *\/ */
+/*     if ((sysroot || iprefix) && !found_board) */
+/*       error ("BSP for board \'%s\' passed to -mboard not found.", board); */
+/* #endif */
+/* } */
 
 int
 k1_mau_lsu_double_port_bypass_p (rtx producer, rtx consumer)
