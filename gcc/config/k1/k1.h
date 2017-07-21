@@ -8,8 +8,8 @@
 #endif
 
 #define K1C_NO_EXT_MASK 0x0
-// FIXME AUTO PRF DISABLED
-/* #define K1C_PRF_EXT_MASK 0x0 */
+#define K1C_ARF_EXT_MASK 0x0
+#define K1C_PRF_EXT_MASK 0x0
 #define K1C_GRF_EXT_MASK 0x0
 #define K1C_SRF_EXT_MASK 0x1
 #define K1C_SRF32_EXT_MASK 0x1
