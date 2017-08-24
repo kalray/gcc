@@ -3011,7 +3011,6 @@ enum k1_builtin
   K1_BUILTIN_CTZ,
   K1_BUILTIN_CTZDL,
   K1_BUILTIN_ACWS,
-  K1_BUILTIN_CWS,
   K1_BUILTIN_AFDA,
   K1_BUILTIN_AFDAU,
   K1_BUILTIN_ALDC,
@@ -3299,7 +3298,6 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (CTZ, "ctz", intSI, uintSI);
   ADD_K1_BUILTIN (CTZDL, "ctzdl", intDI, uintDI);
   ADD_K1_BUILTIN (ACWS, "acws", uintDI, voidPTR, uintDI, uintDI);
-  ADD_K1_BUILTIN (CWS, "cws", uintDI, voidPTR, uintSI, uintSI);
   ADD_K1_BUILTIN (AFDA, "afda", uintDI, voidPTR, intDI);
   ADD_K1_BUILTIN (AFDAU, "afdau", uintDI, voidPTR, intDI);
   ADD_K1_BUILTIN (ALDC, "aldc", uintDI, voidPTR);
@@ -4372,34 +4370,6 @@ k1_expand_builtin_acws (rtx target, tree args)
   arg1 = gen_rtx_MEM (DImode, arg1);
 
   emit_insn (gen_acws (tmp, arg1, tmp));
-  emit_move_insn (target, tmp);
-
-  return target;
-}
-
-static rtx
-k1_expand_builtin_cws (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-  rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
-  rtx tmp = gen_reg_rtx (DImode);
-
-  if (!target)
-    target = gen_reg_rtx (DImode);
-  if (!REG_P (target) || GET_MODE (target) != DImode)
-    {
-      target = force_reg (DImode, target);
-    }
-
-  emit_clobber (tmp);
-  emit_move_insn (gen_lowpart (SImode, tmp), arg2);
-  emit_move_insn (gen_highpart (SImode, tmp), arg3);
-
-  arg1 = force_reg (Pmode, arg1);
-  arg1 = gen_rtx_MEM (SImode, arg1);
-
-  emit_insn (gen_cws (tmp, arg1, tmp));
   emit_move_insn (target, tmp);
 
   return target;
@@ -6227,8 +6197,6 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_cbsdl (target, exp);
     case K1_BUILTIN_ACWS:
       return k1_expand_builtin_acws (target, exp);
-    case K1_BUILTIN_CWS:
-      return k1_expand_builtin_cws (target, exp);
     case K1_BUILTIN_AFDA:
       return k1_expand_builtin_afda_cachemode (target, exp, true);
     case K1_BUILTIN_AFDAU:
