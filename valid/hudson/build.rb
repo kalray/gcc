@@ -433,7 +433,6 @@ b.target("package" + s_bootstrap + target_variant) do
 
   if(variant != "linux") then
     b.add_depend("#{pkg_prefix_name}newlib-#{variant}", depends, release_info)
-    b.add_depend("#{pkg_prefix_name}bsp-#{variant}", depends, release_info)
   end
   
   package_description = "#{arch.upcase} GCC libstdc++ #{variant} package.\n"
@@ -461,7 +460,6 @@ b.target("package" + s_bootstrap + target_variant) do
     release_info = b.release_info(version,buildID)
     
     b.add_depend("#{pkg_prefix_name}newlib-#{variant}", depends, release_info)
-    b.add_depend("#{pkg_prefix_name}bsp-#{variant}", depends, release_info)
     
     package_description = "#{arch.upcase} GCC libgomp #{variant} package.\n"
     
@@ -514,7 +512,6 @@ b.target("package" + s_bootstrap + target_variant) do
     release_info = b.release_info(version,buildID)
   
     b.add_depend("#{pkg_prefix_name}newlib-#{variant}", depends, release_info)
-    b.add_depend("#{pkg_prefix_name}bsp-#{variant}", depends, release_info)
     
     package_description = "#{arch.upcase} GCC libgfortran #{variant} package.\n"
     
@@ -545,7 +542,6 @@ b.target("package" + s_bootstrap + target_variant) do
   else
     b.add_depend("#{pkg_prefix_name}libgfortran-#{variant}", depends, release_info)
     b.add_depend("#{pkg_prefix_name}newlib-#{variant}", depends, release_info)
-    b.add_depend("#{pkg_prefix_name}bsp-#{variant}", depends, release_info)
   end
   b.add_depend("#{pkg_prefix_name}libstdc++-#{variant}", depends, release_info)
   b.add_depend("#{pkg_prefix_name}gbu-#{variant}", depends, release_info)
