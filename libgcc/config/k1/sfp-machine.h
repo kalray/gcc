@@ -1,8 +1,15 @@
-#include <HAL/hal/core/registers.h>
-
 /*
  * FIXME AUTO: part of HAL duplicated here for coolidge
  */
+
+#define _K1_SFR_CS 8	     // Compute Status $cs $s8
+#define _K1_MASK_CS_IO 0x2   // IEEE 754 Invalid Operation
+#define _K1_MASK_CS_DZ 0x4   // IEEE 754 Divide by Zero
+#define _K1_MASK_CS_OV 0x8   // IEEE 754 Overflow
+#define _K1_MASK_CS_UN 0x10  // IEEE 754 Underflow
+#define _K1_MASK_CS_IN 0x20  // IEEE 754 Inexact
+#define _K1_MASK_CS_RM 0x300 // IEEE 754 Rounding Mode
+
 enum __k1_fpu_rounding_mode
 {
   _K1_FPU_NEAREST_EVEN = 0,
