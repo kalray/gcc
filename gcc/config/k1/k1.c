@@ -3245,11 +3245,13 @@ k1_target_init_builtins (void)
 #define uintHI unsigned_intHI_type_node
 #define uintSI unsigned_intSI_type_node
 #define uintDI unsigned_intDI_type_node
+#define uintTI unsigned_intTI_type_node
 
 #define intQI intQI_type_node
 #define intHI intHI_type_node
 #define intSI intSI_type_node
 #define intDI intDI_type_node
+#define intTI intTI_type_node
 
 #define floatSF float_type_node
 #define floatDF double_type_node
@@ -3297,7 +3299,7 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (CMOVEF, "cmovef", floatSF, intSI, floatSF, floatSF);
   ADD_K1_BUILTIN (CTZ, "ctz", intSI, uintSI);
   ADD_K1_BUILTIN (CTZDL, "ctzdl", intDI, uintDI);
-  ADD_K1_BUILTIN (ACWS, "acws", uintDI, voidPTR, uintDI, uintDI);
+  ADD_K1_BUILTIN (ACWS, "acws", uintTI, voidPTR, uintDI, uintDI);
   ADD_K1_BUILTIN (AFDA, "afda", uintDI, voidPTR, intDI);
   ADD_K1_BUILTIN (AFDAU, "afdau", uintDI, voidPTR, intDI);
   ADD_K1_BUILTIN (ALDC, "aldc", uintDI, voidPTR);
