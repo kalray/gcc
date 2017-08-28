@@ -110,41 +110,18 @@ extern void __builtin_k1_writetlb (void);
 extern unsigned long long __builtin_k1_acws (void *address,
 					     unsigned int new_value,
 					     unsigned int old_value);
-/* ACWSU */
-extern unsigned long long __builtin_k1_acwsu (void *address,
-					      unsigned int new_value,
-					      unsigned int old_value);
 /* AFDA */
 extern unsigned long long __builtin_k1_afda (void *address, long long addend);
-/* AFDAU */
-extern unsigned long long __builtin_k1_afdau (void *address, long long addend);
 /* ALDC */
 extern unsigned long long __builtin_k1_aldc (void *addr);
-/* ALDCU */
-extern unsigned long long __builtin_k1_aldcu (void *addr);
 /* DINVAL */
 extern void __builtin_k1_dinval (void);
 /* DINVALL */
 extern void __builtin_k1_dinvall (const void *addr);
-static __inline__ __attribute__ ((deprecated)) void
-__builtin_k1_dinvall_s10 (short a, unsigned int b)
-{
-  __builtin_k1_dinvall ((const void *) (a + b));
-}
 /* DTOUCHL */
 extern void __builtin_k1_dtouchl (const void *addr);
-static __inline__ __attribute__ ((deprecated)) void
-__builtin_k1_dtouchl_s10 (short a, unsigned int b)
-{
-  __builtin_k1_dtouchl ((const void *) (a + b));
-}
 /* DZEROL */
 extern void __builtin_k1_dzerol (void *addr);
-static __inline__ __attribute__ ((deprecated)) void
-__builtin_k1_dzerol_s10 (short a, unsigned int b)
-{
-  __builtin_k1_dzerol ((void *) (a + b));
-}
 /* DZEROLU */
 /* FENCE */
 extern void __builtin_k1_fence (void);
@@ -152,42 +129,10 @@ extern void __builtin_k1_fence (void);
 extern void __builtin_k1_iinval (void);
 /* IINVALS */
 extern void __builtin_k1_iinvals (const void *addr);
-/* LBQS */
-extern unsigned long long __builtin_k1_lbqs (const void *addr);
-/* LBQSN */
-/* LBQSU */
-extern unsigned long long __builtin_k1_lbqsu (const void *addr);
-/* LBQSUN */
-/* LBQZ */
-extern unsigned long long __builtin_k1_lbqz (const void *addr);
-static __inline__ __attribute__ ((deprecated)) long long
-__builtin_k1_lbqz_s32_p (int a, int b)
-{
-  return __builtin_k1_lbqz ((const void *) (a + b));
-}
-/* LBQZN */
-/* LBQZU */
-extern unsigned long long __builtin_k1_lbqzu (const void *addr);
-/* LBQZUN */
-/* LBS */
-/* LBSN */
-/* LBSU */
-extern signed char __builtin_k1_lbsu (const void *addr);
-/* LBSUN */
-/* LBZ */
-/* LBZN */
-/* LBZU */
-extern unsigned char __builtin_k1_lbzu (const void *addr);
-/* LBZUN */
 /* LD */
 /* LDN */
 /* LDU */
 extern unsigned long long __builtin_k1_ldu (const void *addr);
-static __inline__ __attribute__ ((deprecated)) unsigned long long
-__builtin_k1_ldu_s10_p (int s10, unsigned int addr)
-{
-  return __builtin_k1_ldu ((const void *) (addr + s10));
-}
 /* LDUN */
 /* LHPS */
 /* LHPSN */
@@ -820,50 +765,6 @@ extern float __builtin_k1_fwident (unsigned int);
 /*
  * Other Builtin Functions
  */
-
-/* CWS is an alias for ACWSU */
-extern unsigned long long __builtin_k1_cws (void *address,
-					    unsigned int new_value,
-					    unsigned int old_value);
-static __inline__ __attribute__ ((deprecated)) long long
-__builtin_k1_cws_s10 (short a, unsigned int b, long long c)
-{
-  return __builtin_k1_cws ((void *) (a + b), (c & 0xFFFFFFFF),
-			   ((c >> 32) & 0xFFFFFFFF));
-}
-/* LDC is an alias for ALDCU */
-extern unsigned long long __builtin_k1_ldc (void *addr);
-static __inline__ __attribute__ ((deprecated)) long long
-__builtin_k1_ldc_s32_p (int a, int b)
-{
-  return __builtin_k1_ldc ((void *) (a + b));
-}
-/* IINVALL is an alias for IINVALS */
-extern void __builtin_k1_iinvall (const void *addr);
-static __inline__ __attribute__ ((deprecated)) void
-__builtin_k1_iinvall_s10 (short a, unsigned int b)
-{
-  __builtin_k1_iinvall ((const void *) (a + b));
-}
-
-/* DFLUSHL is K1A only */
-extern void __builtin_k1_dflush (void);
-/* DFLUSHLL is K1A only */
-extern void __builtin_k1_dflushl (const void *addr);
-static __inline__ __attribute__ ((deprecated)) void
-__builtin_k1_dflushl_s10 (short a, int b)
-{
-  __builtin_k1_dflushl ((const void *) (a + b));
-}
-/* DPURGE is K1A only */
-extern void __builtin_k1_dpurge (void);
-/* DPURGEL is K1A only */
-extern void __builtin_k1_dpurgel (const void *addr);
-static __inline__ __attribute__ ((deprecated)) void
-__builtin_k1_dpurgel_s10 (short a, unsigned int b)
-{
-  __builtin_k1_dpurgel ((const void *) (a + b));
-}
 
 /* get GPR = GPR
  * GPR get( GPR);
