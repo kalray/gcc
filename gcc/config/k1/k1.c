@@ -3007,15 +3007,12 @@ enum k1_builtin
   K1_BUILTIN_CLZ,
   K1_BUILTIN_CLZDL,
   K1_BUILTIN_CWMOVED,
-  K1_BUILTIN_CMOVEF,
   K1_BUILTIN_CTZ,
   K1_BUILTIN_CTZDL,
   K1_BUILTIN_ACWS,
   K1_BUILTIN_AFDA,
   K1_BUILTIN_AFDAU,
   K1_BUILTIN_ALDC,
-  K1_BUILTIN_ALDCU,
-  K1_BUILTIN_LDC,
   K1_BUILTIN_DFLUSH,
   K1_BUILTIN_DFLUSHL,
   K1_BUILTIN_DINVAL,
@@ -3296,15 +3293,11 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (CLZ, "clz", intSI, uintSI);
   ADD_K1_BUILTIN (CLZDL, "clzdl", intDI, uintDI);
   ADD_K1_BUILTIN (CWMOVED, "cwmoved", intDI, intSI, intDI, intDI);
-  ADD_K1_BUILTIN (CMOVEF, "cmovef", floatSF, intSI, floatSF, floatSF);
   ADD_K1_BUILTIN (CTZ, "ctz", intSI, uintSI);
   ADD_K1_BUILTIN (CTZDL, "ctzdl", intDI, uintDI);
   ADD_K1_BUILTIN (ACWS, "acws", uintTI, voidPTR, uintDI, uintDI);
   ADD_K1_BUILTIN (AFDA, "afda", uintDI, voidPTR, intDI);
-  ADD_K1_BUILTIN (AFDAU, "afdau", uintDI, voidPTR, intDI);
   ADD_K1_BUILTIN (ALDC, "aldc", uintDI, voidPTR);
-  ADD_K1_BUILTIN (ALDCU, "aldcu", uintDI, voidPTR);
-  ADD_K1_BUILTIN (LDC, "ldc", uintDI, voidPTR);
   ADD_K1_BUILTIN (DINVAL, "dinval", VOID);
   ADD_K1_BUILTIN (DINVALL, "dinvall", VOID, constVoidPTR);
   ADD_K1_BUILTIN (DTOUCHL, "dtouchl", VOID, constVoidPTR);
@@ -4320,17 +4313,13 @@ k1_builtin_helper_memref_ptr (rtx ptr, enum machine_mode mode)
 static rtx
 k1_expand_builtin_afda_cachemode (rtx target, tree args, bool usecache)
 {
-  rtx (*gen_afda_cachemode) (rtx target, rtx op1, rtx op2, rtx op3)
-    = usecache ? gen_afda : gen_afdau;
-
   MEMREF (0, DImode, mem_target);
   GETREG (1, DImode, addend_and_return);
 
   target = k1_builtin_helper_check_reg_target (target, DImode);
 
-  emit_insn (
-    gen_afda_cachemode (target, mem_target, addend_and_return,
-			gen_rtx_CONST_INT (SImode, 0) /* unused mem model */));
+  emit_insn (gen_afda (target, mem_target, addend_and_return,
+		       gen_rtx_CONST_INT (SImode, 0) /* unused mem model */));
   return target;
 }
 
@@ -4598,24 +4587,6 @@ k1_expand_builtin_lbqz_cachemode (rtx target, tree args, bool usecache)
   target = k1_builtin_helper_check_reg_target (target, DImode);
 
   emit_insn (gen_lbqz_cachemode (target, mem_target));
-
-  return target;
-}
-
-static rtx
-k1_expand_builtin_ldc (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-
-  if (!target)
-    target = gen_reg_rtx (DImode);
-  if (!REG_P (target) || GET_MODE (target) != DImode)
-    {
-      target = force_reg (DImode, target);
-    }
-
-  arg1 = gen_rtx_MEM (DImode, force_reg (Pmode, arg1));
-  emit_insn (gen_ldc (target, arg1));
 
   return target;
 }
@@ -6205,19 +6176,12 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_afda_cachemode (target, exp, false);
     case K1_BUILTIN_ALDC:
       return k1_expand_builtin_aldc (target, exp);
-    case K1_BUILTIN_ALDCU:
-    case K1_BUILTIN_LDC:
-      return k1_expand_builtin_ldc (target, exp);
     case K1_BUILTIN_CLEAR1:
       return k1_expand_builtin_clear1 (target, exp);
     case K1_BUILTIN_CLZ:
       return k1_expand_builtin_clz (target, exp);
     case K1_BUILTIN_CLZDL:
       return k1_expand_builtin_clzdl (target, exp);
-    case K1_BUILTIN_CWMOVED:
-      return k1_expand_builtin_cwmoved (target, exp);
-    /* case K1_BUILTIN_CMOVEF: */
-    /*     return k1_expand_builtin_cwmovef (target, exp); */
     case K1_BUILTIN_CTZ:
       return k1_expand_builtin_ctz (target, exp);
     case K1_BUILTIN_CTZDL:
