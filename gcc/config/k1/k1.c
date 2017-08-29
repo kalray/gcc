@@ -3014,7 +3014,6 @@ enum k1_builtin
   /* FIXME AUTO: disabling vector support */
   /* K1_BUILTIN_BWLUHP, */
   /* K1_BUILTIN_BWLUWP, */
-  K1_BUILTIN_CLEAR1,
   K1_BUILTIN_CBS,
   K1_BUILTIN_CBSDL,
   K1_BUILTIN_CLZ,
@@ -3159,7 +3158,6 @@ enum k1_builtin
   K1_BUILTIN_LDU,
   K1_BUILTIN_LWZU,
   K1_BUILTIN_MADUUCIWD,
-  K1_BUILTIN_NOTIFY1,
   K1_BUILTIN_PROBETLB,
   K1_BUILTIN_READTLB,
   /* K1_BUILTIN_RXOR, */
@@ -3183,9 +3181,6 @@ enum k1_builtin
   K1_BUILTIN_STSUD,
   K1_BUILTIN_SYNCGROUP,
   K1_BUILTIN_TOUCHL,
-  K1_BUILTIN_WAITANY,
-  K1_BUILTIN_WAITCLR1,
-  K1_BUILTIN_WANTANY,
   K1_BUILTIN_WRITETLB,
   K1_BUILTIN_SAT,
   K1_BUILTIN_SATD,
@@ -3300,7 +3295,6 @@ k1_target_init_builtins (void)
    */
   /* ADD_K1_BUILTIN (BWLUWP,  "bwluwp",      uintDI,  uintDI,  uintDI, uintSI);
    */
-  ADD_K1_BUILTIN (CLEAR1, "clear1", VOID, uintSI);
   ADD_K1_BUILTIN (CBS, "cbs", intSI, uintSI);
   ADD_K1_BUILTIN (CBSDL, "cbsdl", intDI, uintDI);
   ADD_K1_BUILTIN (CLZ, "clz", intSI, uintSI);
@@ -3461,7 +3455,6 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (LDU, "ldu", uintDI, constVoidPTR);
   ADD_K1_BUILTIN (LWZU, "lwzu", uintSI, constVoidPTR);
   ADD_K1_BUILTIN (MADUUCIWD, "maduuciwd", uintDI, uintDI, uintSI, uintSI);
-  ADD_K1_BUILTIN (NOTIFY1, "notify1", VOID, uintSI);
   ADD_K1_BUILTIN (PROBETLB, "probetlb", VOID);
   ADD_K1_BUILTIN (READTLB, "readtlb", VOID);
   /* ADD_K1_BUILTIN (RXOR,    "r_xord",      VOID,   uintQI, uintDI, uintHI); */
@@ -3487,9 +3480,6 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (STSU, "stsu", uintSI, uintSI, uintSI);
   ADD_K1_BUILTIN (STSUD, "stsud", uintDI, uintDI, uintDI);
   ADD_K1_BUILTIN (SYNCGROUP, "syncgroup", VOID, uintSI);
-  ADD_K1_BUILTIN (WAITCLR1, "waitclr1", VOID, uintSI);
-  ADD_K1_BUILTIN (WAITANY, "waitany", uintSI, uintSI, uintQI);
-  ADD_K1_BUILTIN (WANTANY, "wantany", uintSI, uintSI, uintQI);
   ADD_K1_BUILTIN (WRITETLB, "writetlb", VOID);
 
   ADD_K1_BUILTIN (FWIDENBHW, "fwidenbhw", floatSF, uintSI);
@@ -5962,83 +5952,6 @@ k1_expand_builtin_stsud (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_clear1 (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-
-  arg1 = force_reg (SImode, arg1);
-  emit_insn (gen_clear1 (arg1, k1_sync_reg_rtx));
-
-  return target;
-}
-
-static rtx
-k1_expand_builtin_notify1 (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-
-  arg1 = force_reg (SImode, arg1);
-  emit_insn (gen_notify1 (arg1, k1_sync_reg_rtx));
-
-  return target;
-}
-
-static rtx
-k1_expand_builtin_waitclr1 (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-
-  arg1 = force_reg (SImode, arg1);
-  emit_insn (gen_waitclr1 (arg1, k1_sync_reg_rtx));
-
-  return target;
-}
-
-static rtx
-k1_expand_builtin_waitany (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-
-  if (!verify_const_int_arg (arg2, 6, false))
-    {
-      error (
-	"__builtin_k1_waitany expects a 6 bits immediate second argument.");
-      return NULL_RTX;
-    }
-
-  if (!target)
-    target = gen_reg_rtx (SImode);
-  target = force_reg (SImode, target);
-  arg1 = force_reg (SImode, arg1);
-  emit_insn (gen_waitany (target, arg1, arg2, k1_sync_reg_rtx));
-
-  return target;
-}
-
-static rtx
-k1_expand_builtin_wantany (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-
-  if (!verify_const_int_arg (arg2, 6, false))
-    {
-      error (
-	"__builtin_k1_wantany expects a 6 bits immediate second argument.");
-      return NULL_RTX;
-    }
-
-  if (!target)
-    target = gen_reg_rtx (SImode);
-  target = force_reg (SImode, target);
-  arg1 = force_reg (SImode, arg1);
-  emit_insn (gen_wantany (target, arg1, arg2, k1_sync_reg_rtx));
-
-  return target;
-}
-
-static rtx
 k1_expand_builtin_fwiden (rtx target, tree args, int low_bits)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
@@ -6189,8 +6102,6 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_afda_cachemode (target, exp, false);
     case K1_BUILTIN_ALDC:
       return k1_expand_builtin_aldc (target, exp);
-    case K1_BUILTIN_CLEAR1:
-      return k1_expand_builtin_clear1 (target, exp);
     case K1_BUILTIN_CLZ:
       return k1_expand_builtin_clz (target, exp);
     case K1_BUILTIN_CLZDL:
@@ -6424,8 +6335,6 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_lwzu (target, exp);
     case K1_BUILTIN_MADUUCIWD:
       return k1_expand_builtin_maduuciwd (target, exp);
-    case K1_BUILTIN_NOTIFY1:
-      return k1_expand_builtin_notify1 (target, exp);
     case K1_BUILTIN_PROBETLB:
       return k1_expand_builtin_probetlb ();
     case K1_BUILTIN_READTLB:
@@ -6466,12 +6375,6 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_stsud (target, exp);
     case K1_BUILTIN_SYNCGROUP:
       return k1_expand_builtin_syncgroup (target, exp);
-    case K1_BUILTIN_WAITANY:
-      return k1_expand_builtin_waitany (target, exp);
-    case K1_BUILTIN_WANTANY:
-      return k1_expand_builtin_wantany (target, exp);
-    case K1_BUILTIN_WAITCLR1:
-      return k1_expand_builtin_waitclr1 (target, exp);
     case K1_BUILTIN_WRITETLB:
       return k1_expand_builtin_writetlb ();
     case K1_BUILTIN_FWIDENBHW:
