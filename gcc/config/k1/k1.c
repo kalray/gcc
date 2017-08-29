@@ -1220,14 +1220,25 @@ k1_target_print_operand (FILE *file, rtx x, int code)
       if (addressing_mode)
 	{
 	  x = XEXP (x, 0);
+#if 1
+	  if (GET_CODE (x) == PLUS && GET_CODE (XEXP (x, 0)) == MULT
+	      && INTVAL (XEXP (XEXP (x, 0), 1)) > HOST_WIDE_INT_1)
+	    {
+	      fprintf (file, ".xs");
+	    }
+	  else if (GET_CODE (x) == PLUS && GET_CODE (XEXP (x, 0)) == ASHIFT
+		   && INTVAL (XEXP (XEXP (x, 0), 1)) > (HOST_WIDE_INT) 0)
+	    {
+	      fprintf (file, ".xs");
+#else // k1b
 	  if (GET_CODE (x) == PLUS && GET_CODE (XEXP (x, 0)) == MULT)
 	    {
-	      fprintf (file, ".add.x" HOST_WIDE_INT_PRINT_DEC,
+	      fprintf (file, ".x" HOST_WIDE_INT_PRINT_DEC,
 		       INTVAL (XEXP (XEXP (x, 0), 1)));
 	    }
 	  else if (GET_CODE (x) == PLUS && GET_CODE (XEXP (x, 0)) == ASHIFT)
 	    {
-	      fprintf (file, ".add.x" HOST_WIDE_INT_PRINT_DEC,
+	      fprintf (file, ".x" HOST_WIDE_INT_PRINT_DEC,
 		       HOST_WIDE_INT_1 << INTVAL (XEXP (XEXP (x, 0), 1)));
 	    }
 	  else if (GET_CODE (x) == PLUS && GET_CODE (XEXP (x, 0)) == AND)
@@ -1268,9 +1279,11 @@ k1_target_print_operand (FILE *file, rtx x, int code)
 		       ".x" HOST_WIDE_INT_PRINT_DEC,
 		       mod + 1, mul);
 	    }
+#endif
+	    }
 	  else if (GET_CODE (x) == PLUS && REG_P (XEXP (x, 1)))
 	    {
-	      fprintf (file, ".add.x1");
+	      fprintf (file, ".x1");
 	    }
 	}
       else
@@ -7371,8 +7384,8 @@ k1_diff_addr_offset_addr_offset (enum machine_mode mode,
 
      add $r1 = $r3, 4
      add $r2 = $r3, 8
-     lw.add.x4 $r6 = symbol[$r1]
-     lw.add.x4 $r7 = symbol[$r2]
+     lw.x4 $r6 = symbol[$r1]
+     lw.x4 $r7 = symbol[$r2]
 
      which can be replaced by:
 
@@ -7446,8 +7459,8 @@ k1_diff_addr_mult_addr_mult (enum machine_mode mode ATTRIBUTE_UNUSED,
   /* Look for such cases:
 
      add $r1 = $r3, 1
-     lw.add.x4 $r6 = $r2[$r3]
-     lw.add.x4 $r7 = $r2[$r1]
+     lw.x4 $r6 = $r2[$r3]
+     lw.x4 $r7 = $r2[$r1]
 
      which can be replaced by:
 
@@ -7544,7 +7557,7 @@ k1_diff_addr_offset_addr_mult (enum machine_mode mode ATTRIBUTE_UNUSED,
   /* Look for such cases:
 
      add $r1 = $r2, $r3
-     lw.add.x1 $r4 = $r2[$r3]
+     lw.x1 $r4 = $r2[$r3]
      lw $r5 = 4[$r1]
 
      which can be replaced by:
