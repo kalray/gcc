@@ -55,8 +55,6 @@ extern void __builtin_k1_barrier (void);
 /* CALL */
 /* CB */
 /* CDB */
-/* CLEAR1 */
-extern void __builtin_k1_clear1 (unsigned int event);
 /* DOZE */
 /* GET */
 extern unsigned int __builtin_k1_get (int);
@@ -76,8 +74,6 @@ extern void __builtin_k1_invalitlb (void);
 /* LOOPDO */
 /* LOOPGTZ */
 /* LOOPNEZ */
-/* NOTIFY1 */
-extern void __builtin_k1_notify1 (unsigned int);
 /* PROBETLB */
 extern void __builtin_k1_probetlb (void);
 /* READTLB */
@@ -92,13 +88,6 @@ extern void __builtin_k1_readtlb (void);
 extern void __builtin_k1_syncgroup (unsigned int);
 /* TRAPA */
 /* TRAPO */
-/* WAITANY */
-extern unsigned int __builtin_k1_waitany (unsigned int, unsigned char);
-/* WAITCLR1 */
-extern void
-__builtin_k1_waitclr1 (unsigned int /* event = event_reg * 32 + event_index */);
-/* WANTANY */
-extern unsigned int __builtin_k1_wantany (unsigned int, unsigned char);
 /* WRITETLB */
 extern void __builtin_k1_writetlb (void);
 
