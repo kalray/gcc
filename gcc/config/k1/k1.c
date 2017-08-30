@@ -2802,15 +2802,20 @@ enum k1_builtin {
     /* K1_BUILTIN_BWLUHP, */
     /* K1_BUILTIN_BWLUWP, */
     K1_BUILTIN_CBS,
+    K1_BUILTIN_CBSW,
+    K1_BUILTIN_CBSD,
     K1_BUILTIN_CBSDL,
     K1_BUILTIN_CLZ,
+    K1_BUILTIN_CLZW,
+    K1_BUILTIN_CLZD,
     K1_BUILTIN_CLZDL,
-    K1_BUILTIN_CWMOVED,
     K1_BUILTIN_CTZ,
+    K1_BUILTIN_CTZW,
+    K1_BUILTIN_CTZD,
     K1_BUILTIN_CTZDL,
     K1_BUILTIN_ACWS,
     K1_BUILTIN_AFDA,
-    K1_BUILTIN_AFDAU,
+    K1_BUILTIN_LDC,
     K1_BUILTIN_ALDC,
     K1_BUILTIN_DFLUSH,
     K1_BUILTIN_DFLUSHL,
@@ -2929,19 +2934,10 @@ enum k1_builtin {
     K1_BUILTIN_INVALDTLB,
     K1_BUILTIN_INVALITLB,
     K1_BUILTIN_LANDHP,
-    K1_BUILTIN_LBQS,
-    K1_BUILTIN_LBQSU,
-    K1_BUILTIN_LBQZ,
-    K1_BUILTIN_LBQZU,
     K1_BUILTIN_LBSU,
     K1_BUILTIN_LBZU,
     K1_BUILTIN_LHSU,
     K1_BUILTIN_LHZU,
-    /* FIXME AUTO: disabling vector support */
-    /* K1_BUILTIN_LHPZ, */
-    /* K1_BUILTIN_LHPZU, */
-    /* K1_BUILTIN_LHPZN, */
-    /* K1_BUILTIN_LHPZUN, */
     K1_BUILTIN_LDU,
     K1_BUILTIN_LWZU,
     K1_BUILTIN_MADUUCIWD,
@@ -3083,12 +3079,16 @@ k1_target_init_builtins (void)
     ADD_K1_BUILTIN (CBS,     "cbs",         intSI, uintSI);
     ADD_K1_BUILTIN (CBSDL,   "cbsdl",       intDI, uintDI);
     ADD_K1_BUILTIN (CLZ,     "clz",         intSI,  uintSI);
+    ADD_K1_BUILTIN (CLZW,    "clzw",        intSI,  uintSI);
+    ADD_K1_BUILTIN (CLZD,    "clzd",        intDI,  uintDI);
     ADD_K1_BUILTIN (CLZDL,   "clzdl",       intDI,  uintDI);
-    ADD_K1_BUILTIN (CWMOVED, "cwmoved",     intDI,  intSI,  intDI, intDI);
     ADD_K1_BUILTIN (CTZ,     "ctz",         intSI,  uintSI);
+    ADD_K1_BUILTIN (CTZW,    "ctzw",        intSI,  uintSI);
+    ADD_K1_BUILTIN (CTZD,    "ctzd",        intDI,  uintDI);
     ADD_K1_BUILTIN (CTZDL,   "ctzdl",       intDI,  uintDI);
     ADD_K1_BUILTIN (ACWS,    "acws",    uintTI,  voidPTR,  uintDI, uintDI);
     ADD_K1_BUILTIN (AFDA,    "afda",    uintDI,  voidPTR,  intDI);
+    ADD_K1_BUILTIN (LDC,     "ldc",    uintDI,  voidPTR);
     ADD_K1_BUILTIN (ALDC,    "aldc",    uintDI,  voidPTR);
     ADD_K1_BUILTIN (DINVAL,  "dinval",      VOID);
     ADD_K1_BUILTIN (DINVALL, "dinvall", VOID,  constVoidPTR);
@@ -3213,10 +3213,6 @@ k1_target_init_builtins (void)
     ADD_K1_BUILTIN (ITOUCHL, "itouchl", VOID,  voidPTR);
 	/* FIXME AUTO: disabling vector support */
     /* ADD_K1_BUILTIN (LANDHP,  "landhp",      intSI,  intSI,  intSI); */
-    ADD_K1_BUILTIN (LBQS,    "lbqs",  uintDI,  constVoidPTR);
-    ADD_K1_BUILTIN (LBQSU,   "lbqsu", uintDI,  constVoidPTR);
-    ADD_K1_BUILTIN (LBQZ,    "lbqz",  uintDI,  constVoidPTR);
-    ADD_K1_BUILTIN (LBQZU,   "lbqzu", uintDI,  constVoidPTR);
     ADD_K1_BUILTIN (LBSU,    "lbsu",  intQI,  constVoidPTR);
     ADD_K1_BUILTIN (LBZU,    "lbzu",  uintQI,  constVoidPTR);
     ADD_K1_BUILTIN (LHSU,    "lhsu",  intHI,  constVoidPTR);
@@ -3260,12 +3256,6 @@ k1_target_init_builtins (void)
     /* ADD_K1_BUILTIN (FNARROWHWP,  "fnarrowhwp", vect2SI , vect2SF); */
 
     ADD_K1_BUILTIN (FNARROWHW,  "fnarrowhw", uintHI , floatSF);
-
-    /* FIXME AUTO: disabling vector support */
-    /* ADD_K1_BUILTIN (LHPZ,    "lhpz",  vect2SI, unsigned_vect2HI_pointer_node); */
-    /* ADD_K1_BUILTIN (LHPZU,   "lhpzu", vect2SI, unsigned_vect2HI_pointer_node); */
-    /* ADD_K1_BUILTIN (LHPZN,   "lhpzn",  vect2SI, unsigned_vect2HI_pointer_node); */
-    /* ADD_K1_BUILTIN (LHPZUN,  "lhpzun", vect2SI, unsigned_vect2HI_pointer_node); */
 
     ADD_K1_BUILTIN (SRFSIZE,"srfsize",    intSI,  intSI);
 }
@@ -3968,7 +3958,7 @@ k1_expand_builtin_adds (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_cbs (rtx target, tree args)
+k1_expand_builtin_cbsw (rtx target, tree args)
 {
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
 
@@ -3982,7 +3972,7 @@ k1_expand_builtin_cbs (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_cbsdl (rtx target, tree args)
+k1_expand_builtin_cbsd (rtx target, tree args)
 {
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
 
@@ -4038,7 +4028,7 @@ k1_builtin_helper_memref_ptr(rtx ptr, enum machine_mode mode){
   varname = force_reg (mode, varname);
 
 static rtx
-k1_expand_builtin_afda_cachemode (rtx target, tree args, bool usecache)
+k1_expand_builtin_afda (rtx target, tree args)
 {
   MEMREF(0,DImode, mem_target);
   GETREG(1,DImode, addend_and_return);
@@ -4095,7 +4085,7 @@ k1_expand_builtin_acws (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_ctz (rtx target, tree args)
+k1_expand_builtin_ctzw (rtx target, tree args)
 {
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
 
@@ -4109,7 +4099,7 @@ k1_expand_builtin_ctz (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_clz (rtx target, tree args)
+k1_expand_builtin_clzw (rtx target, tree args)
 {
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
 
@@ -4123,7 +4113,7 @@ k1_expand_builtin_clz (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_ctzdl (rtx target, tree args)
+k1_expand_builtin_ctzd (rtx target, tree args)
 {
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
 
@@ -4137,7 +4127,7 @@ k1_expand_builtin_ctzdl (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_clzdl (rtx target, tree args)
+k1_expand_builtin_clzd (rtx target, tree args)
 {
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
 
@@ -4150,6 +4140,7 @@ k1_expand_builtin_clzdl (rtx target, tree args)
     return target;
 }
 
+#if 0
 static rtx
 k1_expand_builtin_cwmoved (rtx target, tree args)
 {
@@ -4172,6 +4163,7 @@ k1_expand_builtin_cwmoved (rtx target, tree args)
 
     return target;
 }
+#endif
 
 // FIXME AUTO: cmovef is not a K1 insn, not a builtin
 /* static rtx */
@@ -4256,61 +4248,6 @@ k1_expand_builtin_itouchl (rtx target, tree args)
 
     arg1 = gen_rtx_MEM (SImode, force_reg (Pmode, arg1));
     emit_insn (gen_itouchl (arg1, k1_sync_reg_rtx));
-
-    return target;
-}
-
-static rtx
-k1_expand_builtin_lbqs (rtx target, tree args)
-{
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-
-    if (!target)
-        target = gen_reg_rtx (DImode);
-    if (!REG_P(target) || GET_MODE (target) != DImode) {
-        target = force_reg (DImode, target);
-    }
-
-    arg1 = gen_rtx_MEM (SImode, force_reg(Pmode, arg1));
-    emit_insn (gen_lbqs (target, arg1));
-
-    return target;
-}
-
-static rtx
-k1_expand_builtin_lbqsu (rtx target, tree args)
-{
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    if (target == NULL)
-      target = gen_reg_rtx(DImode);
-
-    if (!REG_P(target) || GET_MODE (target) != DImode) {
-        target = force_reg (DImode, target);
-    }
-
-    if (!target)
-        target = gen_reg_rtx (DImode);
-    if (!REG_P(target) || GET_MODE (target) != DImode) {
-        target = force_reg (DImode, target);
-    }
-
-    arg1 = gen_rtx_MEM (SImode, force_reg(Pmode, arg1));
-    emit_insn (gen_lbqsu (target, arg1));
-
-    return target;
-}
-
-static rtx
-k1_expand_builtin_lbqz_cachemode (rtx target, tree args, bool usecache)
-{
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    MEMREF(0,SImode,mem_target);
-
-    rtx (*gen_lbqz_cachemode) (rtx target, rtx memref) = usecache ? gen_lbqz : gen_lbqzu;
-
-    target = k1_builtin_helper_check_reg_target(target, DImode);
-
-    emit_insn (gen_lbqz_cachemode (target, mem_target));
 
     return target;
 }
@@ -5687,36 +5624,6 @@ k1_expand_builtin_fnarrowhw (rtx target, tree args)
 /*   return target; */
 /* } */
 
-/* FIXME AUTO: disabling vector support */
-/* static rtx */
-/* k1_expand_builtin_lhpz (rtx target, tree args, int uncached, int no_trap) */
-/* { */
-/*   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
-
-/*   if (!target) */
-/*     target = gen_reg_rtx (V2SImode); */
-/*   if (!REG_P(target) || GET_MODE (target) != V2SImode) { */
-/*     target = force_reg (V2SImode, target); */
-/*   } */
-
-/*   arg1 = gen_rtx_MEM (V2HImode, force_reg (Pmode, arg1)); */
-/*   if (no_trap){ */
-/*     if (uncached){ */
-/*       emit_insn(gen_builtin_lhpzun(target, arg1)); */
-/*     } else { */
-/*       emit_insn(gen_builtin_lhpzn(target, arg1)); */
-/*     } */
-/*   } else { */
-
-/*     if (uncached){ */
-/*       emit_insn(gen_builtin_lhpzu(target, arg1)); */
-/*     } else { */
-/*       emit_insn(gen_builtin_lhpz(target, arg1)); */
-/*     } */
-/*   } */
-/*   return target; */
-/* } */
-
 static rtx
 k1_target_expand_builtin (tree exp,
                           rtx target,
@@ -5749,26 +5656,31 @@ k1_target_expand_builtin (tree exp,
 	/* FIXME AUTO: disabling vector support */
     /* case K1_BUILTIN_BWLUWP: */
     /*     return k1_expand_builtin_bwluwp (target, exp); */
-    case K1_BUILTIN_CBS:
-        return k1_expand_builtin_cbs (target, exp);
-    case K1_BUILTIN_CBSDL:
-        return k1_expand_builtin_cbsdl (target, exp);
     case K1_BUILTIN_ACWS:
         return k1_expand_builtin_acws (target, exp);
     case K1_BUILTIN_AFDA:
-      return k1_expand_builtin_afda_cachemode (target, exp, true);
-    case K1_BUILTIN_AFDAU:
-      return k1_expand_builtin_afda_cachemode (target, exp, false);
+      return k1_expand_builtin_afda (target, exp);
+    case K1_BUILTIN_LDC:
     case K1_BUILTIN_ALDC:
         return k1_expand_builtin_aldc (target, exp);
+    case K1_BUILTIN_CBS:
+    case K1_BUILTIN_CBSW:
+        return k1_expand_builtin_cbsw (target, exp);
+    case K1_BUILTIN_CBSD:
+    case K1_BUILTIN_CBSDL:
+        return k1_expand_builtin_cbsd (target, exp);
     case K1_BUILTIN_CLZ:
-        return k1_expand_builtin_clz (target, exp);
+    case K1_BUILTIN_CLZW:
+        return k1_expand_builtin_clzw (target, exp);
+    case K1_BUILTIN_CLZD:
     case K1_BUILTIN_CLZDL:
-        return k1_expand_builtin_clzdl (target, exp);
+        return k1_expand_builtin_clzd (target, exp);
     case K1_BUILTIN_CTZ:
-        return k1_expand_builtin_ctz (target, exp);
+    case K1_BUILTIN_CTZW:
+        return k1_expand_builtin_ctzw (target, exp);
+    case K1_BUILTIN_CTZD:
     case K1_BUILTIN_CTZDL:
-        return k1_expand_builtin_ctzdl (target, exp);
+        return k1_expand_builtin_ctzd (target, exp);
     case K1_BUILTIN_DINVAL:
         return k1_expand_builtin_dinval ();
     case K1_BUILTIN_DINVALL:
@@ -5953,14 +5865,6 @@ k1_target_expand_builtin (tree exp,
 	/* FIXME AUTO: disabling vector support */
     /* case K1_BUILTIN_LANDHP: */
     /*     return k1_expand_builtin_landhp (target, exp); */
-    case K1_BUILTIN_LBQS:
-        return k1_expand_builtin_lbqs (target, exp);
-    case K1_BUILTIN_LBQSU:
-        return k1_expand_builtin_lbqsu (target, exp);
-    case K1_BUILTIN_LBQZ:
-        return k1_expand_builtin_lbqz_cachemode (target, exp, true);
-    case K1_BUILTIN_LBQZU:
-        return k1_expand_builtin_lbqz_cachemode (target, exp, false);
     case K1_BUILTIN_LBSU:
         return k1_expand_builtin_lbsu (target, exp);
     case K1_BUILTIN_LBZU:
@@ -6036,14 +5940,6 @@ k1_target_expand_builtin (tree exp,
     /* FIXME AUTO: disabling vector support */
     /* case K1_BUILTIN_FNARROWHWP: */
     /*   return k1_expand_builtin_fnarrowhwp (target, exp); */
-    /* case K1_BUILTIN_LHPZ: */
-    /*   return k1_expand_builtin_lhpz (target, exp, 0, 0); */
-    /* case K1_BUILTIN_LHPZU: */
-    /*   return k1_expand_builtin_lhpz (target, exp, 1, 0); */
-    /* case K1_BUILTIN_LHPZN: */
-    /*   return k1_expand_builtin_lhpz (target, exp, 0, 1); */
-    /* case K1_BUILTIN_LHPZUN: */
-    /*   return k1_expand_builtin_lhpz (target, exp, 1, 1); */
 
     case K1_BUILTIN_SRFSIZE:
       return k1_expand_builtin_srfsize (target, exp);
