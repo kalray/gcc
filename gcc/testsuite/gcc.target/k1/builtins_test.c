@@ -100,34 +100,6 @@ void test_sw_lbqs() {
 #endif
 }
 
-void test_ldc_ldu() {
-  long long value = __builtin_k1_ldc(&long_long_values[1]);
-  if(value != 1) {
-    abort();
-  }
-
-  value = __builtin_k1_ldu(&long_long_values[1]);
-  if(value != 0) {
-    abort();
-  }
-}
-
-void test_acwsu_ldu() {
-  long long value;
-  int int_value;
-  __builtin_k1_swu(&int_values[0],-1);
-  __builtin_k1_swu(&int_values[1],1);
-  value = __builtin_k1_acwsu((void *)&int_values[1], 0xffffffff, 0x1);
-  if(value != 0x100000001ULL) {
-    abort();
-  }
-
-  int_value = __builtin_k1_lwu(&int_values[1]);
-  if(int_value != int_values[0]) {
-    abort();
-  }
-}
-
 void test_acws_ld() {
 #ifndef __k1a__
   unsigned long long value;
@@ -143,24 +115,6 @@ void test_acws_ld() {
 
   int_value = (volatile int)int_values[1];
   if(int_value != (volatile int)int_values[0]) {
-    abort();
-  }
-#endif
-}
-
-void test_afdau_ldu() {
-#ifndef __k1a__
-  long long value;
-  __builtin_k1_sdu(&long_long_values[0],-1);
-  __builtin_k1_sdu(&long_long_values[1],1);
-  value = __builtin_k1_ldu(&long_long_values[1]);
-  value = __builtin_k1_afdau(&long_long_values[0], value);
-  if(value != -1LL) {
-    abort();
-  }
-
-  value = __builtin_k1_ldu(&long_long_values[0]);
-  if(value != 0LL) {
     abort();
   }
 #endif
@@ -193,10 +147,8 @@ int main() {
   test_sw_lbqz();
   test_swu_lbqsu();
   test_sw_lbqs();
-  test_ldc_ldu();
-  test_acwsu_ldu();
+  test_aldc_ldu();
   test_acws_ld();
-  test_afdau_ldu();
   test_afda_ld();
   return 0;
 }
