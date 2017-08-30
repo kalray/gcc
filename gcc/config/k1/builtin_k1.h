@@ -405,13 +405,9 @@ extern int __builtin_k1_sbfhp (int, int);
 /* SBMM8 */
 extern unsigned long long __builtin_k1_sbmm8 (unsigned long long a,
 					      unsigned long long b);
-/* SBMM8L */
-extern unsigned int __builtin_k1_sbmm8l (unsigned long long a,
-					 unsigned long long b);
 /* SBMMT8 */
 extern unsigned long long __builtin_k1_sbmmt8 (unsigned long long a,
 					       unsigned long long b);
-/* SBMMT8L */
 /* SLL */
 /* SLLD */
 /* SLLDM */
@@ -449,19 +445,12 @@ extern unsigned long long __builtin_k1_stsud (unsigned long long,
 					      unsigned long long);
 /* SXBP */
 /* SXBPWP */
-/* SXBQ */
-/* UPX10L0 */
-/* UPX10L1 */
-/* UPX10L2 */
-/* UPX12L0 */
-/* UPX12L1 */
 /* XOR */
 /* XORD */
 /* XORHR */
 /* XORHRWP */
 /* ZXBP */
 /* ZXBPWP */
-/* ZXBQ */
 
 /*
  * MAU Instructions (non-FPU)
