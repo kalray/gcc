@@ -119,40 +119,27 @@ extern void __builtin_k1_iinval (void);
 /* IINVALS */
 extern void __builtin_k1_iinvals (const void *addr);
 /* LD */
-/* LDN */
-/* LDU */
+/* LD_N */
+/* LD_U */
 extern unsigned long long __builtin_k1_ldu (const void *addr);
-/* LDUN */
-/* LHPS */
-/* LHPSN */
-/* LHPSU */
-/* LHPSUN */
-/* LHPZ */
-/* LHPZN */
-/* LHPZU */
-/* LHPZUN */
-/* LHS */
-/* LHSN */
-/* LHSU */
+/* LD_UN */
+/* LHS_N */
+/* LHS_U */
 extern short __builtin_k1_lhsu (const void *addr);
-/* LHSUN */
+/* LHS_UN */
 /* LHZ */
-/* LHZN */
-/* LHZU */
+/* LHZ_N */
+/* LHZ_U */
 extern unsigned short __builtin_k1_lhzu (const void *addr);
-/* LHZUN */
-/* LW */
-/* LWN */
-/* LWU */
-extern unsigned int __builtin_k1_lwu (const void *addr);
-/* LWUN */
+/* LHZ_UN */
+/* LWZ */
+/* LWZ_N */
+/* LWZ_U */
+extern unsigned int __builtin_k1_lwzu (const void *addr);
+/* LWZ_UN */
 /* SB */
-/* SBQ */
-/* SBQU */
 /* SD */
 /* SH */
-/* SHP */
-/* SHPU */
 /* SW */
 
 /*
@@ -252,18 +239,18 @@ extern unsigned long long __builtin_k1_bwluwp (unsigned long long op0_wp_ab,
 					       unsigned long long op1_wp_cd,
 					       unsigned int op2_hp_lut);
 /* CBS */
-extern int __builtin_k1_cbs (unsigned int op0);
+extern int __builtin_k1_cbsw (unsigned int op0);
 /* CBSDL */
-extern int __builtin_k1_cbsdl (unsigned long long op0);
+extern int __builtin_k1_cbsd (unsigned long long op0);
 /* CBSWP */
 /* CDMOVED */
 /* CLS */
 /* CLSDL */
 /* CLSWP */
-/* CLZ */
-extern int __builtin_k1_clz (unsigned int op0);
-/* CLZDL */
-extern int __builtin_k1_clzdl (unsigned long long op0);
+/* CLZW */
+extern int __builtin_k1_clzw (unsigned int op0);
+/* CLZD */
+extern int __builtin_k1_clzd (unsigned long long op0);
 /* CLZWP */
 /* CMOVE */
 extern int __builtin_k1_cmove (int condition, int new_value, int curent_value);
@@ -279,9 +266,9 @@ extern int __builtin_k1_cmove (int condition, int new_value, int curent_value);
 /* COMPWDL */
 /* COMPWP */
 /* CTZ */
-extern int __builtin_k1_ctz (unsigned int op0);
+extern int __builtin_k1_ctzw (unsigned int op0);
 /* CTZDL */
-extern int __builtin_k1_ctzdl (unsigned long long op0);
+extern int __builtin_k1_ctzd (unsigned long long op0);
 /* CTZWP */
 /* EXTFDS */
 /* EXTFDZ */
