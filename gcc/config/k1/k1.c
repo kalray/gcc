@@ -3459,7 +3459,6 @@ k1_target_init_builtins (void)
   /* ADD_K1_BUILTIN (SBFHP,   "sbfhp",       intSI,  intSI,  intSI); */
   ADD_K1_BUILTIN (SBMM8, "sbmm8", uintDI, uintDI, uintDI);
   ADD_K1_BUILTIN (SBMM8_D, "sbmm8_d", uintDI, uintDI, uintDI);
-  /* ADD_K1_BUILTIN (SBMM8L,  "sbmm8l",      uintSI, uintDI, uintDI); */
   ADD_K1_BUILTIN (SBMMT8, "sbmmt8", uintDI, uintDI, uintDI);
   ADD_K1_BUILTIN (SBMMT8_D, "sbmmt8_d", uintDI, uintDI, uintDI);
   /* FIXME AUTO: sat does not exist in k1c yet  */
@@ -3839,7 +3838,7 @@ k1_expand_builtin_hfx (rtx target ATTRIBUTE_UNUSED, tree args)
 #endif
 
 static rtx
-k1_expand_builtin_sbmm8_d (rtx target, tree args)
+k1_expand_builtin_sbmm8 (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
@@ -3854,24 +3853,8 @@ k1_expand_builtin_sbmm8_d (rtx target, tree args)
   return target;
 }
 
-/* static rtx */
-/* k1_expand_builtin_sbmm8l (rtx target, tree args) */
-/* { */
-/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
-/*     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1)); */
-
-/*     if (!target) */
-/*         target = gen_reg_rtx (DImode); */
-/*     target = force_reg (DImode, target); */
-/*     arg1 = force_reg (DImode, arg1); */
-/*     arg2 = force_reg (DImode, arg2); */
-/*     emit_insn (gen_sbmm8l (target, arg1, arg2)); */
-
-/*     return target; */
-/* } */
-
 static rtx
-k1_expand_builtin_sbmmt8_d (rtx target, tree args)
+k1_expand_builtin_sbmmt8 (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
@@ -6248,12 +6231,10 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     /*     return k1_expand_builtin_sbfhp (target, exp); */
     case K1_BUILTIN_SBMM8:
     case K1_BUILTIN_SBMM8_D:
-      return k1_expand_builtin_sbmm8_d (target, exp);
-    /* case K1_BUILTIN_SBMM8L: */
-    /*     return k1_expand_builtin_sbmm8l (target, exp); */
+      return k1_expand_builtin_sbmm8 (target, exp);
     case K1_BUILTIN_SBMMT8:
     case K1_BUILTIN_SBMMT8_D:
-      return k1_expand_builtin_sbmmt8_d (target, exp);
+      return k1_expand_builtin_sbmmt8 (target, exp);
     case K1_BUILTIN_SET:
     case K1_BUILTIN_SET_PS:
       return k1_expand_builtin_set (target, exp, fcode == K1_BUILTIN_SET_PS,
