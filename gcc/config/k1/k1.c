@@ -341,8 +341,8 @@ static bool
 k1_legitimate_address_offset_register_p (rtx reg, bool strict)
 {
   return (REG_P (reg) && IS_GENERAL_REGNO (REGNO (reg), strict)
-	  && GET_MODE (reg) == SImode)
-	 || (GET_CODE (reg) == SUBREG && GET_MODE (reg) == SImode
+	  && GET_MODE (reg) == DImode)
+	 || (GET_CODE (reg) == SUBREG && GET_MODE (reg) == DImode
 	     && REG_P (SUBREG_REG (reg))
 	     && IS_GENERAL_REGNO (REGNO (SUBREG_REG (reg)), strict));
 }
