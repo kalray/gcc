@@ -542,33 +542,31 @@ k1_analyze_address (rtx x, bool strict, struct k1_address *addr)
       addr->offset_reg = XEXP (x, 1);
       return true;
     }
-  else if (GET_CODE (x) == PLUS
-	   && k1_legitimate_address_register_p (XEXP (x, 1), strict)
-	   && ((GET_CODE (XEXP (x, 0)) == MULT
-		&& GET_CODE (XEXP (XEXP (x, 0), 1)) == CONST_INT
-		&& (INTVAL (XEXP (XEXP (x, 0), 1)) == 1
-		    || INTVAL (XEXP (XEXP (x, 0), 1)) == 2
-		    || INTVAL (XEXP (XEXP (x, 0), 1)) == 4
-		    || INTVAL (XEXP (XEXP (x, 0), 1)) == 8))
-	       || (GET_CODE (XEXP (x, 0)) == ASHIFT
-		   && GET_CODE (XEXP (XEXP (x, 0), 1)) == CONST_INT
-		   && (INTVAL (XEXP (XEXP (x, 0), 1)) == 0
-		       || INTVAL (XEXP (XEXP (x, 0), 1)) == 1
-		       || INTVAL (XEXP (XEXP (x, 0), 1)) == 2
-		       || INTVAL (XEXP (XEXP (x, 0), 1)) == 3)))
-	   && k1_legitimate_address_offset_register_p (XEXP (XEXP (x, 0), 0),
-						       strict))
-    {
-      addr->mode = ADDR_MULT;
-      addr->base_reg = XEXP (x, 1);
-      addr->offset_reg = XEXP (XEXP (x, 0), 0);
-      addr->mult = INTVAL (XEXP (XEXP (x, 0), 1));
 
-      if (GET_CODE (XEXP (x, 0)) == ASHIFT)
-	addr->mult = 1 << addr->mult;
-
-      return true;
-    }
+  /* FIXME AUTO: disable .xs scaling as it is broken in MDS */
+  /* else if (GET_CODE (x) == PLUS */
+  /*            && k1_legitimate_address_register_p (XEXP (x, 1), strict) */
+  /*            && ((GET_CODE (XEXP (x, 0)) == MULT */
+  /*                 && GET_CODE (XEXP (XEXP (x, 0), 1)) == CONST_INT */
+  /*                 && (INTVAL (XEXP (XEXP (x, 0), 1)) == 1 */
+  /*                     || INTVAL (XEXP (XEXP (x, 0), 1)) == 2 */
+  /*                     || INTVAL (XEXP (XEXP (x, 0), 1)) == 4 */
+  /*                     || INTVAL (XEXP (XEXP (x, 0), 1)) == 8)) */
+  /*                || (GET_CODE (XEXP (x, 0)) == ASHIFT */
+  /*                    && GET_CODE (XEXP (XEXP (x, 0), 1)) == CONST_INT */
+  /*                    && (INTVAL (XEXP (XEXP (x, 0), 1)) == 0 */
+  /*                        || INTVAL (XEXP (XEXP (x, 0), 1)) == 1 */
+  /*                        || INTVAL (XEXP (XEXP (x, 0), 1)) == 2 */
+  /*                        || INTVAL (XEXP (XEXP (x, 0), 1)) == 3))) */
+  /*            && k1_legitimate_address_offset_register_p (XEXP (XEXP (x, 0),
+   * 0), strict)) { */
+  /*     addr->mode = ADDR_MULT; */
+  /*     addr->base_reg = XEXP (x, 1); */
+  /*     addr->offset_reg = XEXP (XEXP (x, 0), 0); */
+  /*     addr->mult = INTVAL (XEXP (XEXP (x, 0), 1)); */
+  /*     if (GET_CODE (XEXP (x, 0)) == ASHIFT) */
+  /*         addr->mult = 1 << addr->mult; */
+  /* } */
 
   return false;
 }
