@@ -3427,8 +3427,8 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (FSINVD, "fsinvd", floatDF, floatDF);
   ADD_K1_BUILTIN (FSINVND, "fsinvnd", floatDF, floatDF);
   ADD_K1_BUILTIN (FSISRD, "fsisrd", floatDF, floatDF);
-  ADD_K1_BUILTIN (GET, "get", uintSI, intSI);
-  ADD_K1_BUILTIN (GET_R, "get_r", uintSI, intSI);
+  ADD_K1_BUILTIN (GET, "get", uintDI, intSI);
+  ADD_K1_BUILTIN (GET_R, "get_r", uintDI, intSI);
   ADD_K1_BUILTIN (HFXB, "hfxb", VOID, uintQI, intSI);
   ADD_K1_BUILTIN (HFXT, "hfxt", VOID, uintQI, intSI);
 #if 0
@@ -3462,8 +3462,8 @@ k1_target_init_builtins (void)
   /* FIXME AUTO: sat does not exist in k1c yet  */
   /* ADD_K1_BUILTIN (SAT,     "sat",         intSI,  intSI,  uintQI); */
   ADD_K1_BUILTIN (SATD, "satd", intDI, intDI, uintQI);
-  ADD_K1_BUILTIN (SET, "set", VOID, intSI, uintSI);
-  ADD_K1_BUILTIN (SET_PS, "set_ps", VOID, intSI, uintSI);
+  ADD_K1_BUILTIN (SET, "set", VOID, intSI, uintDI);
+  ADD_K1_BUILTIN (SET_PS, "set_ps", VOID, intSI, uintDI);
 
   /* FIXME AUTO: disabling vector support */
   /* ADD_K1_BUILTIN (SLLHPS,  "sllhps",      uintSI,  uintSI,  uintSI); */
@@ -3524,7 +3524,7 @@ verify_const_int_arg (rtx arg, int bits, bool signed_p)
  * MODE selects get/getd assembly insn
  */
 static rtx
-k1_expand_builtin_get (rtx target, tree args, enum machine_mode mode)
+k1_expand_builtin_get (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx reg;
@@ -3538,50 +3538,21 @@ k1_expand_builtin_get (rtx target, tree args, enum machine_mode mode)
 
   if (regno > K1C_SRF_LAST_REGNO)
     {
-      error ("__builtin_k1_get%s called with illegal SRF register index : %d",
-	     mode == SImode ? "" : "d", INTVAL (arg1));
-    }
-
-  /* 32bits mode, double access to 64bits register : may be sign of
-     error except for $ps */
-  if (mode == DImode && (REGNO_REG_CLASS_INSENSITIVE (regno) == SRF64_REGS)
-      && !TARGET_64 && (regno != K1C_PS_REGNO))
-    {
-      warning (0, "__builtin_k1_getd should only be used in 64bits mode. Maybe "
-		  "use __builtin_k1_get.");
-    }
-
-  /*
-   * 32bit access to a 64bits SRF in 64bits mode
-   */
-  if ((mode == SImode && ((REGNO_REG_CLASS_INSENSITIVE (regno) == SRF64_REGS))
-       && TARGET_64))
-    {
-      warning (0,
-	       "__builtin_k1_get used with a 64bits SRF $%s (%d). Maybe use "
-	       "__builtin_k1_getd instead",
-	       reg_names[regno], regno - K1C_SRF_FIRST_REGNO);
-    }
-
-  if (mode == DImode && ((REGNO_REG_CLASS_INSENSITIVE (regno) == SRF32_REGS)))
-    {
-      error ("__builtin_k1_getd must only be used on 64bits SRF. $%s (%d) is "
-	     "32bits (use __builtin_k1_get instead)",
-	     reg_names[regno], regno - K1C_SRF_FIRST_REGNO);
+      error ("__builtin_k1_get called with illegal SRF register index : %d",
+	     INTVAL (arg1));
     }
 
   if (!target)
-    target = gen_reg_rtx (mode);
-  target = force_reg (mode, target);
-  reg = gen_rtx_REG (mode, regno);
+    target = gen_reg_rtx (DImode);
+  else
+    target = force_reg (DImode, target);
+
+  reg = gen_rtx_REG (DImode, regno);
+
   if (INTVAL (arg1) == K1C_PCR_REGNO - K1C_SRF_FIRST_REGNO)
     emit_move_insn (target, reg);
-  else if (mode == SImode)
-    emit_insn (gen_getsi_volatile (target, reg, k1_sync_reg_rtx));
-  else if (mode == DImode)
-    emit_insn (gen_getdi_volatile (target, reg, k1_sync_reg_rtx));
   else
-    gcc_unreachable ();
+    emit_insn (gen_get_volatile (target, reg, k1_sync_reg_rtx));
 
   return target;
 }
@@ -3590,35 +3561,25 @@ k1_expand_builtin_get (rtx target, tree args, enum machine_mode mode)
  * MODE selects get/getd assembly insn
  */
 static rtx
-k1_expand_builtin_get_r (rtx target, tree args, enum machine_mode mode)
+k1_expand_builtin_get_r (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
 
   if (!target)
-    target = gen_reg_rtx (mode);
-  target = force_reg (mode, target);
-  arg1 = force_reg (mode, arg1);
-  if (mode == SImode)
-    emit_insn (gen_getsi_r (target, arg1, k1_sync_reg_rtx));
-  else if (mode == DImode)
-    emit_insn (gen_getdi_r (target, arg1, k1_sync_reg_rtx));
-  else
-    gcc_unreachable ();
+    target = gen_reg_rtx (DImode);
+
+  target = force_reg (DImode, target);
+  arg1 = force_reg (DImode, arg1);
+  emit_insn (gen_getdi_r (target, arg1, k1_sync_reg_rtx));
 
   return target;
 }
 
 static rtx
-k1_expand_builtin_set (rtx target ATTRIBUTE_UNUSED, tree args, bool ps,
-		       enum machine_mode mode)
+k1_expand_builtin_set (rtx target ATTRIBUTE_UNUSED, tree args, bool ps)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-
-  rtx (*my_gen_set_ps_volatile) (rtx op1, rtx op2, rtx op3)
-    = (mode == DImode) ? gen_setdi_ps_volatile : gen_setsi_ps_volatile;
-  rtx (*my_gen_set_volatile) (rtx op1, rtx op2, rtx op3)
-    = (mode == DImode) ? gen_setdi_volatile : gen_setsi_volatile;
 
   if (!verify_const_int_arg (arg1, 6, false))
     {
@@ -3634,38 +3595,8 @@ k1_expand_builtin_set (rtx target ATTRIBUTE_UNUSED, tree args, bool ps,
 
   if (regno > K1C_SRF_LAST_REGNO)
     {
-      error ("__builtin_k1_set%s called with illegal SRF register index : %d",
-	     mode == SImode ? "" : "d", INTVAL (arg1));
-    }
-
-  /* 32bits mode, double access to 64bits register : may be sign of
-     error except for $ps */
-  if (mode == DImode && (REGNO_REG_CLASS_INSENSITIVE (regno) == SRF64_REGS)
-      && !TARGET_64 && (regno != K1C_PS_REGNO))
-    {
-      warning (0,
-	       "__builtin_k1_setd on $%s (%d) should only be used in 64bits "
-	       "mode. Maybe use __builtin_k1_set instead",
-	       reg_names[regno], regno - K1C_SRF_FIRST_REGNO);
-    }
-
-  /*
-   * 32bit access to a 64bits SRF in 64bits mode
-   */
-  if ((mode == SImode && ((REGNO_REG_CLASS_INSENSITIVE (regno) == SRF64_REGS))
-       && TARGET_64))
-    {
-      warning (0,
-	       "__builtin_k1_set used with a 64bits SRF $%s (%d). Maybe use "
-	       "__builtin_k1_setd instead",
-	       reg_names[regno], regno - K1C_SRF_FIRST_REGNO);
-    }
-
-  if (mode == DImode && ((REGNO_REG_CLASS_INSENSITIVE (regno) == SRF32_REGS)))
-    {
-      error ("__builtin_k1_setd must only be used on 64bits SRF. $%s (%d) is "
-	     "32bits (use __builtin_k1_set instead)",
-	     reg_names[regno], regno - K1C_SRF_FIRST_REGNO);
+      error ("__builtin_k1_set called with illegal SRF register index : %d",
+	     INTVAL (arg1));
     }
 
   if (!ps && INTVAL (arg1) == K1C_PS_REGNO - K1C_SRF_FIRST_REGNO)
@@ -3673,12 +3604,13 @@ k1_expand_builtin_set (rtx target ATTRIBUTE_UNUSED, tree args, bool ps,
       ps = true;
     }
 
-  arg2 = force_reg (mode, arg2);
-  rtx sys_reg = gen_rtx_REG (mode, regno);
+  arg2 = force_reg (DImode, arg2);
+  rtx sys_reg = gen_rtx_REG (DImode, regno);
+
   if (ps)
-    emit_insn (my_gen_set_ps_volatile (sys_reg, arg2, k1_sync_reg_rtx));
+    emit_insn (gen_set_ps_volatile (sys_reg, arg2, k1_sync_reg_rtx));
   else
-    emit_insn (my_gen_set_volatile (sys_reg, arg2, k1_sync_reg_rtx));
+    emit_insn (gen_set_volatile (sys_reg, arg2, k1_sync_reg_rtx));
 
   return NULL_RTX;
 }
@@ -6173,9 +6105,9 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case K1_BUILTIN_FSISRD:
       return k1_expand_builtin_fsisrd (target, exp);
     case K1_BUILTIN_GET:
-      return k1_expand_builtin_get (target, exp, SImode);
+      return k1_expand_builtin_get (target, exp);
     case K1_BUILTIN_GET_R:
-      return k1_expand_builtin_get_r (target, exp, SImode);
+      return k1_expand_builtin_get_r (target, exp);
 #if 0
     case K1_BUILTIN_HFX:
         return k1_expand_builtin_hfx (target, exp);
@@ -6235,8 +6167,7 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_sbmmt8 (target, exp);
     case K1_BUILTIN_SET:
     case K1_BUILTIN_SET_PS:
-      return k1_expand_builtin_set (target, exp, fcode == K1_BUILTIN_SET_PS,
-				    SImode);
+      return k1_expand_builtin_set (target, exp, fcode == K1_BUILTIN_SET_PS);
       /* FIXME AUTO: disabling vector support */
     /* case K1_BUILTIN_SLLHPS: */
     /* case K1_BUILTIN_SLLHPS_R: */
