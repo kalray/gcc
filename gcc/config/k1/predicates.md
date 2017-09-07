@@ -240,6 +240,11 @@
  *       (match_test "k1_float_fits_bits(CONST_DOUBLE_REAL_VALUE(op),43,mode)")))
  */
 
+(define_predicate "reg_or_s32_operand"
+ ( ior (match_operand 0 "register_operand")
+       (and (match_code "const_int")
+            (match_test "satisfies_constraint_I32(op)"))))
+
 (define_predicate "immediate_unsigned_32bits_operand"
   (and (match_code "const_int")
        (match_test "INTVAL (op) >= 0 && INTVAL (op) < (1LL << 32)")))
