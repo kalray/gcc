@@ -28,7 +28,7 @@
 
 #define DRIVER_SELF_SPECS DRIVER_SELF_SPECS_COMMON
 
-#define K1_DEFAULT_CORE "k1pe"
+#define K1_DEFAULT_CORE "k1rm"
 
 #define K1_OS_SELF_SPECS "%{!mcore*:-mcore=" K1_DEFAULT_CORE " } "
 
