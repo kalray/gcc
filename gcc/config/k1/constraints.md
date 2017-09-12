@@ -75,36 +75,32 @@
 (define_constraint "I08"
   "A signed 8-bit constant."
   (and (match_code "const_int")
-       (match_test "ival >= -128 && ival <= 127")))
+       (match_test "SIGNED_INT_FITS_N_BITS (ival, 8)")))
 
 (define_constraint "I16"  
   "A signed 16-bit constant."
   (and (match_code "const_int")
-       (match_test "ival >= -32768 && ival <= 32767")))
+       (match_test "SIGNED_INT_FITS_N_BITS (ival, 16)")))
 
 (define_constraint "I32"  
   "A signed 32-bit constant."
   (and (match_code "const_int")
-       (match_test "ival >= -2147483648LL && ival <= 2147483647LL")))
+       (match_test "SIGNED_INT_FITS_N_BITS (ival, 32)")))
 
-(define_constraint "D37"  
+(define_constraint "I37"
   "A signed 37-bit constant."
-  (ior (and (match_code "const_double")
-            (match_test "hval >= -16 && hval <= 15"))
-       (and (match_code "const_int")
-            (match_test "ival > -68719476736LL && ival <= 68719476735LL"))))
+   (and (match_code "const_int")
+       (match_test "SIGNED_INT_FITS_N_BITS (ival, 37)")))
 
 (define_constraint "I43"
   "A signed 43-bit constant."
   (and (match_code "const_int")
-       (match_test "ival >= -4398046511104LL && ival <= 4398046511103LL")))
+       (match_test "SIGNED_INT_FITS_N_BITS (ival, 43)")))
 
-;; (define_constraint "I64"  
-;;   "A signed 64-bit constant."
-;;   (ior (and (match_code "const_double")
-;;             (match_test "hval >= -68719476736 && hval <= 68719476735"))
-;;        (and (match_code "const_int")
-;;             (match_test "ival > -68719476736 && ival <= 68719476735"))))
+(define_constraint "I64"
+  "A signed 64-bit constant."
+  (and (match_code "const_int")
+       (match_test "SIGNED_INT_FITS_N_BITS (ival, 64)")))
 
 (define_constraint "Ilh"  
   "Constants that can be expressed as lowbit/highbit pair"

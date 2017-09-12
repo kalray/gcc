@@ -17,13 +17,29 @@
   (and (match_code "const_int")
        (match_test "op == const0_rtx")))
 
-;; register or signed10 or signed 37
-(define_predicate "register_signed10_37_operand"
+;; used for some 32bits ALU
+;; register or immediate up to signed 32
+(define_predicate "register_s32_operand"
  (ior (match_code "reg")
       (and (match_code "const,const_int")
-           (ior (match_test "satisfies_constraint_I10(op)")
-                (match_test "satisfies_constraint_D37(op)")))))
+           (match_test "satisfies_constraint_I32(op)"))))
 
+
+;; immediate up to signed 37
+(define_predicate "s37_operand"
+  (and (match_code "const,const_int")
+       (match_test "satisfies_constraint_I37(op)")))
+
+;; register or immediate up to signed 37
+(define_predicate "register_s37_operand"
+ (ior (match_code "reg")
+      (match_operand 0 "s37_operand")))
+
+;; register or immediate up to signed 64
+(define_predicate "register_s64_operand"
+ (ior (match_code "reg")
+      (and (match_code "const,const_int")
+           (match_test "satisfies_constraint_I64(op)"))))
 
 (define_predicate "nonmemory64_register32_w_operand"
    (match_code "const,const_int,reg,subreg,mem,symbol_ref,label_ref")
