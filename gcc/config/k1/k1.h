@@ -1198,6 +1198,18 @@ int k1_adjust_insn_length (rtx insn, int length);
 #define CTZ_DEFINED_VALUE_AT_ZERO(mode, value)                                 \
   CLZ_DEFINED_VALUE_AT_ZERO (mode, value)
 
+/* Copy/paste from cr16 port
+   Macros to check the range of integers . These macros are used across
+   the port, majorly in constraints.md, predicates.md files. */
+#define SIGNED_INT_FITS_N_BITS(imm, N)                                         \
+  ((((imm) < ((HOST_WIDE_INT) 1 << ((N) -1)))                                  \
+    && ((imm) >= -((HOST_WIDE_INT) 1 << ((N) -1))))                            \
+     ? 1                                                                       \
+     : 0)
+
+#define UNSIGNED_INT_FITS_N_BITS(imm, N)                                       \
+  (((imm) < ((HOST_WIDE_INT) 1 << (N)) && (imm) >= (HOST_WIDE_INT) 0) ? 1 : 0)
+
 #define FINAL_PRESCAN_INSN(insn, ops, nops)                                    \
   k1_final_prescan_insn (insn, ops, nops)
 
