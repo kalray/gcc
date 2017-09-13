@@ -248,12 +248,6 @@
   (and (match_code "const_int")
        (match_test "INTVAL (op) >= 0 && INTVAL (op) < (1LL << 37)")))
 
-
-(define_predicate "const_int_43b_operand"
-  (and (match_code "const_int")
-       (match_test "INTVAL (op) >= (-4398046511104) && INTVAL (op) <= (4398046511104-1)")))
-
-
 (define_predicate "poweroftwo_6bits_immediate_operand"
   (match_code "const_int")
 {
