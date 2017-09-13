@@ -8467,7 +8467,7 @@ k1_optimize_two_block_loop (struct loop *loop, rtx entry, basic_block bb,
        other words, transform:
        loopgtz $counter, endloop
        add $counter = $counter, -1 ;;
-       cb.eqz $counter, endloop ;;
+       cb.eqz $counter? endloop ;;
        <loop body>
        endloop:
        ...
@@ -8734,7 +8734,7 @@ k1_handle_two_block_loop (struct loop *loop, rtx entry,
        loopgtz $counter, endloop
        header:
        ...
-       cb.eqz $counter, endloop
+       cb.eqz $counter? endloop
        latch:
        ...
        endloop:
