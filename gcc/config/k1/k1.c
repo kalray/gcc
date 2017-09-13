@@ -2752,31 +2752,6 @@ k1_expand_mov (rtx operands[])
     {
       operands[1] = k1_legitimize_gp_address (operands[1], operands[0]);
     }
-  /* FIXME AUTO: this is needed because we can't materialize 64bits immediate
-   * yet */
-  else if (const_int_operand (operands[1], GET_MODE (operands[1]))
-	   && !const_int_43b_operand (operands[1], GET_MODE (operands[1])))
-    {
-
-      rtx tmp = gen_reg_rtx (DImode);
-      HOST_WIDE_INT const_val = INTVAL (operands[1]);
-
-      /* emit_insn(tmp, gen_anddi3(gen_rtx_CONST_INT (VOIDmode,
-       * 0xFFFFFFFFULL<<32), */
-      /* 				operands[1]));. */
-
-      emit_move_insn (tmp,
-		      gen_rtx_CONST_INT (VOIDmode,
-					 (const_val & (0xFFFFFFFFULL << 32))
-					   >> 32));
-
-      emit_insn (gen_ashldi3 (tmp, tmp, gen_rtx_CONST_INT (VOIDmode, 32)));
-
-      emit_move_insn (operands[0],
-		      gen_rtx_CONST_INT (VOIDmode, const_val & 0xFFFFFFFF));
-      emit_insn (gen_adddi3 (operands[0], operands[0], tmp));
-      return true;
-    }
 
   return false;
 }
