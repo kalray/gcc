@@ -37,6 +37,7 @@
 (define_code_iterator cb_cond [eq ne gt ge lt le])
 (define_mode_iterator SIDI [SI DI])
 
+;; FIXME AUTO: change name of cbvar, used elsewhere.
 (define_mode_attr cbvar [(SI "w") (DI "d") (SF "w") (DF "d")])
 
 ;; FIXME AUTO: disabling vector support
