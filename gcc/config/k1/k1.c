@@ -6284,6 +6284,8 @@ static int packed_mems;
    - *_Y parameters describe the highpart of the mem reference.
 
    Emit the packed instruction in CYCLE scheduling cycle. */
+    /* FIXME AUTO: Disable memory packing */
+#if 0
 static int
 k1_pack_mems (enum machine_mode mode,
               enum rtx_code extension,
@@ -6508,7 +6510,7 @@ k1_pack_mems (enum machine_mode mode,
 	    mem_y = gen_rtx_ZERO_EXTEND (SImode, mem_y);
 	    x_mode = y_mode = SImode;
 	}
-    /* Use gen_rtx_SUBREG beacause our double_load instruction
+    /* Use gen_rtx_SUBREG because our double_load instruction
        requires a SUBREG. gen_{low,high}part will give us a
        simple REG when applied on a hard register. */
     if (is_store)
@@ -6549,6 +6551,7 @@ k1_pack_mems (enum machine_mode mode,
     packed_mems++;
     return 1;
 }
+#endif /* DISABLE MEMORY PACKING */
 
 static rtx
 k1_diff_addr_offset_addr_offset (enum machine_mode mode,
@@ -6945,6 +6948,9 @@ k1_target_sched_reorder (FILE *file ATTRIBUTE_UNUSED,
     enum rtx_code extension, extension2;
     unsigned int mode_idx;
 
+    /* FIXME AUTO: Disable memory packing */
+    return 1;
+#if 0
     /* We only want to do that in the pre-ira scheduling pass.  */
     if (TARGET_STRICT_ALIGN || reload_completed || reload_in_progress) {
 	int all_deps_ready_insn = -1;
@@ -7368,6 +7374,7 @@ k1_target_sched_reorder (FILE *file ATTRIBUTE_UNUSED,
     }
 
     return 1;
+#endif /* DISABLE MEMORY PACKING */
 }
 
 static int
