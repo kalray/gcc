@@ -1281,7 +1281,7 @@ k1_target_print_operand (FILE *file, rtx x, int code)
 	    }
 	  else if (GET_CODE (x) == PLUS && REG_P (XEXP (x, 1)))
 	    {
-	      fprintf (file, ".x1");
+	      /* fprintf (file, ".x1"); */
 	    }
 	}
       else
