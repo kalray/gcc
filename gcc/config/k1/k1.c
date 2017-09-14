@@ -3001,8 +3001,9 @@ enum k1_builtin
   K1_BUILTIN_CTZDL,
   K1_BUILTIN_ACWS,
   K1_BUILTIN_AFDA,
-  K1_BUILTIN_LDC,
-  K1_BUILTIN_ALDC,
+  /* FIXME AUTO: disable aldc */
+  /* K1_BUILTIN_LDC, */
+  /* K1_BUILTIN_ALDC, */
   K1_BUILTIN_DFLUSH,
   K1_BUILTIN_DFLUSHL,
   K1_BUILTIN_DINVAL,
@@ -3276,8 +3277,9 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (CTZDL, "ctzdl", intDI, uintDI);
   ADD_K1_BUILTIN (ACWS, "acws", uintTI, voidPTR, uintDI, uintDI);
   ADD_K1_BUILTIN (AFDA, "afda", uintDI, voidPTR, intDI);
-  ADD_K1_BUILTIN (LDC, "ldc", uintDI, voidPTR);
-  ADD_K1_BUILTIN (ALDC, "aldc", uintDI, voidPTR);
+  /* FIXME AUTO: disable aldc */
+  /* ADD_K1_BUILTIN (LDC,     "ldc",    uintDI,  voidPTR); */
+  /* ADD_K1_BUILTIN (ALDC,    "aldc",    uintDI,  voidPTR); */
   ADD_K1_BUILTIN (DINVAL, "dinval", VOID);
   ADD_K1_BUILTIN (DINVALL, "dinvall", VOID, constVoidPTR);
   ADD_K1_BUILTIN (DTOUCHL, "dtouchl", VOID, constVoidPTR);
@@ -4411,23 +4413,23 @@ k1_expand_builtin_itouchl (rtx target, tree args)
   return target;
 }
 
-static rtx
-k1_expand_builtin_aldc (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+/* FIXME AUTO: disable aldc */
+/* static rtx */
+/* k1_expand_builtin_aldc (rtx target, tree args) */
+/* { */
+/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
 
-  if (!target)
-    target = gen_reg_rtx (DImode);
-  if (!REG_P (target) || GET_MODE (target) != DImode)
-    {
-      target = force_reg (DImode, target);
-    }
+/*     if (!target) */
+/*         target = gen_reg_rtx (DImode); */
+/*     if (!REG_P(target) || GET_MODE (target) != DImode) { */
+/*         target = force_reg (DImode, target); */
+/*     } */
 
-  arg1 = gen_rtx_MEM (DImode, force_reg (Pmode, arg1));
-  emit_insn (gen_aldc (target, arg1));
+/*     arg1 = gen_rtx_MEM (DImode, force_reg (Pmode, arg1)); */
+/*     emit_insn (gen_aldc (target, arg1)); */
 
-  return target;
-}
+/*     return target; */
+/* } */
 
 static rtx
 k1_expand_builtin_faddrn (rtx target, tree args)
@@ -5881,9 +5883,10 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_acws (target, exp);
     case K1_BUILTIN_AFDA:
       return k1_expand_builtin_afda (target, exp);
-    case K1_BUILTIN_LDC:
-    case K1_BUILTIN_ALDC:
-      return k1_expand_builtin_aldc (target, exp);
+      /* FIXME AUTO: disable aldc */
+      /* case K1_BUILTIN_LDC: */
+      /* case K1_BUILTIN_ALDC: */
+      /* return k1_expand_builtin_aldc (target, exp); */
     case K1_BUILTIN_CBS:
     case K1_BUILTIN_CBSW:
       return k1_expand_builtin_cbsw (target, exp);
