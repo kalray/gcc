@@ -107,14 +107,37 @@
   (and (match_code "const_int")
        (match_test "k1_lowbit_highbit_constant_p (ival, NULL, NULL)")))
 
-(define_memory_constraint "a"  
+(define_memory_constraint "a"
   "Memory operands with small immediates"
   (and (match_code "mem")
        (match_test "!k1_has_big_immediate (op)")))
 
-(define_memory_constraint "Q"  
-  "Packed memory operand, need not be correct."
-  (match_code "mem"))
+;; (define_memory_constraint "Q"
+;;   "Packed memory operand, need not be correct."
+;;   (match_code "mem"))
+
+(define_memory_constraint "Cm"
+  "Cached memory operands"
+  (and (match_code "mem")
+       (match_test "!K1_FORCE_UNCACHED_LSU")))
+
+(define_memory_constraint "Ca"
+  "Cached memory operands"
+  (and (match_code "mem")
+       (match_test "!k1_has_big_immediate (op)")
+       (match_test "!K1_FORCE_UNCACHED_LSU")))
+
+(define_memory_constraint "Zm"
+  "Uncached memory operands"
+  (and (match_code "mem")
+       (match_test "K1_FORCE_UNCACHED_LSU")))
+
+(define_memory_constraint "Za"
+  "Uncached memory operands"
+  (and (match_code "mem")
+       (match_test "!k1_has_big_immediate (op)")
+       (match_test "K1_FORCE_UNCACHED_LSU")))
+
 
 (define_address_constraint "A"  
   "Memory address with small immediates"
