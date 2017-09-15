@@ -38,7 +38,8 @@ extern bool k1_cannot_change_mode_class (enum machine_mode from,
 #ifdef RTX_CODE
 #include "tree-pass.h"
 
-int k1_hard_regno_mode_ok (unsigned regno, enum machine_mode mode);
+extern int k1_hard_regno_mode_ok (unsigned regno, enum machine_mode mode);
+extern void k1_output_load_multiple (rtx *operands);
 
 extern void k1_expand_call (rtx fnaddr, rtx arg, rtx retval, bool sibcall);
 
