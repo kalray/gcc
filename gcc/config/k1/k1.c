@@ -1026,6 +1026,18 @@ k1_lowbit_highbit_constant_p (HOST_WIDE_INT val_, int *lowbit, int *highbit)
 }
 
 void
+k1_output_load_multiple (rtx *operands)
+{
+  char pattern[100];
+  unsigned int regno_dest = REGNO(operands[2]);
+  sprintf(pattern, "lq $r%dr%d = 0[%%2]", regno_dest, regno_dest + 1);
+
+  gcc_assert(!(regno_dest & 1));
+
+  output_asm_insn(pattern, operands);
+}
+
+void
 k1_target_print_operand (FILE *file, rtx x, int code)
 {
     rtx operand = x;
