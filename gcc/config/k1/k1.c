@@ -107,12 +107,13 @@ enum attr_arch k1_arch_schedule;
 int
 k1_hard_regno_mode_ok (unsigned regno, enum machine_mode mode)
 {
-  if ((GET_MODE_SIZE (mode) <= 8)
-      && ((regno <= 64)
-	  || (TARGET_64 && REGNO_REG_CLASS (regno) == SRF64_REGS)))
-    return true;
+  // SI/DI -> K1C_GRF_FIRST_REGNO - K1C_GRF_LAST_REGNO => OK
+  // SI/DI -> K1C_SRF_FIRST_REGNO - K1C_SRF_LAST_REGNO => OK
+  // TI    -> K1C_GRF_FIRST_REGNO - K1C_GRF_LAST_REGNO && even => OK
 
-  return false;
+  return (mode == SImode || mode == DImode)
+	 || (mode == TImode && (regno >= K1C_GRF_FIRST_REGNO)
+	     && (regno <= K1C_GRF_LAST_REGNO) && (regno % 2 == 0));
 }
 
 static unsigned char
