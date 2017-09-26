@@ -618,8 +618,8 @@ k1_target_conditional_register_usage (void)
   // FIXME AUTO: rework ABI selection
   if (flag_pic && !TARGET_64)
     {
-      k1c_cur_abi = K1C_ABI_K1PE_PIC;
-      SET_ABI_PARAMS (K1C, K1PE, PIC);
+      k1c_cur_abi = K1C_ABI_K1C_PIC;
+      SET_ABI_PARAMS (K1C, K1C, PIC);
     } /* else if (TARGET_FDPIC && !TARGET_64){ */
   /*   /\* k1b_cur_abi = K1B_ABI_K1BDP_FDPIC; *\/ */
   /*   /\* /\\* if we're in FDPIC, fix the r9 register *\\/ *\/ */
@@ -627,20 +627,20 @@ k1_target_conditional_register_usage (void)
   /* }  */
   else if (flag_pic && TARGET_64)
     {
-      k1c_cur_abi = K1C_ABI_K1PE_PIC64;
-      SET_ABI_PARAMS (K1C, K1PE, PIC64);
+      k1c_cur_abi = K1C_ABI_K1C_PIC64;
+      SET_ABI_PARAMS (K1C, K1C, PIC64);
     } /* else if (TARGET_FDPIC && TARGET_64) { */
   /*     error ("64bits does not support FDPIC"); */
   /* }  */
   else if (TARGET_64)
     {
-      k1c_cur_abi = K1C_ABI_K1PE_EMBEDDED64;
-      SET_ABI_PARAMS (K1C, K1PE, EMBEDDED64);
+      k1c_cur_abi = K1C_ABI_K1C_EMBEDDED64;
+      SET_ABI_PARAMS (K1C, K1C, EMBEDDED64);
     }
   else
     {
-      k1c_cur_abi = K1C_ABI_K1PE_EMBEDDED;
-      SET_ABI_PARAMS (K1C, K1PE, EMBEDDED);
+      k1c_cur_abi = K1C_ABI_K1C_EMBEDDED;
+      SET_ABI_PARAMS (K1C, K1C, EMBEDDED);
     }
 
   /* the following exists because there is no FDPIC ABI, simply patch the
