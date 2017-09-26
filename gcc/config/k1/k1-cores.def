@@ -36,4 +36,4 @@
 
 /* Coolidge Architecture Processors.  */
 
-K1_CORE("k1pe",  k1cpe, k1cpe, 8,  0, k1cpe)
+K1_CORE("k1c",  k1c, k1c, 8,  0, k1c)
