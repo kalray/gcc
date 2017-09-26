@@ -314,22 +314,22 @@
 
 (define_insn_reservation "k1c_lsu_load_uncached" 10 (and (eq_attr "arch" "coolidge")
                                                          (and (eq_attr "type" "lsu_load_uncached")
-                                                              (match_test "TARGET_K1PE")))
+                                                              (match_test "TARGET_K1C")))
                          "k1c_lsu_r")
 
 (define_insn_reservation "k1c_lsu_load_uncached.x" 10 (and (eq_attr "arch" "coolidge")
                                                           (and (eq_attr "type" "lsu_load_uncached_x")
-                                                               (match_test "TARGET_K1PE")))
+                                                               (match_test "TARGET_K1C")))
                          "k1c_lsu.x_r")
 
 (define_insn_reservation "k1c_io_lsu_load_uncached" 10 (and (eq_attr "arch" "coolidge")
                                                            (and (eq_attr "type" "lsu_load_uncached")
-                                                                (match_test "TARGET_K1RM")))
+                                                                (match_test "TARGET_K1C")))
                          "k1c_lsu_r")
 
 (define_insn_reservation "k1c_io_lsu_load_uncached.x" 10 (and (eq_attr "arch" "coolidge")
                                                              (and (eq_attr "type" "lsu_load_uncached_x")
-                                                                  (match_test "TARGET_K1RM")))
+                                                                  (match_test "TARGET_K1C")))
                          "k1c_lsu.x_r")
 
 (define_insn_reservation "k1c_lsu_store_uncached" 1 (and (eq_attr "arch" "coolidge")
@@ -353,22 +353,22 @@
 
 (define_insn_reservation "k1c_lsu_load" 2 (and (eq_attr "arch" "coolidge")
                                                (and (eq_attr "type" "lsu_load")
-                                                    (match_test "TARGET_K1PE")))
+                                                    (match_test "TARGET_K1C")))
                          "k1c_lsu_r")
 
 (define_insn_reservation "k1c_lsu_load.x" 2 (and (eq_attr "arch" "coolidge")
                                                  (and (eq_attr "type" "lsu_load_x")
-                                                      (match_test "TARGET_K1PE")))
+                                                      (match_test "TARGET_K1C")))
                          "k1c_lsu.x_r")
 
 (define_insn_reservation "k1c_io_lsu_load" 3 (and (eq_attr "arch" "coolidge")
                                                   (and (eq_attr "type" "lsu_load")
-                                                       (match_test "TARGET_K1RM")))
+                                                       (match_test "TARGET_K1C")))
                          "k1c_lsu_r")
 
 (define_insn_reservation "k1c_io_lsu_load.x" 3 (and (eq_attr "arch" "coolidge")
                                                     (and (eq_attr "type" "lsu_load_x")
-                                                         (match_test "TARGET_K1RM")))
+                                                         (match_test "TARGET_K1C")))
                          "k1c_lsu.x_r")
 
 ;; Cached and Uncached LSU
