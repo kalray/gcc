@@ -29,4 +29,4 @@
 
    genopt.sh assumes no whitespace up to the first "," in each entry.  */
 
-K1_ARCH("coolidge",   k1pe,       3,   0)
+K1_ARCH("coolidge",   k1c,       3,   0)
