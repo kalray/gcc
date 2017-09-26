@@ -59,40 +59,22 @@
       builtin_assert ("cpu=k1");                                               \
       builtin_define ("__K1__");                                               \
       builtin_define ("__k1__");                                               \
-      if (TARGET_K1PE)                                                         \
+      if (TARGET_K1C)                                                          \
 	{                                                                      \
-	  builtin_define ("__K1PE__");                                         \
-	  builtin_define ("__k1pe__");                                         \
-	  builtin_define ("__K1DP__");                                         \
-	  builtin_define ("__k1dp__");                                         \
-	  builtin_define ("__K1CDP__");                                        \
-	  builtin_define ("__k1cdp__");                                        \
 	  builtin_define ("__K1C__");                                          \
 	  builtin_define ("__k1c__");                                          \
-	  builtin_assert ("machine=k1pe");                                     \
+	  builtin_assert ("machine=k1c");                                      \
 	  builtin_define ("__k1arch=k1c");                                     \
+	  builtin_define ("__k1core=k1c");                                     \
+	  if (TARGET_STRICT_ALIGN)                                             \
+	    builtin_define ("__STRICT_ALIGN__");                               \
+	  if (TARGET_STACK_CHECK_USE_TLS)                                      \
+	    builtin_define ("__K1_STACK_LIMIT_TLS");                           \
+	  if (TARGET_GPREL)                                                    \
+	    builtin_define ("__K1_GPREL__");                                   \
+	  if (TARGET_64)                                                       \
+	    builtin_define ("__K1_64__");                                      \
 	}                                                                      \
-      else if (TARGET_K1RM)                                                    \
-	{                                                                      \
-	  builtin_define ("__K1RM__");                                         \
-	  builtin_define ("__k1rm__");                                         \
-	  builtin_define ("__K1IO__");                                         \
-	  builtin_define ("__k1io__");                                         \
-	  builtin_define ("__K1CIO__");                                        \
-	  builtin_define ("__k1cio__");                                        \
-	  builtin_define ("__K1C__");                                          \
-	  builtin_define ("__k1c__");                                          \
-	  builtin_assert ("machine=k1rm");                                     \
-	  builtin_define ("__k1arch=k1c");                                     \
-	}                                                                      \
-      if (TARGET_STRICT_ALIGN)                                                 \
-	builtin_define ("__STRICT_ALIGN__");                                   \
-      if (TARGET_STACK_CHECK_USE_TLS)                                          \
-	builtin_define ("__K1_STACK_LIMIT_TLS");                               \
-      if (TARGET_GPREL)                                                        \
-	builtin_define ("__K1_GPREL__");                                       \
-      if (TARGET_64)                                                           \
-	builtin_define ("__K1_64__");                                          \
     }                                                                          \
   while (0)
 
