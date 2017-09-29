@@ -60,8 +60,6 @@ extern void k1_expand_fdpic_call (rtx retval, rtx fnaddr, rtx callarg,
 extern void k1_expand_helper_pic_call (rtx retval, rtx fnaddr, rtx callarg,
 				       int sibcall);
 
-extern HOST_WIDE_INT k1_frame_size (void);
-
 extern void k1_target_print_operand (FILE *file, rtx x, int code);
 
 extern void k1_target_print_operand_address (FILE *file, rtx x);
@@ -115,6 +113,8 @@ extern int k1_legitimize_reload_address (rtx *ad, int opnum, int type);
 
 extern bool k1_float_fits_bits (const REAL_VALUE_TYPE *r, unsigned bitsz,
 				enum machine_mode mode);
+
+extern HOST_WIDE_INT k1_initial_elimination_offset (int, int);
 
 extern GTY (()) rtx k1_sync_reg_rtx;
 extern GTY (()) rtx k1_link_reg_rtx;
