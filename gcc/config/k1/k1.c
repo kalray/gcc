@@ -100,6 +100,125 @@ static int k1_flag_var_tracking;
 /* Which arch are we scheduling for */
 enum attr_arch k1_arch_schedule;
 
+/* Information about a function's frame layout.  */
+struct GTY (()) k1_frame_info
+{
+  /* The size of the frame in bytes.  */
+  HOST_WIDE_INT total_size;
+
+  /* Bit X is set if the function saves or restores GPR X.  */
+  unsigned int mask;
+
+  /* How much the GPR save/restore routines adjust sp (or 0 if unused).  */
+  unsigned save_libcall_adjustment;
+
+  /* Offsets of save area from frame bottom */
+  HOST_WIDE_INT gp_sp_offset;
+
+  /* Offset of virtual frame pointer from stack pointer/frame bottom */
+  HOST_WIDE_INT frame_pointer_offset;
+
+  /* /\* Offset of hard frame pointer from stack pointer/frame bottom *\/ */
+  /* HOST_WIDE_INT hard_frame_pointer_offset; */
+
+  /* The offset of arg_pointer_rtx from the bottom of the frame.  */
+  HOST_WIDE_INT arg_pointer_offset;
+};
+
+struct GTY (()) machine_function
+{
+  char save_reg[FIRST_PSEUDO_REGISTER];
+
+  k1_frame_info frame;
+  //    HOST_WIDE_INT frame_size;
+
+  bool need_rodata_rtx;
+  rtx rodata_rtx;
+  rtx stack_check_block_label;
+  rtx stack_check_block_seq, stack_check_block_last;
+  vec<fake_SC_t, va_gc> *fake_SC_registers;
+  bool gp_initialized;
+};
+
+/* K1 frame info
+
+     +-------------------------------+
+     |                               |
+     |  incoming stack arguments     |
+     |                               |
+     +-------------------------------+ <---- frame pointer
+     |                               |
+     | local variable                |
+     |                               |
+     +-------------------------------+
+     |                               |
+     | callee-saved register         |
+     |                               |
+     +-------------------------------+
+     | RA                            |
+     +-------------------------------+
+     | dynamic allocation            |
+     +-------------------------------+
+     |                               |
+     | outgoing stack arguments      |
+     |                               |
+     +-------------------------------+
+     |                               |
+     | scratch area                  |
+     |                               |
+     +-------------------------------+
+
+ */
+
+enum spill_action
+{
+  SPILL_COMPUTE_SIZE,
+  SPILL_SAVE,
+  SPILL_RESTORE
+};
+static int k1_spill (enum spill_action action);
+
+static void
+k1_compute_frame_info (void)
+{
+  struct k1_frame_info *frame;
+  HOST_WIDE_INT offset;
+
+  frame = &cfun->machine->frame;
+  memset (frame, 0, sizeof (*frame));
+
+  if (flag_pic && crtl->uses_pic_offset_table)
+    {
+      gcc_unreachable ();
+    }
+  else if (TARGET_GPREL)
+    {
+      gcc_unreachable ();
+    }
+
+  /* At the bottom of the frame are any outgoing stack arguments. */
+  offset = crtl->outgoing_args_size;
+
+  /* Next are local stack variables. */
+  offset += K1_STACK_ALIGN (get_frame_size ());
+
+  /* saved registers */
+  offset += k1_spill (SPILL_COMPUTE_SIZE);
+
+  /* push arg registers not used, align result on 16bits */
+  /* if (cfun->stdarg && crtl->args.info < K1C_ARG_REG_SLOTS) */
+  /*   frame_size += UNITS_PER_WORD * ((K1C_ARG_REG_SLOTS - crtl->args.info + 1)
+   * & ~1); */
+
+  /* Next is the callee-allocated area for pretend stack arguments.  */
+  offset += crtl->args.pretend_args_size;
+
+  /* Frame pointer always points at beg of frame */
+  frame->frame_pointer_offset = offset;
+
+  frame->total_size = offset;
+}
+
 // FIXME AUTO PRF DISABLED
 // static const char *prf_reg_names[] = { K1C_K1PE_PRF_REGISTER_NAMES };
 /* Implement HARD_REGNO_MODE_OK.  */
@@ -1880,28 +1999,24 @@ k1_expand_stack_check_allocate_stack (rtx target, rtx adjust)
   emit_label (jump_over);
 }
 
+/* Return TRUE if REGNO should be saves in the prologue of current function */
 static bool
-should_be_saved (int regno)
+should_be_saved_in_prologue (int regno)
 {
-  return df_regs_ever_live_p (regno) && !call_really_used_regs[regno]
+  return df_regs_ever_live_p (regno)	  // reg is used
+	 && !call_really_used_regs[regno] // reg is callee-saved
 	 && (regno == K1C_RETURN_POINTER_REGNO || !fixed_regs[regno]);
 }
-
-enum spill_action
-{
-  SPILL_COMPUTE_SIZE,
-  SPILL_SAVE,
-  SPILL_RESTORE
-};
 
 static void
 k1_emit_single_spill (int regno, enum spill_action action, int *offset,
 		      int *stack_size)
 {
   rtx reg, insn, mem, base = stack_pointer_rtx;
-  enum machine_mode spill_mode
-    = (regno == K1C_RETURN_POINTER_REGNO) ? Pmode : SImode;
-  gcc_assert (spill_mode == SImode);
+  /* enum machine_mode spill_mode = (regno == K1C_RETURN_POINTER_REGNO) ? Pmode
+   * : SImode; */
+  /* gcc_assert(spill_mode == DImode); */
+  enum machine_mode spill_mode = DImode;
 
   if (action != SPILL_COMPUTE_SIZE)
     {
@@ -2017,9 +2132,8 @@ k1_spill (enum spill_action action)
 {
   int regno, spill_reg;
   int stack_size = 0, offset = K1C_SCRATCH_AREA_SIZE + crtl->outgoing_args_size;
-  char my_regs_ever_live_p[FIRST_PSEUDO_REGISTER];
+  bool my_regs_ever_live_p[FIRST_PSEUDO_REGISTER];
   rtx insn, reg, mem;
-  char *save_reg;
   tree attr = DECL_ATTRIBUTES (current_function_decl);
   int no_save = lookup_attribute ("no_save_regs", attr) != NULL;
   int alone = -1, free_pair = -1;
@@ -2038,16 +2152,16 @@ k1_spill (enum spill_action action)
 	}
     }
 
-  save_reg = my_regs_ever_live_p;
-
   for (regno = 0; regno < FIRST_PSEUDO_REGISTER; regno++)
     {
       if ((!no_save || regno == K1C_RETURN_POINTER_REGNO)
-	  && should_be_saved (regno))
+	  && should_be_saved_in_prologue (regno))
 	{
 
+	  // FIXME AUTO: pair spilling needs to be reworked with 64bit regfile.
 	  enum machine_mode spill_mode
-	    = (REGNO_REG_CLASS (regno) == SRF64_REGS) ? DImode : SImode;
+	    = DImode; // (REGNO_REG_CLASS (regno) == SRF64_REGS) ? DImode :
+		      // SImode;
 	  // == K1B_RETURN_POINTER_REGNO) ? Pmode : SImode;
 
 	  /* Try to find a free scratch reg */
@@ -2055,33 +2169,40 @@ k1_spill (enum spill_action action)
 	    {
 
 	      bool grf_free
-		= !save_reg[spill_reg] // spill_reg not used in func (as scratch
-				       // or for computation)
-		  && !save_reg[K1C_RETURN_POINTER_REGNO] // $ra not saved
+		= !my_regs_ever_live_p[spill_reg] // spill_reg not used in func
+						  // (as scratch or for
+						  // computation)
+		  && !my_regs_ever_live_p[K1C_RETURN_POINTER_REGNO] // $ra not
+								    // yet saved
 		  && call_used_regs[spill_reg] // spill_reg is caller saved
 		  && !fixed_regs[spill_reg];
 
 	      bool prf_free
 		= grf_free && (regno % 2 == 0)
 		  && (spill_reg + 1) < K1C_SRF_FIRST_REGNO
-		  && !save_reg[spill_reg + 1] // spill_reg not used in func (as
-					      // scratch or for computation)
+		  && !my_regs_ever_live_p[spill_reg
+					  + 1] // spill_reg not used in func (as
+					       // scratch or for computation)
 		  && call_used_regs[spill_reg + 1] // spill_reg is caller saved
 		  && !fixed_regs[spill_reg + 1];
 
-	      if ((spill_mode == SImode && grf_free)
-		  || (spill_mode == DImode && prf_free))
+	      if ((spill_mode == DImode && grf_free)
+		  // FIXME AUTO: pair spilling needs to be reworked with 64bit
+		  // regfile.
+		  || (spill_mode == TImode && prf_free))
 		{
 		  /* Generate spill to spill_reg */
-		  save_reg[spill_reg] = true;
-		  if (spill_mode == DImode)
+		  my_regs_ever_live_p[spill_reg] = true;
+		  if (spill_mode == TImode)
 		    {
-		      save_reg[spill_reg + 1] = true;
+		      my_regs_ever_live_p[spill_reg + 1] = true;
 		    }
 
 		  reg = gen_rtx_REG (spill_mode, regno);
 		  mem = gen_rtx_REG (spill_mode, spill_reg);
 
+		  // FIXME AUTO: pair spilling needs to be reworked with 64bit
+		  // regfile.
 		  if (action == SPILL_SAVE)
 		    {
 		      // GRF[spill_reg] <- GRF[regno] (or PRF/PRF if spill_mode
@@ -2096,6 +2217,7 @@ k1_spill (enum spill_action action)
 		      insn = emit_move_insn (reg, mem);
 		    }
 
+		  // no need to spill on the stack, skip.
 		  goto next;
 		}
 	    }
@@ -2132,9 +2254,11 @@ k1_spill (enum spill_action action)
 
 	  /* Can we spill this register and the following one
 	     together or is it a SRF64 (ie. $ra in 64bits) spill ? */
-	  if ((regno % 2 == 0 && regno + 1 < FIRST_PSEUDO_REGISTER
-	       && should_be_saved (regno + 1))
-	      || spill_mode == DImode)
+	  // FIXME AUTO: pair spilling needs to be reworked with 64bit regfile.
+	  if (0
+		&& (regno % 2 == 0 && regno + 1 < FIRST_PSEUDO_REGISTER
+		    && should_be_saved_in_prologue (regno + 1))
+	      || spill_mode == TImode)
 	    {
 	      k1_emit_pair_spill (regno, action, &offset, &stack_size);
 	      if (free_pair < 0 && !fixed_regs[regno] && !fixed_regs[regno + 1]
@@ -2212,7 +2336,7 @@ k1_spill (enum spill_action action)
   return stack_size;
 }
 
-HOST_WIDE_INT
+static HOST_WIDE_INT
 k1_frame_size (void)
 {
   HOST_WIDE_INT var_size = get_frame_size ();
@@ -2226,8 +2350,62 @@ k1_frame_size (void)
   return res;
 }
 
+/* Implement INITIAL_ELIMINATION_OFFSET.  FROM is either the frame pointer
+   or argument pointer.  TO is either the stack pointer or frame
+   pointer.  */
+
+HOST_WIDE_INT
+k1_initial_elimination_offset (int from, int to)
+{
+  HOST_WIDE_INT src, dest;
+  k1_compute_frame_info ();
+
+  /* Should never have anything else than ARG or FRAME */
+  if (from != ARG_POINTER_REGNUM && from != FRAME_POINTER_REGNUM)
+    gcc_unreachable ();
+
+  if (to == FRAME_POINTER_REGNUM)
+    {
+      return 0;
+    }
+  else if (to == STACK_POINTER_REGNUM)
+    {
+      return cfun->machine->frame.frame_pointer_offset;
+    }
+  else
+    {
+      gcc_unreachable ();
+    }
+}
+
 void
 k1_expand_prologue (void)
+{
+  k1_compute_frame_info ();
+  struct k1_frame_info *frame = &cfun->machine->frame;
+  HOST_WIDE_INT size = frame->total_size;
+  rtx insn;
+
+  if (size > 0)
+    {
+      insn
+	= gen_add3_insn (stack_pointer_rtx, stack_pointer_rtx, GEN_INT (-size));
+      RTX_FRAME_RELATED_P (emit_insn (insn)) = 1;
+    }
+
+  /* Save registers */
+  k1_spill (SPILL_SAVE);
+
+  if (frame_pointer_needed)
+    {
+      insn = gen_add3_insn (frame_pointer_rtx, stack_pointer_rtx,
+			    GEN_INT (frame->frame_pointer_offset));
+      RTX_FRAME_RELATED_P (emit_insn (insn)) = 1;
+    }
+}
+
+void
+old_k1_expand_prologue (void)
 {
   HOST_WIDE_INT frame_size = k1_frame_size ();
   rtx insn;
@@ -2273,12 +2451,16 @@ k1_expand_prologue (void)
       emit_move_insn (pic_offset_table_rtx, k1_data_start_symbol);
     }
 
-  cfun->machine->frame_size = frame_size;
+  cfun->machine->frame.total_size = frame_size;
 
+  /* Incoming args handling */
+
+  /* push arg registers not used, align result on 16bits */
   if (cfun->stdarg && crtl->args.info < K1C_ARG_REG_SLOTS)
     frame_size
       += UNITS_PER_WORD * ((K1C_ARG_REG_SLOTS - crtl->args.info + 1) & ~1);
 
+  /* callee needs to pretend this has been pushed by caller */
   frame_size += crtl->args.pretend_args_size;
 
   if (frame_size != 0)
@@ -2331,7 +2513,10 @@ k1_expand_prologue (void)
 
   if (frame_pointer_needed)
     {
-      INITIAL_FRAME_POINTER_OFFSET (frame_size);
+      // FIXME AUTO: This resolves to k1_frame_size()
+      frame_size
+	= k1_frame_size () + K1C_SCRATCH_AREA_SIZE - STARTING_FRAME_OFFSET;
+      /* INITIAL_FRAME_POINTER_OFFSET (frame_size); */
       insn = GEN_INT (frame_size);
       insn = emit_insn (gen_add (frame_pointer_rtx, stack_pointer_rtx, insn));
       RTX_FRAME_RELATED_P (insn) = 1;
@@ -2341,7 +2526,32 @@ k1_expand_prologue (void)
 void
 k1_expand_epilogue (void)
 {
-  HOST_WIDE_INT frame_size = cfun->machine->frame_size;
+  struct k1_frame_info *frame = &cfun->machine->frame;
+  HOST_WIDE_INT frame_size = frame->total_size;
+  rtx insn;
+
+  if (frame_pointer_needed)
+    {
+      insn = emit_insn (gen_add3_insn (stack_pointer_rtx, frame_pointer_rtx,
+				       GEN_INT (-frame->frame_pointer_offset)));
+      RTX_FRAME_RELATED_P (insn) = 1;
+    }
+
+  k1_spill (SPILL_RESTORE);
+
+  if (frame_size != 0)
+    {
+      insn = GEN_INT (frame_size);
+      insn = emit_insn (
+	gen_add3_insn (stack_pointer_rtx, stack_pointer_rtx, insn));
+      RTX_FRAME_RELATED_P (insn) = 1;
+    }
+}
+
+void
+old_k1_expand_epilogue (void)
+{
+  HOST_WIDE_INT frame_size = cfun->machine->frame.total_size;
   rtx insn;
   rtx (*gen_add) (rtx target, rtx op1, rtx op2)
     = TARGET_64 ? gen_adddi3 : gen_addsi3;
@@ -2349,7 +2559,9 @@ k1_expand_epilogue (void)
   if (frame_pointer_needed)
     {
       int frame_ptr_offset;
-      INITIAL_FRAME_POINTER_OFFSET (frame_ptr_offset);
+      frame_ptr_offset
+	= k1_frame_size () + K1C_SCRATCH_AREA_SIZE - STARTING_FRAME_OFFSET;
+      // INITIAL_FRAME_POINTER_OFFSET (frame_ptr_offset);
       insn = emit_insn (gen_add (stack_pointer_rtx, frame_pointer_rtx,
 				 GEN_INT (-frame_ptr_offset)));
       RTX_FRAME_RELATED_P (insn) = 1;
@@ -9830,3 +10042,5 @@ k1_profile_hook (void)
 #define TARGET_ASM_FILE_START k1_file_start
 
 struct gcc_target targetm = TARGET_INITIALIZER;
+
+#include "gt-k1.h"

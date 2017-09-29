@@ -529,11 +529,11 @@
 
    If ARGS_GROW_DOWNWARD, this is the offset to the location above the
    first argument's address. */
-#define FIRST_PARM_OFFSET(funcdecl)                                            \
-  (((cfun->stdarg && crtl->args.info < K1C_ARG_REG_SLOTS)                      \
-      ? (UNITS_PER_WORD * ((K1C_ARG_REG_SLOTS - crtl->args.info + 1) & ~1))    \
-      : 0)                                                                     \
-   + STARTING_FRAME_OFFSET)
+// FIXME AUTO: Used a more simple value. Maybe wrong.
+//#define FIRST_PARM_OFFSET(funcdecl) (((cfun->stdarg && crtl->args.info <
+//K1C_ARG_REG_SLOTS)? (UNITS_PER_WORD * ((K1C_ARG_REG_SLOTS - crtl->args.info +
+//1) & ~1)): 0) + STARTING_FRAME_OFFSET)
+#define FIRST_PARM_OFFSET(funcdecl) (STARTING_FRAME_OFFSET)
 
 /* A C expression whose value is RTL representing the value of the
    return address for the frame count steps up from the current frame,
@@ -546,7 +546,8 @@
    the return address of other frames. */
 #define RETURN_ADDR_RTX(COUNT, FRAMEADDR) k1_return_addr_rtx (COUNT, FRAMEADDR)
 
-#define FRAME_ADDR_RTX(rtx) plus_constant (Pmode, rtx, K1C_SCRATCH_AREA_SIZE)
+/* FIXME AUTO: Disable FRAME_ADDR_RTX macro. Maybe this is wrong  */
+//#define FRAME_ADDR_RTX(rtx) plus_constant (Pmode, rtx, K1C_SCRATCH_AREA_SIZE)
 
 #define DWARF2_UNWIND_INFO 1
 #define DWARF2_ASM_LINE_DEBUG_INFO 1
@@ -568,6 +569,9 @@
 #define INCOMING_RETURN_ADDR_RTX gen_rtx_REG (Pmode, K1C_RETURN_POINTER_REGNO)
 
 #define DBX_REGISTER_NUMBER(NUM) (NUM)
+
+// FIXME AUTO: Add DWARF_FRAME_REGNUM macro, untested, unsure.
+#define DWARF_FRAME_REGNUM(REGNO) DBX_REGISTER_NUMBER (REGNO)
 
 #define DWARF_FRAME_RETURN_COLUMN DBX_REGISTER_NUMBER (K1C_RETURN_POINTER_REGNO)
 
@@ -659,6 +663,17 @@
 #define STATIC_CHAIN_REGNUM K1C_STATIC_POINTER_REGNO
 
 /* ********** Elimination ********** */
+#define ELIMINABLE_REGS                                                        \
+  {                                                                            \
+    {ARG_POINTER_REGNUM, STACK_POINTER_REGNUM},                                \
+      {ARG_POINTER_REGNUM, FRAME_POINTER_REGNUM},                              \
+    {                                                                          \
+      FRAME_POINTER_REGNUM, STACK_POINTER_REGNUM                               \
+    }                                                                          \
+  }
+
+#define INITIAL_ELIMINATION_OFFSET(FROM, TO, OFFSET)                           \
+  (OFFSET) = k1_initial_elimination_offset (FROM, TO)
 
 /* A C statement to store in the variable depth-var the difference
    between the frame pointer and the stack pointer values immediately
@@ -670,8 +685,9 @@
    need not be defined. Otherwise, it must be defined even if
    TARGET_FRAME_POINTER_REQUIRED always returns true; in that case,
    you may set depth-var to anything. */
-#define INITIAL_FRAME_POINTER_OFFSET(depth_var)                                \
-  (depth_var) = k1_frame_size () + K1C_SCRATCH_AREA_SIZE - STARTING_FRAME_OFFSET
+/* #define INITIAL_FRAME_POINTER_OFFSET(depth_var)	\ */
+/*     (depth_var) = k1_frame_size() + K1C_SCRATCH_AREA_SIZE -
+ * STARTING_FRAME_OFFSET */
 
 /* ********** Stack Arguments ********** */
 
@@ -1238,6 +1254,9 @@ int k1_adjust_insn_length (rtx insn, int length);
 
 #define STACK_CHECK_BUILTIN 1
 
+/* ABI requires 16-byte alignment. */
+#define K1_STACK_ALIGN(LOC) (((LOC) + 7) & -8)
+
 #ifndef IN_LIBGCC2
 
 typedef struct GTY (()) fake_SC
@@ -1246,19 +1265,6 @@ typedef struct GTY (()) fake_SC
   rtx low, low_insn;
   rtx high, high_insn;
 } fake_SC_t;
-
-struct GTY (()) machine_function
-{
-  char save_reg[FIRST_PSEUDO_REGISTER];
-  HOST_WIDE_INT frame_size;
-
-  bool need_rodata_rtx;
-  rtx rodata_rtx;
-  rtx stack_check_block_label;
-  rtx stack_check_block_seq, stack_check_block_last;
-  vec<fake_SC_t, va_gc> *fake_SC_registers;
-  bool gp_initialized;
-};
 
 extern GTY (()) rtx k1_sync_reg_rtx;
 extern GTY (()) rtx k1_link_reg_rtx;
