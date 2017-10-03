@@ -686,9 +686,8 @@ extern float __builtin_k1_fmulrn (float op0, float op1);
 /* FMULRNWP */
 /* FMULWD */
 /* FMULWP */
-/* FNARROW */
-/* FNARROWH */
-/* FNARROWHWP */
+/* FNARROWD */
+/* FNARROWW */
 /* FNEG */
 /* FNEGD */
 /* FNEGWP */
@@ -720,12 +719,8 @@ extern float __builtin_k1_fsisr (float);
 extern double __builtin_k1_fsisrd (double);
 /* FSISRWP */
 /* FWIDENB */
-extern float __builtin_k1_fwidenb (unsigned int);
-/* FWIDENBWP */
-/* FWIDEND */
-/* FWIDENT */
-extern float __builtin_k1_fwident (unsigned int);
-/* FWIDENTWP */
+/* FWIDENLWP */
+/* FWIDENMWP */
 
 /*
  * Other Builtin Functions
