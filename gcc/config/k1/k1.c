@@ -3154,12 +3154,12 @@ enum k1_builtin
   K1_BUILTIN_WRITETLB,
   K1_BUILTIN_SAT,
   K1_BUILTIN_SATD,
-  K1_BUILTIN_FWIDENBHW,
-  K1_BUILTIN_FWIDENBHWP,
-  K1_BUILTIN_FWIDENTHW,
-  K1_BUILTIN_FWIDENTHWP,
-  K1_BUILTIN_FNARROWHW,
-  K1_BUILTIN_FNARROWHWP,
+  K1_BUILTIN_FWIDENBW,
+  K1_BUILTIN_FWIDENLWP,
+  K1_BUILTIN_FWIDENTW,
+  K1_BUILTIN_FWIDENMWP,
+  K1_BUILTIN_FNARROWWH,
+  K1_BUILTIN_FNARROWDWP,
 
   K1_BUILTIN_SRFSIZE,
 
@@ -3452,15 +3452,15 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (SYNCGROUP, "syncgroup", VOID, uintSI);
   ADD_K1_BUILTIN (WRITETLB, "writetlb", VOID);
 
-  ADD_K1_BUILTIN (FWIDENBHW, "fwidenbhw", floatSF, uintSI);
-  ADD_K1_BUILTIN (FWIDENTHW, "fwidenthw", floatSF, uintSI);
+  ADD_K1_BUILTIN (FWIDENBW, "fwidenbw", floatSF, uintSI);
+  ADD_K1_BUILTIN (FWIDENTW, "fwidentw", floatSF, uintSI);
 
   /* FIXME AUTO: disabling vector support */
-  /* ADD_K1_BUILTIN (FWIDENBWP,  "fwidenbwp", vect2SF , uintDI); */
-  /* ADD_K1_BUILTIN (FWIDENTWP,  "fwidentwp", vect2SF , uintDI); */
-  /* ADD_K1_BUILTIN (FNARROWHWP,  "fnarrowhwp", vect2SI , vect2SF); */
+  /* ADD_K1_BUILTIN (FWIDENLWP,  "fwidenlwp", vect2SF , uintDI); */
+  /* ADD_K1_BUILTIN (FWIDENMWP,  "fwidenmwp", vect2SF , uintDI); */
+  /* ADD_K1_BUILTIN (FNARROWDWP,  "fnarrowdwp", vect2SI , vect2SF); */
 
-  ADD_K1_BUILTIN (FNARROWHW, "fnarrowhw", uintHI, floatSF);
+  ADD_K1_BUILTIN (FNARROWWH, "fnarrowwh", uintHI, floatSF);
 
   ADD_K1_BUILTIN (SRFSIZE, "srfsize", intSI, intSI);
 }
@@ -5813,7 +5813,7 @@ k1_expand_builtin_fwiden (rtx target, tree args, int low_bits)
 /* } */
 
 static rtx
-k1_expand_builtin_fnarrowhw (rtx target, tree args)
+k1_expand_builtin_fnarrowwh (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
 
@@ -5832,7 +5832,7 @@ k1_expand_builtin_fnarrowhw (rtx target, tree args)
 
 /* FIXME AUTO: disabling vector support */
 /* static rtx */
-/* k1_expand_builtin_fnarrowhwp (rtx target, tree args) */
+/* k1_expand_builtin_fnarrowdwp (rtx target, tree args) */
 /* { */
 /*   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
 
@@ -6161,26 +6161,26 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_syncgroup (target, exp);
     case K1_BUILTIN_WRITETLB:
       return k1_expand_builtin_writetlb ();
-    case K1_BUILTIN_FWIDENBHW:
+    case K1_BUILTIN_FWIDENBW:
       return k1_expand_builtin_fwiden (target, exp, 1);
 
       /* FIXME AUTO: disabling vector support */
-      /* case K1_BUILTIN_FWIDENBWP: */
+      /* case K1_BUILTIN_FWIDENLWP: */
       /*   return k1_expand_builtin_fwiden_wp (target, exp, 1); */
 
-    case K1_BUILTIN_FWIDENTHW:
+    case K1_BUILTIN_FWIDENTW:
       return k1_expand_builtin_fwiden (target, exp, 0);
 
       /* FIXME AUTO: disabling vector support */
-      /* case K1_BUILTIN_FWIDENTWP: */
+      /* case K1_BUILTIN_FWIDENMWP: */
       /*   return k1_expand_builtin_fwiden_wp (target, exp, 0); */
 
-    case K1_BUILTIN_FNARROWHW:
-      return k1_expand_builtin_fnarrowhw (target, exp);
+    case K1_BUILTIN_FNARROWWH:
+      return k1_expand_builtin_fnarrowwh (target, exp);
 
       /* FIXME AUTO: disabling vector support */
-      /* case K1_BUILTIN_FNARROWHWP: */
-      /*   return k1_expand_builtin_fnarrowhwp (target, exp); */
+      /* case K1_BUILTIN_FNARROWDWP: */
+      /*   return k1_expand_builtin_fnarrowdwp (target, exp); */
 
     case K1_BUILTIN_SRFSIZE:
       return k1_expand_builtin_srfsize (target, exp);
