@@ -59,18 +59,18 @@ dual_divf_p0:
 	make $r41 = 0x3f800000
 	sll $r43 = $r33,24
 	;;
-	ffmsrn $r42 = $r41, $r8, $r63
+	ffms.rn.s $r42 = $r41, $r8, $r63
 	or $r44 = $r43, 9, 8
 	;;
-	ffmarn $r45 = $r63, $r42, $r63
+	ffma.rn.s $r45 = $r63, $r42, $r63
 	;;
-	ffmsrn $r46 = $r41, $r8, $r45
+	ffms.rn.s $r46 = $r41, $r8, $r45
 	;;
-	ffmarn $r47 = $r45, $r46, $r45
+	ffma.rn.s $r47 = $r45, $r46, $r45
 	;;
-	ffmsrn $r48 = $r41, $r8, $r47
+	ffms.rn.s $r48 = $r41, $r8, $r47
 	;;
-	ffmarn $r0 = $r47, $r48, $r47
+	ffma.rn.s $r0 = $r47, $r48, $r47
 	;;
 	hfxb $cs, $r44
 	;;
@@ -101,17 +101,17 @@ dual_divf_p0:
 .L16:
 	make $r49 = 0x3f800000
 	;;
-	ffmsrn $r50 = $r49, $r0, $r1
+	ffms.rn.s $r50 = $r49, $r0, $r1
 	;;
-	ffmarn $r51 = $r1, $r50, $r1
+	ffma.rn.s $r51 = $r1, $r50, $r1
 	;;
-	ffmsrn $r52 = $r49, $r0, $r51
+	ffms.rn.s $r52 = $r49, $r0, $r51
 	;;
-	ffmarn $r53 = $r51, $r52, $r51
+	ffma.rn.s $r53 = $r51, $r52, $r51
 	;;
-	ffmsrn $r54 = $r49, $r0, $r53
+	ffms.rn.s $r54 = $r49, $r0, $r53
 	;;
-	ffmarn $r0 = $r53, $r54, $r53
+	ffma.rn.s $r0 = $r53, $r54, $r53
 	ret
 	;;
 .L19:
@@ -288,13 +288,13 @@ dual_divf_p1:
 	ret
 	;;
 .L64:
-	fmulrn $r41 = $r0, $r2
+	fmul.rn.s $r41 = $r0, $r2
 	;;
-	ffmsrn $r42 = $r0, $r1, $r41
+	ffms.rn.s $r42 = $r0, $r1, $r41
 	;;
-	ffmarn $r43 = $r41, $r42, $r2
+	ffma.rn.s $r43 = $r41, $r42, $r2
 	;;
-	ffmsrn $r1 = $r0, $r1, $r43
+	ffms.rn.s $r1 = $r0, $r1, $r43
 	;;
 	ffma $r3 = $r43, $r1, $r2
 	;;

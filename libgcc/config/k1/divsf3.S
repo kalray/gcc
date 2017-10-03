@@ -7,28 +7,28 @@ __divsf3:
 	make $r8 = 0x3f800000
 	;;
 	copy $r0 = $r4
-	ffmsrn $r32 = $r8, $r1, $r4
+	ffms.rn.s $r32 = $r8, $r1, $r4
 	;;
 	cb.even $r4, .specialCases
 	;;
 .standardCase:
-	ffmarn $r9 = $r4, $r32, $r4
+	ffma.rn.s $r9 = $r4, $r32, $r4
 	;;
-	ffmsrn $r32 = $r8, $r1, $r9
+	ffms.rn.s $r32 = $r8, $r1, $r9
 	;;
-	ffmarn $r6 = $r9, $r32, $r9
+	ffma.rn.s $r6 = $r9, $r32, $r9
 	;;
-	ffmsrn $r7 = $r8, $r1, $r6
+	ffms.rn.s $r7 = $r8, $r1, $r6
 	;;
-	ffmarn $r4 = $r6, $r7, $r6
+	ffma.rn.s $r4 = $r6, $r7, $r6
 	;;
-	fmulrn $r5 = $r3, $r4
+	fmul.rn.s $r5 = $r3, $r4
 	;;
-	ffmsrn $r2 = $r3, $r1, $r5
+	ffms.rn.s $r2 = $r3, $r1, $r5
 	;;
-	ffmarn $r0 = $r5, $r2, $r4
+	ffma.rn.s $r0 = $r5, $r2, $r4
 	;;
-	ffmsrn $r3 = $r3, $r1, $r0
+	ffms.rn.s $r3 = $r3, $r1, $r0
 	;;
 	ffma $r0 = $r0, $r3, $r4
 	ret
@@ -96,25 +96,25 @@ __divsf3:
 	make $r61 = 0x3f800000
 	sbf $r34 = $r9, $r34
 	;;
-	ffmsrn $r0 = $r61, $r4, $r7
+	ffms.rn.s $r0 = $r61, $r4, $r7
 	;;
-	ffmarn $r62 = $r7, $r0, $r7
+	ffma.rn.s $r62 = $r7, $r0, $r7
 	;;
-	ffmsrn $r63 = $r61, $r4, $r62
+	ffms.rn.s $r63 = $r61, $r4, $r62
 	;;
-	ffmarn $r59 = $r62, $r63, $r62
+	ffma.rn.s $r59 = $r62, $r63, $r62
 	;;
-	ffmsrn $r60 = $r61, $r4, $r59
+	ffms.rn.s $r60 = $r61, $r4, $r59
 	;;
-	ffmarn $r7 = $r59, $r60, $r59
+	ffma.rn.s $r7 = $r59, $r60, $r59
 	;;
-	fmulrn $r58 = $r5, $r7
+	fmul.rn.s $r58 = $r5, $r7
 	;;
-	ffmsrn $r57 = $r5, $r4, $r58
+	ffms.rn.s $r57 = $r5, $r4, $r58
 	;;
-	ffmarn $r55 = $r58, $r57, $r7
+	ffma.rn.s $r55 = $r58, $r57, $r7
 	;;
-	ffmsrn $r56 = $r5, $r4, $r55
+	ffms.rn.s $r56 = $r5, $r4, $r55
 	;;
 	ffma $r9 = $r55, $r56, $r7
 	;;
