@@ -124,11 +124,12 @@
 #define UNITS_PER_WORD 8
 
 #define PROMOTE_MODE(MODE, UNSIGNEDP, TYPE)                                    \
-  if (GET_MODE_CLASS (MODE) == MODE_INT && GET_MODE_SIZE (MODE) < 4)           \
+  if (GET_MODE_CLASS (MODE) == MODE_INT                                        \
+      && GET_MODE_SIZE (MODE) < UNITS_PER_WORD)                                \
     {                                                                          \
-      if (MODE == QImode || MODE == HImode)                                    \
+      if ((MODE) == QImode || (MODE) == HImode || (MODE) == SImode)            \
 	{                                                                      \
-	  MODE = SImode;                                                       \
+	  (MODE) = DImode;                                                     \
 	}                                                                      \
     }
 
