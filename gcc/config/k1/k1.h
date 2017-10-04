@@ -551,6 +551,9 @@
 #define DWARF2_UNWIND_INFO 1
 #define DWARF2_ASM_LINE_DEBUG_INFO 1
 
+#undef PREFERRED_DEBUGGING_TYPE
+#define PREFERRED_DEBUGGING_TYPE DWARF2_DEBUG
+
 /* A C expression whose value is RTL representing the location of the
    incoming return address at the beginning of any function, before
    the prologue. This RTL is either a REG, indicating that the return
