@@ -60,7 +60,7 @@ double k1_fmsd(double c, double a, double b){
  /* { dg-final { scan-assembler-times "ffmsnd \\\$r0 = \\\$r1, \\\$r2" 1 } } */
   
 float ffmsrn(float a, float b, float c){
-  return __builtin_k1_ffmsrn(a, b, c);
+  return __builtin_k1_ffmswrn(a, b, c);
 }
 /* { dg-final { scan-assembler-times "ffmsw.rn.s \\\$r0 = \\\$r1, \\\$r2" 1 } } */
   
