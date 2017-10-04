@@ -3313,9 +3313,10 @@ k1_target_init_builtins (void)
    * floatDF,floatSF,floatSF,floatSF,floatSF); */
   ADD_K1_BUILTIN (FENCE, "fence", VOID);
 
-  ADD_K1_BUILTIN (FFMAW, "ffmaw", floatSF, floatSF, floatSF, floatSF);
   ADD_K1_BUILTIN (FFMAD, "ffmad", floatDF, floatDF, floatDF, floatDF);
   ADD_K1_BUILTIN (FFMADRN, "ffmadrn", floatDF, floatDF, floatDF, floatDF);
+  ADD_K1_BUILTIN (FFMAND, "ffmand", floatDF, floatDF, floatDF, floatDF);
+  ADD_K1_BUILTIN (FFMANDRN, "ffmandrn", floatDF, floatDF, floatDF, floatDF);
 
   /* FIXME AUTO: disabling vector support */
   /* ADD_K1_BUILTIN (FFMAWP,  "ffmawp",      vect2SF,vect2SF,vect2SF,vect2SF);
@@ -3323,10 +3324,11 @@ k1_target_init_builtins (void)
   /* ADD_K1_BUILTIN (FFMARNWP,"ffmarnwp",    vect2SF,vect2SF,vect2SF,vect2SF);
    */
 
+  ADD_K1_BUILTIN (FFMAW, "ffmaw", floatSF, floatSF, floatSF, floatSF);
+  ADD_K1_BUILTIN (FFMAWRN, "ffmawrn", floatSF, floatSF, floatSF, floatSF);
   ADD_K1_BUILTIN (FFMANW, "ffmanw", floatSF, floatSF, floatSF, floatSF);
-  ADD_K1_BUILTIN (FFMAND, "ffmand", floatDF, floatDF, floatDF, floatDF);
   ADD_K1_BUILTIN (FFMANWRN, "ffmanwrn", floatSF, floatSF, floatSF, floatSF);
-  ADD_K1_BUILTIN (FFMANDRN, "ffmandrn", floatDF, floatDF, floatDF, floatDF);
+
   ADD_K1_BUILTIN (FFMAWD, "ffmawd", floatDF, floatDF, floatSF, floatSF);
   ADD_K1_BUILTIN (FFMAWDRN, "ffmawdrn", floatDF, floatDF, floatSF, floatSF);
   ADD_K1_BUILTIN (FFMANWD, "ffmanwd", floatDF, floatDF, floatSF, floatSF);
@@ -3338,8 +3340,10 @@ k1_target_init_builtins (void)
   /* ADD_K1_BUILTIN (FFMANRNWP, "ffmanrnwp", vect2SF,vect2SF,vect2SF,vect2SF);
    */
 
-  ADD_K1_BUILTIN (FFMAWRN, "ffmarn", floatSF, floatSF, floatSF, floatSF);
   ADD_K1_BUILTIN (FFMSW, "ffmsw", floatSF, floatSF, floatSF, floatSF);
+  ADD_K1_BUILTIN (FFMSWRN, "ffmswrn", floatSF, floatSF, floatSF, floatSF);
+  ADD_K1_BUILTIN (FFMSNW, "ffmsnw", floatSF, floatSF, floatSF, floatSF);
+  ADD_K1_BUILTIN (FFMSNWRN, "ffmsnwrn", floatSF, floatSF, floatSF, floatSF);
 
   /* FIXME AUTO: disabling vector support */
   /* ADD_K1_BUILTIN (FFMSWP,  "ffmswp",      vect2SF,vect2SF,vect2SF,vect2SF);
@@ -3348,8 +3352,9 @@ k1_target_init_builtins (void)
    */
 
   ADD_K1_BUILTIN (FFMSD, "ffmsd", floatDF, floatDF, floatDF, floatDF);
-  ADD_K1_BUILTIN (FFMSNW, "ffmsnw", floatSF, floatSF, floatSF, floatSF);
-  ADD_K1_BUILTIN (FFMSNWRN, "ffmsnwrn", floatSF, floatSF, floatSF, floatSF);
+  ADD_K1_BUILTIN (FFMSDRN, "ffmsdrn", floatDF, floatDF, floatDF, floatDF);
+  ADD_K1_BUILTIN (FFMSND, "ffmsnd", floatDF, floatDF, floatDF, floatDF);
+  ADD_K1_BUILTIN (FFMSNDRN, "ffmsndrn", floatDF, floatDF, floatDF, floatDF);
 
   /* FIXME AUTO: disabling vector support */
   /* ADD_K1_BUILTIN (FFMSNWP, "ffmsnwp",     vect2SF,vect2SF,vect2SF,vect2SF);
@@ -3357,14 +3362,10 @@ k1_target_init_builtins (void)
   /* ADD_K1_BUILTIN (FFMSNRNWP,"ffmsnrnwp",  vect2SF,vect2SF,vect2SF,vect2SF);
    */
 
-  ADD_K1_BUILTIN (FFMSND, "ffmsnd", floatDF, floatDF, floatDF, floatDF);
-  ADD_K1_BUILTIN (FFMSNDRN, "ffmsndrn", floatDF, floatDF, floatDF, floatDF);
-  ADD_K1_BUILTIN (FFMSWRN, "ffmswrn", floatSF, floatSF, floatSF, floatSF);
-  ADD_K1_BUILTIN (FFMSDRN, "ffmsdrn", floatDF, floatDF, floatDF, floatDF);
-  ADD_K1_BUILTIN (FFMSNWD, "ffmsnwd", floatDF, floatDF, floatSF, floatSF);
-  ADD_K1_BUILTIN (FFMSNWDRN, "ffmsnwdrn", floatDF, floatDF, floatSF, floatSF);
   ADD_K1_BUILTIN (FFMSWD, "ffmswd", floatDF, floatDF, floatSF, floatSF);
   ADD_K1_BUILTIN (FFMSWDRN, "ffmswdrn", floatDF, floatDF, floatSF, floatSF);
+  ADD_K1_BUILTIN (FFMSNWD, "ffmsnwd", floatDF, floatDF, floatSF, floatSF);
+  ADD_K1_BUILTIN (FFMSNWDRN, "ffmsnwdrn", floatDF, floatDF, floatSF, floatSF);
 
   ADD_K1_BUILTIN (FLOAT, "float", floatSF, uintQI, intSI, uintQI);
   ADD_K1_BUILTIN (FLOATD, "floatd", floatDF, uintQI, intDI, uintQI);
