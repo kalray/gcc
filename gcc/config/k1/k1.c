@@ -111,7 +111,7 @@ k1_hard_regno_mode_ok (unsigned regno, enum machine_mode mode)
   // SI/DI -> K1C_SRF_FIRST_REGNO - K1C_SRF_LAST_REGNO => OK
   // TI    -> K1C_GRF_FIRST_REGNO - K1C_GRF_LAST_REGNO && even => OK
 
-  return (mode == SImode || mode == DImode)
+  return (GET_MODE_SIZE (mode) <= UNITS_PER_WORD)
 	 || (mode == TImode && (regno >= K1C_GRF_FIRST_REGNO)
 	     && (regno <= K1C_GRF_LAST_REGNO) && (regno % 2 == 0));
 }
