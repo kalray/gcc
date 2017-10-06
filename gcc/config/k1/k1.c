@@ -3399,10 +3399,6 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (FSISRD, "fsisrd", floatDF, floatDF);
   ADD_K1_BUILTIN (GET, "get", uintDI, intSI);
   ADD_K1_BUILTIN (GET_R, "get_r", uintDI, intSI);
-  /*
-      ADD_K1_BUILTIN (HFXB,    "hfxb",        VOID,   uintQI, intSI);
-      ADD_K1_BUILTIN (HFXT,    "hfxt",        VOID,   uintQI, intSI);
-  */
   ADD_K1_BUILTIN (WFXL, "wfxl", VOID, uintQI, intDI);
   ADD_K1_BUILTIN (WFXM, "wfxm", VOID, uintQI, intDI);
   ADD_K1_BUILTIN (IINVAL, "iinval", VOID);
@@ -3611,85 +3607,6 @@ k1_expand_builtin_srfsize (rtx target, tree args)
   emit_move_insn (target, reg_size);
 
   return target;
-}
-
-static rtx
-k1_expand_builtin_hfxb (rtx target ATTRIBUTE_UNUSED, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-  rtx arg;
-
-  if (!verify_const_int_arg (arg1, 6, false))
-    {
-      error ("__builtin_k1_hfxb expects a 6 bits immediate first argument.");
-      return NULL_RTX;
-    }
-  int regno = INTVAL (arg1) + K1C_SRF_FIRST_REGNO;
-  enum machine_mode mode = SImode;
-  rtx (*gen_hfxb_ps) (rtx op1, rtx op2, rtx op3) = gen_hfxb_ps_si;
-  rtx (*gen_hfxb) (rtx op1, rtx op2, rtx op3) = gen_hfxb_si;
-
-  if (TARGET_64 && ((REGNO_REG_CLASS (regno) == SRF64_REGS)))
-    {
-      mode = DImode;
-      gen_hfxb_ps = gen_hfxb_ps_di;
-      gen_hfxb = gen_hfxb_di;
-    }
-
-  arg = gen_rtx_REG (mode, regno);
-  arg2 = force_reg (SImode, arg2);
-
-  if (INTVAL (arg1) == K1C_PS_REGNO - K1C_SRF_FIRST_REGNO)
-    {
-      emit_insn (gen_hfxb_ps (arg, arg2, k1_sync_reg_rtx));
-    }
-  else
-    {
-      emit_insn (gen_hfxb (arg, arg2, k1_sync_reg_rtx));
-    }
-
-  return NULL_RTX;
-}
-
-static rtx
-k1_expand_builtin_hfxt (rtx target ATTRIBUTE_UNUSED, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-  rtx arg;
-
-  if (!verify_const_int_arg (arg1, 6, false))
-    {
-      error ("__builtin_k1_hfxt expects a 6 bits immediate first argument.");
-      return NULL_RTX;
-    }
-
-  int regno = INTVAL (arg1) + K1C_SRF_FIRST_REGNO;
-  enum machine_mode mode = SImode;
-  rtx (*gen_hfxt_ps) (rtx op1, rtx op2, rtx op3) = gen_hfxt_ps_si;
-  rtx (*gen_hfxt) (rtx op1, rtx op2, rtx op3) = gen_hfxt_si;
-
-  if (TARGET_64 && ((REGNO_REG_CLASS (regno) == SRF64_REGS)))
-    {
-      mode = DImode;
-      gen_hfxt_ps = gen_hfxt_ps_di;
-      gen_hfxt = gen_hfxt_di;
-    }
-
-  arg = gen_rtx_REG (mode, regno);
-  arg2 = force_reg (SImode, arg2);
-
-  if (INTVAL (arg1) == K1C_PS_REGNO - K1C_SRF_FIRST_REGNO)
-    {
-      emit_insn (gen_hfxt_ps (arg, arg2, k1_sync_reg_rtx));
-    }
-  else
-    {
-      emit_insn (gen_hfxt (arg, arg2, k1_sync_reg_rtx));
-    }
-
-  return NULL_RTX;
 }
 
 static rtx
@@ -6063,12 +5980,6 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_get (target, exp);
     case K1_BUILTIN_GET_R:
       return k1_expand_builtin_get_r (target, exp);
-      /*
-	  case K1_BUILTIN_HFXB:
-	      return k1_expand_builtin_hfxb (target, exp);
-	  case K1_BUILTIN_HFXT:
-	      return k1_expand_builtin_hfxt (target, exp);
-      */
     case K1_BUILTIN_WFXL:
       return k1_expand_builtin_wfxl (target, exp);
     case K1_BUILTIN_WFXM:
