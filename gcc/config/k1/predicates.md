@@ -288,6 +288,11 @@
  (ior (match_test "satisfies_constraint_J10(op)")
       (match_test "satisfies_constraint_U37(op)")))
 
+(define_predicate "reg_or_unsigned_mul_immediate_37"
+  (ior (match_operand 0 "register_operand")
+       (match_test "satisfies_constraint_J10(op)")
+       (match_test "satisfies_constraint_U37(op)")))
+
 (define_predicate "unsigned_mul_reg_or_immediate"
   (ior (match_operand 0 "register_operand")
        (and (match_code "const_int")
