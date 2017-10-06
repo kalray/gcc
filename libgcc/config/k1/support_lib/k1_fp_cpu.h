@@ -20,9 +20,7 @@ enum __k1_fpu_rounding_mode {
 static __inline__ void __k1_fpu_set_rounding_mode(enum __k1_fpu_rounding_mode mode)
 {
     int offset = __builtin_k1_ctz (_K1_HFX_CS_RM);
-    __builtin_k1_hfxb (_K1_SFR_CS, 
-		       ((mode << offset) & _K1_HFX_CS_RM) << 16 
-		       | _K1_HFX_CS_RM);
+    __builtin_k1_wfxl(_K1_SFR_CS, (long long)((mode << offset) & _K1_HFX_CS_RM) << 32 | _K1_HFX_CS_RM);
     __builtin_k1_barrier ();
 }
 #endif
@@ -62,8 +60,7 @@ enum __k1_fpu_exceptions {
  */
 static __inline__ void __k1_fpu_raise_exceptions(int excepts)
 {
-    __builtin_k1_hfxb (_K1_SFR_CS, 
-		       (excepts & _K1_FPU_ALL_EXCEPTS) << 16);
+    __builtin_k1_wfxl(_K1_SFR_CS, (long long)(excepts & _K1_FPU_ALL_EXCEPTS) << 32);
 }
 #endif
 
@@ -74,7 +71,7 @@ static __inline__ void __k1_fpu_raise_exceptions(int excepts)
  */
 static __inline__ void __k1_fpu_clear_exceptions(int excepts)
 {
-    __builtin_k1_hfxb (_K1_SFR_CS, excepts & _K1_FPU_ALL_EXCEPTS);
+    __builtin_k1_wfxl(_K1_SFR_CS, (long long)(excepts & _K1_FPU_ALL_EXCEPTS));
 }
 #endif /* __k1_fpu_clear_exceptions */
 
