@@ -59,10 +59,22 @@ extern void __builtin_k1_barrier (void);
 /* GET */
 extern unsigned int __builtin_k1_get (int);
 /* GOTO */
-/* HFXB */
-extern void __builtin_k1_hfxb (unsigned char, int);
-/* HFXT */
-extern void __builtin_k1_hfxt (unsigned char, int);
+/* WFXL */
+extern void __builtin_k1_wfxl (unsigned char, long long);
+static inline void
+__builtin_k1_hfxb (unsigned char sfr, unsigned argument)
+{
+  __builtin_k1_wfxl (sfr, ((unsigned long long) (argument >> 16) << 32)
+			    | ((unsigned long long) (argument & 0xFFFF)));
+}
+static inline void
+__builtin_k1_hfxt (unsigned char sfr, unsigned argument)
+{
+  __builtin_k1_wfxl (sfr, ((unsigned long long) (argument >> 16) << 48)
+			    | ((unsigned long long) (argument & 0xFFFF) << 16));
+}
+/* WFXM */
+extern void __builtin_k1_wfxm (unsigned char, long long);
 /* ICALL */
 /* IGET */
 /* IGOTO */
@@ -749,24 +761,6 @@ extern unsigned long long __builtin_k1_getd_r (int);
     __builtin_compile_time_check ();                                           \
   }
 #endif /* defined(__open64__) || defined(__clang__) */
-
-#define __builtin_k1_hfx(arg1, arg2, arg3, arg4)                               \
-  {                                                                            \
-    switch (arg1)                                                              \
-      {                                                                        \
-      case 0:                                                                  \
-	__builtin_k1_hfxb (arg2,                                               \
-			   ((int) (arg3) << 16) | ((int) (arg4) &0xffff));     \
-	break;                                                                 \
-      case 1:                                                                  \
-	__builtin_k1_hfxt (arg2,                                               \
-			   ((int) (arg3) << 16) | ((int) (arg4) &0xffff));     \
-	break;                                                                 \
-      default:                                                                 \
-	__builtin_error (                                                      \
-	  "__builtin_k1_hfx expects a 1 bits immediate first argument.");      \
-      }                                                                        \
-  }
 
 /* xord
  *
