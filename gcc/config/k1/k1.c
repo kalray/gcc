@@ -3103,17 +3103,12 @@ enum k1_builtin
   K1_BUILTIN_FSISRD,
   K1_BUILTIN_GET,
   K1_BUILTIN_GET_R,
-#if 0
-    K1_BUILTIN_HFX,
-#endif
-  K1_BUILTIN_HFXB,
-#if 0
-    K1_BUILTIN_HFXB_PS,
-#endif
-  K1_BUILTIN_HFXT,
-#if 0
-    K1_BUILTIN_HFXT_PS,
-#endif
+  /*
+      K1_BUILTIN_HFXB,
+      K1_BUILTIN_HFXT,
+  */
+  K1_BUILTIN_WFXL,
+  K1_BUILTIN_WFXM,
   K1_BUILTIN_IINVAL,
   K1_BUILTIN_IINVALS,
   K1_BUILTIN_IINVALL,
@@ -3135,10 +3130,7 @@ enum k1_builtin
   /* FIXME AUTO: disabling vector support */
   /* K1_BUILTIN_SBFHP, */
   K1_BUILTIN_SBMM8,
-  K1_BUILTIN_SBMM8_D,
-  /* K1_BUILTIN_SBMM8L, */
   K1_BUILTIN_SBMMT8,
-  K1_BUILTIN_SBMMT8_D,
   K1_BUILTIN_SCALL,
   K1_BUILTIN_SET,
   K1_BUILTIN_SET_PS,
@@ -3407,11 +3399,12 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (FSISRD, "fsisrd", floatDF, floatDF);
   ADD_K1_BUILTIN (GET, "get", uintDI, intSI);
   ADD_K1_BUILTIN (GET_R, "get_r", uintDI, intSI);
-  ADD_K1_BUILTIN (HFXB, "hfxb", VOID, uintQI, intSI);
-  ADD_K1_BUILTIN (HFXT, "hfxt", VOID, uintQI, intSI);
-#if 0
-    ADD_K1_BUILTIN (HFX,     "hfx",         VOID,   uintQI, intSI, uintHI, uintHI);
-#endif
+  /*
+      ADD_K1_BUILTIN (HFXB,    "hfxb",        VOID,   uintQI, intSI);
+      ADD_K1_BUILTIN (HFXT,    "hfxt",        VOID,   uintQI, intSI);
+  */
+  ADD_K1_BUILTIN (WFXL, "wfxl", VOID, uintQI, intDI);
+  ADD_K1_BUILTIN (WFXM, "wfxm", VOID, uintQI, intDI);
   ADD_K1_BUILTIN (IINVAL, "iinval", VOID);
   ADD_K1_BUILTIN (IINVALS, "iinvals", VOID, constVoidPTR);
   ADD_K1_BUILTIN (IINVALL, "iinvall", VOID, constVoidPTR);
@@ -3433,9 +3426,7 @@ k1_target_init_builtins (void)
   /* FIXME AUTO: disabling vector support */
   /* ADD_K1_BUILTIN (SBFHP,   "sbfhp",       intSI,  intSI,  intSI); */
   ADD_K1_BUILTIN (SBMM8, "sbmm8", uintDI, uintDI, uintDI);
-  ADD_K1_BUILTIN (SBMM8_D, "sbmm8_d", uintDI, uintDI, uintDI);
   ADD_K1_BUILTIN (SBMMT8, "sbmmt8", uintDI, uintDI, uintDI);
-  ADD_K1_BUILTIN (SBMMT8_D, "sbmmt8_d", uintDI, uintDI, uintDI);
   /* FIXME AUTO: sat does not exist in k1c yet  */
   /* ADD_K1_BUILTIN (SAT,     "sat",         intSI,  intSI,  uintQI); */
   ADD_K1_BUILTIN (SATD, "satd", intDI, intDI, uintQI);
@@ -3701,48 +3692,53 @@ k1_expand_builtin_hfxt (rtx target ATTRIBUTE_UNUSED, tree args)
   return NULL_RTX;
 }
 
-#if 0
 static rtx
-k1_expand_builtin_hfx (rtx target ATTRIBUTE_UNUSED, tree args)
+k1_expand_builtin_wfxl (rtx target ATTRIBUTE_UNUSED, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-    rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
-    rtx arg4 = expand_normal (CALL_EXPR_ARG (args, 3));
-    rtx dest, val;
-
-    if (!verify_const_int_arg (arg1, 1, false)) {
-        error ("__builtin_k1_hfx expects a 1 bits immediate first argument.");
-        return NULL_RTX;
-    } else if (!verify_const_int_arg (arg2, 6, false)) {
-        error ("__builtin_k1_hfx expects a 6 bits immediate second argument.");
-        return NULL_RTX;
-    } else if (!verify_const_int_arg (arg3, 16, false)) {
-        error ("__builtin_k1_hfx expects a 16 bits immediate third argument.");
-        return NULL_RTX;
-    } else if (!verify_const_int_arg (arg4, 16, false)) {
-        error ("__builtin_k1_hfx expects a 16 bits immediate fourth argument.");
-        return NULL_RTX;
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  if (!verify_const_int_arg (arg1, 6, false))
+    {
+      error ("__builtin_k1_wfxl expects a 6 bits immediate first argument.");
+      return NULL_RTX;
     }
-
-    dest = gen_rtx_REG (SImode, K1C_SRF_FIRST_REGNO + INTVAL (arg2));
-    val = force_reg(SImode, GEN_INT(INTVAL(arg3)<<16 | INTVAL(arg4)));
-
-    if (INTVAL(arg2) == K1C_PS_REGNO - K1C_SRF_FIRST_REGNO) {
-        if (INTVAL(arg1) == 0)
-            emit_insn (gen_hfxb_ps (dest, val, k1_sync_reg_rtx));
-        else
-            emit_insn (gen_hfxt_ps (dest, val, k1_sync_reg_rtx));
-    } else {
-        if (INTVAL(arg1) == 0)
-            emit_insn (gen_hfxb (dest, val, k1_sync_reg_rtx));
-        else
-            emit_insn (gen_hfxt (dest, val, k1_sync_reg_rtx));
+  int regno = INTVAL (arg1) + K1C_SRF_FIRST_REGNO;
+  rtx arg = gen_rtx_REG (DImode, regno);
+  arg2 = force_reg (DImode, arg2);
+  if (INTVAL (arg1) == K1C_PS_REGNO - K1C_SRF_FIRST_REGNO)
+    {
+      emit_insn (gen_wfxl_ps (arg, arg2, k1_sync_reg_rtx));
     }
-
-    return NULL_RTX;
+  else
+    {
+      emit_insn (gen_wfxl (arg, arg2, k1_sync_reg_rtx));
+    }
+  return NULL_RTX;
 }
-#endif
+
+static rtx
+k1_expand_builtin_wfxm (rtx target ATTRIBUTE_UNUSED, tree args)
+{
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  if (!verify_const_int_arg (arg1, 6, false))
+    {
+      error ("__builtin_k1_wfxm expects a 6 bits immediate first argument.");
+      return NULL_RTX;
+    }
+  int regno = INTVAL (arg1) + K1C_SRF_FIRST_REGNO;
+  rtx arg = gen_rtx_REG (DImode, regno);
+  arg2 = force_reg (DImode, arg2);
+  if (INTVAL (arg1) == K1C_PS_REGNO - K1C_SRF_FIRST_REGNO)
+    {
+      emit_insn (gen_wfxm_ps (arg, arg2, k1_sync_reg_rtx));
+    }
+  else
+    {
+      emit_insn (gen_wfxm (arg, arg2, k1_sync_reg_rtx));
+    }
+  return NULL_RTX;
+}
 
 static rtx
 k1_expand_builtin_sbmm8 (rtx target, tree args)
@@ -6067,14 +6063,16 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_get (target, exp);
     case K1_BUILTIN_GET_R:
       return k1_expand_builtin_get_r (target, exp);
-#if 0
-    case K1_BUILTIN_HFX:
-        return k1_expand_builtin_hfx (target, exp);
-#endif
-    case K1_BUILTIN_HFXB:
-      return k1_expand_builtin_hfxb (target, exp);
-    case K1_BUILTIN_HFXT:
-      return k1_expand_builtin_hfxt (target, exp);
+      /*
+	  case K1_BUILTIN_HFXB:
+	      return k1_expand_builtin_hfxb (target, exp);
+	  case K1_BUILTIN_HFXT:
+	      return k1_expand_builtin_hfxt (target, exp);
+      */
+    case K1_BUILTIN_WFXL:
+      return k1_expand_builtin_wfxl (target, exp);
+    case K1_BUILTIN_WFXM:
+      return k1_expand_builtin_wfxm (target, exp);
     case K1_BUILTIN_INVALDTLB:
       return k1_expand_builtin_invaldtlb ();
     case K1_BUILTIN_INVALITLB:
@@ -6117,10 +6115,8 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     /* case K1_BUILTIN_SBFHP: */
     /*     return k1_expand_builtin_sbfhp (target, exp); */
     case K1_BUILTIN_SBMM8:
-    case K1_BUILTIN_SBMM8_D:
       return k1_expand_builtin_sbmm8 (target, exp);
     case K1_BUILTIN_SBMMT8:
-    case K1_BUILTIN_SBMMT8_D:
       return k1_expand_builtin_sbmmt8 (target, exp);
     case K1_BUILTIN_SET:
     case K1_BUILTIN_SET_PS:

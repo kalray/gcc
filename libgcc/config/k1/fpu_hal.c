@@ -3,7 +3,8 @@
 void
 __k1_fpu_raise_exceptions (int excepts)
 {
-  __builtin_k1_hfxb (_K1_SFR_CS, (excepts & _K1_FPU_ALL_EXCEPTS) << 16);
+  __builtin_k1_wfxl (_K1_SFR_CS, (long long) (excepts & _K1_FPU_ALL_EXCEPTS)
+				   << 32);
 }
 
 enum __k1_fpu_rounding_mode
