@@ -12,39 +12,40 @@
   "A symbol operand"
   (match_test "k1_symbol_operand(op,mode)"))
 
-(define_constraint "U02"  
-  "A signed 2-bits unsigned constant."
-  (and (match_code "const_int") 
-       (match_test "ival >= 0 && ival <= 3")))
+(define_constraint "U02"
+  "An unsigned 2-bit constant."
+  (and (match_code "const_int")
+       (match_test "UNSIGNED_INT_FITS_N_BITS (ival, 2)")))
 
 (define_constraint "U05"
-  "A signed 5-bits unsigned constant."
-  (and (match_code "const_int") 
-       (match_test "ival >= 0 && ival <= 31")))
+  "An unsigned 5-bit constant."
+  (and (match_code "const_int")
+       (match_test "UNSIGNED_INT_FITS_N_BITS (ival, 5)")))
 
 (define_constraint "U06"
-  "A signed 6-bits unsigned constant."
+  "An unsigned 6-bit constant."
   (and (match_code "const_int")
-       (match_test "ival >= 0 && ival <= 63")))
+       (match_test "UNSIGNED_INT_FITS_N_BITS (ival, 6)")))
 
 (define_constraint "U10"
-  "A signed 6-bits unsigned constant."
+  "An unsigned 10-bit constant."
   (and (match_code "const_int")
-       (match_test "ival >= 0 && ival <= 1023")))
+       (match_test "UNSIGNED_INT_FITS_N_BITS (ival, 10)")))
 
 (define_constraint "U32"
-  "A 32-bits unsigned constant."
-  (ior (and (match_code "const_int")
-            (match_test "ival >= 0 && ival <= 4294967295u"))
-       (and (match_code "const_double")
-            (match_test "hval == 0"))))
+  "An unsigned 32-bit constant."
+  (and (match_code "const_int")
+       (match_test "UNSIGNED_INT_FITS_N_BITS (ival, 32)")))
 
 (define_constraint "U37"
-  "A 37-bits unsigned constant."
-  (ior (and (match_code "const_int")
-            (match_test "ival >= 0 && ival <= 4294967295u"))
-       (and (match_code "const_double")
-            (match_test "hval >=0 && hval <= 4294967295u"))))
+  "An unsigned 37-bit constant."
+  (and (match_code "const_int")
+       (match_test "UNSIGNED_INT_FITS_N_BITS (ival, 37)")))
+
+(define_constraint "U64"
+  "An unsigned 64-bit constant."
+  (and (match_code "const_int")
+       (match_test "UNSIGNED_INT_FITS_N_BITS (ival, 64)")))
 
 (define_constraint "I10"
   "A signed 10-bit constant."
