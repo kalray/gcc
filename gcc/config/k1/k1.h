@@ -40,10 +40,6 @@
   (TEST_REGNO (num, <, 64, strict)                                             \
    || TEST_REGNO (num, ==, (K1C_MDS_REGISTERS + 1), strict))
 
-// FIXME AUTO PRF DISABLED
-/* #define IS_PRF_REGNO(num, strict)     (!(num % 2) && (TEST_REGNO(num, <, 64,
- * strict) || TEST_REGNO(num, ==, (K1C_MDS_REGISTERS+1), strict))) */
-
 /* Do not use Transactionnal Memory as it makes the linux
  * build fail */
 // FIXME AUTO COOLIDGE disable atypical define
@@ -380,8 +376,6 @@
 /* A macro whose definition is the name of the class to which a valid
    base register must belong. A base register is one used in an
    address which is the register value plus a displacement. */
-// FIXME AUTO PRF DISABLED
-/* #define BASE_REG_CLASS (TARGET_64 ? PRF_REGS : GENERAL_REGS) */
 #define BASE_REG_CLASS (GENERAL_REGS)
 
 /* A macro whose definition is the name of the class to which a valid
@@ -415,14 +409,6 @@
    #ifdef REG_OK_STRICT conditional to define the strict variant in
    that case and the non-strict variant otherwise. */
 
-// FIXME AUTO PRF DISABLED
-/* #ifdef REG_OK_STRICT */
-/* #define REGNO_OK_FOR_BASE_P(num) (TARGET_64 ? IS_PRF_REGNO(num, 1) :
- * IS_GENERAL_REGNO(num, 1)) */
-/* #else */
-/* #define REGNO_OK_FOR_BASE_P(num) (TARGET_64 ? IS_PRF_REGNO(num, 0) :
- * IS_GENERAL_REGNO(num, 0)) */
-/* #endif */
 #ifdef REG_OK_STRICT
 #define REGNO_OK_FOR_BASE_P(num) (IS_GENERAL_REGNO (num, 1))
 #else
