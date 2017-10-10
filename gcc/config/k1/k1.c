@@ -439,11 +439,12 @@ k1_legitimate_address_register_p (rtx reg, bool strict)
 {
     return (REG_P (reg)
             && IS_GENERAL_REGNO (REGNO (reg), strict)
-	    && GET_MODE(reg) == Pmode)
-        || (GET_CODE (reg) == SUBREG
-            && GET_MODE (reg) == Pmode
-            && REG_P (SUBREG_REG (reg))
-            && IS_GENERAL_REGNO (REGNO (SUBREG_REG (reg)), strict));
+	    && GET_MODE(reg) == Pmode);
+    // FIXME AUTO: subreg in MEM
+        /* || (GET_CODE (reg) == SUBREG */
+        /*     && GET_MODE (reg) == Pmode */
+        /*     && REG_P (SUBREG_REG (reg)) */
+        /*     && IS_GENERAL_REGNO (REGNO (SUBREG_REG (reg)), strict)); */
 }
 
 static bool
@@ -451,11 +452,14 @@ k1_legitimate_address_offset_register_p (rtx reg, bool strict)
 {
     return (REG_P (reg)
             && IS_GENERAL_REGNO (REGNO (reg), strict)
-	    && GET_MODE(reg) == DImode)
-        || (GET_CODE (reg) == SUBREG
-            && GET_MODE (reg) == DImode
-            && REG_P (SUBREG_REG (reg))
-            && IS_GENERAL_REGNO (REGNO (SUBREG_REG (reg)), strict));
+	    // AUTO FIXME: was DImode instead of Pmode here. Correct ?
+	    && GET_MODE(reg) == Pmode);
+    // FIXME AUTO: subreg in MEM
+        /* || (GET_CODE (reg) == SUBREG */
+
+        /*     && GET_MODE (reg) == DImode */
+        /*     && REG_P (SUBREG_REG (reg)) */
+        /*     && IS_GENERAL_REGNO (REGNO (SUBREG_REG (reg)), strict)); */
 }
 
 /* Implementation of TARGET_ASM_INTEGER.  When using FD-PIC, we need to
