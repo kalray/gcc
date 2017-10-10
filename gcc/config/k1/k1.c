@@ -219,8 +219,7 @@ k1_compute_frame_info (void)
   frame->total_size = offset;
 }
 
-// FIXME AUTO PRF DISABLED
-// static const char *prf_reg_names[] = { K1C_K1PE_PRF_REGISTER_NAMES };
+static const char *prf_reg_names[] = {K1C_K1C_PRF_REGISTER_NAMES};
 /* Implement HARD_REGNO_MODE_OK.  */
 
 int
@@ -241,7 +240,6 @@ k1_class_max_nregs (reg_class_t regclass, enum machine_mode mode)
   switch (regclass)
     {
     case GRF_REGS:
-      // FIXME AUTO PRF DISABLED and re-enabled
     case PRF_REGS:
     case ALL_REGS:
       return HARD_REGNO_NREGS (0, mode);
@@ -778,9 +776,8 @@ k1_target_conditional_register_usage (void)
 			  IDENTIFIER_POINTER (get_identifier ("_data_start")));
   K1C_ADJUST_REGISTER_NAMES;
 
-  // FIXME AUTO PRF DISABLED
-  /* const char *prf_names[] = { K1C_K1PE_PRF_REGISTER_NAMES }; */
-  /* memcpy(prf_reg_names, prf_names, sizeof(prf_reg_names)); */
+  const char *prf_names[] = {K1C_K1C_PRF_REGISTER_NAMES};
+  memcpy (prf_reg_names, prf_names, sizeof (prf_reg_names));
 }
 
 rtx
@@ -1667,15 +1664,14 @@ k1_regname (rtx x)
   switch (GET_CODE (x))
     {
     case REG:
-      // FIXME AUTO PRF DISABLED
-      /* if (GET_MODE(x) == DImode) */
-      /* 	return prf_reg_names[REGNO (x)]; */
-      /* else */
-      return reg_names[REGNO (x)];
+      if (GET_MODE (x) == TImode)
+	return prf_reg_names[REGNO (x)];
+      else
+	return reg_names[REGNO (x)];
     case SUBREG:
-      gcc_assert (!TARGET_64);
-      gcc_assert (GET_MODE (x) == SImode);
-      gcc_assert (GET_MODE (SUBREG_REG (x)) == DImode);
+      gcc_assert (!TARGET_64); // FIXME AUTO: don't understand this assert
+      gcc_assert (GET_MODE (x) == DImode);
+      gcc_assert (GET_MODE (SUBREG_REG (x)) == TImode);
       regno = REGNO (SUBREG_REG (x));
       if (SUBREG_BYTE (x))
 	regno++;
