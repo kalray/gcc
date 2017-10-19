@@ -8,10 +8,6 @@ _init:
               get   $r0 = $ra
               ADD_PTR  $r12 = $r12, -8
               ;;
-#ifndef __K1_64__
-	      sxwd $r12 = $r12
-              ;;
-#endif
               STR_PTR 16[$r12] = $r0
               ;;
               .previous
@@ -24,12 +20,6 @@ _fini:
               get   $r0 = $ra
               ADD_PTR   $r12 = $r12, -8
               ;;
-
-#ifndef __K1_64__
-	      sxwd $r12 = $r12
-              ;;
-#endif
-
               STR_PTR 16[$r12] = $r0
               ;;
               .previous
