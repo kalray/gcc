@@ -2018,8 +2018,8 @@ k1_emit_single_spill (int regno, enum spill_action action, int *offset,
   rtx reg, insn, mem, base = stack_pointer_rtx;
   /* enum machine_mode spill_mode = (regno == K1C_RETURN_POINTER_REGNO) ? Pmode
    * : SImode; */
-  /* gcc_assert(spill_mode == DImode); */
-  enum machine_mode spill_mode = DImode;
+  enum machine_mode spill_mode
+    = (regno == K1C_RETURN_POINTER_REGNO) ? Pmode : DImode;
 
   if (action != SPILL_COMPUTE_SIZE)
     {
@@ -2066,8 +2066,8 @@ k1_emit_single_spill (int regno, enum spill_action action, int *offset,
 	}
     }
 
-  *offset += 4;
-  *stack_size += 4;
+  *offset += GET_MODE_SIZE (spill_mode);
+  *stack_size += GET_MODE_SIZE (spill_mode);
 }
 
 static void
