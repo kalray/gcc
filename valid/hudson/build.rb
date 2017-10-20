@@ -239,6 +239,12 @@ b.target("build" + s_bootstrap + target_variant) do
       include_path = "sys-include"
     end
 
+    if build_type == "Debug" then
+        checking_release = ""
+    else
+        checking_release = "--enable-checking=release "
+    end
+
     configure_common = "#{with_extra_flags} " +
                        "--prefix=#{toolroot} " +
                        "#{libatomic_toggle} " +
@@ -249,7 +255,7 @@ b.target("build" + s_bootstrap + target_variant) do
                        "--disable-libmudflap " +
                        "--disable-libssp " +
                        "#{quadmath} " +
-                       "--enable-checking=release "+
+                       "#{checking_release}" +
                        "--with-system-zlib " +
                        "--enable-__cxa_atexit " +
                        "--target=#{variant_dir} " +
