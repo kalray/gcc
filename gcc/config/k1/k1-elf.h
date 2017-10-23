@@ -33,7 +33,9 @@
 /* Link against Newlib libraries, because the ELF backend assumes Newlib.
    Handle the circular dependence between libc and libgloss. */
 #undef LIB_SPEC
-#define LIB_SPEC "--start-group -lc -lgloss --end-group"
+#define LIB_SPEC                                                               \
+  "-lmppabareruntime --start-group -lc -lgloss --end-group "                   \
+  "-Tmppabareruntime.ld"
 
 #define K1_OS_SELF_SPECS "%{!mcore*:-mcore=" K1_DEFAULT_CORE " } "
 
