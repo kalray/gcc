@@ -31,11 +31,14 @@
 #define K1_DEFAULT_CORE "k1c"
 
 /* Link against Newlib libraries, because the ELF backend assumes Newlib.
-   Handle the circular dependence between libc and libgloss. */
+   Handle the circular dependence between libc and libgloss.
+   Link against MPPA Bare Runtime
+ */
 #undef LIB_SPEC
-#define LIB_SPEC                                                               \
-  "-lmppabareruntime --start-group -lc -lgloss --end-group "                   \
-  "-Tmppabareruntime.ld"
+#define LIB_SPEC "-lmppabareruntime --start-group -lc -lgloss --end-group"
+
+#undef LINK_SPEC
+#define LINK_SPEC "-Tmppabareruntime.ld"
 
 #define K1_OS_SELF_SPECS "%{!mcore*:-mcore=" K1_DEFAULT_CORE " } "
 
