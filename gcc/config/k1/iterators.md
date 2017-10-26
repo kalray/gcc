@@ -37,6 +37,10 @@
 (define_code_iterator cb_cond [eq ne gt ge lt le])
 (define_mode_iterator SIDI [SI DI])
 
+;; Used for conditional LSU with .odd/.even
+(define_code_iterator COND_ODD_EVEN [eq ne])
+(define_code_attr lsu_odd_even [(eq "even") (ne "odd")])
+
 ;; FIXME AUTO: change name of cbvar, used elsewhere.
 (define_mode_attr cbvar [(SI "w") (DI "d") (SF "w") (DF "d")])
 
