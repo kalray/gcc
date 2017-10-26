@@ -6,7 +6,7 @@ load_generic_config "sim"
 process_multilib_options ""
 
 set_board_info sim "k1-mppa"
-set_board_info sim,options "--march=bostan --bootcluster=node0 --timeout=1000000000 --no-gdb-attach --dcache-no-check --"
+set_board_info sim,options "--bootcluster=node0 --timeout=1000000000 --no-gdb-attach --dcache-no-check --"
 set_board_info is_simulator 1
 
 # The compiler used to build for this board. This has *nothing* to do
