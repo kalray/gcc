@@ -42,10 +42,13 @@
   (and (match_code "const_int")
        (match_test "UNSIGNED_INT_FITS_N_BITS (ival, 37)")))
 
-(define_constraint "U64"
-  "An unsigned 64-bit constant."
-  (and (match_code "const_int")
-       (match_test "UNSIGNED_INT_FITS_N_BITS (ival, 64)")))
+;; Not used yet, and does not work as-is. Macro expands
+;; to shift with shift amount > size of internal repr.
+;; Leaving this comment to avoid doing in the same error.
+;; (define_constraint "U64"
+;;   "An unsigned 64-bit constant."
+;;   (and (match_code "const_int")
+;;        (match_test "UNSIGNED_INT_FITS_N_BITS (ival, 64)")))
 
 (define_constraint "I10"
   "A signed 10-bit constant."
