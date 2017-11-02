@@ -28,8 +28,6 @@
 #include "coretypes.h"
 #include "tm.h"
 
-#include "opts.h"
-
 #include "calls.h"
 #include "cfgloop.h"
 #include "cppdefault.h"
@@ -47,6 +45,7 @@
 #include "langhooks.h"
 #include "libfuncs.h"
 #include "output.h"
+#include "hw-doloop.h"
 #include "opts.h"
 #include "params.h"
 #include "recog.h"
@@ -8501,752 +8500,230 @@ k1_invalid_within_doloop (const_rtx insn)
   return NULL;
 }
 
+/* A callback for the hw-doloop pass.  Called when a loop we have discovered
+   turns out not to be optimizable; we have to split the loop_end pattern into
+   a subtract and a test.  */
+
 static void
-k1_handle_one_block_loop (struct loop *loop, rtx entry,
-			  unsigned int counter_regno)
+hwloop_fail (hwloop_info loop)
 {
-  edge e;
-  edge_iterator ei;
-  rtx insn, next, exit = NULL_RTX;
+  rtx test;
+  rtx insn = loop->loop_end;
 
-  /* The simplest form of loop. We just have to take care that the
-     basic blocks follow each other.  */
-  gcc_assert (loop->header == loop->latch);
+  emit_insn_before (gen_addsi3 (loop->iter_reg, loop->iter_reg, constm1_rtx),
+		    loop->loop_end);
 
-  if (BLOCK_FOR_INSN (entry)->next_bb != loop->header)
+  test = gen_rtx_NE (VOIDmode, loop->iter_reg, const0_rtx);
+  insn = emit_jump_insn_before (gen_cbranchsi4 (test, loop->iter_reg,
+						const0_rtx, loop->start_label),
+				loop->loop_end);
+
+  JUMP_LABEL (insn) = loop->start_label;
+  LABEL_NUSES (loop->start_label)++;
+  delete_insn (loop->loop_end);
+}
+
+/* A callback for the hw-doloop pass.  This function examines INSN; if
+   it is a doloop_end pattern we recognize, return the reg rtx for the
+   loop counter.  Otherwise, return NULL_RTX.  */
+
+static rtx
+hwloop_pattern_reg (rtx insn)
+{
+  rtx reg;
+
+  if (!JUMP_P (insn) || recog_memoized (insn) != CODE_FOR_loop_end)
+    return NULL_RTX;
+
+  reg = SET_DEST (XVECEXP (PATTERN (insn), 0, 1));
+  if (!REG_P (reg))
+    return NULL_RTX;
+
+  return reg;
+}
+
+static bool
+hwloop_optimize (hwloop_info loop)
+{
+  int i;
+  edge entry_edge;
+  basic_block entry_bb;
+  rtx iter_reg;
+  rtx insn, seq, entry_after;
+
+  if (!TARGET_HWLOOP)
     {
-      rtx note;
-
-      note = bb_note (loop->header);
-      gcc_assert (note);
-      /* In the simple case of a 1-block loop, we can just move the
-	 loopdo instruction in the loop bb.  */
-      /* The original 'entry' will be deleted in the cleanup pass. */
-      entry = emit_insn_before (copy_insn (PATTERN (entry)),
-				BB_HEAD (loop->header));
-      BB_HEAD (loop->header) = entry;
-      set_block_for_insn (entry, loop->header);
-
-      /* Move the BB note to the right place. */
-      remove_insn (note);
-      add_insn_before (note, BB_HEAD (loop->header), NULL);
-      set_block_for_insn (note, loop->header);
-      BB_HEAD (loop->header) = note;
-
-      /* Create a new BB after the loopgtz */
-      e = split_block (loop->header, entry);
-      set_block_for_insn (entry, e->src);
-
-      e->dest->aux = e->dest->next_bb == EXIT_BLOCK_PTR_FOR_FN (cfun)
-		       ? NULL
-		       : e->dest->next_bb;
-      e->src->aux = e->src->next_bb == EXIT_BLOCK_PTR_FOR_FN (cfun)
-		      ? NULL
-		      : e->src->next_bb;
-      loop->header = e->dest;
-
-      /* Redirect the backedge to the new BB. */
-      FOR_EACH_EDGE (e, ei, loop->header->succs)
-	{
-	  if (e->dest == loop->header->prev_bb)
-	    {
-	      redirect_edge_succ (e, loop->header);
-	      break;
-	    }
-	}
+      if (dump_file)
+	fprintf (dump_file, ";; loop %d not hw optimised as opt disabled\n",
+		 loop->loop_no);
+      return false;
     }
 
-  /* Update edge properties to make sure, the right edge is
-     fallthru. */
-  FOR_EACH_EDGE (e, ei, loop->header->succs)
-    if (e->dest == loop->header)
-      e->flags &= ~(EDGE_FALLTHRU | EDGE_CAN_FALLTHRU);
-    else
-      e->flags |= EDGE_FALLTHRU | EDGE_CAN_FALLTHRU;
+  if (loop->depth > 1)
+    {
+      if (dump_file)
+	fprintf (dump_file, ";; loop %d is not innermost\n", loop->loop_no);
+      return false;
+    }
 
-  /* Put the exit edge in 'e'.  */
-  FOR_EACH_EDGE (e, ei, loop->latch->succs)
-    if (e->dest != loop->header)
+  if (loop->jumps_within)
+    {
+      if (dump_file)
+	fprintf (dump_file, ";; loop %d jumps within\n", loop->loop_no);
+    }
+
+  if (loop->jumps_outof)
+    {
+      if (dump_file)
+	fprintf (dump_file, ";; loop %d has early exit\n", loop->loop_no);
+      return false;
+    }
+
+  if (!loop->incoming_dest)
+    {
+      if (dump_file)
+	fprintf (dump_file, ";; loop %d has more than one entry\n",
+		 loop->loop_no);
+      return false;
+    }
+
+  if (loop->incoming_dest != loop->head)
+    {
+      if (dump_file)
+	fprintf (dump_file, ";; loop %d is not entered from head\n",
+		 loop->loop_no);
+      return false;
+    }
+
+  if (loop->has_call)
+    {
+      if (dump_file)
+	fprintf (dump_file, ";; loop %d has calls\n", loop->loop_no);
+      return false;
+    }
+
+  if (loop->blocks.length () > 1)
+    {
+      if (dump_file)
+	fprintf (dump_file, ";; loop %d has more than one basic block\n",
+		 loop->loop_no);
+      return false;
+    }
+
+  // FIXME AUTO: do we let asm in the loop ?
+
+  gcc_assert (loop->incoming_dest == loop->head);
+
+  /* Scan all the blocks to make sure they don't use iter_reg.  */
+  /* FIXME AUTO: hwloop can still be used for branching. */
+  if (loop->iter_reg_used || loop->iter_reg_used_outside)
+    {
+      if (dump_file)
+	fprintf (dump_file, ";; loop %d uses iterator\n", loop->loop_no);
+      return false;
+    }
+
+  /* Check if start_label appears before doloop_end.  */
+  insn = loop->start_label;
+  while (insn && insn != loop->loop_end)
+    insn = NEXT_INSN (insn);
+
+  if (!insn)
+    {
+      if (dump_file)
+	fprintf (dump_file, ";; loop %d start_label not before loop_end\n",
+		 loop->loop_no);
+      return false;
+    }
+
+  /* Get the loop iteration register.  */
+  iter_reg = loop->iter_reg;
+
+  gcc_assert (REG_P (iter_reg));
+
+  entry_edge = NULL;
+
+  FOR_EACH_VEC_SAFE_ELT (loop->incoming, i, entry_edge)
+    if (entry_edge->flags & EDGE_FALLTHRU)
       break;
 
-  /*
-   * /!\ We are forced to count the number of reg counter inside the
-   * loop because there is something not correct with the loop data
-   * we are handed.
-   *
-   * This code should (and did) kill the counter decrement and
-   * handle the case of counter usage outside the loop (by set the
-   * reg to 0).
-   *
-   * The very strong asumption is that insn using this
-   * register in the loop is the decrement and the jump: so
-   * we kill everything (in this block, should be the
-   * decrement). It relies on this part of the documentation:
-   *
-   * «The essential difference between the
-   * ‘decrement_and_branch_until_zero’ and the ‘doloop_end’
-   * patterns is that the loop optimizer allocates an
-   * additional pseudo register for the latter as an
-   * iteration counter. This pseudo register cannot be used
-   * within the loop (i.e., general induction variables
-   * cannot be derived from it), however, in many cases the
-   * loop induction variable may become redundant and
-   * removed by the flow pass. »
-   *
-   * Obviously, this is not correct or something we have make this
-   * not possible :
-   *
-   * We can have these insn in the loop:
-   * (insn 250 116 234 4 (set (reg:SI 9 r9 [184])
-   *                           (plus:SI (reg:SI 9 r9 [184])
-   *                                    (const_int -1 [0xffffffffffffffff])))
-   * io_main.cpp:8 7 {*addsi3_small} (nil))
-   *
-   * (insn:TI 271 254 251 4 (set (mem/c:SI (plus:SI (reg/f:SI 10 r10)
-   *                                       (const_int 12 [0xc])) [6 %sfp+12 S4
-   * A32]) (reg:SI 9 r9 [184])) io_main.cpp:8 228 {*real_movsi} (nil))
-   *
-   * With the memory being read after the loop.
-   *
-   * The internal issue is T2920 "C/C++ code may crash when compiling with -03
-   * due to bad hw loop generation"
-   *
-   * The second part of the loop is moved in a second loop that is
-   * conditioned by the number of reg counter usage.
-   */
-  int number_of_counter_usage = 0;
-  bool jump_removed = false;
-  FOR_BB_INSNS_SAFE (loop->header, insn, next)
-    if (insn != entry && INSN_P (insn))
-      {
+  if (entry_edge == NULL)
+    return false;
 
-	if (condjump_p (insn))
-	  {
-	    /* This is the jump back. Fake the CFG code by emiting
-	       a fake jump for the HW loop.  */
-	    rtx label = gen_rtx_LABEL_REF (Pmode, block_label (loop->header));
-	    exit = emit_jump_insn_after (gen_loopdo_end (label), insn);
-	    mark_jump_label (PATTERN (exit), exit, 0);
-	    delete_insn (insn);
-	    jump_removed = true;
-	  }
-	else if (reg_mentioned_p (SET_DEST (PATTERN (entry)), PATTERN (insn)))
-	  {
-	    number_of_counter_usage++;
-	  }
-      }
+  /* Place the zero_cost_loop_start instruction before the loop.  */
+  entry_bb = entry_edge->src;
 
-  if (number_of_counter_usage == 1)
+  start_sequence ();
+  loop->end_label = gen_label_rtx ();
+
+  emit_label_after (loop->end_label, loop->loop_end);
+
+  insn = emit_insn (
+    gen_loop_start (loop->iter_reg, loop->iter_reg, loop->end_label));
+
+  seq = get_insns ();
+
+  if (!single_succ_p (entry_bb) || vec_safe_length (loop->incoming) > 1)
     {
-      FOR_BB_INSNS_SAFE (loop->header, insn, next)
+      basic_block new_bb;
+      edge e;
+      edge_iterator ei;
+
+      emit_insn_before (seq, BB_HEAD (loop->head));
+      seq = emit_label_before (gen_label_rtx (), seq);
+      new_bb = create_basic_block (seq, insn, entry_bb);
+      FOR_EACH_EDGE (e, ei, loop->incoming)
 	{
-	  if (insn != entry && INSN_P (insn))
-	    {
-	      if (reg_mentioned_p (SET_DEST (PATTERN (entry)), PATTERN (insn)))
-		{
-		  df_ref ref = df_find_def (insn, regno_reg_rtx[counter_regno]);
-		  struct df_link *uses = ref ? DF_REF_CHAIN (ref) : NULL;
-
-		  /* The counter register is referenced in insn. As the
-		     loopdo conversition ensures that the register is used
-		     only as loop counter and nowhere else, we can delete
-		     this instruction which must be either: the decrement
-		     or the conditional branch out of the loop. */
-		  if (jump_removed && uses && uses->next)
-		    {
-		      /* The counter should have only 2 uses which are the
-			 decrement and the condjump. Otherwise this means
-			 the counter register is used after the loop.
-			 In a single basic-block loop, the counter will
-			 always be zero at end of iteration, thus we can
-			 just emit that new definition on the loop exit
-			 edge.  */
-
-		      basic_block b, prev, succ;
-		      rtx ctr_reg = gen_rtx_REG (SImode, counter_regno);
-		      prev = e->src;
-		      succ = (basic_block) loop->latch->aux;
-		      b = split_edge_and_insert (e, gen_movsi (ctr_reg,
-							       const0_rtx));
-		      if (prev == ENTRY_BLOCK_PTR_FOR_FN (cfun))
-			ENTRY_BLOCK_PTR_FOR_FN (cfun)->next_bb = b;
-		      else
-			prev->aux = b;
-		      b->aux = succ;
-		    }
-		  /* The instruction we need to remove should be similar to: */
-		  /*      (set (reg:SI 2 r2 [1177]) */
-		  /*                     (plus:SI (reg:SI 2 r2 [1177]) */
-		  /*                              (const_int -1
-		   * [0xffffffffffffffff]))) */
-		  const bool is_counter_decr
-		    = (GET_CODE (PATTERN (insn)) == SET)
-		      && REG_P (SET_DEST (PATTERN (insn)))
-		      && (REGNO (SET_DEST (PATTERN (insn)))
-			  == counter_regno) /* target is counter */
-		      && (GET_CODE (SET_SRC (PATTERN (insn))) == PLUS)
-		      && REG_P (XEXP (SET_SRC (PATTERN (insn)), 0))
-		      && REGNO (XEXP (SET_SRC (PATTERN (insn)), 0))
-			   == counter_regno
-		      && CONST_INT_P (XEXP (SET_SRC (PATTERN (insn)), 1));
-
-		  /* be safe, do not kill insn if it does not look like the
-		   * decrement */
-		  if (is_counter_decr)
-		    delete_insn (insn);
-		}
-	    }
+	  if (!(e->flags & EDGE_FALLTHRU))
+	    redirect_edge_and_branch_force (e, new_bb);
+	  else
+	    redirect_edge_succ (e, new_bb);
 	}
+
+      make_edge (new_bb, loop->head, 0);
+    }
+  else
+    {
+      entry_after = BB_END (entry_bb);
+      while (DEBUG_INSN_P (entry_after)
+	     || (NOTE_P (entry_after)
+		 && NOTE_KIND (entry_after) != NOTE_INSN_BASIC_BLOCK
+		 /* Make sure we don't split a call and its corresponding
+		    CALL_ARG_LOCATION note.  */
+		 && NOTE_KIND (entry_after) != NOTE_INSN_CALL_ARG_LOCATION))
+	entry_after = PREV_INSN (entry_after);
+
+      emit_insn_after (seq, entry_after);
     }
 
-  /* Setup the loopgtz instruction with the right end label.  */
-  exit = emit_label_before (gen_label_rtx (), exit);
-  XVECEXP (SET_SRC (PATTERN (entry)), 0, 0) = gen_rtx_LABEL_REF (Pmode, exit);
+  end_sequence ();
+
+  return true;
 }
 
+static struct hw_doloop_hooks k1_doloop_hooks
+  = {hwloop_pattern_reg, hwloop_optimize, hwloop_fail};
+
 static void
-k1_optimize_two_block_loop (struct loop *loop, rtx entry, basic_block bb,
-			    unsigned int counter_regno,
-			    struct df_link *counter_defs)
+k1_reorg_loops (void)
 {
-  rtx decrement = NULL_RTX, branch = NULL_RTX;
-  rtx insn, x;
-  df_ref ref;
-  struct df_link *uses;
-  edge e;
-  edge_iterator ei;
-  struct df_link *defs = counter_defs;
-
-  /* If the header only has
-     - (potentially) the loopdo
-     - a decrement of the counter
-     - a conditional jump out of the loop
-     we can simply add one to the initial value of the counter and
-     remove the other header instructions alltogether.  This
-     situation more than often happens when compiling for size. In
-     other words, transform:
-     loopgtz $counter, endloop
-     add $counter = $counter, -1 ;;
-     cb.eqz $counter? endloop ;;
-     <loop body>
-     endloop:
-     ...
-     to:
-     add $counter = $counter, 1
-     loopgtz $counter, endloop
-     <loop body>
-     endloop:
-  */
-
-  FOR_BB_INSNS (loop->header, insn)
-    {
-      if (!INSN_P (insn))
-	continue;
-      if (insn == entry)
-	continue;
-      if (any_condjump_p (insn))
-	{
-	  rtx comp;
-
-	  /* This could be the branch out of the loop. */
-	  x = PATTERN (insn);
-	  comp = XEXP (SET_SRC (x), 0);
-
-	  if (XEXP (comp, 1) != const0_rtx || !REG_P (XEXP (comp, 0))
-	      || REGNO (XEXP (comp, 0)) != counter_regno)
-	    break;
-
-	  branch = insn;
-	}
-      else if (single_set (insn))
-	{
-	  /* This could be the counter decrement. */
-
-	  x = PATTERN (insn);
-	  if (!REG_P (SET_DEST (x)) || REGNO (SET_DEST (x)) != counter_regno)
-	    break;
-	  if (GET_CODE (SET_SRC (x)) != PLUS
-	      || XEXP (SET_SRC (x), 1) != constm1_rtx
-	      || !REG_P (XEXP (SET_SRC (x), 0))
-	      || REGNO (XEXP (SET_SRC (x), 0)) != counter_regno)
-	    break;
-	  decrement = insn;
-	}
-      else
-	{
-	  decrement = branch = NULL_RTX;
-	  break;
-	}
-    }
-
-  if (decrement && branch)
-    {
-      /* Found both decrement and branch and nothing
-	 else.  */
-      ref = df_find_def (decrement, regno_reg_rtx[counter_regno]);
-      uses = ref ? DF_REF_CHAIN (ref) : NULL;
-
-      /* The counter should have only 2 uses which are the decrement
-	 and the condjump. Otherwise the resulting value is used
-	 outside of the loop. However, in the simplified form of
-	 this loop, we can just emit an $counter = 0 on the
-	 outgoing edge.  */
-      if (uses && uses->next && uses->next->next)
-	{
-	  basic_block b, prev, succ;
-	  rtx make
-	    = gen_movsi (gen_rtx_REG (SImode, counter_regno), const0_rtx);
-
-	  FOR_EACH_EDGE (e, ei, bb->succs)
-	    if (e->dest != loop->header)
-	      break;
-
-	  prev = e->src;
-	  succ = (basic_block) bb->aux;
-	  b = split_edge_and_insert (e, make);
-	  if (prev == ENTRY_BLOCK_PTR_FOR_FN (cfun))
-	    ENTRY_BLOCK_PTR_FOR_FN (cfun)->next_bb = b;
-	  else
-	    prev->aux = b;
-	  b->aux = succ;
-	}
-
-      /* We can try to be smart about where to modify the iteration
-	 counter only if every definition of it is safe. */
-      while (counter_defs)
-	{
-	  /* The definition needs to be either artificial or to have
-	     only one use which is our loop init. This avoids issues
-	     where the loop counter value is decided by the end of
-	     iteration value of an induction variable of another
-	     loop. In this case we must *not* modify the definition.
-	     For example:
-
-	     make $r0 = 0;
-	     make $r1 = 50;
-	     loopgtz $r1     <= another loop
-		...
-		$r0 += 1     <= R0 definition
-		...
-
-	     loopgtz $r0     <= our loop. $r0 should be 50
-		...
-	  */
-
-	  if (counter_defs->ref->base.cl != DF_REF_ARTIFICIAL
-	      && DF_REF_CHAIN (
-		   df_find_def (counter_defs->ref->base.insn_info->insn,
-				regno_reg_rtx[counter_regno]))
-		     ->next
-		   != NULL)
-	    {
-	      /* Just add $counter = $counter + 1 at the right
-		 spot.  */
-	      rtx add;
-
-	      add = gen_addsi3 (gen_rtx_REG (SImode, counter_regno),
-				gen_rtx_REG (SImode, counter_regno),
-				GEN_INT (-1));
-
-	      emit_insn_before (add, entry);
-	      goto no_optimize;
-	    }
-
-	  counter_defs = counter_defs->next;
-	}
-
-      counter_defs = defs;
-      /* We have to update the counter setups to take into account
-	 the off-by-one difference we are introducing with our
-	 transformation.  */
-      while (counter_defs)
-	{
-	  rtx insn = NULL_RTX;
-	  /* If the def isn't artificial, then we have a real
-	     instruction to look at.  */
-	  if (counter_defs->ref->base.cl != DF_REF_ARTIFICIAL)
-	    {
-	      insn = counter_defs->ref->base.insn_info->insn;
-	    }
-
-	  if (insn && single_set (insn))
-	    {
-	      /* We optimize 3 cases. The definition might be:
-		 - $counter = imm
-		 - $counter = $counter + reg
-		 - $counter = $counter - reg
-		 - something else
-	      */
-	      x = PATTERN (insn);
-	      if (CONST_INT_P (SET_SRC (x)))
-		{
-		  SET_SRC (x) = GEN_INT (INTVAL (SET_SRC (x)) - 1);
-		}
-	      else if (GET_CODE (SET_SRC (x)) == PLUS
-		       && CONST_INT_P (XEXP (SET_SRC (x), 1)))
-		{
-		  HOST_WIDE_INT val = INTVAL (XEXP (SET_SRC (x), 1));
-		  XEXP (SET_SRC (x), 1) = GEN_INT (val - 1);
-		  if (REGNO (XEXP (SET_SRC (x), 0)) == counter_regno
-		      && INTVAL (XEXP (SET_SRC (x), 1)) == 0)
-		    delete_insn (insn);
-		}
-	      else if (GET_CODE (SET_SRC (x)) == MINUS
-		       && CONST_INT_P (XEXP (SET_SRC (x), 1)))
-		{
-		  HOST_WIDE_INT val = INTVAL (XEXP (SET_SRC (x), 1));
-		  XEXP (SET_SRC (x), 1) = GEN_INT (val + 1);
-		  if (REGNO (XEXP (SET_SRC (x), 0)) == counter_regno
-		      && INTVAL (XEXP (SET_SRC (x), 1)) == 0)
-		    delete_insn (insn);
-		}
-	      else
-		{
-		  rtx add = gen_addsi3 (gen_rtx_REG (SImode, counter_regno),
-					gen_rtx_REG (SImode, counter_regno),
-					GEN_INT (-1));
-		  emit_insn_after (add, insn);
-		}
-	    }
-	  else
-	    {
-	      /* Just add $counter = $counter + 1 at the right
-		 spot.  */
-	      rtx add;
-	      basic_block bb, next;
-
-	      add = gen_addsi3 (gen_rtx_REG (SImode, counter_regno),
-				gen_rtx_REG (SImode, counter_regno),
-				GEN_INT (-1));
-	      gcc_assert (counter_defs->ref->base.cl == DF_REF_ARTIFICIAL);
-
-	      bb = counter_defs->ref->artificial_ref.bb;
-	      if (counter_defs->ref->base.flags & DF_REF_AT_TOP)
-		{
-		  emit_insn_before (add, BB_HEAD (bb));
-		}
-	      else
-		{
-		  if (bb == ENTRY_BLOCK_PTR_FOR_FN (cfun))
-		    {
-		      next = ENTRY_BLOCK_PTR_FOR_FN (cfun)->next_bb;
-		      ENTRY_BLOCK_PTR_FOR_FN (cfun)->next_bb
-			= split_edge_and_insert (EDGE_I (bb->succs, 0),
-						 copy_rtx (add));
-		      ENTRY_BLOCK_PTR_FOR_FN (cfun)->next_bb->aux = next;
-		    }
-		  else
-		    {
-		      emit_insn_after (add, BB_END (bb));
-		    }
-		}
-	    }
-
-	  /* Next def.  */
-	  counter_defs = counter_defs->next;
-	}
-
-    no_optimize:
-      /* Now delete instructions and loop early exit edges.  */
-      delete_insn (decrement);
-      delete_insn (branch);
-
-      FOR_EACH_EDGE (e, ei, loop->header->succs)
-	if (e->dest != bb)
-	  {
-	    remove_edge (e);
-	    break;
-	  }
-    }
+  if (optimize)
+    reorg_loops (false, &k1_doloop_hooks);
 }
 
-static void
-k1_handle_two_block_loop (struct loop *loop, rtx entry,
-			  unsigned int counter_regno,
-			  struct df_link *counter_defs)
-{
-  edge e;
-  edge_iterator ei;
-  rtx exit, label;
-  basic_block bb;
-
-  gcc_assert (loop->latch != loop->header);
-
-  if (EDGE_COUNT (loop->latch->preds) != 1
-      || EDGE_COUNT (loop->latch->succs) != 1)
-    return;
-
-  if (loop->latch->prev_bb != loop->header
-      && !can_duplicate_block_p (loop->latch))
-    return;
-
-  if (BLOCK_FOR_INSN (entry)->next_bb != loop->header)
-    {
-      rtx note;
-
-      note = bb_note (loop->header);
-      gcc_assert (note);
-      /* In the simple case of a 2-block loop, we can just move the
-	 loopdo instruction in the loop bb.  */
-      /* The original 'entry' will be deleted in the cleanup pass.  */
-      entry
-	= emit_insn_before (copy_rtx (PATTERN (entry)), BB_HEAD (loop->header));
-      BB_HEAD (loop->header) = entry;
-      set_block_for_insn (entry, loop->header);
-
-      /* Move the BB note to the right place. */
-      remove_insn (note);
-      add_insn_before (note, BB_HEAD (loop->header), NULL);
-      set_block_for_insn (note, loop->header);
-      BB_HEAD (loop->header) = note;
-
-      /* Create a new BB after the loopgtz */
-      e = split_block (loop->header, entry);
-      set_block_for_insn (entry, e->src);
-
-      e->dest->aux = e->dest->next_bb == EXIT_BLOCK_PTR_FOR_FN (cfun)
-		       ? NULL
-		       : e->dest->next_bb;
-      e->src->aux = e->src->next_bb == EXIT_BLOCK_PTR_FOR_FN (cfun)
-		      ? NULL
-		      : e->src->next_bb;
-      loop->header = e->dest;
-
-      /* Redirect the backedge to the new BB. */
-      FOR_EACH_EDGE (e, ei, loop->latch->succs)
-	{
-	  if (e->dest == loop->header->prev_bb)
-	    {
-	      redirect_edge_succ (e, loop->header);
-	      break;
-	    }
-	}
-    }
-
-  /* Make sure the loop blocks are in a correct order for the HW
-     loop:
-
-     loopgtz $counter, endloop
-     header:
-     ...
-     cb.eqz $counter? endloop
-     latch:
-     ...
-     endloop:
-     ...
-
-     In that form, we don't use the HW loop iteration termination,
-     because we keep the conditional branch exit and loop counter
-     decrement. However, in the hot path, we still use the
-     low-overhead looping of the hardware loop. */
-
-  if (loop->latch->prev_bb != loop->header)
-    {
-      gcc_assert (loop->latch->prev_bb->aux == loop->latch);
-
-      loop->latch->prev_bb->aux = loop->latch->aux;
-
-      unlink_block (loop->latch);
-      link_block (loop->latch, loop->header);
-
-      loop->latch->prev_bb->aux = loop->latch;
-      loop->latch->aux = loop->latch->next_bb == EXIT_BLOCK_PTR_FOR_FN (cfun)
-			   ? NULL
-			   : loop->latch->next_bb;
-      loop->header->aux = loop->latch;
-    }
-
-  /* Blocks are int the right order.  */
-  bb = loop->latch;
-
-  /* latch has no fallthrough, but we'll add one with
-     the end of loop marker, thus we need to ad it to
-     the CFG also. */
-  make_edge (bb, bb->aux ? (basic_block) bb->aux : EXIT_BLOCK_PTR_FOR_FN (cfun),
-	     0);
-
-  /* Ensure the latch out edges have the right flags wrt fallthru
-     setting. Normally we shouldn't do that, because
-     cfg_layout_finalize will use these annotations to find out if
-     it needs to invert jumps. However, in this case, this is the
-     edge coming from our new end of hwloop: we don't want the cfg
-     logic to fiddle with it. And moreover, having the right
-     setting here is necessary so that k1_optimize_two_block_loop
-     can call split_edge on it. */
-  FOR_EACH_EDGE (e, ei, bb->succs)
-    {
-      if (e->dest == loop->header)
-	e->flags &= ~(EDGE_FALLTHRU | EDGE_CAN_FALLTHRU);
-      else
-	e->flags |= EDGE_FALLTHRU | EDGE_CAN_FALLTHRU;
-    }
-
-  /* Setup the loopgtz instruction with the right end label.  */
-  label = gen_rtx_LABEL_REF (Pmode, block_label (loop->header));
-  exit = emit_jump_insn_after (gen_loopdo_end (label), BB_END (bb));
-  mark_jump_label (PATTERN (exit), exit, 0);
-  exit = emit_label_before (gen_label_rtx (), exit);
-  XVECEXP (SET_SRC (PATTERN (entry)), 0, 0) = gen_rtx_LABEL_REF (Pmode, exit);
-
-  if (bb->aux && find_edge (loop->header, (basic_block) bb->aux))
-    {
-      k1_optimize_two_block_loop (loop, entry, bb, counter_regno, counter_defs);
-    }
-}
+/* Implement the TARGET_MACHINE_DEPENDENT_REORG pass.  */
 
 static void
-k1_reorg_hwloops (void)
+k1_reorg (void)
 {
-  struct loop *loop;
-  rtx entry, next, insn;
-  df_ref counter_df;
-  struct df_link *counter_defs;
-  unsigned int counter_regno;
-  basic_block bb;
-  rtx where, reg, x;
-  bool mentioned;
+  compute_bb_for_insn ();
 
-  FOR_EACH_LOOP (loop, LI_ONLY_INNERMOST)
-    {
+  df_analyze ();
 
-      // Sanity check
-      if (!loop->header || !loop->latch)
-	continue;
+  /* Doloop optimization. */
+  k1_reorg_loops ();
 
-      // Only 1 BB can reach HEADER BB apart from LATCH
-      if (EDGE_COUNT (loop->header->preds) != 2
-	  || EDGE_COUNT (loop->header->succs) != 2)
-	continue;
-
-      bb = EDGE_PRED (loop->header, 0)->src == loop->latch
-	     ? EDGE_PRED (loop->header, 1)->src
-	     : EDGE_PRED (loop->header, 0)->src;
-      where = entry = BB_END (bb);
-
-      // Locate LOOPDO insn in ENTRY BB
-      while (entry
-	     && (!INSN_P (entry) || recog_memoized (entry) != CODE_FOR_loopdo))
-	{
-	  entry = prev_nonnote_insn_bb (entry);
-	}
-
-      if (!entry)
-	continue;
-      // entry is LOOPDO insn in HEADER BB
-
-      // Get the register counter
-      reg = XVECEXP (SET_SRC (PATTERN (entry)), 0, 2);
-
-      if (!REG_P (reg))
-	continue;
-
-      x = entry;
-      mentioned = false;
-      while (x != where)
-	{
-	  x = next_nondebug_insn (x);
-	  if (reg_mentioned_p (reg, x))
-	    {
-	      mentioned = true;
-	      break;
-	    }
-	}
-
-      if (mentioned)
-	continue;
-
-      // Move LOOPDO as last insn in BB (or before the last insn in
-      // case it is a jump)
-      if (where != entry)
-	{
-	  remove_insn (entry);
-	  if (JUMP_P (where))
-	    {
-	      add_insn_before (entry, where, bb);
-	    }
-	  else
-	    {
-	      add_insn_after (entry, where, bb);
-	    }
-	}
-
-      counter_regno = REGNO (XVECEXP (SET_SRC (PATTERN (entry)), 0, 2));
-      counter_df = df_find_use (entry, regno_reg_rtx[counter_regno]);
-      counter_defs = counter_df ? DF_REF_CHAIN (counter_df) : NULL;
-
-      /* printf ("============= LOOP %i BBS ===============\n", */
-      /*         loop->num_nodes); */
-      /* printf ("HEADER %i LATCH %i HEADER->next %i LATCH->next %i\n", */
-      /*      loop->header->index, loop->latch->index, */
-      /*      loop->header->next_bb->index, */
-      /*          loop->latch->next_bb->index); */
-      /* flow_loop_dump (loop, stdout, NULL, 0); */
-      /* printf ("================ LATCH ==================\n"); */
-      /* dump_bb (loop->latch, stdout, 10); */
-      /* printf ("================ HEADER ==================\n"); */
-      /* dump_bb (loop->header, stdout, 10); */
-      /* printf ("==========================================\n"); */
-
-      if (loop->num_nodes == 1)
-	{
-	  k1_handle_one_block_loop (loop, entry, counter_regno);
-	}
-      else if (loop->num_nodes == 2)
-	{
-	  k1_handle_two_block_loop (loop, entry, counter_regno, counter_defs);
-	}
-    }
-
-  /* Cleanup the loopdos that haven't been converted to a real HW
-     loops. */
-  for (insn = get_insns (); insn; insn = next)
-    {
-      next = NEXT_INSN (insn);
-      if (INSN_P (insn))
-	{
-	  if (recog_memoized (insn) == CODE_FOR_loopdo
-	      && XVECEXP (SET_SRC (PATTERN (insn)), 0, 0) == const0_rtx)
-	    delete_insn (insn);
-	}
-    }
-}
-
-static void
-k1_target_machine_dependent_reorg (void)
-{
-  basic_block bb;
-  if (TARGET_HWLOOP && optimize >= 2)
-    {
-      /* We are freeing block_for_insn in the toplev to keep compatibility
-	 with old MDEP_REORGS that are not CFG based.  Recompute it now.  */
-      compute_bb_for_insn ();
-      bool reorder = crtl->bb_reorder_complete;
-
-      /* This is a kludge to prevent cfg_layout_initialize from
-	 asserting. Don't know how other ports using hwloops handle
-	 that. */
-      crtl->bb_reorder_complete = false;
-      cfg_layout_initialize (0);
-      df_chain_add_problem (DF_DU_CHAIN | DF_UD_CHAIN);
-      df_analyze ();
-      loop_optimizer_init (LOOPS_MAY_HAVE_MULTIPLE_LATCHES);
-      FOR_EACH_BB_FN (bb, cfun)
-	{
-	  if (bb->next_bb != EXIT_BLOCK_PTR_FOR_FN (cfun))
-	    bb->aux = bb->next_bb;
-	  else
-	    bb->aux = NULL;
-	}
-      k1_reorg_hwloops ();
-      loop_optimizer_finalize ();
-      cfg_layout_finalize ();
-      free_dominance_info (CDI_DOMINATORS);
-      df_finish_pass (false);
-
-      crtl->bb_reorder_complete = reorder;
-      free_bb_for_insn ();
-    }
-
+  /* This is needed. Else final pass will crash on debug_insn-s */
   if (k1_flag_var_tracking)
     {
       compute_bb_for_insn ();
@@ -9692,7 +9169,7 @@ k1_profile_hook (void)
   k1_dependencies_evaluation_hook
 
 #undef TARGET_MACHINE_DEPENDENT_REORG
-#define TARGET_MACHINE_DEPENDENT_REORG k1_target_machine_dependent_reorg
+#define TARGET_MACHINE_DEPENDENT_REORG k1_reorg
 
 #undef TARGET_ATTRIBUTE_TABLE
 #define TARGET_ATTRIBUTE_TABLE k1_attribute_table
