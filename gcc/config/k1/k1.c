@@ -206,9 +206,8 @@ k1_compute_frame_info (void)
   offset += k1_spill (SPILL_COMPUTE_SIZE);
 
   /* push arg registers not used, align result on 16bits */
-  /* if (cfun->stdarg && crtl->args.info < K1C_ARG_REG_SLOTS) */
-  /*   frame_size += UNITS_PER_WORD * ((K1C_ARG_REG_SLOTS - crtl->args.info + 1)
-   * & ~1); */
+  if (cfun->stdarg && crtl->args.info < K1C_ARG_REG_SLOTS)
+    offset += UNITS_PER_WORD * ((K1C_ARG_REG_SLOTS - crtl->args.info + 1) & ~1);
 
   /* Next is the callee-allocated area for pretend stack arguments.  */
   offset += crtl->args.pretend_args_size;
