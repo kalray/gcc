@@ -76,10 +76,12 @@ extern void __builtin_k1_wfxl (unsigned char, long long);
   switch (arg1)                                                                \
     {                                                                          \
     case 0:                                                                    \
-      __builtin_k1_hfxb (arg2, ((int) (arg3) << 16) | ((int) (arg4) &0xffff)); \
+      __builtin_k1_hfxb (arg2,                                                 \
+			 (((int) (arg3) << 16) | ((int) (arg4) &0xffff)));     \
       break;                                                                   \
     case 1:                                                                    \
-      __builtin_k1_hfxt (arg2, ((int) (arg3) << 16) | ((int) (arg4) &0xffff)); \
+      __builtin_k1_hfxt (arg2,                                                 \
+			 (((int) (arg3) << 16) | ((int) (arg4) &0xffff)));     \
       break;                                                                   \
     default:                                                                   \
       __builtin_error ("__builtin_k1_hfx expects a 1 bit first argument.");    \
