@@ -146,6 +146,11 @@ struct GTY (()) machine_function
      |                               |
      |  incoming stack arguments     |
      |                               |
+     +-------------------------------+
+     |                               |
+     |  callee-allocated save area   |
+     |  for register varargs         |
+     |                               |
      +-------------------------------+ <---- frame pointer
      |                               |
      | local variable                |
@@ -199,11 +204,17 @@ k1_compute_frame_info (void)
   /* At the bottom of the frame are any outgoing stack arguments. */
   offset = crtl->outgoing_args_size;
 
+  /* The scratch area */
+  offset += K1C_SCRATCH_AREA_SIZE;
+
   /* Next are local stack variables. */
   offset += K1_STACK_ALIGN (get_frame_size ());
 
   /* saved registers */
   offset += k1_spill (SPILL_COMPUTE_SIZE);
+
+  /* Frame pointer points between incoming arg and local vars */
+  frame->frame_pointer_offset = offset;
 
   /* push arg registers not used, align result on 16bits */
   if (cfun->stdarg && crtl->args.info < K1C_ARG_REG_SLOTS)
@@ -211,9 +222,6 @@ k1_compute_frame_info (void)
 
   /* Next is the callee-allocated area for pretend stack arguments.  */
   offset += crtl->args.pretend_args_size;
-
-  /* Frame pointer always points at beg of frame */
-  frame->frame_pointer_offset = offset;
 
   frame->total_size = offset;
 }
@@ -980,17 +988,10 @@ k1_target_expand_builtin_saveregs (void)
 {
   int regno;
   int slot;
-  int base = STARTING_FRAME_OFFSET;
-  rtx area;
+  rtx area = frame_pointer_rtx;
+  int offset = 0, size = 0;
 
-  /* Allocate the va_list constructor */
-  if (crtl->args.info >= K1C_ARG_REG_SLOTS)
-    base += (crtl->args.info - K1C_ARG_REG_SLOTS) * UNITS_PER_WORD;
-  else if (crtl->args.info & 1)
-    base += UNITS_PER_WORD;
-
-  area = gen_rtx_PLUS (Pmode, arg_pointer_rtx, GEN_INT (base));
-
+  /* All arg register slots used for named args, nothing to push */
   if (crtl->args.info >= K1C_ARG_REG_SLOTS)
     return area;
 
@@ -998,24 +999,26 @@ k1_target_expand_builtin_saveregs (void)
 
   /* use arg_pointer since saved register slots are not known at that time */
   regno = crtl->args.info;
+
   if (regno & 1)
     {
-      emit_move_insn (
-	gen_rtx_MEM (SImode,
-		     gen_rtx_PLUS (Pmode, arg_pointer_rtx,
-				   GEN_INT (base + slot * UNITS_PER_WORD))),
-	gen_rtx_REG (SImode, K1C_ARGUMENT_POINTER_REGNO + regno));
-      ++regno;
-      ++slot;
+      rtx insn = emit_move_insn (
+	gen_rtx_MEM (DImode,
+		     gen_rtx_PLUS (Pmode, frame_pointer_rtx, GEN_INT (0))),
+	gen_rtx_REG (DImode, K1C_ARGUMENT_POINTER_REGNO + regno));
+      RTX_FRAME_RELATED_P (insn) = 1;
+      regno++;
+      slot++;
     }
 
+  /* Until load_multiple is fixed, these will be split in several ld */
   for (; regno < K1C_ARG_REG_SLOTS; regno += 2, slot += 2)
     {
-      emit_move_insn (
-	gen_rtx_MEM (DImode,
-		     gen_rtx_PLUS (Pmode, arg_pointer_rtx,
-				   GEN_INT (base + slot * UNITS_PER_WORD))),
-	gen_rtx_REG (DImode, K1C_ARGUMENT_POINTER_REGNO + regno));
+      rtx insn = emit_move_insn (
+	gen_rtx_MEM (TImode, gen_rtx_PLUS (Pmode, frame_pointer_rtx,
+					   GEN_INT (slot * UNITS_PER_WORD))),
+	gen_rtx_REG (TImode, K1C_ARGUMENT_POINTER_REGNO + regno));
+      RTX_FRAME_RELATED_P (insn) = 1;
     }
 
   return area;
@@ -2338,20 +2341,6 @@ k1_spill (enum spill_action action)
   return stack_size;
 }
 
-static HOST_WIDE_INT
-k1_frame_size (void)
-{
-  HOST_WIDE_INT var_size = get_frame_size ();
-  HOST_WIDE_INT on_stack_saveregs_size = k1_spill (SPILL_COMPUTE_SIZE);
-  HOST_WIDE_INT outgoing_args_size = crtl->outgoing_args_size;
-  HOST_WIDE_INT res = var_size + on_stack_saveregs_size + outgoing_args_size;
-
-  if (res % 8)
-    res += (8 - res % 8);
-
-  return res;
-}
-
 /* Implement INITIAL_ELIMINATION_OFFSET.  FROM is either the frame pointer
    or argument pointer.  TO is either the stack pointer or frame
    pointer.  */
@@ -2407,125 +2396,6 @@ k1_expand_prologue (void)
 }
 
 void
-old_k1_expand_prologue (void)
-{
-  HOST_WIDE_INT frame_size = k1_frame_size ();
-  rtx insn;
-  rtx (*gen_add) (rtx target, rtx op1, rtx op2)
-    = TARGET_64 ? gen_adddi3 : gen_addsi3;
-  rtx (*gen_set_gotp) (rtx target, rtx op1, rtx op2, rtx op3)
-    = TARGET_64 ? gen_set_gotp_di : gen_set_gotp_si;
-
-  if (flag_pic /* && !TARGET_FDPIC */ && crtl->uses_pic_offset_table)
-    {
-
-      /* In FPIC emit the code that will initialize our Global Pointer.
-       *
-       * For that purpose we use a special fake instruction which in fact
-       * emits in one bundle at the beginning of the function:
-       *
-       * get $r14 = $pc
-       * make $r32 = _gp_disp
-       * ;;
-       *
-       * where _gp_disp is a magic symbol provided by the linker that contains
-       * the offset between the beginning of this function and the Global Offset
-       * Table
-       */
-      rtx tmp1_reg = gen_rtx_REG (Pmode, K1C_R32_REGNO);
-      tree gpdisp = get_identifier ("_gp_disp");
-
-      rtx gp_disp = gen_rtx_SYMBOL_REF (Pmode, IDENTIFIER_POINTER (gpdisp));
-
-      insn = emit_insn (gen_set_gotp (pic_offset_table_rtx,
-				      gen_rtx_REG (Pmode, PC_REGNUM), tmp1_reg,
-				      gp_disp));
-
-      /* All we need right now is to add the program counter value and the
-       * displacement to get the runtime address of the Global Offset Table
-       */
-      insn = emit_insn (
-	gen_add (pic_offset_table_rtx, pic_offset_table_rtx, tmp1_reg));
-      df_set_regs_ever_live (K1C_GLOBAL_POINTER_REGNO, true);
-    }
-  else if (TARGET_GPREL)
-    {
-      emit_move_insn (pic_offset_table_rtx, k1_data_start_symbol);
-    }
-
-  cfun->machine->frame.total_size = frame_size;
-
-  /* Incoming args handling */
-
-  /* push arg registers not used, align result on 16bits */
-  if (cfun->stdarg && crtl->args.info < K1C_ARG_REG_SLOTS)
-    frame_size
-      += UNITS_PER_WORD * ((K1C_ARG_REG_SLOTS - crtl->args.info + 1) & ~1);
-
-  /* callee needs to pretend this has been pushed by caller */
-  frame_size += crtl->args.pretend_args_size;
-
-  if (frame_size != 0)
-    {
-      insn = GEN_INT (-frame_size);
-      insn = emit_insn (gen_add (stack_pointer_rtx, stack_pointer_rtx, insn));
-      RTX_FRAME_RELATED_P (insn) = 1;
-    }
-
-  if (frame_size != 0 && flag_stack_check == FULL_BUILTIN_STACK_CHECK)
-    {
-      df_set_regs_ever_live (8, true);
-    }
-
-  k1_spill (SPILL_SAVE);
-
-  if (frame_size != 0 && flag_stack_check == FULL_BUILTIN_STACK_CHECK)
-    {
-      tree stack_end = get_identifier ("__stack_end");
-      rtx stack_end_sym
-	= gen_rtx_SYMBOL_REF (Pmode, IDENTIFIER_POINTER (stack_end));
-      rtx stack_end_val = gen_rtx_REG (Pmode, 8);
-      rtx label;
-
-      label = k1_get_stack_check_block ();
-
-      if (TARGET_STACK_CHECK_USE_TLS)
-	{
-	  stack_end_sym
-	    = gen_rtx_UNSPEC (Pmode, gen_rtvec (1, stack_end_sym), UNSPEC_TLS);
-	  emit_move_insn (
-	    stack_end_val,
-	    gen_rtx_MEM (
-	      Pmode,
-	      gen_rtx_PLUS (Pmode, gen_rtx_REG (Pmode, K1C_LOCAL_POINTER_REGNO),
-			    gen_rtx_CONST (Pmode, stack_end_sym))));
-	}
-      else
-	{
-	  emit_move_insn (stack_end_val, gen_rtx_REG (Pmode, K1C_SR2_REGNO));
-	}
-      emit_insn (
-	gen_rtx_SET (VOIDmode, stack_end_val,
-		     gen_rtx_MINUS (Pmode, stack_pointer_rtx, stack_end_val)));
-
-      emit_cmp_and_jump_insns (stack_end_val, const0_rtx, LT, NULL_RTX, Pmode,
-			       0, label);
-      JUMP_LABEL (get_last_insn ()) = label;
-    }
-
-  if (frame_pointer_needed)
-    {
-      // FIXME AUTO: This resolves to k1_frame_size()
-      frame_size
-	= k1_frame_size () + K1C_SCRATCH_AREA_SIZE - STARTING_FRAME_OFFSET;
-      /* INITIAL_FRAME_POINTER_OFFSET (frame_size); */
-      insn = GEN_INT (frame_size);
-      insn = emit_insn (gen_add (frame_pointer_rtx, stack_pointer_rtx, insn));
-      RTX_FRAME_RELATED_P (insn) = 1;
-    }
-}
-
-void
 k1_expand_epilogue (void)
 {
   struct k1_frame_info *frame = &cfun->machine->frame;
@@ -2546,41 +2416,6 @@ k1_expand_epilogue (void)
       insn = GEN_INT (frame_size);
       insn = emit_insn (
 	gen_add3_insn (stack_pointer_rtx, stack_pointer_rtx, insn));
-      RTX_FRAME_RELATED_P (insn) = 1;
-    }
-}
-
-void
-old_k1_expand_epilogue (void)
-{
-  HOST_WIDE_INT frame_size = cfun->machine->frame.total_size;
-  rtx insn;
-  rtx (*gen_add) (rtx target, rtx op1, rtx op2)
-    = TARGET_64 ? gen_adddi3 : gen_addsi3;
-
-  if (frame_pointer_needed)
-    {
-      int frame_ptr_offset;
-      frame_ptr_offset
-	= k1_frame_size () + K1C_SCRATCH_AREA_SIZE - STARTING_FRAME_OFFSET;
-      // INITIAL_FRAME_POINTER_OFFSET (frame_ptr_offset);
-      insn = emit_insn (gen_add (stack_pointer_rtx, frame_pointer_rtx,
-				 GEN_INT (-frame_ptr_offset)));
-      RTX_FRAME_RELATED_P (insn) = 1;
-    }
-
-  if (cfun->stdarg && crtl->args.info < K1C_ARG_REG_SLOTS)
-    frame_size
-      += UNITS_PER_WORD * ((K1C_ARG_REG_SLOTS - crtl->args.info + 1) & ~1);
-
-  frame_size += crtl->args.pretend_args_size;
-
-  k1_spill (SPILL_RESTORE);
-
-  if (frame_size != 0)
-    {
-      insn = GEN_INT (frame_size);
-      insn = emit_insn (gen_add (stack_pointer_rtx, stack_pointer_rtx, insn));
       RTX_FRAME_RELATED_P (insn) = 1;
     }
 }
