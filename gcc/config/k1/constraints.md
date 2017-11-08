@@ -101,10 +101,11 @@
   (and (match_code "const_int")
        (match_test "SIGNED_INT_FITS_N_BITS (ival, 43)")))
 
-(define_constraint "I64"
-  "A signed 64-bit constant."
-  (and (match_code "const_int")
-       (match_test "SIGNED_INT_FITS_N_BITS (ival, 64)")))
+;; Not used yet, and does not work as-is.
+;; (define_constraint "I64"
+;;   "A signed 64-bit constant."
+;;   (and (match_code "const_int")
+;;        (match_test "SIGNED_INT_FITS_N_BITS (ival, 64)")))
 
 (define_constraint "Ilh"  
   "Constants that can be expressed as lowbit/highbit pair"
