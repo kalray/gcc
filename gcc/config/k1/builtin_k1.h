@@ -57,7 +57,7 @@ extern void __builtin_k1_barrier (void);
 /* CDB */
 /* DOZE */
 /* GET */
-extern unsigned int __builtin_k1_get (int);
+extern unsigned long long __builtin_k1_get (int);
 /* GOTO */
 /* WFXL */
 extern void __builtin_k1_wfxl (unsigned char, long long);
@@ -753,7 +753,7 @@ extern double __builtin_k1_fsisrd (double);
 /* get GPR = GPR
  * GPR get( GPR);
  */
-extern unsigned int __builtin_k1_get_r (int);
+extern unsigned long long __builtin_k1_get_r (int);
 
 /* get GPR = GPR
  * GPR get( GPR);
