@@ -651,12 +651,13 @@
 /* ********** Elimination ********** */
 #define ELIMINABLE_REGS                                                        \
   {                                                                            \
-    {ARG_POINTER_REGNUM, STACK_POINTER_REGNUM},                                \
-      {ARG_POINTER_REGNUM, FRAME_POINTER_REGNUM},                              \
     {                                                                          \
       FRAME_POINTER_REGNUM, STACK_POINTER_REGNUM                               \
     }                                                                          \
   }
+
+// {ARG_POINTER_REGNUM, STACK_POINTER_REGNUM},
+// {ARG_POINTER_REGNUM, FRAME_POINTER_REGNUM},
 
 #define INITIAL_ELIMINATION_OFFSET(FROM, TO, OFFSET)                           \
   (OFFSET) = k1_initial_elimination_offset (FROM, TO)
