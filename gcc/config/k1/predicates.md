@@ -36,10 +36,11 @@
       (match_operand 0 "s37_operand")))
 
 ;; register or immediate up to signed 64
+;; Does not really check value fits on 64bits as HOST_WIDE_INT
+;; is at most 64bits.
 (define_predicate "register_s64_operand"
  (ior (match_code "reg")
-      (and (match_code "const,const_int")
-           (match_test "satisfies_constraint_I64(op)"))))
+      (match_code "const,const_int")))
 
 (define_predicate "nonmemory64_register32_w_operand"
    (match_code "const,const_int,reg,subreg,mem,symbol_ref,label_ref")
