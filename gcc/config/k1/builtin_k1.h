@@ -106,7 +106,7 @@ extern void __builtin_k1_writetlb(void);
  */
 
 /* ACWS */
-extern unsigned long long __builtin_k1_acws(void *address, unsigned int new_value, unsigned int old_value);
+extern unsigned __int128 __builtin_k1_acws(void *address, unsigned long long new_value, unsigned long long old_value);
 /* AFDA */
 extern unsigned long long __builtin_k1_afda(void *address, long long addend);
 /* ALDC */
@@ -124,8 +124,16 @@ extern void __builtin_k1_dzerol(void *addr);
 extern void __builtin_k1_fence(void);
 /* IINVAL */
 extern void __builtin_k1_iinval(void);
+/* IINVALL */
+extern void __builtin_k1_iinvall(const void *addr);
 /* IINVALS */
 extern void __builtin_k1_iinvals(const void *addr);
+/* ITOUCHL */
+extern void __builtin_k1_itouchl(void *addr);
+/* LBS_U */
+extern char __builtin_k1_lbsu(const void *addr);
+/* LBZ_U */
+extern unsigned char __builtin_k1_lbzu(const void *addr);
 /* LD */
 /* LD_N */
 /* LD_U */
@@ -157,7 +165,6 @@ extern unsigned int __builtin_k1_lwzu(const void *addr);
 /* ABD */
 /* ABDD */
 /* ABDHP */
-extern int __builtin_k1_abdhp(int op0_hp, int op1_hp);
 /* ABDHQ */
 /* ABDWP */
 /* ABS */
@@ -235,24 +242,28 @@ extern int __builtin_k1_adds(int op0, int op1);
 /* AVGUWP */
 /* AVGWP */
 /* BWLU */
-extern unsigned int __builtin_k1_bwlu(unsigned op0_a, unsigned op1_b, unsigned op2_c, unsigned op3_d, unsigned short op4_lut);
+extern unsigned int __builtin_k1_bwlu(unsigned int op0_a, unsigned int op1_b, unsigned int op2_c, unsigned int op3_d, unsigned short op4_lut);
 /* BWLUHP */
 extern unsigned int __builtin_k1_bwluhp(unsigned int op0_hp_ab, unsigned int op1_hp_cd, unsigned int op2_hp_lut);
 /* BWLUWP */
 extern unsigned long long __builtin_k1_bwluwp(unsigned long long op0_wp_ab, unsigned long long op1_wp_cd, unsigned int op2_hp_lut);
 /* CBS */
-extern int __builtin_k1_cbsw(unsigned int op0);
+extern int __builtin_k1_cbs(unsigned int op0);
 /* CBSDL */
-extern int __builtin_k1_cbsd(unsigned long long op0);
+extern long long __builtin_k1_cbsdl(unsigned long long op0);
 /* CBSWP */
 /* CDMOVED */
 /* CLS */
 /* CLSDL */
 /* CLSWP */
+/* CLZ */
+extern int __builtin_k1_clz(unsigned int op0);
 /* CLZW */
 extern int __builtin_k1_clzw(unsigned int op0);
 /* CLZD */
-extern int __builtin_k1_clzd(unsigned long long op0);
+extern long long __builtin_k1_clzd(unsigned long long op0);
+/* CLZDL */
+extern long long __builtin_k1_clzdl(unsigned long long op0);
 /* CLZWP */
 /* CMOVE */
 extern int __builtin_k1_cmove(int condition, int new_value, int curent_value);
@@ -268,12 +279,17 @@ extern int __builtin_k1_cmove(int condition, int new_value, int curent_value);
 /* COMPWDL */
 /* COMPWP */
 /* CTZ */
+extern int __builtin_k1_ctz(unsigned int op0);
+/* CTZW */
 extern int __builtin_k1_ctzw(unsigned int op0);
+/* CTZD */
+extern long long __builtin_k1_ctzd(unsigned long long op0);
 /* CTZDL */
-extern int __builtin_k1_ctzd(unsigned long long op0);
+extern long long __builtin_k1_ctzdl(unsigned long long op0);
 /* CTZWP */
 /* EXTFDS */
 /* EXTFDZ */
+/* EXTFZ */
 extern unsigned int __builtin_k1_extfz(unsigned int op0, unsigned int op1_highbit, unsigned int op2_lowbit);
 /* EXTFS */
 /* EXTFZ */
@@ -542,6 +558,7 @@ extern double __builtin_k1_faddrnd(double op0, double op1);
 /* FCDIV */
 extern float __builtin_k1_fcdiv(float dividend, float divisor);
 /* FCDIVD */
+extern double __builtin_k1_fcdivd(double dividend, double divisor);
 /* FCDIVWP */
 /* FCMA */
 extern float __builtin_k1_fcma(float mult1_op0, float mult0_op0, float mult0_op1, float mult1_op1);
@@ -565,42 +582,80 @@ extern double __builtin_k1_fdmswd(float mult0_op0, float mult1_op0, float mult0_
 /* FFMA */
 extern float __builtin_k1_ffma(float addend, float mult_op0, float mult_op1);
 /* FFMAD */
+extern double __builtin_k1_ffmad(double addend, double mult_op0, double mult_op1);
+/* FFMADRN */
+extern double __builtin_k1_ffmadrn(double addend, double mult_op0, double mult_op1);
 /* FFMAN */
 extern float __builtin_k1_ffman(float addend, float mult_op0, float mult_op1);
 /* FFMAND */
+extern double __builtin_k1_ffmand(double addend, double mult_op0, double mult_op1);
+/* FFMANDRN */
+extern double __builtin_k1_ffmandrn(double addend, double mult_op0, double mult_op1);
 /* FFMANRN */
 extern float __builtin_k1_ffmanrn(float addend, float mult_op0, float mult_op1);
 /* FFMANRND */
 /* FFMANRNWD */
 /* FFMANRNWP */
 /* FFMANWD */
+extern double __builtin_k1_ffmanwd(double addend, float mult_op0, float mult_op1);
+/* FFMANWDRN */
+extern double __builtin_k1_ffmanwdrn(double addend, float mult_op0, float mult_op1);
 /* FFMANWP */
-/* FFMARN */
-extern float __builtin_k1_ffmarn(float addend, float mult_op0, float mult_op1);
+/* FFMANW */
+extern float __builtin_k1_ffmanw(float addend, float mult_op0, float mult_op1);
+/* FFMANWRN */
+extern float __builtin_k1_ffmanwrn(float addend, float mult_op0, float mult_op1);
 /* FFMARND */
 /* FFMARNWD */
 /* FFMARNWP */
+/* FFMAW */
+extern float __builtin_k1_ffmaw(float addend, float mult_op0, float mult_op1);
 /* FFMAWD */
+extern double __builtin_k1_ffmawd(double addend, float mult_op0, float mult_op1);
+/* FFMAWDRN */
+extern double __builtin_k1_ffmawdrn(double addend, float mult_op0, float mult_op1);
 /* FFMAWP */
+/* FFMAWRN */
+extern float __builtin_k1_ffmawrn(float addend, float mult_op0, float mult_op1);
 /* FFMS */
 extern float __builtin_k1_ffms(float addend, float mult_op0, float mult_op1);
 /* FFMSD */
+extern double __builtin_k1_ffmsd(double addend, double mult_op0, double mult_op1);
+/* FFMSDRN */
+extern double __builtin_k1_ffmsdrn(double addend, double mult_op0, double mult_op1);
 /* FFMSN */
 extern float __builtin_k1_ffmsn(float addend, float mult_op0, float mult_op1);
 /* FFMSND */
+extern double __builtin_k1_ffmsnd(double addend, double mult_op0, double mult_op1);
+/* FFMSNDRN */
+extern double __builtin_k1_ffmsndrn(double addend, double mult_op0, double mult_op1);
 /* FFMSNRN */
 extern float __builtin_k1_ffmsnrn(float addend, float mult_op0, float mult_op1);
 /* FFMSNRND */
 /* FFMSNRNWD */
 /* FFMSNRNWP */
+/* FFMSNW */
+extern float __builtin_k1_ffmsnw(float addend, float mult_op0, float mult_op1);
+/* FFMSNWRN */
+extern float __builtin_k1_ffmsnwrn(float addend, float mult_op0, float mult_op1);
 /* FFMSNWD */
+extern double __builtin_k1_ffmsnwd(double addend, float mult_op0, float mult_op1);
+/* FFMSNWDRN */
+extern double __builtin_k1_ffmsnwdrn(double addend, float mult_op0, float mult_op1);
 /* FFMSNWP */
 /* FFMSRN */
 extern float __builtin_k1_ffmsrn(float addend, float mult_op0, float mult_op1);
 /* FFMSRND */
 /* FFMSRNWD */
 /* FFMSRNWP */
+/* FFMSW */
+extern float __builtin_k1_ffmsw(float addend, float mult_op0, float mult_op1);
+/* FFMSWRN */
+extern float __builtin_k1_ffmswrn(float addend, float mult_op0, float mult_op1);
 /* FFMSWD */
+extern double __builtin_k1_ffmswd(double addend, float mult_op0, float mult_op1);
+/* FFMSWDRN */
+extern double __builtin_k1_ffmswdrn(double addend, float mult_op0, float mult_op1);
 /* FFMSWP */
 /* FIXED */
 extern int __builtin_k1_fixed(unsigned char rounding, float fp_32b_num, unsigned char u6_coef);
@@ -609,7 +664,7 @@ extern long long __builtin_k1_fixedd(unsigned char rounding, double fp_64b_num, 
 /* FIXEDDN */
 /* FIXEDN */
 /* FIXEDU */
-extern unsigned __builtin_k1_fixedu(unsigned char rounding, float fp_32b_num, unsigned char u6_coef);
+extern unsigned int __builtin_k1_fixedu(unsigned char rounding, float fp_32b_num, unsigned char u6_coef);
 /* FIXEDUD */
 extern unsigned long long __builtin_k1_fixedud(unsigned char rounding, double fp_64b_num, unsigned char u6_coef);
 /* FIXEDUDN */
@@ -649,19 +704,30 @@ extern double __builtin_k1_floatud(unsigned char rounding, unsigned long long fi
 /* FMULNRN */
 extern float __builtin_k1_fmulnrn(float op0, float op1);
 /* FMULNRND */
+extern double __builtin_k1_fmulnrnd(double op0, double op1);
+/* FMULNRND */
 /* FMULNRNWD */
+extern double __builtin_k1_fmulnrnwd(float op0, float op1);
 /* FMULNRNWP */
 /* FMULNWD */
+extern double __builtin_k1_fmulnwd(float op0, float op1);
 /* FMULNWP */
 /* FMULRN */
 extern float __builtin_k1_fmulrn(float op0, float op1);
 /* FMULRND */
+extern double __builtin_k1_fmulrnd(double op0, double op1);
 /* FMULRNWD */
+extern double __builtin_k1_fmulrnwd(float op0, float op1);
 /* FMULRNWP */
 /* FMULWD */
+extern double __builtin_k1_fmulwd(float op0, float op1);
+/* FMULWND */
+extern double __builtin_k1_fmulwnd(double op0, double op1);
 /* FMULWP */
 /* FNARROWD */
 /* FNARROWW */
+/* FNARROWWH */
+extern unsigned short __builtin_k1_fnarrowwh(float op0);
 /* FNEG */
 /* FNEGD */
 /* FNEGWP */
@@ -670,6 +736,7 @@ extern float __builtin_k1_fmulrn(float op0, float op1);
 /* FSBFRN */
 extern float __builtin_k1_fsbfrn(float op0, float op1);
 /* FSBFRND */
+extern double __builtin_k1_fsbfrnd(double op0, double op1);
 /* FSBFRNWP */
 /* FSBFWP */
 /* FSDIV */
@@ -693,12 +760,20 @@ extern float __builtin_k1_fsisr(float);
 extern double __builtin_k1_fsisrd(double);
 /* FSISRWP */
 /* FWIDENB */
+/* FWIDENBW */
+extern float __builtin_k1_fwidenbw(unsigned int);
+/* FWIDENTW */
+extern float __builtin_k1_fwidentw(unsigned int);
 /* FWIDENLWP */
 /* FWIDENMWP */
 
 /*
  * Other Builtin Functions
  */
+
+/* Returns SRF size */
+extern int __builtin_k1_srfsize(int);
+
 
 /* get GPR = GPR
  * GPR get( GPR);
@@ -729,12 +804,12 @@ extern void __builtin_k1_r_xord(unsigned char, unsigned long long, unsigned shor
 /* set nopcpsreg = GPR
  *  set( u[0..63], GPR);
  */
-extern void __builtin_k1_set(int, unsigned int);
+extern void __builtin_k1_set(int, unsigned long long);
 
 /* set onlypsreg = GPR
  *  set( u[0..63], GPR);
  */
-extern void __builtin_k1_set_ps(int, unsigned int);
+extern void __builtin_k1_set_ps(int, unsigned long long);
 
 #ifdef __cplusplus__
 }
