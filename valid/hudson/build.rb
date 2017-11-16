@@ -172,6 +172,10 @@ b.target("common_pre_build" + s_bootstrap + target_variant) do
     b.run("cp -f #{gcc_path}/valid/hudson/#{arch}-g++.sh       #{install_path}/bin/#{arch}-c++")
     b.run("cp -f #{gcc_path}/valid/hudson/#{arch}-gfortran.sh  #{install_path}/bin/#{arch}-gfortran")
   end
+
+  # Check builtin_k1.h from k1.c
+  b.run("ruby #{File.join(gcc_path,"valid","hudson","k1_builtins.rb")} #{gcc_path}")
+
 end
 
 
