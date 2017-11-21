@@ -833,12 +833,12 @@ extern float __builtin_k1_fsisr (float);
 extern double __builtin_k1_fsisrd (double);
 /* FSISRWP */
 /* FWIDENB */
-/* FWIDENBW */
-extern float __builtin_k1_fwidenbw (unsigned int);
-/* FWIDENTW */
-extern float __builtin_k1_fwidentw (unsigned int);
-/* FWIDENLWP */
-/* FWIDENMWP */
+/* FWIDENHBW */
+extern float __builtin_k1_fwidenhbw (unsigned int);
+/* FWIDENHTW */
+extern float __builtin_k1_fwidenhtw (unsigned int);
+/* FWIDENHLWP */
+/* FWIDENHMWP */
 
 /*
  * Other Builtin Functions
