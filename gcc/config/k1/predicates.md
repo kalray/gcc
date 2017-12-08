@@ -237,13 +237,6 @@
                 && (INTVAL (op) >= 0 && INTVAL (op) < (1<<2));
 })
 
-(define_predicate "fivebits_unsigned_operand"
-  (match_code "const_int")
-{
-	return	CONST_INT_P (op) 
-                && (INTVAL (op) >= 0 && INTVAL (op) < (1<<5));
-})
-
 (define_predicate "sixbits_unsigned_operand"
   (match_code "const_int")
 {
