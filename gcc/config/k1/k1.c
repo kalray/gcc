@@ -4174,7 +4174,7 @@ k1_expand_builtin_faddrn (rtx target, tree args)
     if (!REG_P(target) || GET_MODE (target) != SFmode) {
         target = force_reg (SFmode, target);
     }
-    emit_insn (gen_faddrn (target, arg1, arg2));
+    emit_insn (gen_faddw_rn_s (target, arg1, arg2));
 
     return target;
 }
@@ -4193,7 +4193,7 @@ k1_expand_builtin_faddrnd (rtx target, tree args)
     if (!REG_P(target) || GET_MODE (target) != DFmode) {
         target = force_reg (DFmode, target);
     }
-    emit_insn (gen_faddrnd (target, arg1, arg2));
+    emit_insn (gen_faddd_rn_s (target, arg1, arg2));
 
     return target;
 }
@@ -4235,7 +4235,7 @@ k1_expand_builtin_fsbfrn (rtx target, tree args)
     if (!REG_P(target) || GET_MODE (target) != SFmode) {
         target = force_reg (SFmode, target);
     }
-    emit_insn (gen_fsbfrn (target, arg1, arg2));
+    emit_insn (gen_fsbfw_rn_s (target, arg1, arg2));
 
     return target;
 }
@@ -4254,7 +4254,7 @@ k1_expand_builtin_fsbfrnd (rtx target, tree args)
     if (!REG_P(target) || GET_MODE (target) != DFmode) {
         target = force_reg (DFmode, target);
     }
-    emit_insn (gen_fsbfrnd (target, arg1, arg2));
+    emit_insn (gen_fsbfd_rn_s (target, arg1, arg2));
 
     return target;
 }
