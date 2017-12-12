@@ -51,12 +51,6 @@ extern void k1_expand_epilogue (void);
 
 extern void k1_expand_stack_check_allocate_stack (rtx target, rtx adjust);
 
-extern void k1_expand_fdpic_icall (rtx retval, rtx fnaddr, rtx callarg,
-				   int sibcall);
-
-extern void k1_expand_fdpic_call (rtx retval, rtx fnaddr, rtx callarg,
-				  int sibcall);
-
 extern void k1_expand_helper_pic_call (rtx retval, rtx fnaddr, rtx callarg,
 				       int sibcall);
 
