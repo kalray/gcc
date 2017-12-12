@@ -41,7 +41,6 @@ extern bool k1_cannot_change_mode_class(enum machine_mode from,
 extern int k1_hard_regno_mode_ok (unsigned regno, enum machine_mode mode);
 extern void k1_output_load_multiple (rtx *operands);
 
-
 extern void k1_expand_call (rtx fnaddr, rtx arg, rtx retval, bool sibcall);
 
 extern rtx k1_return_addr_rtx (int count, rtx frameaddr);
@@ -51,10 +50,6 @@ extern void k1_expand_prologue (void);
 extern void k1_expand_epilogue (void);
 
 extern void k1_expand_stack_check_allocate_stack (rtx target, rtx adjust);
-
-extern void k1_expand_fdpic_icall(rtx retval, rtx fnaddr, rtx callarg, int sibcall);
-
-extern void k1_expand_fdpic_call(rtx retval, rtx fnaddr, rtx callarg, int sibcall);
 
 extern void k1_expand_helper_pic_call(rtx retval, rtx fnaddr, rtx callarg, int sibcall);
 
