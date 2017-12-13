@@ -114,8 +114,8 @@ extern void __builtin_k1_readtlb (void);
 extern void __builtin_k1_syncgroup (unsigned int);
 /* TRAPA */
 /* TRAPO */
-/* WRITETLB */
-extern void __builtin_k1_writetlb (void);
+/* TLBWRITE */
+extern void __builtin_k1_tlbwrite (void);
 
 /*
  * LSU Instrutions
