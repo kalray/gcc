@@ -226,6 +226,38 @@ k1_compute_frame_info (void)
   frame->total_size = offset;
 }
 
+// By default, everything is allowed.
+static unsigned int disabled_isa_mask_k1tiny
+  = K1_ISA_ALU_LITE | K1_ISA_ALU_FULL | K1_ISA_ALU_FULL_ODD | K1_ISA_MAU_FPU;
+
+static const char **disabled_insn_k1tiny = NULL;
+
+/* Returns FALSE if specified INSN_NAME or ISA_MASK matches disabled
+   ISA set. If INSN_NAME is not NULL, ISA_MASK is ignored.
+ */
+int
+k1_isa_filter_enabled_p (unsigned int isa_mask, const char *insn_name)
+{
+  if (!K1_TINYK1)
+    {
+      return true;
+    }
+
+  if (insn_name != NULL)
+    {
+      const char **iter = disabled_insn_k1tiny;
+      while (iter != NULL)
+	{
+	  if (!strcmp (*iter, insn_name))
+	    {
+	      return false;
+	    }
+	}
+      return true;
+    }
+  return !(isa_mask & disabled_isa_mask_k1tiny);
+}
+
 static const char *prf_reg_names[] = {K1C_K1C_PRF_REGISTER_NAMES};
 /* Implement HARD_REGNO_MODE_OK.  */
 
