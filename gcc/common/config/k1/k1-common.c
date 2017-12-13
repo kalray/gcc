@@ -77,6 +77,7 @@ k1_handle_option (struct gcc_options *opts ATTRIBUTE_UNUSED,
     case OPT_mreload:
     case OPT_mhypervisor:
     case OPT_fstack_check_use_tls:
+    case OPT_mtiny_k1:
 #ifdef K1_LINUX
     case OPT_pthread:
 #endif
