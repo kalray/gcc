@@ -21,6 +21,16 @@
 #include "k1c-registers.h"
 #endif
 
+/* ISA filtering */
+extern int k1_isa_filter_enabled_p (unsigned int isa_mask,
+				    const char *insn_name);
+
+#define K1_ISA_ALU_TINY (1 << 0)
+#define K1_ISA_ALU_LITE (1 << 1)
+#define K1_ISA_ALU_FULL (1 << 2)
+#define K1_ISA_ALU_FULL_ODD (1 << 3)
+#define K1_ISA_MAU_FPU (1 << 4)
+
 //#define TARGET_K1C (TARGET_K1CDP | TARGET_K1CIO)
 
 #define K1C_SCRATCH_AREA_SIZE 16
