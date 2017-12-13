@@ -3233,7 +3233,7 @@ enum k1_builtin
   K1_BUILTIN_STSUD,
   K1_BUILTIN_SYNCGROUP,
   K1_BUILTIN_TOUCHL,
-  K1_BUILTIN_WRITETLB,
+  K1_BUILTIN_TLBWRITE,
   K1_BUILTIN_SAT,
   K1_BUILTIN_SATD,
   K1_BUILTIN_FWIDENHBW,
@@ -3527,7 +3527,7 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (STSU, "stsu", uintSI, uintSI, uintSI);
   ADD_K1_BUILTIN (STSUD, "stsud", uintDI, uintDI, uintDI);
   ADD_K1_BUILTIN (SYNCGROUP, "syncgroup", VOID, uintSI);
-  ADD_K1_BUILTIN (WRITETLB, "writetlb", VOID);
+  ADD_K1_BUILTIN (TLBWRITE, "tlbwrite", VOID);
 
   ADD_K1_BUILTIN (FWIDENHBW, "fwidenhbw", floatSF, uintSI);
   ADD_K1_BUILTIN (FWIDENHTW, "fwidenhtw", floatSF, uintSI);
@@ -3924,9 +3924,9 @@ k1_expand_builtin_readtlb (void)
 }
 
 static rtx
-k1_expand_builtin_writetlb (void)
+k1_expand_builtin_tlbwrite (void)
 {
-  emit_insn (gen_writetlb (k1_sync_reg_rtx));
+  emit_insn (gen_tlbwrite (k1_sync_reg_rtx));
 
   return NULL_RTX;
 }
@@ -6135,8 +6135,8 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_stsud (target, exp);
     case K1_BUILTIN_SYNCGROUP:
       return k1_expand_builtin_syncgroup (target, exp);
-    case K1_BUILTIN_WRITETLB:
-      return k1_expand_builtin_writetlb ();
+    case K1_BUILTIN_TLBWRITE:
+      return k1_expand_builtin_tlbwrite ();
     case K1_BUILTIN_FWIDENHBW:
       return k1_expand_builtin_fwiden (target, exp, 1);
 
