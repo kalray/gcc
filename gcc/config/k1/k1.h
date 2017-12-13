@@ -30,6 +30,7 @@ extern int k1_isa_filter_enabled_p (unsigned int isa_mask,
 #define K1_ISA_ALU_FULL (1 << 2)
 #define K1_ISA_ALU_FULL_ODD (1 << 3)
 #define K1_ISA_MAU_FPU (1 << 4)
+#define K1_ISA_MAU (1 << 5)
 
 //#define TARGET_K1C (TARGET_K1CDP | TARGET_K1CIO)
 
