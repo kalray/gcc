@@ -2812,6 +2812,9 @@ k1_target_legitimize_pic_address (rtx orig, rtx reg)
   return orig;
 }
 
+/* Expands a mov which second operand is an immediate. Returns TRUE
+   if caller pattern should not expand anymore (ie. call DONE macro).
+*/
 bool
 k1_expand_mov_immediate (rtx operands[])
 {
@@ -2820,35 +2823,34 @@ k1_expand_mov_immediate (rtx operands[])
       rtx src = operands[1];
       operands[1] = k1_legitimize_tls_reference (src);
       gcc_assert (operands[1] != src);
-      return true;
     }
   return false;
 }
 
-bool
-k1_expand_mov (rtx operands[])
-{
-  if (k1_has_tls_reference (operands[1]))
-    {
-      rtx src = operands[1];
-      operands[1] = k1_legitimize_tls_reference (src);
-      gcc_assert (operands[1] != src);
-    }
-  else if (!register_operand (operands[0], GET_MODE (operands[0])))
-    operands[1] = force_reg (GET_MODE (operands[0]), operands[1]);
-  else if (flag_pic /* || TARGET_FDPIC */)
-    {
-      if (SYMBOLIC_CONST (operands[1]))
-	operands[1]
-	  = k1_target_legitimize_pic_address (operands[1], operands[0]);
-    }
-  else if (TARGET_GPREL)
-    {
-      operands[1] = k1_legitimize_gp_address (operands[1], operands[0]);
-    }
+/* This expander may be needed later. */
+/* bool */
+/* k1_expand_mov (rtx operands[]) */
+/* { */
+/*     if (k1_has_tls_reference (operands[1])) */
+/*       { */
+/*         rtx src = operands[1]; */
+/*         operands[1] = k1_legitimize_tls_reference (src); */
+/*         gcc_assert (operands[1] != src); */
+/*       } */
+/*     else if (!register_operand (operands[0], GET_MODE(operands[0]))) */
+/*       operands[1] = force_reg (GET_MODE(operands[0]), operands[1]); */
+/*     else if (flag_pic /\* || TARGET_FDPIC *\/) */
+/*       { */
+/*         if (SYMBOLIC_CONST(operands[1])) */
+/*           operands[1] = k1_target_legitimize_pic_address (operands[1],
+ * operands[0]); */
+/*       } */
+/*     else if (TARGET_GPREL) { */
+/*       operands[1] = k1_legitimize_gp_address(operands[1], operands[0]); */
+/*     } */
 
-  return false;
-}
+/*     return false; */
+/* } */
 
 static int
 k1_target_register_move_cost (enum machine_mode mode,
