@@ -392,24 +392,46 @@ static const struct processor *selected_arch;
 static const struct processor *selected_cpu;
 // static const struct processor *selected_tune;
 
-static bool
-k1_tls_symbol_p (rtx x)
-{
-  return GET_CODE (x) == SYMBOL_REF && SYMBOL_REF_TLS_MODEL (x) != 0;
-}
-
 static int
 k1_tls_symbol_ref_1 (rtx *x, void *data ATTRIBUTE_UNUSED)
 {
+  if (GET_CODE (*x) == SYMBOL_REF)
+    return SYMBOL_REF_TLS_MODEL (*x) != 0;
+
+  /* Don't recurse into UNSPEC_TLS looking for TLS symbols; these are
+     TLS offsets, not real symbol references.  */
   if (GET_CODE (*x) == UNSPEC && XINT (*x, 1) == UNSPEC_TLS)
     return -1;
-  return k1_tls_symbol_p (*x);
+
+  return 0;
 }
 
+/* Returns 0 if there is no TLS ref, != 0 if there is.
+
+  Beware that UNSPEC_TLS are not symbol ref, they are offset within
+  TLS.
+ */
 int
 k1_has_tls_reference (rtx x)
 {
   return for_each_rtx (&x, &k1_tls_symbol_ref_1, NULL);
+}
+
+static int
+k1_has_tprel_1 (rtx *x, void *data ATTRIBUTE_UNUSED)
+{
+  if (GET_CODE (*x) == UNSPEC && XINT (*x, 1) == UNSPEC_TLS)
+    return 1;
+
+  return 0;
+}
+
+/* Returns 1 if an UNSPEC_TLS has been found (ie. a TLS offset), 0 if
+   not */
+static int
+k1_has_tprel (rtx x)
+{
+  return for_each_rtx (&x, &k1_has_tprel_1, NULL);
 }
 
 static int
@@ -658,10 +680,15 @@ k1_analyze_address (rtx x, bool strict, struct k1_address *addr)
 
   /* A 64bits symbol/label won't fit and symbolic refs should be done
      using @got[off] if not pcrel */
+  /* FIXME AUTO: symbols can fit as immediate values on coolidge. This
+   * constraint can be relaxed. */
   if ((TARGET_64 || flag_pic) && symbolic_reference_mentioned_p (x))
     {
       return false;
     }
+
+  if (k1_has_tprel (x))
+    return false;
 
   if ((!current_pass || current_pass->tv_id != TV_CPROP) && GET_CODE (x) == PLUS
       && k1_legitimate_address_register_p (XEXP (x, 0), strict)
