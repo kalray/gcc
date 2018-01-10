@@ -10,7 +10,8 @@
 (define_code_iterator ANY_EXTEND [sign_extend zero_extend])
 
 ;; Sign- or zero-extending data-op
-(define_code_attr su [(sign_extend "s") (zero_extend "z")])
+(define_code_attr lsext [(sign_extend "s") (zero_extend "z")])
+
 
 ;; Iterator for all integer modes (up to 64-bit)
 (define_mode_iterator ALLI [QI HI SI DI])
