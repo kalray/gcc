@@ -77,27 +77,33 @@
        (match_test "k1_float_fits_bits(rval,43,mode)")))
 
 (define_constraint "I08"
-  "A signed 8-bit constant."
+  "A signed 8-bit non symbolic constant."
   (and (match_code "const_int")
        (match_test "SIGNED_INT_FITS_N_BITS (ival, 8)")))
 
 (define_constraint "I16"  
-  "A signed 16-bit constant."
+  "A signed 16-bit non symbolic constant."
   (and (match_code "const_int")
        (match_test "SIGNED_INT_FITS_N_BITS (ival, 16)")))
 
 (define_constraint "I32"  
-  "A signed 32-bit constant."
+  "A signed 32-bit non symbolic constant."
   (and (match_code "const_int")
        (match_test "SIGNED_INT_FITS_N_BITS (ival, 32)")))
 
 (define_constraint "I37"
-  "A signed 37-bit constant."
+  "A signed 37-bit non symbolic constant."
    (and (match_code "const_int")
        (match_test "SIGNED_INT_FITS_N_BITS (ival, 37)")))
 
+(define_constraint "B37"
+  "A signed 37-bit constant (possibly symbolic if targeting 32bits addressing))."
+   (ior (and (match_test "k1_symbol_operand(op,mode)")
+             (match_test "!TARGET_64"))
+        (match_test "satisfies_constraint_I37(op)")))
+
 (define_constraint "I43"
-  "A signed 43-bit constant."
+  "A signed 43-bit non symbolic constant."
   (and (match_code "const_int")
        (match_test "SIGNED_INT_FITS_N_BITS (ival, 43)")))
 
