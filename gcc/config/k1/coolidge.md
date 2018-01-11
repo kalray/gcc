@@ -148,6 +148,9 @@
 (define_reservation "k1c_mau.x_r"
   "k1c_mau_u + k1c_issue_x2_r")
 
+(define_reservation "k1c_mau.y_r"
+  "k1c_mau_u + k1c_issue_x3_r")
+
 (define_reservation "k1c_mau_acc_r"
   "k1c_mau_u + k1c_lsu_store_u + k1c_issue_r")
 
@@ -265,6 +268,10 @@
 (define_insn_reservation "k1c_mau.x" 2 (and (eq_attr "arch" "coolidge")
                                            (eq_attr "type" "mau_x"))
                          "k1c_mau.x_r,nothing")
+
+(define_insn_reservation "k1c_mau.y" 2 (and (eq_attr "arch" "coolidge")
+                                            (eq_attr "type" "mau_y"))
+                         "k1c_mau.y_r,nothing")
 
 (define_insn_reservation "k1c_mau_lsu" 2 (and (eq_attr "arch" "coolidge")
                                            (eq_attr "type" "mau_lsu"))

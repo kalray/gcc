@@ -96,6 +96,12 @@
    (and (match_code "const_int")
        (match_test "SIGNED_INT_FITS_N_BITS (ival, 37)")))
 
+(define_constraint "B32"
+  "A signed 32-bit constant (possibly symbolic if targeting 32bits addressing))."
+   (ior (and (match_test "k1_symbol_operand(op,mode)")
+             (match_test "!TARGET_64"))
+        (match_test "satisfies_constraint_I32(op)")))
+
 (define_constraint "B37"
   "A signed 37-bit constant (possibly symbolic if targeting 32bits addressing))."
    (ior (and (match_test "k1_symbol_operand(op,mode)")
