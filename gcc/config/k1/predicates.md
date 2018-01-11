@@ -24,6 +24,11 @@
       (and (match_code "const,const_int")
            (match_test "satisfies_constraint_I32(op)"))))
 
+;; immediate up to signed 32
+(define_predicate "s32_operand"
+  (and (match_code "const,const_int")
+       (match_test "satisfies_constraint_I32(op)")))
+
 
 ;; immediate up to signed 37
 (define_predicate "s37_operand"
@@ -287,10 +292,16 @@
 ;;       (match_test "satisfies_constraint_J10(op)")
 ;;       (match_test "satisfies_constraint_U37(op)")))
 
-(define_predicate "unsigned_mul_reg_or_immediate"
+(define_predicate "uimmediate_operand"
+  (and (match_code "const_int")
+       (match_test "INTVAL (op) >= 0")))
+
+(define_predicate "u32immediate_operand"
+  (match_test "satisfies_constraint_U32(op)"))
+
+(define_predicate "register_or_u32immediate"
   (ior (match_operand 0 "register_operand")
-       (and (match_code "const_int")
-            (match_test "INTVAL(op) >= 0"))))
+       (match_test "satisfies_constraint_U32(op)")))
 
 (define_predicate "system_register32_operand"
   (match_code "reg")
