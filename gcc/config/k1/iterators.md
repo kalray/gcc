@@ -7,11 +7,25 @@
 (define_mode_attr hq [(HI "h") (QI "q")])
 
 ;; Code iterator for sign/zero extension
+(define_code_iterator MAX_UMAX [smax umax])
+(define_code_iterator MIN_UMIN [smin umin])
+
+(define_code_attr spfx [(smax "s") (umax "u")
+     (smin "s") (umin "u")
+])
+
+
+;; Code iterator for sign/zero extension
 (define_code_iterator ANY_EXTEND [sign_extend zero_extend])
 
 ;; Sign- or zero-extending data-op
 (define_code_attr lsext [(sign_extend "s") (zero_extend "z")])
 
+;; Sign- or zero-extending mapping to unsigned mnemonics
+(define_code_attr ssfx [(sign_extend "") (zero_extend "u")
+     (smax "") (smin "")
+     (umax "u") (umin "u")
+])
 
 ;; Iterator for all integer modes (up to 64-bit)
 (define_mode_iterator ALLI [QI HI SI DI])
