@@ -14,6 +14,7 @@
   mau,\
   mau_fpu,\
   mau_x,\
+  mau_y,\
   mau_lsu,\
   mau_lsu_x,\
   mau_lsu_fpu,\
