@@ -14,12 +14,15 @@
      (smin "s") (umin "u")
 ])
 
-
 ;; Code iterator for sign/zero extension
 (define_code_iterator ANY_EXTEND [sign_extend zero_extend])
 
 ;; Sign- or zero-extending data-op
 (define_code_attr lsext [(sign_extend "s") (zero_extend "z")])
+
+;; Count lead/trailing zero
+(define_code_iterator ANY_ZERO_COUNT [ctz clz])
+(define_code_attr c_tl  [(ctz "t") (clz "l")])
 
 ;; Sign- or zero-extending mapping to unsigned mnemonics
 (define_code_attr ssfx [(sign_extend "") (zero_extend "u")
@@ -34,7 +37,10 @@
 (define_mode_iterator ALL_SMALL_I [QI HI SI])
 
 ;; Iterator for all float modes (up to 64-bit)
-(define_mode_iterator ALLF [SF DF])
+(define_mode_iterator ALLF [(SF "!K1_TINYK1") (DF "!K1_TINYK1")])
+
+;; Iterator for all float modes (up to 64-bit)
+(define_mode_iterator ALLMF [SF DF])
 
 (define_mode_attr sfx [(SF "w") (DF "d") (SI "w") (DI "d")] )
 (define_mode_attr fmasfx [(SF "w") (DF "d")] )
@@ -61,9 +67,9 @@
 
 ;; FIXME AUTO: disabling vector support
 ;;(define_mode_iterator SISIZE [SI SF V2HI])
-(define_mode_iterator SISIZE [SI SF ])
+(define_mode_iterator SISIZE [SI (SF "!K1_TINYK1") ])
 
-(define_mode_iterator SISIZESCALAR [SI SF])
+(define_mode_iterator SISIZESCALAR [SI (SF "!K1_TINYK1")])
 
 ;; FIXME AUTO: disabling vector support
 ;;(define_mode_iterator DISIZE [DI DF V2SI V4HI])
@@ -74,7 +80,7 @@
 ;; FIXME AUTO: disabling vector support
 ;;(define_mode_iterator ALLMODES [DI DF V4HI V2SI SI SF V2HI HI QI])
 
-(define_mode_iterator ALLMODES [DI DF SI SF HI QI])
+(define_mode_iterator ALLMODES [DI (DF "!K1_TINYK1") SI (SF "!K1_TINYK1") HI QI])
 
 (define_mode_iterator I [(SI "") (DI "")])
 (define_mode_attr lite_prefix [(SI "") (DI "alud_")])

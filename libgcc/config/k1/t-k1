@@ -1,12 +1,15 @@
+## FIXME AUTO: make sense of all this libgcc
+## It's not clear why we need to provide our own version
+## of these functions.
 
 # Software emulation for integer div and mod
-LIB2FUNCS_EXCLUDE = _umodsi3 _udivsi3 _modsi3 _divsi3 \
-	            _umoddi3 _udivdi3 _moddi3 _divdi3
+LIB2FUNCS_EXCLUDE = _umoddi3 _udivdi3 _moddi3 _divdi3
+##_umodsi3 _udivsi3 _modsi3 _divsi3 \
 
-LIB2ADD = $(srcdir)/config/k1/udivmodsi4.c \
-          $(srcdir)/config/k1/udivmoddi4.c \
-	  $(srcdir)/config/k1/fpu_hal.c
+## this one is a copy-pasta of libgcc divmodsi4 function adapted for 64bits int.
+LIB2ADD = $(srcdir)/config/k1/udivmoddi4.c
 
+##$(srcdir)/config/k1/udivmodsi4.c \
 #              $(srcdir)/config/k1/__invf.S 
 
 #              # $(srcdir)/config/k1/dual_divf.S \

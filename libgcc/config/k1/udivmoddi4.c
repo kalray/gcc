@@ -1,4 +1,33 @@
+#ifdef __K1_TINYK1__
+static unsigned long long
+udivmoddi4 (unsigned long long num, unsigned long long den, int modwanted)
+{
+  unsigned long long bit = 1;
+  unsigned long long res = 0;
 
+  while (den < num && bit && !(den & (1L << 31)))
+    {
+      den <<= 1;
+      bit <<= 1;
+    }
+  while (bit)
+    {
+      if (num >= den)
+	{
+	  num -= den;
+	  res |= bit;
+	}
+      bit >>= 1;
+      den >>= 1;
+    }
+  if (modwanted)
+    return num;
+  return res;
+}
+
+#else
+
+/* THIS IS THE PREVIOUS VERSION, USED ON BOSTAN AND ANDEY */
 static unsigned long long
 udivmoddi4 (unsigned long long num, unsigned long long den, int modwanted)
 {
@@ -6,7 +35,7 @@ udivmoddi4 (unsigned long long num, unsigned long long den, int modwanted)
 
   if (den <= r)
     {
-      unsigned k = __builtin_k1_clzdl (den) - __builtin_k1_clzdl (r);
+      unsigned k = __builtin_clz (den) - __builtin_clz (r);
       den = den << k;
       if (r >= den)
 	{
@@ -31,6 +60,7 @@ udivmoddi4 (unsigned long long num, unsigned long long den, int modwanted)
 
   return modwanted ? r : q;
 }
+#endif /* __K1_TINYK1__ */
 
 unsigned long long
 __udivdi3 (unsigned long long a, unsigned long long b)
