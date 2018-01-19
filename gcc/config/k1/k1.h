@@ -81,6 +81,8 @@ extern int k1_isa_filter_enabled_p (unsigned int isa_mask,
 	    builtin_define ("__K1_GPREL__");                                   \
 	  if (TARGET_64)                                                       \
 	    builtin_define ("__K1_64__");                                      \
+	  if (K1_TINYK1)                                                       \
+	    builtin_define ("__K1_TINYK1__");                                  \
 	}                                                                      \
     }                                                                          \
   while (0)
@@ -110,7 +112,7 @@ extern int k1_isa_filter_enabled_p (unsigned int isa_mask,
 
 #define CC1_SPEC " %{G*}"
 
-#define ASM_SPEC "%{mcore*} --no-check-resources %{m64}"
+#define ASM_SPEC "%{mcore*} --no-check-resources %{m64} %{mtiny-k1}"
 
 #define CRT_CALL_STATIC_FUNCTION(SECTION_OP, FUNC)                             \
   asm(SECTION_OP "\ncall " #FUNC "\n;;\n.previous\n");
@@ -1256,13 +1258,6 @@ int k1_adjust_insn_length (rtx insn, int length);
 #define K1_STACK_ALIGN(LOC) (((LOC) + 7) & -8)
 
 #ifndef IN_LIBGCC2
-
-typedef struct GTY (()) fake_SC
-{
-  rtx sc;
-  rtx low, low_insn;
-  rtx high, high_insn;
-} fake_SC_t;
 
 extern GTY (()) rtx k1_sync_reg_rtx;
 extern GTY (()) rtx k1_link_reg_rtx;

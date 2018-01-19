@@ -136,7 +136,7 @@ struct GTY (()) machine_function
   rtx rodata_rtx;
   rtx stack_check_block_label;
   rtx stack_check_block_seq, stack_check_block_last;
-  vec<fake_SC_t, va_gc> *fake_SC_registers;
+  /* vec<fake_SC_t,va_gc> *fake_SC_registers; */
   bool gp_initialized;
 };
 
