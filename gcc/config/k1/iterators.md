@@ -82,7 +82,6 @@
 
 (define_mode_iterator ALLMODES [DI (DF "!K1_TINYK1") SI (SF "!K1_TINYK1") HI QI])
 
-(define_mode_iterator I [(SI "") (DI "")])
 (define_mode_attr lite_prefix [(SI "") (DI "alud_")])
 
 ;;(define_mode_attr suffix32b [(SI "w") (DI "")])
