@@ -144,14 +144,14 @@ extern int k1_isa_filter_enabled_p(unsigned int isa_mask, const char* insn_name)
    bits. All stack parameters receive at least this much alignment
    regardless of data type. On most machines, this is the same as the
    size of an integer. */
-#define PARM_BOUNDARY 32
+#define PARM_BOUNDARY 64
 
 /* Define this macro to the minimum alignment enforced by hardware for
    the stack pointer on this machine. The definition is a C expression
    for the desired alignment (measured in bits). This value is used as
    a default if PREFERRED_STACK_BOUNDARY is not defined. On most
    machines, this should be the same as PARM_BOUNDARY. */
-#define STACK_BOUNDARY 32
+#define STACK_BOUNDARY 64
 
 /* Define this macro if you wish to preserve a certain alignment for
    the stack pointer, greater than what the hardware enforces.  The
@@ -202,7 +202,7 @@ extern int k1_isa_filter_enabled_p(unsigned int isa_mask, const char* insn_name)
 /* Similarly, make sure that objects on the stack are sensibly aligned.  */
 #define LOCAL_ALIGNMENT(EXP, ALIGN) DATA_ALIGNMENT(EXP, ALIGN)
 
-#define STACK_SLOT_ALIGNMENT(type, mode, align) ( (mode == BLKmode ? 8 : GET_MODE_SIZE (mode)) > 4 ? BIGGEST_ALIGNMENT : BITS_PER_WORD )
+//#define STACK_SLOT_ALIGNMENT(type, mode, align) ( (mode == BLKmode ? 8 : GET_MODE_SIZE (mode)) > 4 ? BIGGEST_ALIGNMENT : BITS_PER_WORD )
 
 /* ********** Type Layout ********** */
 
@@ -502,7 +502,7 @@ K1C_FIXED_REGISTERS \
    the first slot's length from STARTING_FRAME_OFFSET. Otherwise, it
    is found by adding the length of the first slot to the value
    STARTING_FRAME_OFFSET. */
-#define STARTING_FRAME_OFFSET K1C_SCRATCH_AREA_SIZE
+#define STARTING_FRAME_OFFSET (0) // K1C_SCRATCH_AREA_SIZE
 
 /* Offset from the stack pointer register to the first location at
    which outgoing arguments are placed. If not specified, the default
@@ -519,7 +519,7 @@ K1C_FIXED_REGISTERS \
    first argument's address. */
 // FIXME AUTO: Used a more simple value. Maybe wrong.
 //#define FIRST_PARM_OFFSET(funcdecl) (((cfun->stdarg && crtl->args.info < K1C_ARG_REG_SLOTS)? (UNITS_PER_WORD * ((K1C_ARG_REG_SLOTS - crtl->args.info + 1) & ~1)): 0) + STARTING_FRAME_OFFSET)
-#define FIRST_PARM_OFFSET(funcdecl) (STARTING_FRAME_OFFSET)
+#define FIRST_PARM_OFFSET(funcdecl) (0) //STARTING_FRAME_OFFSET)
 
 /* A C expression whose value is RTL representing the value of the
    return address for the frame count steps up from the current frame,
