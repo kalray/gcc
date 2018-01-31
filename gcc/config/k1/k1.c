@@ -107,13 +107,13 @@ struct GTY (()) k1_frame_info
   HOST_WIDE_INT total_size;
 
   /* Bit X is set if the function saves or restores GPR X.  */
-  unsigned int mask;
+  /* unsigned int mask; */
 
   /* How much the GPR save/restore routines adjust sp (or 0 if unused).  */
-  unsigned save_libcall_adjustment;
+  /* unsigned save_libcall_adjustment; */
 
   /* Offsets of save area from frame bottom */
-  HOST_WIDE_INT gp_sp_offset;
+  /* HOST_WIDE_INT gp_sp_offset; */
 
   /* Offset of virtual frame pointer from stack pointer/frame bottom */
   HOST_WIDE_INT frame_pointer_offset;
