@@ -3104,6 +3104,7 @@ enum k1_builtin
   /* K1_BUILTIN_ABDHP, */
   /* K1_BUILTIN_ADDHP, */
   K1_BUILTIN_ADDS,
+  K1_BUILTIN_AWAIT,
   K1_BUILTIN_BARRIER,
   /* FIXME AUTO: no more bwlu */
   /* K1_BUILTIN_BWLU, */
@@ -3131,6 +3132,7 @@ enum k1_builtin
   K1_BUILTIN_DFLUSHL,
   K1_BUILTIN_DINVAL,
   K1_BUILTIN_DINVALL,
+  K1_BUILTIN_DOZE,
   K1_BUILTIN_DPURGE,
   K1_BUILTIN_DPURGEL,
   K1_BUILTIN_DTOUCHL,
@@ -3258,6 +3260,8 @@ enum k1_builtin
   /* K1_BUILTIN_SLLHPS_R, */
   /* K1_BUILTIN_SRAHPS, */
   /* K1_BUILTIN_SRAHPS_R, */
+  K1_BUILTIN_SLEEP,
+  K1_BUILTIN_STOP,
   K1_BUILTIN_STSU,
   K1_BUILTIN_STSUD,
   K1_BUILTIN_SYNCGROUP,
@@ -3366,6 +3370,7 @@ k1_target_init_builtins (void)
   /* ADD_K1_BUILTIN (ADDHP,   "addhp",       intSI,  intSI, intSI); */
 
   ADD_K1_BUILTIN (ADDS, "adds", intSI, intSI, intSI);
+  ADD_K1_BUILTIN (AWAIT, "await", VOID);
   ADD_K1_BUILTIN (BARRIER, "barrier", VOID);
   /* FIXME AUTO: no more bwlu */
   /* ADD_K1_BUILTIN (BWLU,    "bwlu",        uintSI, uintSI, uintSI, uintSI,
@@ -3393,6 +3398,7 @@ k1_target_init_builtins (void)
   /* ADD_K1_BUILTIN (ALDC,    "aldc",    uintDI,  voidPTR); */
   ADD_K1_BUILTIN (DINVAL, "dinval", VOID);
   ADD_K1_BUILTIN (DINVALL, "dinvall", VOID, constVoidPTR);
+  ADD_K1_BUILTIN (DOZE, "doze", VOID);
   ADD_K1_BUILTIN (DTOUCHL, "dtouchl", VOID, constVoidPTR);
   ADD_K1_BUILTIN (DZEROL, "dzerol", VOID, voidPTR);
   ADD_K1_BUILTIN (EXTFZ, "extfz", uintSI, uintSI, uintSI, uintSI);
@@ -3553,6 +3559,8 @@ k1_target_init_builtins (void)
   /* ADD_K1_BUILTIN (SLLHPS_R,"sllhps_r",    uintSI,  uintSI,  uintSI); */
   /* ADD_K1_BUILTIN (SRAHPS,  "srahps",      uintSI,  uintSI,  uintSI); */
   /* ADD_K1_BUILTIN (SRAHPS_R,"srahps_r",    uintSI,  uintSI,  uintSI); */
+  ADD_K1_BUILTIN (SLEEP, "sleep", VOID);
+  ADD_K1_BUILTIN (STOP, "stop", VOID);
   ADD_K1_BUILTIN (STSU, "stsu", uintSI, uintSI, uintSI);
   ADD_K1_BUILTIN (STSUD, "stsud", uintDI, uintDI, uintDI);
   ADD_K1_BUILTIN (SYNCGROUP, "syncgroup", VOID, uintSI);
@@ -3885,6 +3893,38 @@ k1_expand_builtin_sbmmt8 (rtx target, tree args)
 
 /*     return target; */
 /* } */
+
+static rtx
+k1_expand_builtin_await (rtx target ATTRIBUTE_UNUSED, tree args)
+{
+  emit_insn (gen_await (k1_sync_reg_rtx));
+
+  return NULL_RTX;
+}
+
+static rtx
+k1_expand_builtin_doze (rtx target ATTRIBUTE_UNUSED, tree args)
+{
+  emit_insn (gen_doze (k1_sync_reg_rtx));
+
+  return NULL_RTX;
+}
+
+static rtx
+k1_expand_builtin_sleep (rtx target ATTRIBUTE_UNUSED, tree args)
+{
+  emit_insn (gen_sleep (k1_sync_reg_rtx));
+
+  return NULL_RTX;
+}
+
+static rtx
+k1_expand_builtin_stop (rtx target ATTRIBUTE_UNUSED, tree args)
+{
+  emit_insn (gen_stop (k1_sync_reg_rtx));
+
+  return NULL_RTX;
+}
 
 static rtx
 k1_expand_builtin_syncgroup (rtx target ATTRIBUTE_UNUSED, tree args)
@@ -5876,6 +5916,8 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     /*     return k1_expand_builtin_addhp (target, exp); */
     case K1_BUILTIN_ADDS:
       return k1_expand_builtin_adds (target, exp);
+    case K1_BUILTIN_AWAIT:
+      return k1_expand_builtin_await (target, exp);
     case K1_BUILTIN_BARRIER:
       return k1_expand_builtin_barrier ();
 
@@ -5920,6 +5962,8 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_dinval ();
     case K1_BUILTIN_DINVALL:
       return k1_expand_builtin_dinvall (target, exp);
+    case K1_BUILTIN_DOZE:
+      return k1_expand_builtin_doze (target, exp);
     case K1_BUILTIN_DTOUCHL:
       return k1_expand_builtin_dtouchl (target, exp);
     case K1_BUILTIN_DZEROL:
@@ -6158,6 +6202,10 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     /* case K1_BUILTIN_SRAHPS: */
     /* case K1_BUILTIN_SRAHPS_R: */
     /*     return k1_expand_builtin_srahps (target, exp); */
+    case K1_BUILTIN_SLEEP:
+      return k1_expand_builtin_sleep (target, exp);
+    case K1_BUILTIN_STOP:
+      return k1_expand_builtin_stop (target, exp);
     case K1_BUILTIN_STSU:
       return k1_expand_builtin_stsu (target, exp);
     case K1_BUILTIN_STSUD:
