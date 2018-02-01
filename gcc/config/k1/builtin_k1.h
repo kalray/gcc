@@ -49,6 +49,7 @@ extern "C" {
  */
 
 /* AWAIT */
+extern void __builtin_k1_await (void);
 /* BARRIER */
 extern void __builtin_k1_barrier (void);
 /* BREAK */
@@ -56,6 +57,7 @@ extern void __builtin_k1_barrier (void);
 /* CB */
 /* CDB */
 /* DOZE */
+extern void __builtin_k1_doze (void);
 /* GET */
 extern unsigned long long __builtin_k1_get (int);
 /* GOTO */
@@ -109,7 +111,9 @@ extern void __builtin_k1_readtlb (void);
 /* SCALL */
 /* SET */
 /* SLEEP */
+extern void __builtin_k1_sleep (void);
 /* STOP */
+extern void __builtin_k1_stop (void);
 /* SYNCGROUP */
 extern void __builtin_k1_syncgroup (unsigned int);
 /* TRAPA */
