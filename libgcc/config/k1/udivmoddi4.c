@@ -35,7 +35,7 @@ udivmoddi4 (unsigned long long num, unsigned long long den, int modwanted)
 
   if (den <= r)
     {
-      unsigned k = __builtin_clz (den) - __builtin_clz (r);
+      unsigned k = __builtin_clzll (den) - __builtin_clzll (r);
       den = den << k;
       if (r >= den)
 	{
