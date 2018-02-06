@@ -1432,7 +1432,7 @@ k1_target_print_operand (FILE *file, rtx x, int code)
 	  long l[2];
 	  REAL_VALUE_FROM_CONST_DOUBLE (r, operand);
 	  REAL_VALUE_TO_TARGET_DOUBLE (r, l);
-	  fprintf (file, "0x%x%x",
+	  fprintf (file, "0x%x%08x",
 		   (unsigned int)l[1], (unsigned int)l[0]);
 	  return;
 	}
