@@ -99,6 +99,12 @@ struct GTY(())  k1_frame_info {
   /* The size of the frame in bytes.  */
   HOST_WIDE_INT total_size;
 
+  /* The offset from the initial SP value to its new value */
+  HOST_WIDE_INT initial_sp_offset;
+
+  /* Padding for enforcing stack alignment */
+  HOST_WIDE_INT padding;
+
   /* Bit X is set if the function saves or restores GPR X.  */
   /* unsigned int mask; */
 
@@ -106,7 +112,7 @@ struct GTY(())  k1_frame_info {
   /* unsigned save_libcall_adjustment; */
 
   /* Offsets of save area from frame bottom */
-  /* HOST_WIDE_INT gp_sp_offset; */
+  HOST_WIDE_INT saved_reg_sp_offset;
 
   /* Offset of virtual frame pointer from stack pointer/frame bottom */
   HOST_WIDE_INT frame_pointer_offset;
@@ -116,6 +122,8 @@ struct GTY(())  k1_frame_info {
 
   /* The offset of arg_pointer_rtx from the bottom of the frame.  */
   HOST_WIDE_INT arg_pointer_offset;
+
+  bool laid_out;
 };
 
 struct GTY(()) machine_function {
@@ -137,33 +145,35 @@ struct GTY(()) machine_function {
      +-------------------------------+
      |                               |
      |  incoming stack arguments     |
-     |                               |
      +-------------------------------+
-     |                               |
-     |  callee-allocated save area   |
-     |  for register varargs         |
-     |                               |
-     +-------------------------------+ <---- frame pointer
-     |                               |
-     | local variable                |
-     |                               |
-     +-------------------------------+
-     |                               |
-     | callee-saved register         |
-     |                               |
-     +-------------------------------+
-     | RA                            |
-     +-------------------------------+
-     | dynamic allocation            |
-     +-------------------------------+
-     |                               |
-     | outgoing stack arguments      |
-     |                               |
-     +-------------------------------+
-     |                               |
+     |                               | <----CALLER FRAME
      | scratch area                  |
-     |                               |
-     +-------------------------------+
+     |                       +-------------------------------+
+ /-->+-----------------------|                               |
+ |                           |  callee-allocated save area   |
+ |                           |  for register varargs         |
+initial stack pointer        |                               |
+                             +-------------------------------+ <---- frame pointer / arg pointer
+                             |                               |
+                             | local variable                |
+                             |                               |
+                             +-------------------------------+
+                             |                               |
+                             | callee-saved register         |
+                             |                               |
+                             +-------------------------------+
+                             | RA                            |
+                             +-------------------------------+
+                             | dynamic allocation            |
+                             +-------------------------------+
+                             |                               |
+                             | outgoing stack arguments      |
+                             |                               |
+                             +-------------------------------+
+                             |                               | ^
+                             | scratch area                  | | STACK_POINTER_OFFSET (K1C_SCRATCH_AREA_SIZE)
+                             |                               | v
+                             +-------------------------------+ <---- stack pointer
 
  */  
 
@@ -178,7 +188,10 @@ static void
 k1_compute_frame_info (void)
 {
   struct k1_frame_info *frame;
-  HOST_WIDE_INT offset;
+  HOST_WIDE_INT offset = 0;
+
+  if (reload_completed && cfun->machine->frame.laid_out)
+    return;
 
   frame = &cfun->machine->frame;
   memset (frame, 0, sizeof (*frame));
@@ -189,29 +202,45 @@ k1_compute_frame_info (void)
     gcc_unreachable();
   }
 
-  /* At the bottom of the frame are any outgoing stack arguments. */
-  offset = crtl->outgoing_args_size;
-
   /* The scratch area */
-  offset += K1C_SCRATCH_AREA_SIZE;
+  if (!crtl->is_leaf) {
+    offset += K1C_SCRATCH_AREA_SIZE;
+    frame->saved_reg_sp_offset += K1C_SCRATCH_AREA_SIZE;
+  }
 
-  /* Next are local stack variables. */
-  offset += K1_STACK_ALIGN(get_frame_size());
+  /* At the bottom of the frame are any outgoing stack arguments. */
+  offset += crtl->outgoing_args_size;
+  frame->saved_reg_sp_offset += crtl->outgoing_args_size;
 
   /* saved registers */
   offset += k1_spill (SPILL_COMPUTE_SIZE);
 
+  /* Next are local stack variables. */
+  offset += K1_STACK_ALIGN(get_frame_size());
+
   /* Frame pointer points between incoming arg and local vars */
   frame->frame_pointer_offset = offset;
 
-  /* push arg registers not used, align result on 16bits */
+  /* if any anonymous arg may be in register, push them on the stack */
   if (cfun->stdarg && crtl->args.info < K1C_ARG_REG_SLOTS)
-    offset += UNITS_PER_WORD * ((K1C_ARG_REG_SLOTS - crtl->args.info + 1) & ~1);
+    offset += UNITS_PER_WORD * (K1C_ARG_REG_SLOTS - crtl->args.info);
 
  /* Next is the callee-allocated area for pretend stack arguments.  */
   offset += crtl->args.pretend_args_size;
 
+  /* Enforce stack alignement according to ABI: 8bytes */
+  HOST_WIDE_INT align = (offset + 7) & ~(0x7);
+  frame->padding = align - offset;
+
+  offset += frame->padding;
+
+  /* if no stack storage is needed (or less than scratch), don't move SP. */
+  frame->initial_sp_offset = (offset <= K1C_SCRATCH_AREA_SIZE) ?
+    0 : offset - K1C_SCRATCH_AREA_SIZE;
+
   frame->total_size = offset;
+
+  frame->laid_out = true;
 }
 
 // By default, everything is allowed.
@@ -2041,7 +2070,12 @@ static int
 k1_spill (enum spill_action action)
 {
     int regno, spill_reg;
-    int stack_size = 0, offset = K1C_SCRATCH_AREA_SIZE + crtl->outgoing_args_size;
+    int stack_size = 0;
+    struct k1_frame_info *frame = &cfun->machine->frame;
+
+    gcc_assert(action == SPILL_COMPUTE_SIZE || frame->laid_out);
+    int offset = action == SPILL_COMPUTE_SIZE ? 0 : frame->saved_reg_sp_offset;
+
     bool my_regs_ever_live_p[FIRST_PSEUDO_REGISTER];
     rtx insn, reg, mem;
     tree attr = DECL_ATTRIBUTES (current_function_decl);
@@ -2234,7 +2268,7 @@ k1_expand_prologue(void)
 {
   k1_compute_frame_info();
   struct k1_frame_info *frame = &cfun->machine->frame;
-  HOST_WIDE_INT size = frame->total_size;
+  HOST_WIDE_INT size = frame->initial_sp_offset;
   rtx insn;
 
   if (size > 0) {
@@ -2259,25 +2293,25 @@ void
 k1_expand_epilogue (void)
 {
   struct k1_frame_info *frame = &cfun->machine->frame;
-  HOST_WIDE_INT frame_size = frame->total_size;
+  HOST_WIDE_INT frame_size = frame->initial_sp_offset;
   rtx insn;
 
   if (frame_pointer_needed)
     {
       insn = emit_insn (gen_add3_insn (stack_pointer_rtx,
 				       frame_pointer_rtx, GEN_INT (-frame->frame_pointer_offset)));
-        RTX_FRAME_RELATED_P (insn) = 1;
+      RTX_FRAME_RELATED_P (insn) = 1;
     }
   
-    k1_spill (SPILL_RESTORE);
+  k1_spill (SPILL_RESTORE);
 
-    if (frame_size != 0)
-      {
-	insn = GEN_INT (frame_size);
-        insn = emit_insn (gen_add3_insn (stack_pointer_rtx, stack_pointer_rtx,
-					 insn));
-        RTX_FRAME_RELATED_P (insn) = 1;
-      }
+  if (frame_size != 0)
+    {
+      insn = GEN_INT (frame_size);
+      insn = emit_insn (gen_add3_insn (stack_pointer_rtx, stack_pointer_rtx,
+				       insn));
+      RTX_FRAME_RELATED_P (insn) = 1;
+    }
 }
 
 static rtx
