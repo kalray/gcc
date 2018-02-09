@@ -109,15 +109,6 @@ struct GTY (()) k1_frame_info
   /* The offset from the initial SP value to its new value */
   HOST_WIDE_INT initial_sp_offset;
 
-  /* Padding for enforcing stack alignment */
-  HOST_WIDE_INT padding;
-
-  /* Bit X is set if the function saves or restores GPR X.  */
-  /* unsigned int mask; */
-
-  /* How much the GPR save/restore routines adjust sp (or 0 if unused).  */
-  /* unsigned save_libcall_adjustment; */
-
   /* Offsets of save area from frame bottom */
   HOST_WIDE_INT saved_reg_sp_offset;
 
@@ -162,7 +153,11 @@ struct GTY (()) machine_function
  |                           |  for register varargs         |
 initial stack pointer        |                               |
 			     +-------------------------------+ <---- frame
-pointer / arg pointer |                               | | local variable | | |
+pointer / arg pointer |            padding            |
+			     +-------------------------------+
+			     |                               |
+			     | local variable                |
+			     |                               |
 			     +-------------------------------+
 			     |                               |
 			     | callee-saved register         |
@@ -228,23 +223,21 @@ k1_compute_frame_info (void)
   offset += k1_spill (SPILL_COMPUTE_SIZE);
 
   /* Next are local stack variables. */
-  offset += K1_STACK_ALIGN (get_frame_size ());
+  offset += get_frame_size ();
+
+  /* FP must be correctly aligned, else var args may not be correctly pushed */
+  offset = K1_STACK_ALIGN (offset);
 
   /* Frame pointer points between incoming arg and local vars */
   frame->frame_pointer_offset = offset;
 
-  /* if any anonymous arg may be in register, push them on the stack */
+  /* If any anonymous arg may be in register, push them on the stack */
+  /* This can't break alignment */
   if (cfun->stdarg && crtl->args.info < K1C_ARG_REG_SLOTS)
     offset += UNITS_PER_WORD * (K1C_ARG_REG_SLOTS - crtl->args.info);
 
   /* Next is the callee-allocated area for pretend stack arguments.  */
   offset += crtl->args.pretend_args_size;
-
-  /* Enforce stack alignement according to ABI: 8bytes */
-  HOST_WIDE_INT align = (offset + 7) & ~(0x7);
-  frame->padding = align - offset;
-
-  offset += frame->padding;
 
   /* if no stack storage is needed (or less than scratch), don't move SP. */
   frame->initial_sp_offset
