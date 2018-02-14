@@ -233,8 +233,9 @@ k1_compute_frame_info (void)
 
   /* If any anonymous arg may be in register, push them on the stack */
   /* This can't break alignment */
-  if (cfun->stdarg && crtl->args.info < K1C_ARG_REG_SLOTS)
-    offset += UNITS_PER_WORD * (K1C_ARG_REG_SLOTS - crtl->args.info);
+  if (cfun->stdarg && crtl->args.info.next_arg_reg < K1C_ARG_REG_SLOTS)
+    offset
+      += UNITS_PER_WORD * (K1C_ARG_REG_SLOTS - crtl->args.info.next_arg_reg);
 
   /* Next is the callee-allocated area for pretend stack arguments.  */
   offset += crtl->args.pretend_args_size;
@@ -882,90 +883,130 @@ k1_return_addr_rtx (int count, rtx frameaddr ATTRIBUTE_UNUSED)
 		    : NULL_RTX;
 }
 
-/* Return rtx for register where argument is passed, or zero if it is passed
-   on the stack.  */
+/* Implements the macro INIT_CUMULATIVE_ARGS defined in k1.h. */
+
+void
+k1_init_cumulative_args (CUMULATIVE_ARGS *cum, const_tree fntype, rtx libname,
+			 tree fndecl ATTRIBUTE_UNUSED,
+			 int n_named_args ATTRIBUTE_UNUSED)
+{
+  cum->next_arg_reg = 0;
+}
+
+/* Information about a single argument.  */
+struct k1_arg_info
+{
+  /* first register to be used for this arg */
+  unsigned int first_reg;
+
+  /* number of registers used */
+  int num_regs;
+
+  /* number of words pushed on the stack (in excess of registers) */
+  int num_stack;
+};
+
+/* Analyzes a single argument and fills INFO struct. Does not modify
+   CUM_V. Returns a reg rtx pointing at first argument register to be
+   used for given argument or NULL_RTX if argument must be stacked
+   because there is no argument slot in registers free. */
+
+static rtx
+k1_get_arg_info (struct k1_arg_info *info, cumulative_args_t cum_v,
+		 enum machine_mode mode, const_tree type,
+		 bool named ATTRIBUTE_UNUSED)
+{
+  CUMULATIVE_ARGS *cum = get_cumulative_args (cum_v);
+  HOST_WIDE_INT n_bytes
+    = type ? int_size_in_bytes (type) : GET_MODE_SIZE (mode);
+  HOST_WIDE_INT n_words = (n_bytes + UNITS_PER_WORD - 1) / UNITS_PER_WORD;
+
+  /* Arguments larger than 4 bytes start at the next even boundary.  */
+  HOST_WIDE_INT offset = (n_words > 1 && (cum->next_arg_reg & 1)) ? 1 : 0;
+
+  /* If all argument slots are used, then it must go on the stack.  */
+  if ((cum->next_arg_reg + offset) >= K1C_ARG_REG_SLOTS)
+    {
+      info->num_stack = n_words;
+      info->num_regs = 0;
+      return NULL_RTX;
+    }
+
+  info->first_reg = cum->next_arg_reg + offset;
+  info->num_regs = K1C_ARG_REG_SLOTS - info->first_reg;
+
+  if (info->num_regs >= n_words)
+    {
+      /* All arg fits in remaining registers */
+      info->num_regs = n_words;
+      info->num_stack = 0;
+    }
+  else
+    {
+
+      /* At least one word on stack */
+      info->num_stack = n_words - info->num_regs;
+    }
+
+  return gen_rtx_REG (mode, K1C_ARGUMENT_POINTER_REGNO + info->first_reg);
+}
+
+/* Implements TARGET_FUNCTION_ARG.
+   Returns a reg rtx pointing at first argument register to be
+   used for given argument or NULL_RTX if argument must be stacked
+   because there is no argument slot in registers free. */
+
 static rtx
 k1_function_arg (cumulative_args_t cum_v, enum machine_mode mode,
 		 const_tree type, bool named ATTRIBUTE_UNUSED)
 {
-  CUMULATIVE_ARGS *cum = get_cumulative_args (cum_v);
-  int words
-    = (((mode == BLKmode ? int_size_in_bytes (type) : GET_MODE_SIZE (mode))
-	+ UNITS_PER_WORD - 1)
-       / UNITS_PER_WORD);
-  int offset = 0;
-
-  /* Arguments larger than 4 bytes start at the next even boundary.  */
-  if (words > 1 && (*cum & 1))
-    offset = 1;
-
-  /* If all argument slots are used, then it must go on the stack.  */
-  if (*cum + offset >= K1C_ARG_REG_SLOTS)
-    return 0;
-
-  *cum += offset;
-
-  return gen_rtx_REG (mode, K1C_ARGUMENT_POINTER_REGNO + *cum);
+  struct k1_arg_info info;
+  return k1_get_arg_info (&info, cum_v, mode, type, named);
 }
 
-/* Worker function for TARGET_FUNCTION_ARG_BOUNDARY.  */
+/* Implements TARGET_FUNCTION_ARG_BOUNDARY.
+   Align arguments on a 64bits boundary for small arguments, 128 for bigger
+   ones. */
 
 static unsigned int
 k1_function_arg_boundary (enum machine_mode mode, const_tree type)
 {
-  return (
-    ((mode == BLKmode ? int_size_in_bytes (type) : GET_MODE_SIZE (mode)) > 4)
-      ? 64
-      : 32);
+  HOST_WIDE_INT sz
+    = (mode == BLKmode ? int_size_in_bytes (type) : GET_MODE_SIZE (mode));
+  return ((sz > UNITS_PER_WORD) ? UNITS_PER_WORD * 2 : UNITS_PER_WORD);
 }
 
-/* Return the number of bytes, at the beginning of an argument,
+/* Implements TARGET_ARG_PARTIAL_BYTES.
+   Return the number of bytes, at the beginning of an argument,
    that must be put in registers */
+
 static int
 k1_arg_partial_bytes (cumulative_args_t cum_v, enum machine_mode mode,
 		      tree type, bool named ATTRIBUTE_UNUSED)
 {
-  CUMULATIVE_ARGS *cum = get_cumulative_args (cum_v);
-  int words
-    = (((mode == BLKmode ? int_size_in_bytes (type) : GET_MODE_SIZE (mode))
-	+ UNITS_PER_WORD - 1)
-       / UNITS_PER_WORD);
-  int offset = 0;
-
-  /* Arguments larger than 4 bytes start at the next even boundary.  */
-  if (words > 1 && (*cum & 1))
-    offset = 1;
-
-  /* If all argument slots are already used, then it must go on the stack.  */
-  if ((*cum + offset) >= K1C_ARG_REG_SLOTS)
-    return 0;
-
-  /* If some argument slots are still available, but not
-     sufficient, part of the argument must go on the stack */
-  else if ((*cum + offset + words) > K1C_ARG_REG_SLOTS)
-    return UNITS_PER_WORD * (K1C_ARG_REG_SLOTS - (*cum + offset));
-
-  /* Otherwise, the argument entirely fits into registers */
+  struct k1_arg_info info = {0};
+  k1_get_arg_info (&info, cum_v, mode, type, named);
+  if (info.num_regs > 0 && info.num_stack > 0)
+    {
+      return info.num_regs * UNITS_PER_WORD;
+    }
   return 0;
 }
 
-/* Update CUM to point after this argument. */
+/* Implements TARGET_FUNCTION_ARG.
+   Update CUM to point after this argument. */
+
 static void
 k1_function_arg_advance (cumulative_args_t cum_v, enum machine_mode mode,
 			 const_tree type, bool named ATTRIBUTE_UNUSED)
 {
   CUMULATIVE_ARGS *cum = get_cumulative_args (cum_v);
-  int words
-    = (((mode == BLKmode ? int_size_in_bytes (type) : GET_MODE_SIZE (mode))
-	+ UNITS_PER_WORD - 1)
-       / UNITS_PER_WORD);
-  int offset = 0;
-
-  /* Arguments larger than 4 bytes start at the next even boundary. */
-  if (words > 1 && (*cum & 1))
-    offset = 1;
-
-  *cum += words + offset;
+  struct k1_arg_info info;
+  k1_get_arg_info (&info, cum_v, mode, type, named);
+  if (info.num_regs > 0)
+    {
+      cum->next_arg_reg = info.first_reg + info.num_regs;
+    }
 }
 
 static rtx
@@ -995,19 +1036,24 @@ k1_target_function_value (const_tree ret_type, const_tree func ATTRIBUTE_UNUSED,
     return gen_rtx_REG (TYPE_MODE (ret_type), K1C_ARGUMENT_POINTER_REGNO);
 }
 
+/* Implements TARGET_RETURN_IN_MSB */
 static bool
 k1_target_return_in_msb (const_tree type ATTRIBUTE_UNUSED)
 {
   return false;
 }
 
+/* Implements TARGET_RETURN_IN_MEMORY */
 static bool
 k1_target_return_in_memory (const_tree type, const_tree fntype ATTRIBUTE_UNUSED)
 {
+  HOST_WIDE_INT sz = int_size_in_bytes (type);
+
   return TYPE_MODE (type) == BLKmode
-	 && (int_size_in_bytes (type) > 32 || int_size_in_bytes (type) < 0);
+	 && (sz > (K1C_ARG_REG_SLOTS * UNITS_PER_WORD) || sz < 0);
 }
 
+/* Implements TARGET_STRUCT_VALUE_RTX */
 static rtx
 k1_target_struct_value_rtx (tree fndecl ATTRIBUTE_UNUSED,
 			    int incoming ATTRIBUTE_UNUSED)
@@ -1073,13 +1119,13 @@ k1_target_expand_builtin_saveregs (void)
   int offset = 0, size = 0;
 
   /* All arg register slots used for named args, nothing to push */
-  if (crtl->args.info >= K1C_ARG_REG_SLOTS)
+  if (crtl->args.info.next_arg_reg >= K1C_ARG_REG_SLOTS)
     return area;
 
   slot = 0;
 
   /* use arg_pointer since saved register slots are not known at that time */
-  regno = crtl->args.info;
+  regno = crtl->args.info.next_arg_reg;
 
   if (regno & 1)
     {
