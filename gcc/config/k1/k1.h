@@ -500,27 +500,11 @@ extern int k1_isa_filter_enabled_p (unsigned int isa_mask,
 
 #define STACK_GROWS_DOWNWARD 1
 
-/* Define this macro to nonzero value if the addresses of local
-   variable slots are at negative offsets from the frame pointer. */
-/* FIXME */
 #define FRAME_GROWS_DOWNWARD 1
 
-/* Offset from the frame pointer to the first local variable slot to
-   be allocated.
-
-   If FRAME_GROWS_DOWNWARD, find the next slot's offset by subtracting
-   the first slot's length from STARTING_FRAME_OFFSET. Otherwise, it
-   is found by adding the length of the first slot to the value
-   STARTING_FRAME_OFFSET. */
 #define STARTING_FRAME_OFFSET (0) // K1C_SCRATCH_AREA_SIZE
 
-/* Offset from the stack pointer register to the first location at
-   which outgoing arguments are placed. If not specified, the default
-   value of zero is used. This is the proper value for most machines.
-
-   If ARGS_GROW_DOWNWARD, this is the offset to the location above the
-   first location at which outgoing arguments are placed. */
-#define STACK_POINTER_OFFSET K1C_SCRATCH_AREA_SIZE
+#define STACK_POINTER_OFFSET (K1C_SCRATCH_AREA_SIZE)
 
 /* Offset from the argument pointer register to the first argument's
    address. On some machines it may depend on the data type of the function.
@@ -533,15 +517,6 @@ extern int k1_isa_filter_enabled_p (unsigned int isa_mask,
 //1) & ~1)): 0) + STARTING_FRAME_OFFSET)
 #define FIRST_PARM_OFFSET(funcdecl) (0) // STARTING_FRAME_OFFSET)
 
-/* A C expression whose value is RTL representing the value of the
-   return address for the frame count steps up from the current frame,
-   after the prologue. frameaddr is the frame pointer of the count
-   frame, or the frame pointer of the count − 1 frame if
-   RETURN_ADDR_IN_PREVIOUS_FRAME is defined.
-
-   The value of the expression must always be the correct address when
-   count is zero, but may be NULL_RTX if there is no way to determine
-   the return address of other frames. */
 #define RETURN_ADDR_RTX(COUNT, FRAMEADDR) k1_return_addr_rtx (COUNT, FRAMEADDR)
 
 /* FIXME AUTO: Disable FRAME_ADDR_RTX macro. Maybe this is wrong  */
@@ -573,16 +548,7 @@ extern int k1_isa_filter_enabled_p (unsigned int isa_mask,
 
 #define DWARF_FRAME_RETURN_COLUMN DBX_REGISTER_NUMBER (K1C_RETURN_POINTER_REGNO)
 
-/* A C expression whose value is an integer giving the offset, in
-   bytes, from the value of the stack pointer register to the top of
-   the stack frame at the beginning of any function, before the
-   prologue. The top of the frame is defined to be the value of the
-   stack pointer in the previous frame, just before the call
-   instruction.
-
-   You only need to define this macro if you want to support call
-   frame debugging information like that provided by DWARF 2. */
-#define INCOMING_FRAME_SP_OFFSET K1C_SCRATCH_AREA_SIZE
+#define INCOMING_FRAME_SP_OFFSET (0)
 
 /* A C expression whose value is an integer giving the offset, in
    bytes, from the argument pointer to the canonical frame address
@@ -709,31 +675,19 @@ extern int k1_isa_filter_enabled_p (unsigned int isa_mask,
 
 /* ********** Register Arguments ********** */
 
-/* A C type for declaring a variable that is used as the first argument of
-   `FUNCTION_ARG' and other related values.  For some target machines, the type
-   `int' suffices and can hold the number of bytes of argument so far.  */
-#define CUMULATIVE_ARGS int
+/* Struct used for CUMULATIVE_ARGS.
+   Currently keeps track of next argument register to be used.
+   If next_arg_reg >= K1C_ARG_REG_SLOTS, then all slots are used.
+*/
+struct k1_args
+{
+  int next_arg_reg;
+};
 
-/* A C statement (sans semicolon) for initializing the variable cum
-   for the state at the beginning of the argument list. The variable
-   has type CUMULATIVE_ARGS. The value of fntype is the tree node for
-   the data type of the function which will receive the args, or 0 if
-   the args are to a compiler support library function. For direct
-   calls that are not libcalls, fndecl contain the declaration node of
-   the function. fndecl is also set when INIT_CUMULATIVE_ARGS is used
-   to find arguments for the function being compiled. n_named_args is
-   set to the number of named arguments, including a structure return
-   address if it is passed as a parameter, when making a call. When
-   processing incoming arguments, n_named_args is set to −1.
+#define CUMULATIVE_ARGS struct k1_args
 
-   When processing a call to a compiler support library function,
-   libname identifies which one. It is a symbol_ref rtx which contains
-   the name of the function, as a string. libname is 0 when an
-   ordinary C function call is being processed. Thus, each time this
-   macro is called, either libname or fntype is nonzero, but never
-   both of them at once. */
 #define INIT_CUMULATIVE_ARGS(CUM, FNTYPE, LIBNAME, FNDECL, N_NAMED_ARGS)       \
-  (CUM) = 0
+  k1_init_cumulative_args (&CUM, FNTYPE, LIBNAME, FNDECL, N_NAMED_ARGS)
 
 /* A C expression that is nonzero if regno is the number of a hard
    register in which function arguments are sometimes passed. This
@@ -1253,8 +1207,8 @@ int k1_adjust_insn_length (rtx insn, int length);
 
 #define STACK_CHECK_BUILTIN 1
 
-/* ABI requires 16-byte alignment. */
-#define K1_STACK_ALIGN(LOC) (((LOC) + 7) & -8)
+/* ABI requires 8-bytes (64bits) alignment. */
+#define K1_STACK_ALIGN(LOC) (((LOC) + 7) & ~7)
 
 #ifndef IN_LIBGCC2
 
