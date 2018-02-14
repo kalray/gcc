@@ -62,6 +62,10 @@ extern bool k1_target_print_punct_valid_p (unsigned char code);
 
 extern void k1_init_expanders (void);
 
+extern void k1_init_cumulative_args (CUMULATIVE_ARGS *cum, const_tree fntype,
+				     rtx libname, tree fndecl,
+				     int n_named_args);
+
 extern void k1_emit_immediate_to_register_move (rtx, rtx);
 
 extern void k1_emit_stack_overflow_block (rtx *seq, rtx *last);
