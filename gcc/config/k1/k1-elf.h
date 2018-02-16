@@ -38,7 +38,9 @@
 #define LIB_SPEC "-lmppabareruntime --start-group -lc -lgloss --end-group"
 
 #undef LINK_SPEC
-#define LINK_SPEC "%{!nostartfiles:%{!nodefaultlibs:%{!nostdlib:-Tmppabareruntime.ld}}}"
+#define LINK_SPEC \
+  LINK_SPEC_COMMON \
+  "%{!nostartfiles:%{!nodefaultlibs:%{!nostdlib:-Tmppabareruntime.ld}}}"
 
 #define K1_OS_SELF_SPECS						\
   "%{!mcore*:-mcore=" K1_DEFAULT_CORE " } "
