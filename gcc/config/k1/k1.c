@@ -193,9 +193,6 @@ k1_compute_frame_info (void)
   struct k1_frame_info *frame;
   HOST_WIDE_INT offset = 0;
 
-  if (reload_completed && cfun->machine->frame.laid_out)
-    return;
-
   frame = &cfun->machine->frame;
   memset (frame, 0, sizeof (*frame));
 
