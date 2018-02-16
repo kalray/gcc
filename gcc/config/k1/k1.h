@@ -93,22 +93,7 @@ extern int k1_isa_filter_enabled_p (unsigned int isa_mask,
   K1_OS_SELF_SPECS                                                             \
   "%{fpic: %{!fPIC:-fPIC}} %<fpic", "%{fPIC: %<fpic}"
 
-/*
-	"%{!mno-gprel: -mgprel}"                        \
-*/
-/* "%{!mboard*:" K1_DEFAULT_BOARD "} ",                          \ */
-
-//#define CPP_SPEC_COMMON
-
-/* "%{mcluster=*:%:cluster_to_define(%{mcluster=*:%*})} "			\
- */
-/*     "%{mcluster=ioddr: -D__iocomm__}"                                   \ */
-/*     "%{mcluster=ioeth: -D__iocomm__}"                                   \ */
-/*     "%{mcluster=ioddr_ddr: -D__iocomm__}"                                   \
- */
-/*     "%{mcluster=node_msd: -D__node__}" */
-
-#define LINK_SPEC_COMMON "%{shared} %{m64:-melf64k1}"
+#define LINK_SPEC_COMMON "%{shared} %{m64:-melf64k1} "
 
 #define CC1_SPEC " %{G*}"
 
