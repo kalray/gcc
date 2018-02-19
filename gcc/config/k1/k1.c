@@ -1319,7 +1319,7 @@ k1_output_load_multiple (rtx *operands)
 {
   char pattern[100];
   unsigned int regno_dest = REGNO (operands[2]);
-  sprintf (pattern, "lq $r%dr%d = 0[%%2]", regno_dest, regno_dest + 1);
+  sprintf (pattern, "lq $r%dr%d = 0[%%1]", regno_dest, regno_dest + 1);
 
   gcc_assert (!(regno_dest & 1));
 
