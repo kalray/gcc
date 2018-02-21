@@ -533,7 +533,9 @@ extern int k1_isa_filter_enabled_p (unsigned int isa_mask,
 
 #define DWARF_FRAME_RETURN_COLUMN DBX_REGISTER_NUMBER (K1C_RETURN_POINTER_REGNO)
 
-#define INCOMING_FRAME_SP_OFFSET (0)
+/* MPPA has a 16bytes scratch area that can be seen as
+   a pre-allocated frame area, making the initial SP offseted */
+#define INCOMING_FRAME_SP_OFFSET (K1C_SCRATCH_AREA_SIZE)
 
 /* A C expression whose value is an integer giving the offset, in
    bytes, from the argument pointer to the canonical frame address
