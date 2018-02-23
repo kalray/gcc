@@ -146,8 +146,6 @@ extern void __builtin_k1_dzerol (void *addr);
 extern void __builtin_k1_fence (void);
 /* IINVAL */
 extern void __builtin_k1_iinval (void);
-/* IINVALL */
-extern void __builtin_k1_iinvall (const void *addr);
 /* IINVALS */
 extern void __builtin_k1_iinvals (const void *addr);
 /* ITOUCHL */
