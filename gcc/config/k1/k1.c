@@ -3094,7 +3094,6 @@ enum k1_builtin {
     K1_BUILTIN_WFXM,
     K1_BUILTIN_IINVAL,
     K1_BUILTIN_IINVALS,
-    K1_BUILTIN_IINVALL,
     K1_BUILTIN_ITOUCHL,
     K1_BUILTIN_INVALDTLB,
     K1_BUILTIN_INVALITLB,
@@ -3372,7 +3371,6 @@ k1_target_init_builtins (void)
     ADD_K1_BUILTIN (WFXM,    "wfxm",        VOID,   uintQI, intDI);
     ADD_K1_BUILTIN (IINVAL,  "iinval",      VOID);
     ADD_K1_BUILTIN (IINVALS, "iinvals", VOID,  constVoidPTR);
-    ADD_K1_BUILTIN (IINVALL, "iinvall", VOID,  constVoidPTR);
     ADD_K1_BUILTIN (INVALDTLB, "invaldtlb", VOID);
     ADD_K1_BUILTIN (INVALITLB, "invalitlb", VOID);
     ADD_K1_BUILTIN (ITOUCHL, "itouchl", VOID,  voidPTR);
@@ -4288,12 +4286,12 @@ k1_expand_builtin_dzerol (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_iinvall (rtx target, tree args)
+k1_expand_builtin_iinvals (rtx target, tree args)
 {
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
 
     arg1 = gen_rtx_MEM (SImode, force_reg (Pmode, arg1));
-    emit_insn (gen_iinvall (arg1, k1_sync_reg_rtx));
+    emit_insn (gen_iinvals (arg1, k1_sync_reg_rtx));
 
     return target;
 }
@@ -5896,8 +5894,7 @@ k1_target_expand_builtin (tree exp,
     case K1_BUILTIN_IINVAL:
         return k1_expand_builtin_iinval ();
     case K1_BUILTIN_IINVALS:
-    case K1_BUILTIN_IINVALL:
-        return k1_expand_builtin_iinvall (target, exp);
+        return k1_expand_builtin_iinvals (target, exp);
     case K1_BUILTIN_ITOUCHL:
         return k1_expand_builtin_itouchl (target, exp);
 	/* FIXME AUTO: disabling vector support */
@@ -8074,8 +8071,8 @@ k1_target_trampoline_init (rtx m_tramp, tree fndecl, rtx static_chain)
     mem = adjust_address (m_tramp, Pmode, 8);
     emit_move_insn (mem, chain);
 
-    emit_insn (gen_iinvall (adjust_address (m_tramp, Pmode, 0), k1_sync_reg_rtx));
-    emit_insn (gen_iinvall (mem, k1_sync_reg_rtx));
+    emit_insn (gen_iinvals (adjust_address (m_tramp, Pmode, 0), k1_sync_reg_rtx));
+    emit_insn (gen_iinvals (mem, k1_sync_reg_rtx));
 }
 
 /* We recognize patterns that aren't canonical addresses, because we
