@@ -6325,6 +6325,28 @@ k1_mau_lsu_double_port_bypass_p (rtx producer, rtx consumer)
 }
 
 static int
+k1_target_sched_adjust_cost (rtx insn, rtx link, rtx dep_insn, int cost)
+{
+  enum reg_note kind = REG_NOTE_KIND (link);
+  enum attr_class insn_class = get_attr_class (insn);
+  /* On the k1, it is possible to read then write the same register in a bundle
+   * so we set the WAR cost to 0 unless insn is a control-flow consuming reg
+   * then it is 1 */
+  if (kind == REG_DEP_ANTI)
+    {
+      cost = (insn_class == CLASS_BRANCH) | (insn_class == CLASS_JUMP)
+	     | (insn_class == CLASS_LINK);
+    }
+  else
+    /* Just to be sure, force the WAW cost to 1 */
+    if (kind == REG_DEP_OUTPUT)
+    {
+      cost = 1;
+    }
+  return cost;
+}
+
+static int
 k1_target_sched_issue_rate (void)
 {
   return 5;
@@ -9938,6 +9960,9 @@ k1_profile_hook (void)
 
 #undef TARGET_CANNOT_FORCE_CONST_MEM
 #define TARGET_CANNOT_FORCE_CONST_MEM k1_cannot_force_const_mem
+
+#undef TARGET_SCHED_ADJUST_COST
+#define TARGET_SCHED_ADJUST_COST k1_target_sched_adjust_cost
 
 #undef TARGET_SCHED_ISSUE_RATE
 #define TARGET_SCHED_ISSUE_RATE k1_target_sched_issue_rate
