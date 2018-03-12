@@ -191,7 +191,12 @@ static void
 k1_compute_frame_info (void)
 {
   struct k1_frame_info *frame;
+
+  /* Stack size, including the caller allocated scratch area  */
   HOST_WIDE_INT offset = 0;
+
+  /* FP offset from  SP after it has been moved (if needed)*/
+  HOST_WIDE_INT fp_offset = 0;
 
   frame = &cfun->machine->frame;
   memset (frame, 0, sizeof (*frame));
@@ -226,21 +231,31 @@ k1_compute_frame_info (void)
   offset = K1_STACK_ALIGN (offset);
 
   /* Frame pointer points between incoming arg and local vars */
-  frame->frame_pointer_offset = offset;
+  fp_offset = offset;
 
   /* If any anonymous arg may be in register, push them on the stack */
   /* This can't break alignment */
   if (cfun->stdarg && crtl->args.info.next_arg_reg < K1C_ARG_REG_SLOTS)
     offset
-      += UNITS_PER_WORD * (K1C_ARG_REG_SLOTS - crtl->args.info.next_arg_reg);
+      = UNITS_PER_WORD * (K1C_ARG_REG_SLOTS - crtl->args.info.next_arg_reg);
 
   /* Next is the callee-allocated area for pretend stack arguments.  */
   offset += crtl->args.pretend_args_size;
 
-  /* if no stack storage is needed (or less than scratch), don't move SP. */
-  frame->initial_sp_offset
-    = (offset <= K1C_SCRATCH_AREA_SIZE) ? 0 : offset - K1C_SCRATCH_AREA_SIZE;
+  if (offset <= K1C_SCRATCH_AREA_SIZE)
+    {
+      /* if no stack storage is needed (or less than scratch), don't move SP. */
+      frame->initial_sp_offset = 0;
 
+      /* Account for the possible unused space in scratch */
+      fp_offset += K1C_SCRATCH_AREA_SIZE - offset;
+    }
+  else
+    {
+      frame->initial_sp_offset = offset - K1C_SCRATCH_AREA_SIZE;
+    }
+
+  frame->frame_pointer_offset = fp_offset;
   frame->total_size = offset;
 
   frame->laid_out = true;
