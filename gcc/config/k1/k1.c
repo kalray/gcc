@@ -222,7 +222,7 @@ k1_compute_frame_info (void)
   /* If any anonymous arg may be in register, push them on the stack */
   /* This can't break alignment */
   if (cfun->stdarg && crtl->args.info.next_arg_reg < K1C_ARG_REG_SLOTS)
-    offset = UNITS_PER_WORD * (K1C_ARG_REG_SLOTS - crtl->args.info.next_arg_reg);
+    offset += UNITS_PER_WORD * (K1C_ARG_REG_SLOTS - crtl->args.info.next_arg_reg);
 
  /* Next is the callee-allocated area for pretend stack arguments.  */
   offset += crtl->args.pretend_args_size;
