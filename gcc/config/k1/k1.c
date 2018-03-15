@@ -3318,8 +3318,6 @@ enum k1_builtin
   K1_BUILTIN_IINVAL,
   K1_BUILTIN_IINVALS,
   K1_BUILTIN_ITOUCHL,
-  K1_BUILTIN_INVALDTLB,
-  K1_BUILTIN_INVALITLB,
   K1_BUILTIN_LANDHP,
   K1_BUILTIN_LBSU,
   K1_BUILTIN_LBZU,
@@ -3328,8 +3326,6 @@ enum k1_builtin
   K1_BUILTIN_LDU,
   K1_BUILTIN_LWZU,
   K1_BUILTIN_MADUUCIWD,
-  K1_BUILTIN_PROBETLB,
-  K1_BUILTIN_READTLB,
   /* K1_BUILTIN_RXOR, */
 
   /* FIXME AUTO: disabling vector support */
@@ -3350,6 +3346,10 @@ enum k1_builtin
   K1_BUILTIN_STSUD,
   K1_BUILTIN_SYNCGROUP,
   K1_BUILTIN_TOUCHL,
+  K1_BUILTIN_TLBDINVAL,
+  K1_BUILTIN_TLBIINVAL,
+  K1_BUILTIN_TLBPROBE,
+  K1_BUILTIN_TLBREAD,
   K1_BUILTIN_TLBWRITE,
   K1_BUILTIN_SAT,
   K1_BUILTIN_SATD,
@@ -3612,8 +3612,6 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (WFXM, "wfxm", VOID, uintQI, intDI);
   ADD_K1_BUILTIN (IINVAL, "iinval", VOID);
   ADD_K1_BUILTIN (IINVALS, "iinvals", VOID, constVoidPTR);
-  ADD_K1_BUILTIN (INVALDTLB, "invaldtlb", VOID);
-  ADD_K1_BUILTIN (INVALITLB, "invalitlb", VOID);
   ADD_K1_BUILTIN (ITOUCHL, "itouchl", VOID, voidPTR);
   /* FIXME AUTO: disabling vector support */
   /* ADD_K1_BUILTIN (LANDHP,  "landhp",      intSI,  intSI,  intSI); */
@@ -3623,8 +3621,6 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (LHZU, "lhzu", uintHI, constVoidPTR);
   ADD_K1_BUILTIN (LDU, "ldu", uintDI, constVoidPTR);
   ADD_K1_BUILTIN (LWZU, "lwzu", uintSI, constVoidPTR);
-  ADD_K1_BUILTIN (PROBETLB, "probetlb", VOID);
-  ADD_K1_BUILTIN (READTLB, "readtlb", VOID);
   /* ADD_K1_BUILTIN (RXOR,    "r_xord",      VOID,   uintQI, uintDI, uintHI); */
 
   /* FIXME AUTO: disabling vector support */
@@ -3647,6 +3643,10 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (STSU, "stsu", uintSI, uintSI, uintSI);
   ADD_K1_BUILTIN (STSUD, "stsud", uintDI, uintDI, uintDI);
   ADD_K1_BUILTIN (SYNCGROUP, "syncgroup", VOID, uintSI);
+  ADD_K1_BUILTIN (TLBDINVAL, "tlbdinval", VOID);
+  ADD_K1_BUILTIN (TLBIINVAL, "tlbiinval", VOID);
+  ADD_K1_BUILTIN (TLBPROBE, "tlbprobe", VOID);
+  ADD_K1_BUILTIN (TLBREAD, "tlbread", VOID);
   ADD_K1_BUILTIN (TLBWRITE, "tlbwrite", VOID);
 
   ADD_K1_BUILTIN (FWIDENHBW, "fwidenhbw", floatSF, uintSI);
@@ -4044,33 +4044,33 @@ k1_expand_builtin_iinval (void)
 }
 
 static rtx
-k1_expand_builtin_invaldtlb (void)
+k1_expand_builtin_tlbdinval (void)
 {
-  emit_insn (gen_invaldtlb (k1_sync_reg_rtx));
+  emit_insn (gen_tlbdinval (k1_sync_reg_rtx));
 
   return NULL_RTX;
 }
 
 static rtx
-k1_expand_builtin_invalitlb (void)
+k1_expand_builtin_tlbiinval (void)
 {
-  emit_insn (gen_invalitlb (k1_sync_reg_rtx));
+  emit_insn (gen_tlbiinval (k1_sync_reg_rtx));
 
   return NULL_RTX;
 }
 
 static rtx
-k1_expand_builtin_probetlb (void)
+k1_expand_builtin_tlbprobe (void)
 {
-  emit_insn (gen_probetlb (k1_sync_reg_rtx));
+  emit_insn (gen_tlbprobe (k1_sync_reg_rtx));
 
   return NULL_RTX;
 }
 
 static rtx
-k1_expand_builtin_readtlb (void)
+k1_expand_builtin_tlbread (void)
 {
-  emit_insn (gen_readtlb (k1_sync_reg_rtx));
+  emit_insn (gen_tlbread (k1_sync_reg_rtx));
 
   return NULL_RTX;
 }
@@ -6230,10 +6230,6 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_wfxl (target, exp);
     case K1_BUILTIN_WFXM:
       return k1_expand_builtin_wfxm (target, exp);
-    case K1_BUILTIN_INVALDTLB:
-      return k1_expand_builtin_invaldtlb ();
-    case K1_BUILTIN_INVALITLB:
-      return k1_expand_builtin_invalitlb ();
     case K1_BUILTIN_IINVAL:
       return k1_expand_builtin_iinval ();
     case K1_BUILTIN_IINVALS:
@@ -6255,10 +6251,6 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_lhzu (target, exp);
     case K1_BUILTIN_LWZU:
       return k1_expand_builtin_lwzu (target, exp);
-    case K1_BUILTIN_PROBETLB:
-      return k1_expand_builtin_probetlb ();
-    case K1_BUILTIN_READTLB:
-      return k1_expand_builtin_readtlb ();
       /* case K1_BUILTIN_RXOR: */
       /*     return k1_expand_builtin_rxor (target, exp); */
 
@@ -6294,6 +6286,14 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_stsud (target, exp);
     case K1_BUILTIN_SYNCGROUP:
       return k1_expand_builtin_syncgroup (target, exp);
+    case K1_BUILTIN_TLBDINVAL:
+      return k1_expand_builtin_tlbdinval ();
+    case K1_BUILTIN_TLBIINVAL:
+      return k1_expand_builtin_tlbiinval ();
+    case K1_BUILTIN_TLBPROBE:
+      return k1_expand_builtin_tlbprobe ();
+    case K1_BUILTIN_TLBREAD:
+      return k1_expand_builtin_tlbread ();
     case K1_BUILTIN_TLBWRITE:
       return k1_expand_builtin_tlbwrite ();
     case K1_BUILTIN_FWIDENHBW:
