@@ -95,17 +95,9 @@ extern void __builtin_k1_wfxm (unsigned char, long long);
 /* IGET */
 /* IGOTO */
 /* IGOTOD */
-/* INVALDTLB */
-extern void __builtin_k1_invaldtlb (void);
-/* INVALITLB */
-extern void __builtin_k1_invalitlb (void);
 /* LOOPDO */
 /* LOOPGTZ */
 /* LOOPNEZ */
-/* PROBETLB */
-extern void __builtin_k1_probetlb (void);
-/* READTLB */
-extern void __builtin_k1_readtlb (void);
 /* RET */
 /* RFE */
 /* SCALL */
@@ -118,6 +110,14 @@ extern void __builtin_k1_stop (void);
 extern void __builtin_k1_syncgroup (unsigned int);
 /* TRAPA */
 /* TRAPO */
+/* TLBDINVAL */
+extern void __builtin_k1_tlbdinval (void);
+/* TLBIINVAL */
+extern void __builtin_k1_tlbiinval (void);
+/* TLBPROBE */
+extern void __builtin_k1_tlbprobe (void);
+/* TLBREAD */
+extern void __builtin_k1_tlbread (void);
 /* TLBWRITE */
 extern void __builtin_k1_tlbwrite (void);
 
