@@ -63,31 +63,6 @@ extern unsigned long long __builtin_k1_get (int);
 /* GOTO */
 /* WFXL */
 extern void __builtin_k1_wfxl (unsigned char, long long);
-#define __builtin_k1_hfxb(sfr, argument)                                       \
-  {                                                                            \
-    __builtin_k1_wfxl (sfr, (((unsigned long long) argument >> 16) << 32)      \
-			      | (((unsigned long long) argument & 0xFFFF)));   \
-  }
-#define __builtin_k1_hfxt(sfr, argument)                                       \
-  {                                                                            \
-    __builtin_k1_wfxl (sfr,                                                    \
-		       (((unsigned long long) argument >> 16) << 48)           \
-			 | (((unsigned long long) argument & 0xFFFF) << 16));  \
-  }
-#define __builtin_k1_hfx(arg1, arg2, arg3, arg4)                               \
-  switch (arg1)                                                                \
-    {                                                                          \
-    case 0:                                                                    \
-      __builtin_k1_hfxb (arg2,                                                 \
-			 (((int) (arg3) << 16) | ((int) (arg4) &0xffff)));     \
-      break;                                                                   \
-    case 1:                                                                    \
-      __builtin_k1_hfxt (arg2,                                                 \
-			 (((int) (arg3) << 16) | ((int) (arg4) &0xffff)));     \
-      break;                                                                   \
-    default:                                                                   \
-      __builtin_error ("__builtin_k1_hfx expects a 1 bit first argument.");    \
-    }
 
 /* WFXM */
 extern void __builtin_k1_wfxm (unsigned char, long long);
