@@ -9,6 +9,7 @@
   alu,\
   alu0,\
   alu_x,\
+  alu_y,\
   bcu,\
   bcu_get,\
   mau,\

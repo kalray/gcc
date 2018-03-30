@@ -72,8 +72,7 @@ extern void k1_emit_stack_overflow_block (rtx *seq, rtx *last);
 
 extern void k1_final_prescan_insn (rtx insn, rtx *opvec, int nops);
 
-extern bool k1_expand_mov (rtx operands[]);
-extern bool k1_expand_mov_immediate (rtx operands[]);
+extern void k1_expand_mov_constant (rtx operands[]);
 
 extern rtx k1_find_or_create_SC_register (rtx curr_insn, rtx low, rtx high);
 
@@ -113,6 +112,16 @@ extern bool k1_float_fits_bits (const REAL_VALUE_TYPE *r, unsigned bitsz,
 				enum machine_mode mode);
 
 extern HOST_WIDE_INT k1_initial_elimination_offset (int, int);
+
+/*
+ */
+enum k1_symbol_type
+{
+  SYMBOL_ABSOLUTE,
+  SYMBOL_GOT,
+  SYMBOL_GOTOFF,
+  SYMBOL_TPREL
+};
 
 extern GTY (()) rtx k1_sync_reg_rtx;
 extern GTY (()) rtx k1_link_reg_rtx;
