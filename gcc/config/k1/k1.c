@@ -69,6 +69,13 @@
 #include <unistd.h>
 #include <libgen.h>
 
+#undef TARGET_HAVE_TLS
+#ifdef K1_LINUX
+#define TARGET_HAVE_TLS (false)
+#else
+#define TARGET_HAVE_TLS (true)
+#endif
+
 static bool scheduling = false;
 static int emit_colon;
 
@@ -200,15 +207,6 @@ k1_compute_frame_info (void)
 
   frame = &cfun->machine->frame;
   memset (frame, 0, sizeof (*frame));
-
-  if (flag_pic && crtl->uses_pic_offset_table)
-    {
-      gcc_unreachable ();
-    }
-  else if (TARGET_GPREL)
-    {
-      gcc_unreachable ();
-    }
 
   /* The scratch area */
   if (!crtl->is_leaf)
@@ -536,61 +534,6 @@ k1_legitimate_address_offset_register_p (rtx reg, bool strict)
   /*     && IS_GENERAL_REGNO (REGNO (SUBREG_REG (reg)), strict)); */
 }
 
-/* Implementation of TARGET_ASM_INTEGER.  When using FD-PIC, we need to
-   tell the assembler to generate pointers to function descriptors in
-   some cases.  */
-
-static bool
-k1_assemble_integer (rtx value, unsigned int size, int aligned_p)
-{
-  /* if (TARGET_FDPIC /\*&& !flag_pic*\/ && size == UNITS_PER_WORD) { */
-  /*     if (GET_CODE (value) == CONST */
-  /*         || GET_CODE (value) == SYMBOL_REF */
-  /*         || GET_CODE (value) == LABEL_REF) { */
-
-  /*         if (GET_CODE (value) == SYMBOL_REF */
-  /*             && SYMBOL_REF_FUNCTION_P (value)) { */
-  /*             fputs ("\t.picptr\tfuncdesc(", asm_out_file); */
-  /*             output_addr_const (asm_out_file, value); */
-  /*             fputs (")\n", asm_out_file); */
-  /*             return true; */
-  /*         } else if (GET_CODE (value) == CONST */
-  /*                    && function_symbol_referenced_p (value)) { */
-  /*             gcc_unreachable (); */
-  /*         } else if (GET_CODE (value) == SYMBOL_REF */
-  /*                    || GET_CODE (value) == CONST) { */
-  /*             rtx symbol = GET_CODE (value) == SYMBOL_REF */
-  /*                 ? value : NULL_RTX; */
-
-  /*             if (symbol == NULL_RTX */
-  /*                 && GET_CODE (XEXP (value, 0)) == PLUS */
-  /*                 && GET_CODE (XEXP (XEXP (value, 0), 0)) == SYMBOL_REF) */
-  /*                 symbol = XEXP (XEXP (value, 0), 0); */
-
-  /*             if (symbol */
-  /*                 && SYMBOL_REF_DECL (symbol) */
-  /*                 && DECL_P (SYMBOL_REF_DECL (symbol))) { */
-  /*                 /\* If we don't special case symbols with DECL, then */
-  /*                    every reference to a label become a picptr. This is */
-  /*                    an issue when emitting the debug information as it */
-  /*                    globalizes the local labels, and it clutters the */
-  /*                    objdump output when disassembling. *\/ */
-  /*                 assemble_integer_with_op ("\t.picptr\t", value); */
-  /*                 return true; */
-  /*             } */
-  /*         } */
-  /*     } */
-  /*     if (!aligned_p) { */
-  /*         /\* We've set the unaligned SI op to NULL, so we always have to */
-  /*            handle the unaligned case here.  *\/ */
-  /*         assemble_integer_with_op ("\t.4byte\t", value); */
-  /*         return true; */
-  /*     } */
-  /* } */
-
-  return default_assemble_integer (value, size, aligned_p);
-}
-
 /* static bool */
 /* k1_analyze_modulo_address (rtx x, bool strict, struct k1_address *addr) */
 /* { */
@@ -685,20 +628,37 @@ k1_analyze_address (rtx x, bool strict, struct k1_address *addr)
      using @got[off] if not pcrel */
   /* FIXME AUTO: symbols can fit as immediate values on coolidge. This
    * constraint can be relaxed. */
-  if ((TARGET_64 || flag_pic) && symbolic_reference_mentioned_p (x))
-    {
-      return false;
-    }
+  /* if ((TARGET_64 || flag_pic) && symbolic_reference_mentioned_p(x)){ */
+  /*   return false; */
+  /* } */
 
   if (k1_has_tprel (x))
     return false;
 
-  if ((!current_pass || current_pass->tv_id != TV_CPROP) && GET_CODE (x) == PLUS
-      && k1_legitimate_address_register_p (XEXP (x, 0), strict)
-      && ((CONSTANT_P (XEXP (x, 1))
-	   && k1_legitimate_constant_p (VOIDmode, XEXP (x, 1)))
-	  || GET_CODE (XEXP (x, 1)) == CONST_INT)
-      && immediate_operand (XEXP (x, 1), SImode))
+  /*
+   * Valid :
+   * ld reg = @got[reg]
+   * ld reg = @gotoff[reg]
+   */
+  if (GET_CODE (x) == PLUS
+      && (GET_CODE (XEXP (x, 1)) == UNSPEC
+	  && (XINT (XEXP (x, 1), 1) == UNSPEC_GOT
+	      || XINT (XEXP (x, 1), 1) == UNSPEC_GOTOFF))
+      && k1_legitimate_address_register_p (XEXP (x, 0), strict))
+    {
+      addr->mode = ADDR_OFFSET;
+      addr->offset = XEXP (x, 1);
+      addr->base_reg = XEXP (x, 0);
+
+      return true;
+    }
+  else if ((!current_pass || current_pass->tv_id != TV_CPROP)
+	   && GET_CODE (x) == PLUS
+	   && k1_legitimate_address_register_p (XEXP (x, 0), strict)
+	   && ((CONSTANT_P (XEXP (x, 1))
+		&& k1_legitimate_constant_p (VOIDmode, XEXP (x, 1)))
+	       || GET_CODE (XEXP (x, 1)) == CONST_INT)
+	   && immediate_operand (XEXP (x, 1), SImode))
     {
 
       /*
@@ -1463,7 +1423,6 @@ k1_target_print_operand (FILE *file, rtx x, int code)
       if (addressing_mode)
 	{
 	  x = XEXP (x, 0);
-#if 1
 	  if (GET_CODE (x) == PLUS && GET_CODE (XEXP (x, 0)) == MULT
 	      && INTVAL (XEXP (XEXP (x, 0), 1)) > HOST_WIDE_INT_1)
 	    {
@@ -1473,56 +1432,6 @@ k1_target_print_operand (FILE *file, rtx x, int code)
 		   && INTVAL (XEXP (XEXP (x, 0), 1)) > (HOST_WIDE_INT) 0)
 	    {
 	      fprintf (file, ".xs");
-#else // k1b
-	  if (GET_CODE (x) == PLUS && GET_CODE (XEXP (x, 0)) == MULT)
-	    {
-	      fprintf (file, ".x" HOST_WIDE_INT_PRINT_DEC,
-		       INTVAL (XEXP (XEXP (x, 0), 1)));
-	    }
-	  else if (GET_CODE (x) == PLUS && GET_CODE (XEXP (x, 0)) == ASHIFT)
-	    {
-	      fprintf (file, ".x" HOST_WIDE_INT_PRINT_DEC,
-		       HOST_WIDE_INT_1 << INTVAL (XEXP (XEXP (x, 0), 1)));
-	    }
-	  else if (GET_CODE (x) == PLUS && GET_CODE (XEXP (x, 0)) == AND)
-	    {
-	      HOST_WIDE_INT mod = INTVAL (XEXP (XEXP (x, 0), 1));
-	      HOST_WIDE_INT mul;
-
-	      if (GET_CODE (XEXP (XEXP (x, 0), 0)) == MULT)
-		mul = INTVAL (XEXP (XEXP (XEXP (x, 0), 0), 1));
-	      else if (GET_CODE (XEXP (XEXP (x, 0), 0)) == ASHIFT)
-		mul = 1 << INTVAL (XEXP (XEXP (XEXP (x, 0), 0), 1));
-	      else
-		mul = 1;
-
-	      mod /= mul;
-	      fprintf (file,
-		       ".m" HOST_WIDE_INT_PRINT_DEC
-		       ".x" HOST_WIDE_INT_PRINT_DEC,
-		       mod + 1, mul);
-	    }
-	  else if (GET_CODE (x) == PLUS
-		   && GET_CODE (XEXP (x, 0)) == ZERO_EXTEND)
-	    {
-	      HOST_WIDE_INT mod
-		= GET_MODE (XEXP (XEXP (x, 0), 0)) == QImode ? 255 : 65535;
-	      HOST_WIDE_INT mul;
-
-	      if (GET_CODE (XEXP (XEXP (x, 0), 0)) == MULT)
-		mul = INTVAL (XEXP (XEXP (XEXP (x, 0), 0), 1));
-	      else if (GET_CODE (XEXP (XEXP (x, 0), 0)) == ASHIFT)
-		mul = 1 << INTVAL (XEXP (XEXP (XEXP (x, 0), 0), 1));
-	      else
-		mul = 1;
-
-	      mod /= mul;
-	      fprintf (file,
-		       ".m" HOST_WIDE_INT_PRINT_DEC
-		       ".x" HOST_WIDE_INT_PRINT_DEC,
-		       mod + 1, mul);
-	    }
-#endif
 	    }
 	  else if (GET_CODE (x) == PLUS && REG_P (XEXP (x, 1)))
 	    {
@@ -1829,6 +1738,7 @@ k1_target_print_operand_address (FILE *file, rtx x)
 	case LABEL_REF:
 	case SYMBOL_REF:
 	case CONST:
+	case UNSPEC:
 	  output_addr_const (file, XEXP (x, 1));
 	  break;
 	case REG:
@@ -2488,6 +2398,14 @@ k1_expand_prologue (void)
   struct k1_frame_info *frame = &cfun->machine->frame;
   HOST_WIDE_INT size = frame->initial_sp_offset;
   rtx insn;
+  rtx (*gen_set_gotp) (rtx target)
+    = TARGET_64 ? gen_set_gotp_di : gen_set_gotp_si;
+
+  if (flag_pic && crtl->uses_pic_offset_table)
+    {
+      insn = emit_insn (gen_set_gotp (pic_offset_table_rtx));
+      df_set_regs_ever_live (K1C_GLOBAL_POINTER_REGNO, true);
+    }
 
   if (size > 0)
     {
@@ -2795,9 +2713,10 @@ k1_target_legitimize_pic_address (rtx orig, rtx reg)
       /* if (TARGET_FDPIC && SYMBOL_REF_FUNCTION_P (addr)) */
       /*     unspec = UNSPEC_FUNCDESC_GOTOFF; */
       /* try to decide what case we really have here */
-      /* else */ if (SYMBOL_REF_DECL (addr)
-		     && (!DECL_P (SYMBOL_REF_DECL (addr))
-			 || !DECL_COMMON (SYMBOL_REF_DECL (addr))))
+      /* else */
+      if (SYMBOL_REF_DECL (addr)
+	  && (!DECL_P (SYMBOL_REF_DECL (addr))
+	      || !DECL_COMMON (SYMBOL_REF_DECL (addr))))
 	{
 	  tree decl = SYMBOL_REF_DECL (addr);
 	  tree init = TREE_CODE (decl) == VAR_DECL
@@ -2892,19 +2811,136 @@ k1_target_legitimize_pic_address (rtx orig, rtx reg)
   return orig;
 }
 
-/* Expands a mov which second operand is an immediate. Returns TRUE
+/* Return true if SYMBOL_REF X is thread local */
+static bool
+k1_tls_symbol_p (rtx x)
+{
+  if (!TARGET_HAVE_TLS)
+    return false;
+
+  if (GET_CODE (x) != SYMBOL_REF)
+    return false;
+
+  return SYMBOL_REF_TLS_MODEL (x) != 0;
+}
+
+enum k1_symbol_type
+k1_classify_symbol (rtx x)
+{
+  if (k1_tls_symbol_p (x))
+    return SYMBOL_TPREL;
+
+  if (GET_CODE (x) == LABEL_REF)
+    return SYMBOL_ABSOLUTE;
+
+  if (GET_CODE (x) == SYMBOL_REF)
+    {
+      if (!flag_pic)
+	return SYMBOL_ABSOLUTE;
+
+      if (SYMBOL_REF_LOCAL_P (x) && !SYMBOL_REF_EXTERNAL_P (x))
+	return SYMBOL_GOTOFF;
+      else
+	return SYMBOL_GOT;
+    }
+  return SYMBOL_ABSOLUTE;
+}
+
+/* Expands a mov which second operand is a constant. Returns TRUE
    if caller pattern should not expand anymore (ie. call DONE macro).
 */
-bool
-k1_expand_mov_immediate (rtx operands[])
+void
+k1_expand_mov_constant (rtx operands[])
 {
-  if (k1_has_tls_reference (operands[1]))
+  rtx dest = operands[0];
+  rtx src = operands[1];
+  rtx new_rtx;
+
+  if (GET_CODE (src) == SYMBOL_REF || GET_CODE (src) == LABEL_REF
+      || GET_CODE (src) == CONST)
     {
-      rtx src = operands[1];
-      operands[1] = k1_legitimize_tls_reference (src);
-      gcc_assert (operands[1] != src);
+      rtx mem, base, offset;
+      enum k1_symbol_type sty;
+
+      /* If we have (const (plus symbol offset)), separate out the offset
+	 before we start classifying the symbol.  */
+      split_const (src, &base, &offset);
+
+      sty = k1_classify_symbol (base);
+      switch (sty)
+	{
+	case SYMBOL_ABSOLUTE:
+	  /* Emit: dest = sym */
+	  emit_insn (gen_rtx_SET (Pmode, dest, src));
+	  break;
+
+	case SYMBOL_GOT:
+	  gcc_assert (INTVAL (offset) == 0);
+	  /*
+	   * Emit dest = *(@got(sym) + $pic)
+	   */
+	  new_rtx = gen_rtx_UNSPEC (Pmode, gen_rtvec (1, base), UNSPEC_GOT);
+
+	  emit_move_insn (dest, k1_pic_register_initial_val ());
+
+	  emit_move_insn (dest, gen_rtx_MEM (Pmode, gen_rtx_PLUS (Pmode, dest,
+								  new_rtx)));
+
+	  crtl->uses_pic_offset_table = true;
+	  break;
+
+	case SYMBOL_GOTOFF:
+	  gcc_assert (INTVAL (offset) == 0);
+	  /*
+	   * Emit dest = @gotoff(sym)[$pic]
+	   */
+	  new_rtx = gen_rtx_UNSPEC (Pmode, gen_rtvec (1, base), UNSPEC_GOTOFF);
+
+	  emit_move_insn (dest, k1_pic_register_initial_val ());
+
+	  emit_move_insn (dest, gen_rtx_PLUS (Pmode, dest, new_rtx));
+
+	  crtl->uses_pic_offset_table = true;
+	  break;
+
+	  /* int unspec = UNSPEC_GOTOFF; */
+	  /* if (dest == NULL_RTX) */
+	  /*   { */
+	  /*     gcc_assert (can_create_pseudo_p ()); */
+	  /*     dest = gen_reg_rtx (Pmode); */
+	  /*   } */
+
+	  /* new_rtx = gen_rtx_UNSPEC (Pmode, gen_rtvec (1, src), unspec); */
+	  /* new_rtx = gen_rtx_CONST (Pmode, new_rtx); */
+
+	  /* emit_move_insn(dest, k1_pic_register_initial_val ()); */
+	  /* emit_move_insn(dest, gen_rtx_PLUS (Pmode, dest, new_rtx)); */
+	  /* crtl->uses_pic_offset_table = TRUE; */
+	  break;
+
+	case SYMBOL_TPREL:
+	  operands[1] = k1_legitimize_tls_reference (src);
+	  emit_insn (gen_rtx_SET (VOIDmode, dest, operands[1]));
+	  gcc_assert (operands[1] != src);
+	  break;
+	}
+      return;
     }
-  return false;
+
+  emit_insn (gen_rtx_SET (VOIDmode, dest, src));
+
+  /* if (k1_has_tls_reference (operands[1])) */
+  /*   { */
+  /*     rtx src = operands[1]; */
+  /*     operands[1] = k1_legitimize_tls_reference (src); */
+  /*     gcc_assert (operands[1] != src); */
+  /*   } else if (flag_pic) */
+  /*   { */
+  /*     if (SYMBOLIC_CONST(operands[1])) */
+  /* 	operands[1] = k1_target_legitimize_pic_address (operands[1],
+   * operands[0]); */
+  /*   } */
+  return;
 }
 
 /* This expander may be needed later. */
@@ -9330,12 +9366,6 @@ k1_option_override (void)
 
   k1_arch_schedule = ARCH_COOLIDGE;
 
-  /* There is no single unaligned SI op for PIC code.  Sometimes we
-   need to use ".4byte" and sometimes we need to use ".picptr".
-   See k1_assemble_integer for details.  */
-  /* if (TARGET_FDPIC) */
-  /*     targetm.asm_out.unaligned_op.si = 0; */
-
   /* Set the small data limit.  */
   k1_small_data_threshold
     = (global_options_set.x_g_switch_value ? g_switch_value
@@ -9359,8 +9389,7 @@ k1_output_addr_const_extra (FILE *fp, rtx x)
 	  return true;
 	case UNSPEC_GOT:
 	  fputs ("@got", (fp));
-	  if (TARGET_64)
-	    fputs ("64", (fp));
+	  /* if (TARGET_64) fputs ("64", (fp)); */
 	  fputs ("(", (fp));
 
 	  output_addr_const ((fp), XVECEXP ((x), 0, 0));
@@ -9368,8 +9397,7 @@ k1_output_addr_const_extra (FILE *fp, rtx x)
 	  return true;
 	case UNSPEC_GOTOFF:
 	  fputs ("@gotoff", (fp));
-	  if (TARGET_64)
-	    fputs ("64", (fp));
+	  /* if (TARGET_64) fputs ("64", (fp)); */
 	  fputs ("(", (fp));
 
 	  output_addr_const ((fp), XVECEXP ((x), 0, 0));
@@ -9592,13 +9620,6 @@ k1_profile_hook (void)
 #undef TARGET_EXPAND_BUILTIN
 #define TARGET_EXPAND_BUILTIN k1_target_expand_builtin
 
-#undef TARGET_HAVE_TLS
-#ifdef K1_LINUX
-#define TARGET_HAVE_TLS (false)
-#else
-#define TARGET_HAVE_TLS (true)
-#endif
-
 #undef TARGET_CANNOT_FORCE_CONST_MEM
 #define TARGET_CANNOT_FORCE_CONST_MEM k1_cannot_force_const_mem
 
@@ -9704,9 +9725,6 @@ k1_profile_hook (void)
 
 #undef TARGET_INVALID_WITHIN_DOLOOP
 #define TARGET_INVALID_WITHIN_DOLOOP k1_invalid_within_doloop
-
-#undef TARGET_ASM_INTEGER
-#define TARGET_ASM_INTEGER k1_assemble_integer
 
 #undef TARGET_MODE_DEPENDENT_ADDRESS_P
 #define TARGET_MODE_DEPENDENT_ADDRESS_P k1_mode_dependent_address_p
