@@ -100,6 +100,9 @@
 (define_reservation "k1c_alu_full.x_r"
   "k1c_alu_r + k1c_issue_x2_r")
 
+(define_reservation "k1c_alu_full.y_r"
+  "k1c_alu_r + k1c_issue_x3_r")
+
 (define_reservation "k1c_alu_full_odd_r"
   "k1c_alu0_u + k1c_odd_u + k1c_issue_r")
 
@@ -227,6 +230,10 @@
 (define_insn_reservation "k1c_alu.x" 1 (and (eq_attr "arch" "coolidge")
                                            (eq_attr "type" "alu_x"))
                          "k1c_alu_full.x_r")
+
+(define_insn_reservation "k1c_alu.y" 1 (and (eq_attr "arch" "coolidge")
+                                           (eq_attr "type" "alu_y"))
+                         "k1c_alu_full.y_r")
 
 ;; (define_insn_reservation "k1c_alud" 1 (and (eq_attr "arch" "coolidge")
 ;;                                            (eq_attr "type" "alud"))
