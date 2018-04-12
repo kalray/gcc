@@ -3209,7 +3209,8 @@ enum k1_builtin
   K1_BUILTIN_CTZD,
   K1_BUILTIN_CTZDL,
   K1_BUILTIN_ACWS,
-  K1_BUILTIN_AFDA,
+  K1_BUILTIN_AFADDD,
+  K1_BUILTIN_AFADDW,
   /* FIXME AUTO: disable aldc */
   /* K1_BUILTIN_LDC, */
   /* K1_BUILTIN_ALDC, */
@@ -3477,7 +3478,8 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (CTZD, "ctzd", intDI, uintDI);
   ADD_K1_BUILTIN (CTZDL, "ctzdl", intDI, uintDI);
   ADD_K1_BUILTIN (ACWS, "acws", uintTI, voidPTR, uintDI, uintDI);
-  ADD_K1_BUILTIN (AFDA, "afda", uintDI, voidPTR, intDI);
+  ADD_K1_BUILTIN (AFADDD, "afaddd", uintDI, voidPTR, intDI);
+  ADD_K1_BUILTIN (AFADDW, "afaddw", uintSI, voidPTR, intSI);
   /* FIXME AUTO: disable aldc */
   /* ADD_K1_BUILTIN (LDC,     "ldc",    uintDI,  voidPTR); */
   /* ADD_K1_BUILTIN (ALDC,    "aldc",    uintDI,  voidPTR); */
@@ -4361,15 +4363,28 @@ k1_builtin_helper_memref_ptr (rtx ptr, enum machine_mode mode)
   varname = force_reg (mode, varname);
 
 static rtx
-k1_expand_builtin_afda (rtx target, tree args)
+k1_expand_builtin_afaddd (rtx target, tree args)
 {
   MEMREF (0, DImode, mem_target);
   GETREG (1, DImode, addend_and_return);
 
   target = k1_builtin_helper_check_reg_target (target, DImode);
 
-  emit_insn (gen_afda (target, mem_target, addend_and_return,
-		       gen_rtx_CONST_INT (SImode, 0) /* unused mem model */));
+  emit_insn (gen_afaddd (target, mem_target, addend_and_return,
+			 gen_rtx_CONST_INT (SImode, 0) /* unused mem model */));
+  return target;
+}
+
+static rtx
+k1_expand_builtin_afaddw (rtx target, tree args)
+{
+  MEMREF (0, DImode, mem_target);
+  GETREG (1, SImode, addend_and_return);
+
+  target = k1_builtin_helper_check_reg_target (target, SImode);
+
+  emit_insn (gen_afaddw (target, mem_target, addend_and_return,
+			 gen_rtx_CONST_INT (SImode, 0) /* unused mem model */));
   return target;
 }
 
@@ -6033,8 +6048,10 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     /*     return k1_expand_builtin_bwluwp (target, exp); */
     case K1_BUILTIN_ACWS:
       return k1_expand_builtin_acws (target, exp);
-    case K1_BUILTIN_AFDA:
-      return k1_expand_builtin_afda (target, exp);
+    case K1_BUILTIN_AFADDD:
+      return k1_expand_builtin_afaddd (target, exp);
+    case K1_BUILTIN_AFADDW:
+      return k1_expand_builtin_afaddw (target, exp);
       /* FIXME AUTO: disable aldc */
       /* case K1_BUILTIN_LDC: */
       /* case K1_BUILTIN_ALDC: */
