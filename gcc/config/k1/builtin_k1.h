@@ -106,8 +106,10 @@ extern unsigned int __builtin_k1_waitit (unsigned int);
 extern unsigned __int128 __builtin_k1_acws (void *address,
 					    unsigned long long new_value,
 					    unsigned long long old_value);
-/* AFDA */
-extern unsigned long long __builtin_k1_afda (void *address, long long addend);
+/* AFADDD */
+extern unsigned long long __builtin_k1_afaddd (void *address, long long addend);
+/* AFADDW */
+extern unsigned int __builtin_k1_afaddw (void *address, int addend);
 /* ALDC */
 extern unsigned long long __builtin_k1_aldc (void *addr);
 /* DINVAL */
