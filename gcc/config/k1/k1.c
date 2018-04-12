@@ -3359,6 +3359,7 @@ enum k1_builtin
   K1_BUILTIN_FWIDENHMWP,
   K1_BUILTIN_FNARROWWH,
   K1_BUILTIN_FNARROWDWP,
+  K1_BUILTIN_WAITIT,
 
   K1_BUILTIN_SRFSIZE,
 
@@ -3658,6 +3659,7 @@ k1_target_init_builtins (void)
   /* ADD_K1_BUILTIN (FNARROWDWP,  "fnarrowdwp", vect2SI , vect2SF); */
 
   ADD_K1_BUILTIN (FNARROWWH, "fnarrowwh", uintHI, floatSF);
+  ADD_K1_BUILTIN (WAITIT, "waitit", uintSI, uintSI);
 
   ADD_K1_BUILTIN (SRFSIZE, "srfsize", intSI, intSI);
 }
@@ -3787,6 +3789,20 @@ k1_expand_builtin_set (rtx target ATTRIBUTE_UNUSED, tree args, bool ps)
     emit_insn (gen_set_volatile (sys_reg, arg2, k1_sync_reg_rtx));
 
   return NULL_RTX;
+}
+
+static rtx
+k1_expand_builtin_waitit (rtx target, tree args)
+{
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+
+  if (!target)
+    target = gen_reg_rtx (SImode);
+  target = force_reg (SImode, target);
+  arg1 = force_reg (SImode, arg1);
+  emit_insn (gen_waitit (target, arg1, k1_sync_reg_rtx));
+
+  return target;
 }
 
 /*
@@ -6316,6 +6332,9 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       /* FIXME AUTO: disabling vector support */
       /* case K1_BUILTIN_FNARROWDWP: */
       /*   return k1_expand_builtin_fnarrowdwp (target, exp); */
+
+    case K1_BUILTIN_WAITIT:
+      return k1_expand_builtin_waitit (target, exp);
 
     case K1_BUILTIN_SRFSIZE:
       return k1_expand_builtin_srfsize (target, exp);
