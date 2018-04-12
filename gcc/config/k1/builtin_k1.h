@@ -95,6 +95,8 @@ extern void __builtin_k1_tlbprobe (void);
 extern void __builtin_k1_tlbread (void);
 /* TLBWRITE */
 extern void __builtin_k1_tlbwrite (void);
+/* WAITIT */
+extern unsigned int __builtin_k1_waitit (unsigned int);
 
 /*
  * LSU Instrutions
