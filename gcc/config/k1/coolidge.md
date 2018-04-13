@@ -1,17 +1,17 @@
 (automata_option "ndfa")
 (automata_option "v")
 
-(define_automaton "coolidge")
+(define_automaton "coolidge_exu")
 (define_automaton "coolidge_issue")
 
 (define_cpu_unit
   "k1c_alu0_u, k1c_tiny_alu0_u, k1c_lite_alu0_u,
    k1c_alu1_u, k1c_tiny_alu1_u, k1c_lite_alu1_u,
    k1c_bcu_u,
-   k1c_mau_u, k1c_tiny_mau_u, k1c_lite_mau_u,
+   k1c_mau_u, k1c_tiny_mau_u,
    k1c_lsu_u, k1c_tiny_lsu_u, k1c_lsu_store_u,
    k1c_odd_u"
-   "coolidge")
+  "coolidge_exu")
 
 (define_cpu_unit
   "k1c_issue0, k1c_issue1, k1c_issue2, k1c_issue3, k1c_issue4, k1c_issue5, k1c_issue6, k1c_issue7"
@@ -25,9 +25,8 @@
 (absence_set "k1c_tiny_alu1_u" "k1c_alu1_u, k1c_lite_alu1_u")
 (absence_set "k1c_lite_alu1_u" "k1c_tiny_alu1_u, k1c_alu1_u")
 
-(absence_set "k1c_mau_u"      "k1c_tiny_mau_u, k1c_lite_mau_u")
-(absence_set "k1c_tiny_mau_u" "k1c_mau_u, k1c_lite_mau_u")
-(absence_set "k1c_lite_mau_u" "k1c_tiny_mau_u, k1c_mau_u")
+(absence_set "k1c_mau_u"      "k1c_tiny_mau_u")
+(absence_set "k1c_tiny_mau_u" "k1c_mau_u")
 
 ;; k1c_lsu_store_u, k1c_tiny_lsu_u
 
@@ -46,10 +45,10 @@
 ;; (define_reservation "k1c_lsu_store_r" "k1c_acc_u")
 
 (define_reservation "k1c_alu_r"  "(k1c_alu0_u      | k1c_alu1_u                                        )")
-(define_reservation "k1c_lite_r" "(k1c_lite_alu0_u | k1c_lite_alu1_u                  | k1c_lite_mau_u )")
+(define_reservation "k1c_lite_r" "(k1c_lite_alu0_u | k1c_lite_alu1_u                                   )")
 (define_reservation "k1c_tiny_r" "(k1c_tiny_alu0_u | k1c_tiny_alu1_u | k1c_tiny_lsu_u | k1c_tiny_mau_u )")
 
-;;(define_reservation "k1c_lite_double_r" "( k1c_lite_mau_u | (k1c_lite_alu0_u + k1c_lite_alu1_u))")
+;;(define_reservation "k1c_lite_double_r" "(k1c_lite_alu0_u + k1c_lite_alu1_u)")
 ;;(define_reservation "k1c_tiny_simple_r" "(k1c_tiny_alu0_u | k1c_tiny_alu1_u | k1c_tiny_lsu_u | k1c_tiny_mau_u)")
 ;;(define_reservation "k1c_tiny_double_r" "((k1c_tiny_alu0_u + k1c_tiny_alu1_u) | k1c_tiny_lsu_u | k1c_tiny_mau_u)")
 
