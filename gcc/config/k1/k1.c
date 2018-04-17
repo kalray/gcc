@@ -3611,8 +3611,8 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (FSISRD, "fsisrd", floatDF, floatDF);
   ADD_K1_BUILTIN (GET, "get", uintDI, intSI);
   ADD_K1_BUILTIN (GET_R, "get_r", uintDI, intSI);
-  ADD_K1_BUILTIN (WFXL, "wfxl", VOID, uintQI, intDI);
-  ADD_K1_BUILTIN (WFXM, "wfxm", VOID, uintQI, intDI);
+  ADD_K1_BUILTIN (WFXL, "wfxl", VOID, uintQI, uintDI);
+  ADD_K1_BUILTIN (WFXM, "wfxm", VOID, uintQI, uintDI);
   ADD_K1_BUILTIN (IINVAL, "iinval", VOID);
   ADD_K1_BUILTIN (IINVALS, "iinvals", VOID, constVoidPTR);
   ADD_K1_BUILTIN (ITOUCHL, "itouchl", VOID, voidPTR);
