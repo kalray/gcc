@@ -62,10 +62,10 @@ extern void __builtin_k1_doze (void);
 extern unsigned long long __builtin_k1_get (int);
 /* GOTO */
 /* WFXL */
-extern void __builtin_k1_wfxl (unsigned char, long long);
+extern void __builtin_k1_wfxl (unsigned char, unsigned long long);
 
 /* WFXM */
-extern void __builtin_k1_wfxm (unsigned char, long long);
+extern void __builtin_k1_wfxm (unsigned char, unsigned long long);
 /* ICALL */
 /* IGET */
 /* IGOTO */
