@@ -205,7 +205,7 @@ b.target("build" + s_bootstrap + target_variant) do
     if variant == "linux" then
       newlib = ""
       libatomic_toggle = "--disable-libatomic"
-      threads = "--disable-threads"
+      threads = "--enable-threads=posix"
       quadmath = "--disable-libquadmath"
       languages = "c,c++,fortran"
       sysroot_option = "--with-sysroot=#{sysroot} --with-build-sysroot=#{sysroot}"
