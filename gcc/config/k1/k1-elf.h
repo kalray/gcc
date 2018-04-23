@@ -35,7 +35,7 @@
    Link against MPPA Bare Runtime
  */
 #undef LIB_SPEC
-#define LIB_SPEC "-lmppabareruntime --start-group -lc -lgloss --end-group"
+#define LIB_SPEC "--start-group -lmppabareruntime -lc -lgloss --end-group"
 
 #undef LINK_SPEC
 #define LINK_SPEC                                                              \
