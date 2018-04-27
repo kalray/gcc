@@ -2997,7 +2997,8 @@ enum k1_builtin {
     K1_BUILTIN_CTZW,
     K1_BUILTIN_CTZD,
     K1_BUILTIN_CTZDL,
-    K1_BUILTIN_ACWS,
+    K1_BUILTIN_ACSWAPW,
+    K1_BUILTIN_ACSWAPD,
     K1_BUILTIN_AFADDD,
     K1_BUILTIN_AFADDW,
     /* FIXME AUTO: disable aldc */
@@ -3264,7 +3265,8 @@ k1_target_init_builtins (void)
     ADD_K1_BUILTIN (CTZW,    "ctzw",        intSI,  uintSI);
     ADD_K1_BUILTIN (CTZD,    "ctzd",        intDI,  uintDI);
     ADD_K1_BUILTIN (CTZDL,   "ctzdl",       intDI,  uintDI);
-    ADD_K1_BUILTIN (ACWS,    "acws",        uintTI,  voidPTR,  uintDI, uintDI);
+    ADD_K1_BUILTIN (ACSWAPW, "acswapw",     uintTI,  voidPTR,  uintDI, uintDI);
+    ADD_K1_BUILTIN (ACSWAPD, "acswapd",     uintTI,  voidPTR,  uintDI, uintDI);
     ADD_K1_BUILTIN (AFADDD,  "afaddd",      uintDI,  voidPTR,  intDI);
     ADD_K1_BUILTIN (AFADDW,  "afaddw",      uintSI,  voidPTR,  intSI);
     /* FIXME AUTO: disable aldc */
@@ -4144,45 +4146,38 @@ k1_expand_builtin_afaddw (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_acws (rtx target, tree args)
+k1_expand_builtin_acswap (rtx target, tree args, bool double_p)
 {
-  /* FIXME AUTO: quadruple registers not yet handled correctly */
-/*  _____________________ */
-/* < TI mode not correct > */
-/*  --------------------- */
-/*         \   ^__^ */
-/*          \  (oo)\_______ */
-/*             (__)\       )\/\ */
-/*                 ||----w | */
-/*                 ||     || */
-/*  ____  _     _____    _    ____  _____  //\    _____ _____  __ */
-/* |  _ \| |   | ____|  / \  / ___|| ____||/_\|  |  ___|_ _\ \/ / */
-/* | |_) | |   |  _|   / _ \ \___ \|  _|   /_\   | |_   | | \  /  */
-/* |  __/| |___| |___ / ___ \ ___) | |___ / _ \  |  _|  | | /  \  */
-/* |_|   |_____|_____/_/   \_\____/|_____/_/ \_\ |_|   |___/_/\_\ */
+  rtx ptr = expand_normal (CALL_EXPR_ARG (args, 0));
 
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-    rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
-    rtx tmp  = gen_reg_rtx (TImode);
+  rtx mem_ref;
 
-    if (!target)
-        target = gen_reg_rtx (TImode);
-    if (!REG_P(target) || GET_MODE (target) != TImode) {
-        target = force_reg (TImode, target);
-    }
+  if (!REG_P(ptr))
+    ptr = force_reg(Pmode, ptr);
 
-    emit_clobber (tmp);
-    emit_move_insn (gen_lowpart(DImode, tmp), arg2);
-    emit_move_insn (gen_highpart(DImode, tmp), arg3);
+  mem_ref = gen_rtx_MEM(double_p? DImode : SImode, ptr);
 
-    arg1 = force_reg (Pmode, arg1);
-    arg1 = gen_rtx_MEM (DImode, arg1);
+  rtx new_val = expand_normal (CALL_EXPR_ARG (args, 1));
+  rtx expect_val = expand_normal (CALL_EXPR_ARG (args, 2));
 
-    emit_insn (gen_acws (tmp, arg1, tmp));
-    emit_move_insn (target, tmp);
+  rtx tmp  = gen_reg_rtx (TImode);
 
-    return target;
+  if (!target)
+    target = gen_reg_rtx (TImode);
+  else
+    target = force_reg (TImode, target);
+
+  emit_move_insn (gen_lowpart(DImode, tmp), new_val);
+  emit_move_insn (gen_highpart(DImode, tmp), expect_val);
+
+  if (double_p)
+    emit_insn (gen_acswapd (tmp, mem_ref));
+  else
+    emit_insn (gen_acswapw (tmp, mem_ref));
+
+  emit_move_insn (target, tmp);
+
+  return target;
 }
 
 static rtx
@@ -5739,8 +5734,10 @@ k1_target_expand_builtin (tree exp,
 	/* FIXME AUTO: disabling vector support */
     /* case K1_BUILTIN_BWLUWP: */
     /*     return k1_expand_builtin_bwluwp (target, exp); */
-    case K1_BUILTIN_ACWS:
-        return k1_expand_builtin_acws (target, exp);
+    case K1_BUILTIN_ACSWAPW:
+      return k1_expand_builtin_acswap (target, exp, 0);
+    case K1_BUILTIN_ACSWAPD:
+      return k1_expand_builtin_acswap (target, exp, 1);
     case K1_BUILTIN_AFADDD:
       return k1_expand_builtin_afaddd (target, exp);
     case K1_BUILTIN_AFADDW:
