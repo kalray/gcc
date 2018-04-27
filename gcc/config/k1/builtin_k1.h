@@ -102,10 +102,14 @@ extern unsigned int __builtin_k1_waitit (unsigned int);
  * LSU Instrutions
  */
 
-/* ACWS */
-extern unsigned __int128 __builtin_k1_acws (void *address,
-					    unsigned long long new_value,
-					    unsigned long long old_value);
+/* ACSWAPW */
+extern unsigned __int128 __builtin_k1_acswapw (void *address,
+					       unsigned long long new_value,
+					       unsigned long long old_value);
+/* ACSWAPD */
+extern unsigned __int128 __builtin_k1_acswapd (void *address,
+					       unsigned long long new_value,
+					       unsigned long long old_value);
 /* AFADDD */
 extern unsigned long long __builtin_k1_afaddd (void *address, long long addend);
 /* AFADDW */
