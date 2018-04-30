@@ -70,11 +70,7 @@
 #include <libgen.h>
 
 #undef TARGET_HAVE_TLS
-#ifdef K1_LINUX
-#define TARGET_HAVE_TLS (false)
-#else
 #define TARGET_HAVE_TLS (true)
-#endif
 
 static bool scheduling = false;
 static int emit_colon;
