@@ -114,8 +114,10 @@ extern unsigned __int128 __builtin_k1_acswapd (void *address,
 extern unsigned long long __builtin_k1_afaddd (void *address, long long addend);
 /* AFADDW */
 extern unsigned int __builtin_k1_afaddw (void *address, int addend);
-/* ALDC */
-extern unsigned long long __builtin_k1_aldc (void *addr);
+/* ALCLRD */
+extern unsigned long long __builtin_k1_alclrd (void *addr);
+/* ALCLRW */
+extern unsigned int __builtin_k1_alclrw (void *addr);
 /* DINVAL */
 extern void __builtin_k1_dinval (void);
 /* DINVALL */

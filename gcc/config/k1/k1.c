@@ -3180,9 +3180,8 @@ enum k1_builtin
   K1_BUILTIN_ACSWAPD,
   K1_BUILTIN_AFADDD,
   K1_BUILTIN_AFADDW,
-  /* FIXME AUTO: disable aldc */
-  /* K1_BUILTIN_LDC, */
-  /* K1_BUILTIN_ALDC, */
+  K1_BUILTIN_ALCLRD,
+  K1_BUILTIN_ALCLRW,
   K1_BUILTIN_DFLUSH,
   K1_BUILTIN_DFLUSHL,
   K1_BUILTIN_DINVAL,
@@ -3426,9 +3425,8 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (ACSWAPD, "acswapd", uintTI, voidPTR, uintDI, uintDI);
   ADD_K1_BUILTIN (AFADDD, "afaddd", uintDI, voidPTR, intDI);
   ADD_K1_BUILTIN (AFADDW, "afaddw", uintSI, voidPTR, intSI);
-  /* FIXME AUTO: disable aldc */
-  /* ADD_K1_BUILTIN (LDC,     "ldc",    uintDI,  voidPTR); */
-  /* ADD_K1_BUILTIN (ALDC,    "aldc",    uintDI,  voidPTR); */
+  ADD_K1_BUILTIN (ALCLRD, "alclrd", uintDI, voidPTR);
+  ADD_K1_BUILTIN (ALCLRW, "alclrw", uintSI, voidPTR);
   ADD_K1_BUILTIN (DINVAL, "dinval", VOID);
   ADD_K1_BUILTIN (DINVALL, "dinvall", VOID, constVoidPTR);
   ADD_K1_BUILTIN (DOZE, "doze", VOID);
@@ -4509,23 +4507,38 @@ k1_expand_builtin_itouchl (rtx target, tree args)
   return target;
 }
 
-/* FIXME AUTO: disable aldc */
-/* static rtx */
-/* k1_expand_builtin_aldc (rtx target, tree args) */
-/* { */
-/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
+static rtx
+k1_expand_builtin_alclr (rtx target, tree args, enum machine_mode mode)
+{
+  rtx ptr = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx mem_ref;
 
-/*     if (!target) */
-/*         target = gen_reg_rtx (DImode); */
-/*     if (!REG_P(target) || GET_MODE (target) != DImode) { */
-/*         target = force_reg (DImode, target); */
-/*     } */
+  if (!REG_P (ptr))
+    ptr = force_reg (Pmode, ptr);
 
-/*     arg1 = gen_rtx_MEM (DImode, force_reg (Pmode, arg1)); */
-/*     emit_insn (gen_aldc (target, arg1)); */
+  mem_ref = gen_rtx_MEM (mode, ptr);
 
-/*     return target; */
-/* } */
+  if (!target)
+    target = gen_reg_rtx (mode);
+  if (!REG_P (target) || GET_MODE (target) != mode)
+    {
+      target = force_reg (mode, target);
+    }
+
+  switch (mode)
+    {
+    case DImode:
+      emit_insn (gen_alclrd (target, mem_ref));
+      break;
+    case SImode:
+      emit_insn (gen_alclrw (target, mem_ref));
+      break;
+    default:
+      gcc_unreachable ();
+    }
+
+  return target;
+}
 
 static rtx
 k1_expand_builtin_faddrn (rtx target, tree args)
@@ -5678,10 +5691,10 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_afaddd (target, exp);
     case K1_BUILTIN_AFADDW:
       return k1_expand_builtin_afaddw (target, exp);
-      /* FIXME AUTO: disable aldc */
-      /* case K1_BUILTIN_LDC: */
-      /* case K1_BUILTIN_ALDC: */
-      /* return k1_expand_builtin_aldc (target, exp); */
+    case K1_BUILTIN_ALCLRD:
+      return k1_expand_builtin_alclr (target, exp, DImode);
+    case K1_BUILTIN_ALCLRW:
+      return k1_expand_builtin_alclr (target, exp, SImode);
     case K1_BUILTIN_CBS:
     case K1_BUILTIN_CBSW:
       return k1_expand_builtin_cbsw (target, exp);
