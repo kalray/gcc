@@ -79,8 +79,6 @@ extern int k1_isa_filter_enabled_p(unsigned int isa_mask, const char* insn_name)
 	    builtin_define ("__K1_GPREL__");			\
 	  if (TARGET_64)					\
 	    builtin_define ("__K1_64__");			\
-	  if (K1_TINYK1)					\
-	    builtin_define ("__K1_TINYK1__");			\
 	}							\
   }								\
   while (0)
@@ -98,7 +96,7 @@ extern int k1_isa_filter_enabled_p(unsigned int isa_mask, const char* insn_name)
 #define CC1_SPEC \
         " %{G*}"
 
-#define ASM_SPEC "%{mcore*} --no-check-resources %{m64} %{mtiny-k1}"
+#define ASM_SPEC "%{mcore*} --no-check-resources %{m64} "
 
 #define CRT_CALL_STATIC_FUNCTION(SECTION_OP, FUNC) asm(SECTION_OP "\ncall " #FUNC "\n;;\n.previous\n");
 

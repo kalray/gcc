@@ -37,7 +37,7 @@
 (define_mode_iterator ALL_SMALL_I [QI HI SI])
 
 ;; Iterator for all float modes (up to 64-bit)
-(define_mode_iterator ALLF [(SF "!K1_TINYK1") (DF "!K1_TINYK1")])
+(define_mode_iterator ALLF [SF DF])
 
 ;; Iterator for all float modes (up to 64-bit)
 (define_mode_iterator ALLMF [SF DF])
@@ -67,9 +67,9 @@
 
 ;; FIXME AUTO: disabling vector support
 ;;(define_mode_iterator SISIZE [SI SF V2HI])
-(define_mode_iterator SISIZE [SI (SF "!K1_TINYK1") ])
+(define_mode_iterator SISIZE [SI SF])
 
-(define_mode_iterator SISIZESCALAR [SI (SF "!K1_TINYK1")])
+(define_mode_iterator SISIZESCALAR [SI SF])
 
 ;; FIXME AUTO: disabling vector support
 ;;(define_mode_iterator DISIZE [DI DF V2SI V4HI])
@@ -80,7 +80,7 @@
 ;; FIXME AUTO: disabling vector support
 ;;(define_mode_iterator ALLMODES [DI DF V4HI V2SI SI SF V2HI HI QI])
 
-(define_mode_iterator ALLMODES [DI (DF "!K1_TINYK1") SI (SF "!K1_TINYK1") HI QI])
+(define_mode_iterator ALLMODES [DI DF SI SF HI QI])
 
 (define_mode_attr lite_prefix [(SI "") (DI "alud_")])
 
