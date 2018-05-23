@@ -52,8 +52,6 @@
   fmuld, \
   faddd, \
   fsbfd, \
-  fmulnrn, \
-  fmulnd, \
   cmove_x, \
   addhp, \
   sbfhp, \
