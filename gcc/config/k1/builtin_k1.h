@@ -610,32 +610,6 @@ extern double __builtin_k1_ffmad (double addend, double mult_op0,
 /* FFMADRN */
 extern double __builtin_k1_ffmadrn (double addend, double mult_op0,
 				    double mult_op1);
-/* FFMAN */
-extern float __builtin_k1_ffman (float addend, float mult_op0, float mult_op1);
-/* FFMAND */
-extern double __builtin_k1_ffmand (double addend, double mult_op0,
-				   double mult_op1);
-/* FFMANDRN */
-extern double __builtin_k1_ffmandrn (double addend, double mult_op0,
-				     double mult_op1);
-/* FFMANRN */
-extern float __builtin_k1_ffmanrn (float addend, float mult_op0,
-				   float mult_op1);
-/* FFMANRND */
-/* FFMANRNWD */
-/* FFMANRNWP */
-/* FFMANWD */
-extern double __builtin_k1_ffmanwd (double addend, float mult_op0,
-				    float mult_op1);
-/* FFMANWDRN */
-extern double __builtin_k1_ffmanwdrn (double addend, float mult_op0,
-				      float mult_op1);
-/* FFMANWP */
-/* FFMANW */
-extern float __builtin_k1_ffmanw (float addend, float mult_op0, float mult_op1);
-/* FFMANWRN */
-extern float __builtin_k1_ffmanwrn (float addend, float mult_op0,
-				    float mult_op1);
 /* FFMARND */
 /* FFMARNWD */
 /* FFMARNWP */
@@ -659,32 +633,6 @@ extern double __builtin_k1_ffmsd (double addend, double mult_op0,
 /* FFMSDRN */
 extern double __builtin_k1_ffmsdrn (double addend, double mult_op0,
 				    double mult_op1);
-/* FFMSN */
-extern float __builtin_k1_ffmsn (float addend, float mult_op0, float mult_op1);
-/* FFMSND */
-extern double __builtin_k1_ffmsnd (double addend, double mult_op0,
-				   double mult_op1);
-/* FFMSNDRN */
-extern double __builtin_k1_ffmsndrn (double addend, double mult_op0,
-				     double mult_op1);
-/* FFMSNRN */
-extern float __builtin_k1_ffmsnrn (float addend, float mult_op0,
-				   float mult_op1);
-/* FFMSNRND */
-/* FFMSNRNWD */
-/* FFMSNRNWP */
-/* FFMSNW */
-extern float __builtin_k1_ffmsnw (float addend, float mult_op0, float mult_op1);
-/* FFMSNWRN */
-extern float __builtin_k1_ffmsnwrn (float addend, float mult_op0,
-				    float mult_op1);
-/* FFMSNWD */
-extern double __builtin_k1_ffmsnwd (double addend, float mult_op0,
-				    float mult_op1);
-/* FFMSNWDRN */
-extern double __builtin_k1_ffmsnwdrn (double addend, float mult_op0,
-				      float mult_op1);
-/* FFMSNWP */
 /* FFMSRN */
 extern float __builtin_k1_ffmsrn (float addend, float mult_op0, float mult_op1);
 /* FFMSRND */
