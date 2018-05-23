@@ -194,37 +194,6 @@
 ;;   {}
 ;; )
 ;; 
-;; (define_insn "*fnmsv2sf4"
-;;   [(set (match_operand:V2SF 0 "register_operand" "=r")
-;;         (neg:V2SF (plus:V2SF (mult:V2SF (match_operand:V2SF 2 "register_operand" "r")
-;;                                         (match_operand:V2SF 3 "register_operand" "r"))
-;;                              (match_operand:V2SF 1 "register_operand" "r"))))]
-;;   ""
-;;   "ffmanwp %0 = %1, %2, %3"
-;;   [(set_attr "type" "mau_lsu_fpu")
-;;    (set_attr "length" "4")]
-;; )
-;; 
-;; (define_expand "ffmanrnwp"
-;;   [(set (match_operand:V2SF 0 "register_operand" "=r")
-;;         (minus:V2SF (neg:V2SF (mult:V2SF (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")] UNSPEC_FPRN)
-;;                                          (unspec:V2SF [(match_operand:V2SF 2 "register_operand" "r")] UNSPEC_FPRN)))
-;;                     (unspec:V2SF [(match_operand:V2SF 3 "register_operand" "r")] UNSPEC_FPRN)))]
-;;   ""
-;;   {}
-;; )
-;; 
-;; (define_insn "*ffmanrnwp"
-;;   [(set (match_operand:V2SF 0 "register_operand" "=r")
-;;         (minus:V2SF (neg:V2SF (mult:V2SF (unspec:V2SF [(match_operand:V2SF 2 "register_operand" "r")] UNSPEC_FPRN)
-;;                                          (unspec:V2SF [(match_operand:V2SF 3 "register_operand" "r")] UNSPEC_FPRN)))
-;;                     (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")] UNSPEC_FPRN)))]
-;;   ""
-;;   "ffmanrnwp %0 = %1, %2, %3"
-;;   [(set_attr "type" "mau_lsu_fpu")
-;;    (set_attr "length" "4")]
-;; )
-;; 
 ;; 
 ;; (define_expand "fmav2sf4"
 ;;   [(set (match_operand:V2SF 0 "register_operand" "=r")
@@ -276,39 +245,6 @@
 ;;   ""
 ;;   {}
 ;; )
-;; 
-;; (define_insn "*fmsv2sf4"
-;;   [(set (match_operand:V2SF 0 "register_operand" "=r")
-;;         (minus:V2SF (mult:V2SF (match_operand:V2SF 2 "register_operand" "r")
-;;                                (match_operand:V2SF 3 "register_operand" "r"))
-;;                     (match_operand:V2SF 1 "register_operand" "r")))]
-;;   ""
-;;   "ffmsnwp %0 = %1, %2, %3"
-;;   [(set_attr "type" "mau_lsu_fpu")
-;;    (set_attr "length" "4")]
-;; )
-;; 
-;; 
-;; (define_expand "ffmsnrnwp"
-;;   [(set (match_operand:V2SF 0 "register_operand" "=r")
-;;         (minus:V2SF (mult:V2SF (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")] UNSPEC_FPRN)
-;;                                (unspec:V2SF [(match_operand:V2SF 2 "register_operand" "r")] UNSPEC_FPRN))
-;;                      (unspec:V2SF [(match_operand:V2SF 3 "register_operand" "r")] UNSPEC_FPRN)))]
-;;   ""
-;;   {}
-;; )
-;; 
-;; (define_insn "*ffmsnrnwp"
-;;   [(set (match_operand:V2SF 0 "register_operand" "=r")
-;;         (minus:V2SF (mult:V2SF (unspec:V2SF [(match_operand:V2SF 2 "register_operand" "r")] UNSPEC_FPRN)
-;;                                (unspec:V2SF [(match_operand:V2SF 3 "register_operand" "r")] UNSPEC_FPRN))
-;;                     (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")] UNSPEC_FPRN)))]
-;;   ""
-;;   "ffmsnrnwp %0 = %1, %2, %3"
-;;   [(set_attr "type" "mau_lsu_fpu")
-;;    (set_attr "length" "4")]
-;; )
-;; 
 ;; 
 ;; 
 ;; (define_expand "fnmav2sf4"
