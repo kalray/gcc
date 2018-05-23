@@ -757,19 +757,6 @@ extern double __builtin_k1_floatud (unsigned char rounding,
 /* FMINWP */
 /* FMUL */
 /* FMULD */
-/* FMULN */
-/* FMULND */
-/* FMULNRN */
-extern float __builtin_k1_fmulnrn (float op0, float op1);
-/* FMULNRND */
-extern double __builtin_k1_fmulnrnd (double op0, double op1);
-/* FMULNRND */
-/* FMULNRNWD */
-extern double __builtin_k1_fmulnrnwd (float op0, float op1);
-/* FMULNRNWP */
-/* FMULNWD */
-extern double __builtin_k1_fmulnwd (float op0, float op1);
-/* FMULNWP */
 /* FMULRN */
 extern float __builtin_k1_fmulrn (float op0, float op1);
 /* FMULRND */

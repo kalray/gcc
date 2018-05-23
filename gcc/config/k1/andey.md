@@ -98,7 +98,7 @@
 
 ;; duplicate rule mau_lsu[.x] for mau_acc[.x]
 (define_insn_reservation "mau_acc" 1  (and (eq_attr "arch" "andey")
-                                           (eq_attr "type" "faddd,fmulnd,fmulnrn,fsbfd,fmuld,mau_acc"))
+                                           (eq_attr "type" "faddd,fsbfd,fmuld,mau_acc"))
                          "LSU_STORE_U+MAU_U+ISSUE")
 (define_insn_reservation "mau_acc.x" 2  (and (eq_attr "arch" "andey")
                                              (eq_attr "type" "mau_acc_x"))
