@@ -152,21 +152,15 @@ int main ()
         snand = __builtin_nans("");
 
         TEST_RN_VARIANT_2F (faddrn);
-        TEST_RN_VARIANT_3F (ffmanrn);
         TEST_RN_VARIANT_3F (ffmarn);
-        TEST_RN_VARIANT_3F (ffmsnrn);
         TEST_RN_VARIANT_3F (ffmsrn);
         TEST_RN_VARIANT_2F (fmulrn);
         TEST_RN_VARIANT_2F (fsbfrn);
 #ifndef __k1a__
         TEST_RN_VARIANT_2D (faddrnd);
-        TEST_RN_VARIANT_3D (ffmanrnd);
-        TEST_RN_VARIANT_1D2F (ffmanrnwd);
         TEST_RN_VARIANT_3D (ffmarnd);
         TEST_RN_VARIANT_1D2F (ffmarnwd);
-        TEST_RN_VARIANT_3D (ffmsnrnd);
         TEST_RN_VARIANT_1D2F (ffmsrnwd);
-        TEST_RN_VARIANT_1D2F (ffmsnrnwd);
         TEST_RN_VARIANT_3D (ffmsrnd);
         TEST_RN_VARIANT_2D (fsbfrnd);
         TEST_RN_VARIANT_2D (fmulrnd);
@@ -176,9 +170,7 @@ int main ()
 #ifndef __k1a__
         TEST_RN_VARIANT_2V (faddrnwp);
         TEST_RN_VARIANT_3V (ffmarnwp);
-        TEST_RN_VARIANT_3V (ffmanrnwp); 
         TEST_RN_VARIANT_3V (ffmsrnwp);
-        TEST_RN_VARIANT_3V (ffmsnrnwp);
         TEST_RN_VARIANT_2V (fmulrnwp);
         TEST_RN_VARIANT_2V (fsbfrnwp);
 #endif
@@ -192,32 +184,20 @@ int main ()
         TEST_4F(fdmswd, VAL1, VAL2, VAL3, VAL4);
 
         TEST_3F(ffma, VAL1, VAL2, VAL3);
-        TEST_3F(ffman, VAL1, VAL2, VAL3);
-        TEST_3F(ffmanrn, VAL1, VAL2, VAL3);
-        TEST_1D2F(ffmanwd, VAL1, VAL2, VAL3);
         TEST_3F(ffmarn, VAL1, VAL2, VAL3);
         TEST_1D2F(ffmawd, VAL1, VAL2, VAL3);
 #ifndef __k1a__
-        TEST_1D2F(ffmanrnwd, VAL1, VAL2, VAL3);
         TEST_1D2F(ffmarnwd, VAL1, VAL2, VAL3);
         TEST_3D(ffmad, VAL1, VAL2, VAL3);
-        TEST_3D(ffmand, VAL1, VAL2, VAL3);
-        TEST_3D(ffmanrnd, VAL1, VAL2, VAL3);
         TEST_3D(ffmarnd, VAL1, VAL2, VAL3);
 #endif
 
         TEST_3F(ffms, VAL1, VAL2, VAL3);
-        TEST_3F(ffmsn, VAL1, VAL2, VAL3);
-        TEST_3F(ffmsnrn, VAL1, VAL2, VAL3);
-        TEST_1D2F(ffmsnwd, VAL1, VAL2, VAL3);
         TEST_3F(ffmsrn, VAL1, VAL2, VAL3);
         TEST_1D2F(ffmswd, VAL1, VAL2, VAL3);
 #ifndef __k1a__
-        TEST_1D2F(ffmsnrnwd, VAL1, VAL2, VAL3);
         TEST_1D2F(ffmsrnwd, VAL1, VAL2, VAL3);
         TEST_3D(ffmsd, VAL1, VAL2, VAL3);
-        TEST_3D(ffmsnd, VAL1, VAL2, VAL3);
-        TEST_3D(ffmsnrnd, VAL1, VAL2, VAL3);
         TEST_3D(ffmsrnd, VAL1, VAL2, VAL3);
 #endif
 
@@ -243,12 +223,8 @@ int main ()
         TEST_2V (faddrnwp, ((__v2sf){VAL1, VAL2}), ((__v2sf){VAL3, VAL4}));
         TEST_3V (ffmawp, ((__v2sf){VAL1, VAL2}), ((__v2sf){VAL3, VAL4}), ((__v2sf){VAL5, VAL6}));
         TEST_3V (ffmarnwp, ((__v2sf){VAL1, VAL2}), ((__v2sf){VAL3, VAL4}), ((__v2sf){VAL5, VAL6}));
-        TEST_3V (ffmanwp, ((__v2sf){VAL1, VAL2}), ((__v2sf){VAL3, VAL4}), ((__v2sf){VAL5, VAL6}));
-        TEST_3V (ffmanrnwp, ((__v2sf){VAL1, VAL2}), ((__v2sf){VAL3, VAL4}), ((__v2sf){VAL5, VAL6})); 
         TEST_3V (ffmswp, ((__v2sf){VAL1, VAL2}), ((__v2sf){VAL3, VAL4}), ((__v2sf){VAL5, VAL6}));
         TEST_3V (ffmsrnwp, ((__v2sf){VAL1, VAL2}), ((__v2sf){VAL3, VAL4}), ((__v2sf){VAL5, VAL6}));
-        TEST_3V (ffmsnwp, ((__v2sf){VAL1, VAL2}), ((__v2sf){VAL3, VAL4}), ((__v2sf){VAL5, VAL6}));
-        TEST_3V (ffmsnrnwp, ((__v2sf){VAL1, VAL2}), ((__v2sf){VAL3, VAL4}), ((__v2sf){VAL5, VAL6}));
         TEST_2V (fmulwp, ((__v2sf){VAL1, VAL2}), ((__v2sf){VAL3, VAL4}));
         TEST_2V (fmulrnwp, ((__v2sf){VAL1, VAL2}), ((__v2sf){VAL3, VAL4}));
         TEST_2V (fsbfwp, ((__v2sf){VAL1, VAL2}), ((__v2sf){VAL3, VAL4}));
