@@ -185,26 +185,6 @@
 ;;    (set_attr "length" "4")]
 ;; )
 ;; 
-;; (define_insn "fmulnwp"
-;;   [(set (match_operand:V2SF 0 "register_operand" "=r")
-;; 	(neg:V2SF (mult:V2SF (match_operand:V2SF 1 "register_operand" "r")
-;; 		             (match_operand:V2SF 2 "register_operand" "r"))))]
-;;   ""
-;;   "fmulnwp %0 = %1, %2"
-;; [(set_attr "type" "mau_fpu")
-;;  (set_attr "length" "4")]
-;; )
-;; 
-;; (define_insn "fmulnrnwp"
-;;   [(set (match_operand:V2SF 0 "register_operand" "=r")
-;; 	(neg:V2SF (mult:V2SF (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")] UNSPEC_FPRN)
-;; 		             (unspec:V2SF [(match_operand:V2SF 2 "register_operand" "r")] UNSPEC_FPRN))))]
-;;   ""
-;;   "fmulnrnwp %0 = %1, %2"
-;; [(set_attr "type" "mau_fpu")
-;;  (set_attr "length" "4")]
-;; )
-;; 
 ;; (define_expand "fnmsv2sf4"
 ;;   [(set (match_operand:V2SF 0 "register_operand" "=r")
 ;;         (neg:V2SF (plus:V2SF (mult:V2SF (match_operand:V2SF 1 "register_operand" "r")

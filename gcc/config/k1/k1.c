@@ -3259,16 +3259,10 @@ enum k1_builtin
   K1_BUILTIN_FIXEDUWP,
   K1_BUILTIN_FMULRN,
   K1_BUILTIN_FMULRND,
-  K1_BUILTIN_FMULNRN,
-  K1_BUILTIN_FMULNWD,
-  K1_BUILTIN_FMULNRNWD,
-  K1_BUILTIN_FMULNRND,
   K1_BUILTIN_FMULWP,
   K1_BUILTIN_FMULRNWP,
   K1_BUILTIN_FMULWD,
   K1_BUILTIN_FMULRNWD,
-  K1_BUILTIN_FMULNWP,
-  K1_BUILTIN_FMULNRNWP,
   K1_BUILTIN_FSBFRN,
   K1_BUILTIN_FSBFRND,
   K1_BUILTIN_FSBFWP,
@@ -3551,18 +3545,12 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (FIXEDUD, "fixedud", uintDI, uintQI, floatDF, uintQI);
   ADD_K1_BUILTIN (FMULRN, "fmulrn", floatSF, floatSF, floatSF);
   ADD_K1_BUILTIN (FMULRND, "fmulrnd", floatDF, floatDF, floatDF);
-  ADD_K1_BUILTIN (FMULNRN, "fmulnrn", floatSF, floatSF, floatSF);
-  ADD_K1_BUILTIN (FMULNRND, "fmulnrnd", floatDF, floatDF, floatDF);
 
   /* FIXME AUTO: disabling vector support */
-  /* ADD_K1_BUILTIN (FMULNWP, "fmulnwp",     vect2SF,vect2SF,vect2SF); */
-  /* ADD_K1_BUILTIN (FMULNRNWP,"fmulnrnwp",  vect2SF,vect2SF,vect2SF); */
   /* ADD_K1_BUILTIN (FMULWP,  "fmulwp",      vect2SF,vect2SF,vect2SF); */
   /* ADD_K1_BUILTIN (FMULRNWP,"fmulrnwp",    vect2SF,vect2SF,vect2SF); */
 
   ADD_K1_BUILTIN (FMULWD, "fmulwd", floatDF, floatSF, floatSF);
-  ADD_K1_BUILTIN (FMULNWD, "fmulnwd", floatDF, floatSF, floatSF);
-  ADD_K1_BUILTIN (FMULNRNWD, "fmulnrnwd", floatDF, floatSF, floatSF);
   ADD_K1_BUILTIN (FMULRNWD, "fmulrnwd", floatDF, floatSF, floatSF);
   ADD_K1_BUILTIN (FSBFRN, "fsbfrn", floatSF, floatSF, floatSF);
   ADD_K1_BUILTIN (FSBFRND, "fsbfrnd", floatDF, floatDF, floatDF);
@@ -4745,29 +4733,6 @@ k1_expand_builtin_fmulrnd (rtx target, tree args)
   return target;
 }
 
-/* FIXME AUTO: disabling vector support2 */
-/* static rtx */
-/* k1_expand_builtin_fmulnwp (rtx target, tree args, bool rn) */
-/* { */
-/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
-/*     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1)); */
-
-/*     arg1 = force_reg (V2SFmode, arg1); */
-/*     arg2 = force_reg (V2SFmode, arg2); */
-
-/*     if (!target) */
-/*         target = gen_reg_rtx (V2SFmode); */
-/*     if (!REG_P(target) || GET_MODE (target) != V2SFmode) { */
-/*         target = force_reg (V2SFmode, target); */
-/*     } */
-/*     if (rn) */
-/*         emit_insn (gen_fmulnrnwp (target, arg1, arg2)); */
-/*     else */
-/*         emit_insn (gen_fmulnwp (target, arg1, arg2)); */
-
-/*     return target; */
-/* } */
-
 /* FIXME AUTO: disabling vector support */
 /* static rtx */
 /* k1_expand_builtin_fmulwp (rtx target, tree args, bool rn) */
@@ -4810,29 +4775,6 @@ k1_expand_builtin_fmulwd (rtx target, tree args, bool rn)
     emit_insn (gen_fmulrnwd (target, arg1, arg2));
   else
     emit_insn (gen_fmulwd (target, arg1, arg2));
-
-  return target;
-}
-
-static rtx
-k1_expand_builtin_fmulnwd (rtx target, tree args, bool rn)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-
-  arg1 = force_reg (SFmode, arg1);
-  arg2 = force_reg (SFmode, arg2);
-
-  if (!target)
-    target = gen_reg_rtx (DFmode);
-  if (!REG_P (target) || GET_MODE (target) != DFmode)
-    {
-      target = force_reg (DFmode, target);
-    }
-  if (rn)
-    emit_insn (gen_fmulnrnwd (target, arg1, arg2));
-  else
-    emit_insn (gen_fmulnwd (target, arg1, arg2));
 
   return target;
 }
@@ -4993,46 +4935,6 @@ k1_expand_builtin_fixedd (rtx target, tree args, bool usigned)
     emit_insn (gen_fixedud (target, arg1, arg2, arg3));
   else
     emit_insn (gen_fixedd (target, arg1, arg2, arg3));
-
-  return target;
-}
-
-static rtx
-k1_expand_builtin_fmulnrn (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-
-  arg1 = force_reg (SFmode, arg1);
-  arg2 = force_reg (SFmode, arg2);
-
-  if (!target)
-    target = gen_reg_rtx (SFmode);
-  if (!REG_P (target) || GET_MODE (target) != SFmode)
-    {
-      target = force_reg (SFmode, target);
-    }
-  emit_insn (gen_fmulnrn (target, arg1, arg2));
-
-  return target;
-}
-
-static rtx
-k1_expand_builtin_fmulnrnd (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-
-  arg1 = force_reg (DFmode, arg1);
-  arg2 = force_reg (DFmode, arg2);
-
-  if (!target)
-    target = gen_reg_rtx (DFmode);
-  if (!REG_P (target) || GET_MODE (target) != DFmode)
-    {
-      target = force_reg (DFmode, target);
-    }
-  emit_insn (gen_fmulnrnd (target, arg1, arg2));
 
   return target;
 }
@@ -6173,10 +6075,6 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_fmulrn (target, exp);
     case K1_BUILTIN_FMULRND:
       return k1_expand_builtin_fmulrnd (target, exp);
-    case K1_BUILTIN_FMULNRN:
-      return k1_expand_builtin_fmulnrn (target, exp);
-    case K1_BUILTIN_FMULNRND:
-      return k1_expand_builtin_fmulnrnd (target, exp);
 
       /* FIXME AUTO: disabling vector support */
       /* case K1_BUILTIN_FMULWP: */
@@ -6188,16 +6086,6 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case K1_BUILTIN_FMULRNWD:
       return k1_expand_builtin_fmulwd (target, exp,
 				       fcode == K1_BUILTIN_FMULRNWD);
-    case K1_BUILTIN_FMULNWD:
-    case K1_BUILTIN_FMULNRNWD:
-      return k1_expand_builtin_fmulnwd (target, exp,
-					fcode == K1_BUILTIN_FMULNRNWD);
-
-      /* FIXME AUTO: disabling vector support */
-      /* case K1_BUILTIN_FMULNWP: */
-      /* case K1_BUILTIN_FMULNRNWP: */
-      /*     return k1_expand_builtin_fmulnwp (target, exp, fcode ==
-       * K1_BUILTIN_FMULNRNWP); */
 
     case K1_BUILTIN_FCDIV:
       return k1_expand_builtin_fcdiv (target, exp);
