@@ -284,7 +284,7 @@
 
 ;; Bug workaround : insn issuing a FPU must not be bundled with store insn
 (define_insn_reservation "k1b_mau_fpu" 4 (and (eq_attr "arch" "bostan")
-                                         (eq_attr "type" "mau_fpu,fmuld,fmulnd,fmulnrn,faddd,fsbfd"))
+                                         (eq_attr "type" "mau_fpu,fmuld,faddd,fsbfd"))
                          "k1b_mau_r + k1b_lsu_store_u,nothing,nothing,nothing")
 
 (define_insn_reservation "k1b_mau_lsu_fpu" 4 (and (eq_attr "arch" "bostan")
