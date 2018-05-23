@@ -3,7 +3,7 @@
 
 #include <math.h>
 
-/* 
+/*
  * Conforming compiler should not use fma without fast-math.
  * We are not a conforming compiler...
  */
@@ -49,63 +49,25 @@ double ffmadrn(double a, double b, double c){
 }
  /* { dg-final { scan-assembler-times "ffmad.rn.s \\\$r0 = \\\$r1, \\\$r2" 1 } } */
 
-float k1_fms(float c, float a, float b){
-  return fmaf(a /* r1 */, b /* r2 */, -c /* r0 */);
-}
-/* { dg-final { scan-assembler-times "ffmsnw \\\$r0 = \\\$r1, \\\$r2" 1 } } */
-  
-double k1_fmsd(double c, double a, double b){
-  return fma(a /* r1 */, b /* r2 */, -c /* r0 */);
-}
- /* { dg-final { scan-assembler-times "ffmsnd \\\$r0 = \\\$r1, \\\$r2" 1 } } */
-  
 float ffmsrn(float a, float b, float c){
   return __builtin_k1_ffmswrn(a, b, c);
 }
 /* { dg-final { scan-assembler-times "ffmsw.rn.s \\\$r0 = \\\$r1, \\\$r2" 1 } } */
-  
+
 double ffmsdrn(double a, double b, double c){
   return __builtin_k1_ffmsdrn(a, b, c);
 }
 /* { dg-final { scan-assembler-times "ffmsd.rn.s \\\$r0 = \\\$r1, \\\$r2" 1 } } */
-  
+
 float k1_fms2(float c, float a, float b){
   return fmaf(-a /* r1 */, b /* r2 */, c /* r0 */);
 }
  /* { dg-final { scan-assembler-times "ffmsw \\\$r0 = \\\$r1, \\\$r2" 1 } } */
-  
+
 double k1_fmsd2(double c, double a, double b){
   return fma(-a /* r1 */, b /* r2 */, c /* r0 */);
 }
 /* { dg-final { scan-assembler-times "ffmsd \\\$r0 = \\\$r1, \\\$r2" 1 } } */
-
-  
-float k1_fman(float c, float a, float b){
-  return fmaf(-a /* r1 */, b /* r2 */, -c /* r0 */);
-}
-/* { dg-final { scan-assembler-times "ffmanw \\\$r0 = \\\$r1, \\\$r2" 1 } } */
-
-  
-double k1_fmand(double c, double a, double b){
-  return fma(-a /* r1 */, b /* r2 */, -c /* r0 */);
-}
-/* { dg-final { scan-assembler-times "ffmand \\\$r0 = \\\$r1, \\\$r2" 1 } } */
-
-  
-float k1_b_ffmanrn(float a, float b, float c){
-  return __builtin_k1_ffmanwrn(a, b, c);
-}
-/* { dg-final { scan-assembler-times "ffmanw.rn.s \\\$r0 = \\\$r1, \\\$r2" 1 } } */
-  
-double k1_b_ffmandrn(double a, double b, double c){
-  return __builtin_k1_ffmandrn(a, b, c);
-}
-/* { dg-final { scan-assembler-times "ffmand.rn.s \\\$r0 = \\\$r1, \\\$r2" 1 } } */
-
-double k1_b_ffmanwd(double a, float b, float c){
-  return __builtin_k1_ffmanwd(a, b, c);
-}
-/* { dg-final { scan-assembler-times "ffmanwd \\\$r0 = \\\$r1, \\\$r2" 1 } } */
 
 double k1_b_ffmawd(double a, float b, float c){
   return __builtin_k1_ffmawd(a, b, c);
@@ -117,7 +79,6 @@ double k1_b_ffmawdrn(double a, float b, float c){
 }
 /* { dg-final { scan-assembler-times "ffmawd.rn.s \\\$r0 = \\\$r1, \\\$r2" 1 } } */
 
-
 double k1_b_ffmswd(double a, float b, float c){
   return __builtin_k1_ffmswd(a, b, c);
 }
@@ -128,13 +89,3 @@ double k1_b_ffmswdrn(double a, float b, float c){
 }
 /* { dg-final { scan-assembler-times "ffmswd.rn.s \\\$r0 = \\\$r1, \\\$r2" 1 } } */
 
-
-double k1_b_ffmsnwd(double a, float b, float c){
-  return __builtin_k1_ffmsnwd(a, b, c);
-}
-/* { dg-final { scan-assembler-times "ffmsnwd \\\$r0 = \\\$r1, \\\$r2" 1 } } */
-
-double k1_b_ffmsnwdrn(double a, float b, float c){
-  return __builtin_k1_ffmsnwdrn(a, b, c);
-}
-/* { dg-final { scan-assembler-times "ffmsnwd.rn.s \\\$r0 = \\\$r1, \\\$r2" 1 } } */
