@@ -44,7 +44,7 @@
 
 ;; (define_reservation "k1c_lsu_store_r" "k1c_acc_u")
 
-(define_reservation "k1c_alu_r"  "(k1c_alu0_u      | k1c_alu1_u                                        )")
+(define_reservation "k1c_alu_r"  "(k1c_alu0_u      + k1c_alu1_u                                        )")
 (define_reservation "k1c_lite_r" "(k1c_lite_alu0_u | k1c_lite_alu1_u                                   )")
 (define_reservation "k1c_tiny_r" "(k1c_tiny_alu0_u | k1c_tiny_alu1_u | k1c_tiny_lsu_u | k1c_tiny_mau_u )")
 
