@@ -89,10 +89,6 @@ mforce-uncached-lsu
 Target Report Var(K1_FORCE_UNCACHED_LSU)
 Force the use of uncached instructions for all memory accesses. 
 
-mtiny-k1
-Target Report Var(K1_TINYK1)
-Restrict the ISA to a smaller subset fit for early usage in the design process.
-
 mcore=k1c
 Target RejectNegative Report Mask(K1C)
 Compile for K1C ISA
