@@ -1007,7 +1007,7 @@ k1_target_function_value (const_tree ret_type, const_tree func ATTRIBUTE_UNUSED,
       for (i = 0; i < nexps; i++)
 	XVECEXP (ret, 0, i)
 	  = gen_rtx_EXPR_LIST (VOIDmode,
-			       gen_rtx_REG (SImode,
+			       gen_rtx_REG (DImode,
 					    K1C_ARGUMENT_POINTER_REGNO + i),
 			       GEN_INT (i * UNITS_PER_WORD));
       return ret;
