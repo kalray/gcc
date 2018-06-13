@@ -306,13 +306,13 @@
 (define_predicate "system_register32_operand"
   (match_code "reg")
 {
-	return	(!TARGET_64 && (REGNO_REG_CLASS (REGNO (op)) == SRF_REGS)) || (TARGET_64 && ((REGNO_REG_CLASS (REGNO (op)) == SRF32_REGS))) ;
+	return	(TARGET_32 && (REGNO_REG_CLASS (REGNO (op)) == SRF_REGS)) || (!TARGET_32 && ((REGNO_REG_CLASS (REGNO (op)) == SRF32_REGS))) ;
 })
 
 (define_predicate "system_register64_operand"
   (match_code "reg")
 {
-	return	(TARGET_64 && ((REGNO_REG_CLASS (REGNO (op)) == SRF64_REGS))) ;
+	return	(!TARGET_32 && ((REGNO_REG_CLASS (REGNO (op)) == SRF64_REGS))) ;
 })
 
 (define_predicate "system_register_operand"
@@ -346,12 +346,12 @@
       /* TLS symbols are not constant.  */
       if (SYMBOL_REF_TLS_MODEL (op))
 	return false;
-      return (!TARGET_64);
+      return (TARGET_32);
 
     case LABEL_REF:
       /* For certain code models, the code is near as well.  */
       /* return ix86_cmodel == CM_SMALL || ix86_cmodel == CM_MEDIUM; */
-      return (!TARGET_64);
+      return (TARGET_32);
 
     default:
       gcc_unreachable ();
