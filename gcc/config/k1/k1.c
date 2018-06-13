@@ -131,14 +131,12 @@ struct GTY (()) machine_function
   char save_reg[FIRST_PSEUDO_REGISTER];
 
   k1_frame_info frame;
-  //    HOST_WIDE_INT frame_size;
 
-  bool need_rodata_rtx;
-  rtx rodata_rtx;
+  rtx pic_reg;
+
   rtx stack_check_block_label;
   rtx stack_check_block_seq, stack_check_block_last;
   /* vec<fake_SC_t,va_gc> *fake_SC_registers; */
-  bool gp_initialized;
 };
 
 /* K1 frame info
@@ -254,6 +252,18 @@ k1_compute_frame_info (void)
   frame->laid_out = true;
 }
 
+static rtx
+k1_pic_register (void)
+{
+  if (cfun->machine->pic_reg == NULL_RTX && can_create_pseudo_p ())
+    cfun->machine->pic_reg = gen_reg_rtx (Pmode);
+
+  if (cfun->machine->pic_reg != NULL_RTX)
+    return cfun->machine->pic_reg;
+
+  gcc_unreachable ();
+}
+
 static const char *prf_reg_names[] = {K1C_K1C_PRF_REGISTER_NAMES};
 /* Implement HARD_REGNO_MODE_OK.  */
 
@@ -298,10 +308,10 @@ k1_cannot_change_mode_class (enum machine_mode from, enum machine_mode to,
 			     enum reg_class reg_class)
 {
   // FIXME FOR COOLIDGE
-  if (!TARGET_64 && (reg_class == SRF_REGS && (from == SImode && to == SImode)))
+  if (TARGET_32 && (reg_class == SRF_REGS && (from == SImode && to == SImode)))
     return true; // SRF in 32bits mode can't be anything else than SI
 
-  if (TARGET_64)
+  if (!TARGET_32)
     {
       if ((reg_class == SRF32_REGS) && (from == SImode || to == SImode))
 	return true;
@@ -335,8 +345,6 @@ static bool k1_has_gprel (rtx x);
 static rtx k1_legitimize_gp_address (rtx x, rtx reg);
 
 static bool k1_rtx_constant_in_small_data_p (enum machine_mode mode);
-
-static rtx k1_pic_register_initial_val (void);
 
 static bool k1_legitimate_constant_p (enum machine_mode mode ATTRIBUTE_UNUSED,
 				      rtx x);
@@ -763,34 +771,32 @@ k1_target_conditional_register_usage (void)
 {
   const int is_k1c = true;
 
+  k1c_cur_abi = K1C_ABI_K1C_REGULAR;
+  SET_ABI_PARAMS (K1C, K1C, REGULAR);
+
   // FIXME FOR COOLIDGE
   // FIXME AUTO: rework ABI selection
-  if (flag_pic && !TARGET_64)
-    {
-      k1c_cur_abi = K1C_ABI_K1C_PIC;
-      SET_ABI_PARAMS (K1C, K1C, PIC);
-    } /* else if (TARGET_FDPIC && !TARGET_64){ */
+  /* if (flag_pic && TARGET_32){ */
+  /*   k1c_cur_abi = K1C_ABI_K1C_PIC; */
+  /*   SET_ABI_PARAMS(K1C,K1C,PIC); */
+  /* } /\* else if (TARGET_FDPIC && !TARGET_64){ *\/ */
   /*   /\* k1b_cur_abi = K1B_ABI_K1BDP_FDPIC; *\/ */
   /*   /\* /\\* if we're in FDPIC, fix the r9 register *\\/ *\/ */
   /*   /\* fix_register ("r9", 1, 1); *\/ */
   /* }  */
-  else if (flag_pic && TARGET_64)
-    {
-      k1c_cur_abi = K1C_ABI_K1C_PIC64;
-      SET_ABI_PARAMS (K1C, K1C, PIC64);
-    } /* else if (TARGET_FDPIC && TARGET_64) { */
+  /* else if (flag_pic && !TARGET_32) { */
+  /*   k1c_cur_abi = K1C_ABI_K1C_PIC64; */
+  /*   SET_ABI_PARAMS(K1C,K1C,PIC64); */
+  /* } /\* else if (TARGET_FDPIC && TARGET_64) { *\/ */
   /*     error ("64bits does not support FDPIC"); */
   /* }  */
-  else if (TARGET_64)
-    {
-      k1c_cur_abi = K1C_ABI_K1C_EMBEDDED64;
-      SET_ABI_PARAMS (K1C, K1C, EMBEDDED64);
-    }
-  else
-    {
-      k1c_cur_abi = K1C_ABI_K1C_EMBEDDED;
-      SET_ABI_PARAMS (K1C, K1C, EMBEDDED);
-    }
+  /* else if (!TARGET_32) { */
+  /*   k1c_cur_abi = K1C_ABI_K1C_EMBEDDED64; */
+  /*   SET_ABI_PARAMS(K1C,K1C,EMBEDDED64); */
+  /* } else { */
+  /*   k1c_cur_abi = K1C_ABI_K1C_EMBEDDED; */
+  /*   SET_ABI_PARAMS(K1C,K1C,EMBEDDED); */
+  /* } */
 
   /* the following exists because there is no FDPIC ABI, simply patch the
    * default one */
@@ -1004,7 +1010,7 @@ k1_target_asm_output_mi_thunk (FILE *file ATTRIBUTE_UNUSED,
 			       tree function ATTRIBUTE_UNUSED)
 {
   rtx xops[1];
-  if (TARGET_64)
+  if (!TARGET_32)
     {
       if (delta)
 	/* FIXME AUTO: this is fixed for build, not checked for correctness ! */
@@ -1092,21 +1098,6 @@ k1_target_expand_va_start (tree valist, rtx nextarg ATTRIBUTE_UNUSED)
   rtx saveregs_area = expand_builtin_saveregs ();
   rtx va_r = expand_expr (valist, NULL_RTX, VOIDmode, EXPAND_WRITE);
   emit_move_insn (va_r, saveregs_area);
-}
-
-static int
-k1_gprel_unspec_1 (rtx *x, void *data ATTRIBUTE_UNUSED)
-{
-  if (GET_CODE (*x) == UNSPEC
-      && (XINT (*x, 1) == UNSPEC_GPREL || XINT (*x, 1) == UNSPEC_GPREL10))
-    return 1;
-  return 0;
-}
-
-static bool
-k1_has_gprel (rtx x)
-{
-  return for_each_rtx (&x, &k1_gprel_unspec_1, NULL);
 }
 
 static bool
@@ -1596,19 +1587,19 @@ k1_target_print_operand (FILE *file, rtx x, int code)
 	      {
 	      case UNSPEC_TLS:
 		fprintf (file, "@tprel");
-		if (TARGET_64)
+		if (!TARGET_32)
 		  fprintf (file, "64");
 		fprintf (file, "(");
 		break;
 	      case UNSPEC_GOT:
 		fprintf (file, "@got");
-		if (TARGET_64)
+		if (!TARGET_32)
 		  fprintf (file, "64");
 		fprintf (file, "(");
 		break;
 	      case UNSPEC_GOTOFF:
 		fprintf (file, "@gotoff");
-		if (TARGET_64)
+		if (!TARGET_32)
 		  fprintf (file, "64");
 		fprintf (file, "(");
 		break;
@@ -1696,7 +1687,7 @@ k1_regname (rtx x)
       else
 	return reg_names[REGNO (x)];
     case SUBREG:
-      gcc_assert (!TARGET_64); // FIXME AUTO: don't understand this assert
+      gcc_assert (TARGET_32); // FIXME AUTO: don't understand this assert
       gcc_assert (GET_MODE (x) == DImode);
       gcc_assert (GET_MODE (SUBREG_REG (x)) == TImode);
       regno = REGNO (SUBREG_REG (x));
@@ -2401,12 +2392,12 @@ k1_expand_prologue (void)
   HOST_WIDE_INT size = frame->initial_sp_offset;
   rtx insn;
   rtx (*gen_set_gotp) (rtx target)
-    = TARGET_64 ? gen_set_gotp_di : gen_set_gotp_si;
+    = !TARGET_32 ? gen_set_gotp_di : gen_set_gotp_si;
 
   if (flag_pic && crtl->uses_pic_offset_table)
     {
-      insn = emit_insn (gen_set_gotp (pic_offset_table_rtx));
-      df_set_regs_ever_live (K1C_GLOBAL_POINTER_REGNO, true);
+      insn = emit_insn (gen_set_gotp (k1_pic_register ()));
+      /* df_set_regs_ever_live(K1C_GLOBAL_POINTER_REGNO, true); */
     }
 
   if (size > 0)
@@ -2457,7 +2448,7 @@ k1_legitimize_tls_reference (rtx x)
 {
   rtx reg;
   rtx (*gen_add) (rtx target, rtx op1, rtx op2)
-    = TARGET_64 ? gen_adddi3 : gen_addsi3;
+    = !TARGET_32 ? gen_adddi3 : gen_addsi3;
 
   if (reload_completed || reload_in_progress)
     return x;
@@ -2469,60 +2460,6 @@ k1_legitimize_tls_reference (rtx x)
 
   emit_insn (gen_add (reg, gen_rtx_REG (Pmode, K1C_LOCAL_POINTER_REGNO), reg));
   return reg;
-}
-
-static rtx
-k1_legitimize_gp_address (rtx x, rtx reg)
-{
-  rtx *sym;
-
-  if (x == k1_data_start_symbol)
-    return x;
-
-  if (k1_needs_gp_symbol_reloc (x, &sym))
-    {
-      int unspec = UNSPEC_GPREL;
-      if (SYMBOL_REF_FUNCTION_P (*sym) || CONSTANT_POOL_ADDRESS_P (*sym))
-	return x;
-      /* do not generate gp-relative
-	 relocations for data in rodata section */
-      if (SYMBOL_REF_LOCAL_P (*sym) && !SYMBOL_REF_EXTERNAL_P (*sym)
-	  && SYMBOL_REF_DECL (*sym)
-	  && (!DECL_P (SYMBOL_REF_DECL (*sym))
-	      || !DECL_COMMON (SYMBOL_REF_DECL (*sym))))
-	{
-	  tree decl = SYMBOL_REF_DECL (*sym);
-	  tree init = TREE_CODE (decl) == VAR_DECL
-			? DECL_INITIAL (decl)
-			: TREE_CODE (decl) == CONSTRUCTOR ? decl : 0;
-	  int reloc = 0;
-	  if (init && init != error_mark_node)
-	    reloc = compute_reloc_for_constant (init);
-	  if (decl_readonly_section (decl, reloc) || TREE_READONLY (decl))
-	    {
-	      return x;
-	    }
-	  if (k1_in_small_data_p (decl))
-	    unspec = UNSPEC_GPREL10;
-	}
-      if (reg == 0)
-	{
-	  gcc_assert (can_create_pseudo_p ());
-	  reg = gen_reg_rtx (Pmode);
-	}
-
-      emit_move_insn (reg,
-		      gen_rtx_CONST (Pmode,
-				     gen_rtx_UNSPEC (Pmode, gen_rtvec (1, x),
-						     unspec)));
-
-      emit_move_insn (reg, gen_rtx_PLUS (Pmode,
-					 get_hard_reg_initial_val (
-					   Pmode, K1C_GLOBAL_POINTER_REGNO),
-					 reg));
-      return reg;
-    }
-  return x;
 }
 
 static bool
@@ -2602,51 +2539,12 @@ symbolic_reference_mentioned_p (rtx op)
   return FALSE;
 }
 
-/* emit a sequence to access a read-only data */
-static rtx
-k1_handle_label_or_readonly (rtx addr, rtx reg)
-{
-  /* we use magic symbol _gp provided by the linker to find our read-only
-   * data:
-   * lw $rx = @got(_gp)[$r14]
-   * lw $ry = @gprel(symbol_or_label)[$rx]
-   */
-  tree gp = get_identifier ("_gp");
-  rtx rodata_pointer = gen_reg_rtx (Pmode);
-  rtx gp_sym = gen_rtx_SYMBOL_REF (Pmode, IDENTIFIER_POINTER (gp));
-
-  /* access the _gp value through the GOT */
-  rtx new_rtx = gen_rtx_UNSPEC (Pmode, gen_rtvec (1, gp_sym), UNSPEC_GOT);
-  new_rtx = gen_rtx_CONST (Pmode, new_rtx);
-  new_rtx = gen_rtx_PLUS (Pmode, k1_pic_register_initial_val (), new_rtx);
-  new_rtx = gen_const_mem (Pmode, new_rtx);
-  emit_move_insn (rodata_pointer, new_rtx);
-
-  /* now use the pointer to rodata to access the value we want
-   * via the GP-relative mechanisms
-   */
-  emit_move_insn (reg,
-		  gen_rtx_CONST (Pmode,
-				 gen_rtx_UNSPEC (Pmode, gen_rtvec (1, addr),
-						 UNSPEC_GPREL)));
-  emit_move_insn (reg, gen_rtx_PLUS (Pmode, rodata_pointer, reg));
-  cfun->machine->need_rodata_rtx = true;
-  return reg;
-}
-
-/* handle a symbol for PIC and FDPIC */
+/* handle a symbol for PIC */
 static rtx
 k1_handle_symbol (rtx addr, rtx reg)
 {
   int unspec = UNSPEC_GOT;
   rtx new_rtx = addr;
-
-  /* In FDPIC it is either a global data pointer -- UNSPEC_GOT,
-   * or function pointer, being in fact function descriptor */
-  /* if (TARGET_FDPIC */
-  /*      && GET_CODE (addr) == SYMBOL_REF */
-  /*      && SYMBOL_REF_FUNCTION_P (addr)) */
-  /*       unspec = UNSPEC_FUNCDESC_GOT; */
 
   if (reg == 0)
     {
@@ -2662,7 +2560,7 @@ k1_handle_symbol (rtx addr, rtx reg)
    */
   new_rtx = gen_rtx_UNSPEC (Pmode, gen_rtvec (1, addr), unspec);
   new_rtx = gen_rtx_CONST (Pmode, new_rtx);
-  new_rtx = gen_rtx_PLUS (Pmode, k1_pic_register_initial_val (), new_rtx);
+  new_rtx = gen_rtx_PLUS (Pmode, k1_pic_register (), new_rtx);
 
   new_rtx = gen_const_mem (Pmode, new_rtx);
   emit_move_insn (reg, new_rtx);
@@ -2686,9 +2584,6 @@ k1_target_legitimize_pic_address (rtx orig, rtx reg)
 {
   rtx addr = orig;
   rtx new_rtx = orig;
-
-  /* if (TARGET_FDPIC && GET_CODE (addr) == LABEL_REF) */
-  /*     return k1_handle_label_or_readonly(addr, reg); */
 
   /* Local symbol references in (FD)PIC/PIE mode are relative to global
    * offset table, but do not require GOT entry.
@@ -2758,7 +2653,7 @@ k1_target_legitimize_pic_address (rtx orig, rtx reg)
       new_rtx = gen_rtx_UNSPEC (Pmode, gen_rtvec (1, addr), unspec);
       new_rtx = gen_rtx_CONST (Pmode, new_rtx);
 
-      emit_move_insn (reg, k1_pic_register_initial_val ());
+      emit_move_insn (reg, k1_pic_register ());
       emit_move_insn (reg, gen_rtx_PLUS (Pmode, reg, new_rtx));
       crtl->uses_pic_offset_table = TRUE;
 
@@ -2883,7 +2778,7 @@ k1_expand_mov_constant (rtx operands[])
 	   */
 	  new_rtx = gen_rtx_UNSPEC (Pmode, gen_rtvec (1, base), UNSPEC_GOT);
 
-	  emit_move_insn (dest, k1_pic_register_initial_val ());
+	  emit_move_insn (dest, k1_pic_register ());
 
 	  emit_move_insn (dest, gen_rtx_MEM (Pmode, gen_rtx_PLUS (Pmode, dest,
 								  new_rtx)));
@@ -2898,7 +2793,7 @@ k1_expand_mov_constant (rtx operands[])
 	   */
 	  new_rtx = gen_rtx_UNSPEC (Pmode, gen_rtvec (1, base), UNSPEC_GOTOFF);
 
-	  emit_move_insn (dest, k1_pic_register_initial_val ());
+	  emit_move_insn (dest, k1_pic_register ());
 
 	  emit_move_insn (dest, gen_rtx_PLUS (Pmode, dest, new_rtx));
 
@@ -3769,7 +3664,7 @@ k1_expand_builtin_srfsize (rtx target, tree args)
 
   target = force_reg (SImode, target);
   reg_size_val
-    = (TARGET_64 && ((REGNO_REG_CLASS (regno) == SRF64_REGS))) ? 8 : 4;
+    = (!TARGET_32 && ((REGNO_REG_CLASS (regno) == SRF64_REGS))) ? 8 : 4;
 
   reg_size = gen_rtx_CONST_INT (VOIDmode, reg_size_val);
   emit_move_insn (target, reg_size);
@@ -8198,15 +8093,6 @@ clobber_reg (rtx *call_fusage, rtx reg)
 				    *call_fusage);
 }
 
-static rtx
-k1_pic_register_initial_val (void)
-{
-  if (can_create_pseudo_p ())
-    return get_hard_reg_initial_val (Pmode, PIC_OFFSET_TABLE_REGNUM);
-
-  gcc_unreachable ();
-}
-
 void
 k1_expand_call (rtx fnaddr, rtx arg, rtx retval, bool sibcall)
 {
@@ -8232,22 +8118,24 @@ k1_expand_call (rtx fnaddr, rtx arg, rtx retval, bool sibcall)
   /* } else */
   if (TARGET_GPREL)
     {
-      rtx callee = XEXP (fnaddr, 0);
+      gcc_unreachable ();
+      /* rtx callee = XEXP (fnaddr, 0); */
 
-      /* Functions in GPREL expect to have a correct r14 on
-	 entry. Put a restoration before every call. */
-      /* If we are after register allocation, we must be emitting
-	 the stack overflow check block. Let's say that this
-	 function can't use global data... */
-      if (can_create_pseudo_p ())
-	emit_move_insn (pic_offset_table_rtx, k1_pic_register_initial_val ());
+      /* /\* Functions in GPREL expect to have a correct r14 on */
+      /*    entry. Put a restoration before every call. *\/ */
+      /* /\* If we are after register allocation, we must be emitting */
+      /*    the stack overflow check block. Let's say that this */
+      /*    function can't use global data... *\/ */
+      /* if (can_create_pseudo_p ()) */
+      /*     emit_move_insn (pic_offset_table_rtx, k1_pic_register_initial_val
+       * ()); */
 
-      use_reg (&use, pic_offset_table_rtx);
+      /* use_reg (&use, pic_offset_table_rtx); */
 
-      /* A function that isn't local might be PIC, and as such
-	 clobber the r14 value. */
-      if (GET_CODE (callee) == SYMBOL_REF && !SYMBOL_REF_LOCAL_P (callee))
-	clobber_reg (&use, pic_offset_table_rtx);
+      /* /\* A function that isn't local might be PIC, and as such */
+      /*    clobber the r14 value. *\/ */
+      /* if (GET_CODE (callee) == SYMBOL_REF && !SYMBOL_REF_LOCAL_P (callee)) */
+      /*     clobber_reg (&use, pic_offset_table_rtx); */
     }
 
   if (!jump_operand (fnaddr, Pmode) || K1_FARCALL)
@@ -8328,10 +8216,9 @@ k1_target_legitimize_address (rtx x, rtx oldx ATTRIBUTE_UNUSED,
 {
   if (k1_has_tls_reference (x))
     return k1_legitimize_tls_reference (x);
-  else if (k1_has_gprel (x))
-    {
-      return k1_legitimize_gp_address (x, NULL);
-    }
+  /* else if (k1_has_gprel(x)) { */
+  /*   return k1_legitimize_gp_address (x, NULL); */
+  /* }  */
   else if (GET_CODE (x) == PLUS
 	   && (GET_CODE (XEXP (x, 0)) == MULT
 	       || GET_CODE (XEXP (x, 0)) == ZERO_EXTEND))
@@ -8956,7 +8843,7 @@ k1_output_addr_const_extra (FILE *fp, rtx x)
 	/*   return true; */
 	case UNSPEC_TLS:
 	  fputs ("@tprel", (fp));
-	  if (TARGET_64)
+	  if (!TARGET_32)
 	    fputs ("64", (fp));
 	  fputs ("(", (fp));
 

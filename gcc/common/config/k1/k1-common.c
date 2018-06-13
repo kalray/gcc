@@ -57,25 +57,16 @@ k1_handle_option (struct gcc_options *opts ATTRIBUTE_UNUSED,
     case OPT_ffixed_reg:  /* defer this option */
     case OPT_mcore_k1c:
     case OPT_march_:
-    /* case OPT_msoc_: */
-    case OPT_mboard_:
-    case OPT_mcluster_:
-    /* case OPT_mfdpic:     */
     case OPT_mgprel:
-    case OPT_m64:
+    case OPT_m32:
     case OPT_mlocal_sdata:
-    case OPT_mos_:
     case OPT_fbundling:
     case OPT_fhwloop:
     case OPT_fstrict_align:
-    case OPT_keep:
-    case OPT_show:
-    case OPT_mprocessing_:
     case OPT_mfarcall:
     case OPT_mforce_uncached_lsu:
     case OPT_G:
     case OPT_mreload:
-    case OPT_mhypervisor:
     case OPT_fstack_check_use_tls:
 #ifdef K1_LINUX
     case OPT_pthread:
