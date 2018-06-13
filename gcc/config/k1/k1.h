@@ -21,18 +21,15 @@
 #include "k1c-registers.h"
 #endif
 
-/* ISA filtering */
-extern int k1_isa_filter_enabled_p (unsigned int isa_mask,
-				    const char *insn_name);
+/* Which ABI to use.  */
+enum k1_abi_type
+{
+  K1_ABI_LP64 = 0
+};
 
-#define K1_ISA_ALU_TINY (1 << 0)
-#define K1_ISA_ALU_LITE (1 << 1)
-#define K1_ISA_ALU_FULL (1 << 2)
-#define K1_ISA_ALU_FULL_ODD (1 << 3)
-#define K1_ISA_MAU_FPU (1 << 4)
-#define K1_ISA_MAU (1 << 5)
-
-//#define TARGET_K1C (TARGET_K1CDP | TARGET_K1CIO)
+#ifndef K1_ABI_DEFAULT
+#define K1_ABI_DEFAULT K1_ABI_LP64
+#endif
 
 #define K1C_SCRATCH_AREA_SIZE 16
 
@@ -79,7 +76,7 @@ extern int k1_isa_filter_enabled_p (unsigned int isa_mask,
 	    builtin_define ("__K1_STACK_LIMIT_TLS");                           \
 	  if (TARGET_GPREL)                                                    \
 	    builtin_define ("__K1_GPREL__");                                   \
-	  if (TARGET_64)                                                       \
+	  if (!TARGET_32)                                                      \
 	    builtin_define ("__K1_64__");                                      \
 	}                                                                      \
     }                                                                          \
@@ -91,11 +88,11 @@ extern int k1_isa_filter_enabled_p (unsigned int isa_mask,
   K1_OS_SELF_SPECS                                                             \
   "%{fpic: %{!fPIC:-fPIC}} %<fpic", "%{fPIC: %<fpic}"
 
-#define LINK_SPEC_COMMON "%{shared} %{m64:-melf64k1} "
+#define LINK_SPEC_COMMON "%{shared} %{m32:-melf32k1} %{!m32:-melf64k1} "
 
 #define CC1_SPEC " %{G*}"
 
-#define ASM_SPEC "%{mcore*} --no-check-resources %{m64} "
+#define ASM_SPEC "%{mcore*} --no-check-resources %{!m32:-m64} "
 
 #define CRT_CALL_STATIC_FUNCTION(SECTION_OP, FUNC)                             \
   asm(SECTION_OP "\ncall " #FUNC "\n;;\n.previous\n");
@@ -192,7 +189,7 @@ extern int k1_isa_filter_enabled_p (unsigned int isa_mask,
 
 /* ********** Type Layout ********** */
 
-#define POINTER_SIZE (TARGET_64 ? 64 : 32)
+#define POINTER_SIZE (TARGET_32 ? 32 : 64)
 
 /* A C expression for the size in bits of the type `int' on the target machine.
    If you don't define this, the default is one word.  */
@@ -205,7 +202,7 @@ extern int k1_isa_filter_enabled_p (unsigned int isa_mask,
 
 /* A C expression for the size in bits of the type `long' on the target
    machine.  If you don't define this, the default is one word.  */
-#define LONG_TYPE_SIZE (TARGET_64 ? 64 : 32)
+#define LONG_TYPE_SIZE (TARGET_32 ? 32 : 64)
 
 /* A C expression for the size in bits of the type `long long' on the target
    machine.  If you don't define this, the default is two words.  If you want
@@ -239,13 +236,13 @@ extern int k1_isa_filter_enabled_p (unsigned int isa_mask,
 /* A C expression for a string describing the name of the data type to use for
    size values.  The typedef name `size_t' is defined using the contents of the
    string.  */
-#define SIZE_TYPE (TARGET_64 ? "long unsigned int" : "unsigned int")
+#define SIZE_TYPE (TARGET_32 ? "unsigned int" : "long unsigned int")
 
 /* A C expression for a string describing the name of the data type to use for
    the result of subtracting two pointers.  The typedef name `ptrdiff_t' is
    defined using the contents of the string.  See `SIZE_TYPE' above for more
    information.  */
-#define PTRDIFF_TYPE (TARGET_64 ? "long int" : "int")
+#define PTRDIFF_TYPE (TARGET_32 ? "int" : "long int")
 
 /* ********** Registers ********** */
 
@@ -609,7 +606,7 @@ extern int k1_isa_filter_enabled_p (unsigned int isa_mask,
 
    If the static chain is passed in memory, these macros should not be
    defined; instead, the TARGET_STATIC_CHAIN hook should be used. */
-#define STATIC_CHAIN_REGNUM K1C_STATIC_POINTER_REGNO
+/* #define STATIC_CHAIN_REGNUM K1C_STATIC_POINTER_REGNO */
 
 /* ********** Elimination ********** */
 #define ELIMINABLE_REGS                                                        \
@@ -843,15 +840,15 @@ int k1_adjust_insn_length (rtx insn, int length);
    is not defined, it is up to the machine-dependent files to allocate
    such a register (if necessary). Note that this register must be
    fixed when in use (e.g. when flag_pic is true). */
-#define PIC_OFFSET_TABLE_REGNUM                                                \
-  (!flag_pic ? INVALID_REGNUM                                                  \
-	     : reload_completed ? REGNO (pic_offset_table_rtx)                 \
-				: K1C_GLOBAL_POINTER_REGNO)
+/* #define PIC_OFFSET_TABLE_REGNUM				\ */
+/*   (!flag_pic ? INVALID_REGNUM				\ */
+/*    : reload_completed ? REGNO(pic_offset_table_rtx)	\ */
+/*    :K1C_GLOBAL_POINTER_REGNO) */
 
 /* Define this macro if the register defined by
    PIC_OFFSET_TABLE_REGNUM is clobbered by calls. Do not define this
    macro if PIC_OFFSET_TABLE_REGNUM is not defined. */
-#define PIC_OFFSET_TABLE_REG_CALL_CLOBBERED 1
+/* #define PIC_OFFSET_TABLE_REG_CALL_CLOBBERED 1 */
 
 #define GOT_SYMBOL_NAME "*_GLOBAL_OFFSET_TABLE_"
 
@@ -1056,7 +1053,7 @@ int k1_adjust_insn_length (rtx insn, int length);
 #define TRULY_NOOP_TRUNCATION(OUTPREC, INPREC) 1
 
 /* An alias for the machine mode for pointers.  */
-#define Pmode (TARGET_64 ? DImode : SImode)
+#define Pmode (TARGET_32 ? SImode : DImode)
 
 /* An alias for the machine mode used for memory references to
    functions being called, in call RTL expressions. On most CISC

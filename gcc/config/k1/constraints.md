@@ -2,10 +2,10 @@
 (define_register_constraint "RXX" "(SRF_REGS)"
      "Any system register (32/64bits) constraint.")
 
-(define_register_constraint "R32" "(TARGET_64 ? SRF32_REGS : SRF_REGS)"
+(define_register_constraint "R32" "((!TARGET_32) ? SRF32_REGS : SRF_REGS)"
      "32bits System register constraint.")
 
-(define_register_constraint "R64" "(TARGET_64 ? SRF64_REGS : NO_REGS)"
+(define_register_constraint "R64" "((!TARGET_32) ? SRF64_REGS : NO_REGS)"
      "64bits System register constraint.")
 
 (define_constraint "S"
@@ -99,13 +99,13 @@
 (define_constraint "B32"
   "A signed 32-bit constant (possibly symbolic if targeting 32bits addressing))."
    (ior (and (match_test "k1_symbol_operand(op,mode)")
-             (match_test "!TARGET_64"))
+             (match_test "TARGET_32"))
         (match_test "satisfies_constraint_I32(op)")))
 
 (define_constraint "B37"
   "A signed 37-bit constant (possibly symbolic if targeting 32bits addressing))."
    (ior (and (match_test "k1_symbol_operand(op,mode)")
-             (match_test "!TARGET_64"))
+             (match_test "TARGET_32"))
         (match_test "satisfies_constraint_I37(op)")))
 
 (define_constraint "I43"
