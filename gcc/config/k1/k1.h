@@ -31,7 +31,7 @@ enum k1_abi_type
 #define K1_ABI_DEFAULT K1_ABI_LP64
 #endif
 
-#define K1C_SCRATCH_AREA_SIZE 16
+//#define K1C_SCRATCH_AREA_SIZE 16
 
 // FIXME AUTO: aarch64 uses a reg class for stack register. Maybe do the same ?
 
@@ -74,16 +74,12 @@ enum k1_abi_type
 	    builtin_define ("__STRICT_ALIGN__");                               \
 	  if (TARGET_STACK_CHECK_USE_TLS)                                      \
 	    builtin_define ("__K1_STACK_LIMIT_TLS");                           \
-	  if (TARGET_GPREL)                                                    \
-	    builtin_define ("__K1_GPREL__");                                   \
 	  if (!TARGET_32)                                                      \
 	    builtin_define ("__K1_64__");                                      \
 	}                                                                      \
     }                                                                          \
   while (0)
 
-/* "%{mcore=k1io: -fstrict-align} ",                             \ */
-/* "%{mcore=k1bio: -fstrict-align} ",			      \ */
 #define DRIVER_SELF_SPECS_COMMON                                               \
   K1_OS_SELF_SPECS                                                             \
   "%{fpic: %{!fPIC:-fPIC}} %<fpic", "%{fPIC: %<fpic}"
@@ -122,49 +118,15 @@ enum k1_abi_type
 	}                                                                      \
     }
 
-/* Normal alignment required for function parameters on the stack, in
-   bits. All stack parameters receive at least this much alignment
-   regardless of data type. On most machines, this is the same as the
-   size of an integer. */
 #define PARM_BOUNDARY 64
 
-/* Define this macro to the minimum alignment enforced by hardware for
-   the stack pointer on this machine. The definition is a C expression
-   for the desired alignment (measured in bits). This value is used as
-   a default if PREFERRED_STACK_BOUNDARY is not defined. On most
-   machines, this should be the same as PARM_BOUNDARY. */
-#define STACK_BOUNDARY 64
-
-/* Define this macro if you wish to preserve a certain alignment for
-   the stack pointer, greater than what the hardware enforces.  The
-   definition is a C expression for the desired alignment (measured
-   in bits).  This macro must evaluate to a value equal to or larger
-   than `STACK_BOUNDARY'. */
-#define PREFERRED_STACK_BOUNDARY 64
+#define STACK_BOUNDARY 128
 
 /* Alignment required for a function entry point, in bits.  */
 #define FUNCTION_BOUNDARY 64
 
-/* Biggest alignment that any data type can require on this machine,
-   in bits.  */
-#define BIGGEST_ALIGNMENT 64
+#define BIGGEST_ALIGNMENT 128
 
-/* Alignment, in bits, a C conformant malloc implementation has to
-   provide. If not defined, the default value is BITS_PER_WORD.  */
-#define MALLOC_ABI_ALIGNMENT 64
-
-/* Define this if instructions will fail to work if given data not
-   on the nominal alignment.  If instructions will merely go slower
-   in that case, do not define this macro. */
-#define STRICT_ALIGNMENT TARGET_STRICT_ALIGN
-
-/* Define this if you wish to imitate the way many other C compilers handle
-   alignment of bitfields and the structures that contain them.
-   The behavior is that the type written for a bitfield (`int', `short', or
-   other integer type) imposes an alignment for the entire structure, as if the
-   structure really did contain an ordinary field of that type.  In addition,
-   the bitfield is placed within the structure so that it would fit within such
-   a field, not crossing a boundary for it. */
 #define PCC_BITFIELD_TYPE_MATTERS 1
 
 /* Make strings word-aligned so strcpy from constants will be faster.  */
@@ -184,6 +146,8 @@ enum k1_abi_type
 /* Similarly, make sure that objects on the stack are sensibly aligned.  */
 #define LOCAL_ALIGNMENT(EXP, ALIGN) DATA_ALIGNMENT (EXP, ALIGN)
 
+#define STRICT_ALIGNMENT TARGET_STRICT_ALIGN
+
 //#define STACK_SLOT_ALIGNMENT(type, mode, align) ( (mode == BLKmode ? 8 :
 //GET_MODE_SIZE (mode)) > 4 ? BIGGEST_ALIGNMENT : BITS_PER_WORD )
 
@@ -191,57 +155,24 @@ enum k1_abi_type
 
 #define POINTER_SIZE (TARGET_32 ? 32 : 64)
 
-/* A C expression for the size in bits of the type `int' on the target machine.
-   If you don't define this, the default is one word.  */
 #define INT_TYPE_SIZE 32
 
-/* A C expression for the size in bits of the type `short' on the target
-   machine.  If you don't define this, the default is half a word.  (If this
-   would be less than one storage unit, it is rounded up to one unit.)  */
 #define SHORT_TYPE_SIZE 16
 
-/* A C expression for the size in bits of the type `long' on the target
-   machine.  If you don't define this, the default is one word.  */
 #define LONG_TYPE_SIZE (TARGET_32 ? 32 : 64)
 
-/* A C expression for the size in bits of the type `long long' on the target
-   machine.  If you don't define this, the default is two words.  If you want
-   to support GNU Ada on your machine, the value of macro must be at least 64.
- */
 #define LONG_LONG_TYPE_SIZE 64
 
-/* A C expression for the size in bits of the type `char' on the target
-   machine.  If you don't define this, the default is one quarter of a word.
-   (If this would be less than one storage unit, it is rounded up to one unit.)
- */
-#define CHAR_TYPE_SIZE 8
-
-/* A C expression for the size in bits of the type `float' on the target
-   machine.  If you don't define this, the default is one word.  */
 #define FLOAT_TYPE_SIZE 32
 
-/* A C expression for the size in bits of the type `double' on the target
-   machine.  If you don't define this, the default is two words.  */
 #define DOUBLE_TYPE_SIZE 64
 
-/* A C expression for the size in bits of the type `long double' on the target
-   machine.  If you don't define this, the default is two words.  */
 #define LONG_DOUBLE_TYPE_SIZE 64
 
-/* An expression whose value is 1 or 0, according to whether the type `char'
-   should be signed or unsigned by default.  The user can always override this
-   default with the options `-fsigned-char' and `-funsigned-char'.  */
 #define DEFAULT_SIGNED_CHAR 1
 
-/* A C expression for a string describing the name of the data type to use for
-   size values.  The typedef name `size_t' is defined using the contents of the
-   string.  */
 #define SIZE_TYPE "long unsigned int"
 
-/* A C expression for a string describing the name of the data type to use for
-   the result of subtracting two pointers.  The typedef name `ptrdiff_t' is
-   defined using the contents of the string.  See `SIZE_TYPE' above for more
-   information.  */
 #define PTRDIFF_TYPE "long int"
 
 /* ********** Registers ********** */
@@ -252,64 +183,26 @@ enum k1_abi_type
    FIRST_PSEUDO_REGISTER.  */
 #define FIRST_PSEUDO_REGISTER (K1C_MDS_REGISTERS + 1)
 
-/* An initializer that says which registers are used for fixed
-   purposes all throughout the compiled code and are therefore not
-   available for general allocation. These would include the stack
-   pointer, the frame pointer (except on machines where that can be
-   used as a general register when no frame pointer is needed), the
-   program counter on machines where that is considered one of the
-   addressable registers, and any other numbered register with a
-   standard use.
-
-    This information is expressed as a sequence of numbers, separated
-    by commas and surrounded by braces. The nth number is 1 if
-    register n is fixed, 0 otherwise.
-
-    The table initialized from this macro, and the table initialized
-    by the following one, may be overridden at run time either
-    automatically, by the actions of the macro
-    CONDITIONAL_REGISTER_USAGE, or by the user with the command
-    options -ffixed-reg, -fcall-used-reg and -fcall-saved-reg.  */
 #define FIXED_REGISTERS                                                        \
   {                                                                            \
     K1C_FIXED_REGISTERS                                                        \
     1,                                                                         \
   }
 
-/* Like FIXED_REGISTERS but has 1 for each register that is clobbered
-   (in general) by function calls as well as for fixed registers. This
-   macro therefore identifies the registers that are not available for
-   general allocation of values that must live across function calls.
-
-   If a register has 0 in CALL_USED_REGISTERS, the compiler
-   automatically saves it on function entry and restores it on
-   function exit, if the register is used within the function.  */
 #define CALL_USED_REGISTERS                                                    \
   {                                                                            \
     K1C_CALL_USED_REGISTERS                                                    \
     1,                                                                         \
   }
 
-/* Like CALL_USED_REGISTERS except this macro doesn't require that
-   the entire set of FIXED_REGISTERS be
-   included. (CALL_USED_REGISTERS must be a superset of
-   FIXED_REGISTERS). This macro is optional. If not specified, it
-   defaults to the value of CALL_USED_REGISTERS. */
 #define CALL_REALLY_USED_REGISTERS                                             \
   {                                                                            \
     K1C_CALL_REALLY_USED_REGISTERS                                             \
     1,                                                                         \
   }
 
-/* If the program counter has a register number, define this as that
-   register number. Otherwise, do not define it. */
 #define PC_REGNUM K1C_PROGRAM_POINTER_REGNO
 
-/* A C expression for the number of consecutive hard registers,
-   starting at register number regno, required to hold a value of mode
-   mode. This macro must never return zero, even if a register cannot
-   hold the requested mode - indicate that with HARD_REGNO_MODE_OK
-   and/or CANNOT_CHANGE_MODE_CLASS instead.  */
 #define HARD_REGNO_NREGS(REGNO, MODE)                                          \
   ((GET_MODE_SIZE (MODE) + UNITS_PER_WORD - 1) / UNITS_PER_WORD)
 
@@ -353,17 +246,6 @@ enum k1_abi_type
 
 /* Provide the GENERAL_REGS definitions */
 #define GENERAL_REGS GRF_REGS
-
-/* use r16..r33 before r10 and r15, because the former are more easily stored by
- * pair */
-// FIXME AUTO: Coolidge may need to change this when packing to 128bits ld/st
-/* #define REG_ALLOC_ORDER { \ */
-/*          0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  11, 12, 13 ,14, 	\ */
-/* 	32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, \ */
-/* 	48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, \ */
-/* 	16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, \ */
-/* 	10, 15, \ */
-/* 	} */
 
 /* A macro whose definition is the name of the class to which a valid
    base register must belong. A base register is one used in an
@@ -481,32 +363,19 @@ enum k1_abi_type
 #define STACK_GROWS_DOWNWARD 1
 
 #define FRAME_GROWS_DOWNWARD 1
+#undef ARGS_GROWS_DOWNWARD
 
-#define STARTING_FRAME_OFFSET (0) // K1C_SCRATCH_AREA_SIZE
+#define STARTING_FRAME_OFFSET k1_starting_frame_offset ()
 
-#define STACK_POINTER_OFFSET (K1C_SCRATCH_AREA_SIZE)
-
-/* Offset from the argument pointer register to the first argument's
-   address. On some machines it may depend on the data type of the function.
-
-   If ARGS_GROW_DOWNWARD, this is the offset to the location above the
-   first argument's address. */
-// FIXME AUTO: Used a more simple value. Maybe wrong.
-//#define FIRST_PARM_OFFSET(funcdecl) (((cfun->stdarg && crtl->args.info <
-//K1C_ARG_REG_SLOTS)? (UNITS_PER_WORD * ((K1C_ARG_REG_SLOTS - crtl->args.info +
-//1) & ~1)): 0) + STARTING_FRAME_OFFSET)
-#define FIRST_PARM_OFFSET(funcdecl) (0) // STARTING_FRAME_OFFSET)
+#define FIRST_PARM_OFFSET(funcdecl) k1_first_parm_offset (funcdecl)
 
 #define RETURN_ADDR_RTX(COUNT, FRAMEADDR) k1_return_addr_rtx (COUNT, FRAMEADDR)
-
-/* FIXME AUTO: Disable FRAME_ADDR_RTX macro. Maybe this is wrong  */
-//#define FRAME_ADDR_RTX(rtx) plus_constant (Pmode, rtx, K1C_SCRATCH_AREA_SIZE)
 
 #define DWARF2_UNWIND_INFO 1
 #define DWARF2_ASM_LINE_DEBUG_INFO 1
 
-#undef PREFERRED_DEBUGGING_TYPE
-#define PREFERRED_DEBUGGING_TYPE DWARF2_DEBUG
+/* #undef PREFERRED_DEBUGGING_TYPE */
+/* #define PREFERRED_DEBUGGING_TYPE DWARF2_DEBUG */
 
 /* A C expression whose value is RTL representing the location of the
    incoming return address at the beginning of any function, before
@@ -524,13 +393,13 @@ enum k1_abi_type
 #define DBX_REGISTER_NUMBER(NUM) (NUM)
 
 // FIXME AUTO: Add DWARF_FRAME_REGNUM macro, untested, unsure.
-#define DWARF_FRAME_REGNUM(REGNO) DBX_REGISTER_NUMBER (REGNO)
+//#define DWARF_FRAME_REGNUM(REGNO) DBX_REGISTER_NUMBER(REGNO)
 
 #define DWARF_FRAME_RETURN_COLUMN DBX_REGISTER_NUMBER (K1C_RETURN_POINTER_REGNO)
 
 /* MPPA has a 16bytes scratch area that can be seen as
    a pre-allocated frame area, making the initial SP offseted */
-#define INCOMING_FRAME_SP_OFFSET (K1C_SCRATCH_AREA_SIZE)
+//#define INCOMING_FRAME_SP_OFFSET (K1C_SCRATCH_AREA_SIZE)
 
 /* A C expression whose value is an integer giving the offset, in
    bytes, from the argument pointer to the canonical frame address
@@ -585,14 +454,6 @@ enum k1_abi_type
 
 #define FRAME_POINTER_REGNUM K1C_FRAME_POINTER_REGNO
 
-/* The register number of the arg pointer register, which is used to
-   access the function's argument list. On some machines, this is the
-   same as the frame pointer register. On some machines, the hardware
-   determines which register this is. On other machines, you can
-   choose any register you wish for this purpose. If this is not the
-   same register as the frame pointer register, then you must mark it
-   as a fixed register according to FIXED_REGISTERS, or arrange to be
-   able to eliminate it (see Elimination). */
 #define ARG_POINTER_REGNUM FRAME_POINTER_REGNUM
 
 /* Register numbers used for passing a function's static chain
@@ -1188,9 +1049,6 @@ int k1_adjust_insn_length (rtx insn, int length);
   })
 
 #define STACK_CHECK_BUILTIN 1
-
-/* ABI requires 8-bytes (64bits) alignment. */
-#define K1_STACK_ALIGN(LOC) (((LOC) + 7) & ~7)
 
 /* Address spaces
 
