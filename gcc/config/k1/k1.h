@@ -236,13 +236,13 @@ enum k1_abi_type
 /* A C expression for a string describing the name of the data type to use for
    size values.  The typedef name `size_t' is defined using the contents of the
    string.  */
-#define SIZE_TYPE (TARGET_32 ? "unsigned int" : "long unsigned int")
+#define SIZE_TYPE "long unsigned int"
 
 /* A C expression for a string describing the name of the data type to use for
    the result of subtracting two pointers.  The typedef name `ptrdiff_t' is
    defined using the contents of the string.  See `SIZE_TYPE' above for more
    information.  */
-#define PTRDIFF_TYPE (TARGET_32 ? "int" : "long int")
+#define PTRDIFF_TYPE "long int"
 
 /* ********** Registers ********** */
 
