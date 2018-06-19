@@ -38,6 +38,9 @@ extern bool k1_cannot_change_mode_class (enum machine_mode from,
 #ifdef RTX_CODE
 #include "tree-pass.h"
 
+extern HOST_WIDE_INT k1_first_parm_offset (tree decl);
+extern int k1_starting_frame_offset (void);
+
 extern int k1_hard_regno_mode_ok (unsigned regno, enum machine_mode mode);
 extern void k1_output_load_multiple (rtx *operands);
 
