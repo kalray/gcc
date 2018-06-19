@@ -359,6 +359,46 @@
   return false;
 })
 
+(define_predicate "store_multiple_operation"
+  (match_code "parallel")
+{
+  int count = XVECLEN (op, 0) /* - 1 */;
+  unsigned int src_regno;
+  rtx dest_addr;
+  int i;
+
+  /* Perform a quick check so we don't blow up below.  */
+  if ((count != 2 && count != 4)
+      || GET_CODE (XVECEXP (op, 0, 0)) != SET
+      || GET_CODE (SET_DEST (XVECEXP (op, 0, 0))) != MEM
+      || GET_CODE (SET_SRC (XVECEXP (op, 0, 0))) != REG)
+    return 0;
+
+  src_regno = REGNO (SET_SRC (XVECEXP (op, 0, 0)));
+  dest_addr = XEXP (SET_DEST (XVECEXP (op, 0, 0)), 0);
+
+  for (i = 1; i < count; i++)
+    {
+      rtx elt = XVECEXP (op, 0, i /*+ 1*/);
+
+      if (GET_CODE (elt) != SET
+	  || GET_CODE (SET_SRC (elt)) != REG
+	  || GET_MODE (SET_SRC (elt)) != DImode
+	  || REGNO (SET_SRC (elt)) != src_regno + i
+	  || GET_CODE (SET_DEST (elt)) != MEM
+	  || GET_MODE (SET_DEST (elt)) != DImode
+	  || GET_CODE (XEXP (SET_DEST (elt), 0)) != PLUS
+	  || ! rtx_equal_p (XEXP (XEXP (SET_DEST (elt), 0), 0), dest_addr)
+	  || GET_CODE (XEXP (XEXP (SET_DEST (elt), 0), 1)) != CONST_INT
+	  || INTVAL (XEXP (XEXP (SET_DEST (elt), 0), 1)) != i * 8)
+	return 0;
+
+    }
+
+  return 1;
+})
+
+
 ;; Return 1 if OP is a load multiple operation, known to be a PARALLEL.
 (define_predicate "load_multiple_operation"
   (match_code "parallel")
@@ -369,7 +409,7 @@
   int i;
 
   /* Perform a quick check so we don't blow up below.  */
-  if (count != 2
+  if ((count != 2 && count != 4)
       || GET_CODE (XVECEXP (op, 0, 0)) != SET
       || GET_CODE (SET_DEST (XVECEXP (op, 0, 0))) != REG
       || GET_CODE (SET_SRC (XVECEXP (op, 0, 0))) != MEM)
