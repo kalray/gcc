@@ -129,31 +129,39 @@
   (and (match_code "mem")
        (match_test "!k1_has_big_immediate (op)")))
 
+(define_memory_constraint "u"
+  "Uncached memory operands"
+  (and (match_code "mem")
+       (match_test "k1_is_uncached_mem_op (op)")))
+
 ;; (define_memory_constraint "Q"
 ;;   "Packed memory operand, need not be correct."
 ;;   (match_code "mem"))
 
+
 (define_memory_constraint "Cm"
-  "Cached memory operands"
+  "Cached memory operands with big immediates"
   (and (match_code "mem")
-       (match_test "!K1_FORCE_UNCACHED_LSU")))
+       (match_test "k1_has_big_immediate (op)")
+       (match_test "!k1_is_uncached_mem_op (op)")))
 
 (define_memory_constraint "Ca"
-  "Cached memory operands"
+  "Cached memory operands with small immediates"
   (and (match_code "mem")
        (match_test "!k1_has_big_immediate (op)")
-       (match_test "!K1_FORCE_UNCACHED_LSU")))
+       (match_test "!k1_is_uncached_mem_op (op)")))
 
 (define_memory_constraint "Zm"
-  "Uncached memory operands"
+  "Uncached memory operands with big immediates"
   (and (match_code "mem")
-       (match_test "K1_FORCE_UNCACHED_LSU")))
+       (match_test "k1_has_big_immediate (op)")
+       (match_test "k1_is_uncached_mem_op (op)")))
 
 (define_memory_constraint "Za"
-  "Uncached memory operands"
+  "Uncached memory operands with small immediates"
   (and (match_code "mem")
        (match_test "!k1_has_big_immediate (op)")
-       (match_test "K1_FORCE_UNCACHED_LSU")))
+       (match_test "k1_is_uncached_mem_op (op)")))
 
 
 (define_address_constraint "A"  
