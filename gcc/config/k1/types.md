@@ -31,8 +31,6 @@
   lsu_atomic_uncached_x,\
   lsu_load_uncached,\
   lsu_load_uncached_x,\
-  lsu_store_uncached,\
-  lsu_store_uncached_x,\
   alu_full_odd, \
   mau_acc, \
   mau_acc_x, \
