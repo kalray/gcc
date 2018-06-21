@@ -3446,9 +3446,6 @@ verify_const_int_arg (rtx arg, int bits, bool signed_p)
 }
 
 
-/*
- * MODE selects get/getd assembly insn
- */
 static rtx
 k1_expand_builtin_get (rtx target, tree args)
 {
@@ -3480,9 +3477,6 @@ k1_expand_builtin_get (rtx target, tree args)
     return target;
 }
 
-/*
- * MODE selects get/getd assembly insn
- */
 static rtx
 k1_expand_builtin_get_r (rtx target, tree args)
 {
