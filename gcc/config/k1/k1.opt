@@ -140,3 +140,7 @@ Compatibility with the old Open64 compiler. Equivalent to -v.
 pthread
 Target RejectNegative
 Equivalent to -qrtems.
+
+Waddress-space-conversion
+C C++ Warning Var(K1_WARN_ADDRESS_SPACE_CONVERSION) Init(0)
+Warn if an __uncached pointer is converted to a general one or vice versa
