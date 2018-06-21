@@ -1257,7 +1257,10 @@ k1_output_load_multiple (rtx *operands)
 {
   char pattern[100];
   unsigned int regno_dest = REGNO (operands[2]);
-  sprintf (pattern, "lq $r%dr%d = 0[%%1]", regno_dest, regno_dest + 1);
+  sprintf (pattern,
+	   k1_is_uncached_mem_op (operands[1]) ? "lq.u $r%dr%d = 0[%%1]"
+					       : "lq $r%dr%d = 0[%%1]",
+	   regno_dest, regno_dest + 1);
 
   gcc_assert (!(regno_dest & 1));
 
@@ -1330,6 +1333,10 @@ k1_target_print_operand (FILE *file, rtx x, int code)
       else
 	fprintf (file, "$nd" HOST_WIDE_INT_PRINT_DEC,
 		 (INTVAL (x) - 48) * 2 + 32);
+      return;
+    case 'C': /* Print an additional 'u' in the case of uncached load/store */
+      if (k1_is_uncached_mem_op (x))
+	fprintf (file, ".u");
       return;
     default:
       gcc_unreachable ();
@@ -7580,6 +7587,17 @@ k1_has_big_immediate (rtx x)
 }
 
 int
+k1_is_uncached_mem_op (rtx op)
+{
+  /* __convert[_no_sync] addr space should not come here. */
+  gcc_assert (!MEM_P (op)
+	      || (MEM_ADDR_SPACE (op) == ADDR_SPACE_GENERIC
+		  || MEM_ADDR_SPACE (op) == K1_ADDR_SPACE_UNCACHED));
+
+  return MEM_P (op) && MEM_ADDR_SPACE (op) == K1_ADDR_SPACE_UNCACHED;
+}
+
+int
 k1_adjust_insn_length (rtx insn, int length)
 {
   rtx mem = 0;
@@ -8353,6 +8371,68 @@ k1_target_legitimize_address (rtx x, rtx oldx ATTRIBUTE_UNUSED,
 	}
     }
   return x;
+}
+
+/* Implements TARGET_ADDR_SPACE_POINTER_MODE */
+static machine_mode
+k1_addr_space_pointer_mode (addr_space_t address_space ATTRIBUTE_UNUSED)
+{
+  return ptr_mode;
+}
+
+/* Implements TARGET_ADDR_SPACE_ADDRESS_MODE */
+static machine_mode
+k1_addr_space_address_mode (addr_space_t address_space ATTRIBUTE_UNUSED)
+{
+  return Pmode;
+}
+
+/* Implements TARGET_ADDR_SPACE_LEGITIMATE_ADDRESS_P */
+static bool
+k1_addr_space_legitimate_address_p (machine_mode mode, rtx exp, bool strict,
+				    addr_space_t as ATTRIBUTE_UNUSED)
+{
+  if (as != K1_ADDR_SPACE_UNCACHED && as != ADDR_SPACE_GENERIC)
+    return false;
+
+  return k1_target_legitimate_address_p (mode, exp, strict);
+}
+
+/* Implements TARGET_ADDR_SPACE_LEGITIMIZE_ADDRESS */
+static rtx
+k1_addr_space_legitimize_address (rtx x, rtx oldx, machine_mode mode,
+				  addr_space_t as)
+{
+  if (as == K1_ADDR_SPACE_CONVERT)
+    error ("__convert should be used only in explicit pointer casting");
+  return k1_target_legitimize_address (x, oldx, mode);
+}
+
+/* Implements TARGET_ADDR_SPACE_SUBSET_P */
+static bool
+k1_addr_space_subset_p (addr_space_t subset ATTRIBUTE_UNUSED,
+			addr_space_t superset ATTRIBUTE_UNUSED)
+{
+  return true; // Address spaces (GENERIC or __UNCACHED) refer to the same space
+}
+
+/* Implements TARGET_ADDR_SPACE_CONVERT */
+static rtx
+k1_addr_space_convert (rtx op, tree from_type, tree to_type ATTRIBUTE_UNUSED)
+{
+  if (K1_WARN_ADDRESS_SPACE_CONVERSION
+      && TYPE_ADDR_SPACE (TREE_TYPE (from_type)) != K1_ADDR_SPACE_CONVERT
+      && TYPE_ADDR_SPACE (TREE_TYPE (to_type)) != K1_ADDR_SPACE_CONVERT)
+    {
+
+      warning (0,
+	       TYPE_ADDR_SPACE (TREE_TYPE (from_type)) == K1_ADDR_SPACE_UNCACHED
+		 ? "Implicit conversion of uncached pointer to cached one"
+		 : "Implicit conversion of cached pointer to uncached one");
+      inform (input_location,
+	      "Use (__convert <type> *) to acknowledge this conversion");
+    }
+  return op;
 }
 
 static void
@@ -9210,6 +9290,28 @@ k1_profile_hook (void)
 
 #undef TARGET_ASM_FILE_START
 #define TARGET_ASM_FILE_START k1_file_start
+
+#undef TARGET_ADDR_SPACE_POINTER_MODE
+#define TARGET_ADDR_SPACE_POINTER_MODE k1_addr_space_pointer_mode
+
+#undef TARGET_ADDR_SPACE_ADDRESS_MODE
+#define TARGET_ADDR_SPACE_ADDRESS_MODE k1_addr_space_address_mode
+
+#undef TARGET_ADDR_SPACE_ADDRESS_MODE
+#define TARGET_ADDR_SPACE_ADDRESS_MODE k1_addr_space_address_mode
+
+#undef TARGET_ADDR_SPACE_LEGITIMATE_ADDRESS_P
+#define TARGET_ADDR_SPACE_LEGITIMATE_ADDRESS_P                                 \
+  k1_addr_space_legitimate_address_p
+
+#undef TARGET_ADDR_SPACE_LEGITIMIZE_ADDRESS
+#define TARGET_ADDR_SPACE_LEGITIMIZE_ADDRESS k1_addr_space_legitimize_address
+
+#undef TARGET_ADDR_SPACE_SUBSET_P
+#define TARGET_ADDR_SPACE_SUBSET_P k1_addr_space_subset_p
+
+#undef TARGET_ADDR_SPACE_CONVERT
+#define TARGET_ADDR_SPACE_CONVERT k1_addr_space_convert
 
 struct gcc_target targetm = TARGET_INITIALIZER;
 
