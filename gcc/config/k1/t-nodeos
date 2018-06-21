@@ -1,4 +1,0 @@
-MULTILIB_OPTIONS = mhypervisor fno-exceptions
-MULTILIB_DIRNAMES = mOS noexceptions
-
-MULTILIB_EXCEPTIONS = 

@@ -2315,15 +2315,9 @@ k1-*-elf*)
 	extra_gcc_objs="driver-k1.o"
 	extra_headers="float.h"
 	;;
-k1-*-nodeos*)
-	tm_file="${tm_file} elfos.h dbxelf.h k1/nodeos.h newlib-stdint.h"
-	tmake_file="k1/t-k1 k1/t-nodeos"
-	extra_gcc_objs="driver-k1.o"
-	extra_headers="float.h"
-	;;
-k1-*-rtems*)
-	tm_file="${tm_file} elfos.h dbxelf.h rtems.h k1/rtems.h newlib-stdint.h"
-	tmake_file="k1/t-k1 t-rtems k1/t-rtems"
+k1-*-cos*)
+	tm_file="${tm_file} elfos.h dbxelf.h k1/k1-cos.h newlib-stdint.h"
+	tmake_file="k1/t-k1 k1/t-cos"
 	extra_gcc_objs="driver-k1.o"
 	extra_headers="float.h"
 	;;

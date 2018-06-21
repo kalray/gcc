@@ -19,7 +19,7 @@ options = Options.new({ "target"        => ["k1", "Target arch"],
                         "processor"     => {"type" => "string", "default" => "processor", "help" => "processor clone relative to workspace path" },
                         "mds"           => {"type" => "string", "default" => "mds", "help" => "mds clone relative to workspace path" },
                         "bootstrap"     => {"type" => "boolean", "default" => false, "help" => "Bootstrap phase of gcc build."},
-                        "variant"       => {"type" => "keywords", "keywords" => [:nodeos, :elf, :rtems, :linux], "default" => "elf", "help" => "Select build variant."},
+                        "variant"       => {"type" => "keywords", "keywords" => [:elf, :cos, :linux], "default" => "elf", "help" => "Select build variant."},
                         "sysroot"       => ["sysroot", "Sysroot directory"],
                         "k1Req"         => ["kEnv/k1tools/usr/local/k1Req", "Path to k1Req env containing gmp, mpfr and mpc."],
                         "core"          => ["k1io", "The core to build for (only for Linux builds)"],
@@ -200,7 +200,7 @@ b.target("build" + s_bootstrap + target_variant) do
     end
 
     gomp = "--disable-libgomp"
-    gomp = "--enable-libgomp" if(variant == "nodeos")
+# For libgomp    gomp = "--enable-libgomp" if(variant == "cos")
 
     if variant == "linux" then
       newlib = ""
@@ -211,23 +211,14 @@ b.target("build" + s_bootstrap + target_variant) do
       sysroot_option = "--with-sysroot=#{sysroot} --with-build-sysroot=#{sysroot}"
       include_path = "include"
       multilib = "--enable-multilib"
-    elsif variant == "nodeos"       
+    elsif variant == "cos"       
       newlib = "--with-newlib"
       libatomic_toggle = ""
-      threads = "--enable-threads=posix"
-      quadmath = ""
-      languages = "c,c++,fortran"
-#      sysroot_option = "--with-build-time-tools=#{toolroot}/#{variant_dir}/bin --with-sysroot=#{toolroot} --with-native-system-header-dir=/#{variant_dir}/include"
-      sysroot_option = "--with-build-time-tools=#{toolroot}/#{variant_dir}/bin" # --with-headers=#{toolroot}/#{variant_dir}/include"
-      multilib = "--enable-multilib"
-      include_path = "sys-include"
-    elsif variant == "rtems"
-      newlib = "--with-newlib"
+# Old nodeos config
+#      threads = "--enable-threads=posix"
       threads = "--enable-threads"
-      libatomic_toggle = "--disable-libatomic"
       quadmath = ""
       languages = "c,c++,fortran"
-#      sysroot_option = "--with-build-time-tools=#{toolroot}/#{variant_dir}/bin --with-sysroot=#{toolroot} --with-native-system-header-dir=/#{variant_dir}/include"
       sysroot_option = "--with-build-time-tools=#{toolroot}/#{variant_dir}/bin" # --with-headers=#{toolroot}/#{variant_dir}/include"
       multilib = "--enable-multilib"
       include_path = "sys-include"
@@ -237,7 +228,6 @@ b.target("build" + s_bootstrap + target_variant) do
       libatomic_toggle = ""
       quadmath = ""
       languages = "c,c++,fortran"
-#      sysroot_option = "--with-build-time-tools=#{toolroot}/#{variant_dir}/bin --with-sysroot=#{toolroot} --with-native-system-header-dir=/#{variant_dir}/include"
       sysroot_option = "--with-build-time-tools=#{toolroot}/#{variant_dir}/bin" # --with-headers=#{toolroot}/#{variant_dir}/include"
       multilib = "--enable-multilib"
       include_path = "sys-include"
@@ -378,7 +368,7 @@ b.target("install" + s_bootstrap + target_variant) do
 #      end
       b.run(:cmd => "make prefix=#{install_prefix} install-gcc", :env => env)
       b.run(:cmd => "make prefix=#{install_libstdcpp_prefix} install-target-libstdc++-v3", :env => env)
-      b.run(:cmd => "make prefix=#{install_libgomp_prefix} install-target-libgomp", :env => env) if(variant == "nodeos")
+# For libgomp      b.run(:cmd => "make prefix=#{install_libgomp_prefix} install-target-libgomp", :env => env) if(variant == "cos")
       b.run(:cmd => "make prefix=#{install_info_prefix} install-libcpp", :env => env) if(variant == "elf" or variant == "linux")
       b.run(:cmd => "make prefix=#{install_libgfortran_prefix} install-strip-target-libgfortran", :env => env)
     end
@@ -392,9 +382,6 @@ b.target("install" + s_bootstrap + target_variant) do
           b.run("ln -sf #{arch}-gcc #{arch}cc")
           mkdir_p("#{install_path}/#{arch}-elf/include/")
           b.run("cp -f #{gcc_path}/gcc/config/k1/builtin_k1.h #{install_path}/#{arch}-elf/include/")
-        when "rtems" then
-          mkdir_p("#{install_path}/#{arch}-rtems/include/")
-          b.run("cp -f #{gcc_path}/gcc/config/k1/builtin_k1.h #{install_path}/#{arch}-rtems/include/")
         when "linux" then
           # Patch install_prefix with subdirectory from sysroot: usually k1-linux
           # Only applied here for headers and libs...
@@ -404,10 +391,10 @@ b.target("install" + s_bootstrap + target_variant) do
           mkdir_p("#{install_path}/#{core}/usr/include/")
           b.run("cp -f #{gcc_path}/gcc/config/k1/builtin_k1.h #{install_path}/usr/include/")
           b.run("cp -f #{gcc_path}/gcc/config/k1/builtin_k1.h #{install_path}/#{core}/usr/include/")
-        when "nodeos" then
+        when "cos" then
           b.run("ln -sf #{arch}-gcc #{arch}cc")
-          mkdir_p("#{install_path}/#{arch}-nodeos/include/")
-          b.run("cp -f #{gcc_path}/gcc/config/k1/builtin_k1.h #{install_path}/#{arch}-nodeos/include/")      
+          mkdir_p("#{install_path}/#{arch}-cos/include/")
+          b.run("cp -f #{gcc_path}/gcc/config/k1/builtin_k1.h #{install_path}/#{arch}-cos/include/")      
         else
           raise "Unknown variant '#{variant}'"
         end
@@ -454,7 +441,7 @@ b.target("package" + s_bootstrap + target_variant) do
   b.create_package(tar_package, pinfo)
   b.run("rm #{tar_package}")
 
-  if(variant == "nodeos") then
+  if(false and variant == "cos") then # For libgomp
     # libgomp package
     cd install_libgomp_prefix
     
@@ -555,7 +542,7 @@ b.target("package" + s_bootstrap + target_variant) do
   end
   b.add_depend("#{pkg_prefix_name}libstdc++-#{variant}", depends, release_info)
   b.add_depend("#{pkg_prefix_name}gbu-#{variant}", depends, release_info)
-  if(variant == "nodeos") then
+  if(false and variant == "cos") then # For libgomp
     b.add_depend("#{pkg_prefix_name}libgomp-#{variant}", depends, release_info)
   end
   b.add_depend("#{pkg_prefix_name}gcc-info", depends, release_info)
@@ -630,8 +617,8 @@ end
 
 b.target("libgomp_valid") do
   if(arch == "k1")
-    cd "#{gcc_path}/k1_nodeos_Debug_build_64/k1-nodeos/libgomp"
-    b.valid(:cmd => "make check DEJAGNU=../../../../valid/hudson/site-nodeos.exp RUNTESTFLAGS=\"--target_board=k1-sim\" ", :env => env);
+    cd "#{gcc_path}/k1_cos_Debug_build_64/k1-cos/libgomp"
+    b.valid(:cmd => "make check DEJAGNU=../../../../valid/hudson/site-cos.exp RUNTESTFLAGS=\"--target_board=k1-sim\" ", :env => env);
     b.silent("{ grep FAIL testsuite/libgomp.sum || exit 0; } && echo -e \"######################################\nYou've broken libgomp\n######################################\" && exit -1")
   else raise "Unknown target: #{arch}"
   end
@@ -641,7 +628,7 @@ b.target("libgomp") do
   if( arch == "k1" )
     b.create_goto_dir! "#{gcc_path}/#{arch}_libgomp_build"
 
-    env["DEJAGNU"] = "#{gcc_path}/valid/hudson/site-nodeos.exp"
+    env["DEJAGNU"] = "#{gcc_path}/valid/hudson/site-cos.exp"
     b.valid(:cmd => "runtest  --tool libgomp --srcdir #{gcc_path}/libgomp/testsuite/ --target_board=k1-sim", :env => env)
   else raise "Unknown target: #{arch}"
   end
