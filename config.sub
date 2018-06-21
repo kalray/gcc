@@ -1739,6 +1739,7 @@ case $os in
 	     | skyos* | haiku* | rdos* | toppers* | drops* | es* \
 	     | onefs* | tirtos* | phoenix* | fuchsia* | redox* | bme* \
 	     | midnightbsd* | amdhsa* | unleashed* | emscripten* | wasi* \
+	     | cos*
 	     | nsk* | powerunix* | genode* | zvmoe* | qnx* | emx*)
 		;;
 	# This one is extra strict with allowed versions
