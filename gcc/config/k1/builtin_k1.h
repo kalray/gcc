@@ -766,11 +766,6 @@ extern int __builtin_k1_srfsize (int);
  */
 extern unsigned long long __builtin_k1_get_r (int);
 
-/* get GPR = GPR
- * GPR get( GPR);
- */
-extern unsigned long long __builtin_k1_getd_r (int);
-
 #if defined(__open64__) || defined(__clang__)
 #define __builtin_error(MSG)                                                   \
   do                                                                           \
