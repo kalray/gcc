@@ -1195,6 +1195,23 @@ int k1_adjust_insn_length (rtx insn, int length);
 /* ABI requires 8-bytes (64bits) alignment. */
 #define K1_STACK_ALIGN(LOC) (((LOC) + 7) & ~7)
 
+/* Address spaces
+
+   The __uncached address space refers to same space as the generic
+   one but accesses to __uncached objects are achieved using uncached
+   load/store instructions. */
+#define K1_ADDR_SPACE_UNCACHED 1
+#define K1_ADDR_SPACE_CONVERT 2
+
+#define REGISTER_TARGET_PRAGMAS()                                              \
+  c_register_addr_space ("__uncached", K1_ADDR_SPACE_UNCACHED);                \
+  c_register_addr_space ("__convert", K1_ADDR_SPACE_CONVERT);
+
+/* Test whether the memory operand OP should be accessed cached or
+   uncached regarding it's name address space and the value of the
+   flag K1_FORCE_UNCACHED_LSU. */
+int k1_is_uncached_mem_op (rtx op);
+
 #ifndef IN_LIBGCC2
 
 extern GTY (()) rtx k1_sync_reg_rtx;
