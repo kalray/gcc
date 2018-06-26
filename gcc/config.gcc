@@ -2313,19 +2313,19 @@ k1-*-elf*)
 	tm_file="${tm_file} elfos.h dbxelf.h k1/k1-elf.h newlib-stdint.h"
 	tmake_file="k1/t-k1 k1/t-elf"
 	extra_gcc_objs="driver-k1.o"
-	extra_headers="float.h"
+	extra_headers="float-k1-elf.h"
 	;;
 k1-*-cos*)
 	tm_file="${tm_file} elfos.h dbxelf.h k1/k1-cos.h newlib-stdint.h"
 	tmake_file="k1/t-k1 k1/t-cos"
 	extra_gcc_objs="driver-k1.o"
-	extra_headers="float.h"
+	extra_headers="float-k1-cos.h"
 	;;
 k1-*-linux*)
 	tm_file="${tm_file} elfos.h gnu-user.h linux.h k1/linux.h glibc-stdint.h"
 	tmake_file="t-linux k1/t-linux t-uclibc t-glibc"
 	extra_gcc_objs="driver-k1.o"
-	extra_headers="float.h"
+	extra_headers="float-k1-linux.h"
 	extra_parts="crtbegin.o crtend.o crti.o crtn.o"
 	;;
 lm32-*-elf*)
