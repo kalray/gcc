@@ -1,7 +1,7 @@
 set host_triplet x86_64-unknown-linux-gnu
 set build_triplet x86_64-unknown-linux-gnu
-set target_triplet k1-nodeos
-set target_alias k1-nodeos
+set target_triplet k1-cos
+set target_alias k1-cos
 set blddir ""
 set libiconv ""
 set CFLAGS ""
