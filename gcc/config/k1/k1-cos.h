@@ -35,14 +35,20 @@
    Link against MPPA Bare Runtime
  */
 #undef LIB_SPEC
-#define LIB_SPEC                                                               \
-  "--start-group -lmppahal -lmppabareruntime -lc -lgloss --end-group"
+#define LIB_SPEC "--start-group -lmppacos -lc -lgloss --end-group"
 
 #undef LINK_SPEC
 #define LINK_SPEC                                                              \
   LINK_SPEC_COMMON                                                             \
-  "%{!nostartfiles:%{!nodefaultlibs:%{!nostdlib:-Tmppabareruntime.ld}}}"
+  "%{!nostartfiles:%{!nodefaultlibs:%{!nostdlib:-Tmppacos.ld}}}"
 
 #define K1_OS_SELF_SPECS "%{!mcore*:-mcore=" K1_DEFAULT_CORE " } "
 
+#define TARGET_OS_CPP_BUILTINS()                                               \
+  do                                                                           \
+    {                                                                          \
+      builtin_define ("__CLUSTER_OS__");                                       \
+      builtin_assert ("system=clusteros");                                     \
+    }                                                                          \
+  while (0)
 #endif /* GCC_K1_MPPA_COS */
