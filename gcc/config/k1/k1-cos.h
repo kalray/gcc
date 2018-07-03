@@ -26,7 +26,9 @@
 #define STARTFILE_SPEC " crti%O%s crtbegin%O%s crt0%O%s"
 #define ENDFILE_SPEC " crtend%O%s crtn%O%s"
 
-#define DRIVER_SELF_SPECS DRIVER_SELF_SPECS_COMMON
+#define DRIVER_SELF_SPECS                                                      \
+  DRIVER_SELF_SPECS_COMMON, "%{lpthread: -pthread} "                           \
+			    "%{pthread:%<pthread}"
 
 #define K1_DEFAULT_CORE "k1c"
 
@@ -40,7 +42,8 @@
 #undef LINK_SPEC
 #define LINK_SPEC                                                              \
   LINK_SPEC_COMMON                                                             \
-  "%{!nostartfiles:%{!nodefaultlibs:%{!nostdlib:-Tmppacos.ld}}}"
+  "%{!nostartfiles:%{!nodefaultlibs:%{!nostdlib:-Tmppacos.ld}}}"               \
+  "%{pthread:}"
 
 #define K1_OS_SELF_SPECS "%{!mcore*:-mcore=" K1_DEFAULT_CORE " } "
 
