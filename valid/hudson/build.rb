@@ -199,8 +199,11 @@ b.target("build" + s_bootstrap + target_variant) do
     else raise "Unknown target: #{arch}"
     end
 
-    gomp = "--disable-libgomp"
-# For libgomp    gomp = "--enable-libgomp" if(variant == "cos")
+    if(variant == "cos") then
+      gomp = "--enable-libgomp" 
+    else
+      gomp = "--disable-libgomp"
+    end
 
     if variant == "linux" then
       newlib = ""
@@ -214,9 +217,7 @@ b.target("build" + s_bootstrap + target_variant) do
     elsif variant == "cos"       
       newlib = "--with-newlib"
       libatomic_toggle = ""
-# Old nodeos config
-#      threads = "--enable-threads=posix"
-      threads = "--enable-threads"
+      threads = "--enable-threads=posix"
       quadmath = ""
       languages = "c,c++,fortran"
       sysroot_option = "--with-build-time-tools=#{toolroot}/#{variant_dir}/bin" # --with-headers=#{toolroot}/#{variant_dir}/include"
@@ -368,7 +369,7 @@ b.target("install" + s_bootstrap + target_variant) do
 #      end
       b.run(:cmd => "make prefix=#{install_prefix} install-gcc", :env => env)
       b.run(:cmd => "make prefix=#{install_libstdcpp_prefix} install-target-libstdc++-v3", :env => env)
-# For libgomp      b.run(:cmd => "make prefix=#{install_libgomp_prefix} install-target-libgomp", :env => env) if(variant == "cos")
+      b.run(:cmd => "make prefix=#{install_libgomp_prefix} install-target-libgomp", :env => env) if(variant == "cos")
       b.run(:cmd => "make prefix=#{install_info_prefix} install-libcpp", :env => env) if(variant == "elf" or variant == "linux")
       b.run(:cmd => "make prefix=#{install_libgfortran_prefix} install-strip-target-libgfortran", :env => env)
     end
@@ -441,7 +442,7 @@ b.target("package" + s_bootstrap + target_variant) do
   b.create_package(tar_package, pinfo)
   b.run("rm #{tar_package}")
 
-  if(false and variant == "cos") then # For libgomp
+  if(variant == "cos") then # For libgomp
     # libgomp package
     cd install_libgomp_prefix
     
@@ -542,7 +543,7 @@ b.target("package" + s_bootstrap + target_variant) do
   end
   b.add_depend("#{pkg_prefix_name}libstdc++-#{variant}", depends, release_info)
   b.add_depend("#{pkg_prefix_name}gbu-#{variant}", depends, release_info)
-  if(false and variant == "cos") then # For libgomp
+  if(variant == "cos") then # For libgomp
     b.add_depend("#{pkg_prefix_name}libgomp-#{variant}", depends, release_info)
   end
   b.add_depend("#{pkg_prefix_name}gcc-info", depends, release_info)
