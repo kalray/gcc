@@ -37,15 +37,6 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 #define _REENTRANT 1
 #endif
 
-#ifdef __nodeos__
-  #ifdef GTHREAD_USE_WEAK
-  #undef GTHREAD_USE_WEAK
-  #endif
-#define GTHREAD_USE_WEAK 0
-#else
-#error nok
-#endif
-
 #include <pthread.h>
 #include <sched.h>
 
