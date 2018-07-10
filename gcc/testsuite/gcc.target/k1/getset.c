@@ -41,7 +41,7 @@ profile(unsigned int iter)
     int timer1 = 0;
     int timer2 = 0;
     int timer3 = 0;
-    unsigned int pcr;
+    unsigned long pcr;
 
     for (i = 0; i < iter; ++i) {
         TH_StartTimer ();
