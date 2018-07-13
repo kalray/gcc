@@ -8692,8 +8692,6 @@ hwloop_optimize (hwloop_info loop)
 
   // FIXME AUTO: do we let asm in the loop ?
 
-  gcc_assert (loop->incoming_dest == loop->head);
-
   /* Scan all the blocks to make sure they don't use iter_reg.  */
   /* FIXME AUTO: hwloop can still be used for branching. */
   if (loop->iter_reg_used || loop->iter_reg_used_outside)
@@ -8762,7 +8760,7 @@ hwloop_optimize (hwloop_info loop)
 
       make_edge (new_bb, loop->head, 0);
     }
-  else
+  else if (entry_bb != ENTRY_BLOCK_PTR_FOR_FN (cfun))
     {
       entry_after = BB_END (entry_bb);
       while (DEBUG_INSN_P (entry_after)
@@ -8774,6 +8772,14 @@ hwloop_optimize (hwloop_info loop)
 	entry_after = PREV_INSN (entry_after);
 
       emit_insn_after (seq, entry_after);
+    }
+  else
+    {
+      // Loop is at the very beginning of function
+      insert_insn_on_edge (seq,
+			   single_succ_edge (ENTRY_BLOCK_PTR_FOR_FN (cfun)));
+      commit_one_edge_insertion (
+	single_succ_edge (ENTRY_BLOCK_PTR_FOR_FN (cfun)));
     }
 
   end_sequence ();
