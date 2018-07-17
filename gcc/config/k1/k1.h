@@ -587,8 +587,7 @@ struct k1_args
    that are used by the epilogue or the `return' pattern. The stack
    and frame pointer registers are already assumed to be used as
    needed. */
-#define EPILOGUE_USES(regno)                                                   \
-  (reload_completed && regno == K1C_RETURN_POINTER_REGNO)
+#define EPILOGUE_USES(regno) (regno == K1C_RETURN_POINTER_REGNO)
 
 /* ********** Tail calls ********** */
 
