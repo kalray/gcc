@@ -1351,34 +1351,6 @@ end:
   return res;
 }
 
-/* void */
-/* k1_output_load_multiple (rtx *operands) */
-/* { */
-/*   char pattern[100]; */
-/*   unsigned int regno_dest = REGNO(operands[2]); */
-/*   sprintf(pattern, k1_is_uncached_mem_op (operands [1])  */
-/* 	  ? "lq.u $r%dr%d = 0[%%1]" : "lq $r%dr%d = 0[%%1]",  */
-/* 	  regno_dest, regno_dest + 1); */
-
-/*   gcc_assert(!(regno_dest & 1)); */
-
-/*   output_asm_insn(pattern, operands); */
-/* } */
-
-/* void */
-/* k1_output_store_multiple (rtx *operands) */
-/* { */
-/*   char pattern[100]; */
-/*   unsigned int regno_dest = REGNO(operands[2]); */
-/*   sprintf(pattern, k1_is_uncached_mem_op (operands [1])  */
-/* 	  ? "sq.u 0[%%1] = $r%dr%d" : "sq.u $r%dr%d = 0[%%1]",  */
-/* 	  regno_dest, regno_dest + 1); */
-
-/*   gcc_assert(!(regno_dest & 1)); */
-
-/*   output_asm_insn(pattern, operands); */
-/* } */
-
 void
 k1_target_print_operand (FILE *file, rtx x, int code)
 {
