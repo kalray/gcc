@@ -21,6 +21,11 @@
 #include "k1c-registers.h"
 #endif
 
+/* 256bits memory not yet implemented in hardware. Disabling until it is. */
+/* When this has to go, please remove all occurences of the macro and
+   fix the code. */
+#define DISABLE_OCTUBLE_MEM 1
+
 /* Which ABI to use.  */
 enum k1_abi_type
 {
