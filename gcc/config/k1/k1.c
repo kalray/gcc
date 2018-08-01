@@ -3336,10 +3336,10 @@ enum k1_builtin
   K1_BUILTIN_TLBWRITE,
   K1_BUILTIN_SAT,
   K1_BUILTIN_SATD,
-  K1_BUILTIN_FWIDENHBW,
-  K1_BUILTIN_FWIDENHLWP,
-  K1_BUILTIN_FWIDENHTW,
-  K1_BUILTIN_FWIDENHMWP,
+  K1_BUILTIN_FWIDENLHW,
+  K1_BUILTIN_FWIDENLHWP,
+  K1_BUILTIN_FWIDENMHW,
+  K1_BUILTIN_FWIDENMHWP,
   K1_BUILTIN_FNARROWWH,
   K1_BUILTIN_FNARROWDWP,
   K1_BUILTIN_WAITIT,
@@ -3606,12 +3606,12 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (TLBREAD, "tlbread", VOID);
   ADD_K1_BUILTIN (TLBWRITE, "tlbwrite", VOID);
 
-  ADD_K1_BUILTIN (FWIDENHBW, "fwidenhbw", floatSF, uintSI);
-  ADD_K1_BUILTIN (FWIDENHTW, "fwidenhtw", floatSF, uintSI);
+  ADD_K1_BUILTIN (FWIDENLHW, "fwidenlhw", floatSF, uintSI);
+  ADD_K1_BUILTIN (FWIDENMHW, "fwidenmhw", floatSF, uintSI);
 
   /* FIXME AUTO: disabling vector support */
-  /* ADD_K1_BUILTIN (FWIDENHLWP,  "fwidenlwp", vect2SF , uintDI); */
-  /* ADD_K1_BUILTIN (FWIDENHMWP,  "fwidenhmwp", vect2SF , uintDI); */
+  /* ADD_K1_BUILTIN (FWIDENLHWP,  "fwidenlhwp", vect2SF , uintDI); */
+  /* ADD_K1_BUILTIN (FWIDENMHWP,  "fwidenmhwp", vect2SF , uintDI); */
   /* ADD_K1_BUILTIN (FNARROWDWP,  "fnarrowdwp", vect2SI , vect2SF); */
 
   ADD_K1_BUILTIN (FNARROWWH, "fnarrowwh", uintHI, floatSF);
@@ -5957,18 +5957,18 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_tlbread ();
     case K1_BUILTIN_TLBWRITE:
       return k1_expand_builtin_tlbwrite ();
-    case K1_BUILTIN_FWIDENHBW:
+    case K1_BUILTIN_FWIDENLHW:
       return k1_expand_builtin_fwiden (target, exp, 1);
 
       /* FIXME AUTO: disabling vector support */
-      /* case K1_BUILTIN_FWIDENHLWP: */
+      /* case K1_BUILTIN_FWIDENLHWP: */
       /*   return k1_expand_builtin_fwiden_wp (target, exp, 1); */
 
-    case K1_BUILTIN_FWIDENHTW:
+    case K1_BUILTIN_FWIDENMHW:
       return k1_expand_builtin_fwiden (target, exp, 0);
 
       /* FIXME AUTO: disabling vector support */
-      /* case K1_BUILTIN_FWIDENHMWP: */
+      /* case K1_BUILTIN_FWIDENMHWP: */
       /*   return k1_expand_builtin_fwiden_wp (target, exp, 0); */
 
     case K1_BUILTIN_FNARROWWH:
