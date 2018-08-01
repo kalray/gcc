@@ -755,10 +755,10 @@ extern float __builtin_k1_fsisr (float);
 extern double __builtin_k1_fsisrd (double);
 /* FSISRWP */
 /* FWIDENB */
-/* FWIDENHBW */
-extern float __builtin_k1_fwidenhbw (unsigned int);
-/* FWIDENHTW */
-extern float __builtin_k1_fwidenhtw (unsigned int);
+/* FWIDENLHW */
+extern float __builtin_k1_fwidenlhw (unsigned int);
+/* FWIDENMHW */
+extern float __builtin_k1_fwidenmhw (unsigned int);
 /* FWIDENHLWP */
 /* FWIDENHMWP */
 
