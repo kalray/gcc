@@ -1755,8 +1755,9 @@ k1_expand_stack_check_allocate_stack (rtx target, rtx adjust)
 						   gen_rtx_REG(Pmode, K1C_LOCAL_POINTER_REGNO),
 						   gen_rtx_CONST(Pmode, stack_end_sym))));
     } else {
+	/* [JV] Multiring: Waiting for allocated VSFR0 and maturity. */
 	emit_move_insn (stack_end_val,
-			gen_rtx_REG (Pmode, K1C_SR2_REGNO));
+			gen_rtx_REG (Pmode, K1C_VSFR0_REGNO));
     }
     emit_insn (gen_rtx_SET (Pmode,
 			    tmp,
