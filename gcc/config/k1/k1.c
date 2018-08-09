@@ -3098,9 +3098,9 @@ k1_expand_builtin_get (rtx target, tree args)
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx reg;
 
-  if (!verify_const_int_arg (arg1, 6, false))
+  if (!verify_const_int_arg (arg1, 12, false))
     {
-      error ("__builtin_k1_get expects a 6 bits immediate argument.");
+      error ("__builtin_k1_get expects a 12 bits immediate argument.");
       return NULL_RTX;
     }
   const int regno = INTVAL (arg1) + K1C_SRF_FIRST_REGNO;
@@ -3147,9 +3147,9 @@ k1_expand_builtin_set (rtx target ATTRIBUTE_UNUSED, tree args, bool ps)
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
 
-  if (!verify_const_int_arg (arg1, 6, false))
+  if (!verify_const_int_arg (arg1, 12, false))
     {
-      error ("__builtin_k1_set expects a 6 bits immediate first argument.");
+      error ("__builtin_k1_set expects a 12 bits immediate first argument.");
       return NULL_RTX;
     }
 
@@ -3205,9 +3205,9 @@ k1_expand_builtin_srfsize (rtx target, tree args)
   rtx reg_size;
   int reg_size_val;
 
-  if (!verify_const_int_arg (arg1, 6, false))
+  if (!verify_const_int_arg (arg1, 12, false))
     {
-      error ("__builtin_k1_srfsize expects a 6 bits immediate argument.");
+      error ("__builtin_k1_srfsize expects a 12 bits immediate argument.");
       return NULL_RTX;
     }
   const int regno = INTVAL (arg1) + K1C_SRF_FIRST_REGNO;
@@ -3230,9 +3230,9 @@ k1_expand_builtin_wfxl (rtx target ATTRIBUTE_UNUSED, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-  if (!verify_const_int_arg (arg1, 6, false))
+  if (!verify_const_int_arg (arg1, 12, false))
     {
-      error ("__builtin_k1_wfxl expects a 6 bits immediate first argument.");
+      error ("__builtin_k1_wfxl expects a 12 bits immediate first argument.");
       return NULL_RTX;
     }
   int regno = INTVAL (arg1) + K1C_SRF_FIRST_REGNO;
@@ -3254,9 +3254,9 @@ k1_expand_builtin_wfxm (rtx target ATTRIBUTE_UNUSED, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-  if (!verify_const_int_arg (arg1, 6, false))
+  if (!verify_const_int_arg (arg1, 12, false))
     {
-      error ("__builtin_k1_wfxm expects a 6 bits immediate first argument.");
+      error ("__builtin_k1_wfxm expects a 12 bits immediate first argument.");
       return NULL_RTX;
     }
   int regno = INTVAL (arg1) + K1C_SRF_FIRST_REGNO;
