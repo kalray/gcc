@@ -356,7 +356,12 @@ static rtx
 k1_pic_register (void)
 {
   if (cfun->machine->pic_reg == NULL_RTX && can_create_pseudo_p ())
-    cfun->machine->pic_reg = gen_reg_rtx (Pmode);
+    {
+      cfun->machine->pic_reg = gen_reg_rtx (Pmode);
+      /* We need this use for reload to handle the reg before we emit
+	 insn using it in the expand_prologue */
+      emit_use (cfun->machine->pic_reg);
+    }
 
   if (cfun->machine->pic_reg != NULL_RTX)
     return cfun->machine->pic_reg;
