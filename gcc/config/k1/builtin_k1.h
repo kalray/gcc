@@ -267,14 +267,10 @@ extern long long __builtin_k1_cbsdl (unsigned long long op0);
 /* CLS */
 /* CLSDL */
 /* CLSWP */
-/* CLZ */
-extern int __builtin_k1_clz (unsigned int op0);
 /* CLZW */
 extern int __builtin_k1_clzw (unsigned int op0);
 /* CLZD */
 extern long long __builtin_k1_clzd (unsigned long long op0);
-/* CLZDL */
-extern long long __builtin_k1_clzdl (unsigned long long op0);
 /* CLZWP */
 /* CMOVE */
 extern int __builtin_k1_cmove (int condition, int new_value, int curent_value);
@@ -289,14 +285,10 @@ extern int __builtin_k1_cmove (int condition, int new_value, int curent_value);
 /* COMPUWDL */
 /* COMPWDL */
 /* COMPWP */
-/* CTZ */
-extern int __builtin_k1_ctz (unsigned int op0);
 /* CTZW */
 extern int __builtin_k1_ctzw (unsigned int op0);
 /* CTZD */
 extern long long __builtin_k1_ctzd (unsigned long long op0);
-/* CTZDL */
-extern long long __builtin_k1_ctzdl (unsigned long long op0);
 /* CTZWP */
 /* EXTFDS */
 /* EXTFDZ */
