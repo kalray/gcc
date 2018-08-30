@@ -3206,14 +3206,10 @@ enum k1_builtin
   K1_BUILTIN_CBSW,
   K1_BUILTIN_CBSD,
   K1_BUILTIN_CBSDL,
-  K1_BUILTIN_CLZ,
   K1_BUILTIN_CLZW,
   K1_BUILTIN_CLZD,
-  K1_BUILTIN_CLZDL,
-  K1_BUILTIN_CTZ,
   K1_BUILTIN_CTZW,
   K1_BUILTIN_CTZD,
-  K1_BUILTIN_CTZDL,
   K1_BUILTIN_ACSWAPW,
   K1_BUILTIN_ACSWAPD,
   K1_BUILTIN_AFADDD,
@@ -3451,14 +3447,10 @@ k1_target_init_builtins (void)
    */
   ADD_K1_BUILTIN (CBS, "cbs", intSI, uintSI);
   ADD_K1_BUILTIN (CBSDL, "cbsdl", intDI, uintDI);
-  ADD_K1_BUILTIN (CLZ, "clz", intSI, uintSI);
   ADD_K1_BUILTIN (CLZW, "clzw", intSI, uintSI);
   ADD_K1_BUILTIN (CLZD, "clzd", intDI, uintDI);
-  ADD_K1_BUILTIN (CLZDL, "clzdl", intDI, uintDI);
-  ADD_K1_BUILTIN (CTZ, "ctz", intSI, uintSI);
   ADD_K1_BUILTIN (CTZW, "ctzw", intSI, uintSI);
   ADD_K1_BUILTIN (CTZD, "ctzd", intDI, uintDI);
-  ADD_K1_BUILTIN (CTZDL, "ctzdl", intDI, uintDI);
   ADD_K1_BUILTIN (ACSWAPW, "acswapw", uintTI, voidPTR, uintDI, uintDI);
   ADD_K1_BUILTIN (ACSWAPD, "acswapd", uintTI, voidPTR, uintDI, uintDI);
   ADD_K1_BUILTIN (AFADDD, "afaddd", uintDI, voidPTR, intDI);
@@ -4411,7 +4403,7 @@ k1_expand_builtin_ctzd (rtx target, tree args)
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
 
   if (!target)
-    target = gen_reg_rtx (SImode);
+    target = gen_reg_rtx (DImode);
   target = force_reg (DImode, target);
   arg1 = force_reg (DImode, arg1);
   emit_insn (gen_ctzdi2 (target, arg1));
@@ -4425,7 +4417,7 @@ k1_expand_builtin_clzd (rtx target, tree args)
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
 
   if (!target)
-    target = gen_reg_rtx (SImode);
+    target = gen_reg_rtx (DImode);
   target = force_reg (DImode, target);
   arg1 = force_reg (DImode, arg1);
   emit_insn (gen_clzdi2 (target, arg1));
@@ -5739,17 +5731,13 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case K1_BUILTIN_CBSD:
     case K1_BUILTIN_CBSDL:
       return k1_expand_builtin_cbsd (target, exp);
-    case K1_BUILTIN_CLZ:
     case K1_BUILTIN_CLZW:
       return k1_expand_builtin_clzw (target, exp);
     case K1_BUILTIN_CLZD:
-    case K1_BUILTIN_CLZDL:
       return k1_expand_builtin_clzd (target, exp);
-    case K1_BUILTIN_CTZ:
     case K1_BUILTIN_CTZW:
       return k1_expand_builtin_ctzw (target, exp);
     case K1_BUILTIN_CTZD:
-    case K1_BUILTIN_CTZDL:
       return k1_expand_builtin_ctzd (target, exp);
     case K1_BUILTIN_DINVAL:
       return k1_expand_builtin_dinval ();
