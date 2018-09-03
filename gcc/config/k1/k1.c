@@ -117,6 +117,9 @@ struct GTY (()) k1_frame_info
   /* Offset of virtual frame pointer from stack pointer/frame bottom */
   HOST_WIDE_INT frame_pointer_offset;
 
+  /* Offset of hard frame pointer from stack pointer/frame bottom */
+  HOST_WIDE_INT hard_frame_pointer_offset;
+
   /* The offset of arg_pointer_rtx from the frame pointer.  */
   HOST_WIDE_INT arg_pointer_fp_offset;
 
@@ -195,7 +198,7 @@ pointer
 		  |               |
 		  |               |
 		  +---------------+
-	    FP--->| [Static chain]|
+      Virt. FP--->| [Static chain]|
 		  +---------------+
 		  | Local         |
 		  | Variable      |
@@ -205,6 +208,8 @@ pointer
 		  | Register      |
 		  | Save          |
 		  |               |
+		  | $ra           | (if frame_pointer_needed)
+       Hard FP--->| caller FP     | (if frame_pointer_needed)
 		  +---------------+
 		  |               |
 		  | Outgoing      |
@@ -244,6 +249,8 @@ k1_compute_frame_info (void)
   /* Saved registers area */
   frame->saved_reg_sp_offset = sp_offset;
 
+  frame->hard_frame_pointer_offset = sp_offset;
+
 #define SLOT_NOT_REQUIRED (-2)
 #define SLOT_REQUIRED (-1)
 
@@ -258,7 +265,7 @@ k1_compute_frame_info (void)
     {
       /* Enforce ABI that requires the FP to point to previous FP value and $ra
        */
-      cfun->machine->frame.reg_offset[FRAME_POINTER_REGNUM] = sp_offset;
+      cfun->machine->frame.reg_offset[HARD_FRAME_POINTER_REGNUM] = sp_offset;
       cfun->machine->frame.reg_offset[K1C_RETURN_POINTER_REGNO]
 	= sp_offset + UNITS_PER_WORD;
       sp_offset += 2 * UNITS_PER_WORD;
@@ -837,7 +844,8 @@ k1_analyze_address (rtx x, bool strict, struct k1_address *addr)
   do                                                                           \
     {                                                                          \
       char tmp_fixed_regs[] = {                                                \
-	ARCH##_ABI_##CORE##_##CONV##_FIXED_REGISTERS 1,                        \
+	ARCH##_ABI_##CORE##_##CONV##_FIXED_REGISTERS 1, /* sync */             \
+	1,						/* virtual FP */       \
       };                                                                       \
       gcc_assert (sizeof (tmp_fixed_regs) == sizeof (fixed_regs));             \
       size_t _idx_tmp;                                                         \
@@ -848,7 +856,8 @@ k1_analyze_address (rtx x, bool strict, struct k1_address *addr)
 	}                                                                      \
                                                                                \
       char tmp_call_used_regs[] = {                                            \
-	ARCH##_ABI_##CORE##_##CONV##_CALL_USED_REGISTERS 1,                    \
+	ARCH##_ABI_##CORE##_##CONV##_CALL_USED_REGISTERS 1, /* sync */         \
+	1,						    /* virtual FP */   \
       };                                                                       \
       gcc_assert (sizeof (tmp_call_used_regs) == sizeof (call_used_regs));     \
       for (_idx_tmp = 0; _idx_tmp < sizeof (call_used_regs); _idx_tmp++)       \
@@ -858,7 +867,8 @@ k1_analyze_address (rtx x, bool strict, struct k1_address *addr)
 	}                                                                      \
                                                                                \
       char tmp_call_really_used_regs[] = {                                     \
-	ARCH##_ABI_##CORE##_##CONV##_CALL_REALLY_USED_REGISTERS 1,             \
+	ARCH##_ABI_##CORE##_##CONV##_CALL_REALLY_USED_REGISTERS 1, /* sync */  \
+	1, /* virtual FP */                                                    \
       };                                                                       \
       gcc_assert (sizeof (tmp_call_really_used_regs)                           \
 		  == sizeof (call_really_used_regs));                          \
@@ -2165,7 +2175,7 @@ k1_save_or_restore_callee_save_registers (bool restore)
   for (regno = 0; regno < limit; regno++)
     {
       /* Already taken care in prologue/epilogue */
-      if (regno == FRAME_POINTER_REGNUM && frame_pointer_needed)
+      if (regno == HARD_FRAME_POINTER_REGNUM && frame_pointer_needed)
 	continue;
 
       if (k1_register_saved_on_entry (regno))
@@ -2279,12 +2289,15 @@ k1_initial_elimination_offset (int from, int to)
   k1_compute_frame_info ();
   struct k1_frame_info *frame = &cfun->machine->frame;
 
-  /* Should never have anything else FRAME_POINTER_REGNUM */
-  if (from != FRAME_POINTER_REGNUM || to != STACK_POINTER_REGNUM)
+  /* Should never have anything else FRAME_POINTER_REGNUM -> HFP/SP */
+  if (from != FRAME_POINTER_REGNUM
+      || (to != STACK_POINTER_REGNUM && to != HARD_FRAME_POINTER_REGNUM))
     gcc_unreachable ();
 
   if (from == FRAME_POINTER_REGNUM && to == STACK_POINTER_REGNUM)
     return frame->frame_pointer_offset;
+  else if (from == FRAME_POINTER_REGNUM && to == HARD_FRAME_POINTER_REGNUM)
+    return (frame->frame_pointer_offset - frame->hard_frame_pointer_offset);
 
   gcc_unreachable ();
 }
@@ -2314,19 +2327,20 @@ k1_expand_prologue (void)
 
   if (frame_pointer_needed)
     {
+      gcc_assert (frame->reg_offset[HARD_FRAME_POINTER_REGNUM] >= 0);
       /* Save previous FP */
       rtx fp_mem = gen_rtx_MEM (
-	DImode,
-	plus_constant (Pmode, stack_pointer_rtx,
-		       cfun->machine->frame.reg_offset[FRAME_POINTER_REGNUM]));
+	DImode, plus_constant (Pmode, stack_pointer_rtx,
+			       frame->reg_offset[HARD_FRAME_POINTER_REGNUM]));
 
       rtx insn
-	= emit_move_insn (fp_mem, gen_rtx_REG (DImode, FRAME_POINTER_REGNUM));
+	= emit_move_insn (fp_mem,
+			  gen_rtx_REG (DImode, HARD_FRAME_POINTER_REGNUM));
       RTX_FRAME_RELATED_P (insn) = 1;
 
       /* FIXME AUTO: Add FP/RA store at frame bottom here */
-      insn = gen_add3_insn (frame_pointer_rtx, stack_pointer_rtx,
-			    GEN_INT (frame->frame_pointer_offset));
+      insn = gen_add3_insn (hard_frame_pointer_rtx, stack_pointer_rtx,
+			    GEN_INT (frame->hard_frame_pointer_offset));
       RTX_FRAME_RELATED_P (emit_insn (insn)) = 1;
     }
 
@@ -2345,18 +2359,20 @@ k1_expand_epilogue (void)
 
   if (frame_pointer_needed)
     {
-      insn = emit_insn (gen_add3_insn (stack_pointer_rtx, frame_pointer_rtx,
-				       GEN_INT (-frame->frame_pointer_offset)));
+      insn = emit_insn (
+	gen_add3_insn (stack_pointer_rtx, hard_frame_pointer_rtx,
+		       GEN_INT (-frame->hard_frame_pointer_offset)));
       RTX_FRAME_RELATED_P (insn) = 1;
 
       /* Restore previous FP */
       rtx fp_mem = gen_rtx_MEM (
-	DImode,
-	plus_constant (Pmode, stack_pointer_rtx,
-		       cfun->machine->frame.reg_offset[FRAME_POINTER_REGNUM]));
+	DImode, plus_constant (
+		  Pmode, stack_pointer_rtx,
+		  cfun->machine->frame.reg_offset[HARD_FRAME_POINTER_REGNUM]));
 
       rtx insn
-	= emit_move_insn (gen_rtx_REG (DImode, FRAME_POINTER_REGNUM), fp_mem);
+	= emit_move_insn (gen_rtx_REG (DImode, HARD_FRAME_POINTER_REGNUM),
+			  fp_mem);
     }
 
   if (frame_size != 0)
