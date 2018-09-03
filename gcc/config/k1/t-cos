@@ -1,2 +1,2 @@
-MULTILIB_OPTIONS = fno-exceptions m64 # fPIC
-MULTILIB_DIRNAMES = noexceptions 64 # pic
+MULTILIB_OPTIONS = fno-exceptions m32
+MULTILIB_DIRNAMES = noexceptions 32
