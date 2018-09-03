@@ -7,14 +7,16 @@
 #include "vec.h"
 #endif
 
+/* Sync register and virtual FP */
+
 #define K1C_NO_EXT_MASK 0x0
 //#define K1C_ARF_EXT_MASK 0x0
 #define K1C_PRF_EXT_MASK 0x0
-#define K1C_GRF_EXT_MASK 0x0
-#define K1C_SRF_EXT_MASK 0x1
-#define K1C_SRF32_EXT_MASK 0x1
+#define K1C_GRF_EXT_MASK 0x2   /* Virtual FP */
+#define K1C_SRF_EXT_MASK 0x1   /* Sync */
+#define K1C_SRF32_EXT_MASK 0x1 /* Sync */
 #define K1C_SRF64_EXT_MASK 0x0
-#define K1C_ALL_EXT_MASK 0x1
+#define K1C_ALL_EXT_MASK 0x3
 
 #ifndef _K1_REGS
 #define _K1_REGS
@@ -186,24 +188,27 @@ enum k1_abi_type
    numbers 0 through FIRST_PSEUDO_REGISTER-1; thus, the first pseudo
    register's number really is assigned the number
    FIRST_PSEUDO_REGISTER.  */
-#define FIRST_PSEUDO_REGISTER (K1C_MDS_REGISTERS + 1)
+#define FIRST_PSEUDO_REGISTER (K1C_MDS_REGISTERS + 2)
 
 #define FIXED_REGISTERS                                                        \
   {                                                                            \
     K1C_FIXED_REGISTERS                                                        \
-    1,                                                                         \
+    1,	 /* sync */                                                            \
+      1, /* virtual FP */                                                      \
   }
 
 #define CALL_USED_REGISTERS                                                    \
   {                                                                            \
     K1C_CALL_USED_REGISTERS                                                    \
-    1,                                                                         \
+    1,	 /* sync */                                                            \
+      1, /* virtual FP */                                                      \
   }
 
 #define CALL_REALLY_USED_REGISTERS                                             \
   {                                                                            \
     K1C_CALL_REALLY_USED_REGISTERS                                             \
-    1,                                                                         \
+    1,	 /* sync */                                                            \
+      1, /* virtual FP */                                                      \
   }
 
 #define PC_REGNUM K1C_PROGRAM_POINTER_REGNO
@@ -457,7 +462,10 @@ enum k1_abi_type
 
 #define STACK_POINTER_REGNUM K1C_STACK_POINTER_REGNO
 
-#define FRAME_POINTER_REGNUM K1C_FRAME_POINTER_REGNO
+#define K1C_FRAME_POINTER_VIRT_REGNO (K1C_MDS_REGISTERS + 1)
+
+#define FRAME_POINTER_REGNUM K1C_FRAME_POINTER_VIRT_REGNO
+#define HARD_FRAME_POINTER_REGNUM K1C_FRAME_POINTER_REGNO
 
 #define ARG_POINTER_REGNUM FRAME_POINTER_REGNUM
 
@@ -477,9 +485,8 @@ enum k1_abi_type
 /* ********** Elimination ********** */
 #define ELIMINABLE_REGS                                                        \
   {                                                                            \
-    {                                                                          \
-      FRAME_POINTER_REGNUM, STACK_POINTER_REGNUM                               \
-    }                                                                          \
+    {FRAME_POINTER_REGNUM, STACK_POINTER_REGNUM},                              \
+      {FRAME_POINTER_REGNUM, HARD_FRAME_POINTER_REGNUM},                       \
   }
 
 // {ARG_POINTER_REGNUM, STACK_POINTER_REGNUM},
@@ -853,7 +860,7 @@ int k1_adjust_insn_length (rtx insn, int length);
 #define REGISTER_NAMES                                                         \
   {                                                                            \
     K1C_REGISTER_NAMES                                                         \
-    ".sync.",                                                                  \
+    ".sync.", ".virtual-fp.",                                                  \
   }
 
 /* If defined, a C initializer for an array of structures containing a
