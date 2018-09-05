@@ -2318,6 +2318,7 @@ k1-*-cos*)
 	tm_file="${tm_file} elfos.h dbxelf.h k1/k1-cos.h newlib-stdint.h"
 	tmake_file="k1/t-k1 k1/t-cos"
 	extra_headers="float-k1-cos.h"
+	extra_options="${extra_options} k1/k1-cos.opt"
 	;;
 k1-*-linux*)
 	tm_file="${tm_file} elfos.h gnu-user.h linux.h k1/linux.h glibc-stdint.h"
