@@ -729,7 +729,6 @@ int k1_adjust_insn_length (rtx insn, int length);
 #define TEXT_SECTION_ASM_OP "\t.text"
 #define DATA_SECTION_ASM_OP "\t.data"
 #define BSS_SECTION_ASM_OP "\t.section .bss"
-#define SBSS_SECTION_ASM_OP "\t.section .sbss"
 /* A C expression whose value is a string containing the assembler operation to
    switch to the fixup section that records all initialized pointers in a -fpic
    program so they can be changed program startup time if the program is loaded
@@ -752,79 +751,8 @@ int k1_adjust_insn_length (rtx insn, int length);
 #define ASM_OUTPUT_ALIGN(FILE, LOG)                                            \
   fprintf (FILE, "\n\t.align %d\n", 1 << (LOG))
 
-/* Override default implementation in elfos.h to support -G.  */
-#undef ASM_OUTPUT_ALIGNED_LOCAL
-#define ASM_OUTPUT_ALIGNED_LOCAL(FILE, NAME, SIZE, ALIGN)                      \
-  do                                                                           \
-    {                                                                          \
-      if (TARGET_LOCAL_SDATA                                                   \
-	  && (SIZE) <= (unsigned HOST_WIDE_INT) g_switch_value)                \
-	switch_to_section (sbss_section);                                      \
-      else                                                                     \
-	switch_to_section (bss_section);                                       \
-      ASM_OUTPUT_TYPE_DIRECTIVE (FILE, NAME, "object");                        \
-      if (!flag_inhibit_size_directive)                                        \
-	ASM_OUTPUT_SIZE_DIRECTIVE (FILE, NAME, SIZE);                          \
-      ASM_OUTPUT_ALIGN ((FILE), exact_log2 ((ALIGN) / BITS_PER_UNIT));         \
-      ASM_OUTPUT_LABEL (FILE, NAME);                                           \
-      ASM_OUTPUT_SKIP ((FILE), (SIZE) ? (SIZE) : 1);                           \
-    }                                                                          \
-  while (0)
-
-/* Override default implementation in elfos.h to support -G.  */
-#undef ASM_OUTPUT_ALIGNED_COMMON
-#define ASM_OUTPUT_ALIGNED_COMMON(FILE, NAME, SIZE, ALIGN)                     \
-  do                                                                           \
-    {                                                                          \
-      if (TARGET_LOCAL_SDATA                                                   \
-	  && (SIZE) <= (unsigned HOST_WIDE_INT) g_switch_value)                \
-	{                                                                      \
-	  switch_to_section (sbss_section);                                    \
-	  (*targetm.asm_out.globalize_label) (FILE, NAME);                     \
-	  ASM_OUTPUT_TYPE_DIRECTIVE (FILE, NAME, "object");                    \
-	  if (!flag_inhibit_size_directive)                                    \
-	    ASM_OUTPUT_SIZE_DIRECTIVE (FILE, NAME, SIZE);                      \
-	  ASM_OUTPUT_ALIGN ((FILE), exact_log2 ((ALIGN) / BITS_PER_UNIT));     \
-	  ASM_OUTPUT_LABEL (FILE, NAME);                                       \
-	  ASM_OUTPUT_SKIP ((FILE), (SIZE) ? (SIZE) : 1);                       \
-	}                                                                      \
-      else                                                                     \
-	{                                                                      \
-	  switch_to_section (bss_section);                                     \
-	  fprintf ((FILE), "%s", COMMON_ASM_OP);                               \
-	  assemble_name ((FILE), (NAME));                                      \
-	  fprintf ((FILE), "," HOST_WIDE_INT_PRINT_UNSIGNED ",%u\n", (SIZE),   \
-		   (ALIGN) / BITS_PER_UNIT);                                   \
-	}                                                                      \
-    }                                                                          \
-  while (0)
-
-#undef ASM_OUTPUT_ALIGNED_DECL_LOCAL
-#define ASM_OUTPUT_ALIGNED_DECL_LOCAL(FILE, DECL, NAME, SIZE, ALIGN)           \
-  do                                                                           \
-    {                                                                          \
-      if (TARGET_LOCAL_SDATA                                                   \
-	  && (SIZE) <= (unsigned HOST_WIDE_INT) g_switch_value)                \
-	switch_to_section (sbss_section);                                      \
-      else                                                                     \
-	switch_to_section (bss_section);                                       \
-      ASM_OUTPUT_TYPE_DIRECTIVE (FILE, NAME, "object");                        \
-      if (!flag_inhibit_size_directive)                                        \
-	ASM_OUTPUT_SIZE_DIRECTIVE (FILE, NAME, SIZE);                          \
-      ASM_OUTPUT_ALIGN ((FILE), exact_log2 ((ALIGN) / BITS_PER_UNIT));         \
-      ASM_OUTPUT_LABEL (FILE, NAME);                                           \
-      ASM_OUTPUT_SKIP ((FILE), (SIZE) ? (SIZE) : 1);                           \
-    }                                                                          \
-  while (0)
-
 #define GLOBAL_ASM_OP "\t.globl "
 
-/* #define ASM_OUTPUT_ADDR_VEC_ELT(STREAM, VALUE)				\
- */
-/*   fprintf (STREAM, "\t.word\t%sL%d\n",					\
- */
-/* 	   LOCAL_LABEL_PREFIX,						\ */
-/* 	   VALUE) */
 #define ASM_OUTPUT_ADDR_VEC_ELT(FILE, VALUE)                                   \
   do                                                                           \
     {                                                                          \

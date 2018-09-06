@@ -456,8 +456,6 @@ static bool k1_has_gprel (rtx x);
 
 static rtx k1_legitimize_gp_address (rtx x, rtx reg);
 
-static bool k1_rtx_constant_in_small_data_p (enum machine_mode mode);
-
 static bool k1_legitimate_constant_p (enum machine_mode mode ATTRIBUTE_UNUSED,
 				      rtx x);
 
@@ -468,10 +466,6 @@ static const struct attribute_spec k1_attribute_table[] = {
   {"no_save_regs", 0, 0, true, false, false, k1_handle_fndecl_attribute, false},
   {"farcall", 0, 0, true, false, false, k1_handle_fndecl_attribute, false},
   {NULL, 0, 0, false, false, false, NULL, false}};
-
-/* The -G setting, or the configuration's default small-data limit if
-   no -G option is given.  */
-static unsigned int k1_small_data_threshold;
 
 enum addressing_mode
 {
@@ -1898,78 +1892,6 @@ k1_target_print_operand_address (FILE *file, rtx x)
   /*     if (is_tls)
 	   fprintf (file, ")");
   */
-}
-
-/* Return true if rtx constants of mode MODE should be put into a small
-   data section.  */
-
-static bool
-k1_rtx_constant_in_small_data_p (enum machine_mode mode)
-{
-  /* FIXME: For now for all GPREL, but we need a switch for that */
-  return (TARGET_LOCAL_SDATA
-	  && GET_MODE_SIZE (mode) <= k1_small_data_threshold);
-}
-
-/* Implement TARGET_ASM_SELECT_RTX_SECTION.  */
-
-static section *
-k1_select_rtx_section (enum machine_mode mode, rtx x,
-		       unsigned HOST_WIDE_INT align)
-{
-  if (k1_rtx_constant_in_small_data_p (mode))
-    {
-      return get_named_section (NULL, ".sdata", 0);
-    }
-
-  return default_elf_select_rtx_section (mode, x, align);
-}
-
-/* Implement TARGET_IN_SMALL_DATA_P.  */
-
-static bool
-k1_in_small_data_p (const_tree decl)
-{
-  unsigned HOST_WIDE_INT size;
-
-  if (!TARGET_LOCAL_SDATA || TREE_CODE (decl) == STRING_CST
-      || TREE_CODE (decl) == FUNCTION_DECL)
-    return false;
-
-  if (TREE_CODE (decl) == VAR_DECL && DECL_SECTION_NAME (decl) != 0)
-    {
-      const char *name;
-
-      /* Reject anything that isn't in a known small-data section.  */
-      name = TREE_STRING_POINTER (DECL_SECTION_NAME (decl));
-      if (strcmp (name, ".sdata") != 0 && strcmp (name, ".sbss") != 0)
-	return false;
-
-      /* If a symbol is defined externally, the assembler will use the
-	 usual -G rules when deciding how to implement macros.  */
-      /*      if (mips_lo_relocs[SYMBOL_GP_RELATIVE] || !DECL_EXTERNAL (decl))
-	      return true; */
-    }
-#if 0
-  /* Enforce -mlocal-sdata.  */
-  if (!TARGET_LOCAL_SDATA && !TREE_PUBLIC (decl))
-    return false;
-
-  /* Enforce -mextern-sdata.  */
-  if (!TARGET_EXTERN_SDATA && DECL_P (decl))
-    {
-      if (DECL_EXTERNAL (decl))
-	return false;
-      if (DECL_COMMON (decl) && DECL_INITIAL (decl) == NULL)
-	return false;
-    }
-#endif
-
-  /* We have traditionally not treated zero-sized objects as small data,
-     so this is now effectively part of the ABI.  */
-  size = int_size_in_bytes (TREE_TYPE (decl));
-
-  return size > 0 && size <= k1_small_data_threshold;
 }
 
 static void
@@ -8664,12 +8586,6 @@ k1_option_override (void)
   /*   k1_arch_schedule = ARCH_ANDEY; */
 
   k1_arch_schedule = ARCH_COOLIDGE;
-
-  /* Set the small data limit.  */
-  k1_small_data_threshold
-    = (global_options_set.x_g_switch_value ? g_switch_value
-					   : K1C_DEFAULT_GVALUE);
-  g_switch_value = k1_small_data_threshold;
 }
 
 /* Recognize machine-specific patterns that may appear within
@@ -8867,9 +8783,6 @@ k1_profile_hook (void)
 #undef TARGET_ASM_OUTPUT_MI_THUNK
 #define TARGET_ASM_OUTPUT_MI_THUNK k1_target_asm_output_mi_thunk
 
-#undef TARGET_ASM_SELECT_RTX_SECTION
-#define TARGET_ASM_SELECT_RTX_SECTION k1_select_rtx_section
-
 #undef TARGET_ASM_CAN_OUTPUT_MI_THUNK
 #define TARGET_ASM_CAN_OUTPUT_MI_THUNK k1_target_asm_can_output_mi_thunk
 
@@ -8962,9 +8875,6 @@ k1_profile_hook (void)
 
 #undef TARGET_REGISTER_PRIORITY
 #define TARGET_REGISTER_PRIORITY k1_target_register_priority
-
-#undef TARGET_IN_SMALL_DATA_P
-#define TARGET_IN_SMALL_DATA_P k1_in_small_data_p
 
 #undef TARGET_FUNCTION_OK_FOR_SIBCALL
 #define TARGET_FUNCTION_OK_FOR_SIBCALL k1_function_ok_for_sibcall
