@@ -44,39 +44,6 @@ static const struct default_options k1_option_optimization_table[] =
 
  
 
-/* Implement TARGET_HANDLE_OPTION.  */
-static bool
-k1_handle_option (struct gcc_options *opts ATTRIBUTE_UNUSED,
-                  struct gcc_options *opts_set ATTRIBUTE_UNUSED,
-                  const struct cl_decoded_option *decoded,
-                  location_t loc ATTRIBUTE_UNUSED)
-{
-    size_t code = decoded->opt_index;
-
-    switch (code) {
-    case OPT_ffixed_reg:  /* defer this option */
-    case OPT_mcore_k1c:
-    case OPT_march_:
-    case OPT_mgprel:
-    case OPT_m32:
-    case OPT_mlocal_sdata:
-    case OPT_fbundling:
-    case OPT_fhwloop:
-    case OPT_fstrict_align:
-    case OPT_mfarcall:
-    case OPT_mforce_uncached_lsu:
-    case OPT_G:
-    case OPT_mreload:
-    case OPT_fstack_check_use_tls:
-#ifdef K1_LINUX
-    case OPT_pthread:
-#endif
-        return true;
-    default:
-        return false;
-    }
-}
-
 /* Implement TARGET_OPTION_DEFAULT_PARAMS.  */
 static void
 k1_option_default_params (void)
@@ -96,8 +63,6 @@ k1_option_default_params (void)
 #define TARGET_OPTION_OPTIMIZATION_TABLE k1_option_optimization_table
 #undef TARGET_OPTION_DEFAULT_PARAMS
 #define TARGET_OPTION_DEFAULT_PARAMS k1_option_default_params
-#undef TARGET_HANDLE_OPTION
-#define TARGET_HANDLE_OPTION k1_handle_option
 #undef TARGET_EXCEPT_UNWIND_INFO
 #define TARGET_EXCEPT_UNWIND_INFO sjlj_except_unwind_info
 #undef TARGET_DEFAULT_TARGET_FLAGS
