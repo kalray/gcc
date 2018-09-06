@@ -582,7 +582,7 @@ tilepro*-*-*)
 	;;
 k1-*-*)
 	need_64bit_hwint=yes
-        extra_options="${extra_options} g.opt"
+        extra_options="${extra_options}"
 	;;
 esac
 
