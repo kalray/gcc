@@ -144,8 +144,6 @@ struct GTY (()) machine_function
   /* If true, the current function has a STATIC_CHAIN.  */
   int static_chain_on_stack;
 
-  rtx pic_reg;
-
   rtx stack_check_block_label;
   rtx stack_check_block_seq, stack_check_block_last;
   /* vec<fake_SC_t,va_gc> *fake_SC_registers; */
@@ -357,23 +355,6 @@ k1_static_chain (const_tree fndecl, bool incoming_p)
   cfun->machine->static_chain_on_stack = 1;
 
   return gen_frame_mem (Pmode, frame_pointer_rtx);
-}
-
-static rtx
-k1_pic_register (void)
-{
-  if (cfun->machine->pic_reg == NULL_RTX && can_create_pseudo_p ())
-    {
-      cfun->machine->pic_reg = gen_reg_rtx (Pmode);
-      /* We need this use for reload to handle the reg before we emit
-	 insn using it in the expand_prologue */
-      emit_use (cfun->machine->pic_reg);
-    }
-
-  if (cfun->machine->pic_reg != NULL_RTX)
-    return cfun->machine->pic_reg;
-
-  gcc_unreachable ();
 }
 
 static const char *prf_reg_names[] = {K1C_K1C_PRF_REGISTER_NAMES};
@@ -2231,14 +2212,6 @@ k1_expand_prologue (void)
   struct k1_frame_info *frame = &cfun->machine->frame;
   HOST_WIDE_INT size = frame->initial_sp_offset;
   rtx insn;
-  rtx (*gen_set_gotp) (rtx target)
-    = !TARGET_32 ? gen_set_gotp_di : gen_set_gotp_si;
-
-  if (flag_pic && crtl->uses_pic_offset_table)
-    {
-      insn = emit_insn (gen_set_gotp (k1_pic_register ()));
-      /* df_set_regs_ever_live(K1C_GLOBAL_POINTER_REGNO, true); */
-    }
 
   if (size > 0)
     {
@@ -2402,35 +2375,6 @@ symbolic_reference_mentioned_p (rtx op)
   return FALSE;
 }
 
-/* handle a symbol for PIC */
-static rtx
-k1_handle_symbol (rtx addr, rtx reg)
-{
-  int unspec = UNSPEC_GOT;
-  rtx new_rtx = addr;
-
-  if (reg == 0)
-    {
-      reg = gen_reg_rtx (Pmode);
-      gcc_assert (can_create_pseudo_p ());
-    }
-
-  /* simply emit the sequence
-   * lw $ry = @got(foo)[$r14]
-   *
-   * or
-   * lw $ry = @got_funcdesc(bar)[$r14]
-   */
-  new_rtx = gen_rtx_UNSPEC (Pmode, gen_rtvec (1, addr), unspec);
-  new_rtx = gen_rtx_CONST (Pmode, new_rtx);
-  new_rtx = gen_rtx_PLUS (Pmode, k1_pic_register (), new_rtx);
-
-  new_rtx = gen_const_mem (Pmode, new_rtx);
-  emit_move_insn (reg, new_rtx);
-  crtl->uses_pic_offset_table = TRUE;
-  return reg;
-}
-
 bool
 k1_legitimate_pic_operand_p (rtx x)
 {
@@ -2440,135 +2384,6 @@ k1_legitimate_pic_operand_p (rtx x)
     return false;
 
   return true;
-}
-
-static rtx
-k1_target_legitimize_pic_address (rtx orig, rtx reg)
-{
-  rtx addr = orig;
-  rtx new_rtx = orig;
-
-  /* Local symbol references in (FD)PIC/PIE mode are relative to global
-   * offset table, but do not require GOT entry.
-   * to obtain address we generate code similar to:
-   *
-   * add $r0 = $r14, @gotoff(symbol);;
-   *
-   * with the optimizations turned off we can end up with two instructions
-   *
-   * make $r0 = @gotoff(symbol);;
-   * add $r0 = $r14, $r0;;
-   *
-   * of course for functions in FDPIC we will get @gotoff_funcdesc
-   */
-  if (GET_CODE (addr) == SYMBOL_REF && SYMBOL_REF_LOCAL_P (addr)
-      && !SYMBOL_REF_EXTERNAL_P (addr))
-    {
-      /* make it @gotoff by default,
-       * i.e., not read-only local data,
-       * and read-only local data in PIC */
-      int unspec = UNSPEC_GOTOFF;
-
-      /* @gotoff_funcdesc for function in FDPIC */
-      /* if (TARGET_FDPIC && SYMBOL_REF_FUNCTION_P (addr)) */
-      /*     unspec = UNSPEC_FUNCDESC_GOTOFF; */
-      /* try to decide what case we really have here */
-      /* else */
-      if (SYMBOL_REF_DECL (addr)
-	  && (!DECL_P (SYMBOL_REF_DECL (addr))
-	      || !DECL_COMMON (SYMBOL_REF_DECL (addr))))
-	{
-	  tree decl = SYMBOL_REF_DECL (addr);
-	  tree init = TREE_CODE (decl) == VAR_DECL
-			? DECL_INITIAL (decl)
-			: TREE_CODE (decl) == CONSTRUCTOR ? decl : 0;
-	  int reloc = 0;
-	  bool named_section, readonly;
-
-	  if (init && init != error_mark_node)
-	    reloc = compute_reloc_for_constant (init);
-
-	  named_section
-	    = TREE_CODE (decl) == VAR_DECL
-	      && lookup_attribute ("section", DECL_ATTRIBUTES (decl));
-	  readonly = decl_readonly_section (decl, reloc);
-	  /* this captures also the readonly data with initializers
-	   * which have to be relocated during runtime, i.e., data.rel.ro
-	   * we don't want that */
-	  /* || TREE_READONLY(decl); */
-
-	  /* Taken from frv, seems to work */
-	  if (named_section)
-	    return k1_handle_symbol (addr, reg);
-	  /* read-only in FDPIC -- we need to find our .rodata section
-	   * so go through the _gp symbol
-	   */
-	  /* else if (readonly && TARGET_FDPIC) */
-	  /*   return k1_handle_label_or_readonly(addr, reg); */
-	}
-
-      if (reg == NULL_RTX)
-	{
-	  gcc_assert (can_create_pseudo_p ());
-	  reg = gen_reg_rtx (Pmode);
-	}
-
-      new_rtx = gen_rtx_UNSPEC (Pmode, gen_rtvec (1, addr), unspec);
-      new_rtx = gen_rtx_CONST (Pmode, new_rtx);
-
-      emit_move_insn (reg, k1_pic_register ());
-      emit_move_insn (reg, gen_rtx_PLUS (Pmode, reg, new_rtx));
-      crtl->uses_pic_offset_table = TRUE;
-
-      return reg;
-    }
-  /* Non-local symbols require GOT entry to obtain the pointer. We generate:
-   * lw $r0 = @got(symbol)[$r14]
-   */
-  else if (GET_CODE (addr) == SYMBOL_REF)
-    return k1_handle_symbol (addr, reg);
-
-  /* Checkout if we don't have to add UNSPEC in const and plus */
-  else if (GET_CODE (addr) == CONST || GET_CODE (addr) == PLUS)
-    {
-      rtx base;
-
-      if (GET_CODE (addr) == CONST)
-	{
-	  addr = XEXP (addr, 0);
-	  if (GET_CODE (addr) == UNSPEC)
-	    return orig;
-	  gcc_assert (GET_CODE (addr) == PLUS);
-	}
-
-      if (XEXP (addr, 0)
-	  == has_hard_reg_initial_val (Pmode, PIC_OFFSET_TABLE_REGNUM))
-	return orig;
-
-      if (reg == 0)
-	{
-	  gcc_assert (can_create_pseudo_p ());
-	  reg = gen_reg_rtx (Pmode);
-	}
-
-      base = k1_target_legitimize_pic_address (XEXP (addr, 0), reg);
-      addr = k1_target_legitimize_pic_address (XEXP (addr, 1),
-					       base == reg ? NULL_RTX : reg);
-
-      if (GET_CODE (base) == UNSPEC
-	  && (GET_CODE (XVECEXP (base, 0, 0)) == SYMBOL_REF
-	      || GET_CODE (XVECEXP (base, 0, 0)) == LABEL_REF)
-	  && GET_CODE (addr) == CONST_INT)
-	{
-	  XVECEXP (base, 0, 0)
-	    = gen_rtx_PLUS (Pmode, XVECEXP (base, 0, 0), addr);
-	  return base;
-	}
-
-      return gen_rtx_PLUS (Pmode, base, addr);
-    }
-
-  return orig;
 }
 
 /* Return true if SYMBOL_REF X is thread local */
@@ -2615,12 +2430,17 @@ k1_expand_mov_constant (rtx operands[])
   rtx dest = operands[0];
   rtx src = operands[1];
   rtx new_rtx;
+  rtx (*gen_addp) (rtx target, rtx op1, rtx op2)
+    = !TARGET_32 ? gen_adddi3 : gen_addsi3;
 
   if (GET_CODE (src) == SYMBOL_REF || GET_CODE (src) == LABEL_REF
       || GET_CODE (src) == CONST)
     {
       rtx mem, base, offset;
       enum k1_symbol_type sty;
+      rtx pic_reg;
+      rtx (*gen_set_gotp) (rtx target)
+	= !TARGET_32 ? gen_set_gotp_di : gen_set_gotp_si;
 
       /* If we have (const (plus symbol offset)), separate out the offset
 	 before we start classifying the symbol.  */
@@ -2635,47 +2455,41 @@ k1_expand_mov_constant (rtx operands[])
 	  break;
 
 	case SYMBOL_GOT:
-	  gcc_assert (INTVAL (offset) == 0);
 	  /*
 	   * Emit dest = *(@got(sym) + $pic)
 	   */
+	  pic_reg = gen_reg_rtx (Pmode);
+	  emit_insn (gen_set_gotp (pic_reg));
+
 	  new_rtx = gen_rtx_UNSPEC (Pmode, gen_rtvec (1, base), UNSPEC_GOT);
 
-	  emit_move_insn (dest, k1_pic_register ());
+	  emit_move_insn (dest, pic_reg);
 
 	  emit_move_insn (dest, gen_rtx_MEM (Pmode, gen_rtx_PLUS (Pmode, dest,
 								  new_rtx)));
+	  if (INTVAL (offset) != 0)
+	    emit_insn (gen_addp (dest, dest, offset));
 
 	  crtl->uses_pic_offset_table = true;
 	  break;
 
 	case SYMBOL_GOTOFF:
-	  gcc_assert (INTVAL (offset) == 0);
 	  /*
 	   * Emit dest = @gotoff(sym)[$pic]
 	   */
+	  pic_reg = gen_reg_rtx (Pmode);
+	  emit_insn (gen_set_gotp (pic_reg));
+
 	  new_rtx = gen_rtx_UNSPEC (Pmode, gen_rtvec (1, base), UNSPEC_GOTOFF);
 
-	  emit_move_insn (dest, k1_pic_register ());
+	  emit_move_insn (dest, pic_reg);
 
 	  emit_move_insn (dest, gen_rtx_PLUS (Pmode, dest, new_rtx));
 
+	  if (INTVAL (offset) != 0)
+	    emit_insn (gen_addp (dest, dest, offset));
+
 	  crtl->uses_pic_offset_table = true;
-	  break;
-
-	  /* int unspec = UNSPEC_GOTOFF; */
-	  /* if (dest == NULL_RTX) */
-	  /*   { */
-	  /*     gcc_assert (can_create_pseudo_p ()); */
-	  /*     dest = gen_reg_rtx (Pmode); */
-	  /*   } */
-
-	  /* new_rtx = gen_rtx_UNSPEC (Pmode, gen_rtvec (1, src), unspec); */
-	  /* new_rtx = gen_rtx_CONST (Pmode, new_rtx); */
-
-	  /* emit_move_insn(dest, k1_pic_register_initial_val ()); */
-	  /* emit_move_insn(dest, gen_rtx_PLUS (Pmode, dest, new_rtx)); */
-	  /* crtl->uses_pic_offset_table = TRUE; */
 	  break;
 
 	case SYMBOL_TPREL:
