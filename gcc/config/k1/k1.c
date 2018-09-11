@@ -2125,8 +2125,6 @@ k1_expand_epilogue (void)
   HOST_WIDE_INT frame_size = frame->initial_sp_offset;
   rtx insn;
 
-  k1_save_or_restore_callee_save_registers(1);
-
   if (frame_pointer_needed)
     {
       insn = emit_insn (gen_add3_insn (stack_pointer_rtx,
@@ -2141,6 +2139,8 @@ k1_expand_epilogue (void)
 
       rtx insn = emit_move_insn (gen_rtx_REG (DImode, HARD_FRAME_POINTER_REGNUM), fp_mem);
     }
+
+  k1_save_or_restore_callee_save_registers(1);
 
   if (frame_size != 0)
     {
