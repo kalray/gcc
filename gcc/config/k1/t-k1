@@ -14,6 +14,3 @@ DRIVER_DEFINES = \
   -DDEFAULT_TARGET_MACHINE=\"$(target_noncanonical)\" \
   -DSTANDARD_BINDIR_PREFIX=\"$(bindir)/\" \
   -DTOOLDIR_BASE_PREFIX=\"$(libsubdir_to_prefix)$(prefix_to_exec_prefix)\"
-  
-INCLUDES += -I${FAMDIR}/ -I$(abs_srcdir)/config/k1
-BUILD_CPPFLAGS += -I${FAMDIR} -I$(abs_srcdir)/config/k1
