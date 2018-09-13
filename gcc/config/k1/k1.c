@@ -2060,6 +2060,25 @@ k1_register_saved_on_entry (int regno)
   return cfun->machine->frame.reg_offset[regno] >= 0;
 }
 
+/* Returns a REG rtx with a hard reg that is safe to use in prologue
+   (caller-saved and non fixed reg). Returns NULL_RTX and emits an
+   error if no such register can be found. */
+static rtx
+k1_get_callersaved_nonfixed_reg (machine_mode mode)
+{
+  int regno;
+  // start at R16 as as everything before that may be used.
+  // We should be able to use the veneer regs if not fixed.
+  for (regno = 16; regno < FIRST_PSEUDO_REGISTER; regno++)
+    {
+      if (call_really_used_regs[regno] && !fixed_regs[regno])
+	return gen_rtx_REG (mode, regno);
+    }
+
+  error ("No scratch register available in function prologue.");
+  return NULL_RTX;
+}
+
 /* Save/Restore register at offsets previously computed in frame information
  * layout.
  */
@@ -2140,40 +2159,38 @@ k1_save_or_restore_callee_save_registers (bool restore)
 	  /* else */
 	  {
 	    machine_mode spill_mode = DImode;
-	    int saved_regno = regno;
+	    rtx saved_reg = gen_rtx_REG (spill_mode, regno);
 
 	    if (regno == K1C_RETURN_POINTER_REGNO)
 	      {
 		/* spill_mode = Pmode; */
-		rtx reg2 = gen_rtx_REG (spill_mode, 32);
+		saved_reg = k1_get_callersaved_nonfixed_reg (spill_mode);
+		gcc_assert (saved_reg != NULL_RTX);
+
 		if (restore == false)
 		  {
-		    insn
-		      = emit_move_insn (reg2, gen_rtx_REG (spill_mode, regno));
+		    insn = emit_move_insn (saved_reg,
+					   gen_rtx_REG (spill_mode, regno));
 		    RTX_FRAME_RELATED_P (insn) = 1;
 		  }
-		saved_regno = 32;
 	      }
 
 	    if (restore)
 	      {
-		insn
-		  = emit_move_insn (gen_rtx_REG (spill_mode, saved_regno), mem);
+		insn = emit_move_insn (saved_reg, mem);
 
 		// add_reg_note (insn, REG_CFA_RESTORE, gen_rtx_REG (spill_mode,
 		// saved_regno));
 
 		if (regno == K1C_RETURN_POINTER_REGNO)
 		  {
-		    insn
-		      = emit_move_insn (gen_rtx_REG (spill_mode, regno),
-					gen_rtx_REG (spill_mode, saved_regno));
+		    insn = emit_move_insn (gen_rtx_REG (spill_mode, regno),
+					   saved_reg);
 		  }
 	      }
 	    else
 	      {
-		insn
-		  = emit_move_insn (mem, gen_rtx_REG (spill_mode, saved_regno));
+		insn = emit_move_insn (mem, saved_reg);
 		RTX_FRAME_RELATED_P (insn) = 1;
 	      }
 	  }
