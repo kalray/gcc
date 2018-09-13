@@ -25,7 +25,3 @@ MULTILIB_EXTRA_OPTS = fpic
 ## MULTILIB_REUSE= mcore.k1io=. mcore.k1io/mno-fdpic=mno-fdpic
 
 CRTSTUFF_T_CFLAGS_S = -fpic
-
-INCLUDES += -I${FAMDIR}/BE/GCC/k1b -I$(abs_srcdir)/config/k1
-BUILD_CPPFLAGS += -I${FAMDIR}/BE/GCC/k1b -I$(abs_srcdir)/config/k1
-
