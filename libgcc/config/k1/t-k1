@@ -24,5 +24,3 @@ LIB2ADD = $(srcdir)/config/k1/udivmoddi4.c
 
 # LIB1ASMFUNCS = $(if $(findstring k1v1,$(MULTISUBDIR)),,_divsf3)
 # LIB1ASMSRC = $(if $(findstring k1v1,$(MULTISUBDIR)),,k1/divsf3.S)
-
-INCLUDES += -I${FAMDIR}/ -I$(srcdir)/config/k1 -I$(srcdir)/../gcc/config/k1 -fstrict-align
