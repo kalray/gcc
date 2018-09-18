@@ -2320,11 +2320,10 @@ k1-*-cos*)
 	extra_headers="float-k1-cos.h"
 	extra_options="${extra_options} k1/k1-cos.opt"
 	;;
-k1-*-linux*)
-	tm_file="${tm_file} elfos.h gnu-user.h linux.h k1/linux.h glibc-stdint.h"
-	tmake_file="t-linux k1/t-linux t-uclibc t-glibc"
+k1-*-linux-uclibc)
+	tm_file="${tm_file} elfos.h dbxelf.h gnu-user.h linux.h k1/k1-linux.h glibc-stdint.h"
+	tmake_file="t-linux k1/t-linux t-glibc"
 	extra_headers="float-k1-linux.h"
-	extra_parts="crtbegin.o crtend.o crti.o crtn.o"
 	;;
 lm32-*-elf*)
         tm_file="dbxelf.h elfos.h ${tm_file} newlib-stdint.h"

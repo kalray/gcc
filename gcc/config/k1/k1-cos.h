@@ -30,8 +30,6 @@
   DRIVER_SELF_SPECS_COMMON, "%{lpthread: -pthread} "                           \
 			    "%{pthread:%<pthread}"
 
-#define K1_DEFAULT_CORE "k1c"
-
 /* Link against Newlib libraries, because the COS backend assumes Newlib.
    Handle the circular dependence between libc and libgloss.
    Link against MPPA Bare Runtime
@@ -45,8 +43,6 @@
 #define LINK_SPEC                                                              \
   LINK_SPEC_COMMON                                                             \
   "%{pthread:}"
-
-#define K1_OS_SELF_SPECS "%{!mcore*:-mcore=" K1_DEFAULT_CORE " } "
 
 #define TARGET_OS_CPP_BUILTINS()                                               \
   do                                                                           \
