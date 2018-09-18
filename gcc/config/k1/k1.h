@@ -87,6 +87,14 @@ enum k1_abi_type
     }                                                                          \
   while (0)
 
+#ifndef K1_DEFAULT_CORE
+#define K1_DEFAULT_CORE "k1c"
+#endif
+
+#ifndef K1_OS_SELF_SPECS
+#define K1_OS_SELF_SPECS "%{!mcore*:-mcore=" K1_DEFAULT_CORE " } "
+#endif
+
 #define DRIVER_SELF_SPECS_COMMON                                               \
   K1_OS_SELF_SPECS                                                             \
   "%{fpic: %{!fPIC:-fPIC}} %<fpic", "%{fPIC: %<fpic}"
