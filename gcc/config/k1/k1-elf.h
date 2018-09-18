@@ -36,12 +36,11 @@
  */
 #undef LIB_SPEC
 #define LIB_SPEC                                                               \
-  "--start-group -lmppahal -lmppabareruntime -lc -lgloss --end-group"
+  "--start-group -lmppahal -lmppabareruntime -lc -lgloss --end-group "         \
+  "%{!nostartfiles:%{!nodefaultlibs:%{!nostdlib:-Tmppabareruntime.ld}}}"
 
 #undef LINK_SPEC
-#define LINK_SPEC                                                              \
-  LINK_SPEC_COMMON                                                             \
-  "%{!nostartfiles:%{!nodefaultlibs:%{!nostdlib:-Tmppabareruntime.ld}}}"
+#define LINK_SPEC LINK_SPEC_COMMON
 
 #define K1_OS_SELF_SPECS "%{!mcore*:-mcore=" K1_DEFAULT_CORE " } "
 
