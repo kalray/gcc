@@ -126,6 +126,7 @@
 
       if (GET_CODE (XEXP (op, 0)) == UNSPEC
           && (XINT (XEXP (op, 0), 1) == UNSPEC_GOT
+              || XINT (XEXP (op, 0), 1) == UNSPEC_PCREL
               || XINT (XEXP (op, 0), 1) == UNSPEC_GOTOFF)
 	  && k1_symbol_operand(XVECEXP (XEXP (op, 0), 0, 0), mode))
 	return true;
