@@ -60,6 +60,7 @@
 #include "target.h"
 #include "target-def.h"
 #include "ira.h"
+#include "optabs.h"
 
 #include "k1-protos.h"
 #include "k1-opts.h"
@@ -486,10 +487,7 @@ k1_has_unspec_reference_1 (rtx *x, void *data ATTRIBUTE_UNUSED)
 {
   return (GET_CODE (*x) == UNSPEC
 	  && (XINT (*x, 1) == UNSPEC_GOT || XINT (*x, 1) == UNSPEC_GOTOFF
-	      || XINT (*x, 1) == UNSPEC_TLS
-	      /* || XINT (*x, 1) == UNSPEC_FUNCDESC_GOT */
-	      /* || XINT (*x, 1) == UNSPEC_FUNCDESC_GOTOFF) */
-	      ));
+	      || XINT (*x, 1) == UNSPEC_PCREL || XINT (*x, 1) == UNSPEC_TLS));
 }
 
 static int
@@ -1625,22 +1623,13 @@ k1_target_print_operand (FILE *file, rtx x, int code)
 	    switch (unspec)
 	      {
 	      case UNSPEC_TLS:
-		fprintf (file, "@tprel");
-		if (!TARGET_32)
-		  fprintf (file, "64");
-		fprintf (file, "(");
+		fprintf (file, "@tprel(");
 		break;
 	      case UNSPEC_GOT:
-		fprintf (file, "@got");
-		if (!TARGET_32)
-		  fprintf (file, "64");
-		fprintf (file, "(");
+		fprintf (file, "@got(");
 		break;
 	      case UNSPEC_GOTOFF:
-		fprintf (file, "@gotoff");
-		if (!TARGET_32)
-		  fprintf (file, "64");
-		fprintf (file, "(");
+		fprintf (file, "@gotoff(");
 		break;
 	      default:
 		gcc_unreachable ();
@@ -1816,6 +1805,36 @@ k1_handle_fndecl_attribute (tree *node, tree name, tree args ATTRIBUTE_UNUSED,
     }
 
   return NULL_TREE;
+}
+
+void
+k1_expand_tablejump (rtx op0, rtx op1)
+{
+  if (flag_pic)
+    {
+      rtx (*gen_addpcrel) (rtx target, rtx label)
+	= !TARGET_32 ? gen_add_pcrel_di : gen_add_pcrel_si;
+      rtx tmp_reg = gen_reg_rtx (Pmode);
+      emit_insn (gen_addpcrel (tmp_reg, op1));
+
+      /* Relative addrs are stored as 32bits value. */
+      if (GET_MODE (op0) != Pmode)
+	{
+	  rtx dreg = gen_reg_rtx (Pmode);
+	  emit_insn (gen_extend_insn (dreg, op0, Pmode, GET_MODE (op0), 1));
+	  op0 = dreg;
+	}
+      emit_insn (gen_add3_insn (op0, op0, tmp_reg));
+    }
+
+  if (!TARGET_32)
+    {
+      emit_jump_insn (gen_tablejump_real_di (op0, op1));
+    }
+  else
+    {
+      emit_jump_insn (gen_tablejump_real_si (op0, op1));
+    }
 }
 
 void
@@ -2271,12 +2290,35 @@ symbolic_reference_mentioned_p (rtx op)
   return FALSE;
 }
 
+/* Returns TRUE if OP is (const (unspec ([] UNSPEC_*))) or
+   (unspec ([] UNSPEC_*)) with unspec type compatible with PIC
+   code
+*/
+bool
+k1_legitimate_pic_symbolic_ref_p (rtx op)
+{
+  /* Unwrap CONST */
+  if (GET_CODE (op) == CONST)
+    op = XEXP (op, 0);
+
+  /* Valid ref are wrapped in UNSPEC */
+  if (GET_CODE (op) != UNSPEC)
+    return false;
+
+  int unspec = XINT ((op), 1);
+  return (unspec == UNSPEC_GOT || unspec == UNSPEC_GOTOFF
+	  || unspec == UNSPEC_TLS || unspec == UNSPEC_PCREL);
+}
+
+/* Returns TRUE if X can be used as an operand in PIC code.
+   Mainly */
 bool
 k1_legitimate_pic_operand_p (rtx x)
 {
-  if (GET_CODE (x) == SYMBOL_REF
+  if (GET_CODE (x) == SYMBOL_REF || GET_CODE (x) == LABEL_REF
       || (GET_CODE (x) == CONST && GET_CODE (XEXP (x, 0)) == PLUS
-	  && GET_CODE (XEXP (XEXP (x, 0), 0)) == SYMBOL_REF))
+	  && (GET_CODE (XEXP (XEXP (x, 0), 0)) == SYMBOL_REF
+	      || GET_CODE (XEXP (XEXP (x, 0), 0)) == LABEL_REF)))
     return false;
 
   return true;
@@ -2302,7 +2344,7 @@ k1_classify_symbol (rtx x)
     return SYMBOL_TPREL;
 
   if (GET_CODE (x) == LABEL_REF)
-    return SYMBOL_ABSOLUTE;
+    return flag_pic ? LABEL_PCREL_ABSOLUTE : SYMBOL_ABSOLUTE;
 
   if (GET_CODE (x) == SYMBOL_REF)
     {
@@ -2337,6 +2379,8 @@ k1_expand_mov_constant (rtx operands[])
       rtx pic_reg;
       rtx (*gen_set_gotp) (rtx target)
 	= !TARGET_32 ? gen_set_gotp_di : gen_set_gotp_si;
+      rtx (*gen_addpcrel) (rtx target, rtx label)
+	= !TARGET_32 ? gen_add_pcrel_di : gen_add_pcrel_si;
 
       /* If we have (const (plus symbol offset)), separate out the offset
 	 before we start classifying the symbol.  */
@@ -2348,6 +2392,15 @@ k1_expand_mov_constant (rtx operands[])
 	case SYMBOL_ABSOLUTE:
 	  /* Emit: dest = sym */
 	  emit_insn (gen_rtx_SET (Pmode, dest, src));
+	  break;
+
+	case LABEL_PCREL_ABSOLUTE:
+	  /* Emit: dest = @pcrel(sym) */
+	  emit_insn (gen_addpcrel (dest, XEXP (base, 0)));
+
+	  if (INTVAL (offset) != 0)
+	    emit_insn (gen_addp (dest, dest, offset));
+
 	  break;
 
 	case SYMBOL_GOT:
