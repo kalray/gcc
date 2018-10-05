@@ -20,9 +20,25 @@
 #ifndef GCC_K1_MPPA_LINUX
 #define GCC_K1_MPPA_LINUX
 
-#undef TARGET_OS_CPP_BUILTINS
-#define TARGET_OS_CPP_BUILTINS() GNU_USER_TARGET_OS_CPP_BUILTINS ()
+#define GLIBC_DYNAMIC_LINKER "/lib/ld-linux-k1c.so.1"
+
+#define TARGET_OS_CPP_BUILTINS()                                               \
+  do                                                                           \
+    {                                                                          \
+      GNU_USER_TARGET_OS_CPP_BUILTINS ();                                      \
+    }                                                                          \
+  while (0)
 
 #define DRIVER_SELF_SPECS DRIVER_SELF_SPECS_COMMON
+
+#define LINK_SPEC                                                              \
+  "%{h*}		\
+   %{static:-Bstatic}				\
+   %{shared:-shared}				\
+   %{symbolic:-Bsymbolic}			\
+   %{!static:					\
+     %{rdynamic:-export-dynamic}		\
+     %{!shared:-dynamic-linker " GNU_USER_DYNAMIC_LINKER "}} \
+   -X"
 
 #endif
