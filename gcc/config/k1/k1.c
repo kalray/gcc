@@ -530,7 +530,6 @@ k1_has_unspec_reference_1 (rtx *x, void *data ATTRIBUTE_UNUSED)
 {
   return (GET_CODE (*x) == UNSPEC
 	  && (XINT (*x, 1) == UNSPEC_GOT || XINT (*x, 1) == UNSPEC_GOTOFF
-	      || XINT (*x, 1) == UNSPEC_GPREL || XINT (*x, 1) == UNSPEC_GPREL10
 	      || XINT (*x, 1) == UNSPEC_TLS
 	      /* || XINT (*x, 1) == UNSPEC_FUNCDESC_GOT */
 	      /* || XINT (*x, 1) == UNSPEC_FUNCDESC_GOTOFF) */
@@ -1705,18 +1704,6 @@ k1_target_print_operand (FILE *file, rtx x, int code)
 		if (!TARGET_32)
 		  fprintf (file, "64");
 		fprintf (file, "(");
-		break;
-	      /* case UNSPEC_FUNCDESC_GOTOFF: */
-	      /*   fprintf (file, "@gotoff_funcdesc("); */
-	      /*   break; */
-	      /* case UNSPEC_FUNCDESC_GOT: */
-	      /*   fprintf (file, "@got_funcdesc("); */
-	      /*   break; */
-	      case UNSPEC_GPREL:
-		fprintf (file, "@gprel(");
-		break;
-	      case UNSPEC_GPREL10:
-		fprintf (file, "@gprel10(");
 		break;
 	      default:
 		gcc_unreachable ();
@@ -7809,11 +7796,7 @@ k1_legitimate_constant_p (enum machine_mode mode ATTRIBUTE_UNUSED, rtx x)
   if (k1_has_tls_reference (x))
     return false;
 
-  if (TARGET_GPREL && k1_needs_gp_symbol_reloc (x, NULL))
-    {
-      return false;
-    }
-  else if (flag_pic && k1_needs_symbol_reloc (x))
+  if (flag_pic && k1_needs_symbol_reloc (x))
     {
       return false;
     }
@@ -8449,16 +8432,6 @@ k1_output_addr_const_extra (FILE *fp, rtx x)
 	  output_addr_const ((fp), XVECEXP ((x), 0, 0));
 	  fputs (")", (fp));
 	  return true;
-	/* case UNSPEC_FUNCDESC_GOT: */
-	/*   fputs ("@got_funcdesc(", (fp)); */
-	/*   output_addr_const ((fp), XVECEXP ((x), 0, 0)); */
-	/*   fputs (")", (fp)); */
-	/*   return true; */
-	/* case UNSPEC_FUNCDESC_GOTOFF: */
-	/*   fputs ("@gotoff_funcdesc(", (fp)); */
-	/*   output_addr_const ((fp), XVECEXP ((x), 0, 0)); */
-	/*   fputs (")", (fp)); */
-	/*   return true; */
 	case UNSPEC_TLS:
 	  fputs ("@tprel", (fp));
 	  if (!TARGET_32)
@@ -8470,16 +8443,6 @@ k1_output_addr_const_extra (FILE *fp, rtx x)
 	  return true;
 	case UNSPEC_PCREL:
 	  fputs ("@pcrel(", (fp));
-	  output_addr_const ((fp), XVECEXP ((x), 0, 0));
-	  fputs (")", (fp));
-	  return true;
-	case UNSPEC_GPREL:
-	  fputs ("@gprel(", (fp));
-	  output_addr_const ((fp), XVECEXP ((x), 0, 0));
-	  fputs (")", (fp));
-	  return true;
-	case UNSPEC_GPREL10:
-	  fputs ("@gprel10(", (fp));
 	  output_addr_const ((fp), XVECEXP ((x), 0, 0));
 	  fputs (")", (fp));
 	  return true;
