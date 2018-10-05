@@ -836,15 +836,14 @@ int k1_adjust_insn_length (rtx insn, int length);
 
 /* ********** Miscellaneous Parameters ********** */
 
-/* An alias for a machine mode name.  This is the machine mode that elements of
-   a jump-table should have.  */
-#define CASE_VECTOR_MODE Pmode
+/* When doing PIC jumptable, stores relative address as 32bits.
+ */
+#define CASE_VECTOR_MODE                                                       \
+  ((CASE_VECTOR_PC_RELATIVE || flag_pic) ? SImode : Pmode)
 
-#define CASE_VECTOR_PC_RELATIVE (flag_pic)
-
-/* FIXME: when storing jumptables in rodata, relocation seem to be
-   wronlgy computed along the chain, leading to incorrect jumps */
-#define JUMP_TABLES_IN_TEXT_SECTION (flag_pic)
+/* Place jump tables next to code for PIC so that PCREL relocations
+ are resolved during assembly */
+#define JUMP_TABLES_IN_TEXT_SECTION (flag_pic || CASE_VECTOR_PC_RELATIVE)
 
 /* The maximum number of bytes that a single instruction can move quickly from
    memory to memory.  */
