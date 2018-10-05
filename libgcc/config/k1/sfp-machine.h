@@ -3,6 +3,8 @@
  */
 #ifdef __CLUSTER_OS__
 #include "config/k1/cos/sfp-machine.h"
+#elif linux == 1
+#include "config/k1/linux/sfp-machine.h"
 #else
 #include "config/k1/elf/sfp-machine.h"
 #endif
