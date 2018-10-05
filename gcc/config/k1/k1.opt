@@ -36,10 +36,6 @@ m32
 Target Report Mask(32)
 Use 32 bits pointers.
 
-mgprel
-Target Report Mask(GPREL)
-Enable use of Global Pointer relative data
-
 mlocal-sdata
 Target Report Var(TARGET_LOCAL_SDATA) Init(0)
 Enable use of small data for local objects

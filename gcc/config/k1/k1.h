@@ -836,11 +836,6 @@ int k1_adjust_insn_length (rtx insn, int length);
 
 /* ********** Miscellaneous Parameters ********** */
 
-/* Default Small Data treshold to -G 8 */
-#ifndef K1C_DEFAULT_GVALUE
-#define K1C_DEFAULT_GVALUE 8
-#endif
-
 /* An alias for a machine mode name.  This is the machine mode that elements of
    a jump-table should have.  */
 #define CASE_VECTOR_MODE Pmode
