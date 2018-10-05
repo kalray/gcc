@@ -208,6 +208,9 @@ v850*-*-*)
 tic6x-*-*)
 	cpu_type=c6x
 	;;
+k1-*-*)
+	cpu_type=k1
+	;;
 esac
 
 # Common parts for widely ported systems.
