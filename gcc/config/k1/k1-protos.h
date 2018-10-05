@@ -38,6 +38,7 @@ extern int k1_starting_frame_offset (void);
 extern int k1_hard_regno_mode_ok (unsigned regno, enum machine_mode mode);
 extern void k1_output_load_multiple (rtx *operands);
 
+extern void k1_expand_tablejump (rtx op0, rtx op1);
 extern void k1_expand_call (rtx fnaddr, rtx arg, rtx retval, bool sibcall);
 
 extern rtx k1_return_addr_rtx (int count, rtx frameaddr);
@@ -74,6 +75,8 @@ extern void k1_expand_mov_constant (rtx operands[]);
 extern rtx k1_find_or_create_SC_register (rtx curr_insn, rtx low, rtx high);
 
 extern bool k1_legitimate_pic_operand_p (rtx x);
+
+extern bool k1_legitimate_pic_symbolic_ref_p (rtx op);
 
 extern bool k1_legitimate_modulo_addressing_p (rtx x, bool strict);
 
@@ -114,6 +117,7 @@ extern HOST_WIDE_INT k1_initial_elimination_offset (int, int);
  */
 enum k1_symbol_type
 {
+  LABEL_PCREL_ABSOLUTE,
   SYMBOL_ABSOLUTE,
   SYMBOL_GOT,
   SYMBOL_GOTOFF,
