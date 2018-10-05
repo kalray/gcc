@@ -21,12 +21,6 @@ along with GCC; see the file COPYING3.  If not see
 #ifndef K1_PROTOS_H
 #define K1_PROTOS_H
 
-#ifndef _K1_REGS
-#define _K1_REGS
-#error This is dubious.
-//#include "k1b-registers.h"
-#endif
-
 #ifdef HAVE_ATTR_arch
 extern enum attr_arch k1_arch_schedule;
 #endif
