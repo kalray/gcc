@@ -1,26 +1,4 @@
-## FIXME AUTO: make sense of all this libgcc
-## It's not clear why we need to provide our own version
-## of these functions.
-
-# Software emulation for integer div and mod
-LIB2FUNCS_EXCLUDE = _umoddi3 _udivdi3 _moddi3 _divdi3
-##_umodsi3 _udivsi3 _modsi3 _divsi3 \
-
 ## this one is a copy-pasta of libgcc divmodsi4 function adapted for 64bits int.
-LIB2ADD = $(srcdir)/config/k1/udivmoddi4.c
-
-##$(srcdir)/config/k1/udivmodsi4.c \
-#              $(srcdir)/config/k1/__invf.S 
-
-#              # $(srcdir)/config/k1/dual_divf.S \
-
-# LIB2ADD_ST += $(if $(findstring k1b, $(MULTISUBDIR)), \
-#              $(srcdir)/config/k1/support_lib/fast_dirty_nearbyintf.c \
-#              $(srcdir)/config/k1/support_lib/ml_multi_prec_lib.c \
-#              $(srcdir)/config/k1/support_lib/ml_utils.c \
-#              $(srcdir)/config/k1/support_lib/k1/k1a_utils.c \
-#              $(srcdir)/config/k1/support_lib/k1/k1b_utils.c \
-#              $(srcdir)/config/k1/divdf3.c, )
-
-# LIB1ASMFUNCS = $(if $(findstring k1v1,$(MULTISUBDIR)),,_divsf3)
-# LIB1ASMSRC = $(if $(findstring k1v1,$(MULTISUBDIR)),,k1/divsf3.S)
+## Looks like libgcc makes the assumption that these are handled by
+## the hw, which is not the case on k1.
+LIB2ADD += $(srcdir)/config/k1/udivmoddi4.c
