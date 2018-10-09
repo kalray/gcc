@@ -2312,18 +2312,15 @@ iq2000*-*-elf*)
 k1-*-elf*)
 	tm_file="${tm_file} elfos.h dbxelf.h k1/k1-elf.h newlib-stdint.h"
 	tmake_file="k1/t-k1 k1/t-elf"
-	extra_headers="float-k1-elf.h"
 	;;
 k1-*-cos*)
 	tm_file="${tm_file} elfos.h dbxelf.h k1/k1-cos.h newlib-stdint.h"
 	tmake_file="k1/t-k1 k1/t-cos"
-	extra_headers="float-k1-cos.h"
 	extra_options="${extra_options} k1/k1-cos.opt"
 	;;
 k1-*-linux-uclibc)
 	tm_file="${tm_file} elfos.h dbxelf.h gnu-user.h linux.h k1/k1-linux.h glibc-stdint.h"
 	tmake_file="t-linux k1/t-linux t-glibc"
-	extra_headers="float-k1-linux.h"
 	;;
 lm32-*-elf*)
         tm_file="dbxelf.h elfos.h ${tm_file} newlib-stdint.h"
