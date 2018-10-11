@@ -1,17 +1,8 @@
-;; (define_predicate "lt_k1b"
-;;   (match_test "k1_architecture () < K1B")
-;; )
-
-;; (define_predicate "ge_k1b"
-;;   (match_test "k1_architecture () >= K1B")
-;; )
-
 (define_predicate "nonmemory64_register32_d_operand"
    (match_code "const,const_int,reg,subreg,mem,symbol_ref,label_ref")
 {
 	return nonmemory_operand (op,mode);
 })
-
 
 (define_predicate "k1_zero"
   (and (match_code "const_int")

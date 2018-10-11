@@ -149,46 +149,6 @@ struct GTY (()) machine_function
   /* vec<fake_SC_t,va_gc> *fake_SC_registers; */
 };
 
-/* K1 frame info
-
-     +-------------------------------+
-     |                               |
-     |  incoming stack arguments     |
-     +-------------------------------+
-     |                               | <----CALLER FRAME
-     | scratch area                  |
-     |                       +-------------------------------+
- /-->+-----------------------|                               |
- |                           |  callee-allocated save area   |
- |                           |  for register varargs         |
-initial stack pointer        |                               |
-			     +-------------------------------+ <---- frame
-pointer / arg pointer |            padding            |
-			     +-------------------------------+
-			     |                               |
-			     | local variable                |
-			     |                               |
-			     +-------------------------------+
-			     |                               |
-			     | callee-saved register         |
-			     |                               |
-			     +-------------------------------+
-			     | RA                            |
-			     +-------------------------------+
-			     | dynamic allocation            |
-			     +-------------------------------+
-			     |                               |
-			     | outgoing stack arguments      |
-			     |                               |
-			     +-------------------------------+
-			     |                               | ^
-			     | scratch area                  | |
-STACK_POINTER_OFFSET (K1C_SCRATCH_AREA_SIZE) |                               | v
-			     +-------------------------------+ <---- stack
-pointer
-
- */
-
 /*
 
 		  +---------------+
@@ -431,11 +391,7 @@ static bool
 k1_target_legitimate_address_p (enum machine_mode ATTRIBUTE_UNUSED mode, rtx x,
 				bool strict);
 
-static rtx k1_target_legitimize_pic_address (rtx orig, rtx reg);
-
-static bool k1_has_gprel (rtx x);
-
-static rtx k1_legitimize_gp_address (rtx x, rtx reg);
+bool k1_legitimate_pic_symbolic_ref_p (rtx op);
 
 static bool k1_legitimate_constant_p (enum machine_mode mode ATTRIBUTE_UNUSED,
 				      rtx x);
@@ -570,25 +526,6 @@ k1_needs_symbol_reloc (rtx x)
 {
   return for_each_rtx (&x, &k1_needs_symbol_reloc_1, NULL);
 }
-
-static int
-k1_needs_gp_symbol_reloc (rtx x, rtx **sym)
-{
-  rtx *s;
-  int res;
-
-  res = for_each_rtx (&x, &k1_needs_symbol_reloc_1, &s);
-  if (res && sym)
-    *sym = s;
-
-  return res;
-}
-
-/* static int */
-/* k1_has_symbol_or_label (rtx *x, void *dummy) */
-/* { */
-/*   return GET_CODE (*x) == SYMBOL_REF || GET_CODE (*x) == LABEL_REF; */
-/* } */
 
 static int
 k1_has_unspec_reference (rtx x)
@@ -1719,51 +1656,6 @@ k1_target_print_operand (FILE *file, rtx x, int code)
     }
 }
 
-#if 0
-/* AP: seems it's not used anymore */
-static rtx
-un_unpsec(rtx x) {
-    if (GET_CODE (x) == UNSPEC) {
-        switch(XINT (x, 1)) {
-          case UNSPEC_TLS:
-            x = XVECEXP (x, 0, 0);
-            break;
-/* leave those -- handled by OUTPUT_ADDR_CONST_EXTRA macro */
-          case UNSPEC_PIC:
-          case UNSPEC_GOT:
-          case UNSPEC_GOTOFF:
-            break;
-          default:
-            gcc_unreachable();
-            break;
-        }
-    } else if (GET_CODE (x) == PLUS) {
-        XEXP (x, 0) = un_unpsec (XEXP (x, 0));
-        XEXP (x, 1) = un_unpsec (XEXP (x, 1));
-    } else if (GET_CODE (x) == CONST) {
-        XEXP (x, 0) = un_unpsec (XEXP (x, 0));
-    }
-
-    return x;
-}
-
-/*FBT: un_unspec IS important */
-static rtx
-un_unspec(rtx x) {
-    if (GET_CODE (x) == UNSPEC) {
-        gcc_assert (XINT (x, 1) == UNSPEC_TLS);
-        x = XVECEXP (x, 0, 0);
-    } else if (GET_CODE (x) == PLUS) {
-        XEXP (x, 0) = un_unspec (XEXP (x, 0));
-        XEXP (x, 1) = un_unspec (XEXP (x, 1));
-    } else if (GET_CODE (x) == CONST) {
-        XEXP (x, 0) = un_unspec (XEXP (x, 0));
-    }
-
-    return x;
-}
-#endif
-
 static const char *
 k1_regname (rtx x)
 {
@@ -2520,31 +2412,6 @@ k1_expand_mov_constant (rtx operands[])
   /*   } */
   return;
 }
-
-/* This expander may be needed later. */
-/* bool */
-/* k1_expand_mov (rtx operands[]) */
-/* { */
-/*     if (k1_has_tls_reference (operands[1])) */
-/*       { */
-/*         rtx src = operands[1]; */
-/*         operands[1] = k1_legitimize_tls_reference (src); */
-/*         gcc_assert (operands[1] != src); */
-/*       } */
-/*     else if (!register_operand (operands[0], GET_MODE(operands[0]))) */
-/*       operands[1] = force_reg (GET_MODE(operands[0]), operands[1]); */
-/*     else if (flag_pic /\* || TARGET_FDPIC *\/) */
-/*       { */
-/*         if (SYMBOLIC_CONST(operands[1])) */
-/*           operands[1] = k1_target_legitimize_pic_address (operands[1],
- * operands[0]); */
-/*       } */
-/*     else if (TARGET_GPREL) { */
-/*       operands[1] = k1_legitimize_gp_address(operands[1], operands[0]); */
-/*     } */
-
-/*     return false; */
-/* } */
 
 static int
 k1_target_register_move_cost (enum machine_mode mode,
@@ -7823,9 +7690,6 @@ k1_target_legitimize_address (rtx x, rtx oldx ATTRIBUTE_UNUSED,
 {
   if (k1_has_tls_reference (x))
     return k1_legitimize_tls_reference (x);
-  /* else if (k1_has_gprel(x)) { */
-  /*   return k1_legitimize_gp_address (x, NULL); */
-  /* }  */
   else if (GET_CODE (x) == PLUS
 	   && (GET_CODE (XEXP (x, 0)) == MULT
 	       || GET_CODE (XEXP (x, 0)) == ZERO_EXTEND))
