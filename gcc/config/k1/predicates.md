@@ -48,21 +48,21 @@
 (define_predicate "jump_operand"
   (match_code "mem")
 {
-/* Weak symbols can be resolved to 0 and thus generate long branches that
-   don't fit in our 27 bits offsets. Calls to a function which declaration
-   has the 'farcall' attribute must also use indirect calls.
-   Reject weak symbols and 'farcall's here and handle that case
-   in the call expanders to generate indirect calls for weak references. */
+  /* Weak symbols can be resolved to 0 and thus generate long branches that
+     don't fit in our 27 bits offsets. Calls to a function which declaration
+     has the 'farcall' attribute must also use indirect calls.
+     Reject weak symbols and 'farcall's here and handle that case
+     in the call expanders to generate indirect calls for weak references. */
 
-        bool farcall = false;
-        if (GET_CODE(XEXP(op, 0)) == SYMBOL_REF
-	    && SYMBOL_REF_FUNCTION_P(XEXP(op, 0))
-            && SYMBOL_REF_DECL(XEXP(op,0)) != NULL_TREE){
-          farcall = lookup_attribute ("farcall", DECL_ATTRIBUTES(SYMBOL_REF_DECL(XEXP(op,0)))) != NULL;
-        }
-        return  !farcall && (GET_CODE (XEXP (op, 0)) == LABEL_REF 
-                             || (GET_CODE (XEXP (op, 0)) == SYMBOL_REF
-                                 && !SYMBOL_REF_WEAK (XEXP (op, 0))));
+  bool farcall = K1_FARCALL;
+  if (!farcall && (GET_CODE(XEXP(op, 0)) == SYMBOL_REF
+		   && SYMBOL_REF_FUNCTION_P(XEXP(op, 0))
+		   && SYMBOL_REF_DECL(XEXP(op,0)) != NULL_TREE))
+    farcall = lookup_attribute ("farcall", DECL_ATTRIBUTES(SYMBOL_REF_DECL(XEXP(op,0)))) != NULL;
+
+  return  !farcall && (GET_CODE (XEXP (op, 0)) == LABEL_REF
+		       || (GET_CODE (XEXP (op, 0)) == SYMBOL_REF
+			   && !SYMBOL_REF_WEAK (XEXP (op, 0))));
 })
 
 (define_special_predicate "k1_branch_comparison_operator"
@@ -83,6 +83,43 @@
 	return true;
 })
 
+;; Immediate suitable for PIC code (insn must have corresponding
+;; relocation)
+(define_predicate "k1_imm_pic_operand"
+  (ior (match_code "const_int")
+       (match_test "k1_legitimate_pic_symbolic_ref_p(op)")))
+
+;; Operand valid as the 2nd/2 op of an ALU insn (make, …)
+(define_predicate "k1_make_int_operand"
+ (ior (and (match_test "!flag_pic")
+           (match_operand 0 "immediate_operand"))
+      (match_code "const_int")
+      (match_test "k1_legitimate_pic_symbolic_ref_p(op)"))
+)
+
+(define_predicate "k1_make_float_operand"
+      (match_code "const_double"))
+
+;; Operand valid as the 3rd/3 op of an ALU insn (add*, sbf*, …)
+(define_predicate "k1_alu_op3_operand"
+ (ior (and (match_test "!flag_pic")
+           (match_operand 0 "nonmemory_operand"))
+      (match_code "const_int")
+      (match_operand 0 "register_operand")
+      (match_test "k1_legitimate_pic_symbolic_ref_p(op)"))
+)
+
+(define_predicate "k1_imm_float_operand"
+   (match_code "const_double"))
+
+;; Operand valid as the 3rd op of an MAU insn (mul*, …)
+(define_predicate "k1_mau_op3_operand"
+ (ior (and (match_test "!flag_pic")
+           (match_operand 0 "nonmemory_operand"))
+      (match_code "const_int")
+      (match_operand 0 "register_operand")
+      (match_test "k1_legitimate_pic_symbolic_ref_p(op)")))
+
 (define_predicate "k1_symbol_operand"
   (match_code "symbol_ref,label_ref,const,unspec")
 {
@@ -100,23 +137,11 @@
 
     case UNSPEC:
       if (XINT (op, 1) == UNSPEC_GOTOFF
-       	  && GET_CODE (XVECEXP (op, 0, 0)) == PLUS)
-	{
-	  rtx op1 = XEXP (XVECEXP (op, 0, 0), 0);
-	  rtx op2 = XEXP (XVECEXP (op, 0, 0), 1);
-
-	  if (!CONST_INT_P (op2)){
-	       if (k1_symbol_operand(op2, mode) 
-	           || !immediate_operand(op2, mode)) {
-	           return false;
-	       }
-	    }
-
-	  if (GET_CODE(op1) == SYMBOL_REF
-	      || GET_CODE(op1) == LABEL_REF )
-	     return true;
-        }
+          || XINT (op, 1) == UNSPEC_GOT
+          || XINT (op, 1) == UNSPEC_PCREL)
+	  return true;
       break;
+
     case CONST:
       /* We also may accept the offsetted memory references in certain
 	 special cases.  */
@@ -127,42 +152,9 @@
       if (GET_CODE (XEXP (op, 0)) == UNSPEC
           && (XINT (XEXP (op, 0), 1) == UNSPEC_GOT
               || XINT (XEXP (op, 0), 1) == UNSPEC_PCREL
-              || XINT (XEXP (op, 0), 1) == UNSPEC_GOTOFF)
-	  && k1_symbol_operand(XVECEXP (XEXP (op, 0), 0, 0), mode))
+              || XINT (XEXP (op, 0), 1) == UNSPEC_GOTOFF))
 	return true;
 
-	// switch ()
-	//   {
-	//   case UNSPEC_TLS:
-	//     return true;
-	//   default:
-	//     break;
-	//   }
-
-      if (GET_CODE (XEXP (op, 0)) == PLUS)
-	{
-	  rtx op1 = XEXP (XEXP (op, 0), 0);
-	  rtx op2 = XEXP (XEXP (op, 0), 1);
-
-	  if (!CONST_INT_P (op2))
-	    return false;
-
-//	  offset = trunc_int_for_mode (INTVAL (op2), DImode);
-	  if (GET_CODE(op1) == SYMBOL_REF
-	      || GET_CODE(op1) == LABEL_REF)
-	     return true;
-	  // switch (GET_CODE (op1))
-	  //   {
-	  //   case SYMBOL_REF:
-	  //     return true;
-
-	  //   case LABEL_REF:
-	  // 	return true;
-
-	  //   default:
-	  //     break;
-	  //   }
-	}
       break;
 
       default:
@@ -172,28 +164,11 @@
   return false;
 })
 
-
-/* When reloading (subreg:SI (reg:DI) xxx) reload will sometimes generate 
-   (subreg:SI (concatn:DI ...) xxx). This will get cleaned up in
-   cleanup_subreg_operands, but the pattern needs to be accepted as the 
-   instruction will be extract_insn'd first.  */
-/* FIXME AUTO: should not be needed anymore as we won't play with subreg«
-/*(define_predicate "movsi_operand"
-   (match_code "const,const_int,reg,subreg,mem,symbol_ref,label_ref")
-{
-	return general_operand (op,mode) 
-               || immediate_operand (op, VOIDmode)
-               || (GET_CODE (op) == SUBREG
-                   && GET_CODE (SUBREG_REG (op)) == CONCATN);
-})
-*/
-
-
-(define_predicate "shift_operand"
+(define_predicate "sat_shift_operand"
   (match_code "const_int,reg,subreg")
 {
-	return	nonmemory_operand(op, mode) 
-	   && (!CONST_INT_P (op) 
+	return	nonmemory_operand(op, mode)
+	   && (!CONST_INT_P (op)
                 || (INTVAL (op) >= 0 && INTVAL (op) < (1<<6)));
 })
 
