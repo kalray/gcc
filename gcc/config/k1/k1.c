@@ -491,32 +491,17 @@ k1_has_unspec_reference_1 (rtx *x, void *data ATTRIBUTE_UNUSED)
 }
 
 static int
-k1_needs_symbol_reloc_1 (rtx *x, void *gprel)
+k1_needs_symbol_reloc_1 (rtx *x, void *data ATTRIBUTE_UNUSED)
 {
-  rtx **sym = (rtx **) gprel;
-
-  if (k1_has_unspec_reference_1 (x, gprel))
+  if (k1_has_unspec_reference_1 (x, NULL))
     return -1;
 
-  if (!gprel)
-    {
-      /* One could believe that we should filter out functions here,
-	 but it's not true. Function calls won't use
-	 legitimate_constant_p, and other uses of function addresses
-	 need to go through the GOT (think about comparing
-	 function poitners). */
-      return GET_CODE (*x) == SYMBOL_REF;
-    }
-  else
-    {
-      int res = GET_CODE (*x) == SYMBOL_REF && !SYMBOL_REF_FUNCTION_P (*x)
-		&& !(SYMBOL_REF_DECL (*x)
-		     && (decl_readonly_section (SYMBOL_REF_DECL (*x), 0)
-			 || TREE_READONLY (SYMBOL_REF_DECL (*x))));
-      if (res)
-	*sym = x;
-      return res;
-    }
+  /* One could believe that we should filter out functions here,
+     but it's not true. Function calls won't use
+     legitimate_constant_p, and other uses of function addresses
+     need to go through the GOT (think about comparing
+     function poitners). */
+  return GET_CODE (*x) == SYMBOL_REF;
 }
 
 static int
