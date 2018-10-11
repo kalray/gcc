@@ -9,8 +9,9 @@
      "64bits System register constraint.")
 
 (define_constraint "S"
-  "A symbol operand"
-  (match_test "k1_symbol_operand(op,mode)"))
+  "An immediate or symbol operand"
+  (ior (match_code "const_double,const_int")
+       (match_test "k1_symbol_operand(op,mode)")))
 
 (define_constraint "U02"
   "An unsigned 2-bit constant."
