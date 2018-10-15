@@ -38,11 +38,6 @@ enum k1_abi_type
 #define K1_ABI_DEFAULT K1_ABI_LP64
 #endif
 
-//#define K1C_SCRATCH_AREA_SIZE 16
-
-// FIXME AUTO: aarch64 uses a reg class for stack register. Maybe do the same ?
-
-// FIXME AUTO: Coolidge: what is this MDS+1 register.
 #define TEST_REGNO(R, TEST, VALUE, STRICT)                                     \
   ((!(STRICT) && R >= FIRST_PSEUDO_REGISTER) || (R TEST VALUE)                 \
    || (reg_renumber && ((unsigned) reg_renumber[R] TEST VALUE)))
@@ -54,11 +49,6 @@ enum k1_abi_type
 #define IS_GENERAL_REGNO(num, strict)                                          \
   (TEST_REGNO (num, <, 64, strict)                                             \
    || TEST_REGNO (num, ==, (K1C_MDS_REGISTERS + 1), strict))
-
-/* Do not use Transactionnal Memory as it makes the linux
- * build fail */
-// FIXME AUTO COOLIDGE disable atypical define
-//#define USE_TM_CLONE_REGISTRY 0
 
 #define NO_IMPLICIT_EXTERN_C
 
