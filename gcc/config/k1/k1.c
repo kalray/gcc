@@ -423,23 +423,6 @@ struct k1_address
   int mod;
 };
 
-/* A processor implementing K1.  */
-// FIXME FOR COOLIDGE
-struct processor
-{
-  const char *const name;
-  //  enum aarch64_processor core;
-  const char *arch;
-  const unsigned long flags;
-  /* const struct tune_params *const tune; */
-};
-
-/* Target specification.  These are populated as commandline arguments
-   are processed, or NULL if not specified.  */
-static const struct processor *selected_arch;
-static const struct processor *selected_cpu;
-// static const struct processor *selected_tune;
-
 static int
 k1_tls_symbol_ref_1 (rtx *x, void *data ATTRIBUTE_UNUSED)
 {
