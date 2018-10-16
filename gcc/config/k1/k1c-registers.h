@@ -161,7 +161,7 @@ extern enum k1c_abi k1c_cur_abi;
     "res3", "ev4", "men", "pmsa", "aespc", "pm0", "pm1", "pm2", "pm3", "pmc",  \
     "sr0", "sr1", "sr2", "t0v", "t1v", "t0r", "t1r", "tcr", "wdc", "wdr",      \
     "ile", "ill", "ilh", "mmc", "tel", "teh", "dv", "oce0", "oce1", "ocec",    \
-    "ocea", "es", "ilr", "mes", "ws", "???", "???", "???", "???", "???",       \
+    "ocea", "es", "ilr", "ws", "mes", "???", "???", "???", "???", "???",       \
     "???", "???", "???", "???", "???",
 
 #define K1C_K1C_GRF_REGISTER_NAMES                                             \
@@ -188,7 +188,7 @@ extern enum k1c_abi k1c_cur_abi;
     "men", "pmsa", "aespc", "pm0", "pm1", "pm2", "pm3", "pmc", "sr0", "sr1",   \
     "sr2", "t0v", "t1v", "t0r", "t1r", "tcr", "wdc", "wdr", "ile", "ill",      \
     "ilh", "mmc", "tel", "teh", "dv", "oce0", "oce1", "ocec", "ocea", "es",    \
-    "ilr", "mes", "ws",
+    "ilr", "ws", "mes",
 
 #define K1C_ADJUST_REGISTER_NAMES                                              \
   if (TARGET_K1C)                                                              \
