@@ -7043,27 +7043,6 @@ k1_is_uncached_mem_op (rtx op)
   return MEM_P (op) && MEM_ADDR_SPACE (op) == K1_ADDR_SPACE_UNCACHED;
 }
 
-int
-k1_adjust_insn_length (rtx insn, int length)
-{
-  rtx mem = 0;
-
-  insn = PATTERN (insn);
-
-  if (GET_CODE (insn) != SET)
-    return length;
-
-  if (GET_CODE (SET_SRC (insn)) == MEM)
-    mem = SET_SRC (insn);
-  else if (GET_CODE (SET_DEST (insn)) == MEM)
-    mem = SET_DEST (insn);
-
-  if (!mem)
-    return length;
-
-  return k1_has_big_immediate (mem) ? 8 : 4;
-}
-
 static int
 k1_uses_register_1 (rtx *x, void *data ATTRIBUTE_UNUSED)
 {
