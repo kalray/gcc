@@ -692,10 +692,6 @@ extern void k1_profile_hook (void);
 
 #define NO_FUNCTION_CSE
 
-#define ADJUST_INSN_LENGTH(insn, length)                                       \
-  (length) = k1_adjust_insn_length ((insn), (length))
-int k1_adjust_insn_length (rtx insn, int length);
-
 #define MEMORY_MOVE_COST(mode, class, in) (in ? 6 : 4)
 
 #define BRANCH_COST(speed, predictable) 4
