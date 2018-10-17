@@ -382,81 +382,9 @@ enum k1_abi_type
 #define DWARF2_UNWIND_INFO 1
 #define DWARF2_ASM_LINE_DEBUG_INFO 1
 
-/* #undef PREFERRED_DEBUGGING_TYPE */
-/* #define PREFERRED_DEBUGGING_TYPE DWARF2_DEBUG */
-
-/* A C expression whose value is RTL representing the location of the
-   incoming return address at the beginning of any function, before
-   the prologue. This RTL is either a REG, indicating that the return
-   value is saved in `REG', or a MEM representing a location in the
-   stack.
-
-   You only need to define this macro if you want to support call
-   frame debugging information like that provided by DWARF 2.
-
-   If this RTL is a REG, you should also define
-   DWARF_FRAME_RETURN_COLUMN to DWARF_FRAME_REGNUM (REGNO). */
 #define INCOMING_RETURN_ADDR_RTX gen_rtx_REG (Pmode, K1C_RETURN_POINTER_REGNO)
 
-#define DBX_REGISTER_NUMBER(NUM) (NUM)
-
-// FIXME AUTO: Add DWARF_FRAME_REGNUM macro, untested, unsure.
-//#define DWARF_FRAME_REGNUM(REGNO) DBX_REGISTER_NUMBER(REGNO)
-
 #define DWARF_FRAME_RETURN_COLUMN DBX_REGISTER_NUMBER (K1C_RETURN_POINTER_REGNO)
-
-/* MPPA has a 16bytes scratch area that can be seen as
-   a pre-allocated frame area, making the initial SP offseted */
-//#define INCOMING_FRAME_SP_OFFSET (K1C_SCRATCH_AREA_SIZE)
-
-/* A C expression whose value is an integer giving the offset, in
-   bytes, from the argument pointer to the canonical frame address
-   (cfa). The final value should coincide with that calculated by
-   INCOMING_FRAME_SP_OFFSET. Which is unfortunately not usable during
-   virtual register instantiation.
-
-   The default value for this macro is FIRST_PARM_OFFSET (fundecl) +
-   crtl->args.pretend_args_size, which is correct for most machines;
-   in general, the arguments are found immediately before the stack
-   frame. Note that this is not the case on some targets that save
-   registers into the caller's frame, such as SPARC and rs6000, and so
-   such targets need to define this macro.
-
-   You only need to define this macro if the default is incorrect, and
-   you want to support call frame debugging information like that
-   provided by DWARF 2. */
-// FIXME AUTO: disabled for coolidge
-//#define ARG_POINTER_CFA_OFFSET(funcdecl) K1C_SCRATCH_AREA_SIZE +
-//crtl->args.pretend_args_size + (cfun->stdarg && crtl->args.info <
-//K1C_ARG_REG_SLOTS ? UNITS_PER_WORD * ((K1C_ARG_REG_SLOTS - crtl->args.info +
-//1) & ~1) : 0)
-
-/* This macro need only be defined if the target might save registers
-   in the function prologue at an offset to the stack pointer that is
-   not aligned to UNITS_PER_WORD. The definition should be the
-   negative minimum alignment if STACK_GROWS_DOWNWARD is true, and the
-   positive minimum alignment otherwise. See SDB and DWARF. Only
-   applicable if the target supports DWARF 2 frame unwind
-   information. */
-
-#define DWARF_CIE_DATA_ALIGNMENT (-4) //(TARGET_64 ? 8 : 4))
-
-/* If defined, a C expression whose value is an integer giving the
-   offset in bytes from the frame pointer to the canonical frame
-   address (cfa). The final value should coincide with that calculated
-   by INCOMING_FRAME_SP_OFFSET.
-
-   Normally the CFA is calculated as an offset from the argument
-   pointer, via ARG_POINTER_CFA_OFFSET, but if the argument pointer is
-   variable due to the ABI, this may not be possible. If this macro is
-   defined, it implies that the virtual register instantiation should
-   be based on the frame pointer instead of the argument pointer. Only
-   one of FRAME_POINTER_CFA_OFFSET and ARG_POINTER_CFA_OFFSET should
-   be defined. */
-/* #define FRAME_POINTER_CFA_OFFSET(func) K1C_SCRATCH_AREA_SIZE +
- * crtl->args.pretend_args_size + (cfun->stdarg && crtl->args.info <
- * K1C_ARG_REG_SLOTS ? UNITS_PER_WORD * ((K1C_ARG_REG_SLOTS - crtl->args.info +
- * 1) & ~1) : 0) */
 
 #define STACK_POINTER_REGNUM K1C_STACK_POINTER_REGNO
 
@@ -466,19 +394,6 @@ enum k1_abi_type
 #define HARD_FRAME_POINTER_REGNUM K1C_FRAME_POINTER_REGNO
 
 #define ARG_POINTER_REGNUM FRAME_POINTER_REGNUM
-
-/* Register numbers used for passing a function's static chain
-   pointer. If register windows are used, the register number as seen
-   by the called function is STATIC_CHAIN_INCOMING_REGNUM, while the
-   register number as seen by the calling function is
-   STATIC_CHAIN_REGNUM. If these registers are the same,
-   STATIC_CHAIN_INCOMING_REGNUM need not be defined.
-
-   The static chain register need not be a fixed register.
-
-   If the static chain is passed in memory, these macros should not be
-   defined; instead, the TARGET_STATIC_CHAIN hook should be used. */
-/* #define STATIC_CHAIN_REGNUM K1C_STATIC_POINTER_REGNO */
 
 /* ********** Elimination ********** */
 #define ELIMINABLE_REGS                                                        \
@@ -698,24 +613,6 @@ extern void k1_profile_hook (void);
 
 /* ********** PIC ********** */
 
-/* The register number of the register used to address a table of
-   static data addresses in memory. In some cases this register is
-   defined by a processor's “application binary interface” (ABI). When
-   this macro is defined, RTL is generated for this register once, as
-   with the stack pointer and frame pointer registers. If this macro
-   is not defined, it is up to the machine-dependent files to allocate
-   such a register (if necessary). Note that this register must be
-   fixed when in use (e.g. when flag_pic is true). */
-/* #define PIC_OFFSET_TABLE_REGNUM				\ */
-/*   (!flag_pic ? INVALID_REGNUM				\ */
-/*    : reload_completed ? REGNO(pic_offset_table_rtx)	\ */
-/*    :K1C_GLOBAL_POINTER_REGNO) */
-
-/* Define this macro if the register defined by
-   PIC_OFFSET_TABLE_REGNUM is clobbered by calls. Do not define this
-   macro if PIC_OFFSET_TABLE_REGNUM is not defined. */
-/* #define PIC_OFFSET_TABLE_REG_CALL_CLOBBERED 1 */
-
 #define GOT_SYMBOL_NAME "*_GLOBAL_OFFSET_TABLE_"
 
 /* ********** Sections ********** */
@@ -723,11 +620,6 @@ extern void k1_profile_hook (void);
 #define TEXT_SECTION_ASM_OP "\t.text"
 #define DATA_SECTION_ASM_OP "\t.data"
 #define BSS_SECTION_ASM_OP "\t.section .bss"
-/* A C expression whose value is a string containing the assembler operation to
-   switch to the fixup section that records all initialized pointers in a -fpic
-   program so they can be changed program startup time if the program is loaded
-   at a different address than linked for.  */
-#define FIXUP_SECTION_ASM_OP "\t.section .rofixup,\"a\""
 
 /* ********** Assembler Output ********** */
 
