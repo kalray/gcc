@@ -97,9 +97,6 @@
       (match_test "k1_legitimate_pic_symbolic_ref_p(op)"))
 )
 
-(define_predicate "k1_make_float_operand"
-      (match_code "const_double"))
-
 ;; Operand valid as the 3rd/3 op of an ALU insn (add*, sbf*, …)
 (define_predicate "k1_alu_op3_operand"
  (ior (and (match_test "!flag_pic")
@@ -123,7 +120,11 @@
 (define_predicate "k1_symbol_operand"
   (match_code "symbol_ref,label_ref,const,unspec")
 {
-  switch (GET_CODE (op))
+  rtx base, offset;
+  split_const (op, &base, &offset);
+
+  /* Allow for (const (plus (sym) (const_int offset)) */
+  switch (GET_CODE (base))
     {
     case SYMBOL_REF:
       /* TLS symbols are not constant.  */
@@ -136,28 +137,14 @@
       return true;
 
     case UNSPEC:
-      if (XINT (op, 1) == UNSPEC_GOTOFF
-          || XINT (op, 1) == UNSPEC_GOT
-          || XINT (op, 1) == UNSPEC_PCREL)
+      if (XINT (base, 1) == UNSPEC_GOTOFF
+          || XINT (base, 1) == UNSPEC_GOT
+          || XINT (base, 1) == UNSPEC_PCREL
+          || XINT (base, 1) == UNSPEC_TLS)
 	  return true;
       break;
 
-    case CONST:
-      /* We also may accept the offsetted memory references in certain
-	 special cases.  */
-      if (GET_CODE (XEXP (op, 0)) == UNSPEC
-          && XINT (XEXP (op, 0), 1) == UNSPEC_TLS)
-	return true;
-
-      if (GET_CODE (XEXP (op, 0)) == UNSPEC
-          && (XINT (XEXP (op, 0), 1) == UNSPEC_GOT
-              || XINT (XEXP (op, 0), 1) == UNSPEC_PCREL
-              || XINT (XEXP (op, 0), 1) == UNSPEC_GOTOFF))
-	return true;
-
-      break;
-
-      default:
+    default:
 	gcc_unreachable ();
     }
 
@@ -270,24 +257,13 @@
   (ior (match_operand 0 "register_operand")
        (match_test "satisfies_constraint_U32(op)")))
 
-(define_predicate "system_register32_operand"
-  (match_code "reg")
-{
-	return	(TARGET_32 && (REGNO_REG_CLASS (REGNO (op)) == SRF_REGS)) || (!TARGET_32 && ((REGNO_REG_CLASS (REGNO (op)) == SRF32_REGS))) ;
-})
-
-(define_predicate "system_register64_operand"
-  (match_code "reg")
-{
-	return	(!TARGET_32 && ((REGNO_REG_CLASS (REGNO (op)) == SRF64_REGS))) ;
-})
-
 (define_predicate "system_register_operand"
   (match_code "reg")
 {
-	return	(REGNO_REG_CLASS (REGNO (op)) == SRF_REGS) || (((REGNO_REG_CLASS (REGNO (op)) == SRF32_REGS) ||(REGNO_REG_CLASS (REGNO (op)) == SRF64_REGS))) ;
+  return (REGNO_REG_CLASS (REGNO (op)) == SRF_REGS)
+          || REGNO_REG_CLASS (REGNO (op)) == SRF32_REGS
+	  || REGNO_REG_CLASS (REGNO (op)) == SRF64_REGS ;
 })
-
 
 ;; Return true if VALUE can be stored in the zero extended 32bits immediate field.
 (define_predicate "k1_unsigned32_immediate_operand"
