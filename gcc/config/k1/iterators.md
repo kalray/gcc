@@ -52,9 +52,6 @@
 
 (define_mode_iterator P [(SI "Pmode == SImode") (DI "Pmode == DImode")])
 
-(define_mode_attr SRFSIZE [(SI "R32") (DI "R64")])
-(define_mode_attr SRFSIZEp [(SI "32") (DI "64")])
-
 (define_code_iterator cb_cond [eq ne gt ge lt le])
 (define_mode_iterator SIDI [SI DI])
 
@@ -93,4 +90,17 @@
 (define_mode_attr regclass [(SI "r") (DI "r")])
 (define_mode_attr size [(SI "4") (DI "8")])
 
+;; isns length for materializing a symbol depending on pointer size,
+;; using make insn. Alternatives using these should only be enable for valid modes: SI or DI.
+;; Anything else is an error.
+(define_mode_attr symlen1 [(SI "_x") (DI "_y") (QI "") (HI "") (SF "") (DF "")])
+(define_mode_attr symlen2 [(SI "8") (DI "12") (QI "999") (HI "999") (SF "999") (DF "999")])
+
+
 (define_mode_attr sbfx_resrv [(SI "tiny") (DI "alud_lite")])
+
+(define_attr "disabled" "yes,no" (const_string "no"))
+
+(define_attr "enabled" ""
+  (cond [(eq_attr "disabled" "yes") (const_int 0)]
+        (const_int 1)))
