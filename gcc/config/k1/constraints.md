@@ -1,12 +1,5 @@
-
 (define_register_constraint "RXX" "(SRF_REGS)"
      "Any system register (32/64bits) constraint.")
-
-(define_register_constraint "R32" "((!TARGET_32) ? SRF32_REGS : SRF_REGS)"
-     "32bits System register constraint.")
-
-(define_register_constraint "R64" "((!TARGET_32) ? SRF64_REGS : NO_REGS)"
-     "64bits System register constraint.")
 
 (define_constraint "S"
   "An immediate or symbol operand"
@@ -113,12 +106,6 @@
   "A signed 43-bit non symbolic constant."
   (and (match_code "const_int")
        (match_test "SIGNED_INT_FITS_N_BITS (ival, 43)")))
-
-;; Not used yet, and does not work as-is.
-;; (define_constraint "I64"
-;;   "A signed 64-bit constant."
-;;   (and (match_code "const_int")
-;;        (match_test "SIGNED_INT_FITS_N_BITS (ival, 64)")))
 
 (define_constraint "Ilh"  
   "Constants that can be expressed as lowbit/highbit pair"
