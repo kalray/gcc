@@ -2327,17 +2327,13 @@ k1_classify_symbol (rtx x)
   return SYMBOL_ABSOLUTE;
 }
 
-/* Expands a mov which second operand is a constant. Returns TRUE
-   if caller pattern should not expand anymore (ie. call DONE macro).
-*/
+/* Expands a mov which second operand is a constant. */
 void
 k1_expand_mov_constant (rtx operands[])
 {
   rtx dest = operands[0];
   rtx src = operands[1];
   rtx new_rtx;
-  rtx (*gen_addp) (rtx target, rtx op1, rtx op2)
-    = !TARGET_32 ? gen_adddi3 : gen_addsi3;
 
   if (GET_CODE (src) == SYMBOL_REF || GET_CODE (src) == LABEL_REF
       || GET_CODE (src) == CONST)
@@ -2367,7 +2363,7 @@ k1_expand_mov_constant (rtx operands[])
 	  emit_insn (gen_addpcrel (dest, XEXP (base, 0)));
 
 	  if (INTVAL (offset) != 0)
-	    emit_insn (gen_addp (dest, dest, offset));
+	    emit_insn (gen_add3_insn (dest, dest, offset));
 
 	  break;
 
@@ -2378,14 +2374,16 @@ k1_expand_mov_constant (rtx operands[])
 	  pic_reg = gen_reg_rtx (Pmode);
 	  emit_insn (gen_set_gotp (pic_reg));
 
-	  new_rtx = gen_rtx_UNSPEC (Pmode, gen_rtvec (1, base), UNSPEC_GOT);
+	  new_rtx
+	    = gen_rtx_CONST (Pmode, gen_rtx_UNSPEC (Pmode, gen_rtvec (1, base),
+						    UNSPEC_GOT));
 
 	  emit_move_insn (dest, pic_reg);
 
 	  emit_move_insn (dest, gen_rtx_MEM (Pmode, gen_rtx_PLUS (Pmode, dest,
 								  new_rtx)));
 	  if (INTVAL (offset) != 0)
-	    emit_insn (gen_addp (dest, dest, offset));
+	    emit_insn (gen_add3_insn (dest, dest, offset));
 
 	  crtl->uses_pic_offset_table = true;
 	  break;
@@ -2397,14 +2395,16 @@ k1_expand_mov_constant (rtx operands[])
 	  pic_reg = gen_reg_rtx (Pmode);
 	  emit_insn (gen_set_gotp (pic_reg));
 
-	  new_rtx = gen_rtx_UNSPEC (Pmode, gen_rtvec (1, base), UNSPEC_GOTOFF);
+	  new_rtx
+	    = gen_rtx_CONST (Pmode, gen_rtx_UNSPEC (Pmode, gen_rtvec (1, base),
+						    UNSPEC_GOTOFF));
 
 	  emit_move_insn (dest, pic_reg);
 
 	  emit_move_insn (dest, gen_rtx_PLUS (Pmode, dest, new_rtx));
 
 	  if (INTVAL (offset) != 0)
-	    emit_insn (gen_addp (dest, dest, offset));
+	    emit_insn (gen_add3_insn (dest, dest, offset));
 
 	  crtl->uses_pic_offset_table = true;
 	  break;
