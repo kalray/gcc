@@ -124,9 +124,6 @@ struct GTY (()) k1_frame_info
   /* The offset of arg_pointer_rtx from the frame pointer.  */
   HOST_WIDE_INT arg_pointer_fp_offset;
 
-  /* Offset from the frame pointer to the first local variable slot */
-  HOST_WIDE_INT fp_local_offset;
-
   /* Offset to the static chain pointer, if needed */
   HOST_WIDE_INT static_chain_fp_offset;
 
@@ -240,10 +237,6 @@ k1_compute_frame_info (void)
 
   frame->saved_regs_size = sp_offset - frame->saved_reg_sp_offset;
 
-  /* If either of FP or automatic var is moved, beware of this
-     value */
-  /* frame->fp_local_offset = UNITS_PER_WORD; */
-
   /* Next are automatic variables. */
   sp_offset += get_frame_size ();
 
@@ -281,16 +274,6 @@ k1_compute_frame_info (void)
   frame->total_size = sp_offset;
 
   frame->laid_out = true;
-}
-
-int
-k1_starting_frame_offset (void)
-{
-  struct k1_frame_info *frame;
-  k1_compute_frame_info ();
-  frame = &cfun->machine->frame;
-
-  return frame->fp_local_offset;
 }
 
 HOST_WIDE_INT
@@ -854,7 +837,7 @@ k1_get_arg_info (struct k1_arg_info *info, cumulative_args_t cum_v,
     = type ? int_size_in_bytes (type) : GET_MODE_SIZE (mode);
   HOST_WIDE_INT n_words = (n_bytes + UNITS_PER_WORD - 1) / UNITS_PER_WORD;
 
-  /* Arguments larger than 4 bytes start at the next even boundary.  */
+  /* Arguments larger than 8 bytes start at the next even boundary.  */
   HOST_WIDE_INT offset = (n_words > 1 && (cum->next_arg_reg & 1)) ? 1 : 0;
 
   /* If all argument slots are used, then it must go on the stack.  */
@@ -934,7 +917,7 @@ k1_function_arg_advance (cumulative_args_t cum_v, enum machine_mode mode,
 			 const_tree type, bool named ATTRIBUTE_UNUSED)
 {
   CUMULATIVE_ARGS *cum = get_cumulative_args (cum_v);
-  struct k1_arg_info info;
+  struct k1_arg_info info = {0};
   k1_get_arg_info (&info, cum_v, mode, type, named);
   if (info.num_regs > 0)
     {

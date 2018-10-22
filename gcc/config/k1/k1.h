@@ -373,7 +373,7 @@ enum k1_abi_type
 #define FRAME_GROWS_DOWNWARD 1
 #undef ARGS_GROWS_DOWNWARD
 
-#define STARTING_FRAME_OFFSET k1_starting_frame_offset ()
+#define STARTING_FRAME_OFFSET (0)
 
 #define FIRST_PARM_OFFSET(funcdecl) k1_first_parm_offset (funcdecl)
 
