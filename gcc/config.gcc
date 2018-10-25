@@ -2313,6 +2313,10 @@ k1-*-elf*)
 	tm_file="${tm_file} elfos.h dbxelf.h k1/k1-elf.h newlib-stdint.h"
 	tmake_file="k1/t-k1 k1/t-elf"
 	;;
+k1-*-mbr*)
+	tm_file="${tm_file} elfos.h dbxelf.h k1/k1-elf.h newlib-stdint.h"
+	tmake_file="k1/t-k1 k1/t-mbr"
+	;;
 k1-*-cos*)
 	tm_file="${tm_file} elfos.h dbxelf.h k1/k1-cos.h newlib-stdint.h"
 	tmake_file="k1/t-k1 k1/t-cos"
