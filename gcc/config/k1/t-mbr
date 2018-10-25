@@ -1,0 +1,2 @@
+MULTILIB_OPTIONS = fno-exceptions m32
+MULTILIB_DIRNAMES = noexceptions 32
