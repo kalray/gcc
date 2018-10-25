@@ -1440,7 +1440,7 @@ case $os in
 	     | skyos* | haiku* | rdos* | toppers* | drops* | es* \
 	     | onefs* | tirtos* | phoenix* | fuchsia* | redox* | bme* \
 	     | midnightbsd* | amdhsa* | unleashed* | emscripten* | wasi* \
-	     | nsk* | powerunix | -cos* )
+	     | nsk* | powerunix | -cos* | -mbr* )
 	# Remember, each alternative MUST END IN *, to match a version number.
 		;;
 >>>>>>> 5912ea12721 (  [K1] clusterOS (cos) replaces nodes and rtems toolchains)
