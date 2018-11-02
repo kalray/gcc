@@ -37,7 +37,7 @@
 #undef LIB_SPEC
 #define LIB_SPEC                                                               \
   "--start-group -lmppacos -lc -lgloss --end-group "                           \
-  "%{!nostartfiles:%{!nodefaultlibs:%{!nostdlib:-Tmppacos.ld}}}"
+  "%{!nostartfiles:%{!nodefaultlibs:%{!nostdlib:%{!T*:-Tmppacos.ld}}}}"
 
 #undef LINK_SPEC
 #define LINK_SPEC                                                              \
