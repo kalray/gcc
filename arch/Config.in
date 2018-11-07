@@ -93,6 +93,14 @@ config BR2_i386
 	  Intel i386 architecture compatible microprocessor
 	  http://en.wikipedia.org/wiki/I386
 
+config BR2_kvx
+	bool "kvx"
+	select BR2_ARCH_IS_64
+	select BR2_ARCH_HAS_MMU_MANDATORY
+	help
+	  Kalray MPPA architecture support.
+	  https://www.kalrayinc.com/portfolio/processors/
+
 config BR2_m68k
 	bool "m68k"
 	# MMU support is set by the subarchitecture file, arch/Config.in.m68k
@@ -436,6 +444,10 @@ endif
 
 if BR2_csky
 source "arch/Config.in.csky"
+endif
+
+if BR2_kvx
+source "arch/Config.in.kvx"
 endif
 
 if BR2_m68k

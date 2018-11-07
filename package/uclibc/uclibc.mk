@@ -4,9 +4,14 @@
 #
 ################################################################################
 
+ifeq ($(BR2_kvx),y)
+UCLIBC_VERSION = cd59b0cce07781e20102cb2094144ab9c65c7d65
+UCLIBC_SITE = $(call github,kalray,uclibc-ng,$(UCLIBC_VERSION))
+else
 UCLIBC_VERSION = 1.0.38
 UCLIBC_SOURCE = uClibc-ng-$(UCLIBC_VERSION).tar.xz
 UCLIBC_SITE = https://downloads.uclibc-ng.org/releases/$(UCLIBC_VERSION)
+endif
 UCLIBC_LICENSE = LGPL-2.1+
 UCLIBC_LICENSE_FILES = COPYING.LIB
 UCLIBC_INSTALL_STAGING = YES

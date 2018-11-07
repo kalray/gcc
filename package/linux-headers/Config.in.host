@@ -31,45 +31,59 @@ config BR2_KERNEL_HEADERS_4_4
 	bool "Linux 4.4.x kernel headers"
 	depends on !BR2_riscv
 	depends on !BR2_csky
+	depends on !BR2_kvx
 	select BR2_TOOLCHAIN_HEADERS_AT_LEAST_4_4
 
 config BR2_KERNEL_HEADERS_4_9
 	bool "Linux 4.9.x kernel headers"
 	depends on !BR2_riscv
 	depends on !BR2_csky
+	depends on !BR2_kvx
 	select BR2_TOOLCHAIN_HEADERS_AT_LEAST_4_9
 
 config BR2_KERNEL_HEADERS_4_14
 	bool "Linux 4.14.x kernel headers"
 	depends on !BR2_riscv
 	depends on !BR2_csky
+	depends on !BR2_kvx
 	select BR2_TOOLCHAIN_HEADERS_AT_LEAST_4_14
 
 config BR2_KERNEL_HEADERS_4_19
 	bool "Linux 4.19.x kernel headers"
 	depends on !BR2_csky
+	depends on !BR2_kvx
 	select BR2_TOOLCHAIN_HEADERS_AT_LEAST_4_19
 
 config BR2_KERNEL_HEADERS_5_4
 	bool "Linux 5.4.x kernel headers"
+	depends on !BR2_kvx
 	select BR2_TOOLCHAIN_HEADERS_AT_LEAST_5_4
 
 config BR2_KERNEL_HEADERS_5_10
 	bool "Linux 5.10.x kernel headers"
+	depends on !BR2_kvx
 	select BR2_TOOLCHAIN_HEADERS_AT_LEAST_5_10
 
 config BR2_KERNEL_HEADERS_5_11
 	bool "Linux 5.11.x kernel headers"
+	depends on !BR2_kvx
 	select BR2_TOOLCHAIN_HEADERS_AT_LEAST_5_11
 
 config BR2_KERNEL_HEADERS_5_12
 	bool "Linux 5.12.x kernel headers"
+	depends on !BR2_kvx
 	select BR2_TOOLCHAIN_HEADERS_AT_LEAST_5_12
 
 config BR2_KERNEL_HEADERS_5_13
 	bool "Linux 5.13.x kernel headers"
+	depends on !BR2_kvx
 	select BR2_TOOLCHAIN_HEADERS_AT_LEAST_5_13
 	select BR2_KERNEL_HEADERS_LATEST
+
+config BR2_KERNEL_HEADERS_KVX
+	bool "Linux 5.10 for KVX kernel headers"
+	depends on BR2_kvx
+	select BR2_TOOLCHAIN_HEADERS_AT_LEAST_5_10
 
 config BR2_KERNEL_HEADERS_VERSION
 	bool "Manually specified Linux version"

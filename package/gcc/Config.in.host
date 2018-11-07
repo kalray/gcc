@@ -5,6 +5,7 @@ choice
 	default BR2_GCC_VERSION_ARC if BR2_arc
 	default BR2_GCC_VERSION_CSKY if BR2_csky
 	default BR2_GCC_VERSION_POWERPC_SPE if BR2_powerpc_SPE
+	default BR2_GCC_VERSION_KVX if BR2_kvx
 	default BR2_GCC_VERSION_10_X
 	help
 	  Select the version of gcc you wish to use.
@@ -28,6 +29,12 @@ config BR2_GCC_VERSION_POWERPC_SPE
 	depends on BR2_powerpc_SPE
 	select BR2_TOOLCHAIN_GCC_AT_LEAST_8
 
+config BR2_GCC_VERSION_KVX
+	bool "gcc kvx (7.x)"
+	# Only supported architecture
+	depends on BR2_kvx
+	select BR2_TOOLCHAIN_GCC_AT_LEAST_7
+
 config BR2_GCC_VERSION_9_X
 	bool "gcc 9.x"
 	depends on !BR2_ARCH_NEEDS_GCC_AT_LEAST_10
@@ -38,6 +45,7 @@ config BR2_GCC_VERSION_9_X
 	# upstream gcc. C-SKY gcc upstream support not tested
 	# with upstream binutils and glibc.
 	depends on !BR2_csky
+	depends on !BR2_kvx
 	select BR2_TOOLCHAIN_GCC_AT_LEAST_9
 
 config BR2_GCC_VERSION_10_X
@@ -50,6 +58,7 @@ config BR2_GCC_VERSION_10_X
 	# upstream gcc. C-SKY gcc upstream support not tested
 	# with upstream binutils and glibc.
 	depends on !BR2_csky
+	depends on !BR2_kvx
 	select BR2_TOOLCHAIN_GCC_AT_LEAST_10
 
 config BR2_GCC_VERSION_11_X
@@ -65,6 +74,7 @@ config BR2_GCC_VERSION_11_X
 	# that need to be reverted since gcc 8.4, 9.3 and 10.1.
 	# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=98784
 	depends on !BR2_sparc
+	depends on !BR2_kvx
 	select BR2_TOOLCHAIN_GCC_AT_LEAST_11
 
 endchoice
@@ -94,6 +104,7 @@ config BR2_GCC_VERSION
 	default "10.3.0"    if BR2_GCC_VERSION_10_X
 	default "11.1.0"    if BR2_GCC_VERSION_11_X
 	default "arc-2020.09-release" if BR2_GCC_VERSION_ARC
+	default "50bb1935d20f383c3d37c98b681f63de873688b2" if BR2_GCC_VERSION_KVX
 	default "48152afb96c59733d5bc79e3399bb7b3d4b44266" if BR2_GCC_VERSION_CSKY
 
 config BR2_EXTRA_GCC_CONFIG_OPTIONS
