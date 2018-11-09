@@ -241,6 +241,16 @@
  (ior (match_test "satisfies_constraint_J10(op)")
       (match_test "satisfies_constraint_U37(op)")))
 
+;; Used for hw loop pattern where we have an output reload in a jump insn.
+;; This is not supported by reload so the insn must handle them.
+;; This hack comes from the arc backend.
+(define_predicate "shouldbe_register_operand"
+  (match_code "reg,subreg,mem")
+{
+  return ((reload_in_progress || reload_completed)
+	  ? general_operand : register_operand) (op, mode);
+})
+
 ;; (define_predicate "reg_or_unsigned_mul_immediate_37"
 ;;  (ior (match_operand 0 "register_operand")
 ;;       (match_test "satisfies_constraint_J10(op)")
