@@ -82,7 +82,7 @@ extern void __builtin_k1_sleep (void);
 /* STOP */
 extern void __builtin_k1_stop (void);
 /* SYNCGROUP */
-extern void __builtin_k1_syncgroup (unsigned int);
+extern void __builtin_k1_syncgroup (unsigned long long);
 /* TRAPA */
 /* TRAPO */
 /* TLBDINVAL */
