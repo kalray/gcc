@@ -21,8 +21,6 @@
 #ifndef GCC_K1_MPPA_COS
 #define GCC_K1_MPPA_COS
 
-#define K1_BARE
-
 #define STARTFILE_SPEC " crti%O%s crtbegin%O%s crt0%O%s"
 #define ENDFILE_SPEC " crtend%O%s crtn%O%s"
 

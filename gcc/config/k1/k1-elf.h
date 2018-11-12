@@ -1,6 +1,5 @@
 /* Machine description for K1 MPPA architecture.
-   Copyright (C) 2009-2017 Free Software Foundation, Inc.
-   Contributed by Kalray.
+   Copyright (C) 2018 Kalray Inc.
 
    This file is part of GCC.
 
@@ -21,8 +20,6 @@
 #ifndef GCC_K1_MPPA_ELF
 #define GCC_K1_MPPA_ELF
 
-#define K1_BARE
-
 #define STARTFILE_SPEC " crti%O%s crtbegin%O%s crt0%O%s"
 #define ENDFILE_SPEC " crtend%O%s crtn%O%s"
 
@@ -33,9 +30,7 @@
    Link against MPPA Bare Runtime
  */
 #undef LIB_SPEC
-#define LIB_SPEC                                                               \
-  "--start-group -lmppahal -lmppabareruntime -lc -lgloss --end-group "         \
-  "%{!nostartfiles:%{!nodefaultlibs:%{!nostdlib:-Tmppabareruntime.ld}}}"
+#define LIB_SPEC "--start-group -lgloss --end-group "
 
 #undef LINK_SPEC
 #define LINK_SPEC LINK_SPEC_COMMON
