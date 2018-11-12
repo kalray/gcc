@@ -3038,7 +3038,7 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (STOP, "stop", VOID);
   ADD_K1_BUILTIN (STSU, "stsu", uintSI, uintSI, uintSI);
   ADD_K1_BUILTIN (STSUD, "stsud", uintDI, uintDI, uintDI);
-  ADD_K1_BUILTIN (SYNCGROUP, "syncgroup", VOID, uintSI);
+  ADD_K1_BUILTIN (SYNCGROUP, "syncgroup", VOID, uintDI);
   ADD_K1_BUILTIN (TLBDINVAL, "tlbdinval", VOID);
   ADD_K1_BUILTIN (TLBIINVAL, "tlbiinval", VOID);
   ADD_K1_BUILTIN (TLBPROBE, "tlbprobe", VOID);
@@ -3419,7 +3419,7 @@ k1_expand_builtin_syncgroup (rtx target ATTRIBUTE_UNUSED, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
 
-  arg1 = force_reg (SImode, arg1);
+  arg1 = force_reg (DImode, arg1);
   emit_insn (gen_syncgroup (arg1, k1_sync_reg_rtx));
 
   return NULL_RTX;
