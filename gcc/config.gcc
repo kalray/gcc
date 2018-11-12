@@ -2314,7 +2314,7 @@ k1-*-elf*)
 	tmake_file="k1/t-k1 k1/t-elf"
 	;;
 k1-*-mbr*)
-	tm_file="${tm_file} elfos.h dbxelf.h k1/k1-elf.h newlib-stdint.h"
+	tm_file="${tm_file} elfos.h dbxelf.h k1/k1-mbr.h newlib-stdint.h"
 	tmake_file="k1/t-k1 k1/t-mbr"
 	;;
 k1-*-cos*)
