@@ -925,7 +925,7 @@ iq2000*-*-elf*)
 	extra_parts=
         ;;
 k1-*-linux*)
-        extra_parts="$extra_parts crtbegin.o crtend.o crti.o crtn.o"
+        extra_parts="$extra_parts crtbegin.o crtend.o"
 	tmake_file="$tmake_file ${cpu_type}/t-k1 t-softfp-sfdf t-libgcc-pic t-softfp "
         ;;
 k1-*-*)

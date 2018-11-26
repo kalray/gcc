@@ -2323,8 +2323,8 @@ k1-*-cos*)
 	extra_options="${extra_options} k1/k1-cos.opt"
 	;;
 k1-*-linux-uclibc)
-	tm_file="${tm_file} elfos.h dbxelf.h gnu-user.h linux.h k1/k1-linux.h glibc-stdint.h"
-	tmake_file="t-linux k1/t-linux t-glibc"
+	tm_file="${tm_file} dbxelf.h elfos.h gnu-user.h linux.h k1/k1-linux.h glibc-stdint.h"
+	tmake_file="${tmake_file} t-linux k1/t-linux"
 	;;
 lm32-*-elf*)
         tm_file="dbxelf.h elfos.h ${tm_file} newlib-stdint.h"
