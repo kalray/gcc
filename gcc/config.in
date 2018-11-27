@@ -1585,9 +1585,7 @@
 
 /* Define 0/1 if .init_array/.fini_array sections are available and working.
    */
-#ifndef USED_FOR_TARGET
 #undef HAVE_INITFINI_ARRAY_SUPPORT
-#endif
 
 
 /* Define to 1 if the system has the type `intmax_t'. */
