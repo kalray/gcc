@@ -6829,24 +6829,21 @@ k1_scan_insn_registers_1 (rtx *x, void *data)
     }
 
     if (REG_P (*x)) {
-        if (REGNO (*x) > FIRST_PSEUDO_REGISTER) {
-            warning (0, "Pseudo register found while scanning final asm. Please report.");
-        }
+        gcc_assert (REGNO (*x) <= FIRST_PSEUDO_REGISTER
+		    && REGNO (*x) <= K1C_MDS_REGISTERS);
 
         if (regs->set_dest)
             SET_HARD_REG_BIT (regs->defs, REGNO (*x));
         else
             SET_HARD_REG_BIT (regs->uses, REGNO (*x));
 
+	/* AUTO FIXME: This is most certainly wrong. See T7698 */
         if (GET_MODE_SIZE (GET_MODE (*x)) > 4) {
             if (regs->set_dest)
                 SET_HARD_REG_BIT (regs->defs, REGNO (*x)+1);
             else
                 SET_HARD_REG_BIT (regs->uses, REGNO (*x)+1);
         }
-
-        if (REGNO (*x) > 128)
-            print_rtl_single (stdout, regs->scanned_insn);
     }
 
     return 0;
