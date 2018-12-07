@@ -2739,7 +2739,7 @@ enum k1_builtin
   K1_BUILTIN_FSINVND,
   K1_BUILTIN_FSISRD,
   K1_BUILTIN_GET,
-  K1_BUILTIN_GET_R,
+  /* K1_BUILTIN_GET_R, */
   K1_BUILTIN_WFXL,
   K1_BUILTIN_WFXM,
   K1_BUILTIN_IINVAL,
@@ -3004,7 +3004,8 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (FSINVND, "fsinvnd", floatDF, floatDF);
   ADD_K1_BUILTIN (FSISRD, "fsisrd", floatDF, floatDF);
   ADD_K1_BUILTIN (GET, "get", uintDI, intSI);
-  ADD_K1_BUILTIN (GET_R, "get_r", uintDI, intSI);
+  /* FIXME AUTO: Disabling get builtin. Ref T7705 */
+  /* ADD_K1_BUILTIN (GET_R,   "get_r",       uintDI,  intSI); */
   ADD_K1_BUILTIN (WFXL, "wfxl", VOID, uintQI, uintDI);
   ADD_K1_BUILTIN (WFXM, "wfxm", VOID, uintQI, uintDI);
   ADD_K1_BUILTIN (IINVAL, "iinval", VOID);
@@ -3126,20 +3127,21 @@ k1_expand_builtin_get (rtx target, tree args)
   return target;
 }
 
-static rtx
-k1_expand_builtin_get_r (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+/* FIXME AUTO: Disabling get builtin. Ref T7705 */
+/* static rtx */
+/* k1_expand_builtin_get_r (rtx target, tree args) */
+/* { */
+/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
 
-  if (!target)
-    target = gen_reg_rtx (DImode);
+/*     if (!target) */
+/*         target = gen_reg_rtx (DImode); */
 
-  target = force_reg (DImode, target);
-  arg1 = force_reg (DImode, arg1);
-  emit_insn (gen_getdi_r (target, arg1, k1_sync_reg_rtx));
+/*     target = force_reg (DImode, target); */
+/*     arg1 = force_reg (DImode, arg1); */
+/*     emit_insn (gen_getdi_r (target, arg1, k1_sync_reg_rtx)); */
 
-  return target;
-}
+/*     return target; */
+/* } */
 
 static rtx
 k1_expand_builtin_set (rtx target ATTRIBUTE_UNUSED, tree args, bool ps)
@@ -5315,8 +5317,9 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_fsisrd (target, exp);
     case K1_BUILTIN_GET:
       return k1_expand_builtin_get (target, exp);
-    case K1_BUILTIN_GET_R:
-      return k1_expand_builtin_get_r (target, exp);
+    /* FIXME AUTO: Disabling get builtin. Ref T7705 */
+    /* case K1_BUILTIN_GET_R: */
+    /*   return k1_expand_builtin_get_r (target, exp); */
     case K1_BUILTIN_WFXL:
       return k1_expand_builtin_wfxl (target, exp);
     case K1_BUILTIN_WFXM:
