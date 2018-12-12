@@ -25,16 +25,14 @@ enum reg_class
   GRF_REGS,
   PRF_REGS,
   SRF_REGS,
-  SRF32_REGS,
-  SRF64_REGS,
   ALL_REGS,
   LIM_REG_CLASSES
 };
 
 #define REG_CLASS_NAMES                                                        \
   {                                                                            \
-    "NO_REGS", "GRF_REGS", "PRF_REGS", "SRF_REGS", "SRF32_REGS", "SRF64_REGS", \
-      "ALL_REGS", "LIM_REG_CLASSES",                                           \
+    "NO_REGS", "GRF_REGS", "PRF_REGS", "SRF_REGS", "ALL_REGS",                 \
+      "LIM_REG_CLASSES",                                                       \
   }
 
 enum k1c_abi
@@ -60,14 +58,6 @@ extern enum k1c_abi k1c_cur_abi;
        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,	    0xFFFFFFFF,        \
        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,	    0xFFFFFFFF,        \
        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, K1C_SRF_EXT_MASK},                  \
-      {0x00000000, 0x00000000, 0x10040022, 0x0000610B,	      0x000000F0,      \
-       0x0000000B, 0x00000010, 0x00000000, 0x00000000,	      0x00000000,      \
-       0x00000000, 0x00000000, 0x00000000, 0x00000000,	      0x00000000,      \
-       0x00000000, 0x00000000, 0x00000000, K1C_SRF32_EXT_MASK},                \
-      {0x00000000, 0x00000000, 0xEFFBFFDD, 0xFFFF9EF4,	      0xFFFFFF0F,      \
-       0xFFFFFFF4, 0xFFFFFFEF, 0xFFFFFFFF, 0xFFFFFFFF,	      0xFFFFFFFF,      \
-       0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,	      0xFFFFFFFF,      \
-       0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, K1C_SRF64_EXT_MASK},                \
     {                                                                          \
       0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,  \
 	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,            \
@@ -81,87 +71,29 @@ extern enum k1c_abi k1c_cur_abi;
    choose a class which is minimal, meaning that no smaller class also
    contains the register. */
 
-#define REGNO_REG_CLASS(REGNO)                                                                                                                           \
-  (__extension__({                                                                                                                                       \
-    enum reg_class res = NO_REGS;                                                                                                                        \
-    if (REGNO >= FIRST_PSEUDO_REGISTER)                                                                                                                  \
-      res = NO_REGS;                                                                                                                                     \
-    else if ((TARGET_K1C)                                                                                                                                \
-	     && ((REGNO < 64)                                                                                                                            \
-		 || (REGNO >= K1C_MDS_REGISTERS                                                                                                          \
-		     && ((1 << (REGNO - K1C_MDS_REGISTERS))                                                                                              \
-			 & K1C_GRF_EXT_MASK))))                                                                                                          \
-      res = (((REGNO) % 2) ? GRF_REGS : PRF_REGS);                                                                                                       \
-    else if ((TARGET_32)                                                                                                                                 \
-	     && (((REGNO >= 64) && (REGNO < 576))                                                                                                        \
-		 || (REGNO >= K1C_MDS_REGISTERS                                                                                                          \
-		     && ((1 << (REGNO - K1C_MDS_REGISTERS))                                                                                              \
-			 & K1C_SRF_EXT_MASK))))                                                                                                          \
-      res = SRF_REGS;                                                                                                                                    \
-    else if ((!TARGET_32)                                                                                                                                \
-	     && (((REGNO >= 64) && (REGNO < 576)                                                                                                         \
-		  && ((1ULL << (REGNO - 64))                                                                                                             \
-		      & 0x100000000B000000F00000610B10040022ULL))                                                                                        \
-		 || (REGNO >= K1C_MDS_REGISTERS                                                                                                          \
-		     && ((1 << (REGNO - K1C_MDS_REGISTERS))                                                                                              \
-			 & K1C_SRF32_EXT_MASK))))                                                                                                        \
-      res = SRF32_REGS;                                                                                                                                  \
-    else if (                                                                                                                                            \
-      (!TARGET_32)                                                                                                                                       \
-      && (((REGNO >= 64) && (REGNO < 576)                                                                                                                \
-	   && ((1ULL << (REGNO - 64))                                                                                                                    \
-	       & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFF4FFFFFF0FFFFF9EF4EFFBFFDDULL)) \
-	  || (REGNO >= K1C_MDS_REGISTERS                                                                                                                 \
-	      && ((1 << (REGNO - K1C_MDS_REGISTERS)) & K1C_SRF64_EXT_MASK))))                                                                            \
-      res = SRF64_REGS;                                                                                                                                  \
-    res;                                                                                                                                                 \
-  }))
-
-/*
- * Same as above, but returns the real size of registers, not the size
- * that should be used wrt to current target : $ra should always be
- * used as 32bits when not targeting 64bits but hardware allows the
- * use of 64bits.
- */
-
-#define REGNO_REG_CLASS_INSENSITIVE(REGNO)                                                                                                               \
-  (__extension__({                                                                                                                                       \
-    enum reg_class res = NO_REGS;                                                                                                                        \
-    if (REGNO >= FIRST_PSEUDO_REGISTER)                                                                                                                  \
-      res = NO_REGS;                                                                                                                                     \
-    else if (((TARGET_K1C))                                                                                                                              \
-	     && (((REGNO < 64))                                                                                                                          \
-		 || (REGNO >= K1C_MDS_REGISTERS                                                                                                          \
-		     && ((1 << (REGNO - K1C_MDS_REGISTERS))                                                                                              \
-			 & K1C_GRF_EXT_MASK))))                                                                                                          \
-      res = (((REGNO) % 2) ? GRF_REGS : PRF_REGS);                                                                                                       \
-    else if ((1)                                                                                                                                         \
-	     && ((((REGNO >= 64) && (REGNO < 576))                                                                                                       \
-		  && ((1ULL << (REGNO - 64))                                                                                                             \
-		      & 0x100000000B000000F00000610B10040022ULL))                                                                                        \
-		 || (REGNO >= K1C_MDS_REGISTERS                                                                                                          \
-		     && ((1 << (REGNO - K1C_MDS_REGISTERS))                                                                                              \
-			 & K1C_SRF32_EXT_MASK))))                                                                                                        \
-      res = SRF32_REGS;                                                                                                                                  \
-    else if (                                                                                                                                            \
-      (1)                                                                                                                                                \
-      && ((((REGNO >= 64) && (REGNO < 576))                                                                                                              \
-	   && ((1ULL << (REGNO - 64))                                                                                                                    \
-	       & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFF4FFFFFF0FFFFF9EF4EFFBFFDDULL)) \
-	  || (REGNO >= K1C_MDS_REGISTERS                                                                                                                 \
-	      && ((1 << (REGNO - K1C_MDS_REGISTERS)) & K1C_SRF64_EXT_MASK))))                                                                            \
-      res = SRF64_REGS;                                                                                                                                  \
-    res;                                                                                                                                                 \
+#define REGNO_REG_CLASS(REGNO)                                                 \
+  (__extension__({                                                             \
+    enum reg_class res = NO_REGS;                                              \
+    if (REGNO >= FIRST_PSEUDO_REGISTER)                                        \
+      res = NO_REGS;                                                           \
+    else if ((TARGET_K1C)                                                      \
+	     && ((REGNO < 64)                                                  \
+		 || (REGNO >= K1C_MDS_REGISTERS                                \
+		     && ((1 << (REGNO - K1C_MDS_REGISTERS))                    \
+			 & K1C_GRF_EXT_MASK))))                                \
+      res = (((REGNO) % 2) ? GRF_REGS : PRF_REGS);                             \
+    else if ((((REGNO >= 64) && (REGNO < 576))                                 \
+	      || (REGNO >= K1C_MDS_REGISTERS                                   \
+		  && ((1 << (REGNO - K1C_MDS_REGISTERS))                       \
+		      & K1C_SRF_EXT_MASK))))                                   \
+      res = SRF_REGS;                                                          \
+    res;                                                                       \
   }))
 
 #define K1C_GRF_FIRST_REGNO (0)
 #define K1C_GRF_LAST_REGNO (64 - 1)
 #define K1C_SRF_FIRST_REGNO (64)
 #define K1C_SRF_LAST_REGNO (576 - 1)
-#define K1C_SRF32_FIRST_REGNO (64)
-#define K1C_SRF32_LAST_REGNO (576 - 1)
-#define K1C_SRF64_FIRST_REGNO (64)
-#define K1C_SRF64_LAST_REGNO (576 - 1)
 
 #define K1C_MDS_REGISTERS 576
 #define K1C_REGISTER_NAMES                                                     \
