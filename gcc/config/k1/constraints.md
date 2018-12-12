@@ -1,5 +1,5 @@
 (define_register_constraint "RXX" "(SRF_REGS)"
-     "Any system register (32/64bits) constraint.")
+     "A system register constraint.")
 
 (define_constraint "S"
   "An immediate or symbol operand"
