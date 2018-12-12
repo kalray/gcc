@@ -270,9 +270,7 @@
 (define_predicate "system_register_operand"
   (match_code "reg")
 {
-  return (REGNO_REG_CLASS (REGNO (op)) == SRF_REGS)
-          || REGNO_REG_CLASS (REGNO (op)) == SRF32_REGS
-	  || REGNO_REG_CLASS (REGNO (op)) == SRF64_REGS ;
+  return (REGNO_REG_CLASS (REGNO (op)) == SRF_REGS);
 })
 
 ;; Return true if VALUE can be stored in the zero extended 32bits immediate field.
