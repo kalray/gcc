@@ -319,8 +319,6 @@ k1_class_max_nregs(reg_class_t regclass, enum machine_mode mode)
     return HARD_REGNO_NREGS(0, mode);
 
   case SRF_REGS:
-  case SRF32_REGS:
-  case SRF64_REGS:
     return 1;
 
   case NO_REGS:
@@ -331,27 +329,6 @@ k1_class_max_nregs(reg_class_t regclass, enum machine_mode mode)
   }
   gcc_unreachable ();
 }
-
-bool k1_cannot_change_mode_class(enum machine_mode from, enum machine_mode to, enum reg_class reg_class){
-  // FIXME FOR COOLIDGE
-  if (TARGET_32
-      && (reg_class == SRF_REGS
-	  && (from == SImode && to == SImode)))
-    return true; // SRF in 32bits mode can't be anything else than SI
-
-  if (!TARGET_32){
-    if ((reg_class == SRF32_REGS)
-	&& (from == SImode || to == SImode))
-      return true;
-
-    if ((reg_class == SRF64_REGS)
-	&& (from == DImode || to == DImode))
-      return true;
-  }
-
-  return false;
-}
-
 
 static tree k1_handle_fndecl_attribute (tree *node, tree name, tree args ATTRIBUTE_UNUSED,
 					int flags ATTRIBUTE_UNUSED, bool *no_add_attrs);
@@ -2656,9 +2633,6 @@ enum k1_builtin {
     K1_BUILTIN_FNARROWWH,
     K1_BUILTIN_FNARROWDWP,
     K1_BUILTIN_WAITIT,
-
-    K1_BUILTIN_SRFSIZE,
-
     K1_LAST_BUILTIN
 };
 
@@ -2912,9 +2886,6 @@ k1_target_init_builtins (void)
 
     ADD_K1_BUILTIN (FNARROWWH,  "fnarrowwh", uintHI , floatSF);
     ADD_K1_BUILTIN (WAITIT,     "waitit",    uintSI,  uintSI);
-
-    ADD_K1_BUILTIN (SRFSIZE,"srfsize",    intSI,  intSI);
-
 }
 
 static tree
@@ -3042,35 +3013,6 @@ k1_expand_builtin_waitit (rtx target, tree args)
 
     return target;
 }
-
-/*
- * MODE selects get/getd assembly insn
- */
-static rtx
-k1_expand_builtin_srfsize (rtx target, tree args)
-{
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx reg_size;
-    int reg_size_val;
-
-    if (!verify_const_int_arg (arg1, 12, false)) {
-        error ("__builtin_k1_srfsize expects a 12 bits immediate argument.");
-        return NULL_RTX;
-    }
-    const int regno = INTVAL(arg1) + K1C_SRF_FIRST_REGNO;
-
-    if (!target)
-        target = gen_reg_rtx (SImode);
-
-    target = force_reg (SImode, target);
-    reg_size_val = (!TARGET_32 && ((REGNO_REG_CLASS (regno) == SRF64_REGS))) ? 8 : 4 ;
-
-    reg_size = gen_rtx_CONST_INT (VOIDmode, reg_size_val);
-    emit_move_insn (target, reg_size);
-
-    return target;
-}
-
 
 static rtx
 k1_expand_builtin_wfxl (rtx target ATTRIBUTE_UNUSED, tree args)
@@ -5188,9 +5130,6 @@ k1_target_expand_builtin (tree exp,
 
     case K1_BUILTIN_WAITIT:
       return k1_expand_builtin_waitit (target, exp);
-
-    case K1_BUILTIN_SRFSIZE:
-      return k1_expand_builtin_srfsize (target, exp);
 
     default:
         internal_error ("bad builtin code");

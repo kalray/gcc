@@ -1,4 +1,4 @@
-  (define_constants [
+(define_constants [
          (K1C_AESPC_REGNO 70)
          (K1C_CS_REGNO 68)
          (K1C_CSIT_REGNO 69)

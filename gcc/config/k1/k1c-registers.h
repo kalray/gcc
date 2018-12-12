@@ -57,7 +57,7 @@ extern enum k1c_abi k1c_cur_abi;
 #define REGNO_REG_CLASS(REGNO) (__extension__ ({\
 	enum reg_class res = NO_REGS; \
 	if (REGNO >= FIRST_PSEUDO_REGISTER) res = NO_REGS; \
-	else if ((TARGET_K1C) && ((REGNO < 64) || (REGNO >= K1C_MDS_REGISTERS && ((1 << (REGNO-K1C_MDS_REGISTERS)) & K1C_GRF_EXT_MASK)))) res = (((REGNO)%2) ? GRF_REGS : PRF_REGS);  \
+	else if (((REGNO < 64) || (REGNO >= K1C_MDS_REGISTERS && ((1 << (REGNO-K1C_MDS_REGISTERS)) & K1C_GRF_EXT_MASK)))) res = (((REGNO)%2) ? GRF_REGS : PRF_REGS);  \
 	else if ((((REGNO >= 64) && (REGNO < 576)) || (REGNO >= K1C_MDS_REGISTERS && ((1 << (REGNO-K1C_MDS_REGISTERS)) & K1C_SRF_EXT_MASK)))) res = SRF_REGS;  \
 res; }))
 
@@ -65,6 +65,7 @@ res; }))
 #define K1C_GRF_LAST_REGNO (64 - 1)
 #define K1C_SRF_FIRST_REGNO (64)
 #define K1C_SRF_LAST_REGNO (576 - 1)
+
 
 #define K1C_MDS_REGISTERS 576
 #define K1C_REGISTER_NAMES \
