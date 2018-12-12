@@ -76,11 +76,10 @@ extern enum k1c_abi k1c_cur_abi;
     enum reg_class res = NO_REGS;                                              \
     if (REGNO >= FIRST_PSEUDO_REGISTER)                                        \
       res = NO_REGS;                                                           \
-    else if ((TARGET_K1C)                                                      \
-	     && ((REGNO < 64)                                                  \
-		 || (REGNO >= K1C_MDS_REGISTERS                                \
-		     && ((1 << (REGNO - K1C_MDS_REGISTERS))                    \
-			 & K1C_GRF_EXT_MASK))))                                \
+    else if (((REGNO < 64)                                                     \
+	      || (REGNO >= K1C_MDS_REGISTERS                                   \
+		  && ((1 << (REGNO - K1C_MDS_REGISTERS))                       \
+		      & K1C_GRF_EXT_MASK))))                                   \
       res = (((REGNO) % 2) ? GRF_REGS : PRF_REGS);                             \
     else if ((((REGNO >= 64) && (REGNO < 576))                                 \
 	      || (REGNO >= K1C_MDS_REGISTERS                                   \
