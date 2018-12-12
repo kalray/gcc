@@ -214,11 +214,6 @@ enum k1_abi_type
 #define HARD_REGNO_NREGS(REGNO, MODE)                                          \
   ((GET_MODE_SIZE (MODE) + UNITS_PER_WORD - 1) / UNITS_PER_WORD)
 
-/* If defined, a C expression that returns nonzero for a class for
-   which a change from mode from to mode to is invalid. */
-#define CANNOT_CHANGE_MODE_CLASS(from, to, class)                              \
-  k1_cannot_change_mode_class (from, to, class)
-
 /* A C expression that is nonzero if it is permissible to store a
    value of mode mode in hard register number regno (or in several
    registers starting with that one). */
