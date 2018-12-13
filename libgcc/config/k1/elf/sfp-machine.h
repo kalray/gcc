@@ -2,7 +2,7 @@
  * FIXME AUTO: part of HAL duplicated here for coolidge
  */
 
-#define _K1_SFR_CS 8 // Compute Status $cs $s8
+#define _K1_SFR_CS 4 // Compute Status $cs $s8
 #define _K1_MASK_CS_IO 0x2 // IEEE 754 Invalid Operation
 #define _K1_MASK_CS_DZ 0x4 // IEEE 754 Divide by Zero
 #define _K1_MASK_CS_OV 0x8 // IEEE 754 Overflow
