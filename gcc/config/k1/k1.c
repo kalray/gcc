@@ -6972,6 +6972,22 @@ k1_is_uncached_mem_op (rtx op)
   return MEM_P (op) && MEM_ADDR_SPACE (op) == K1_ADDR_SPACE_UNCACHED;
 }
 
+/* Following funtions are used for bundling insn before ASM emission */
+
+/* Contains the state corresponding to the bundle under construction */
+static state_t state;
+/* Track registers being defined within the bundle */
+static HARD_REG_SET current_bundle_reg_defs;
+static bool emited_colon;
+
+struct bundle_regs
+{
+  int set_dest;
+  rtx scanned_insn;
+  HARD_REG_SET uses;
+  HARD_REG_SET defs;
+};
+
 static int
 k1_uses_register_1 (rtx *x, void *data ATTRIBUTE_UNUSED)
 {
@@ -6998,22 +7014,6 @@ k1_uses_register (rtx x)
 
   return for_each_rtx (&x, k1_uses_register_1, &set_dst);
 }
-
-static state_t state;
-static bool emited_colon;
-
-/* Unused variables... */
-/* static int errata_store_load_load;  */
-/* static int had_load;*/
-/* static int had_store;*/
-
-struct bundle_regs
-{
-  int set_dest;
-  rtx scanned_insn;
-  HARD_REG_SET uses;
-  HARD_REG_SET defs;
-};
 
 static int
 k1_scan_insn_registers_1 (rtx *x, void *data)
@@ -7046,8 +7046,18 @@ k1_scan_insn_registers_1 (rtx *x, void *data)
     {
       if (REG_P (XEXP (*x, 0)))
 	SET_HARD_REG_BIT (regs->defs, REGNO (XEXP (*x, 0)));
-      if (GET_MODE_SIZE (GET_MODE (*x)) > 4)
-	SET_HARD_REG_BIT (regs->defs, REGNO (XEXP (*x, 0)) + 1);
+
+      /* double/quadruple/octuple register */
+      /* Also mark the implicitely defined registers */
+      if (GET_MODE_SIZE (GET_MODE (*x)) > UNITS_PER_WORD)
+	{
+	  unsigned word;
+	  for (word = 1; word < GET_MODE_SIZE (GET_MODE (*x)) / UNITS_PER_WORD;
+	       word++)
+	    {
+	      SET_HARD_REG_BIT (regs->defs, REGNO (XEXP (*x, 0)) + word);
+	    }
+	}
       return -1;
     }
 
@@ -7059,21 +7069,23 @@ k1_scan_insn_registers_1 (rtx *x, void *data)
 
   if (REG_P (*x))
     {
-      gcc_assert (REGNO (*x) <= FIRST_PSEUDO_REGISTER
-		  && REGNO (*x) <= K1C_MDS_REGISTERS);
+      /* Must be a real hard registers */
+      gcc_assert (REGNO (*x) <= K1C_MDS_REGISTERS);
 
       if (regs->set_dest)
 	SET_HARD_REG_BIT (regs->defs, REGNO (*x));
       else
 	SET_HARD_REG_BIT (regs->uses, REGNO (*x));
 
-      /* AUTO FIXME: This is most certainly wrong. See T7698 */
-      if (GET_MODE_SIZE (GET_MODE (*x)) > 4)
+      if (GET_MODE_SIZE (GET_MODE (*x)) > UNITS_PER_WORD)
 	{
-	  if (regs->set_dest)
-	    SET_HARD_REG_BIT (regs->defs, REGNO (*x) + 1);
-	  else
-	    SET_HARD_REG_BIT (regs->uses, REGNO (*x) + 1);
+	  unsigned word;
+	  for (word = 1; word < GET_MODE_SIZE (GET_MODE (*x)) / UNITS_PER_WORD;
+	       word++)
+	    {
+	      SET_HARD_REG_BIT (regs->set_dest ? regs->defs : regs->uses,
+				REGNO (*x) + word);
+	    }
 	}
     }
 
@@ -7092,9 +7104,6 @@ k1_scan_insn_registers (rtx insn, struct bundle_regs *regs)
   CLEAR_HARD_REG_SET (regs->defs);
   for_each_rtx (&insn, k1_scan_insn_registers_1, regs);
 }
-
-static HARD_REG_SET current_bundle_reg_defs;
-static int bundle_length;
 
 static void
 k1_clear_insn_registers (void)
@@ -7119,9 +7128,15 @@ k1_final_prescan_insn (rtx insn, rtx *opvec ATTRIBUTE_UNUSED,
 
   if (!state)
     state = xcalloc (1, state_size ());
+
+  /* First, check if the insn fits in the bundle:
+   * - bundle size
+   * - exu resources
+   */
   can_issue = state_transition (state, insn) < 0;
+
+  /* Scan insn for registers definitions and usage. */
   k1_scan_insn_registers (insn, &regs);
-  bundle_length += get_attr_length (insn);
 
 #if 0
     if (can_issue)
@@ -7130,8 +7145,7 @@ k1_final_prescan_insn (rtx insn, rtx *opvec ATTRIBUTE_UNUSED,
 
   if (!can_issue
       || hard_reg_set_intersect_p (regs.uses, current_bundle_reg_defs)
-      || hard_reg_set_intersect_p (regs.defs, current_bundle_reg_defs)
-      || bundle_length > 8 * 4)
+      || hard_reg_set_intersect_p (regs.defs, current_bundle_reg_defs))
     {
       if (!emited_colon)
 	fprintf (asm_out_file,
@@ -7140,7 +7154,6 @@ k1_final_prescan_insn (rtx insn, rtx *opvec ATTRIBUTE_UNUSED,
       k1_clear_insn_registers ();
       IOR_HARD_REG_SET (current_bundle_reg_defs, regs.defs);
       state_transition (state, insn);
-      bundle_length = get_attr_length (insn);
 #if 0
         fprintf(asm_out_file, "# state: %i\n", *(unsigned char*)state);
 #endif
@@ -7198,7 +7211,6 @@ k1_target_asm_final_postscan_insn (FILE *file, rtx insn,
     {
       emited_colon = true;
       fprintf (file, "\t;;\n");
-      bundle_length = 0;
       state_reset (state);
       k1_clear_insn_registers ();
 
