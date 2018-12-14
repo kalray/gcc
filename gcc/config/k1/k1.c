@@ -2271,6 +2271,8 @@ k1_expand_mov_constant (rtx operands[]) {
   return ;
 }
 
+/* FIXME AUTO: fix cost function for coolidge */
+/* See T7748 */
 static int
 k1_target_register_move_cost (enum machine_mode mode,
                               reg_class_t from ATTRIBUTE_UNUSED,
@@ -2287,9 +2289,9 @@ k1_target_register_move_cost (enum machine_mode mode,
           make $r3 = $r2
           ;;
     */
-    if (GET_MODE_SIZE (mode) <= 4)
+    if (GET_MODE_SIZE (mode) <= UNITS_PER_WORD)
         return 5;
-    else if (GET_MODE_SIZE (mode) == 8)
+    else if (GET_MODE_SIZE (mode) == 2 * UNITS_PER_WORD)
         return 10;
     else
 	return INT_MAX;
@@ -6937,6 +6939,8 @@ struct cost_walker {
     int total;
 };
 
+/* FIXME AUTO: fix cost function for coolidge */
+/* See T7748 */
 static int k1_rtx_operand_cost (rtx *x, void *arg) {
     struct cost_walker *cost = (struct cost_walker*)arg;
     enum rtx_code code;
@@ -7009,6 +7013,8 @@ static int k1_rtx_operand_cost (rtx *x, void *arg) {
     return 0;
 }
 
+/* FIXME AUTO: fix cost function for coolidge */
+/* See T7748 */
 static bool k1_target_rtx_costs (rtx x,
                                  int code ATTRIBUTE_UNUSED,
                                  int outer_code ATTRIBUTE_UNUSED,
@@ -7048,6 +7054,8 @@ static bool k1_target_rtx_costs (rtx x,
     return true;
 }
 
+/* FIXME AUTO: fix cost function for coolidge */
+/* See T7748 */
 static int k1_target_address_cost (rtx x,
                                    machine_mode mode ATTRIBUTE_UNUSED,
                                    addr_space_t space ATTRIBUTE_UNUSED,
@@ -7931,6 +7939,8 @@ k1_output_addr_const_extra (FILE *fp, rtx x)
   return false;
 }
 
+/* FIXME AUTO: This must be fixed for coolidge */
+/* See T7749 */
 static int
 k1_reassociation_width (unsigned int opc,
 			enum machine_mode mode)
@@ -7944,21 +7954,20 @@ k1_reassociation_width (unsigned int opc,
     case BIT_IOR_EXPR:
     case BIT_AND_EXPR:
     case BIT_XOR_EXPR:
-	if (mode == SImode || mode == HImode || mode == QImode)
+	if (mode == SImode || mode == HImode || mode == QImode || mode == DImode)
 	    res = 4;
-	else if (mode == DImode)
+	else if (mode == TImode)
 	    res = 2;
 	break;
     case PLUS_EXPR:
     case MIN_EXPR:
     case MAX_EXPR:
-	if (mode == SImode || mode == HImode || mode == QImode)
+	if (mode == SImode || mode == HImode || mode == QImode || mode == DImode)
 	    res = 4;
 	break;
     case MULT_EXPR:
 	break;
     }
-
 
   return res;
 }
