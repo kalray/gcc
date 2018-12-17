@@ -1560,6 +1560,9 @@ k1_target_print_operand (FILE *file, rtx x, int code)
 	      case UNSPEC_GOTOFF:
 		fprintf (file, "@gotoff(");
 		break;
+	      case UNSPEC_PCREL:
+		fprintf (file, "@pcrel(");
+		break;
 	      default:
 		gcc_unreachable ();
 	      }
