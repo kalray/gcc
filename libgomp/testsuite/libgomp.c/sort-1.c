@@ -105,10 +105,13 @@ busy_wait (void)
   __asm volatile ("hint @pause" : : : "memory");
 #elif defined __sparc__ && (defined __arch64__ || defined __sparc_v9__)
   __asm volatile ("membar #LoadLoad" : : : "memory");
-#elif defined __k1dp__ || defined __k1bdp__
-  __builtin_k1_wpurge();
-  __builtin_k1_dinval();
-  __builtin_k1_fence();
+#elif defined __k1__
+  extern int MPPA_COS_ENABLE_DINVAL __attribute__((weak));
+  if (&MPPA_COS_ENABLE_DINVAL) {
+    __builtin_k1_fence();
+    __builtin_k1_dinval();
+  }
+  __asm volatile ("" : : : "memory");
 #else
   __asm volatile ("" : : : "memory");
 #endif
