@@ -631,6 +631,15 @@ extern void k1_profile_hook (void);
 
 #define REGISTER_PREFIX "$"
 
+/* /\* Use tags for debug info labels, so that they don't break instruction */
+/*    bundles.  This also avoids getting spurious DV warnings from the */
+/*    assembler.  This is similar to (*targetm.asm_out.internal_label), except
+ * that we */
+/*    add brackets around the label.  *\/ */
+
+/* #define ASM_OUTPUT_DEBUG_LABEL(FILE, PREFIX, NUM) \ */
+/*   fprintf (FILE, "[.%s%d:]\n", PREFIX, NUM) */
+
 #define ASM_COMMENT_START "#"
 #define ASM_APP_ON "\t;;\n#APP\n"
 #define ASM_APP_OFF "\n\t;;\n#NO_APP\n"
@@ -826,9 +835,6 @@ extern void k1_profile_hook (void);
 
 #define UNSIGNED_INT_FITS_N_BITS(imm, N)                                       \
   (((imm) < ((HOST_WIDE_INT) 1 << (N)) && (imm) >= (HOST_WIDE_INT) 0) ? 1 : 0)
-
-#define FINAL_PRESCAN_INSN(insn, ops, nops)                                    \
-  k1_final_prescan_insn (insn, ops, nops)
 
 #define k1_strict_to_nonstrict_comparison_operator(code)                       \
   __extension__({                                                              \
