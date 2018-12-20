@@ -73,7 +73,6 @@
 #define TARGET_HAVE_TLS (true)
 
 static bool scheduling = false;
-static int emit_colon;
 
 /* interface with MDS */
 enum k1c_abi k1c_cur_abi;
@@ -302,8 +301,8 @@ k1_static_chain (const_tree fndecl, bool incoming_p)
 }
 
 static const char *prf_reg_names[] = {K1C_K1C_PRF_REGISTER_NAMES};
-/* Implement HARD_REGNO_MODE_OK.  */
 
+/* Implement HARD_REGNO_MODE_OK.  */
 int
 k1_hard_regno_mode_ok (unsigned regno, enum machine_mode mode)
 {
@@ -6981,7 +6980,44 @@ k1_is_uncached_mem_op (rtx op)
 static state_t state;
 /* Track registers being defined within the bundle */
 static HARD_REG_SET current_bundle_reg_defs;
-static bool emited_colon;
+
+struct bundle_state
+{
+  /* Unique bundle state number to identify them in the debugging
+     output */
+  int unique_num;
+
+  /* First insn in the bundle */
+  rtx insn;
+
+  /* Last insn in the bundle */
+  rtx last_insn;
+
+  /* Number of insn in the bundle */
+  int insns_num;
+
+  /* Registers being defined within the bundle */
+  HARD_REG_SET reg_defs;
+
+  /* All bundle states are in the following chain.  */
+  struct bundle_state *allocated_states_chain;
+
+  struct bundle_state *next;
+  state_t dfa_state;
+};
+
+/* Bundles list for current function */
+static struct bundle_state *cur_bundle_list;
+
+/* The unique number of next bundle state.  */
+static int bundle_states_num;
+
+/* All allocated bundle states are in the following chain.  */
+static struct bundle_state *allocated_bundle_states_chain;
+
+/* All allocated but not used bundle states are in the following
+   chain.  */
+static struct bundle_state *free_bundle_state_chain;
 
 struct bundle_regs
 {
@@ -7114,56 +7150,199 @@ k1_clear_insn_registers (void)
   CLEAR_HARD_REG_SET (current_bundle_reg_defs);
 }
 
-void
-k1_final_prescan_insn (rtx insn, rtx *opvec ATTRIBUTE_UNUSED,
-		       int nops ATTRIBUTE_UNUSED)
+/* Skip over irrelevant NOTEs and such and look for the next insn we
+   would consider bundling.  */
+static rtx
+next_insn_to_bundle (rtx r, rtx end)
 {
-  int can_issue;
-  struct bundle_regs regs;
-
-  if (!INSN_P (insn) || DEBUG_INSN_P (insn) || GET_CODE (PATTERN (insn)) == USE
-      || GET_CODE (PATTERN (insn)) == CLOBBER || LABEL_P (insn))
-    return;
-
-  /* fprintf (asm_out_file, "/\* %d *\/", INSN_UID (insn)); */
-  if (!scheduling || !TARGET_BUNDLING)
-    return;
-
-  if (!state)
-    state = xcalloc (1, state_size ());
-
-  /* First, check if the insn fits in the bundle:
-   * - bundle size
-   * - exu resources
-   */
-  can_issue = state_transition (state, insn) < 0;
-
-  /* Scan insn for registers definitions and usage. */
-  k1_scan_insn_registers (insn, &regs);
-
-#if 0
-    if (can_issue)
-        fprintf(asm_out_file, "# state: %i\n", *(unsigned char*)state);
-#endif
-
-  if (!can_issue
-      || hard_reg_set_intersect_p (regs.uses, current_bundle_reg_defs)
-      || hard_reg_set_intersect_p (regs.defs, current_bundle_reg_defs))
+  for (; r != end; r = NEXT_INSN (r))
     {
-      if (!emited_colon)
-	fprintf (asm_out_file,
-		 "\t;; /* Can't issue next in the same bundle */\n");
-      state_reset (state);
-      k1_clear_insn_registers ();
-      IOR_HARD_REG_SET (current_bundle_reg_defs, regs.defs);
-      state_transition (state, insn);
-#if 0
-        fprintf(asm_out_file, "# state: %i\n", *(unsigned char*)state);
-#endif
-      return;
+      if (NONDEBUG_INSN_P (r) && GET_CODE (PATTERN (r)) != USE
+	  && GET_CODE (PATTERN (r)) != CLOBBER)
+	return r;
     }
 
-  IOR_HARD_REG_SET (current_bundle_reg_defs, regs.defs);
+  return NULL_RTX;
+}
+
+static struct bundle_state *
+get_free_bundle_state (void)
+{
+  struct bundle_state *result;
+
+  if (free_bundle_state_chain != NULL)
+    {
+      result = free_bundle_state_chain;
+      free_bundle_state_chain = result->next;
+    }
+  else
+    {
+      result = XNEW (struct bundle_state);
+      result->next = NULL;
+
+      result->insn = NULL_RTX;
+      result->last_insn = NULL_RTX;
+      result->insns_num = 0;
+
+      CLEAR_HARD_REG_SET (result->reg_defs);
+
+      result->dfa_state = xmalloc (dfa_state_size);
+      state_reset (result->dfa_state);
+
+      result->allocated_states_chain = allocated_bundle_states_chain;
+      allocated_bundle_states_chain = result;
+    }
+  result->unique_num = bundle_states_num++;
+  return result;
+}
+
+/* The following function frees given bundle state.  */
+
+static void
+free_bundle_state (struct bundle_state *state)
+{
+  state->next = free_bundle_state_chain;
+  free_bundle_state_chain = state;
+}
+
+static int
+k1_insn_is_bundle_end_p (rtx insn)
+{
+  bundle_state *i;
+  for (i = cur_bundle_list; i; i = i->next)
+    {
+      gcc_assert (i->insn != NULL_RTX);
+      gcc_assert (i->last_insn != NULL_RTX);
+      if (i->last_insn == insn)
+	return 1;
+    }
+  return 0;
+}
+
+static void k1_dump_bundles (void);
+
+static void
+k1_gen_bundles (void)
+{
+  bundle_state *cur_bstate = NULL;
+
+  dfa_start ();
+
+  basic_block bb;
+  FOR_EACH_BB_FN (bb, cfun)
+    {
+      rtx insn, next, prev;
+      rtx end = NEXT_INSN (BB_END (bb));
+
+      if (cur_bstate == NULL)
+	{
+	  /* First bundle for function */
+	  cur_bstate = get_free_bundle_state ();
+	  cur_bundle_list = cur_bstate;
+	}
+      else if (cur_bstate->insns_num != 0) /* can reuse preallocated
+					      bundle if previous BB
+					      ended-up empty of
+					      insns */
+	{
+	  cur_bstate->next = get_free_bundle_state ();
+	  cur_bstate = cur_bstate->next;
+	}
+
+      prev = NULL_RTX;
+      for (insn = next_insn_to_bundle (BB_HEAD (bb), end); insn;
+	   prev = insn, insn = next)
+	{
+	  next = next_insn_to_bundle (NEXT_INSN (insn), end);
+
+	  struct bundle_regs cur_insn_regs = {0};
+
+	  /* First, check if the insn fits in the bundle:
+	   * - bundle size
+	   * - exu resources
+	   */
+	  int can_issue = state_transition (cur_bstate->dfa_state, insn) < 0;
+
+	  /* Scan insn for registers definitions and usage. */
+	  k1_scan_insn_registers (insn, &cur_insn_regs);
+
+	  const int insn_raw = hard_reg_set_intersect_p (cur_insn_regs.uses,
+							 cur_bstate->reg_defs);
+	  const int insn_waw = hard_reg_set_intersect_p (cur_insn_regs.defs,
+							 cur_bstate->reg_defs);
+	  const int insn_jump = JUMP_P (insn) || CALL_P (insn);
+	  const int next_is_label = (next != NULL_RTX) && LABEL_P (next);
+
+	  /* Current insn can be bundled with other insn, create a new one. */
+	  if (!can_issue || insn_raw || insn_waw)
+	    {
+	      gcc_assert (cur_bstate->insn != NULL_RTX);
+
+	      gcc_assert (prev != NULL_RTX);
+
+	      cur_bstate->next = get_free_bundle_state ();
+	      cur_bstate = cur_bstate->next;
+
+	      state_transition (cur_bstate->dfa_state, insn);
+	    }
+
+	  if (cur_bstate->insn == NULL_RTX)
+	    {
+	      /* First insn in bundle */
+	      cur_bstate->insn = insn;
+	      cur_bstate->insns_num = 1;
+	    }
+	  else
+	    {
+	      cur_bstate->insns_num++;
+	    }
+	  cur_bstate->last_insn = insn;
+
+	  IOR_HARD_REG_SET (cur_bstate->reg_defs, cur_insn_regs.defs);
+
+	  /* Current insn is a jump, don't bundle following insns. */
+	  /* If there is a label in the middle of a possible bundle,
+	     split it */
+	  if (insn_jump && next != NULL_RTX || next_is_label)
+	    {
+	      gcc_assert (cur_bstate->insn != NULL_RTX);
+	      cur_bstate->next = get_free_bundle_state ();
+	      cur_bstate = cur_bstate->next;
+	    }
+	}
+    }
+
+  dfa_finish ();
+}
+
+static void
+k1_dump_bundles (void)
+{
+  bundle_state *i;
+  for (i = cur_bundle_list; i; i = i->next)
+    {
+
+      rtx binsn = i->insn;
+      fprintf (stderr, "BUNDLE START %d\n", i->unique_num);
+
+      if (i->insn == NULL_RTX)
+	fprintf (stderr, " invalid bundle %d: insn is NULL\n", i->unique_num);
+
+      if (i->last_insn == NULL_RTX)
+	fprintf (stderr, " invalid bundle %d: last_insn is NULL\n",
+		 i->unique_num);
+
+      int bundle_stop = 0;
+      do
+	{
+	  debug (binsn);
+	  bundle_stop = (binsn == i->last_insn);
+
+	  binsn = NEXT_INSN (binsn);
+	}
+      while (!bundle_stop);
+      fprintf (stderr, "BUNDLE STOP %d\n", i->unique_num);
+    }
 }
 
 static void
@@ -7171,52 +7350,9 @@ k1_target_asm_final_postscan_insn (FILE *file, rtx insn,
 				   rtx *opvec ATTRIBUTE_UNUSED,
 				   int noperands ATTRIBUTE_UNUSED)
 {
-  rtx next_real_insn = RTX_NEXT (insn);
-
-  emited_colon = false;
-
-  if (!scheduling || !TARGET_BUNDLING)
+  if (!scheduling || !TARGET_BUNDLING || k1_insn_is_bundle_end_p (insn))
     {
       fprintf (file, "\t;;\n");
-      return;
-    }
-
-  if (!INSN_P (insn) || DEBUG_INSN_P (insn) || GET_CODE (PATTERN (insn)) == USE
-      || GET_CODE (PATTERN (insn)) == CLOBBER || LABEL_P (insn))
-    return;
-
-  if (!state)
-    state = xcalloc (1, state_size ());
-
-  while (next_real_insn
-	 && (!INSN_P (next_real_insn) || DEBUG_INSN_P (next_real_insn)
-	     || GET_CODE (PATTERN (next_real_insn)) == USE
-	     || GET_CODE (PATTERN (next_real_insn)) == CLOBBER))
-    {
-      if (next_real_insn
-	  && (LABEL_P (next_real_insn)
-	      || NOTE_INSN_BASIC_BLOCK_P (next_real_insn)))
-	break;
-      next_real_insn = RTX_NEXT (next_real_insn);
-    }
-
-  emit_colon = !next_real_insn || LABEL_P (next_real_insn)
-	       || NOTE_INSN_BASIC_BLOCK_P (next_real_insn)
-	       || GET_MODE (next_real_insn) == TImode || JUMP_P (insn)
-	       || CALL_P (insn);
-
-  if (emit_colon && !JUMP_P (insn) && !CALL_P (insn) && next_real_insn
-      && (CALL_P (next_real_insn) || JUMP_P (next_real_insn))
-      && !k1_uses_register (PATTERN (next_real_insn)))
-    emit_colon = false;
-
-  if (emit_colon)
-    {
-      emited_colon = true;
-      fprintf (file, "\t;;\n");
-      state_reset (state);
-      k1_clear_insn_registers ();
-
       return;
     }
 }
@@ -8088,10 +8224,19 @@ k1_reorg (void)
 {
   compute_bb_for_insn ();
 
+  /* If optimizing, we'll have split before scheduling.  */
+  if (optimize == 0)
+    split_all_insns ();
+
   df_analyze ();
 
   /* Doloop optimization. */
   k1_reorg_loops ();
+
+  if (scheduling && TARGET_BUNDLING)
+    {
+      k1_gen_bundles ();
+    }
 
   /* This is needed. Else final pass will crash on debug_insn-s */
   if (k1_flag_var_tracking)
@@ -8102,6 +8247,8 @@ k1_reorg (void)
       timevar_pop (TV_VAR_TRACKING);
       free_bb_for_insn ();
     }
+
+  df_finish_pass (false);
 }
 
 /* FIXME AUTO: disabling vector support */
