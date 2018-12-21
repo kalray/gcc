@@ -1028,20 +1028,28 @@ k1_target_expand_builtin_saveregs (void)
 				 gen_rtx_REG (DImode, K1C_ARGUMENT_POINTER_REGNO
 							+ regno));
       RTX_FRAME_RELATED_P (insn) = 1;
+      /* Do not attach a NOTE here as the frame has not been laid out yet.
+       Let the k1_fix_debug_for_bundles function during reorg pass handle these
+     */
+
       regno++;
       slot++;
     }
 
-  /* Until load_multiple is fixed, these will be split in several ld */
   for (; regno < K1C_ARG_REG_SLOTS; regno += 2, slot += 2)
     {
-      rtx insn = emit_move_insn (
-	gen_rtx_MEM (TImode,
-		     gen_rtx_PLUS (Pmode, frame_pointer_rtx,
-				   GEN_INT (slot * UNITS_PER_WORD
-					    + frame->arg_pointer_fp_offset))),
-	gen_rtx_REG (TImode, K1C_ARGUMENT_POINTER_REGNO + regno));
+      rtx addr
+	= gen_rtx_MEM (TImode,
+		       gen_rtx_PLUS (Pmode, frame_pointer_rtx,
+				     GEN_INT (slot * UNITS_PER_WORD
+					      + frame->arg_pointer_fp_offset)));
+      rtx src = gen_rtx_REG (TImode, K1C_ARGUMENT_POINTER_REGNO + regno);
+
+      rtx insn = emit_move_insn (addr, src);
       RTX_FRAME_RELATED_P (insn) = 1;
+      /* Do not attach a NOTE here as the frame has not been laid out yet.
+       Let the k1_fix_debug_for_bundles function during reorg pass handle these
+     */
     }
 
   return area;
@@ -1918,11 +1926,22 @@ k1_save_or_restore_callee_save_registers (bool restore)
   struct k1_frame_info *frame = &cfun->machine->frame;
   rtx insn;
   rtx base_rtx = stack_pointer_rtx;
-  rtx (*gen_mem_ref) (enum machine_mode, rtx)
-    = (frame_pointer_needed) ? gen_frame_mem : gen_rtx_MEM;
+  rtx (*gen_mem_ref) (enum machine_mode, rtx) = gen_rtx_MEM;
+  HOST_WIDE_INT bias = 0;
+
   unsigned limit = FIRST_PSEUDO_REGISTER;
   unsigned regno;
   unsigned regno2;
+
+  /* Only use FP for prologue/save. Epilogue has already restored FP to the
+     caller's value and CFA for current function is SP.
+  */
+  if (!restore && frame_pointer_needed)
+    {
+      base_rtx = hard_frame_pointer_rtx;
+      gen_mem_ref = gen_frame_mem;
+      bias = -frame->hard_frame_pointer_offset;
+    }
 
   for (regno = 0; regno < limit; regno++)
     {
@@ -1934,8 +1953,9 @@ k1_save_or_restore_callee_save_registers (bool restore)
 	{
 	  rtx mem;
 
-	  mem = gen_mem_ref (DImode, plus_constant (Pmode, base_rtx,
-						    frame->reg_offset[regno]));
+	  mem = gen_mem_ref (DImode,
+			     plus_constant (Pmode, base_rtx,
+					    frame->reg_offset[regno] + bias));
 
 	  regno2 = k1_register_saved_on_entry (regno + 1) ? regno + 1 : 0;
 
@@ -1999,18 +2019,18 @@ k1_save_or_restore_callee_save_registers (bool restore)
 
 		if (restore == false)
 		  {
-		    insn = emit_move_insn (saved_reg,
-					   gen_rtx_REG (spill_mode, regno));
+		    rtx src_reg = gen_rtx_REG (spill_mode, regno);
+		    insn = emit_move_insn (saved_reg, src_reg);
 		    RTX_FRAME_RELATED_P (insn) = 1;
+
+		    add_reg_note (insn, REG_CFA_REGISTER,
+				  gen_rtx_SET (spill_mode, saved_reg, src_reg));
 		  }
 	      }
 
 	    if (restore)
 	      {
 		insn = emit_move_insn (saved_reg, mem);
-
-		// add_reg_note (insn, REG_CFA_RESTORE, gen_rtx_REG (spill_mode,
-		// saved_regno));
 
 		if (regno == K1C_RETURN_POINTER_REGNO)
 		  {
@@ -2022,6 +2042,9 @@ k1_save_or_restore_callee_save_registers (bool restore)
 	      {
 		insn = emit_move_insn (mem, saved_reg);
 		RTX_FRAME_RELATED_P (insn) = 1;
+
+		add_reg_note (insn, REG_CFA_OFFSET,
+			      gen_rtx_SET (spill_mode, mem, saved_reg));
 	      }
 	  }
 	}
@@ -2062,9 +2085,11 @@ k1_expand_prologue (void)
 
   if (size > 0)
     {
-      insn
-	= gen_add3_insn (stack_pointer_rtx, stack_pointer_rtx, GEN_INT (-size));
-      RTX_FRAME_RELATED_P (emit_insn (insn)) = 1;
+      insn = emit_insn (
+	gen_add3_insn (stack_pointer_rtx, stack_pointer_rtx, GEN_INT (-size)));
+      RTX_FRAME_RELATED_P (insn) = 1;
+
+      add_reg_note (insn, REG_CFA_ADJUST_CFA, PATTERN (insn));
     }
 
   if (frame_pointer_needed)
@@ -2079,11 +2104,17 @@ k1_expand_prologue (void)
 	= emit_move_insn (fp_mem,
 			  gen_rtx_REG (DImode, HARD_FRAME_POINTER_REGNUM));
       RTX_FRAME_RELATED_P (insn) = 1;
+      add_reg_note (insn, REG_CFA_OFFSET, PATTERN (insn));
 
-      /* FIXME AUTO: Add FP/RA store at frame bottom here */
-      insn = gen_add3_insn (hard_frame_pointer_rtx, stack_pointer_rtx,
-			    GEN_INT (frame->hard_frame_pointer_offset));
-      RTX_FRAME_RELATED_P (emit_insn (insn)) = 1;
+      insn = emit_insn (
+	gen_add3_insn (hard_frame_pointer_rtx, stack_pointer_rtx,
+		       GEN_INT (frame->hard_frame_pointer_offset)));
+
+      RTX_FRAME_RELATED_P (insn) = 1;
+      add_reg_note (insn, REG_CFA_DEF_CFA,
+		    gen_rtx_PLUS (Pmode, hard_frame_pointer_rtx,
+				  GEN_INT (
+				    size - frame->hard_frame_pointer_offset)));
     }
 
   /* Save registers */
@@ -2102,7 +2133,12 @@ k1_expand_epilogue (void)
       insn = emit_insn (
 	gen_add3_insn (stack_pointer_rtx, hard_frame_pointer_rtx,
 		       GEN_INT (-frame->hard_frame_pointer_offset)));
+
+      /* Revert CFA reg to use SP with its initial offset */
       RTX_FRAME_RELATED_P (insn) = 1;
+      add_reg_note (insn, REG_CFA_DEF_CFA,
+		    gen_rtx_PLUS (DImode, stack_pointer_rtx,
+				  GEN_INT (frame->initial_sp_offset)));
 
       /* Restore previous FP */
       rtx fp_mem = gen_rtx_MEM (
@@ -2123,6 +2159,7 @@ k1_expand_epilogue (void)
       insn = emit_insn (
 	gen_add3_insn (stack_pointer_rtx, stack_pointer_rtx, insn));
       RTX_FRAME_RELATED_P (insn) = 1;
+      add_reg_note (insn, REG_CFA_ADJUST_CFA, PATTERN (insn));
     }
 }
 
@@ -7335,13 +7372,82 @@ k1_dump_bundles (void)
       int bundle_stop = 0;
       do
 	{
-	  debug (binsn);
 	  bundle_stop = (binsn == i->last_insn);
 
 	  binsn = NEXT_INSN (binsn);
 	}
       while (!bundle_stop);
       fprintf (stderr, "BUNDLE STOP %d\n", i->unique_num);
+    }
+}
+
+/* Visit all bundles and force all debug insns after the last insn in
+   the bundle. */
+static void
+k1_fix_debug_for_bundles (void)
+{
+  bundle_state *i;
+  for (i = cur_bundle_list; i; i = i->next)
+    {
+      rtx binsn = i->last_insn;
+
+      gcc_assert (i->insn != NULL_RTX);
+      gcc_assert (i->last_insn != NULL_RTX);
+
+      int bundle_start;
+
+      /* Start from the end so that NOTEs will be added in the correct order. */
+      do
+	{
+	  bundle_start = (binsn == i->insn);
+	  int bundle_end = (binsn == i->last_insn);
+
+	  if (RTX_FRAME_RELATED_P (binsn))
+	    {
+	      rtx note;
+	      bool handled = false;
+	      for (note = REG_NOTES (binsn); note; note = XEXP (note, 1))
+		switch (REG_NOTE_KIND (note))
+		  {
+		  case REG_CFA_ADJUST_CFA:
+		  case REG_CFA_REGISTER:
+		  case REG_CFA_DEF_CFA:
+		  case REG_CFA_RESTORE:
+		  case REG_CFA_OFFSET:
+		    handled = true;
+		    if (!bundle_end)
+		      {
+			/* Move note to last insn in bundle */
+			add_shallow_copy_of_reg_note (i->last_insn, note);
+			remove_note (binsn, note);
+		      }
+		    break;
+
+		  case REG_CFA_EXPRESSION:
+		  case REG_CFA_SET_VDRAP:
+		  case REG_CFA_WINDOW_SAVE:
+		  case REG_CFA_FLUSH_QUEUE:
+		    error ("Unexpected CFA notes found.");
+		    break;
+
+		  default:
+		    break;
+		  }
+
+	      if (!handled)
+		{
+		  /* This *must* be some mem write emitted by builtin_save_regs,
+		   * or a bug */
+		  add_reg_note (i->last_insn, REG_CFA_OFFSET, PATTERN (binsn));
+		}
+
+	      RTX_FRAME_RELATED_P (binsn) = 0;
+	      RTX_FRAME_RELATED_P (i->last_insn) = 1;
+	    }
+
+	  binsn = PREV_INSN (binsn);
+	}
+      while (!bundle_start);
     }
 }
 
@@ -8236,6 +8342,7 @@ k1_reorg (void)
   if (scheduling && TARGET_BUNDLING)
     {
       k1_gen_bundles ();
+      k1_fix_debug_for_bundles ();
     }
 
   /* This is needed. Else final pass will crash on debug_insn-s */
