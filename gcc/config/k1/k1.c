@@ -143,29 +143,29 @@ struct GTY(()) machine_function {
 
 /*
 
-   	       	  +---------------+
- 	       	  | Varargs       |
- 	     	  |               |
- 	     	  |               |
+                  +---------------+
+                  | Varargs       |
+                  |               |
+                  |               |
                   +---------------+
       Virt. FP--->| [Static chain]|
                   +---------------+
                   | Local         |
-		  | Variable      |
-		  |               |
-	          +---------------+
-		  |               |
-		  | Register      |
-		  | Save          |
+                  | Variable      |
+                  |               |
+                  +---------------+
+                  |               |
+                  | Register      |
+                  | Save          |
                   |               |
                   | $ra           | (if frame_pointer_needed)
        Hard FP--->| caller FP     | (if frame_pointer_needed)
                   +---------------+
-           	  |               |
-       	     	  | Outgoing      |
-               	  | Args          |
-       	    SP--->|               |
- 		  +---------------+
+                  |               |
+                  | Outgoing      |
+                  | Args          |
+            SP--->|               |
+                  +---------------+
 
 */
 
