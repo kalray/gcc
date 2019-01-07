@@ -37,7 +37,7 @@
  */
 #undef  LIB_SPEC
 #define LIB_SPEC "--start-group -lmppahal -lmppabareruntime -lc -lgloss --end-group " \
-  "%{!nostartfiles:%{!nodefaultlibs:%{!nostdlib:-Tmppabareruntime.ld}}}"
+  "%{!nostartfiles:%{!nodefaultlibs:%{!nostdlib:%{!T*:-Tmppabareruntime.ld}}}}"
 
 #undef LINK_SPEC
 #define LINK_SPEC \
