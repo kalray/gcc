@@ -379,6 +379,11 @@ enum k1_abi_type
 
 #define INCOMING_RETURN_ADDR_RTX gen_rtx_REG (Pmode, K1C_RETURN_POINTER_REGNO)
 
+#define DBX_REGISTER_NUMBER(REGNO)                                             \
+  ((((REGNO) >= K1C_GRF_FIRST_REGNO) && ((REGNO) <= K1C_GRF_LAST_REGNO))       \
+     ? (REGNO) + 512                                                           \
+     : (REGNO) -64)
+
 #define DWARF_FRAME_RETURN_COLUMN DBX_REGISTER_NUMBER (K1C_RETURN_POINTER_REGNO)
 
 #define STACK_POINTER_REGNUM K1C_STACK_POINTER_REGNO
