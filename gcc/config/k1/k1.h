@@ -637,7 +637,7 @@ extern void k1_profile_hook (void);
 #define ASM_OUTPUT_ALIGN(FILE, LOG)                                            \
   fprintf (FILE, "\n\t.align %d\n", 1 << (LOG))
 
-#define GLOBAL_ASM_OP "\t.globl "
+#define GLOBAL_ASM_OP "\t.global "
 
 #define ASM_OUTPUT_ADDR_VEC_ELT(FILE, VALUE)                                   \
   do                                                                           \
@@ -878,6 +878,7 @@ extern void k1_profile_hook (void);
 #define K1_ADDR_SPACE_CONVERT 2
 
 #define REGISTER_TARGET_PRAGMAS()                                              \
+  c_register_addr_space ("__streamed", K1_ADDR_SPACE_UNCACHED);                \
   c_register_addr_space ("__uncached", K1_ADDR_SPACE_UNCACHED);                \
   c_register_addr_space ("__convert", K1_ADDR_SPACE_CONVERT);
 
