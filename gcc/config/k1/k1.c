@@ -2010,6 +2010,7 @@ k1_save_or_restore_callee_save_registers (bool restore)
 	  {
 	    machine_mode spill_mode = DImode;
 	    rtx saved_reg = gen_rtx_REG (spill_mode, regno);
+	    rtx orig_save_reg = saved_reg;
 
 	    if (regno == K1C_RETURN_POINTER_REGNO)
 	      {
@@ -2044,7 +2045,10 @@ k1_save_or_restore_callee_save_registers (bool restore)
 		RTX_FRAME_RELATED_P (insn) = 1;
 
 		add_reg_note (insn, REG_CFA_OFFSET,
-			      gen_rtx_SET (spill_mode, mem, saved_reg));
+			      gen_rtx_SET (spill_mode, mem,
+					   (regno == K1C_RETURN_POINTER_REGNO)
+					     ? orig_save_reg
+					     : saved_reg));
 	      }
 	  }
 	}
