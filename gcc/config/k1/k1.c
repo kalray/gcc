@@ -1763,7 +1763,7 @@ k1_expand_tablejump (rtx op0, rtx op1)
 	  emit_insn (gen_extend_insn (dreg, op0, Pmode, GET_MODE (op0), 1));
 	  op0 = dreg;
 	}
-      emit_insn (gen_add3_insn (op0, op0, tmp_reg));
+      emit_insn (gen_add2_insn (op0, tmp_reg));
     }
 
   if (!TARGET_32)
@@ -2089,8 +2089,7 @@ k1_expand_prologue (void)
 
   if (size > 0)
     {
-      insn = emit_insn (
-	gen_add3_insn (stack_pointer_rtx, stack_pointer_rtx, GEN_INT (-size)));
+      insn = emit_insn (gen_add2_insn (stack_pointer_rtx, GEN_INT (-size)));
       RTX_FRAME_RELATED_P (insn) = 1;
 
       add_reg_note (insn, REG_CFA_ADJUST_CFA, PATTERN (insn));
@@ -2160,8 +2159,7 @@ k1_expand_epilogue (void)
   if (frame_size != 0)
     {
       insn = GEN_INT (frame_size);
-      insn = emit_insn (
-	gen_add3_insn (stack_pointer_rtx, stack_pointer_rtx, insn));
+      insn = emit_insn (gen_add2_insn (stack_pointer_rtx, insn));
       RTX_FRAME_RELATED_P (insn) = 1;
       add_reg_note (insn, REG_CFA_ADJUST_CFA, PATTERN (insn));
     }
@@ -2368,7 +2366,7 @@ k1_expand_mov_constant (rtx operands[])
 	  emit_insn (gen_addpcrel (dest, XEXP (base, 0)));
 
 	  if (INTVAL (offset) != 0)
-	    emit_insn (gen_add3_insn (dest, dest, offset));
+	    emit_insn (gen_add2_insn (dest, offset));
 
 	  break;
 
@@ -2388,7 +2386,7 @@ k1_expand_mov_constant (rtx operands[])
 	  emit_move_insn (dest, gen_rtx_MEM (Pmode, gen_rtx_PLUS (Pmode, dest,
 								  new_rtx)));
 	  if (INTVAL (offset) != 0)
-	    emit_insn (gen_add3_insn (dest, dest, offset));
+	    emit_insn (gen_add2_insn (dest, offset));
 
 	  crtl->uses_pic_offset_table = true;
 	  break;
@@ -2409,7 +2407,7 @@ k1_expand_mov_constant (rtx operands[])
 	  emit_move_insn (dest, gen_rtx_PLUS (Pmode, dest, new_rtx));
 
 	  if (INTVAL (offset) != 0)
-	    emit_insn (gen_add3_insn (dest, dest, offset));
+	    emit_insn (gen_add2_insn (dest, offset));
 
 	  crtl->uses_pic_offset_table = true;
 	  break;
