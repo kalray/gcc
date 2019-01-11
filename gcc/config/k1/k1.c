@@ -1927,35 +1927,19 @@ k1_save_or_restore_callee_save_registers (bool restore)
   rtx insn;
   rtx base_rtx = stack_pointer_rtx;
   rtx (*gen_mem_ref) (enum machine_mode, rtx) = gen_rtx_MEM;
-  HOST_WIDE_INT bias = 0;
 
   unsigned limit = FIRST_PSEUDO_REGISTER;
   unsigned regno;
   unsigned regno2;
 
-  /* Only use FP for prologue/save. Epilogue has already restored FP to the
-     caller's value and CFA for current function is SP.
-  */
-  if (!restore && frame_pointer_needed)
-    {
-      base_rtx = hard_frame_pointer_rtx;
-      gen_mem_ref = gen_frame_mem;
-      bias = -frame->hard_frame_pointer_offset;
-    }
-
   for (regno = 0; regno < limit; regno++)
     {
-      /* Already taken care in prologue/epilogue */
-      if (regno == HARD_FRAME_POINTER_REGNUM && frame_pointer_needed)
-	continue;
-
       if (k1_register_saved_on_entry (regno))
 	{
 	  rtx mem;
 
-	  mem = gen_mem_ref (DImode,
-			     plus_constant (Pmode, base_rtx,
-					    frame->reg_offset[regno] + bias));
+	  mem = gen_mem_ref (DImode, plus_constant (Pmode, base_rtx,
+						    frame->reg_offset[regno]));
 
 	  regno2 = k1_register_saved_on_entry (regno + 1) ? regno + 1 : 0;
 
@@ -2032,7 +2016,6 @@ k1_save_or_restore_callee_save_registers (bool restore)
 	    if (restore)
 	      {
 		insn = emit_move_insn (saved_reg, mem);
-
 		if (regno == K1C_RETURN_POINTER_REGNO)
 		  {
 		    insn = emit_move_insn (gen_rtx_REG (spill_mode, regno),
@@ -2043,7 +2026,6 @@ k1_save_or_restore_callee_save_registers (bool restore)
 	      {
 		insn = emit_move_insn (mem, saved_reg);
 		RTX_FRAME_RELATED_P (insn) = 1;
-
 		add_reg_note (insn, REG_CFA_OFFSET,
 			      gen_rtx_SET (spill_mode, mem,
 					   (regno == K1C_RETURN_POINTER_REGNO)
@@ -2095,20 +2077,12 @@ k1_expand_prologue (void)
       add_reg_note (insn, REG_CFA_ADJUST_CFA, PATTERN (insn));
     }
 
+  /* Save registers */
+  k1_save_or_restore_callee_save_registers (0);
+
   if (frame_pointer_needed)
     {
       gcc_assert (frame->reg_offset[HARD_FRAME_POINTER_REGNUM] >= 0);
-      /* Save previous FP */
-      rtx fp_mem = gen_rtx_MEM (
-	DImode, plus_constant (Pmode, stack_pointer_rtx,
-			       frame->reg_offset[HARD_FRAME_POINTER_REGNUM]));
-
-      rtx insn
-	= emit_move_insn (fp_mem,
-			  gen_rtx_REG (DImode, HARD_FRAME_POINTER_REGNUM));
-      RTX_FRAME_RELATED_P (insn) = 1;
-      add_reg_note (insn, REG_CFA_OFFSET, PATTERN (insn));
-
       insn = emit_insn (
 	gen_add3_insn (hard_frame_pointer_rtx, stack_pointer_rtx,
 		       GEN_INT (frame->hard_frame_pointer_offset)));
@@ -2119,9 +2093,6 @@ k1_expand_prologue (void)
 				  GEN_INT (
 				    size - frame->hard_frame_pointer_offset)));
     }
-
-  /* Save registers */
-  k1_save_or_restore_callee_save_registers (0);
 }
 
 void
@@ -7375,11 +7346,50 @@ k1_dump_bundles (void)
       do
 	{
 	  bundle_stop = (binsn == i->last_insn);
-
+	  debug (binsn);
 	  binsn = NEXT_INSN (binsn);
 	}
       while (!bundle_stop);
       fprintf (stderr, "BUNDLE STOP %d\n", i->unique_num);
+    }
+}
+
+/* Used during CFA note fixups.  When a FRAME_RELATED_P insn is being
+   moved around a CFA-defining insn, its CFA NOTE must be changed
+   accordingly to use correct register instead of OLD_BASE.
+*/
+static void
+k1_swap_fp_sp_in_note (rtx note, rtx old_base)
+{
+  XEXP (note, 0) = copy_rtx (XEXP (note, 0));
+  rtx note_pat = XEXP (note, 0);
+
+  rtx new_base_reg = (REGNO (old_base) == REGNO (hard_frame_pointer_rtx))
+		       ? stack_pointer_rtx
+		       : hard_frame_pointer_rtx;
+  rtx mem_dest = SET_DEST (note_pat);
+  struct k1_frame_info *frame = &cfun->machine->frame;
+
+  if (frame->hard_frame_pointer_offset == 0)
+    {
+      if (GET_CODE (XEXP (mem_dest, 0)) == PLUS)
+	XEXP (XEXP (mem_dest, 0), 0) = new_base_reg;
+      else
+	XEXP (mem_dest, 0) = new_base_reg;
+    }
+  else
+    {
+      HOST_WIDE_INT new_offset = (new_base_reg == hard_frame_pointer_rtx)
+				   ? -frame->hard_frame_pointer_offset
+				   : frame->hard_frame_pointer_offset;
+      if (GET_CODE (XEXP (mem_dest, 0)) == PLUS)
+	{
+	  rtx plus = XEXP (mem_dest, 0);
+	  HOST_WIDE_INT old_offset = INTVAL (XEXP (plus, 1));
+	  new_offset += old_offset;
+	}
+      XEXP (mem_dest, 0) = gen_rtx_PLUS (Pmode, new_base_reg,
+					 gen_rtx_CONST_INT (Pmode, new_offset));
     }
 }
 
@@ -7389,6 +7399,8 @@ static void
 k1_fix_debug_for_bundles (void)
 {
   bundle_state *i;
+  int cur_cfa_reg = REGNO (stack_pointer_rtx);
+
   for (i = cur_bundle_list; i; i = i->next)
     {
       rtx binsn = i->last_insn;
@@ -7397,50 +7409,54 @@ k1_fix_debug_for_bundles (void)
       gcc_assert (i->last_insn != NULL_RTX);
 
       int bundle_start;
-
+      int bundle_end;
       /* Start from the end so that NOTEs will be added in the correct order. */
       do
 	{
 	  bundle_start = (binsn == i->insn);
-	  int bundle_end = (binsn == i->last_insn);
+	  bundle_end = (binsn == i->last_insn);
 
 	  if (RTX_FRAME_RELATED_P (binsn))
 	    {
 	      rtx note;
 	      bool handled = false;
 	      for (note = REG_NOTES (binsn); note; note = XEXP (note, 1))
-		switch (REG_NOTE_KIND (note))
-		  {
-		  case REG_CFA_ADJUST_CFA:
-		  case REG_CFA_REGISTER:
-		  case REG_CFA_DEF_CFA:
-		  case REG_CFA_RESTORE:
-		  case REG_CFA_OFFSET:
-		    handled = true;
-		    if (!bundle_end)
-		      {
-			/* Move note to last insn in bundle */
-			add_shallow_copy_of_reg_note (i->last_insn, note);
-			remove_note (binsn, note);
-		      }
-		    break;
+		{
+		  rtx pat = XEXP (note, 0);
+		  switch (REG_NOTE_KIND (note))
+		    {
+		    case REG_CFA_DEF_CFA:
+		    case REG_CFA_ADJUST_CFA:
+		    case REG_CFA_REGISTER:
+		    case REG_CFA_RESTORE:
+		    case REG_CFA_OFFSET:
+		      handled = true;
+		      if (!bundle_end)
+			{
+			  /* Move note to last insn in bundle */
+			  add_shallow_copy_of_reg_note (i->last_insn, note);
+			  remove_note (binsn, note);
+			}
+		      break;
 
-		  case REG_CFA_EXPRESSION:
-		  case REG_CFA_SET_VDRAP:
-		  case REG_CFA_WINDOW_SAVE:
-		  case REG_CFA_FLUSH_QUEUE:
-		    error ("Unexpected CFA notes found.");
-		    break;
+		    case REG_CFA_EXPRESSION:
+		    case REG_CFA_SET_VDRAP:
+		    case REG_CFA_WINDOW_SAVE:
+		    case REG_CFA_FLUSH_QUEUE:
+		      error ("Unexpected CFA notes found.");
+		      break;
 
-		  default:
-		    break;
-		  }
+		    default:
+		      break;
+		    }
+		}
 
 	      if (!handled)
 		{
 		  /* This *must* be some mem write emitted by builtin_save_regs,
 		   * or a bug */
-		  add_reg_note (i->last_insn, REG_CFA_OFFSET, PATTERN (binsn));
+		  add_reg_note (i->last_insn, REG_CFA_OFFSET,
+				copy_rtx (PATTERN (binsn)));
 		}
 
 	      RTX_FRAME_RELATED_P (binsn) = 0;
@@ -7450,6 +7466,64 @@ k1_fix_debug_for_bundles (void)
 	  binsn = PREV_INSN (binsn);
 	}
       while (!bundle_start);
+
+      /* Iterate from start and fix possible MEM using the incorrect base
+       * register */
+      /* This only works if FRAME_RELATED_P insns are in sequence. If
+	 this is not the case, relying on NEXT_INSN is *incorrect* */
+      binsn = i->insn;
+      do
+	{
+	  bundle_start = (binsn == i->insn);
+	  bundle_end = (binsn == i->last_insn);
+
+	  if (RTX_FRAME_RELATED_P (binsn))
+	    {
+	      rtx note;
+
+	      for (note = REG_NOTES (binsn); note; note = XEXP (note, 1))
+		{
+		  rtx pat = XEXP (note, 0);
+		  switch (REG_NOTE_KIND (note))
+		    {
+		    case REG_CFA_DEF_CFA:
+		      /* (PLUS ( CFA_REG, OFFSET)) */
+		      gcc_assert (GET_CODE (pat) == PLUS);
+		      cur_cfa_reg = REGNO (XEXP (pat, 0));
+		      break;
+
+		      /* We only need to fixup register spill */
+		    case REG_CFA_OFFSET:
+		      gcc_assert (GET_CODE (pat) == SET);
+
+		      rtx mem_dest = SET_DEST (pat);
+		      rtx base_reg;
+		      if (GET_CODE (XEXP (mem_dest, 0)) == PLUS)
+			{
+			  base_reg = XEXP (XEXP (mem_dest, 0), 0);
+			}
+		      else
+			{
+			  base_reg = XEXP (mem_dest, 0);
+			}
+		      gcc_assert (REG_P (base_reg));
+
+		      if (REGNO (base_reg) != cur_cfa_reg)
+			{
+			  /* Most likely an insn was moved around and
+			     its note has not been modified accordingly.
+			     We need to rebuild an offset based on
+			     current CFA.
+			  */
+			  k1_swap_fp_sp_in_note (note, base_reg);
+			}
+		      break;
+		    }
+		}
+	    }
+	  binsn = NEXT_INSN (binsn);
+	}
+      while (!bundle_end);
     }
 }
 
