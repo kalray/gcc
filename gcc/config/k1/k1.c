@@ -8191,6 +8191,7 @@ hwloop_fail (hwloop_info loop)
 {
   rtx test;
   rtx insn = loop->loop_end;
+  int has_reload = (recog_memoized (insn) == CODE_FOR_loop_end_withreload);
 
   emit_insn_before (gen_addsi3 (loop->iter_reg, loop->iter_reg, constm1_rtx),
 		    loop->loop_end);
@@ -8202,6 +8203,15 @@ hwloop_fail (hwloop_info loop)
 
   JUMP_LABEL (insn) = loop->start_label;
   LABEL_NUSES (loop->start_label)++;
+
+  /* Copy back the counter in the memory as reload has to be handled
+     by ourself */
+  if (has_reload)
+    {
+      rtx mem_dest = SET_DEST (XVECEXP (PATTERN (loop->loop_end), 0, 2));
+      emit_insn (gen_movsi (mem_dest, loop->iter_reg));
+    }
+
   delete_insn (loop->loop_end);
 }
 
@@ -8214,7 +8224,9 @@ hwloop_pattern_reg (rtx insn)
 {
   rtx reg;
 
-  if (!JUMP_P (insn) || recog_memoized (insn) != CODE_FOR_loop_end)
+  if (!JUMP_P (insn)
+      || (recog_memoized (insn) != CODE_FOR_loop_end
+	  && recog_memoized (insn) != CODE_FOR_loop_end_withreload))
     return NULL_RTX;
 
   reg = SET_DEST (XVECEXP (PATTERN (insn), 0, 1));
