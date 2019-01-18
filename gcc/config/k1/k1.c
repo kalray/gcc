@@ -7244,6 +7244,10 @@ k1_gen_bundles (void)
       rtx insn, next, prev;
       rtx end = NEXT_INSN (BB_END (bb));
 
+      /* BB has no insn to bundle */
+      if (next_insn_to_bundle (BB_HEAD (bb), end) == NULL_RTX)
+	continue;
+
       if (cur_bstate == NULL)
 	{
 	  /* First bundle for function */
