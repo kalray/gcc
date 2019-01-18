@@ -8916,8 +8916,8 @@ k1_profile_hook (void)
 #define TARGET_ADDR_SPACE_CONVERT k1_addr_space_convert
 
 /* FIXME AUTO: trampoline are broken T6775 */
-/* #undef TARGET_STATIC_CHAIN */
-/* #define TARGET_STATIC_CHAIN k1_static_chain */
+#undef TARGET_STATIC_CHAIN
+#define TARGET_STATIC_CHAIN k1_static_chain
 
 struct gcc_target targetm = TARGET_INITIALIZER;
 
