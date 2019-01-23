@@ -106,8 +106,6 @@ extern int k1_has_pic_reference (rtx x);
    static ! */
 extern int k1_has_tls_reference (rtx x);
 
-extern int k1_legitimize_reload_address (rtx *ad, int opnum, int type);
-
 extern bool k1_float_fits_bits (const REAL_VALUE_TYPE *r, unsigned bitsz,
 				enum machine_mode mode);
 
