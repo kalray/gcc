@@ -265,12 +265,6 @@ enum k1_abi_type
   (GET_CODE (X) == SYMBOL_REF || GET_CODE (X) == LABEL_REF                     \
    || (GET_CODE (X) == CONST && symbolic_reference_mentioned_p (X)))
 
-#define LEGITIMIZE_RELOAD_ADDRESS(x, mode, opnum, type, ind_levels, win)       \
-  {                                                                            \
-    if (k1_legitimize_reload_address (&x, opnum, type))                        \
-      goto win;                                                                \
-  }
-
 #define LEGITIMATE_PIC_OPERAND_P(X) k1_legitimate_pic_operand_p (X)
 
 /* A C expression which is nonzero if register number num is suitable
