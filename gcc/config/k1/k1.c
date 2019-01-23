@@ -1115,32 +1115,6 @@ k1_target_pass_by_reference (cumulative_args_t cum ATTRIBUTE_UNUSED,
   return false;
 }
 
-static int
-k1_legitimize_reload_packed_address (rtx *x, void *data ATTRIBUTE_UNUSED)
-{
-  if (REG_P (*x) && REGNO (*x) >= FIRST_PSEUDO_REGISTER)
-    *x = gen_rtx_REG (GET_MODE (*x), 62);
-
-  return 0;
-}
-
-int
-k1_legitimize_reload_address (rtx *ad, int opnum, int type ATTRIBUTE_UNUSED)
-{
-  if (recog_data.constraints[opnum][0] == 'Q'
-      || (recog_data.constraints[opnum][0] == '='
-	  && recog_data.constraints[opnum][1] == 'Q'))
-    {
-      *ad = copy_rtx (*ad);
-      gcc_assert (GET_CODE (*ad) == PLUS);
-      for_each_rtx (ad, k1_legitimize_reload_packed_address, NULL);
-
-      return 1;
-    }
-
-  return 0;
-}
-
 static reg_class_t
 k1_target_secondary_reload (bool in_p ATTRIBUTE_UNUSED, rtx x ATTRIBUTE_UNUSED,
 			    reg_class_t reload_class ATTRIBUTE_UNUSED,
