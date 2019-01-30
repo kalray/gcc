@@ -300,6 +300,102 @@ k1_static_chain (const_tree fndecl, bool incoming_p)
 static const char *prf_reg_names[] = {K1C_PRF_REGISTER_NAMES};
 static const char *qrf_reg_names[] = {K1C_QRF_REGISTER_NAMES};
 
+#define K1_MAX_PACKED_LSU (4)
+
+/* Used during peephole to merge consecutive loads/stores.
+   Returns TRUE if the merge was successful, FALSE if not.
+   NOPS is the number of load/store to consider in OPERANDS array.
+ */
+bool
+k1_pack_load_store (rtx operands[], unsigned int nops)
+{
+  rtx set_dests[K1_MAX_PACKED_LSU];
+  rtx set_srcs[K1_MAX_PACKED_LSU];
+  bool is_load = true;
+  rtx sorted_operands[nops];
+
+  /* Only ld +ld => lq */
+  if (nops != 2)
+    return false;
+
+  for (unsigned i = 0; i < nops; i++)
+    {
+      set_dests[i] = operands[2 * i];
+      set_srcs[i] = operands[2 * i + 1];
+      sorted_operands[2 * i] = sorted_operands[2 * i + 1] = NULL_RTX;
+    }
+
+  /* Only for register size accesses */
+  for (unsigned i = 0; i < nops; i++)
+    if (GET_MODE (set_dests[i]) != DImode)
+      return false;
+
+  /* Only loads */
+  for (unsigned i = 0; i < nops; i++)
+    if (!MEM_P (set_srcs[i]))
+      return false;
+
+  /* Sort and check operands */
+  if (is_load)
+    {
+      unsigned int min_regno = REGNO (operands[0]);
+
+      /* Find first regno for destination */
+      for (unsigned int i = 1; i < nops; i++)
+	if (REGNO (operands[i * 2]) < min_regno)
+	  min_regno = REGNO (operands[i * 2]);
+
+      /* Sort operands based on regno */
+      for (unsigned int i = 0; i < nops; i++)
+	{
+	  const unsigned int regno = REGNO (operands[i * 2]);
+	  const unsigned int idx = 2 * (regno - min_regno);
+
+	  /* Register are not consecutive */
+	  if (idx >= (2 * nops))
+	    return false;
+
+	  /* Destination register used twice in operands */
+	  if (sorted_operands[idx] != NULL_RTX)
+	    return false;
+
+	  sorted_operands[idx] = operands[2 * i];
+	  sorted_operands[idx + 1] = operands[2 * i + 1];
+	}
+
+      /* Check mem addresses are consecutive and first address starts
+	 with a simple reg (this could be changed)*/
+
+      if (!REG_P (XEXP (sorted_operands[1], 0)))
+	return false;
+      const unsigned int base_regno = REGNO (XEXP (sorted_operands[1], 0));
+
+      unsigned int next_offset = UNITS_PER_WORD;
+      for (unsigned int i = 1; i < nops; i++)
+	{
+	  rtx elem = XEXP (sorted_operands[2 * i + 1], 0);
+
+	  /* Not addressing next memory word */
+	  if (GET_CODE (elem) != PLUS || !REG_P (XEXP (elem, 0))
+	      || REGNO (XEXP (elem, 0)) != base_regno
+	      || INTVAL (XEXP (elem, 1)) != next_offset)
+	    return false;
+
+	  next_offset += UNITS_PER_WORD;
+	}
+    }
+
+  rtx lm = gen_load_multiple (sorted_operands[0], sorted_operands[1],
+			      GEN_INT (nops));
+
+  if (lm != NULL_RTX)
+    emit_insn (lm);
+  else
+    return false;
+
+  return true;
+}
+
 /* Implement HARD_REGNO_MODE_OK.  */
 int
 k1_hard_regno_mode_ok (unsigned regno, enum machine_mode mode)
