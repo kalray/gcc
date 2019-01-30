@@ -74,9 +74,6 @@
 
 static bool scheduling = false;
 
-/* interface with MDS */
-enum k1c_abi k1c_cur_abi;
-
 #define K1C_SYNC_REG_REGNO (K1C_MDS_REGISTERS + 0)
 
 rtx k1_sync_reg_rtx;
@@ -240,7 +237,7 @@ k1_compute_frame_info (void)
   sp_offset += get_frame_size ();
 
   /* ABI requires 16-bytes (128bits) alignment. */
-#define K1_STACK_ALIGN(LOC) (((LOC) + 0b1111) & ~0b1111)
+#define K1_STACK_ALIGN(LOC) (((LOC) + 0xF) & ~0xF)
 
   /* Vararg area must be correctly aligned, else var args may not be correctly
    * pushed */
@@ -300,7 +297,8 @@ k1_static_chain (const_tree fndecl, bool incoming_p)
   return gen_frame_mem (Pmode, frame_pointer_rtx);
 }
 
-static const char *prf_reg_names[] = {K1C_K1C_PRF_REGISTER_NAMES};
+static const char *prf_reg_names[] = {K1C_PRF_REGISTER_NAMES};
+static const char *qrf_reg_names[] = {K1C_QRF_REGISTER_NAMES};
 
 /* Implement HARD_REGNO_MODE_OK.  */
 int
@@ -309,32 +307,23 @@ k1_hard_regno_mode_ok (unsigned regno, enum machine_mode mode)
   // SI/DI -> K1C_GRF_FIRST_REGNO - K1C_GRF_LAST_REGNO => OK
   // SI/DI -> K1C_SRF_FIRST_REGNO - K1C_SRF_LAST_REGNO => OK
   // TI    -> K1C_GRF_FIRST_REGNO - K1C_GRF_LAST_REGNO && even => OK
-
-  return (GET_MODE_SIZE (mode) <= UNITS_PER_WORD)
-	 || (mode == TImode && (regno >= K1C_GRF_FIRST_REGNO)
-	     && (regno <= K1C_GRF_LAST_REGNO) && (regno % 2 == 0));
+  // OI    -> K1C_GRF_FIRST_REGNO - K1C_GRF_LAST_REGNO && 0mod4 => OK
+  if (GET_MODE_SIZE (mode) <= UNITS_PER_WORD)
+    return 1;
+  if (regno >= K1C_GRF_FIRST_REGNO && regno <= K1C_GRF_LAST_REGNO)
+    {
+      if (mode == TImode)
+	return (regno % 2 == 0);
+      if (mode == OImode)
+	return (regno % 4 == 0);
+    }
+  return 0;
 }
 
 static unsigned char
 k1_class_max_nregs (reg_class_t regclass, enum machine_mode mode)
 {
-  switch (regclass)
-    {
-    case GRF_REGS:
-    case PRF_REGS:
-    case ALL_REGS:
-      return HARD_REGNO_NREGS (0, mode);
-
-    case SRF_REGS:
-      return 1;
-
-    case NO_REGS:
-      return 0;
-
-    default:
-      break;
-    }
-  gcc_unreachable ();
+  return HARD_REGNO_NREGS (0, mode);
 }
 
 static tree k1_handle_fndecl_attribute (tree *node, tree name,
@@ -677,96 +666,14 @@ k1_analyze_address (rtx x, bool strict, struct k1_address *addr)
   return false;
 }
 
-#define SET_ABI_PARAMS(ARCH, CORE, CONV)                                       \
-  do                                                                           \
-    {                                                                          \
-      char tmp_fixed_regs[] = {                                                \
-	ARCH##_ABI_##CORE##_##CONV##_FIXED_REGISTERS 1, /* sync */             \
-	1,						/* virtual FP */       \
-      };                                                                       \
-      gcc_assert (sizeof (tmp_fixed_regs) == sizeof (fixed_regs));             \
-      size_t _idx_tmp;                                                         \
-      for (_idx_tmp = 0; _idx_tmp < sizeof (fixed_regs); _idx_tmp++)           \
-	{                                                                      \
-	  if (fixed_regs[_idx_tmp] == 2)                                       \
-	    fixed_regs[_idx_tmp] = tmp_fixed_regs[_idx_tmp];                   \
-	}                                                                      \
-                                                                               \
-      char tmp_call_used_regs[] = {                                            \
-	ARCH##_ABI_##CORE##_##CONV##_CALL_USED_REGISTERS 1, /* sync */         \
-	1,						    /* virtual FP */   \
-      };                                                                       \
-      gcc_assert (sizeof (tmp_call_used_regs) == sizeof (call_used_regs));     \
-      for (_idx_tmp = 0; _idx_tmp < sizeof (call_used_regs); _idx_tmp++)       \
-	{                                                                      \
-	  if (call_used_regs[_idx_tmp] == 2)                                   \
-	    call_used_regs[_idx_tmp] = tmp_call_used_regs[_idx_tmp];           \
-	}                                                                      \
-                                                                               \
-      char tmp_call_really_used_regs[] = {                                     \
-	ARCH##_ABI_##CORE##_##CONV##_CALL_REALLY_USED_REGISTERS 1, /* sync */  \
-	1, /* virtual FP */                                                    \
-      };                                                                       \
-      gcc_assert (sizeof (tmp_call_really_used_regs)                           \
-		  == sizeof (call_really_used_regs));                          \
-      for (_idx_tmp = 0; _idx_tmp < sizeof (fixed_regs); _idx_tmp++)           \
-	{                                                                      \
-	  if (call_really_used_regs[_idx_tmp] == 2)                            \
-	    call_really_used_regs[_idx_tmp]                                    \
-	      = tmp_call_really_used_regs[_idx_tmp];                           \
-	}                                                                      \
-    }                                                                          \
-  while (0)
-
 static void
 k1_target_conditional_register_usage (void)
 {
-  const int is_k1c = true;
-
-  k1c_cur_abi = K1C_ABI_K1C_REGULAR;
-  SET_ABI_PARAMS (K1C, K1C, REGULAR);
-
-  // FIXME FOR COOLIDGE
-  // FIXME AUTO: rework ABI selection
-  /* if (flag_pic && TARGET_32){ */
-  /*   k1c_cur_abi = K1C_ABI_K1C_PIC; */
-  /*   SET_ABI_PARAMS(K1C,K1C,PIC); */
-  /* } /\* else if (TARGET_FDPIC && !TARGET_64){ *\/ */
-  /*   /\* k1b_cur_abi = K1B_ABI_K1BDP_FDPIC; *\/ */
-  /*   /\* /\\* if we're in FDPIC, fix the r9 register *\\/ *\/ */
-  /*   /\* fix_register ("r9", 1, 1); *\/ */
-  /* }  */
-  /* else if (flag_pic && !TARGET_32) { */
-  /*   k1c_cur_abi = K1C_ABI_K1C_PIC64; */
-  /*   SET_ABI_PARAMS(K1C,K1C,PIC64); */
-  /* } /\* else if (TARGET_FDPIC && TARGET_64) { *\/ */
-  /*     error ("64bits does not support FDPIC"); */
-  /* }  */
-  /* else if (!TARGET_32) { */
-  /*   k1c_cur_abi = K1C_ABI_K1C_EMBEDDED64; */
-  /*   SET_ABI_PARAMS(K1C,K1C,EMBEDDED64); */
-  /* } else { */
-  /*   k1c_cur_abi = K1C_ABI_K1C_EMBEDDED; */
-  /*   SET_ABI_PARAMS(K1C,K1C,EMBEDDED); */
-  /* } */
-
-  /* the following exists because there is no FDPIC ABI, simply patch the
-   * default one */
-  /* if (TARGET_FDPIC){ */
-  /*   /\* if we're in FDPIC, fix the r9 register *\/ */
-  /*   fix_register ("r9", 1, 1); */
-  /* } */
-
   k1_sync_reg_rtx = gen_rtx_REG (SImode, K1C_SYNC_REG_REGNO);
-
   k1_link_reg_rtx = gen_rtx_REG (Pmode, K1C_RETURN_POINTER_REGNO);
   k1_data_start_symbol
     = gen_rtx_SYMBOL_REF (Pmode,
 			  IDENTIFIER_POINTER (get_identifier ("_data_start")));
-  K1C_ADJUST_REGISTER_NAMES;
-
-  const char *prf_names[] = {K1C_K1C_PRF_REGISTER_NAMES};
-  memcpy (prf_reg_names, prf_names, sizeof (prf_reg_names));
 }
 
 rtx
@@ -1568,6 +1475,8 @@ k1_regname (rtx x)
     case REG:
       if (GET_MODE (x) == TImode)
 	return prf_reg_names[REGNO (x)];
+      else if (GET_MODE (x) == OImode)
+	return qrf_reg_names[REGNO (x)];
       else
 	return reg_names[REGNO (x)];
     case SUBREG:
@@ -1842,7 +1751,9 @@ k1_expand_stack_check_allocate_stack (rtx target, rtx adjust)
   else
     {
       /* [JV] Multiring: Waiting for allocated VSFR0 and maturity. */
-      emit_move_insn (stack_end_val, gen_rtx_REG (Pmode, K1C_VSFR0_REGNO));
+      /*BD3 emit_move_insn (stack_end_val,
+		      gen_rtx_REG (Pmode, K1C_VSFR0_REGNO));*/
+      gcc_unreachable ();
     }
   emit_insn (
     gen_rtx_SET (Pmode, tmp,
