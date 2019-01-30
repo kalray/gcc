@@ -1,9 +1,29 @@
 ;; Iterator for SI, QI and HI modes
 (define_mode_iterator SHORT [QI HI SI])
 
-(define_mode_attr lsusize [(QI "b") (HI "h") (SI "w") (DI "d") (SF "w") (DF "d")])
+;; Mapping between GCC modes and suffixes used by LSU insns
+(define_mode_attr lsusize [
+ (QI "b")
+ (HI "h")
+ (SI "w")
+ (DI "d")
+ (TI "q")
+ (OI "o")
+ (SF "w")
+ (DF "d")])
 
-(define_mode_attr lsusext [(QI "z") (HI "z") (SI "z") (DI "") (SF "z") (DF "")])
+;; Suffix for extension when applicable (for LSU narrower than a
+;; register). Leave empty if not applicable
+(define_mode_attr lsusext [
+  (QI "z")
+  (HI "z")
+  (SI "z")
+  (DI "")
+  (TI "")
+  (OI "")
+  (SF "z")
+  (DF "")])
+
 (define_mode_attr hq [(HI "h") (QI "q")])
 
 ;; Code iterator for sign/zero extension
@@ -42,10 +62,20 @@
 ;; Iterator for all float modes (up to 64-bit)
 (define_mode_iterator ALLMF [SF DF])
 
-(define_mode_attr sfx [(SF "w") (DF "d") (SI "w") (DI "d")] )
+(define_mode_attr sfx [
+  (SF "w")
+  (DF "d")
+  (QI "w")
+  (HI "w")
+  (SI "w")
+  (DI "d")
+  (TI "q")
+  (OI "o")])
+
 (define_mode_attr fmasfx [(SF "w") (DF "d")] )
 
-;; All modes that fit in 1 register. Used for LSU.
+;; All modes used by the mov pattern that fit in a register.
+;; TI and OI and to be handled elsewhere.
 (define_mode_iterator ALLIF [QI HI SI DI SF DF])
 
 (define_mode_iterator ALLP [SI DI])
@@ -90,12 +120,15 @@
 (define_mode_attr regclass [(SI "r") (DI "r")])
 (define_mode_attr size [(SI "4") (DI "8")])
 
-;; isns length for materializing a symbol depending on pointer size,
-;; using make insn. Alternatives using these should only be enable for valid modes: SI or DI.
-;; Anything else is an error.
+;; insns length for materializing a symbol depending on pointer size,
+;; using make insn. Alternatives using these should only be enabled
+;; for valid pointer modes: SI or DI. Anything else is an error.
+;; Values 999 are used for modes where the alternative must always be disabled.
 (define_mode_attr symlen1 [(SI "_x") (DI "_y") (QI "") (HI "") (SF "") (DF "")])
 (define_mode_attr symlen2 [(SI "8") (DI "12") (QI "999") (HI "999") (SF "999") (DF "999")])
 
+;; Used to also select AUX WRITE
+(define_mode_attr auxw [(SI "") (DI "") (QI "") (HI "") (TI "_auxw") (OI "_auxw") (SF "") (DF "")])
 
 (define_mode_attr sbfx_resrv [(SI "tiny") (DI "alud_lite")])
 
