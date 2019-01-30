@@ -7,17 +7,6 @@
 #include "vec.h"
 #endif
 
-/* Sync register and virtual FP */
-
-#define K1C_NO_EXT_MASK 0x0
-//#define K1C_ARF_EXT_MASK 0x0
-#define K1C_PRF_EXT_MASK 0x0
-#define K1C_GRF_EXT_MASK 0x2   /* Virtual FP */
-#define K1C_SRF_EXT_MASK 0x1   /* Sync */
-#define K1C_SRF32_EXT_MASK 0x1 /* Sync */
-#define K1C_SRF64_EXT_MASK 0x0
-#define K1C_ALL_EXT_MASK 0x3
-
 #ifndef _K1_REGS
 #define _K1_REGS
 #include "k1c-registers.h"
@@ -190,21 +179,21 @@ enum k1_abi_type
 
 #define FIXED_REGISTERS                                                        \
   {                                                                            \
-    K1C_FIXED_REGISTERS                                                        \
+    K1C_ABI_REGULAR_FIXED_REGISTERS                                            \
     1,	 /* sync */                                                            \
       1, /* virtual FP */                                                      \
   }
 
 #define CALL_USED_REGISTERS                                                    \
   {                                                                            \
-    K1C_CALL_USED_REGISTERS                                                    \
+    K1C_ABI_REGULAR_CALL_USED_REGISTERS                                        \
     1,	 /* sync */                                                            \
       1, /* virtual FP */                                                      \
   }
 
 #define CALL_REALLY_USED_REGISTERS                                             \
   {                                                                            \
-    K1C_CALL_REALLY_USED_REGISTERS                                             \
+    K1C_ABI_REGULAR_CALL_REALLY_USED_REGISTERS                                 \
     1,	 /* sync */                                                            \
       1, /* virtual FP */                                                      \
   }
@@ -373,10 +362,7 @@ enum k1_abi_type
 
 #define INCOMING_RETURN_ADDR_RTX gen_rtx_REG (Pmode, K1C_RETURN_POINTER_REGNO)
 
-#define DBX_REGISTER_NUMBER(REGNO)                                             \
-  ((((REGNO) >= K1C_GRF_FIRST_REGNO) && ((REGNO) <= K1C_GRF_LAST_REGNO))       \
-     ? (REGNO) + 512                                                           \
-     : (REGNO) -64)
+#define DBX_REGISTER_NUMBER(REGNO) (REGNO)
 
 #define DWARF_FRAME_RETURN_COLUMN DBX_REGISTER_NUMBER (K1C_RETURN_POINTER_REGNO)
 
@@ -686,20 +672,19 @@ extern void k1_profile_hook (void);
    refer to registers using alternate names. */
 #define ADDITIONAL_REGISTER_NAMES                                              \
   {                                                                            \
-    {"p0", 0}, {"p2", 2}, {"p4", 4}, {"p6", 6}, {"p8", 8}, {"p10", 10},        \
-      {"p12", 12}, {"p14", 14}, {"p16", 16}, {"p18", 18}, {"p20", 20},         \
-      {"p22", 22}, {"p24", 24}, {"p26", 26}, {"p28", 28}, {"p30", 30},         \
-      {"p32", 32}, {"p34", 34}, {"p36", 36}, {"p38", 38}, {"p40", 40},         \
-      {"p42", 42}, {"p44", 44}, {"p46", 46}, {"p48", 48}, {"p50", 50},         \
-      {"p52", 52}, {"p54", 54}, {"p56", 56}, {"p58", 58}, {"p60", 60},         \
-      {"p62", 62}, {"r0r1", 0}, {"r2r3", 2}, {"r4r5", 4}, {"r6r7", 6},         \
-      {"r8r9", 8}, {"r10r11", 10}, {"r12r13", 12}, {"r14r15", 14},             \
-      {"r16r17", 16}, {"r18r19", 18}, {"r20r21", 20}, {"r22r23", 22},          \
-      {"r24r25", 24}, {"r26r27", 26}, {"r28r29", 28}, {"r30r31", 30},          \
-      {"r32r33", 32}, {"r34r35", 34}, {"r36r37", 36}, {"r38r39", 38},          \
-      {"r40r41", 40}, {"r42r43", 42}, {"r44r45", 44}, {"r46r47", 46},          \
-      {"r48r49", 48}, {"r50r51", 50}, {"r52r53", 52}, {"r54r55", 54},          \
-      {"r56r57", 56}, {"r58r59", 58}, {"r60r61", 60}, {"r62r63", 62},          \
+    {"r0r1", 0}, {"r2r3", 2}, {"r4r5", 4}, {"r6r7", 6}, {"r8r9", 8},           \
+      {"r10r11", 10}, {"r12r13", 12}, {"r14r15", 14}, {"r16r17", 16},          \
+      {"r18r19", 18}, {"r20r21", 20}, {"r22r23", 22}, {"r24r25", 24},          \
+      {"r26r27", 26}, {"r28r29", 28}, {"r30r31", 30}, {"r32r33", 32},          \
+      {"r34r35", 34}, {"r36r37", 36}, {"r38r39", 38}, {"r40r41", 40},          \
+      {"r42r43", 42}, {"r44r45", 44}, {"r46r47", 46}, {"r48r49", 48},          \
+      {"r50r51", 50}, {"r52r53", 52}, {"r54r55", 54}, {"r56r57", 56},          \
+      {"r58r59", 58}, {"r60r61", 60}, {"r62r63", 62}, {"r0r1r2r3", 0},         \
+      {"r4r5r6r7", 4}, {"r8r9r10r11", 8}, {"r12r13r14r15", 12},                \
+      {"r16r17r18r19", 16}, {"r20r21r22r23", 20}, {"r24r25r26r27", 24},        \
+      {"r28r29r30r31", 28}, {"r32r33r34r35", 32}, {"r36r37r38r39", 36},        \
+      {"r40r41r42r43", 40}, {"r44r45r46r47", 44}, {"r48r49r50r51", 48},        \
+      {"r52r53r54r55", 52}, {"r56r57r58r59", 56}, {"r60r61r62r63", 60},        \
       {"s0", 64}, {"s1", 65}, {"s2", 66}, {"s3", 67}, {"s4", 68}, {"s5", 69},  \
       {"s6", 70}, {"s7", 71}, {"s8", 72}, {"s9", 73}, {"s10", 74},             \
       {"s11", 75}, {"s12", 76}, {"s13", 77}, {"s14", 78}, {"s15", 79},         \
