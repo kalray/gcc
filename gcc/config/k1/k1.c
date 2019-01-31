@@ -2710,7 +2710,6 @@ enum k1_builtin
   K1_BUILTIN_WFXM,
   K1_BUILTIN_IINVAL,
   K1_BUILTIN_IINVALS,
-  K1_BUILTIN_ITOUCHL,
   K1_BUILTIN_LANDHP,
   K1_BUILTIN_LBSU,
   K1_BUILTIN_LBZU,
@@ -2973,7 +2972,6 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (WFXM, "wfxm", VOID, uintQI, uintDI);
   ADD_K1_BUILTIN (IINVAL, "iinval", VOID);
   ADD_K1_BUILTIN (IINVALS, "iinvals", VOID, constVoidPTR);
-  ADD_K1_BUILTIN (ITOUCHL, "itouchl", VOID, voidPTR);
   /* FIXME AUTO: disabling vector support */
   /* ADD_K1_BUILTIN (LANDHP,  "landhp",      intSI,  intSI,  intSI); */
   ADD_K1_BUILTIN (LBSU, "lbsu", intQI, constVoidPTR);
@@ -3897,17 +3895,6 @@ k1_expand_builtin_iinvals (rtx target, tree args)
 
   arg1 = gen_rtx_MEM (SImode, force_reg (Pmode, arg1));
   emit_insn (gen_iinvals (arg1, k1_sync_reg_rtx));
-
-  return target;
-}
-
-static rtx
-k1_expand_builtin_itouchl (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-
-  arg1 = gen_rtx_MEM (SImode, force_reg (Pmode, arg1));
-  emit_insn (gen_itouchl (arg1, k1_sync_reg_rtx));
 
   return target;
 }
@@ -5259,8 +5246,6 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_iinval ();
     case K1_BUILTIN_IINVALS:
       return k1_expand_builtin_iinvals (target, exp);
-    case K1_BUILTIN_ITOUCHL:
-      return k1_expand_builtin_itouchl (target, exp);
       /* FIXME AUTO: disabling vector support */
     /* case K1_BUILTIN_LANDHP: */
     /*     return k1_expand_builtin_landhp (target, exp); */
