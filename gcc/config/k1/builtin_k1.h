@@ -133,8 +133,6 @@ extern void __builtin_k1_fence (void);
 extern void __builtin_k1_iinval (void);
 /* IINVALS */
 extern void __builtin_k1_iinvals (const void *addr);
-/* ITOUCHL */
-extern void __builtin_k1_itouchl (void *addr);
 /* LBS_U */
 extern char __builtin_k1_lbsu (const void *addr);
 /* LBZ_U */
