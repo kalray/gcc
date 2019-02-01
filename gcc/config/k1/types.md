@@ -72,7 +72,6 @@
   maxuhp, \
   abd, \
   abd_x, \
-  bwluhp, \
   shift32"
 
   (const_string "all"))
