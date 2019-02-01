@@ -186,9 +186,10 @@ extern int __builtin_k1_addhp (int op0_hp, int op1_hp);
 /* ADDHQ */
 /* ADDHR */
 /* ADDHRWP */
-/* ADDS */
-extern int __builtin_k1_adds (int op0, int op1);
+/* ADDSW */
+extern int __builtin_k1_addsw (int op0, int op1);
 /* ADDSD */
+extern long long __builtin_k1_addsd (long long op0, long long op1);
 /* ADDSHP */
 /* ADDSHQ */
 /* ADDSWP */
@@ -244,22 +245,10 @@ extern int __builtin_k1_adds (int op0, int op1);
 /* AVGUHQ */
 /* AVGUWP */
 /* AVGWP */
-/* BWLU */
-extern unsigned int __builtin_k1_bwlu (unsigned int op0_a, unsigned int op1_b,
-				       unsigned int op2_c, unsigned int op3_d,
-				       unsigned short op4_lut);
-/* BWLUHP */
-extern unsigned int __builtin_k1_bwluhp (unsigned int op0_hp_ab,
-					 unsigned int op1_hp_cd,
-					 unsigned int op2_hp_lut);
-/* BWLUWP */
-extern unsigned long long __builtin_k1_bwluwp (unsigned long long op0_wp_ab,
-					       unsigned long long op1_wp_cd,
-					       unsigned int op2_hp_lut);
-/* CBS */
-extern int __builtin_k1_cbs (unsigned int op0);
-/* CBSDL */
-extern long long __builtin_k1_cbsdl (unsigned long long op0);
+/* CBSW */
+extern int __builtin_k1_cbsw (unsigned int op0);
+/* CBSD */
+extern long long __builtin_k1_cbsd (unsigned long long op0);
 /* CBSWP */
 /* CDMOVED */
 /* CLS */
@@ -392,8 +381,10 @@ extern long long int __builtin_k1_satd (long long int, unsigned char);
 /* SBFHP */
 extern int __builtin_k1_sbfhp (int, int);
 /* SBFHQ */
-/* SBFS */
+/* SBFSW */
+extern int __builtin_k1_sbfsw (int op0, int op1);
 /* SBFSD */
+extern long long __builtin_k1_sbfsd (long long op0, long long op1);
 /* SBFSHP */
 /* SBFSHQ */
 /* SBFSWP */
@@ -457,8 +448,8 @@ extern unsigned int __builtin_k1_srahps (unsigned int, unsigned int);
 /* SRSHPS */
 /* SRSHQS */
 /* SRSWPS */
-/* STSU */
-extern unsigned int __builtin_k1_stsu (unsigned int, unsigned int);
+/* STSUW */
+extern unsigned int __builtin_k1_stsuw (unsigned int, unsigned int);
 /* STSUD */
 extern unsigned long long __builtin_k1_stsud (unsigned long long,
 					      unsigned long long);
@@ -548,7 +539,7 @@ extern unsigned long long __builtin_k1_maduuciwd (unsigned long long,
 /* MULWDM */
 
 /*
- * FPU Instructions (ALU ans MAU)
+ * FPU Instructions (ALU and MAU)
  */
 
 /* FABS */
@@ -562,40 +553,16 @@ extern float __builtin_k1_faddrn (float op0, float op1);
 extern double __builtin_k1_faddrnd (double op0, double op1);
 /* FADDRNWP */
 /* FADDWP */
-/* FCDIV */
-extern float __builtin_k1_fcdiv (float dividend, float divisor);
+/* FCDIVW */
+extern float __builtin_k1_fcdivw (float dividend, float divisor);
 /* FCDIVD */
 extern double __builtin_k1_fcdivd (double dividend, double divisor);
 /* FCDIVWP */
-/* FCMA */
-extern float __builtin_k1_fcma (float mult1_op0, float mult0_op0,
-				float mult0_op1, float mult1_op1);
-/* FCMAWD */
-extern double __builtin_k1_fcmawd (float mult1_op0, float mult0_op0,
-				   float mult0_op1, float mult1_op1);
-/* FCMS */
-extern float __builtin_k1_fcms (float mult1_op0, float mult0_op0,
-				float mult0_op1, float mult1_op1);
-/* FCMSWD */
-extern double __builtin_k1_fcmswd (float mult1_op0, float mult0_op0,
-				   float mult0_op1, float mult1_op1);
 /* FCOMP */
 /* FCOMPDL */
 /* FCOMPWP */
-/* FDMA */
-extern float __builtin_k1_fdma (float mult0_op0, float mult1_op0,
-				float mult0_op1, float mult1_op1);
-/* FDMAWD */
-extern double __builtin_k1_fdmawd (float mult0_op0, float mult1_op0,
-				   float mult0_op1, float mult1_op1);
-/* FDMS */
-extern float __builtin_k1_fdms (float mult0_op0, float mult1_op0,
-				float mult0_op1, float mult1_op1);
-/* FDMSWD */
-extern double __builtin_k1_fdmswd (float mult0_op0, float mult1_op0,
-				   float mult0_op1, float mult1_op1);
-/* FFMA */
-extern float __builtin_k1_ffma (float addend, float mult_op0, float mult_op1);
+/* FFMAW */
+extern float __builtin_k1_ffmaw (float addend, float mult_op0, float mult_op1);
 /* FFMAD */
 extern double __builtin_k1_ffmad (double addend, double mult_op0,
 				  double mult_op1);
@@ -605,8 +572,6 @@ extern double __builtin_k1_ffmadrn (double addend, double mult_op0,
 /* FFMARND */
 /* FFMARNWD */
 /* FFMARNWP */
-/* FFMAW */
-extern float __builtin_k1_ffmaw (float addend, float mult_op0, float mult_op1);
 /* FFMAWD */
 extern double __builtin_k1_ffmawd (double addend, float mult_op0,
 				   float mult_op1);
@@ -617,8 +582,8 @@ extern double __builtin_k1_ffmawdrn (double addend, float mult_op0,
 /* FFMAWRN */
 extern float __builtin_k1_ffmawrn (float addend, float mult_op0,
 				   float mult_op1);
-/* FFMS */
-extern float __builtin_k1_ffms (float addend, float mult_op0, float mult_op1);
+/* FFMSW */
+extern float __builtin_k1_ffmsw (float addend, float mult_op0, float mult_op1);
 /* FFMSD */
 extern double __builtin_k1_ffmsd (double addend, double mult_op0,
 				  double mult_op1);
@@ -630,8 +595,6 @@ extern float __builtin_k1_ffmsrn (float addend, float mult_op0, float mult_op1);
 /* FFMSRND */
 /* FFMSRNWD */
 /* FFMSRNWP */
-/* FFMSW */
-extern float __builtin_k1_ffmsw (float addend, float mult_op0, float mult_op1);
 /* FFMSWRN */
 extern float __builtin_k1_ffmswrn (float addend, float mult_op0,
 				   float mult_op1);
@@ -724,23 +687,18 @@ extern float __builtin_k1_fsbfrn (float op0, float op1);
 extern double __builtin_k1_fsbfrnd (double op0, double op1);
 /* FSBFRNWP */
 /* FSBFWP */
-/* FSDIV */
-extern float __builtin_k1_fsdiv (float, float);
+/* FSDIVW */
+extern float __builtin_k1_fsdivw (float, float);
 /* FSDIVD */
 extern double __builtin_k1_fsdivd (double, double);
 /* FSDIVWP */
-/* FSINV */
-extern float __builtin_k1_fsinv (float);
+/* FSINVW */
+extern float __builtin_k1_fsinvw (float);
 /* FSINVD */
 extern double __builtin_k1_fsinvd (double);
-/* FSINVN */
-extern float __builtin_k1_fsinvn (float);
-/* FSINVND */
-extern double __builtin_k1_fsinvnd (double);
-/* FSINVNWP */
 /* FSINVWP */
-/* FSISR */
-extern float __builtin_k1_fsisr (float);
+/* FSISRW */
+extern float __builtin_k1_fsisrw (float);
 /* FSISRD */
 extern double __builtin_k1_fsisrd (double);
 /* FSISRWP */
