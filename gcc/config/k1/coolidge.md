@@ -222,7 +222,7 @@
                  "k1c_alu_lite_r")
 
 (define_insn_reservation "k1c_lite.x" 1 (and (eq_attr "arch" "coolidge")
-                                             (eq_attr "type" "abd_x,cmove_x,bwluhp,lite_x"))
+                                             (eq_attr "type" "abd_x,cmove_x,lite_x"))
                          "k1c_alu_lite.x_r")
 
 (define_insn_reservation "k1c_lite.y" 1 (and (eq_attr "arch" "coolidge")
