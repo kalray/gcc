@@ -1211,14 +1211,13 @@ k1_target_print_operand (FILE *file, rtx x, int code)
     case 'b':
       lowbit_highbit = true;
       break;
-    case 'Q':
+    case 'Q': /* Force the use of quadruple even if mode is not compatible */
       quadword_reg++;
       /* fallthrough */
     case 'q':
       quadword_reg++;
       break;
-
-    case 'O':
+    case 'O': /* Force the use of octuple even if mode is not compatible */
       octupleword_reg++;
       /* fallthrough */
     case 'o':
@@ -1342,7 +1341,7 @@ k1_target_print_operand (FILE *file, rtx x, int code)
 	    }
 	  fprintf (file, "$%s%s%s%s", reg_names[REGNO (operand)],
 		   reg_names[REGNO (operand) + 1],
-		   reg_names[REGNO (operand)] + 2,
+		   reg_names[REGNO (operand) + 2],
 		   reg_names[REGNO (operand) + 3]);
 	}
 
