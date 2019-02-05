@@ -300,8 +300,29 @@ k1_static_chain (const_tree fndecl, bool incoming_p)
 static const char *prf_reg_names[] = {K1C_PRF_REGISTER_NAMES};
 static const char *qrf_reg_names[] = {K1C_QRF_REGISTER_NAMES};
 
-#define K1_MAX_PACKED_LSU (4)
+/* Splits X as a base + offset. Returns true if split successful,
+   false if not. BASE_OUT and OFFSET_OUT contain the corresponding
+   split.
+ */
+bool
+k1_split_mem (rtx x, rtx *base_out, rtx *offset_out)
+{
+  if (GET_CODE (x) != PLUS && !REG_P (x))
+    return false;
 
+  if (GET_CODE (x) == PLUS && CONST_INT_P (XEXP (x, 1)))
+    {
+      *base_out = XEXP (x, 0);
+      *offset_out = XEXP (x, 1);
+      return true;
+    }
+
+  *base_out = x;
+  *offset_out = const0_rtx;
+  return true;
+}
+
+#define K1_MAX_PACKED_LSU (4)
 /* Used during peephole to merge consecutive loads/stores.
    Returns TRUE if the merge was successful, FALSE if not.
    NOPS is the number of load/store to consider in OPERANDS array.
@@ -363,14 +384,31 @@ k1_pack_load_store (rtx operands[], unsigned int nops)
 	  sorted_operands[idx + 1] = operands[2 * i + 1];
 	}
 
-      /* Check mem addresses are consecutive and first address starts
-	 with a simple reg (this could be changed)*/
+      /* Check mem addresses are consecutive */
+      rtx base_reg, base_offset;
+      k1_split_mem (XEXP (sorted_operands[1], 0), &base_reg, &base_offset);
 
-      if (!REG_P (XEXP (sorted_operands[1], 0)))
-	return false;
-      const unsigned int base_regno = REGNO (XEXP (sorted_operands[1], 0));
+      const unsigned int base_regno = REGNO (base_reg);
 
-      unsigned int next_offset = UNITS_PER_WORD;
+      /* Base register is modified by one load */
+      if (base_regno >= REGNO (sorted_operands[0])
+	  && base_regno <= REGNO (sorted_operands[(nops - 1) * 2]))
+	{
+	  bool mod_before_last = false;
+	  /* Check the base register is modified in the last load */
+	  for (unsigned int i = 0; i < (nops - 1); i++)
+	    {
+	      if (REGNO (operands[2 * i]) == base_regno)
+		{
+		  mod_before_last = true;
+		  break;
+		}
+	    }
+	  if (mod_before_last)
+	    return false;
+	}
+
+      unsigned int next_offset = INTVAL (base_offset) + UNITS_PER_WORD;
       for (unsigned int i = 1; i < nops; i++)
 	{
 	  rtx elem = XEXP (sorted_operands[2 * i + 1], 0);
