@@ -148,6 +148,9 @@
 (define_reservation "k1c_lsu_auxw.x_r"
   "k1c_lsu_u + k1c_tiny_lsu_u + k1c_auxw_u + k1c_issue_x2_r")
 
+(define_reservation "k1c_lsu_auxw.y_r"
+  "k1c_lsu_u + k1c_tiny_lsu_u + k1c_auxw_u + k1c_issue_x3_r")
+
 (define_reservation "k1c_lsu_acc_r"
   "k1c_lsu_u + k1c_tiny_lsu_u + k1c_lsu_store_u + k1c_issue_r")
 
@@ -355,6 +358,11 @@
                                                                 (match_test "TARGET_K1C")))
                          "k1c_lsu_auxw.x_r")
 
+(define_insn_reservation "k1c_lsu_load_auxw_uncached.y" 10 (and (eq_attr "arch" "coolidge")
+                                                                (and (eq_attr "type" "lsu_load_auxw_uncached_y")
+                                                                (match_test "TARGET_K1C")))
+                         "k1c_lsu_auxw.y_r")
+
 (define_insn_reservation "k1c_io_lsu_load_uncached" 10 (and (eq_attr "arch" "coolidge")
                                                            (and (eq_attr "type" "lsu_load_uncached")
                                                                 (match_test "TARGET_K1C")))
@@ -395,6 +403,11 @@
                                                       (match_test "TARGET_K1C")))
                          "k1c_lsu_auxw.x_r")
 
+(define_insn_reservation "k1c_lsu_load_auxw.y" 2 (and (eq_attr "arch" "coolidge")
+                                                      (and (eq_attr "type" "lsu_load_auxw_y")
+                                                      (match_test "TARGET_K1C")))
+                         "k1c_lsu_auxw.y_r")
+
 (define_insn_reservation "k1c_io_lsu_load" 3 (and (eq_attr "arch" "coolidge")
                                                   (and (eq_attr "type" "lsu_load")
                                                        (match_test "TARGET_K1C")))
@@ -422,6 +435,10 @@
 (define_insn_reservation "k1c_lsu_store_auxr.x" 1 (and (eq_attr "arch" "coolidge")
                                                        (eq_attr "type" "lsu_store_auxr_x"))
                          "k1c_lsu_u + k1c_tiny_lsu_u + k1c_lsu_store_u + k1c_auxr_u + k1c_issue_x2_r")
+
+(define_insn_reservation "k1c_lsu_store_auxr.y" 1 (and (eq_attr "arch" "coolidge")
+                                                       (eq_attr "type" "lsu_store_auxr_y"))
+                         "k1c_lsu_u + k1c_tiny_lsu_u + k1c_lsu_store_u + k1c_auxr_u + k1c_issue_x3_r")
 
 (define_insn_reservation "k1c_lsu" 1 (and (eq_attr "arch" "coolidge")
                                           (eq_attr "type" "lsu"))
