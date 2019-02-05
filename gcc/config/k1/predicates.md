@@ -367,22 +367,45 @@
     return 0;
 
   dest_regno = REGNO (SET_DEST (XVECEXP (op, 0, 0)));
-  src_addr = XEXP (SET_SRC (XVECEXP (op, 0, 0)), 0);
 
-  for (i = 1; i < count; i++)
+  /* register number must be correctly aligned */
+  if (dest_regno < FIRST_PSEUDO_REGISTER
+      && (dest_regno % count != 0))
+    return 0;
+
+  src_addr = XEXP (SET_SRC (XVECEXP (op, 0, 0)), 0);
+  HOST_WIDE_INT expected_offset = 0;
+  int base_regno = -1;
+
+  for (i = 0; i < count; i++)
     {
       rtx elt = XVECEXP (op, 0, i);
+      rtx base, offset;
 
       if (GET_CODE (elt) != SET
-	  || GET_CODE (SET_DEST (elt)) != REG
+      	  || GET_CODE (SET_SRC (elt)) != MEM)
+        return 0;
+
+      if (! k1_split_mem (XEXP (SET_SRC (elt), 0), &base, &offset))
+        return 0;
+
+      if (i == 0)
+        {
+          expected_offset = INTVAL (offset);
+	  base_regno = REGNO (base);
+	}
+      else
+        {
+	  expected_offset += UNITS_PER_WORD;
+	}
+
+      if (GET_CODE (SET_DEST (elt)) != REG
 	  || GET_MODE (SET_DEST (elt)) != DImode
 	  || REGNO (SET_DEST (elt)) != dest_regno + i
-	  || GET_CODE (SET_SRC (elt)) != MEM
 	  || GET_MODE (SET_SRC (elt)) != DImode
-	  || GET_CODE (XEXP (SET_SRC (elt), 0)) != PLUS
-	  || ! rtx_equal_p (XEXP (XEXP (SET_SRC (elt), 0), 0), src_addr)
-	  || GET_CODE (XEXP (XEXP (SET_SRC (elt), 0), 1)) != CONST_INT
-	  || INTVAL (XEXP (XEXP (SET_SRC (elt), 0), 1)) != i * 8)
+	  || base_regno != REGNO (base)
+	  || expected_offset != INTVAL (offset))
+
 	return 0;
     }
 
