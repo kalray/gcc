@@ -165,24 +165,25 @@ extern unsigned int __builtin_k1_lwzu (const void *addr);
  * ALU Instruction (non-FPU)
  */
 
-/* ABD */
+/* ABDW */
+extern int __builtin_k1_abdw (int op0, int op1);
 /* ABDD */
+extern long long __builtin_k1_abdd (long long op0, long long op1);
 /* ABDHP */
 /* ABDHQ */
 /* ABDWP */
-/* ABS */
+/* ABSW */
 /* ABSD */
 /* ABSHP */
 /* ABSHQ */
 /* ABSWP */
-/* ADD */
+/* ADDW */
 /* ADDC */
 /* ADDCD */
 /* ADDCI */
 /* ADDCID */
 /* ADDD */
 /* ADDHP */
-extern int __builtin_k1_addhp (int op0_hp, int op1_hp);
 /* ADDHQ */
 /* ADDHR */
 /* ADDHRWP */
@@ -225,12 +226,16 @@ extern long long __builtin_k1_addsd (long long op0, long long op1);
 /* ANDHRWP */
 /* ANDN */
 /* ANDND */
-/* AVG */
-/* AVGD */
+/* AVGW */
+extern int __builtin_k1_avgw (int op0, int op1);
+/* AVGUW */
+extern unsigned int __builtin_k1_avguw (unsigned int op0, unsigned int op1);
 /* AVGHP */
 /* AVGHQ */
-/* AVGR */
-/* AVGRD */
+/* AVGRW */
+extern int __builtin_k1_avgrw (int op0, int op1);
+/* AVGRUW */
+extern unsigned int __builtin_k1_avgruw (unsigned int op0, unsigned int op1);
 /* AVGRHP */
 /* AVGRHQ */
 /* AVGRU */
@@ -364,14 +369,10 @@ extern int __builtin_k1_landhp (int, int);
 /* ROLWPS */
 /* ROR */
 /* RORWPS */
-/* SAT */
-extern int __builtin_k1_sat (int, unsigned char);
 /* SATD */
 extern long long int __builtin_k1_satd (long long int, unsigned char);
-/* SATDL */
-/* SATU */
 /* SATUD */
-/* SATUDL */
+extern unsigned long long int __builtin_k1_satud (long long int, unsigned char);
 /* SBF */
 /* SBFC */
 /* SBFCD */
@@ -542,10 +543,10 @@ extern unsigned long long __builtin_k1_maduuciwd (unsigned long long,
  * FPU Instructions (ALU and MAU)
  */
 
-/* FABS */
+/* FABSW */
 /* FABSD */
 /* FABSWP */
-/* FADD */
+/* FADDW */
 /* FADDD */
 /* FADDRN */
 extern float __builtin_k1_faddrn (float op0, float op1);
