@@ -81,7 +81,7 @@ extern bool k1_legitimate_pic_symbolic_ref_p (rtx op);
 
 extern bool k1_legitimate_modulo_addressing_p (rtx x, bool strict);
 
-extern bool k1_split_mem (rtx x, rtx *base_out, rtx *offset_out);
+extern bool k1_split_mem (rtx x, rtx *base_out, rtx *offset_out, bool strict);
 
 extern bool k1_pack_load_store (rtx operands[], unsigned int nops);
 
