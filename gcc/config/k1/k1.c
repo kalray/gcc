@@ -434,6 +434,23 @@ k1_pack_load_store (rtx operands[], unsigned int nops)
   return true;
 }
 
+/* Implement HARD_REGNO_RENAME_OK.  */
+int
+k1_hard_regno_rename_ok (unsigned int from, unsigned int to)
+{
+  if (from >= K1C_GRF_FIRST_REGNO && from <= K1C_GRF_LAST_REGNO
+      && to >= K1C_GRF_FIRST_REGNO && to <= K1C_GRF_LAST_REGNO)
+    {
+      /* Retain quad alignement */
+      if (from % 4 == 0)
+	return (to % 4 == 0);
+
+      /* Retain pair alignement */
+      return (from & 1) == (to & 1);
+    }
+  return 1;
+}
+
 /* Implement HARD_REGNO_MODE_OK.  */
 int
 k1_hard_regno_mode_ok (unsigned regno, enum machine_mode mode)
