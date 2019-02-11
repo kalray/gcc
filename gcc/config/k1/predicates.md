@@ -386,7 +386,7 @@
       	  || GET_CODE (SET_SRC (elt)) != MEM)
         return 0;
 
-      if (! k1_split_mem (XEXP (SET_SRC (elt), 0), &base, &offset))
+      if (! k1_split_mem (XEXP (SET_SRC (elt), 0), &base, &offset, true))
         return 0;
 
       if (i == 0)
