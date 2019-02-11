@@ -36,6 +36,7 @@ extern HOST_WIDE_INT k1_first_parm_offset (tree decl);
 extern int k1_starting_frame_offset (void);
 
 extern int k1_hard_regno_mode_ok (unsigned regno, enum machine_mode mode);
+extern int k1_hard_regno_rename_ok (unsigned from, unsigned to);
 extern void k1_output_load_multiple (rtx *operands);
 
 extern void k1_expand_tablejump (rtx op0, rtx op1);
