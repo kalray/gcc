@@ -203,6 +203,8 @@ enum k1_abi_type
    registers starting with that one). */
 #define HARD_REGNO_MODE_OK(REGNO, MODE) k1_hard_regno_mode_ok (REGNO, MODE)
 
+#define HARD_REGNO_RENAME_OK(FROM, TO) k1_hard_regno_rename_ok (FROM, TO)
+
 /* A C expression that is nonzero if a value of mode mode1 is
    accessible in mode mode2 without copying.
 
