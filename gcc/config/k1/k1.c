@@ -302,12 +302,18 @@ static const char *qrf_reg_names[] = {K1C_QRF_REGISTER_NAMES};
 
 /* Splits X as a base + offset. Returns true if split successful,
    false if not. BASE_OUT and OFFSET_OUT contain the corresponding
-   split.
+   split. If STRICT is false, base is not always a register.
  */
 bool
-k1_split_mem (rtx x, rtx *base_out, rtx *offset_out)
+k1_split_mem (rtx x, rtx *base_out, rtx *offset_out, bool strict)
 {
   if (GET_CODE (x) != PLUS && !REG_P (x))
+    return false;
+
+  if (strict
+      && !((GET_CODE (x) == PLUS && CONST_INT_P (XEXP (x, 1))
+	    && REG_P (XEXP (x, 0)))
+	   || REG_P (x)))
     return false;
 
   if (GET_CODE (x) == PLUS && CONST_INT_P (XEXP (x, 1)))
@@ -386,7 +392,9 @@ k1_pack_load_store (rtx operands[], unsigned int nops)
 
       /* Check mem addresses are consecutive */
       rtx base_reg, base_offset;
-      k1_split_mem (XEXP (sorted_operands[1], 0), &base_reg, &base_offset);
+      if (!k1_split_mem (XEXP (sorted_operands[1], 0), &base_reg, &base_offset,
+			 true))
+	return false;
 
       const unsigned int base_regno = REGNO (base_reg);
 
