@@ -7866,10 +7866,18 @@ static bool
 k1_addr_space_legitimate_address_p (machine_mode mode, rtx exp, bool strict,
 				    addr_space_t as ATTRIBUTE_UNUSED)
 {
-  if (as != K1_ADDR_SPACE_UNCACHED && as != ADDR_SPACE_GENERIC)
-    return false;
+  switch (as)
+    {
+    default:
+      gcc_unreachable ();
 
-  return k1_target_legitimate_address_p (mode, exp, strict);
+    case ADDR_SPACE_GENERIC:
+    case K1_ADDR_SPACE_UNCACHED:
+      return k1_target_legitimate_address_p (mode, exp, strict);
+
+    case K1_ADDR_SPACE_CONVERT:
+      return false;
+    }
 }
 
 /* Implements TARGET_ADDR_SPACE_LEGITIMIZE_ADDRESS */
@@ -7879,6 +7887,7 @@ k1_addr_space_legitimize_address (rtx x, rtx oldx, machine_mode mode,
 {
   if (as == K1_ADDR_SPACE_CONVERT)
     error ("__convert should be used only in explicit pointer casting");
+
   return k1_target_legitimize_address (x, oldx, mode);
 }
 
@@ -7887,7 +7896,8 @@ static bool
 k1_addr_space_subset_p (addr_space_t subset ATTRIBUTE_UNUSED,
 			addr_space_t superset ATTRIBUTE_UNUSED)
 {
-  return true; // Address spaces (GENERIC or __UNCACHED) refer to the same space
+  // Address spaces (GENERIC or __UNCACHED) refer to the same space
+  return true;
 }
 
 /* Implements TARGET_ADDR_SPACE_CONVERT */
@@ -8770,10 +8780,6 @@ k1_profile_hook (void)
 
 #undef TARGET_ADDR_SPACE_ADDRESS_MODE
 #define TARGET_ADDR_SPACE_ADDRESS_MODE k1_addr_space_address_mode
-
-#undef TARGET_ADDR_SPACE_ADDRESS_MODE
-#define TARGET_ADDR_SPACE_ADDRESS_MODE k1_addr_space_address_mode
-
 #undef TARGET_ADDR_SPACE_LEGITIMATE_ADDRESS_P
 #define TARGET_ADDR_SPACE_LEGITIMATE_ADDRESS_P                                 \
   k1_addr_space_legitimate_address_p

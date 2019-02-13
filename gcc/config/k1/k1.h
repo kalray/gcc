@@ -860,9 +860,13 @@ extern void k1_profile_hook (void);
 #define K1_ADDR_SPACE_CONVERT 2
 
 #define REGISTER_TARGET_PRAGMAS()                                              \
-  c_register_addr_space ("__streamed", K1_ADDR_SPACE_UNCACHED);                \
-  c_register_addr_space ("__uncached", K1_ADDR_SPACE_UNCACHED);                \
-  c_register_addr_space ("__convert", K1_ADDR_SPACE_CONVERT);
+  do                                                                           \
+    {                                                                          \
+      c_register_addr_space ("__streamed", K1_ADDR_SPACE_UNCACHED);            \
+      c_register_addr_space ("__uncached", K1_ADDR_SPACE_UNCACHED);            \
+      c_register_addr_space ("__convert", K1_ADDR_SPACE_CONVERT);              \
+    }                                                                          \
+  while (0)
 
 /* Test whether the memory operand OP should be accessed cached or
    uncached regarding it's name address space and the value of the
