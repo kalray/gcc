@@ -54,11 +54,7 @@
      Reject weak symbols and 'farcall's here and handle that case
      in the call expanders to generate indirect calls for weak references. */
 
-  bool farcall = K1_FARCALL;
-  if (!farcall && (GET_CODE(XEXP(op, 0)) == SYMBOL_REF
-		   && SYMBOL_REF_FUNCTION_P(XEXP(op, 0))
-		   && SYMBOL_REF_DECL(XEXP(op,0)) != NULL_TREE))
-    farcall = lookup_attribute ("farcall", DECL_ATTRIBUTES(SYMBOL_REF_DECL(XEXP(op,0)))) != NULL;
+  bool farcall = k1_is_farcall_p (op);
 
   return  !farcall && (GET_CODE (XEXP (op, 0)) == LABEL_REF
 		       || (GET_CODE (XEXP (op, 0)) == SYMBOL_REF
