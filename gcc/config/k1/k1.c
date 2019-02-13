@@ -8261,6 +8261,19 @@ k1_float_fits_bits(const REAL_VALUE_TYPE *r, unsigned bitsz, enum machine_mode m
   }
 }
 
+/* Returns TRUE if OP is a symbol and has the farcall attribute or if
+   -mfarcall is in use. */
+bool
+k1_is_farcall_p (rtx op)
+{
+  bool farcall = K1_FARCALL;
+  if (!farcall && (GET_CODE(XEXP(op, 0)) == SYMBOL_REF
+		   && SYMBOL_REF_FUNCTION_P(XEXP(op, 0))
+		   && SYMBOL_REF_DECL(XEXP(op,0)) != NULL_TREE))
+    farcall = lookup_attribute ("farcall", DECL_ATTRIBUTES(SYMBOL_REF_DECL(XEXP(op,0)))) != NULL;
+  return farcall;
+}
+
 void k1_profile_hook (void)
 {
   rtx mem_p_saved_ra =  gen_rtx_REG (SImode, 38);
