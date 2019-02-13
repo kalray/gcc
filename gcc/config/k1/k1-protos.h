@@ -88,6 +88,8 @@ extern bool k1_pack_load_store (rtx operands[], unsigned int nops);
 extern bool k1_lowbit_highbit_constant_p (HOST_WIDE_INT val, int *lowbit,
 					  int *highbit);
 
+extern bool k1_is_farcall_p (rtx);
+
 extern void k1_override_options (void);
 
 extern int k1_has_big_immediate (rtx x);
