@@ -35,8 +35,6 @@ enum kvx_abi_type
   (TEST_REGNO (num, <, 64, strict)                                             \
    || TEST_REGNO (num, ==, (KV3_FRAME_POINTER_VIRT_REGNO), strict))
 
-#define NO_IMPLICIT_EXTERN_C
-
 /* ********** Driver ********** */
 
 #define TARGET_CPU_CPP_BUILTINS()                                              \
@@ -132,11 +130,11 @@ enum kvx_abi_type
 #define MAX_FIXED_MODE_SIZE 256
 
 /* Make strings word-aligned so strcpy from constants will be faster.  */
-#define CONSTANT_ALIGNMENT(EXP, ALIGN)                                         \
-  ((TREE_CODE (EXP) == STRING_CST && !optimize_size                            \
-    && (ALIGN) < BITS_PER_WORD)                                                \
-     ? BITS_PER_WORD                                                           \
-     : (ALIGN))
+/* #define TARGET_CONSTANT_ALIGNMENT(EXP, ALIGN)				\ */
+/*    ((TREE_CODE (EXP) == STRING_CST				\ */
+/*      && !optimize_size						\ */
+/*      && (ALIGN) < BITS_PER_WORD )	\ */
+/*     ? BITS_PER_WORD : (ALIGN)) */
 
 /* Align definitions of arrays, unions and structures so that
    initializations and copies can be made more efficient.  This is not
@@ -199,31 +197,9 @@ enum kvx_abi_type
 
 #define PC_REGNUM KVX_PROGRAM_POINTER_REGNO
 
-#define HARD_REGNO_NREGS(REGNO, MODE)                                          \
-  ((GET_MODE_SIZE (MODE) + UNITS_PER_WORD - 1) / UNITS_PER_WORD)
-
-/* A C expression that is nonzero if it is permissible to store a
-   value of mode mode in hard register number regno (or in several
-   registers starting with that one). */
-#define HARD_REGNO_MODE_OK(REGNO, MODE) kvx_hard_regno_mode_ok (REGNO, MODE)
-
-#define HARD_REGNO_RENAME_OK(FROM, TO) kvx_hard_regno_rename_ok (FROM, TO)
-
-/* A C expression that is nonzero if a value of mode mode1 is
-   accessible in mode mode2 without copying.
-
-   If HARD_REGNO_MODE_OK (r, mode1) and HARD_REGNO_MODE_OK (r, mode2)
-   are always the same for any r, then MODES_TIEABLE_P (mode1, mode2)
-   should be nonzero. If they differ for any r, you should define this
-   macro to return zero unless some other mechanism ensures the
-   accessibility of the value in a narrower mode.
-
-   You should define this macro to return nonzero in as many cases as
-   possible since doing so will allow GCC to perform better register
-   allocation. */
 // FIXME AUTO: Check modes tieable is correct. Float part seems suspicious.
-#define MODES_TIEABLE_P(MODE1, MODE2)                                          \
-  (GET_MODE_CLASS (MODE1) == GET_MODE_CLASS (MODE2))
+/* #define MODES_TIEABLE_P(MODE1, MODE2) \ */
+/*     (GET_MODE_CLASS (MODE1) == GET_MODE_CLASS (MODE2)) */
 
 // This looks a bit problematic for mode with different sizes. A float
 // is hardly accessed without a copy when changing its mode.
@@ -351,8 +327,6 @@ enum kvx_abi_type
 
 #define FRAME_GROWS_DOWNWARD 1
 #undef ARGS_GROWS_DOWNWARD
-
-#define STARTING_FRAME_OFFSET (0)
 
 #define FIRST_PARM_OFFSET(funcdecl) kvx_first_parm_offset (funcdecl)
 
@@ -726,11 +700,6 @@ extern void kvx_profile_hook (void);
  * to represent the size of the object being shifted.  */
 #define SHIFT_COUNT_TRUNCATED 1
 
-/* A C expression which is nonzero if on this machine it is safe to "convert"
-   an integer of INPREC bits to one of OUTPREC bits (where OUTPREC is smaller
-   than INPREC) by merely operating on it as if it had only OUTPREC bits.  */
-#define TRULY_NOOP_TRUNCATION(OUTPREC, INPREC) 1
-
 /* The maximum number of bytes that a single instruction can move quickly from
    memory to memory.  */
 #define MOVE_MAX 8
@@ -842,7 +811,7 @@ extern void kvx_profile_hook (void);
     comp;                                                                      \
   })
 
-#define TARGET_SUPPORTS_WIDE_INT 1
+#define TARGETS_SUPPORTS_WIDE_INT 1
 
 /* Address spaces
 

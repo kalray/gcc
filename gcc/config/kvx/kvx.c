@@ -42,6 +42,7 @@
 #include "regs.h"
 #include "emit-rtl.h"
 #include "recog.h"
+#include "attribs.h"
 #include "diagnostic.h"
 #include "insn-attr.h"
 #include "alias.h"
@@ -140,10 +141,10 @@ enum attr_arch kvx_arch_schedule;
 struct GTY (()) kvx_frame_info
 {
   /* The total frame size, used for moving $sp in prologue */
-  HOST_WIDE_INT frame_size;
+  poly_int64 frame_size;
 
   /* Offsets of save area from frame bottom */
-  HOST_WIDE_INT saved_reg_sp_offset;
+  poly_int64 saved_reg_sp_offset;
 
   /* Relative offsets within register save area  */
   HOST_WIDE_INT reg_rel_offset[FIRST_PSEUDO_REGISTER];
@@ -152,16 +153,16 @@ struct GTY (()) kvx_frame_info
   HARD_REG_SET saved_regs;
 
   /* Offset of virtual frame pointer from new stack pointer/frame bottom */
-  HOST_WIDE_INT virt_frame_pointer_offset;
+  poly_int64 virt_frame_pointer_offset;
 
   /* Offset of hard frame pointer from new stack pointer/frame bottom */
-  HOST_WIDE_INT hard_frame_pointer_offset;
+  poly_int64 hard_frame_pointer_offset;
 
   /* The offset of arg_pointer_rtx from the new stack pointer/frame bottom.  */
-  HOST_WIDE_INT arg_pointer_offset;
+  poly_int64 arg_pointer_offset;
 
   /* Offset to the static chain pointer, if needed */
-  HOST_WIDE_INT static_chain_offset;
+  poly_int64 static_chain_offset;
 
   /* Padding size between local area and incoming/varargs */
   HOST_WIDE_INT padding1;
@@ -242,12 +243,16 @@ enum spill_action
 
 static bool should_be_saved_in_prologue (int regno);
 
+
 static void
 kvx_compute_frame_info (void)
 {
   struct kvx_frame_info *frame;
 
-  HOST_WIDE_INT inc_sp_offset = 0;
+  poly_int64 inc_sp_offset = 0;
+
+  if (reload_completed && cfun->machine->frame.laid_out)
+    return;
 
   frame = &cfun->machine->frame;
   memset (frame, 0, sizeof (*frame));
@@ -264,14 +269,14 @@ kvx_compute_frame_info (void)
   if (cfun->machine->static_chain_on_stack)
     inc_sp_offset += UNITS_PER_WORD;
 
-  HOST_WIDE_INT local_vars_sz = get_frame_size ();
+  HOST_WIDE_INT local_vars_sz = get_frame_size ().to_constant ();
   frame->padding1 = 0;
 
   if (local_vars_sz > 0)
     {
-      frame->padding1 = ROUND_UP (inc_sp_offset, STACK_BOUNDARY / BITS_PER_UNIT)
-			- inc_sp_offset;
-      inc_sp_offset = ROUND_UP (inc_sp_offset, STACK_BOUNDARY / BITS_PER_UNIT);
+      frame->padding1 = ROUND_UP (inc_sp_offset.to_constant (), STACK_BOUNDARY / BITS_PER_UNIT)
+	- inc_sp_offset.to_constant();
+      inc_sp_offset = ROUND_UP (inc_sp_offset.to_constant (), STACK_BOUNDARY / BITS_PER_UNIT);
 
       /* Next are automatic variables. */
       inc_sp_offset += local_vars_sz;
@@ -279,8 +284,8 @@ kvx_compute_frame_info (void)
 #define SLOT_NOT_REQUIRED (-2)
 #define SLOT_REQUIRED (-1)
 
-  frame->padding2 = ROUND_UP (inc_sp_offset, UNITS_PER_WORD) - inc_sp_offset;
-  inc_sp_offset = ROUND_UP (inc_sp_offset, UNITS_PER_WORD);
+  frame->padding2 = ROUND_UP (inc_sp_offset.to_constant(), UNITS_PER_WORD) - inc_sp_offset.to_constant();
+  inc_sp_offset = ROUND_UP (inc_sp_offset.to_constant (), UNITS_PER_WORD);
 
   HOST_WIDE_INT reg_offset = 0;
 
@@ -320,9 +325,9 @@ kvx_compute_frame_info (void)
   /* At the bottom of the frame are any outgoing stack arguments. */
   inc_sp_offset += crtl->outgoing_args_size;
   frame->padding3
-    = ROUND_UP (inc_sp_offset, STACK_BOUNDARY / BITS_PER_UNIT) - inc_sp_offset;
+    = ROUND_UP (inc_sp_offset.to_constant (), STACK_BOUNDARY / BITS_PER_UNIT) - inc_sp_offset.to_constant();
 
-  inc_sp_offset = ROUND_UP (inc_sp_offset, STACK_BOUNDARY / BITS_PER_UNIT);
+  inc_sp_offset = ROUND_UP (inc_sp_offset.to_constant(), STACK_BOUNDARY / BITS_PER_UNIT);
 
   frame->hard_frame_pointer_offset = frame->saved_reg_sp_offset
     = crtl->outgoing_args_size + frame->padding3;
@@ -390,7 +395,7 @@ kvx_debug_frame_info (struct kvx_frame_info *fi)
       DFI_SEP;
     }
 
-  if (get_frame_size () > 0)
+  if (get_frame_size ().to_constant () > 0)
     {
       DFI_FIELD ("locals", get_frame_size (),
 		 fi->virt_frame_pointer_offset - get_frame_size (), "", "");
@@ -429,7 +434,7 @@ kvx_debug_frame_info (struct kvx_frame_info *fi)
     }
   if (fi->padding3 > 0)
     {
-      if (crtl->outgoing_args_size > 0)
+      if (crtl->outgoing_args_size.to_constant () > 0)
 	{
 	  DFI_FIELD ("padding3", fi->padding3,
 		     crtl->outgoing_args_size + fi->padding3, "", "");
@@ -441,7 +446,7 @@ kvx_debug_frame_info (struct kvx_frame_info *fi)
 	  DFI_SEP;
 	}
     }
-  if (crtl->outgoing_args_size > 0)
+  if (crtl->outgoing_args_size.to_constant () > 0)
     {
       DFI_FIELD ("outgoing", crtl->outgoing_args_size, 0, "",
 		 "<- $sp (callee)");
@@ -460,6 +465,12 @@ kvx_debug_frame_info (struct kvx_frame_info *fi)
 	   fi->laid_out ? "yes" : "no");
 }
 
+static HOST_WIDE_INT
+kvx_starting_frame_offset (void)
+{
+  return 0;
+}
+
 HOST_WIDE_INT
 kvx_first_parm_offset (tree decl ATTRIBUTE_UNUSED)
 {
@@ -467,7 +478,7 @@ kvx_first_parm_offset (tree decl ATTRIBUTE_UNUSED)
   kvx_compute_frame_info ();
   frame = &cfun->machine->frame;
 
-  return frame->arg_pointer_offset - frame->virt_frame_pointer_offset;
+  return frame->arg_pointer_offset.to_constant() - frame->virt_frame_pointer_offset.to_constant();
 }
 
 static rtx
@@ -672,22 +683,29 @@ kvx_hard_regno_rename_ok (unsigned int from, unsigned int to)
   return 1;
 }
 
+static unsigned int
+kvx_hard_regno_nregs (unsigned int regno, machine_mode mode)
+{
+  return exact_div ((GET_MODE_SIZE (mode) + UNITS_PER_WORD - 1),
+		    UNITS_PER_WORD).to_constant ();
+}
+
 /* Implement HARD_REGNO_MODE_OK.  */
-int
+static bool
 kvx_hard_regno_mode_ok (unsigned regno, enum machine_mode mode)
 {
   // SI/DI -> KV3_GPR_FIRST_REGNO - KV3_GPR_LAST_REGNO => OK
-  // SI/DI -> KV3_SFR_FIRST_REGNO - KV3_SFR_LAST_REGNO => OK
+  // SI/DI -> KV3_SRF_FIRST_REGNO - KV3_SRF_LAST_REGNO => OK
   // TI    -> KV3_GPR_FIRST_REGNO - KV3_GPR_LAST_REGNO && even => OK
   // OI    -> KV3_GPR_FIRST_REGNO - KV3_GPR_LAST_REGNO && 0mod4 => OK
-  if (GET_MODE_SIZE (mode) <= UNITS_PER_WORD)
+  if (known_le (GET_MODE_SIZE (mode), UNITS_PER_WORD))
     return 1;
   if (IN_RANGE (regno, KV3_GPR_FIRST_REGNO, KV3_GPR_LAST_REGNO))
     {
-      if (GET_MODE_SIZE (mode) == 2 * UNITS_PER_WORD)
-	return (regno % 2 == 0);
-      if (GET_MODE_SIZE (mode) == 4 * UNITS_PER_WORD)
-	return (regno % 4 == 0);
+      if (known_eq (GET_MODE_SIZE (mode), 2 * UNITS_PER_WORD))
+        return (regno % 2 == 0);
+      if (known_eq (GET_MODE_SIZE (mode), 4 * UNITS_PER_WORD))
+        return (regno % 4 == 0);
     }
   return 0;
 }
@@ -696,7 +714,7 @@ static unsigned char
 kvx_class_max_nregs (reg_class_t regclass ATTRIBUTE_UNUSED,
 		     enum machine_mode mode)
 {
-  return HARD_REGNO_NREGS (0, mode);
+  return kvx_hard_regno_nregs (0, mode);
 }
 
 static tree kvx_handle_fndecl_attribute (tree *node, tree name,
@@ -722,10 +740,10 @@ static bool kvx_legitimate_constant_p (enum machine_mode mode ATTRIBUTE_UNUSED,
 static const struct attribute_spec kvx_attribute_table[] = {
   /* { name, min_len, max_len, decl_req, type_req, fn_type_req, handler,
      affects_type } */
-  {"no_save_regs", 0, 0, true, false, false, kvx_handle_fndecl_attribute,
-   false},
-  {"farcall", 0, 0, true, false, false, kvx_handle_fndecl_attribute, false},
-  {NULL, 0, 0, false, false, false, NULL, false}};
+  {"no_save_regs", 0, 0, true, false, false, false, kvx_handle_fndecl_attribute,
+   NULL},
+  {"farcall", 0, 0, true, false, false, false, kvx_handle_fndecl_attribute, NULL},
+  {NULL, 0, 0, false, false, false, false, NULL, NULL}};
 
 /* Returns 0 if there is no TLS ref, != 0 if there is.
 
@@ -862,11 +880,12 @@ kvx_legitimate_address_p (machine_mode mode, rtx x, bool strict)
       && kvx_legitimate_address_register_p (XEXP (x, 1), strict)
       && GET_CODE (XEXP (x, 0)) == MULT
       && GET_CODE (XEXP (XEXP (x, 0), 1)) == CONST_INT
-      && (INTVAL (XEXP (XEXP (x, 0), 1)) == GET_MODE_SIZE (mode))
+      && (known_eq (INTVAL (XEXP (XEXP (x, 0), 1)), GET_MODE_SIZE (mode)))
       && kvx_legitimate_address_offset_register_p (XEXP (XEXP (x, 0), 0),
 						   strict))
     // The .xs addressing mode applies to object sizes 2, 4, 8, 16, 32.
-    return GET_MODE_SIZE (mode) > 1 && GET_MODE_SIZE (mode) <= 32;
+    return known_gt (GET_MODE_SIZE (mode), 1)
+	   && known_le (GET_MODE_SIZE (mode), 32);
 
   return false;
 }
@@ -920,12 +939,13 @@ struct kvx_arg_info
 
 static rtx
 kvx_get_arg_info (struct kvx_arg_info *info, cumulative_args_t cum_v,
-		  enum machine_mode mode, const_tree type,
+		  machine_mode mode, const_tree type,
 		  bool named ATTRIBUTE_UNUSED)
 {
   CUMULATIVE_ARGS *cum = get_cumulative_args (cum_v);
+  /* FIXME PORTING: this does not compile, even-though it's a simple c/p from other ports (eg. riscv)  */
   HOST_WIDE_INT n_bytes
-    = type ? int_size_in_bytes (type) : GET_MODE_SIZE (mode);
+    = type ? int_size_in_bytes (type) : GET_MODE_SIZE (mode).to_constant ();
   HOST_WIDE_INT n_words = (n_bytes + UNITS_PER_WORD - 1) / UNITS_PER_WORD;
 
   info->first_reg = cum->next_arg_reg;
@@ -962,7 +982,7 @@ kvx_get_arg_info (struct kvx_arg_info *info, cumulative_args_t cum_v,
    because there is no argument slot in registers free. */
 
 static rtx
-kvx_function_arg (cumulative_args_t cum_v, enum machine_mode mode,
+kvx_function_arg (cumulative_args_t cum_v, machine_mode mode,
 		  const_tree type, bool named)
 {
   struct kvx_arg_info info;
@@ -974,7 +994,7 @@ kvx_function_arg (cumulative_args_t cum_v, enum machine_mode mode,
    that must be put in registers */
 
 static int
-kvx_arg_partial_bytes (cumulative_args_t cum_v, enum machine_mode mode,
+kvx_arg_partial_bytes (cumulative_args_t cum_v, machine_mode mode,
 		       tree type, bool named ATTRIBUTE_UNUSED)
 {
   struct kvx_arg_info info = {0};
@@ -1121,7 +1141,7 @@ kvx_expand_builtin_saveregs (void)
   kvx_compute_frame_info ();
   frame = &cfun->machine->frame;
   HOST_WIDE_INT arg_fp_offset
-    = frame->arg_pointer_offset - frame->virt_frame_pointer_offset;
+    = frame->arg_pointer_offset.to_constant() - frame->virt_frame_pointer_offset.to_constant();
   rtx area = gen_rtx_PLUS (Pmode, frame_pointer_rtx, GEN_INT (arg_fp_offset));
 
   /* All argument register slots used for named args, nothing to push */
@@ -1173,7 +1193,7 @@ kvx_expand_va_start (tree valist, rtx nextarg ATTRIBUTE_UNUSED)
 
   frame = &cfun->machine->frame;
   HOST_WIDE_INT arg_fp_offset
-    = frame->arg_pointer_offset - frame->virt_frame_pointer_offset;
+    = frame->arg_pointer_offset.to_constant() - frame->virt_frame_pointer_offset.to_constant();
 
   gcc_assert (frame->laid_out);
 
@@ -1211,19 +1231,34 @@ kvx_fixed_point_supported_p (void)
 }
 
 static bool
-kvx_scalar_mode_supported_p (enum machine_mode mode)
+kvx_scalar_mode_supported_p (scalar_mode mode)
 {
   if (mode == HFmode)
     return true;
+
+  int precision = GET_MODE_PRECISION (mode);
+
+  switch (GET_MODE_CLASS (mode))
+    {
+    case MODE_PARTIAL_INT:
+    case MODE_INT:
+      if (precision == SHORT_TYPE_SIZE)
+	return true;
+      break;
+
+    default:
+      break;
+    }
+
   return default_scalar_mode_supported_p (mode);
 }
 
 static bool
-kvx_libgcc_floating_mode_supported_p (enum machine_mode mode)
+kvx_libgcc_floating_mode_supported_p (scalar_float_mode mode)
 {
-  if (mode == HFmode)
-    return true;
-  return default_libgcc_floating_mode_supported_p (mode);
+  return (mode == HFmode
+	  ? true
+	  : default_libgcc_floating_mode_supported_p (mode));
 }
 
 static enum flt_eval_method
@@ -1247,27 +1282,27 @@ kvx_vector_mode_supported_p (enum machine_mode mode)
   switch (mode)
     {
     // 64-bit modes
-    case V8QImode:
-    case V4HImode:
-    case V2SImode:
-    case V4HFmode:
-    case V2SFmode:
+    case E_V8QImode:
+    case E_V4HImode:
+    case E_V2SImode:
+    case E_V4HFmode:
+    case E_V2SFmode:
     // 128-bit modes
-    case V16QImode:
-    case V8HImode:
-    case V4SImode:
-    case V2DImode:
-    case V8HFmode:
-    case V4SFmode:
-    case V2DFmode:
+    case E_V16QImode:
+    case E_V8HImode:
+    case E_V4SImode:
+    case E_V2DImode:
+    case E_V8HFmode:
+    case E_V4SFmode:
+    case E_V2DFmode:
     // 256-bit modes
-    case V32QImode:
-    case V16HImode:
-    case V8SImode:
-    case V4DImode:
-    case V16HFmode:
-    case V8SFmode:
-    case V4DFmode:
+    case E_V32QImode:
+    case E_V16HImode:
+    case E_V8SImode:
+    case E_V4DImode:
+    case E_V16HFmode:
+    case E_V8SFmode:
+    case E_V4DFmode:
       return true;
     default:
       break;
@@ -1285,21 +1320,21 @@ kvx_support_vector_misalignment (enum machine_mode mode ATTRIBUTE_UNUSED,
 }
 
 static machine_mode
-kvx_vectorize_preferred_simd_mode (machine_mode mode)
+kvx_vectorize_preferred_simd_mode (scalar_mode mode)
 {
   switch (mode)
     {
-    case HImode:
+    case E_HImode:
       return V8HImode;
-    case SImode:
+    case E_SImode:
       return V4SImode;
-    case DImode:
+    case E_DImode:
       return V2DImode;
-    case HFmode:
+    case E_HFmode:
       return V8HFmode;
-    case SFmode:
+    case E_SFmode:
       return V4SFmode;
-    case DFmode:
+    case E_DFmode:
       return V2DFmode;
     default:
       break;
@@ -1316,7 +1351,7 @@ kvx_pass_by_reference (cumulative_args_t cum ATTRIBUTE_UNUSED,
 
   /* GET_MODE_SIZE (BLKmode) is useless since it is 0.  */
   size = (mode == BLKmode && type) ? int_size_in_bytes (type)
-				   : (int) GET_MODE_SIZE (mode);
+    : (int) GET_MODE_SIZE (mode).to_constant ();
 
   /* Aggregates are passed by reference based on their size.  */
   if (type && AGGREGATE_TYPE_P (type))
@@ -1534,7 +1569,7 @@ kvx_print_operand (FILE *file, rtx x, int code)
       if (REGNO (operand) >= FIRST_PSEUDO_REGISTER)
 	error ("internal error: bad register: %d", REGNO (operand));
       if (system_register_operand (operand, VOIDmode))
-	gcc_assert (GET_MODE_SIZE (GET_MODE (x)) <= UNITS_PER_WORD);
+	gcc_assert (known_le (GET_MODE_SIZE (GET_MODE (x)), UNITS_PER_WORD));
       if (select_qreg)
 	{
 	  fprintf (file, "$%s", qgr_reg_names[REGNO (operand)]);
@@ -1545,33 +1580,33 @@ kvx_print_operand (FILE *file, rtx x, int code)
 	}
       else if (select_treg)
 	{
-	  if (GET_MODE_SIZE (GET_MODE (x)) < UNITS_PER_WORD * 4)
+	  if (known_lt (GET_MODE_SIZE (GET_MODE (x)), UNITS_PER_WORD * 4))
 	    error ("using %%t format with operand smaller than 4 registers");
 	  fprintf (file, "$%s", reg_names[REGNO (operand) + 3]);
 	}
       else if (select_zreg)
 	{
-	  if (GET_MODE_SIZE (GET_MODE (x)) < UNITS_PER_WORD * 4)
+	  if (known_lt (GET_MODE_SIZE (GET_MODE (x)), UNITS_PER_WORD * 4))
 	    error ("using %%z format with operand smaller than 4 registers");
 	  fprintf (file, "$%s", reg_names[REGNO (operand) + 2]);
 	}
       else if (select_yreg)
 	{
-	  if (GET_MODE_SIZE (GET_MODE (x)) < UNITS_PER_WORD * 2)
+	  if (known_lt (GET_MODE_SIZE (GET_MODE (x)), UNITS_PER_WORD * 2))
 	    error ("using %%y format with operand smaller than 2 registers");
 	  fprintf (file, "$%s", reg_names[REGNO (operand) + 1]);
 	}
       else if (select_xreg)
 	{
-	  if (GET_MODE_SIZE (GET_MODE (x)) < UNITS_PER_WORD * 2)
+	  if (known_lt (GET_MODE_SIZE (GET_MODE (x)), UNITS_PER_WORD * 2))
 	    error ("using %%x format with operand smaller than 2 registers");
 	  fprintf (file, "$%s", reg_names[REGNO (operand)]);
 	}
-      else if (GET_MODE_SIZE (GET_MODE (x)) == UNITS_PER_WORD * 4)
+      else if (known_eq (GET_MODE_SIZE (GET_MODE (x)), UNITS_PER_WORD * 4))
 	{
 	  fprintf (file, "$%s", qgr_reg_names[REGNO (operand)]);
 	}
-      else if (GET_MODE_SIZE (GET_MODE (x)) == UNITS_PER_WORD * 2)
+      else if (known_eq (GET_MODE_SIZE (GET_MODE (x)), UNITS_PER_WORD * 2))
 	{
 	  fprintf (file, "$%s", pgr_reg_names[REGNO (operand)]);
 	}
@@ -1704,17 +1739,17 @@ kvx_regname (rtx x)
   switch (GET_CODE (x))
     {
     case REG:
-      if (GET_MODE_SIZE (mode) <= UNITS_PER_WORD)
+      if (known_le (GET_MODE_SIZE (mode), UNITS_PER_WORD))
 	return reg_names[REGNO (x)];
-      else if (GET_MODE_SIZE (mode) <= 2 * UNITS_PER_WORD)
+      else if (known_le (GET_MODE_SIZE (mode), 2 * UNITS_PER_WORD))
 	return pgr_reg_names[REGNO (x)];
-      else if (GET_MODE_SIZE (mode) <= 4 * UNITS_PER_WORD)
+      else if (known_le (GET_MODE_SIZE (mode), 4 * UNITS_PER_WORD))
 	return qgr_reg_names[REGNO (x)];
       gcc_unreachable ();
     case SUBREG:
       // Addressing mode with register offset
       gcc_assert (TARGET_32);
-      gcc_assert (SUBREG_BYTE (x) == 0);
+      gcc_assert (known_eq (SUBREG_BYTE (x), 0));
       return kvx_regname (SUBREG_REG (x));
     default:
       gcc_unreachable ();
@@ -2182,7 +2217,7 @@ kvx_save_or_restore_callee_save_registers (bool restore)
    or argument pointer.  TO is either the stack pointer or frame
    pointer.  */
 
-HOST_WIDE_INT
+poly_int64
 kvx_initial_elimination_offset (int from, int to)
 {
   kvx_compute_frame_info ();
@@ -2219,7 +2254,7 @@ kvx_expand_prologue (void)
 {
   kvx_compute_frame_info ();
   struct kvx_frame_info *frame = &cfun->machine->frame;
-  HOST_WIDE_INT size = frame->frame_size;
+  HOST_WIDE_INT size = frame->frame_size.to_constant ();
   rtx insn;
 
   if (flag_stack_usage_info)
@@ -2268,13 +2303,14 @@ kvx_expand_prologue (void)
       gcc_assert (frame->reg_rel_offset[HARD_FRAME_POINTER_REGNUM] == 0);
       insn = emit_insn (
 	gen_add3_insn (hard_frame_pointer_rtx, stack_pointer_rtx,
-		       GEN_INT (frame->hard_frame_pointer_offset)));
+		       GEN_INT (frame->hard_frame_pointer_offset.to_constant ())));
 
       RTX_FRAME_RELATED_P (insn) = 1;
-      add_reg_note (insn, REG_CFA_DEF_CFA,
-		    gen_rtx_PLUS (Pmode, hard_frame_pointer_rtx,
-				  GEN_INT (
-				    size - frame->hard_frame_pointer_offset)));
+      add_reg_note (
+	insn, REG_CFA_DEF_CFA,
+	gen_rtx_PLUS (
+	  Pmode, hard_frame_pointer_rtx,
+	  GEN_INT (size - frame->hard_frame_pointer_offset.to_constant ())));
     }
 }
 
@@ -2282,7 +2318,7 @@ void
 kvx_expand_epilogue (void)
 {
   struct kvx_frame_info *frame = &cfun->machine->frame;
-  HOST_WIDE_INT frame_size = frame->frame_size;
+  HOST_WIDE_INT frame_size = frame->frame_size.to_constant ();
   rtx insn;
 
   if (frame_pointer_needed)
@@ -2290,13 +2326,13 @@ kvx_expand_epilogue (void)
       /* Restore $sp from $fp */
       insn = emit_insn (
 	gen_add3_insn (stack_pointer_rtx, hard_frame_pointer_rtx,
-		       GEN_INT (-frame->hard_frame_pointer_offset)));
+		       GEN_INT (-frame->hard_frame_pointer_offset.to_constant ())));
 
       /* Revert CFA reg to use SP with its initial offset */
       RTX_FRAME_RELATED_P (insn) = 1;
       add_reg_note (insn, REG_CFA_DEF_CFA,
 		    gen_rtx_PLUS (DImode, stack_pointer_rtx,
-				  GEN_INT (frame->frame_size)));
+				  GEN_INT (frame->frame_size.to_constant())));
     }
 
   /* $sp is now correct and can be used by save_or_restore */
@@ -2776,7 +2812,8 @@ static int
 kvx_register_move_cost (machine_mode mode, reg_class_t from ATTRIBUTE_UNUSED,
 			reg_class_t to ATTRIBUTE_UNUSED)
 {
-  int n_copyd = (GET_MODE_SIZE (mode) + UNITS_PER_WORD - 1) / UNITS_PER_WORD;
+  int n_copyd = (GET_MODE_SIZE (mode).to_constant () + UNITS_PER_WORD - 1)
+		/ UNITS_PER_WORD;
   /* Provide a cost slightly above one of a simple instruction. This prevents
        postreload from transforming:
 	  make $r2 = 0
@@ -2818,28 +2855,28 @@ kvx_get_predicate_mode (enum machine_mode mode)
   switch (mode)
     {
     // 64-bit modes
-    case V4HFmode:
+    case E_V4HFmode:
       return V4HImode;
-    case V2SFmode:
+    case E_V2SFmode:
       return V2SImode;
     // 128-bit modes
-    case V8HFmode:
+    case E_V8HFmode:
       return V8HImode;
-    case V4SFmode:
+    case E_V4SFmode:
       return V4SImode;
-    case V2DFmode:
+    case E_V2DFmode:
       return V2DImode;
     // 256-bit modes
-    case V16HFmode:
+    case E_V16HFmode:
       return V16HImode;
-    case V8SFmode:
+    case E_V8SFmode:
       return V8SImode;
-    case V4DFmode:
+    case E_V4DFmode:
       return V4DImode;
     // Scalar modes
-    case HFmode:
-    case SFmode:
-    case DFmode:
+    case E_HFmode:
+    case E_SFmode:
+    case E_DFmode:
       return DImode;
     // Other modes
     default:
@@ -3063,34 +3100,34 @@ kvx_get_chunk_mode (enum machine_mode mode)
   switch (mode)
     {
     // 128-bit modes
-    case V16QImode:
+    case E_V16QImode:
       return V8QImode;
-    case V8HImode:
+    case E_V8HImode:
       return V4HImode;
-    case V4SImode:
+    case E_V4SImode:
       return V2SImode;
-    case V2DImode:
+    case E_V2DImode:
       return DImode;
-    case V8HFmode:
+    case E_V8HFmode:
       return V4HFmode;
-    case V4SFmode:
+    case E_V4SFmode:
       return V2SFmode;
-    case V2DFmode:
+    case E_V2DFmode:
       return DFmode;
     // 256-bit modes
-    case V32QImode:
+    case E_V32QImode:
       return V8QImode;
-    case V16HImode:
+    case E_V16HImode:
       return V4HImode;
-    case V8SImode:
+    case E_V8SImode:
       return V2SImode;
-    case V4DImode:
+    case E_V4DImode:
       return DImode;
-    case V16HFmode:
+    case E_V16HFmode:
       return V4HFmode;
-    case V8SFmode:
+    case E_V8SFmode:
       return V2SFmode;
-    case V4DFmode:
+    case E_V4DFmode:
       return DFmode;
     // Other modes
     default:
@@ -3104,7 +3141,7 @@ kvx_expand_vector_insert (rtx target, rtx source, rtx where)
 {
   machine_mode vector_mode = GET_MODE (target);
   machine_mode inner_mode = GET_MODE_INNER (vector_mode);
-  int width = GET_MODE_SIZE (inner_mode);
+  int width = GET_MODE_SIZE (inner_mode).to_constant ();
 
   if (CONST_INT_P (where))
     {
@@ -3112,7 +3149,7 @@ kvx_expand_vector_insert (rtx target, rtx source, rtx where)
       int major = (index*width) / UNITS_PER_WORD;
       int minor = (index*width) % UNITS_PER_WORD;
 
-      if (GET_MODE_SIZE (inner_mode) == UNITS_PER_WORD)
+      if (known_eq (GET_MODE_SIZE (inner_mode), UNITS_PER_WORD))
 	{
 	  rtx op0 = simplify_gen_subreg (inner_mode, target, vector_mode, major*UNITS_PER_WORD);
 	  rtx op1 = source;
@@ -3140,7 +3177,7 @@ kvx_expand_vector_extract (rtx target, rtx source, rtx where)
 {
   machine_mode vector_mode = GET_MODE (source);
   machine_mode inner_mode = GET_MODE_INNER (vector_mode);
-  int width = GET_MODE_SIZE (inner_mode);
+  int width = GET_MODE_SIZE (inner_mode).to_constant ();
 
   if (CONST_INT_P (where))
     {
@@ -3148,7 +3185,7 @@ kvx_expand_vector_extract (rtx target, rtx source, rtx where)
       int major = (index*width) / UNITS_PER_WORD;
       int minor = (index*width) % UNITS_PER_WORD;
 
-      if (GET_MODE_SIZE (inner_mode) == UNITS_PER_WORD)
+      if (known_eq (GET_MODE_SIZE (inner_mode), UNITS_PER_WORD))
 	{
 	  rtx op0 = target;
 	  rtx op1 = simplify_gen_subreg(inner_mode, source, vector_mode, major*UNITS_PER_WORD);
@@ -3179,7 +3216,7 @@ kvx_expand_chunk_splat (rtx target, rtx source, machine_mode inner_mode)
 {
   HOST_WIDE_INT constant = 0;
   machine_mode chunk_mode = GET_MODE (target);
-  unsigned inner_size = GET_MODE_SIZE (inner_mode);
+  unsigned inner_size = GET_MODE_SIZE (inner_mode).to_constant ();
 
   if (inner_size == UNITS_PER_WORD)
     return source;
@@ -3216,7 +3253,7 @@ static rtx
 kvx_expand_chunk_insert(rtx target, rtx source, int index, machine_mode inner_mode)
 {
   machine_mode chunk_mode = GET_MODE (target);
-  unsigned inner_size = GET_MODE_SIZE (inner_mode);
+  unsigned inner_size = GET_MODE_SIZE (inner_mode).to_constant ();
 
   switch (inner_size)
     {
@@ -3288,7 +3325,7 @@ kvx_expand_vector_duplicate (rtx target, rtx source)
   rtx chunk = gen_reg_rtx (chunk_mode);
   chunk = kvx_expand_chunk_splat (chunk, source, inner_mode);
 
-  unsigned vector_size = GET_MODE_SIZE (vector_mode);
+  unsigned vector_size = GET_MODE_SIZE (vector_mode).to_constant();
   if (vector_size > UNITS_PER_WORD)
     {
       rtx splat = NULL_RTX;
@@ -3311,10 +3348,10 @@ void
 kvx_expand_vector_init (rtx target, rtx source)
 {
   machine_mode vector_mode = GET_MODE (target);
-  unsigned vector_size = GET_MODE_SIZE (vector_mode);
+  unsigned vector_size = GET_MODE_SIZE (vector_mode).to_constant ();
   machine_mode inner_mode = GET_MODE_INNER (vector_mode);
-  unsigned inner_size = GET_MODE_SIZE (inner_mode);
-  int nunits = GET_MODE_NUNITS (vector_mode);
+  unsigned inner_size = GET_MODE_SIZE (inner_mode).to_constant ();
+  int nunits = GET_MODE_NUNITS (vector_mode).to_constant ();
 
   /* Special-case for the duplicate of a value. */
   bool duplicate = true;
@@ -3385,13 +3422,6 @@ kvx_expand_vector_init (rtx target, rtx source)
     }
 }
 
-bool
-kvx_vectorize_vec_perm_const_ok (enum machine_mode vector_mode,
-				 const unsigned char *sel)
-{
-  return true;
-}
-
 /* Collect the SBMM8 immdiate values to implement a swizzle or a shuffle.
    As the largest vector type is 32 bytes and the word is 8 bytes, there
    are at most 4 words to operate in the destination vector. This corresponds
@@ -3408,10 +3438,10 @@ struct {
 void
 kvx_expand_vec_perm_print (FILE *file, machine_mode vector_mode)
 {
-  int nwords = GET_MODE_SIZE (vector_mode) / UNITS_PER_WORD;
+  int nwords = GET_MODE_SIZE (vector_mode).to_constant () / UNITS_PER_WORD;
   machine_mode inner_mode = GET_MODE_INNER (vector_mode);
-  int nunits = GET_MODE_NUNITS (vector_mode);
-  int ibytes = GET_MODE_SIZE (inner_mode);
+  int nunits = GET_MODE_NUNITS (vector_mode).to_constant ();
+  int ibytes = GET_MODE_SIZE (inner_mode).to_constant ();
 
   for (int i = 0; i < nunits*ibytes; i++)
     fprintf(file, "[%2d]", kvx_expand_vec_perm.from[i]);
@@ -3437,7 +3467,7 @@ kvx_expand_vec_perm_const_emit_move (rtx target, rtx source1, rtx source2,
 {
   machine_mode vector_mode = GET_MODE (target);
   machine_mode chunk_mode = kvx_get_chunk_mode (vector_mode);
-  int nwords = GET_MODE_SIZE (vector_mode) / UNITS_PER_WORD;
+  int nwords = GET_MODE_SIZE (vector_mode).to_constant () / UNITS_PER_WORD;
   rtx op0 = simplify_gen_subreg (chunk_mode, target, vector_mode, dest*UNITS_PER_WORD);
   rtx source = orig >= nwords? source2: source1;
   int offset = orig >= nwords? orig - nwords: orig;
@@ -3453,7 +3483,7 @@ kvx_expand_vec_perm_const_emit_insf (rtx target, rtx source1, rtx source2,
 				     int dest, int orig1, int orig2)
 {
   machine_mode vector_mode = GET_MODE (target);
-  int nwords = GET_MODE_SIZE (vector_mode) / UNITS_PER_WORD;
+  int nwords = GET_MODE_SIZE (vector_mode).to_constant () / UNITS_PER_WORD;
   HOST_WIDE_INT constant1 = kvx_expand_vec_perm.values[orig1][dest].dword;
   HOST_WIDE_INT constant2 = kvx_expand_vec_perm.values[orig2][dest].dword;
   HOST_WIDE_INT constant0 = 0x8040201008040201ULL, constanti = 0;
@@ -3524,7 +3554,7 @@ void
 kvx_expand_vec_perm_const_emit (rtx target, rtx source1, rtx source2)
 {
   machine_mode vector_mode = GET_MODE (target);
-  int nwords = GET_MODE_SIZE (vector_mode) / UNITS_PER_WORD;
+  int nwords = GET_MODE_SIZE (vector_mode).to_constant () / UNITS_PER_WORD;
   int range = source2? 2*nwords: nwords;
 
   for (int dest = 0; dest < nwords; dest++)
@@ -3579,18 +3609,23 @@ kvx_expand_vec_perm_const_emit (rtx target, rtx source1, rtx source2)
     }
 }
 
+
 /* Called by the vec_perm_const<mode> standard pattern.
    First step identifies whether this is a swizzle (one source) or a shuffle.
    Second step fills the kvx_expand_vec_perm structure with SBMM8 immediates.
    Third step emits the permutation with (kvx_expand_vec_perm_const_emit).  */
-void
+bool
 kvx_expand_vec_perm_const (rtx target, rtx source1, rtx source2, rtx selector)
 {
+  // used during testing
+  if (!target)
+    return true;
+
   machine_mode vector_mode = GET_MODE (target);
   machine_mode inner_mode = GET_MODE_INNER (vector_mode);
-  int nwords = GET_MODE_SIZE (vector_mode) / UNITS_PER_WORD;
-  int nunits = GET_MODE_NUNITS (vector_mode);
-  int ibytes = GET_MODE_SIZE (inner_mode);
+  int nwords = GET_MODE_SIZE (vector_mode).to_constant () / UNITS_PER_WORD;
+  int nunits = GET_MODE_NUNITS (vector_mode).to_constant ();
+  int ibytes = GET_MODE_SIZE (inner_mode).to_constant ();
   unsigned idx_mask = 2*nunits - 1, which = 0;
 
   gcc_assert (nwords <= 4);
@@ -3640,6 +3675,17 @@ kvx_expand_vec_perm_const (rtx target, rtx source1, rtx source2, rtx selector)
     kvx_expand_vec_perm_const_emit (target, source1, NULL_RTX);
   else
     kvx_expand_vec_perm_const_emit (target, source1, source2);
+
+  return true;
+}
+
+static bool
+kvx_vectorize_vec_perm_const (machine_mode vmode, rtx target, rtx op0,
+			      rtx op1, const vec_perm_indices &sel)
+{
+  opt_machine_mode smode = mode_for_int_vector (vmode);
+  rtx sel_rtx = vec_perm_indices_to_rtx (smode.else_void (), sel);
+  kvx_expand_vec_perm_const(target, op0, op1, sel_rtx);
 }
 
 /* Helper to implement vector cross-element right shift. Two source chunks are
@@ -5430,7 +5476,7 @@ static inline const char *
 tree_string_constant (tree arg)
 {
   tree offset_tree = 0;
-  arg = string_constant (arg, &offset_tree);
+  arg = string_constant (arg, &offset_tree, 0, 0);
   return arg ? TREE_STRING_POINTER (arg) : "";
 }
 
@@ -6186,10 +6232,10 @@ kvx_expand_builtin_aladd (rtx target, tree args, enum machine_mode mode)
 
   switch (mode)
     {
-    case DImode:
+    case E_DImode:
       emit_insn (gen_aladdd (target, mem_target, addend_and_return));
       break;
-    case SImode:
+    case E_SImode:
       emit_insn (gen_aladdw (target, mem_target, addend_and_return));
       break;
     default:
@@ -6224,10 +6270,10 @@ kvx_expand_builtin_acswap (rtx target, tree args, enum machine_mode mode)
 
   switch (mode)
     {
-    case DImode:
+    case E_DImode:
       emit_insn (gen_acswapd (tmp, mem_ref));
       break;
-    case SImode:
+    case E_SImode:
       emit_insn (gen_acswapw (tmp, mem_ref));
       break;
     default:
@@ -6311,10 +6357,10 @@ kvx_expand_builtin_alclr (rtx target, tree args, enum machine_mode mode)
 
   switch (mode)
     {
-    case DImode:
+    case E_DImode:
       emit_insn (gen_alclrd (target, mem_ref));
       break;
-    case SImode:
+    case E_SImode:
       emit_insn (gen_alclrw (target, mem_ref));
       break;
     default:
@@ -6482,7 +6528,7 @@ kvx_expand_builtin_alclr (rtx target, tree args, enum machine_mode mode)
 #define KVX_EXPAND_BUILTIN_SHIFT(name, tmode, smode)                           \
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
-    int bits = __builtin_ctz (GET_MODE_NUNITS (tmode));                        \
+    int bits = __builtin_ctz (GET_MODE_NUNITS (tmode).to_constant());                        \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
     rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));                        \
@@ -8372,7 +8418,8 @@ kvx_sched_adjust_cost (rtx_insn *insn, int dep_type, rtx_insn *dep_insn,
 	      if (DEP_TYPE (dep) == REG_DEP_TRUE)
 		{
 		  rtx_insn *pro_insn = DEP_PRO (dep);
-		  int pro_cost = insn_cost (pro_insn);
+		  // FIXME GCC9: added 'true' arg here.
+		  int pro_cost = insn_cost (pro_insn, true);
 		  if (cost < pro_cost)
 		    cost = pro_cost;
 		}
@@ -8744,7 +8791,7 @@ kvx_const_vector_value (rtx x, int slice)
     {
       machine_mode mode = GET_MODE (x);
       machine_mode inner_mode = GET_MODE_INNER (mode);
-      int index = slice * (8 / GET_MODE_SIZE (inner_mode));
+      int index = slice * (8 / GET_MODE_SIZE (inner_mode).to_constant ());
       if (inner_mode == QImode)
 	{
 	  HOST_WIDE_INT val_0 = INTVAL (CONST_VECTOR_ELT (x, index + 0));
@@ -9132,10 +9179,12 @@ kvx_scan_insn_registers_1 (rtx *x, void *data)
 
       /* double/quadruple/octuple register */
       /* Also mark the implicitely defined registers */
-      if (GET_MODE_SIZE (GET_MODE (*x)) > UNITS_PER_WORD)
+      if (known_gt (GET_MODE_SIZE (GET_MODE (*x)), UNITS_PER_WORD))
 	{
 	  unsigned word;
-	  for (word = 1; word < GET_MODE_SIZE (GET_MODE (*x)) / UNITS_PER_WORD;
+	  for (word = 1;
+	       word < exact_div (GET_MODE_SIZE (GET_MODE (*x)), UNITS_PER_WORD)
+			.to_constant ();
 	       word++)
 	    {
 	      SET_HARD_REG_BIT (regs->defs, REGNO (XEXP (*x, 0)) + word);
@@ -9160,10 +9209,12 @@ kvx_scan_insn_registers_1 (rtx *x, void *data)
       else
 	SET_HARD_REG_BIT (regs->uses, REGNO (*x));
 
-      if (GET_MODE_SIZE (GET_MODE (*x)) > UNITS_PER_WORD)
+      if (known_gt (GET_MODE_SIZE (GET_MODE (*x)), UNITS_PER_WORD))
 	{
 	  unsigned word;
-	  for (word = 1; word < GET_MODE_SIZE (GET_MODE (*x)) / UNITS_PER_WORD;
+	  for (word = 1;
+	       word < exact_div (GET_MODE_SIZE (GET_MODE (*x)), UNITS_PER_WORD)
+			.to_constant ();
 	       word++)
 	    {
 	      SET_HARD_REG_BIT (regs->set_dest ? regs->defs : regs->uses,
@@ -9453,7 +9504,7 @@ kvx_swap_fp_sp_in_note (rtx note, rtx old_base)
   rtx mem_dest = SET_DEST (note_pat);
   struct kvx_frame_info *frame = &cfun->machine->frame;
 
-  if (frame->hard_frame_pointer_offset == 0)
+  if (known_eq (frame->hard_frame_pointer_offset, 0))
     {
       if (GET_CODE (XEXP (mem_dest, 0)) == PLUS)
 	XEXP (XEXP (mem_dest, 0), 0) = new_base_reg;
@@ -9462,9 +9513,10 @@ kvx_swap_fp_sp_in_note (rtx note, rtx old_base)
     }
   else
     {
-      HOST_WIDE_INT new_offset = (new_base_reg == hard_frame_pointer_rtx)
-				   ? -frame->hard_frame_pointer_offset
-				   : frame->hard_frame_pointer_offset;
+      HOST_WIDE_INT new_offset
+	= (new_base_reg == hard_frame_pointer_rtx)
+	    ? -frame->hard_frame_pointer_offset.to_constant ()
+	    : frame->hard_frame_pointer_offset.to_constant ();
       if (GET_CODE (XEXP (mem_dest, 0)) == PLUS)
 	{
 	  rtx plus = XEXP (mem_dest, 0);
@@ -9665,7 +9717,7 @@ kvx_fix_debug_for_bundles (void)
 static unsigned
 kvx_mode_size (machine_mode mode)
 {
-  return GET_MODE_SIZE (mode);
+  return GET_MODE_SIZE (mode).to_constant ();
 }
 
 /* Adjust for the stall effects of AUXR RAW on issue cycle. */
@@ -9727,7 +9779,7 @@ kvx_sched2_insn_issue (rtx_insn *insn, rtx *opvec, int noperands)
 	  int regno = REGNO (opvec[0]);
 	  machine_mode mode = GET_MODE (opvec[0]);
 	  int cost = FLOAT_MODE_P (mode) ? 4 : (INTEGRAL_MODE_P (mode) ? 3 : 1);
-	  int i = hard_regno_nregs[regno][mode];
+	  int i = hard_regno_nregs (regno, mode);
 	  while (--i >= 0)
 	    {
 	      scoreboard.write[regno + i] = cycle + cost + stall;
@@ -10017,14 +10069,14 @@ kvx_legitimize_address (rtx x, rtx oldx ATTRIBUTE_UNUSED,
 }
 
 /* Implements TARGET_ADDR_SPACE_POINTER_MODE */
-static machine_mode
+static scalar_int_mode
 kvx_addr_space_pointer_mode (addr_space_t address_space ATTRIBUTE_UNUSED)
 {
   return ptr_mode;
 }
 
 /* Implements TARGET_ADDR_SPACE_ADDRESS_MODE */
-static machine_mode
+static scalar_int_mode
 kvx_addr_space_address_mode (addr_space_t address_space ATTRIBUTE_UNUSED)
 {
   return Pmode;
@@ -10090,15 +10142,13 @@ kvx_addr_space_convert (rtx op, tree from_type, tree to_type ATTRIBUTE_UNUSED)
 }
 
 static void
-kvx_function_prologue (FILE *file ATTRIBUTE_UNUSED,
-		       HOST_WIDE_INT size ATTRIBUTE_UNUSED)
+kvx_function_prologue (FILE *file ATTRIBUTE_UNUSED)
 {
   dfa_start ();
 }
 
 static void
-kvx_function_epilogue (FILE *file ATTRIBUTE_UNUSED,
-		       HOST_WIDE_INT size ATTRIBUTE_UNUSED)
+kvx_function_epilogue (FILE *file ATTRIBUTE_UNUSED)
 {
   kvx_sched2_max_uid = 0;
   kvx_sched2_prev_uid = -1;
@@ -10308,13 +10358,13 @@ hwloop_optimize (hwloop_info loop)
   else if (entry_bb != ENTRY_BLOCK_PTR_FOR_FN (cfun))
     {
       entry_after = BB_END (entry_bb);
-      while (DEBUG_INSN_P (entry_after)
-	     || (NOTE_P (entry_after)
-		 && NOTE_KIND (entry_after) != NOTE_INSN_BASIC_BLOCK
-		 /* Make sure we don't split a call and its corresponding
-		    CALL_ARG_LOCATION note.  */
-		 && NOTE_KIND (entry_after) != NOTE_INSN_CALL_ARG_LOCATION))
-	entry_after = PREV_INSN (entry_after);
+      /* while (DEBUG_INSN_P (entry_after) */
+      /*        || (NOTE_P (entry_after) */
+      /*            && NOTE_KIND (entry_after) != NOTE_INSN_BASIC_BLOCK */
+      /* 		 /\* Make sure we don't split a call and its corresponding */
+      /* 		    CALL_ARG_LOCATION note.  *\/ */
+      /*            && NOTE_KIND (entry_after) != NOTE_INSN_CALL_ARG_LOCATION)) */
+      /*   entry_after = PREV_INSN (entry_after); */
 
       emit_insn_after (seq, entry_after);
     }
@@ -10528,6 +10578,38 @@ kvx_output_addr_const_extra (FILE *fp, rtx x)
   return false;
 }
 
+/* FIXME AUTO: This must be fixed for coolidge */
+/* See T7749 */
+static int
+kvx_reassociation_width (unsigned int opc, machine_mode mode)
+{
+  int res = 1;
+
+  /* see tree.c:associative_tree_code () for possible values of opc. */
+
+  switch (opc)
+    {
+    case BIT_IOR_EXPR:
+    case BIT_AND_EXPR:
+    case BIT_XOR_EXPR:
+      if (mode == SImode || mode == HImode || mode == QImode || mode == DImode)
+	res = 4;
+      else if (mode == TImode)
+	res = 2;
+      break;
+    case PLUS_EXPR:
+    case MIN_EXPR:
+    case MAX_EXPR:
+      if (mode == SImode || mode == HImode || mode == QImode || mode == DImode)
+	res = 4;
+      break;
+    case MULT_EXPR:
+      break;
+    }
+
+  return res;
+}
+
 /* Return true for the .xs addressing modes, else false. */
 static bool
 kvx_mode_dependent_address_p (const_rtx addr,
@@ -10646,8 +10728,8 @@ kvx_check_align_reg (rtx op, int align)
 
   const bool aligned_subreg
     = SUBREG_P (op) && REG_P (SUBREG_REG (op))
-      && (REGNO (SUBREG_REG (op)) + SUBREG_BYTE (op) / UNITS_PER_WORD) % align
-	   == 0;
+    && (REGNO (SUBREG_REG (op)) + SUBREG_BYTE (op).to_constant() / UNITS_PER_WORD) % align
+    == 0;
 
   return aligned_reg || aligned_subreg;
 }
@@ -10762,9 +10844,44 @@ kvx_profile_hook (void)
 {
   rtx ra_arg = get_hard_reg_initial_val (Pmode, KV3_RETURN_POINTER_REGNO);
   rtx fun = gen_rtx_SYMBOL_REF (Pmode, "__mcount");
-  emit_library_call (fun, LCT_NORMAL, VOIDmode, 1, ra_arg, Pmode);
+  emit_library_call (fun, LCT_NORMAL, VOIDmode, ra_arg, Pmode);
 }
 #endif
+
+/* MAYBE FIXME */
+/* bool */
+/* kvx_is_farcall_p (rtx op) */
+/* { */
+/*   bool farcall = KVX_FARCALL; */
+/*   if (!farcall && (GET_CODE(XEXP(op, 0)) == SYMBOL_REF */
+/* 		   && SYMBOL_REF_FUNCTION_P(XEXP(op, 0)) */
+/* 		   && SYMBOL_REF_DECL(XEXP(op,0)) != NULL_TREE)) */
+/*     farcall = lookup_attribute ("farcall", DECL_ATTRIBUTES(SYMBOL_REF_DECL(XEXP(op,0)))) != NULL; */
+
+/*   return farcall; */
+/* } */
+
+static HOST_WIDE_INT
+kvx_constant_alignment (const_tree exp, HOST_WIDE_INT align)
+{
+  return ((TREE_CODE (exp) == STRING_CST
+	   && !optimize_size
+	   && (align) < BITS_PER_WORD )
+	  ? BITS_PER_WORD : (align));
+}
+
+static bool
+kvx_modes_tieable_p (machine_mode mode1, machine_mode mode2)
+{
+  return(GET_MODE_CLASS (mode1) == GET_MODE_CLASS (mode2));
+}
+
+static bool
+kvx_truly_noop_truncation (poly_uint64 outprec, poly_uint64 inprec)
+{
+  return 1;
+}
+
 
 /* Returns asm template for ctrapsi4 */
 char *
@@ -10784,6 +10901,10 @@ kvx_ctrapsi4 (void)
     *width = TARGET_32 ? 'w' : 'd';
   return asm_template;
 }
+
+#undef TARGET_TRULY_NOOP_TRUNCATION
+#define TARGET_TRULY_NOOP_TRUNCATION kvx_truly_noop_truncation
+
 
 /* Initialize the GCC target structure.  */
 
@@ -10845,9 +10966,6 @@ kvx_ctrapsi4 (void)
 
 #undef TARGET_VECTORIZE_PREFERRED_SIMD_MODE
 #define TARGET_VECTORIZE_PREFERRED_SIMD_MODE kvx_vectorize_preferred_simd_mode
-
-#undef TARGET_VECTORIZE_VEC_PERM_CONST_OK
-#define TARGET_VECTORIZE_VEC_PERM_CONST_OK kvx_vectorize_vec_perm_const_ok
 
 #undef TARGET_PROMOTE_PROTOTYPES
 #define TARGET_PROMOTE_PROTOTYPES hook_bool_const_tree_true
@@ -11000,6 +11118,21 @@ kvx_ctrapsi4 (void)
 #undef TARGET_ADDR_SPACE_CONVERT
 #define TARGET_ADDR_SPACE_CONVERT kvx_addr_space_convert
 
+#undef TARGET_CONSTANT_ALIGNMENT
+#define TARGET_CONSTANT_ALIGNMENT kvx_constant_alignment
+
+#undef TARGET_HARD_REGNO_NREGS
+#define TARGET_HARD_REGNO_NREGS kvx_hard_regno_nregs
+
+#undef TARGET_HARD_REGNO_MODE_OK
+#define TARGET_HARD_REGNO_MODE_OK kvx_hard_regno_mode_ok
+
+#undef TARGET_MODES_TIEABLE_P
+#define TARGET_MODES_TIEABLE_P kvx_modes_tieable_p
+
+#undef TARGET_STARTING_FRAME_OFFSET
+#define TARGET_STARTING_FRAME_OFFSET kvx_starting_frame_offset
+
 /* FIXME AUTO: trampoline are broken T6775 */
 #undef TARGET_STATIC_CHAIN
 #define TARGET_STATIC_CHAIN kvx_static_chain
@@ -11009,6 +11142,11 @@ kvx_ctrapsi4 (void)
 
 #undef TARGET_DELAY_VARTRACK
 #define TARGET_DELAY_VARTRACK (!TARGET_BUNDLING)
+
+#undef TARGET_VECTORIZE_VEC_PERM_CONST
+#define TARGET_VECTORIZE_VEC_PERM_CONST		\
+  kvx_vectorize_vec_perm_const
+
 
 struct gcc_target targetm = TARGET_INITIALIZER;
 
