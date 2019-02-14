@@ -25,6 +25,7 @@ along with GCC; see the file COPYING3.  If not see
 extern enum attr_arch kvx_arch_schedule;
 #endif
 
+extern bool kvx_is_farcall_p (rtx op);
 extern bool kvx_cannot_change_mode_class (enum machine_mode from,
 					  enum machine_mode to,
 					  enum reg_class reg_class);
@@ -34,9 +35,7 @@ extern bool kvx_cannot_change_mode_class (enum machine_mode from,
 
 extern void kvx_output_function_profiler (FILE *);
 extern HOST_WIDE_INT kvx_first_parm_offset (tree decl);
-extern int kvx_starting_frame_offset (void);
 
-extern int kvx_hard_regno_mode_ok (unsigned regno, enum machine_mode mode);
 extern int kvx_hard_regno_rename_ok (unsigned from, unsigned to);
 extern void kvx_output_load_multiple (rtx *operands);
 
@@ -144,7 +143,7 @@ extern rtx kvx_expand_chunk_splat (rtx target, rtx source,
 
 extern void kvx_expand_vector_init (rtx target, rtx source);
 
-extern void kvx_expand_vec_perm_const (rtx target, rtx source1, rtx source2, rtx selector);
+extern bool kvx_expand_vec_perm_const (rtx target, rtx source1, rtx source2, rtx selector);
 
 extern rtx kvx_expand_chunk_shift (rtx target, rtx source1, rtx source2, int shift);
 
@@ -162,7 +161,7 @@ extern int kvx_has_tls_reference (rtx x);
 extern bool kvx_float_fits_bits (const REAL_VALUE_TYPE *r, unsigned bitsz,
 				 enum machine_mode mode);
 
-extern HOST_WIDE_INT kvx_initial_elimination_offset (int, int);
+extern poly_int64 kvx_initial_elimination_offset (int, int);
 
 char *kvx_ctrapsi4 (void);
 
