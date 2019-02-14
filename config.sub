@@ -1298,6 +1298,10 @@ case $os in
 	cos*)
 	    os=cos
 	    ;;
+	mbr*)
+	    os=mbr
+	    ;;
+
 	solaris1 | solaris1.*)
 		os=`echo $os | sed -e 's|solaris1|sunos4|'`
 		;;

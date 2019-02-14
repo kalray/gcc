@@ -47,11 +47,11 @@
   kvx_emit_pre_barrier(operands[2], true);
 
   switch (<MODE>mode) {
-    case TImode: emit_insn (gen_lqu (operands[0], operands[1]));  break;
-    case DImode: emit_insn (gen_ldu (operands[0], operands[1]));  break;
-    case SImode: emit_insn (gen_lwzu (operands[0], operands[1])); break;
-    case HImode: emit_insn (gen_lhzu (operands[0], operands[1])); break;
-    case QImode: emit_insn (gen_lbzu (operands[0], operands[1])); break;
+    case E_TImode: emit_insn (gen_lqu (operands[0], operands[1]));  break;
+    case E_DImode: emit_insn (gen_ldu (operands[0], operands[1]));  break;
+    case E_SImode: emit_insn (gen_lwzu (operands[0], operands[1])); break;
+    case E_HImode: emit_insn (gen_lhzu (operands[0], operands[1])); break;
+    case E_QImode: emit_insn (gen_lbzu (operands[0], operands[1])); break;
     default: gcc_unreachable ();
     }
 

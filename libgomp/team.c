@@ -134,7 +134,9 @@ gomp_thread_start (void *xdata)
     }
 
   gomp_sem_destroy (&thr->release);
+#ifndef __CLUSTER_OS__
   pthread_detach (pthread_self ());
+#endif
   thr->thread_pool = NULL;
   thr->task = NULL;
   return NULL;
@@ -235,7 +237,9 @@ gomp_free_pool_helper (void *thread_pool)
   thr->thread_pool = NULL;
   thr->task = NULL;
 #ifdef LIBGOMP_USE_PTHREADS
+#ifndef __CLUSTER_OS__
   pthread_detach (pthread_self ());
+#endif
   pthread_exit (NULL);
 #elif defined(__nvptx__)
   asm ("exit;");
