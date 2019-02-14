@@ -249,22 +249,6 @@
   }
 )
 
-(define_expand "vec_perm_const<mode>"
-  [(match_operand:SIMDALL 0 "register_operand" "")
-   (match_operand:SIMDALL 1 "register_operand" "")
-   (match_operand:SIMDALL 2 "register_operand" "")
-   (match_operand:<MASK> 3 "" "")]
-  ""
-  {
-    rtx target = operands[0];
-    rtx source1 = operands[1];
-    rtx source2 = operands[2];
-    rtx selector = operands[3];
-    kvx_expand_vec_perm_const (target, source1, source2, selector);
-    DONE;
-  }
-)
-
 (define_expand "vec_cmp<mode><mask>"
   [(set (match_operand:<MASK> 0 "register_operand")
         (match_operator 1 "comparison_operator"
