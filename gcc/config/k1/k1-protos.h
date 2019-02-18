@@ -106,7 +106,8 @@ extern void k1_expand_new_sync_instruction (enum rtx_code code, rtx dest,
 
 extern void k1_expand_sync_instruction (enum rtx_code code, rtx addr, rtx val);
 
-extern int k1_mau_lsu_double_port_bypass_p (rtx producer, rtx consumer);
+extern int k1_mau_lsu_double_port_bypass_p (rtx_insn *producer,
+					    rtx_insn *consumer);
 
 extern int k1_has_pic_reference (rtx x);
 /* This function is exported for the tirex plugin. Do not make it
