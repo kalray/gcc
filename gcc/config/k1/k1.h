@@ -582,7 +582,7 @@ extern void k1_profile_hook (void);
    value when STRICT_ALIGNMENT is nonzero. */
 /* #define SLOW_UNALIGNED_ACCESS(MODE, ALIGN) 1 */
 
-#define NO_FUNCTION_CSE
+#define NO_FUNCTION_CSE 1
 
 #define MEMORY_MOVE_COST(mode, class, in) (in ? 6 : 4)
 
