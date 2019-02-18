@@ -22,6 +22,55 @@
    a copy of the GCC Runtime Library Exception along with this program;
    see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
    <http://www.gnu.org/licenses/>.  */
+#include "config.h"
+#define INCLUDE_STRING
+#include "system.h"
+#include "coretypes.h"
+#include "backend.h"
+#include "target.h"
+#include "rtl.h"
+#include "rtl-iter.h"
+#include "tree.h"
+#include "memmodel.h"
+#include "gimple.h"
+#include "cfghooks.h"
+#include "cfgloop.h"
+#include "df.h"
+#include "tm_p.h"
+#include "stringpool.h"
+#include "optabs.h"
+#include "regs.h"
+#include "emit-rtl.h"
+#include "recog.h"
+#include "diagnostic.h"
+#include "insn-attr.h"
+#include "alias.h"
+#include "fold-const.h"
+#include "stor-layout.h"
+#include "calls.h"
+#include "varasm.h"
+#include "output.h"
+#include "flags.h"
+#include "explow.h"
+#include "expr.h"
+#include "reload.h"
+#include "langhooks.h"
+#include "opts.h"
+#include "params.h"
+#include "gimplify.h"
+#include "dwarf2.h"
+#include "gimple-iterator.h"
+#include "tree-vectorizer.h"
+#include "cfgrtl.h"
+
+#include "dumpfile.h"
+#include "builtins.h"
+#include "tm-constrs.h"
+#include "sched-int.h"
+#include "target-globals.h"
+#include "common/common-target.h"
+#include "selftest.h"
+#include "selftest-rtl.h"
 
 #include "config.h"
 #include "system.h"
@@ -29,16 +78,22 @@
 #include "tm.h"
 
 #include "calls.h"
+#include "function.h"
 #include "cfgloop.h"
 #include "cppdefault.h"
 #include "cpplib.h"
 #include "diagnostic.h"
 #include "incpath.h"
+
+#include "basic-block.h"
+#include "bitmap.h"
+#include "hard-reg-set.h"
 #include "df.h"
+#include "tree.h"
+#include "rtl.h"
 #include "expr.h"
 #include "function.h"
 #include "ggc.h"
-#include "hard-reg-set.h"
 #include "insn-attr.h"
 #include "insn-codes.h"
 #include "insn-modes.h"
@@ -48,19 +103,19 @@
 #include "hw-doloop.h"
 #include "opts.h"
 #include "params.h"
-#include "recog.h"
+#include "emit-rtl.h"
+//#include "recog.h"
 #include "regs.h"
-#include "rtl.h"
+
 #include "sched-int.h"
 #include "toplev.h"
 #include "stor-layout.h"
 #include "varasm.h"
-#include "tree.h"
+
 #include "tm_p.h"
 #include "target.h"
 #include "target-def.h"
 #include "ira.h"
-#include "optabs.h"
 
 #include "k1-protos.h"
 #include "k1-opts.h"
@@ -531,20 +586,6 @@ struct k1_address
   int mod;
 };
 
-static int
-k1_tls_symbol_ref_1 (rtx *x, void *data ATTRIBUTE_UNUSED)
-{
-  if (GET_CODE (*x) == SYMBOL_REF)
-    return SYMBOL_REF_TLS_MODEL (*x) != 0;
-
-  /* Don't recurse into UNSPEC_TLS looking for TLS symbols; these are
-     TLS offsets, not real symbol references.  */
-  if (GET_CODE (*x) == UNSPEC && XINT (*x, 1) == UNSPEC_TLS)
-    return -1;
-
-  return 0;
-}
-
 /* Returns 0 if there is no TLS ref, != 0 if there is.
 
   Beware that UNSPEC_TLS are not symbol ref, they are offset within
@@ -553,16 +594,20 @@ k1_tls_symbol_ref_1 (rtx *x, void *data ATTRIBUTE_UNUSED)
 int
 k1_has_tls_reference (rtx x)
 {
-  return for_each_rtx (&x, &k1_tls_symbol_ref_1, NULL);
-}
-
-static int
-k1_has_tprel_1 (rtx *x, void *data ATTRIBUTE_UNUSED)
-{
-  if (GET_CODE (*x) == UNSPEC && XINT (*x, 1) == UNSPEC_TLS)
-    return 1;
-
-  return 0;
+  if (!TARGET_HAVE_TLS)
+    return false;
+  subrtx_iterator::array_type array;
+  FOR_EACH_SUBRTX (iter, array, x, ALL)
+    {
+      const_rtx x = *iter;
+      if (GET_CODE (x) == SYMBOL_REF && SYMBOL_REF_TLS_MODEL (x) != 0)
+	return true;
+      /* Don't recurse into UNSPEC_TLS looking for TLS symbols; these are
+	 TLS offsets, not real symbol references.  */
+      if (GET_CODE (x) == UNSPEC && XINT (x, 1) == UNSPEC_TLS)
+	iter.skip_subrtxes ();
+    }
+  return false;
 }
 
 /* Returns 1 if an UNSPEC_TLS has been found (ie. a TLS offset), 0 if
@@ -570,7 +615,16 @@ k1_has_tprel_1 (rtx *x, void *data ATTRIBUTE_UNUSED)
 static int
 k1_has_tprel (rtx x)
 {
-  return for_each_rtx (&x, &k1_has_tprel_1, NULL);
+  if (!TARGET_HAVE_TLS)
+    return false;
+  subrtx_iterator::array_type array;
+  FOR_EACH_SUBRTX (iter, array, x, ALL)
+    {
+      const_rtx x = *iter;
+      if (GET_CODE (x) == UNSPEC && XINT (x, 1) == UNSPEC_TLS)
+	return true;
+    }
+  return false;
 }
 
 static int
@@ -582,9 +636,9 @@ k1_has_unspec_reference_1 (rtx *x, void *data ATTRIBUTE_UNUSED)
 }
 
 static int
-k1_needs_symbol_reloc_1 (rtx *x, void *data ATTRIBUTE_UNUSED)
+k1_needs_symbol_reloc_1 (rtx *x, void *gprel)
 {
-  if (k1_has_unspec_reference_1 (x, NULL))
+  if (k1_has_unspec_reference_1 (x, gprel))
     return -1;
 
   /* One could believe that we should filter out functions here,
@@ -598,13 +652,45 @@ k1_needs_symbol_reloc_1 (rtx *x, void *data ATTRIBUTE_UNUSED)
 static int
 k1_needs_symbol_reloc (rtx x)
 {
-  return for_each_rtx (&x, &k1_needs_symbol_reloc_1, NULL);
+  subrtx_ptr_iterator::array_type array;
+  FOR_EACH_SUBRTX_PTR (iter, array, &x, ALL)
+    {
+      rtx *x = *iter;
+      switch (k1_needs_symbol_reloc_1 (x, NULL))
+	{
+	case -1:
+	  iter.skip_subrtxes ();
+	  break;
+	case 0:
+	  break;
+	default:
+	  return 1;
+	}
+    }
+  return 0;
+  //    return for_each_rtx (&x, &k1_needs_symbol_reloc_1, NULL);
 }
 
 static int
 k1_has_unspec_reference (rtx x)
 {
-  return for_each_rtx (&x, &k1_has_unspec_reference_1, NULL);
+  subrtx_ptr_iterator::array_type array;
+  FOR_EACH_SUBRTX_PTR (iter, array, &x, ALL)
+    {
+      rtx *x = *iter;
+      switch (k1_has_unspec_reference_1 (x, NULL))
+	{
+	case -1:
+	  iter.skip_subrtxes ();
+	  break;
+	case 0:
+	  break;
+	default:
+	  return 1;
+	}
+    }
+  return 0;
+  //   return for_each_rtx (&x, &k1_has_unspec_reference_1, NULL);
 }
 
 static bool
@@ -1454,7 +1540,7 @@ k1_target_print_operand (FILE *file, rtx x, int code)
 	      /*   fprintf (file, "@plt64("); */
 	      /* else if (want_plt) */
 	      /*   fprintf (file, "@plt("); */
-	      output_address (XEXP (operand, 0));
+	      output_address (GET_MODE (XEXP (operand, 0)), XEXP (operand, 0));
 	      /* if (want_plt) */
 	      /*   fprintf (file, ")"); */
 	    }
@@ -1483,7 +1569,7 @@ k1_target_print_operand (FILE *file, rtx x, int code)
 	{
 	  REAL_VALUE_TYPE r;
 	  long l;
-	  REAL_VALUE_FROM_CONST_DOUBLE (r, operand);
+	  r = *CONST_DOUBLE_REAL_VALUE (operand);
 	  REAL_VALUE_TO_TARGET_SINGLE (r, l);
 	  fprintf (file, "0x%x", (unsigned int) l);
 	  return;
@@ -1493,7 +1579,7 @@ k1_target_print_operand (FILE *file, rtx x, int code)
 	  /* this is a double that should fit on less than 64bits */
 	  REAL_VALUE_TYPE r;
 	  long l[2];
-	  REAL_VALUE_FROM_CONST_DOUBLE (r, operand);
+	  r = *CONST_DOUBLE_REAL_VALUE (operand);
 	  REAL_VALUE_TO_TARGET_DOUBLE (r, l);
 	  fprintf (file, "0x%x%08x", (unsigned int) l[1], (unsigned int) l[0]);
 	  return;
@@ -1751,8 +1837,7 @@ static struct machine_function *
 k1_init_machine_status (void)
 {
   struct machine_function *machine;
-  machine = (struct machine_function *) ggc_alloc_cleared_atomic (
-    sizeof (struct machine_function));
+  machine = ggc_cleared_alloc<machine_function> ();
 
   return machine;
 }
@@ -1914,8 +1999,7 @@ k1_expand_stack_check_allocate_stack (rtx target, rtx adjust)
       gcc_unreachable ();
     }
   emit_insn (
-    gen_rtx_SET (Pmode, tmp,
-		 gen_rtx_MINUS (Pmode, stack_pointer_rtx, stack_end_val)));
+    gen_rtx_SET (tmp, gen_rtx_MINUS (Pmode, stack_pointer_rtx, stack_end_val)));
   emit_cmp_and_jump_insns (tmp, const0_rtx, LT, NULL_RTX, Pmode, 0, label);
   JUMP_LABEL (get_last_insn ()) = label;
 
@@ -2052,7 +2136,7 @@ k1_save_or_restore_callee_save_registers (bool restore)
 		    RTX_FRAME_RELATED_P (insn) = 1;
 
 		    add_reg_note (insn, REG_CFA_REGISTER,
-				  gen_rtx_SET (spill_mode, saved_reg, src_reg));
+				  gen_rtx_SET (saved_reg, src_reg));
 		  }
 	      }
 
@@ -2070,7 +2154,7 @@ k1_save_or_restore_callee_save_registers (bool restore)
 		insn = emit_move_insn (mem, saved_reg);
 		RTX_FRAME_RELATED_P (insn) = 1;
 		add_reg_note (insn, REG_CFA_OFFSET,
-			      gen_rtx_SET (spill_mode, mem,
+			      gen_rtx_SET (mem,
 					   (regno == K1C_RETURN_POINTER_REGNO)
 					     ? orig_save_reg
 					     : saved_reg));
@@ -2372,7 +2456,7 @@ k1_expand_mov_constant (rtx operands[])
 	{
 	case SYMBOL_ABSOLUTE:
 	  /* Emit: dest = sym */
-	  emit_insn (gen_rtx_SET (Pmode, dest, src));
+	  emit_insn (gen_rtx_SET (dest, src));
 	  break;
 
 	case LABEL_PCREL_ABSOLUTE:
@@ -2428,14 +2512,14 @@ k1_expand_mov_constant (rtx operands[])
 
 	case SYMBOL_TPREL:
 	  operands[1] = k1_legitimize_tls_reference (src);
-	  emit_insn (gen_rtx_SET (VOIDmode, dest, operands[1]));
+	  emit_insn (gen_rtx_SET (dest, operands[1]));
 	  gcc_assert (operands[1] != src);
 	  break;
 	}
       return;
     }
 
-  emit_insn (gen_rtx_SET (VOIDmode, dest, src));
+  emit_insn (gen_rtx_SET (dest, src));
 
   /* if (k1_has_tls_reference (operands[1])) */
   /*   { */
@@ -5250,7 +5334,7 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
 }
 
 int
-k1_mau_lsu_double_port_bypass_p (rtx producer, rtx consumer)
+k1_mau_lsu_double_port_bypass_p (rtx_insn *producer, rtx_insn *consumer)
 {
   rtx produced = SET_DEST (single_set (producer));
   rtx consumed = PATTERN (consumer);
@@ -5263,21 +5347,21 @@ k1_mau_lsu_double_port_bypass_p (rtx producer, rtx consumer)
 }
 
 static int
-k1_target_sched_adjust_cost (rtx insn, rtx link, rtx dep_insn, int cost)
+k1_target_sched_adjust_cost (rtx_insn *insn, int dep_type, rtx_insn *dep_insn,
+			     int cost, unsigned int)
 {
-  enum reg_note kind = REG_NOTE_KIND (link);
   enum attr_class insn_class = get_attr_class (insn);
   /* On the k1, it is possible to read then write the same register in a bundle
    * so we set the WAR cost to 0 unless insn is a control-flow consuming reg
    * then it is 1 */
-  if (kind == REG_DEP_ANTI)
+  if (dep_type == REG_DEP_ANTI)
     {
       cost = (insn_class == CLASS_BRANCH) | (insn_class == CLASS_JUMP)
 	     | (insn_class == CLASS_LINK);
     }
   else
     /* Just to be sure, force the WAW cost to 1 */
-    if (kind == REG_DEP_OUTPUT)
+    if (dep_type == REG_DEP_OUTPUT)
     {
       cost = 1;
     }
@@ -5292,7 +5376,7 @@ k1_target_sched_issue_rate (void)
 
 static int
 k1_target_sched_dfa_new_cycle (FILE *dump ATTRIBUTE_UNUSED,
-			       int verbose ATTRIBUTE_UNUSED, rtx insn,
+			       int verbose ATTRIBUTE_UNUSED, rtx_insn *insn,
 			       int last_clock, int clock,
 			       int *sort_p ATTRIBUTE_UNUSED)
 {
@@ -5303,336 +5387,6 @@ k1_target_sched_dfa_new_cycle (FILE *dump ATTRIBUTE_UNUSED,
     return 1;
 
   return 0;
-}
-
-struct replace_reg_data
-{
-  rtx old;
-  rtx replacement;
-  rtx asm_op; /* See k1_replace_reg_rtx comment */
-};
-
-static int
-replace_reg (rtx *x, void *data)
-{
-  struct replace_reg_data *replace_data = (struct replace_reg_data *) data;
-  rtx old = replace_data->old;
-  rtx replace = replace_data->replacement;
-
-  if (!*x)
-    return -1;
-
-  if (GET_CODE (*x) == SUBREG && rtx_equal_p (SUBREG_REG (*x), old))
-    {
-      rtx subreg = simplify_subreg (GET_MODE (*x), copy_rtx (replace),
-				    GET_MODE (replace), SUBREG_BYTE (*x));
-      if (subreg == NULL_RTX
-	  && GET_MODE_SIZE (GET_MODE (*x)) > GET_MODE_SIZE (GET_MODE (replace)))
-	{
-	  /* Paradoxical subreg that couldn't be simplified. As the
-	     upper bits are undefined, we can as well mark them as
-	     0. */
-	  subreg = gen_rtx_ZERO_EXTEND (DImode, copy_rtx (replace));
-	}
-      *x = subreg;
-      return -1;
-    }
-  else if (rtx_equal_p (*x, old))
-    {
-      *x = copy_rtx (replace);
-      return -1;
-    }
-  else if (GET_CODE (*x) == ASM_OPERANDS && replace_data->asm_op)
-    {
-      *x = replace_data->asm_op;
-      return -1;
-    }
-
-  return 0;
-}
-
-/* Replace all occurences of pseudo with regno REGNO and rtx OLD
-   by rtx REPLACE. Don't do the replacement in insns IGNORE1 and
-   IGNORE2.
-
-   Take special care of ASM_OPERANDS. Asm statements can be grouped
-   together in PARALLEL rtxs when their asm_operands are the same. The
-   asm_operands, need to be shared between all theit occurences in the
-   parallel, otherwise check_asm_operands () fails. Thus we need to
-   take specific measures to generate a conformant RTL statement after
-   copy_rtx'ing the original stmt. */
-static bool
-k1_replace_reg_rtx (int regno, rtx old, rtx replace, rtx ignore1, rtx ignore2,
-		    int remove_notes, int force_success)
-{
-  df_ref adef, next = NULL;
-  rtx insn, tmp_insn;
-  struct replace_reg_data data;
-  bool replaced_everywhere = true;
-
-  data.old = old;
-  data.replacement = replace;
-
-  for (adef = DF_REG_DEF_CHAIN (regno); adef; adef = next)
-    {
-
-      gcc_assert (DF_REF_CLASS (adef) != DF_REF_ARTIFICIAL);
-      insn = DF_REF_INSN (adef);
-      next = DF_REF_NEXT_REG (adef);
-
-      if (insn == ignore1 || insn == ignore2)
-	continue;
-
-      tmp_insn = copy_rtx (insn);
-      data.asm_op = NULL_RTX;
-      if (asm_noperands (PATTERN (insn)) > 0)
-	{
-	  rtx asm_op = extract_asm_operands (PATTERN (tmp_insn));
-	  for_each_rtx (&asm_op, replace_reg, &data);
-	  data.asm_op = asm_op;
-	}
-
-      for_each_rtx (&PATTERN (tmp_insn), replace_reg, &data);
-      if (!INSN_P (tmp_insn) || DEBUG_INSN_P (tmp_insn)
-	  || GET_CODE (PATTERN (tmp_insn)) == USE
-	  || GET_CODE (PATTERN (tmp_insn)) == CLOBBER
-	  || recog (PATTERN (tmp_insn), tmp_insn, 0) >= 0
-	  || check_asm_operands (PATTERN (tmp_insn)))
-	{
-	  data.asm_op = NULL_RTX;
-	  for_each_rtx (&PATTERN (insn), replace_reg, &data);
-
-	  if (REG_NOTES (insn))
-	    {
-	      if (remove_notes)
-		{
-		  rtx note = find_regno_note (insn, REG_DEAD, regno);
-		  remove_note (insn, note);
-		}
-	      else
-		{
-		  for_each_rtx (&REG_NOTES (insn), replace_reg, &data);
-		}
-	    }
-	  df_ref_remove (adef);
-	}
-      else
-	{
-	  if (force_success)
-	    print_rtl_single (stdout, tmp_insn);
-	  replaced_everywhere = false;
-	}
-    }
-  for (adef = DF_REG_USE_CHAIN (regno); adef; adef = next)
-    {
-
-      gcc_assert (DF_REF_CLASS (adef) != DF_REF_ARTIFICIAL);
-      insn = DF_REF_INSN (adef);
-      next = DF_REF_NEXT_REG (adef);
-
-      if (insn == ignore1 || insn == ignore2)
-	continue;
-
-      tmp_insn = copy_rtx (insn);
-      data.asm_op = NULL_RTX;
-      if (asm_noperands (PATTERN (insn)) > 0)
-	{
-	  rtx asm_op = extract_asm_operands (PATTERN (tmp_insn));
-	  for_each_rtx (&asm_op, replace_reg, &data);
-	  data.asm_op = asm_op;
-	}
-
-      for_each_rtx (&PATTERN (tmp_insn), replace_reg, &data);
-
-      if (!INSN_P (tmp_insn) || DEBUG_INSN_P (tmp_insn)
-	  || GET_CODE (PATTERN (tmp_insn)) == USE
-	  || GET_CODE (PATTERN (tmp_insn)) == CLOBBER
-	  || recog (PATTERN (tmp_insn), tmp_insn, 0) >= 0
-	  || check_asm_operands (PATTERN (tmp_insn)))
-	{
-	  data.asm_op = NULL_RTX;
-	  for_each_rtx (&PATTERN (insn), replace_reg, &data);
-
-	  if (REG_NOTES (insn))
-	    {
-	      if (remove_notes)
-		{
-		  rtx note = find_regno_note (insn, REG_DEAD, regno);
-		  remove_note (insn, note);
-		}
-	      else
-		{
-		  for_each_rtx (&REG_NOTES (insn), replace_reg, &data);
-		}
-	    }
-	  df_ref_remove (adef);
-	}
-      else
-	{
-	  if (force_success)
-	    print_rtl_single (stdout, tmp_insn);
-	  replaced_everywhere = false;
-	}
-    }
-
-  gcc_assert (replaced_everywhere || !force_success);
-  return replaced_everywhere;
-}
-
-/* Remove INSN from all dependency lists, resolve its forward
-   dependencies (and maybe mark its dependencies ready) and finally
-   remove it from the insn flow.  */
-static void
-k1_sched_remove_insn (rtx insn)
-{
-  sd_iterator_def sd_it;
-  dep_t dep;
-
-  /* The skeleton of this loop is copied from
-     haifa-sched.c:schedule_insn ().  */
-  for (sd_it = sd_iterator_start (insn, SD_LIST_FORW);
-       sd_iterator_cond (&sd_it, &dep);)
-    {
-      rtx next = DEP_CON (dep);
-      bool cancelled = (DEP_STATUS (dep) & DEP_CANCELLED) != 0;
-
-      /* Resolve the dependence between INSN and NEXT.
-	 sd_resolve_dep () moves current dep to another list thus
-	 advancing the iterator.  */
-      sd_resolve_dep (sd_it);
-
-      /* Don't bother trying to mark next as ready if
-	 insn is a debug insn.  If insn is the last hard
-	 dependency, it will have already been discounted.  */
-      if (DEBUG_INSN_P (insn) && !DEBUG_INSN_P (next))
-	continue;
-
-      if (cancelled)
-	continue;
-
-      if (!IS_SPECULATION_BRANCHY_CHECK_P (insn))
-	{
-	  /* With EBB scheduling, you can get to dependencies which
-	     can't be scheduled because in another BB. */
-	  if (INSN_BB (next) == INSN_BB (insn))
-	    {
-	      if (HID (next)->todo_spec == 0)
-		HID (next)->todo_spec = HARD_DEP;
-	      try_ready (next);
-	    }
-	}
-      else
-	gcc_unreachable ();
-    }
-
-  sd_it = sd_iterator_start (insn, (SD_LIST_FORW | SD_LIST_RES_FORW
-				    | SD_LIST_BACK | SD_LIST_RES_BACK));
-
-  while (sd_iterator_cond (&sd_it, &dep))
-    sd_delete_dep (sd_it);
-
-  sd_finish_insn (insn);
-  current_sched_info->add_remove_insn (insn, 1);
-  remove_insn (insn);
-  set_insn_deleted (insn);
-}
-
-/* Extend the reg_info_p array when creating a new pseudo with regno
-   REGNO.  The new register is meant to replace OLD_REGNO1 and
-   OLD_REGNO2, thus use their properties to feed the new reg_info
-   entry.  */
-static void
-k1_add_reginfo (int regno, int old_regno1, int old_regno2)
-{
-  int old_max_regno = max_regno;
-  int i;
-  max_regno = max_reg_num ();
-
-  /* Extend REG_INFO_P, if needed.  */
-  if ((unsigned int) max_regno - 1 >= reg_info_p_size)
-    {
-      size_t new_reg_info_p_size = max_regno + 128;
-      reg_info_p
-	= (struct reg_info_t *) xrecalloc (reg_info_p, new_reg_info_p_size,
-					   reg_info_p_size,
-					   sizeof (*reg_info_p));
-      reg_info_p_size = new_reg_info_p_size;
-    }
-  /* Extend sched_regno_pressure_class (was init in haifa-sched.c, sched_init())
-   */
-  sched_regno_pressure_class
-    = (enum reg_class *) xrealloc (sched_regno_pressure_class,
-				   max_regno * sizeof (enum reg_class));
-  resize_reg_info ();
-
-  for (i = old_max_regno; i < max_regno; i++)
-    {
-      setup_reg_classes (i, NO_REGS, NO_REGS, NO_REGS);
-      /* will be set to actual values in a later pass, for now, we need to
-       * replace all the "-1" in the reg_pref[regno] */
-
-      sched_regno_pressure_class[i]
-	= ira_pressure_class_translate[reg_allocno_class (i)];
-    }
-
-  REG_FREQ (regno) = MAX (REG_FREQ (old_regno1), REG_FREQ (old_regno2));
-  REG_N_DEATHS (regno)
-    = MAX (REG_N_DEATHS (old_regno1), REG_N_DEATHS (old_regno2));
-  REG_N_DEATHS (regno)
-    = MAX (REG_N_DEATHS (old_regno1), REG_N_DEATHS (old_regno2));
-  REG_LIVE_LENGTH (regno)
-    = MAX (REG_LIVE_LENGTH (old_regno1), REG_LIVE_LENGTH (old_regno2));
-  REG_N_CALLS_CROSSED (regno)
-    = MAX (REG_N_CALLS_CROSSED (old_regno1), REG_N_CALLS_CROSSED (old_regno2));
-  REG_FREQ_CALLS_CROSSED (regno) = MAX (REG_FREQ_CALLS_CROSSED (old_regno1),
-					REG_FREQ_CALLS_CROSSED (old_regno2));
-  REG_N_THROWING_CALLS_CROSSED (regno)
-    = MAX (REG_N_THROWING_CALLS_CROSSED (old_regno1),
-	   REG_N_THROWING_CALLS_CROSSED (old_regno2));
-  REG_BASIC_BLOCK (regno)
-    = MAX (REG_BASIC_BLOCK (old_regno1), REG_BASIC_BLOCK (old_regno2));
-
-  df_grow_reg_info ();
-}
-
-static void
-add_post_packing_clobber_insertion (rtx reg, rtx insn)
-{
-  struct post_packing_action *action;
-
-  action = (struct post_packing_action *) xmalloc (sizeof (*action));
-  action->type = CLOBBER_INSERT;
-  action->next = post_packing_action;
-  action->reg = reg;
-  action->insn = insn;
-  post_packing_action = action;
-}
-
-static void
-add_post_packing_insn_deletion (rtx insn, rtx x)
-{
-  struct post_packing_action *action;
-
-  action = (struct post_packing_action *) xmalloc (sizeof (*action));
-  action->type = INSN_DELETE;
-  action->next = post_packing_action;
-  action->insn = insn;
-  action->reg = x;
-  post_packing_action = action;
-}
-
-static void
-add_post_packing_reg_copy_insertion (rtx reg, rtx reg_orig, rtx insn)
-{
-  struct post_packing_action *action;
-
-  action = (struct post_packing_action *) xmalloc (sizeof (*action));
-  action->type = REG_COPY_INSERT;
-  action->next = post_packing_action;
-  action->reg = reg;
-  action->reg2 = reg_orig;
-  action->insn = insn;
-  post_packing_action = action;
 }
 
 static rtx
@@ -5699,1150 +5453,22 @@ k1_incr_reg_use_count (rtx *x, void *data ATTRIBUTE_UNUSED)
   return 0;
 }
 
-static rtx
-k1_patch_mem_for_double_access (rtx x)
-{
-  rtx y = shallow_copy_rtx (x);
-  for_each_rtx (&y, k1_decr_reg_use_count, NULL);
-  for_each_rtx (&y, &k1_patch_mem_for_double_access_1, NULL);
-  for_each_rtx (&y, k1_incr_reg_use_count, NULL);
-  return y;
-}
-
-/* Number of mem access packing that occured for the current
-   function.  */
-static int packed_mems;
-
-/* Pack the passed memory accesses:
-   - *_X parameters describe the lowpart of the mem reference.
-   - *_Y parameters describe the highpart of the mem reference.
-
-   Emit the packed instruction in CYCLE scheduling cycle. */
-/* FIXME AUTO: Disable memory packing */
-#if 0
-static int
-k1_pack_mems (enum machine_mode mode,
-              enum rtx_code extension,
-              rtx insn_x, rtx mem_x, int regno_x,
-              rtx insn_y, rtx mem_y, int regno_y,
-              int cycle)
-{
-    rtx load, insn, load_insn;
-    int is_store = MEM_P (SET_DEST (single_set (insn_x)));
-    int i;
-    sd_iterator_def sd_it;
-    dep_t dep;
-    df_ref adef;
-
-    mem_x = shallow_copy_rtx (mem_x);
-
-    /* If we have hard regs, we already checked that they are in the
-       right order.  Just use the DImode register with the lowest
-       offset.  */
-    if (regno_x < FIRST_PSEUDO_REGISTER) {
-        load = gen_rtx_REG (DImode, regno_x);
-    } else {
-        load = gen_reg_rtx (DImode);
-        k1_add_reginfo (REGNO (load), regno_x, regno_y);
-    }
-
-    /* We'll access the register only by subparts. Emit a
-       clobber of the whole register so that the liveness
-       analysis can deduce that it's live only from this point
-       on. */
-    if (is_store) {
-        /* For a store we need to emit the clobber before every def of
-           the subregs. */
-        bitmap def_bbs = BITMAP_ALLOC (NULL);
-        int min_tick = INT_MAX;
-        rtx min_tick_insn = NULL_RTX;
-        int tick;
-
-        for (adef = DF_REG_DEF_CHAIN (regno_x);
-             adef;
-             adef = DF_REF_NEXT_REG (adef)) {
-
-            bitmap_set_bit (def_bbs, DF_REF_BB (adef)->index);
-            if (DF_REF_CLASS (adef) != DF_REF_ARTIFICIAL) {
-                tick = HID (DF_REF_INSN (adef))->tick;
-                if (tick >= 0 && tick < min_tick ) {
-                    min_tick = HID (DF_REF_INSN (adef))->tick;
-                    min_tick_insn = DF_REF_INSN (adef);
-                }
-            } else {
-                return 0;
-            }
-        }
-
-        for (adef = DF_REG_DEF_CHAIN (regno_y);
-             adef;
-             adef = DF_REF_NEXT_REG (adef)) {
-
-            bitmap_set_bit (def_bbs, DF_REF_BB (adef)->index);
-            if (DF_REF_CLASS (adef) != DF_REF_ARTIFICIAL) {
-                tick = HID (DF_REF_INSN (adef))->tick;
-                if (tick >= 0 && tick < min_tick) {
-                    min_tick = HID (DF_REF_INSN (adef))->tick;
-                    min_tick_insn = DF_REF_INSN (adef);
-                }
-            } else {
-                return 0;
-            }
-        }
-
-        if (bitmap_single_bit_set_p (def_bbs)) {
-            if (min_tick_insn) {
-                add_post_packing_clobber_insertion (load, min_tick_insn);
-            } else {
-                return 0;
-            }
-        } else {
-            basic_block bb;
-            calculate_dominance_info (CDI_DOMINATORS);
-            bb = nearest_common_dominator_for_set (CDI_DOMINATORS,
-                                                   def_bbs);
-
-            if (bb && BB_END (bb)
-                && HID(BB_END (bb))->tick >= 0) {
-                if (bitmap_bit_p (def_bbs, bb->index)) {
-                    add_post_packing_clobber_insertion (load, BB_HEAD (bb));
-                } else {
-                    add_post_packing_clobber_insertion (load, BB_END (bb));
-                }
-            } else {
-                return 0;
-            }
-        }
-
-    } else {
-        /* For a load, we can emit the clobber right before the load. */
-        rtx clobber = gen_rtx_CLOBBER (DImode, load);
-        insn = sched_emit_insn (clobber);
-        HID(insn)->tick = cycle;
-        /* printf ("INSERTED3: %i(%i)%i\n", INSN_UID(PREV_INSN(insn)), INSN_UID(insn), INSN_UID(NEXT_INSN(insn))); */
-    }
-
-    /* If we're replacing pseudo register references, then replace all
-       refs with the equivalent subreg that we generated.  */
-    if (regno_x >= FIRST_PSEUDO_REGISTER) {
-        rtx lowpart_rtx, highpart_rtx;
-        rtx lowpart_replacement, highpart_replacement;
-
-        if (REG_P (SET_DEST(single_set(insn_x)))) {
-            lowpart_rtx = SET_DEST(single_set(insn_x));
-            highpart_rtx = SET_DEST(single_set(insn_y));
-        } else {
-            lowpart_rtx = SET_SRC(single_set(insn_x));
-            highpart_rtx = SET_SRC(single_set(insn_y));
-        }
-
-        if (GET_MODE_SIZE (GET_MODE (lowpart_rtx)) < UNITS_PER_WORD) {
-            lowpart_replacement = gen_lowpart (SImode, load);
-            PUT_MODE (lowpart_replacement, mode);
-        } else {
-            lowpart_replacement = gen_lowpart (GET_MODE (lowpart_rtx), load);
-        }
-
-        if (GET_MODE_SIZE (GET_MODE (highpart_rtx)) < UNITS_PER_WORD) {
-            highpart_replacement = gen_highpart (SImode, load);
-            PUT_MODE (highpart_replacement, mode);
-        } else {
-            highpart_replacement = gen_highpart (GET_MODE (highpart_rtx), load);
-        }
-
-        /* printf ("============ REPLACING ==================\n"); */
-        /* print_rtl_single (stdout, insn_x); */
-        /* print_rtl_single (stdout, mem_x); */
-        /* print_rtl_single (stdout, lowpart_rtx); */
-        /* print_rtl_single (stdout, lowpart_replacement); */
-        /* printf ("------------------------------------------\n"); */
-        /* print_rtl_single (stdout, insn_y); */
-        /* print_rtl_single (stdout, mem_y); */
-        /* print_rtl_single (stdout, highpart_rtx); */
-        /* print_rtl_single (stdout, highpart_replacement); */
-        /* printf ("==========================================\n"); */
-
-        /* The memory access might contain references to the changed
-           pseudos.  */
-        replace_rtx (mem_x, lowpart_rtx,
-                     copy_rtx (lowpart_replacement));
-        replace_rtx (mem_x, highpart_rtx,
-                     copy_rtx (highpart_replacement));
-
-        /* Only update the second part if the pseudo to be stored
-           is different. Otherwise, emit a copy to generate a correct
-           double register for the access.
-           Do this before the global replacement, as we need the
-           DEF information that is destroyed by k1_replace_reg_rtx
-        */
-        if (regno_y != regno_x) {
-            k1_replace_reg_rtx (regno_y, highpart_rtx,
-                                copy_rtx (highpart_replacement),
-                                insn_x, insn_y, false, true);
-            replace_rtx (mem_y, lowpart_rtx,
-                         copy_rtx (lowpart_replacement));
-            replace_rtx (mem_y, highpart_rtx,
-                         copy_rtx (highpart_replacement));
-        } else {
-            gcc_assert (is_store);
-
-            /* Emit the definition as far up as we can (typically,
-               this prevents us from rematerializing half of a constant
-               right in the middle of a loop.
-
-               For now only do this if there's only one def. Multiple
-               defs include tricky things like infered zeros from loop
-               counters and this won't work very well. */
-            adef = DF_REG_DEF_CHAIN (regno_x);
-            if (adef && !DF_REF_NEXT_REG (adef)) {
-                add_post_packing_reg_copy_insertion (copy_rtx (highpart_replacement),
-                                                     copy_rtx (lowpart_replacement),
-                                                     DF_REF_INSN(adef));
-            } else {
-                insn = sched_emit_insn (k1_gen_reg_copy (copy_rtx (highpart_replacement),
-                                                         copy_rtx (lowpart_replacement)));
-                HID(insn)->tick = cycle;
-                recog_memoized (insn);
-            }
-        }
-
-        /* Replace all references to the lowpart.  */
-        k1_replace_reg_rtx (regno_x, lowpart_rtx,
-                            copy_rtx (lowpart_replacement),
-                            insn_x, insn_y, false, true);
-    }
-
-    mem_y = k1_patch_mem_for_double_access (mem_x);
-
-    {
-      /* FIXME AUTO: disabling vector support */
-	/* enum machine_mode memmode = mode == HImode ? V2HImode : DImode; */
-	enum machine_mode memmode = DImode;
-	int subreg_offset = GET_MODE_SIZE (memmode) / 2;
-	enum machine_mode x_mode = GET_MODE (mem_x);
-	enum machine_mode y_mode = GET_MODE (mem_y);
-
-	PUT_MODE (mem_x, memmode);
-	if (memmode == DImode) {
-	    mem_y = gen_rtx_SUBREG (y_mode, mem_x, subreg_offset);
-	    mem_x = gen_rtx_SUBREG (x_mode, mem_x, 0);
-	} else {
-	    static rtx elem0 = gen_rtx_PARALLEL (VOIDmode, rtvec_alloc (1));
-	    static rtx elem1 = gen_rtx_PARALLEL (VOIDmode, rtvec_alloc (1));
-	    XVECEXP (elem0, 0, 0) = const0_rtx;
-	    XVECEXP (elem1, 0, 0) = const1_rtx;
-
-	    mem_y = gen_rtx_VEC_SELECT (y_mode, mem_x, elem1);
-	    mem_x = gen_rtx_VEC_SELECT (x_mode, mem_x, elem0);
-	}
-	if (extension == SIGN_EXTEND) {
-	    mem_x = gen_rtx_SIGN_EXTEND (SImode, mem_x);
-	    mem_y = gen_rtx_SIGN_EXTEND (SImode, mem_y);
-	    x_mode = y_mode = SImode;
-	} else if (extension == ZERO_EXTEND) {
-	    mem_x = gen_rtx_ZERO_EXTEND (SImode, mem_x);
-	    mem_y = gen_rtx_ZERO_EXTEND (SImode, mem_y);
-	    x_mode = y_mode = SImode;
-	}
-    /* Use gen_rtx_SUBREG because our double_load instruction
-       requires a SUBREG. gen_{low,high}part will give us a
-       simple REG when applied on a hard register. */
-    if (is_store)
-        load_insn = gen_double_store (mem_x,
-                                      gen_rtx_SUBREG (x_mode, load, 0),
-                                      mem_y,
-                                      gen_rtx_SUBREG (y_mode, load, 4));
-    else
-        load_insn = gen_double_load (gen_rtx_SUBREG (x_mode, load, 0),
-                                     mem_x,
-                                     gen_rtx_SUBREG (y_mode, load, 4),
-                                     mem_y);
-    }
-    insn = sched_emit_insn (load_insn);
-    INSN_LOCATION (insn) = INSN_LOCATION (insn_x);
-    HID(insn)->tick = cycle;
-    recog_memoized (insn);
-    /* printf ("INSERTED: %i(%i)%i\n", INSN_UID(PREV_INSN(load_insn)), INSN_UID(load_insn), INSN_UID(NEXT_INSN(load_insn))); */
-    /* Report the back dependencies of the replaced instructions to
-       our new instruction.  */
-    for (i = 0; i < 2; ++i) {
-        rtx old = i == 0 ? insn_x : insn_y;
-        for (sd_it = sd_iterator_start (old, SD_LIST_BACK);
-             sd_iterator_cond (&sd_it, &dep);
-             sd_iterator_next (&sd_it)) {
-            if (DEP_PRO (dep) != old) {
-                /* This might happen with some debug_insns... Don't know
-                   why though.  */
-                continue;
-            } else {
-                DEP_PRO (dep) = insn;
-            }
-
-            sd_add_dep (dep, false);
-        }
-    }
-
-    packed_mems++;
-    return 1;
-}
-#endif /* DISABLE MEMORY PACKING */
-
-static rtx
-k1_diff_addr_offset_addr_offset (enum machine_mode mode,
-				 struct k1_address *addr1,
-				 struct k1_address *addr2, rtx *insn_to_remove)
-{
-  /* Look for such cases:
-
-     add $r1 = $r3, 4
-     add $r2 = $r3, 8
-     lw.x4 $r6 = symbol[$r1]
-     lw.x4 $r7 = symbol[$r2]
-
-     which can be replaced by:
-
-     add $r1 = $r3, 4
-     ld $p6 = symbol[$r1] */
-  rtx insn1 = NULL_RTX, insn2 = NULL_RTX, x, def_rtx, diff;
-  df_ref ref;
-
-  if (addr1->offset != addr2->offset)
-    return NULL_RTX;
-
-  if (!REG_P (addr1->base_reg) || !REG_P (addr2->base_reg))
-    return NULL_RTX;
-
-  diff = gen_rtx_MINUS (Pmode, addr2->base_reg, addr1->base_reg);
-
-  for (x = addr1->base_reg; x != NULL;
-       x = (x == addr1->base_reg) ? addr2->base_reg : NULL)
-    {
-      if (DF_REG_DEF_COUNT (REGNO (x)) != 1)
-	// Previously, this was not considered an error.
-	// Simple case where r1 is defined outside a loop and r3/r2 is redefined
-	// inside a loop: Mem access must not be packed.
-	//
-	// This failure should be made less restrictive as it
-	// currently prevents most mem packing inside a loop
-	return NULL_RTX;
-
-      ref = DF_REG_DEF_CHAIN (REGNO (x));
-      if (DF_REF_CLASS (ref) == DF_REF_ARTIFICIAL)
-	continue;
-      def_rtx = DF_REF_INSN (ref);
-
-      if (DF_REG_USE_COUNT (REGNO (x)) == 1 && insn_to_remove)
-	{
-	  if (x == addr1->base_reg)
-	    insn1 = def_rtx;
-	  else
-	    insn2 = def_rtx;
-	}
-      def_rtx = single_set (def_rtx);
-      if (!def_rtx)
-	return NULL_RTX;
-
-      def_rtx = SET_SRC (def_rtx);
-      diff = simplify_replace_rtx (diff, x, def_rtx);
-    }
-
-  if (diff && CONST_INT_P (diff) && abs (INTVAL (diff)) == GET_MODE_SIZE (mode))
-    {
-      if (INTVAL (diff) < 0)
-	{
-	  if (insn1)
-	    *insn_to_remove = insn1;
-	}
-      else
-	{
-	  if (insn2)
-	    *insn_to_remove = insn2;
-	}
-    }
-
-  return diff;
-}
-
-static rtx
-k1_diff_addr_mult_addr_mult (enum machine_mode mode ATTRIBUTE_UNUSED,
-			     struct k1_address *addr1, struct k1_address *addr2,
-			     rtx *insn_to_remove, rtx *insn_to_remove2)
-{
-  /* Look for such cases:
-
-     add $r1 = $r3, 1
-     lw.x4 $r6 = $r2[$r3]
-     lw.x4 $r7 = $r2[$r1]
-
-     which can be replaced by:
-
-     ld $p6 = $r2[$r3] */
-  rtx offset1, offset2, x, def_rtx, diff;
-  df_ref ref;
-
-  if (addr1->mult != addr2->mult)
-    return NULL_RTX;
-
-  if (addr1->mult != 1)
-    {
-      if (addr1->base_reg != addr2->base_reg)
-	return NULL_RTX;
-      offset1 = addr1->offset_reg;
-      offset2 = addr2->offset_reg;
-    }
-  else
-    {
-      /* When the multiplier is one, the notion of base/offset
-	 registers isn't so clear. If we find a common register,
-	 then it's the base. */
-      if (addr1->base_reg == addr2->base_reg)
-	{
-	  offset1 = addr1->offset_reg;
-	  offset2 = addr2->offset_reg;
-	}
-      else if (addr1->base_reg == addr2->offset_reg)
-	{
-	  offset1 = addr1->offset_reg;
-	  offset2 = addr2->base_reg;
-	}
-      else if (addr1->offset_reg == addr2->base_reg)
-	{
-	  offset1 = addr1->base_reg;
-	  offset2 = addr2->offset_reg;
-	}
-      else if (addr1->offset_reg == addr2->offset_reg)
-	{
-	  offset1 = addr1->base_reg;
-	  offset2 = addr2->base_reg;
-	}
-      else
-	{
-	  return NULL_RTX;
-	}
-    }
-
-  if (!REG_P (offset1) || !REG_P (offset2))
-    return NULL_RTX;
-
-  diff = gen_rtx_MINUS (Pmode, offset2, offset1);
-
-  for (x = offset1; x != NULL; x = (x == offset1) ? offset2 : NULL)
-    {
-      if (DF_REG_DEF_COUNT (REGNO (x)) != 1)
-	// Previously, this was not considered an error.
-	// Simple case where r1 is defined outside a loop and r3 is redefined
-	// inside a loop: Mem access must not be packed.
-	//
-	// This failure should be made less restrictive as it
-	// currently prevents most mem packing inside a loop
-	return NULL_RTX;
-
-      ref = DF_REG_DEF_CHAIN (REGNO (x));
-      if (DF_REF_CLASS (ref) == DF_REF_ARTIFICIAL)
-	continue;
-      def_rtx = DF_REF_INSN (ref);
-      if (DF_REG_USE_COUNT (REGNO (x)) == 1)
-	{
-	  if (insn_to_remove && *insn_to_remove == NULL_RTX)
-	    *insn_to_remove = def_rtx;
-	  else if (insn_to_remove2 && *insn_to_remove2 == NULL_RTX)
-	    *insn_to_remove2 = def_rtx;
-	}
-      def_rtx = single_set (def_rtx);
-      if (!def_rtx)
-	return NULL_RTX;
-
-      def_rtx = SET_SRC (def_rtx);
-      diff = simplify_replace_rtx (diff, x, def_rtx);
-    }
-
-  if (diff && CONST_INT_P (diff))
-    diff = simplify_rtx (gen_rtx_MULT (SImode, diff, GEN_INT (addr1->mult)));
-  return diff;
-}
-
-static rtx
-k1_diff_addr_offset_addr_mult (enum machine_mode mode ATTRIBUTE_UNUSED,
-			       rtx mem1, rtx mem2, rtx mem_to_modify,
-			       rtx reg_to_replace, rtx *insn_to_remove)
-{
-  /* Look for such cases:
-
-     add $r1 = $r2, $r3
-     lw.x1 $r4 = $r2[$r3]
-     lw $r5 = 4[$r1]
-
-     which can be replaced by:
-
-     ld $p4 = $r2[$r3] */
-  df_ref ref;
-  rtx def_rtx;
-
-  if (!REG_P (reg_to_replace))
-    return NULL_RTX;
-
-  if (DF_REG_DEF_COUNT (REGNO (reg_to_replace)) != 1)
-    return NULL_RTX;
-
-  ref = DF_REG_DEF_CHAIN (REGNO (reg_to_replace));
-  if (DF_REF_CLASS (ref) == DF_REF_ARTIFICIAL)
-    return NULL_RTX;
-  def_rtx = DF_REF_INSN (ref);
-  if (DF_REG_USE_COUNT (REGNO (reg_to_replace)) == 1 && insn_to_remove)
-    *insn_to_remove = def_rtx;
-  def_rtx = single_set (def_rtx);
-  if (!def_rtx)
-    return NULL_RTX;
-
-  def_rtx = SET_SRC (def_rtx);
-  replace_rtx (mem_to_modify, reg_to_replace, def_rtx);
-  return simplify_rtx (gen_rtx_MINUS (Pmode, XEXP (mem2, 0), XEXP (mem1, 0)));
-}
-
-/* Tests if mem X loaded/stored to regno REGNO_X and mem Y
-   loaded/stored to regno REGNO_Y are contiguous memory accesses.
-   If packing these mem accesses allows to remove an intermediate
-   instruction, store it to INSN_TO_REMOVE.
-   Return an rtx containing the simplified difference between the
-   addresses.  */
-static rtx
-k1_contiguous_mem_access_p (enum machine_mode mode ATTRIBUTE_UNUSED, rtx x,
-			    int regno_x, rtx y, int regno_y,
-			    rtx *insn_to_remove, rtx *insn_to_remove2)
-{
-  rtx diff;
-
-  if (insn_to_remove)
-    *insn_to_remove = NULL_RTX;
-  if (insn_to_remove2)
-    *insn_to_remove2 = NULL_RTX;
-
-  if ((regno_x < FIRST_PSEUDO_REGISTER && regno_y >= FIRST_PSEUDO_REGISTER)
-      || (regno_x >= FIRST_PSEUDO_REGISTER && regno_y < FIRST_PSEUDO_REGISTER))
-    return NULL_RTX;
-
-  if (regno_y < FIRST_PSEUDO_REGISTER && abs (regno_y - regno_x) != 1)
-    return NULL_RTX;
-
-  if (GET_MODE_SIZE (GET_MODE (y)) != GET_MODE_SIZE (mode))
-    return NULL_RTX;
-
-  if (GET_MODE_SIZE (GET_MODE (x)) != GET_MODE_SIZE (mode))
-    return NULL_RTX;
-
-  diff = simplify_rtx (gen_rtx_MINUS (Pmode, XEXP (y, 0), XEXP (x, 0)));
-
-  if (diff == NULL_RTX || !CONST_INT_P (diff))
-    {
-      struct k1_address addr1, addr2;
-
-      k1_analyze_address (XEXP (x, 0), false, &addr1);
-      k1_analyze_address (XEXP (y, 0), false, &addr2);
-
-      if (addr1.mode == ADDR_MULT && addr2.mode == ADDR_OFFSET)
-	{
-	  y = copy_rtx (y);
-	  return k1_diff_addr_offset_addr_mult (mode, x, y, y, addr2.base_reg,
-						insn_to_remove);
-	}
-      else if (addr1.mode == ADDR_OFFSET && addr2.mode == ADDR_MULT)
-	{
-	  x = copy_rtx (x);
-	  return k1_diff_addr_offset_addr_mult (mode, x, y, x, addr2.base_reg,
-						insn_to_remove);
-	}
-      else if (addr1.mode == ADDR_MULT && addr2.mode == ADDR_MULT)
-	{
-	  return k1_diff_addr_mult_addr_mult (mode, &addr1, &addr2,
-					      insn_to_remove, insn_to_remove2);
-	}
-      else if (addr1.mode == ADDR_OFFSET && addr2.mode == ADDR_OFFSET)
-	{
-	  return k1_diff_addr_offset_addr_offset (mode, &addr1, &addr2,
-						  insn_to_remove);
-	}
-      else
-	{
-	  return NULL_RTX;
-	}
-    }
-
-  return diff;
-}
-
-enum pass
-{
-  PACK_LOADS,
-  PACK_STORES
-};
-
-static int
-k1_is_mem (rtx x, rtx *mem, enum rtx_code *extension)
-{
-  if (MEM_P (x))
-    {
-      *mem = x;
-      *extension = UNKNOWN;
-      return 1;
-    }
-  else if (GET_CODE (x) == SIGN_EXTEND && MEM_P (XEXP (x, 0)))
-    {
-      *mem = XEXP (x, 0);
-      *extension = SIGN_EXTEND;
-      return 1;
-    }
-  else if (GET_CODE (x) == ZERO_EXTEND && MEM_P (XEXP (x, 0)))
-    {
-      *mem = XEXP (x, 0);
-      *extension = ZERO_EXTEND;
-      return 1;
-    }
-
-  return 0;
-}
-
-/*
- * Tests wether the MEM[] contained in X is suitable for packing with
- * another mem access using MODE. MEM is set to the MEM[] rtl subexpr,
- * extension is set with the insn rtx code of X and REGNO is set with
- * the register being read/writen respectively by the load/store insn.
- * returns 1 if the X is a candidate for packing, 0 if not.
- */
-static int
-k1_interesting_mem_access (int pass, enum machine_mode mode, rtx x, rtx *mem,
-			   enum rtx_code *extension, int *regno)
-{
-  if (pass == PACK_LOADS)
-    {
-      if (!x || !k1_is_mem (SET_SRC (x), mem, extension)
-	  || MEM_VOLATILE_P (*mem) || !REG_P (SET_DEST (x)))
-	return 0;
-      *regno = REGNO (SET_DEST (x));
-    }
-  else
-    {
-      if (!x || !k1_is_mem (SET_DEST (x), mem, extension)
-	  || MEM_VOLATILE_P (*mem) || !REG_P (SET_SRC (x)))
-	return 0;
-      *regno = REGNO (SET_SRC (x));
-    }
-
-  if (GET_MODE_SIZE (GET_MODE (*mem)) != GET_MODE_SIZE (mode))
-    return 0;
-
-  return 1;
-}
-
-static int
-k1_lsu_load_p (rtx insn)
-{
-  switch (get_attr_type (insn))
-    {
-    case TYPE_LSU_ATOMIC:
-    case TYPE_LSU_ATOMIC_X:
-    case TYPE_LSU_LOAD:
-    case TYPE_LSU_LOAD_X:
-      return 1;
-    default:
-      return 0;
-    }
-}
-
-static int
-k1_lsu_store_p (rtx insn)
-{
-  switch (get_attr_type (insn))
-    {
-    case TYPE_LSU_STORE:
-    case TYPE_LSU_STORE_X:
-    case TYPE_LSU:
-    case TYPE_LSU_X:
-      return 1;
-    default:
-      return 0;
-    }
-}
-
-static int
-k1_lsu_p (rtx insn)
-{
-  switch (get_attr_type (insn))
-    {
-    case TYPE_LSU_ATOMIC:
-    case TYPE_LSU_ATOMIC_X:
-    case TYPE_LSU_LOAD:
-    case TYPE_LSU_LOAD_X:
-    case TYPE_LSU_STORE:
-    case TYPE_LSU_STORE_X:
-    case TYPE_LSU:
-    case TYPE_LSU_X:
-      return 1;
-    default:
-      return 0;
-    }
-}
-
-/* Hijack the scheduler ready list reordering to pack memory access
-   together.  */
-static int
-k1_target_sched_reorder (FILE *file ATTRIBUTE_UNUSED,
-			 int verbose ATTRIBUTE_UNUSED, rtx *ready, int *nreadyp,
-			 int cycle)
-{
-  int nready = *nreadyp;
-  int i, j, n, offset, regno_x, regno_y;
-  rtx x, y, diff, insn_to_remove, insn_to_remove2;
-  rtx *copy, *it = ready + 2;
-  int pass;
-  sd_iterator_def sd_it;
-  dep_t dep;
-  enum machine_mode modes[] = {HImode, SImode};
-  enum machine_mode mode;
-  enum rtx_code extension, extension2;
-  unsigned int mode_idx;
-
-  /* FIXME AUTO: Disable memory packing */
-  return 1;
-#if 0
-    /* We only want to do that in the pre-ira scheduling pass.  */
-    if (TARGET_STRICT_ALIGN || reload_completed || reload_in_progress) {
-	int all_deps_ready_insn = -1;
-
-        /* Look for LSU operation that block instruction that are only
-	   dependant on ready instructions. Make those prioritary. */
-        for (i = nready-1; i >= 0; --i) {
-            enum rtx_code pat_code;
-
-            pat_code = GET_CODE (PATTERN (ready[i]));
-            if (pat_code == USE || pat_code == CLOBBER || pat_code == ASM_INPUT
-                || pat_code == ADDR_VEC || pat_code == ADDR_DIFF_VEC)
-                continue;
-
-            if (k1_lsu_load_p (ready[i])) {
-		for (sd_it = sd_iterator_start (ready[i], SD_LIST_FORW);
-		     sd_iterator_cond (&sd_it, &dep);
-		     sd_iterator_next (&sd_it)) {
-		    rtx next = DEP_CON (dep);
-		    sd_iterator_def sd_it2;
-		    dep_t dep2;
-		    bool all_deps_ready = true;
-		    bool all_other_deps_emitted = true;
-
-		    if (DEBUG_INSN_P (next))
-			continue;
-
-		    for (sd_it2 = sd_iterator_start (next, SD_LIST_BACK);
-			 sd_iterator_cond (&sd_it2, &dep2);
-			 sd_iterator_next (&sd_it2)) {
-			rtx pro = DEP_PRO (dep2);
-
-			if (DEBUG_INSN_P (pro))
-			    continue;
-
-			pat_code = GET_CODE (PATTERN (pro));
-			if (pat_code == USE || pat_code == CLOBBER
-			    || pat_code == ADDR_VEC || pat_code == ADDR_DIFF_VEC)
-			    continue;
-
-			/* -1 is QUEUE_READY. See haifa-sched.c */
-			if ((HID (pro)->queue_index) != -1) {
-			    all_deps_ready = false;
-			    break;
-			}
-
-			if (pro != ready[i]) {
-			    all_other_deps_emitted = false;
-			    if (all_deps_ready_insn >= 0)
-				break;
-			}
-		    }
-
-		    if (!all_deps_ready)
-			continue;
-
-		    if (!all_other_deps_emitted) {
-			if (all_deps_ready_insn < 0)
-			    all_deps_ready_insn = i;
-		    } else {
-			rtx tmp = ready[i];
-			/* All other deps have been emitted! Just put
-			   this one out! */
-			ready[i] = ready[nready-1];
-			ready[nready-1] = tmp;
-
-			return k1_target_sched_issue_rate ();
-		    }
-		}
-            }
-        }
-
-	if (all_deps_ready_insn >= 0) {
-	    /* No LSU was the last dependency of another instruction,
-	       but the instruction stored at index
-	       'all_deps_ready_insn' blocks an instruction that only
-	       depends on other ready instructions. */
-	    rtx tmp = ready[all_deps_ready_insn];
-	    ready[all_deps_ready_insn] = ready[nready-1];
-	    ready[nready-1] = tmp;
-
-	    return k1_target_sched_issue_rate ();
-	}
-
-        /* Make LSU load operations prioritary */
-        for (i = nready-1; i >= 0; --i) {
-            enum rtx_code pat_code;
-
-            pat_code = GET_CODE (PATTERN (ready[i]));
-            if (pat_code == USE || pat_code == CLOBBER || pat_code == ASM_INPUT
-                || pat_code == ADDR_VEC || pat_code == ADDR_DIFF_VEC)
-                continue;
-
-            if (k1_lsu_load_p (ready[i])) {
-                rtx tmp = ready[i];
-                ready[i] = ready[nready-1];
-                ready[nready-1] = tmp;
-
-                return k1_target_sched_issue_rate ();
-            }
-        }
-        /* and then the stores */
-        for (i = nready-1; i >= 0; --i) {
-            enum rtx_code pat_code;
-
-            pat_code = GET_CODE (PATTERN (ready[i]));
-            if (pat_code == USE || pat_code == CLOBBER || pat_code == ASM_INPUT
-                || pat_code == ADDR_VEC || pat_code == ADDR_DIFF_VEC)
-                continue;
-
-            if (k1_lsu_store_p (ready[i])) {
-                rtx tmp = ready[i];
-                ready[i] = ready[nready-1];
-                ready[nready-1] = tmp;
-
-                return k1_target_sched_issue_rate ();
-            }
-        }
-
-        return k1_target_sched_issue_rate ();
-    }
-
-    for (mode_idx = 0; mode_idx < ARRAY_SIZE(modes); ++mode_idx) {
-        mode = modes[mode_idx];
-
-        for (pass = PACK_LOADS; pass <= PACK_STORES; ++pass) {
-
-            if (mode != SImode && pass != PACK_LOADS)
-                continue;
-
-            for (i = nready-1; i >= 0; --i) {
-                x = single_set (ready[i]);
-
-                if (!k1_interesting_mem_access (pass, mode, x, &x, &extension, &regno_x))
-                    continue;
-
-                for (j = i-1; j >= 0; --j) {
-                    insn_to_remove = NULL_RTX;
-                    insn_to_remove2 = NULL_RTX;
-                    y = single_set (ready[j]);
-
-                    if (!k1_interesting_mem_access (pass, mode, y, &y, &extension2, &regno_y))
-                        continue;
-
-                    if (extension2 != extension)
-                        continue;
-
-                    diff = k1_contiguous_mem_access_p (mode,
-                                                       x, regno_x,
-                                                       y, regno_y,
-                                                       &insn_to_remove,
-                                                       &insn_to_remove2);
-                    offset = (diff && CONST_INT_P (diff)) ? INTVAL (diff) : 0;
-                    if (abs (offset) != GET_MODE_SIZE(mode))
-                        continue;
-
-                    /* Make x the low part of the memory reference. */
-                    if (offset < 0) {
-                        int tmp;
-                        rtx z;
-                        z = x; x = y; y = z;
-                        tmp = regno_x; regno_x = regno_y; regno_y = tmp;
-                        tmp = i; i = j; j = tmp;
-                    }
-
-                    if (TARGET_STRICT_ALIGN
-                        && MEM_ALIGN (x) < 2*GET_MODE_SIZE (mode)*BITS_PER_UNIT)
-                        continue;
-
-                    /* If we have 2 hard registers, make sure they are in the
-                       right order. */
-                    if (regno_x < FIRST_PSEUDO_REGISTER
-                        && (regno_x % 2
-                            || regno_x > regno_y)) {
-                        if (offset < 0) {
-                            int tmp;
-                            rtx z;
-                            z = x; x = y; y = z;
-                            tmp = regno_x; regno_x = regno_y; regno_y = tmp;
-                            tmp = i; i = j; j = tmp;
-                        }
-
-                        continue;
-                    }
-
-                    /* Create the new instruction and make the necessary
-                       adjustement to the dependent instructions.  */
-                    if (!k1_pack_mems (mode, extension,
-                                       ready[i], x, regno_x,
-                                       ready[j], y, regno_y,
-                                       cycle)) {
-                        if (offset < 0) {
-                            int tmp;
-                            rtx z;
-                            z = x; x = y; y = z;
-                            tmp = regno_x; regno_x = regno_y; regno_y = tmp;
-                            tmp = i; i = j; j = tmp;
-                        }
-                        continue;
-                    }
-
-                    /* Remove the now useless instructions from the ready
-                       list.  */
-                    copy = (rtx*)alloca (nready * sizeof(*copy));
-                    memcpy (copy, ready,  nready * sizeof(*copy));
-
-                    n = 0;
-                    ready[0] = copy[j];
-                    ready[1] = copy[i];
-                    while (n != nready) {
-                        if (n == j || n == i) { n++; continue; }
-                        *it = copy[n];
-                        ++it; ++n;
-                    }
-
-                    *nreadyp -= 2;
-
-                    /* The things we do in k1_sched_remove_insn can modify the
-                       ready list, thus we store the 2 insns we want to remove
-                       apart.  */
-                    copy[0] = ready[0];
-                    copy[1] = ready[1];
-
-                    for (i = 0; i <= 1; ++i) {
-                        /* Remove the insn and all dependencies.  */
-                        k1_sched_remove_insn (copy[i]);
-                    }
-
-                    /* If the packing allows to remove an additional
-                       instruction, do that here.  */
-
-                    if (insn_to_remove) {
-                        sd_iterator_def sd_it;
-                        dep_t dep;
-                        struct k1_address addr;
-
-                    remove_again:
-                        k1_analyze_address (XEXP (x, 0), false, &addr);
-                        if (addr.mode == ADDR_INVALID)
-                            return 0;
-
-                        /* The instruction might have been scheduled
-                           earlier and already removed from the dep
-                           structures. */
-                        if (INSN_FORW_DEPS (insn_to_remove)) {
-                            /* The instruction should be selected for removal
-                               only if it has no other dependencies that one of
-                               the 2 mem accesses.  Simply remove all its
-                               deps.  */
-                            sd_it = sd_iterator_start (insn_to_remove,
-                                                       (SD_LIST_FORW
-                                                        | SD_LIST_RES_FORW
-                                                        | SD_LIST_BACK
-                                                        | SD_LIST_RES_BACK));
-
-                            while (sd_iterator_cond (&sd_it, &dep))
-                                sd_delete_dep (sd_it);
-                        }
-
-                        add_post_packing_insn_deletion (insn_to_remove, x);
-
-                        if (insn_to_remove2) {
-                            insn_to_remove = insn_to_remove2;
-                            insn_to_remove2 = NULL_RTX;
-                            goto remove_again;
-                        }
-                    }
-
-                    /* As we changed the ready list, don't do more than one
-                       packing per iteration.  Returning 0 here means the
-                       cycle is finished: we'll get called again with an
-                       updated ready list.  */
-                    return 0;
-                }
-
-                if (reg_mentioned_p (SET_DEST(single_set(ready[i])),
-                                     SET_SRC(single_set(ready[i]))))
-                    continue;
-
-                /* Two contiguous loads/stores can't possibly be data
-                   dependent, however, such dependencies are introduced when
-                   the subreg pass splits a double register an keeps its
-                   points-to information untouched.
-                   Look for such cases: if the current mem access blocks a
-                   contiguous access, just remove that dependency.  */
-                for (sd_it = sd_iterator_start (ready[i], SD_LIST_FORW);
-                     sd_iterator_cond (&sd_it, &dep);
-                     sd_iterator_next (&sd_it)) {
-		    bool cancelled = (DEP_STATUS (dep) & DEP_CANCELLED) != 0;
-		    rtx con_insn = DEP_CON (dep);
-                    y = single_set (con_insn);
-
-		    if (cancelled)
-			continue;
-
-                    if (!k1_interesting_mem_access (pass, mode, y, &y, &extension, &regno_y))
-                        continue;
-
-                    if (reg_mentioned_p (SET_DEST(single_set(con_insn)),
-                                         SET_SRC(single_set(con_insn))))
-                        continue;
-
-                    diff = k1_contiguous_mem_access_p (mode,
-                                                       x, regno_x,
-                                                       y, regno_y,
-                                                       NULL, NULL);
-                    offset = (diff && CONST_INT_P (diff)) ? INTVAL (diff) : 0;
-                    if (abs (offset) != GET_MODE_SIZE(mode))
-                        continue;
-
-                    /* Resolve the dependence between INSN and NEXT.
-                       sd_resolve_dep () moves current dep to another list thus
-                       advancing the iterator.  */
-                    sd_resolve_dep (sd_it);
-
-		    /* And don't break transitive dependencies. All
-		       the forward dependencies of the now released
-		       instruction become our forward dependencies as
-		       well. */
-		    for (sd_it = sd_iterator_start (con_insn, SD_LIST_FORW);
-			 sd_iterator_cond (&sd_it, &dep);
-			 sd_iterator_next (&sd_it)) {
-			dep_def _new_dep, *new_dep = &_new_dep;
-			if ((DEP_STATUS (dep) & DEP_CANCELLED) != 0)
-			    continue;
-			new_dep = (dep_t)memcpy (new_dep, dep, sizeof(_new_dep));
-			DEP_PRO (new_dep) = ready[i];
-			sd_add_dep (new_dep, false);
-		    }
-
-                    /* Don't bother trying to mark next as ready if
-                       insn is a debug insn.  If insn is the last hard
-                       dependency, it will have already been discounted.  */
-                    if (DEBUG_INSN_P (ready[i])
-                        && !DEBUG_INSN_P (con_insn))
-                        break;
-
-                    if (!IS_SPECULATION_BRANCHY_CHECK_P (ready[i])) {
-                        if (HID(con_insn)->todo_spec == 0)
-                            HID(con_insn)->todo_spec = HARD_DEP;
-                        try_ready (con_insn);
-                    } else
-                        gcc_unreachable ();
-
-                    /* We called try_ready that might change the ready
-                       list pointers. Do not iterate more, or we risk
-                       a corruption on upcoming list accesses. */
-                    return 0;
-                }
-            }
-        }
-    }
-
-    /* Look if there's no instruction in the ready list that blocks a
-       memory access.  If that's the case, make it first so that it'll
-       get scheduled and allow us to pack that access with others in
-       the next call to this function.  */
-    {
-        sd_iterator_def sd_it;
-        dep_t dep;
-        for (i = nready-1; i >= 0; --i) {
-            rtx set;
-
-            if ((set = single_set (ready[i]))) {
-                if (k1_lsu_p (ready[i])) {
-                    /* We don't pack DImode or QImode LSUs. Emit them
-                       right away */
-                    if (GET_MODE (SET_DEST (set)) == DImode
-                        || GET_MODE (SET_DEST (set)) == QImode) {
-                        rtx tmp = ready[i];
-                        ready[i] = ready[nready-1];
-                        ready[nready-1] = tmp;
-                        return 1;
-                    }
-
-                    /* It's a LSU, do not bother with the following
-                       loop. */
-                    continue;
-                } else if (GET_CODE (SET_DEST (set)) == SUBREG) {
-                    for (sd_it = sd_iterator_start (ready[i], SD_LIST_RES_BACK);
-                         sd_iterator_cond (&sd_it, &dep);
-                         sd_iterator_next (&sd_it)) {
-                        rtx prev = DEP_PRO (dep);
-
-                        /* if we find the various subreg sets that
-                           follow a clobber, try to emit these right
-                           after the clobber so that live ranges
-                           (that start at the clobber) aren't
-                           artificially interferring with
-                           instructions that might be inserted inbetween.  */
-                        if ((GET_CODE (PATTERN (prev)) == CLOBBER
-                             && SUBREG_REG (SET_DEST (set)) == XEXP (SET_DEST (set), 0))
-                            || (GET_CODE (PATTERN (prev))
-                                   && GET_CODE (SET_DEST (PATTERN (prev))) == SUBREG
-                                   && SUBREG_REG (SET_DEST (PATTERN (prev))) == SUBREG_REG (SET_DEST (set)))
-                            ) {
-                            rtx tmp = ready[i];
-                            ready[i] = ready[nready-1];
-                            ready[nready-1] = tmp;
-                            return 1;
-                        }
-                    }
-                }
-            }
-
-            for (sd_it = sd_iterator_start (ready[i], SD_LIST_FORW);
-                 sd_iterator_cond (&sd_it, &dep);
-                 sd_iterator_next (&sd_it)) {
-                rtx next = DEP_CON (dep);
-
-                if (single_set (next)
-                    && k1_lsu_p (next)) {
-                    rtx tmp = ready[i];
-                    ready[i] = ready[nready-1];
-                    ready[nready-1] = tmp;
-
-                    return 1;
-                }
-            }
-        }
-    }
-
-    return 1;
-#endif /* DISABLE MEMORY PACKING */
-}
-
-static int
-k1_has_big_immediate_1 (rtx *x, void *data ATTRIBUTE_UNUSED)
-{
-  return GET_CODE (*x) == SYMBOL_REF || GET_CODE (*x) == LABEL_REF
-	 || GET_CODE (*x) == CONST_DOUBLE
-	 || (GET_CODE (*x) == CONST_INT
-	     && (INTVAL (*x) < -512 || INTVAL (*x) > 511));
-}
-
 int
 k1_has_big_immediate (rtx x)
 {
-  return for_each_rtx (&x, k1_has_big_immediate_1, NULL);
+  /* return for_each_rtx (&x, k1_has_big_immediate_1, NULL); */
+  subrtx_ptr_iterator::array_type array;
+  FOR_EACH_SUBRTX_PTR (iter, array, &x, ALL)
+    {
+      rtx *x = *iter;
+      if (GET_CODE (*x) == SYMBOL_REF || GET_CODE (*x) == LABEL_REF
+	  || GET_CODE (*x) == CONST_DOUBLE
+	  || (GET_CODE (*x) == CONST_INT
+	      && (INTVAL (*x) < -512 || INTVAL (*x) > 511)))
+	{
+	  return 1;
+	}
+    }
 }
 
 int
@@ -6870,10 +5496,10 @@ struct bundle_state
   int unique_num;
 
   /* First insn in the bundle */
-  rtx insn;
+  rtx_insn *insn;
 
   /* Last insn in the bundle */
-  rtx last_insn;
+  rtx_insn *last_insn;
 
   /* Number of insn in the bundle */
   int insns_num;
@@ -6910,31 +5536,39 @@ struct bundle_regs
 };
 
 static int
-k1_uses_register_1 (rtx *x, void *data ATTRIBUTE_UNUSED)
-{
-  rtx *set_dst = (rtx *) data;
-
-  if (!*x)
-    return 0;
-  if (GET_CODE (*x) == CLOBBER || GET_CODE (*x) == USE
-      || GET_CODE (*x) == EXPR_LIST)
-    return -1;
-
-  if (GET_CODE (*x) == SET)
-    {
-      *set_dst = SET_DEST (*x);
-    }
-
-  return GET_CODE (*x) == REG && *x != *set_dst;
-}
-
-static int
 k1_uses_register (rtx x)
 {
   rtx set_dst = NULL;
 
-  return for_each_rtx (&x, k1_uses_register_1, &set_dst);
+  subrtx_ptr_iterator::array_type array;
+  FOR_EACH_SUBRTX_PTR (iter, array, &x, ALL)
+    {
+      rtx *x = *iter;
+
+      if (!*x)
+	{
+	  continue;
+	}
+
+      if (GET_CODE (*x) == CLOBBER || GET_CODE (*x) == USE
+	  || GET_CODE (*x) == EXPR_LIST)
+	{
+	  iter.skip_subrtxes ();
+	}
+      else if (GET_CODE (*x) == SET)
+	{
+	  set_dst = SET_DEST (*x);
+	}
+
+      if (GET_CODE (*x) == REG && *x != set_dst)
+	{
+	  return 1;
+	}
+    }
+  /* return for_each_rtx (&x, k1_uses_register_1, &set_dst); */
 }
+
+static void k1_scan_insn_registers_wrap (rtx *x, void *data);
 
 static int
 k1_scan_insn_registers_1 (rtx *x, void *data)
@@ -6950,16 +5584,19 @@ k1_scan_insn_registers_1 (rtx *x, void *data)
   if (GET_CODE (*x) == SET)
     {
       regs->set_dest = 1;
-      for_each_rtx (&SET_DEST (*x), k1_scan_insn_registers_1, regs);
+      /* for_each_rtx (&SET_DEST (*x), k1_scan_insn_registers_1, regs); */
+      k1_scan_insn_registers_wrap (&SET_DEST (*x), regs);
       regs->set_dest = 0;
-      for_each_rtx (&SET_SRC (*x), k1_scan_insn_registers_1, regs);
+      /* for_each_rtx (&SET_SRC (*x), k1_scan_insn_registers_1, regs); */
+      k1_scan_insn_registers_wrap (&SET_SRC (*x), regs);
       return -1;
     }
 
   if (MEM_P (*x))
     {
       regs->set_dest = 0;
-      for_each_rtx (&XEXP (*x, 0), k1_scan_insn_registers_1, regs);
+      /* for_each_rtx (&XEXP (*x, 0), k1_scan_insn_registers_1, regs); */
+      k1_scan_insn_registers_wrap (&XEXP (*x, 0), regs);
       return -1;
     }
 
@@ -7014,6 +5651,23 @@ k1_scan_insn_registers_1 (rtx *x, void *data)
 }
 
 static void
+k1_scan_insn_registers_wrap (rtx *x, void *data)
+{
+  /* for_each_rtx (&SET_DEST (*x), k1_scan_insn_registers_1, regs); */
+  struct bundle_regs *regs = (struct bundle_regs *) data;
+
+  subrtx_ptr_iterator::array_type array;
+  FOR_EACH_SUBRTX_PTR (iter, array, x, ALL)
+    {
+      rtx *x = *iter;
+      if (k1_scan_insn_registers_1 (x, data) == -1)
+	{
+	  iter.skip_subrtxes ();
+	}
+    }
+}
+
+static void
 k1_scan_insn_registers (rtx insn, struct bundle_regs *regs)
 {
   if (GET_CODE (insn) == CLOBBER || GET_CODE (insn) == USE || !INSN_P (insn))
@@ -7023,7 +5677,8 @@ k1_scan_insn_registers (rtx insn, struct bundle_regs *regs)
   regs->scanned_insn = insn;
   CLEAR_HARD_REG_SET (regs->uses);
   CLEAR_HARD_REG_SET (regs->defs);
-  for_each_rtx (&insn, k1_scan_insn_registers_1, regs);
+  /* for_each_rtx (&insn, k1_scan_insn_registers_1, regs); */
+  k1_scan_insn_registers_wrap (&insn, regs);
 }
 
 static void
@@ -7034,8 +5689,8 @@ k1_clear_insn_registers (void)
 
 /* Skip over irrelevant NOTEs and such and look for the next insn we
    would consider bundling.  */
-static rtx
-next_insn_to_bundle (rtx r, rtx end)
+static rtx_insn *
+next_insn_to_bundle (rtx_insn *r, rtx_insn *end)
 {
   for (; r != end; r = NEXT_INSN (r))
     {
@@ -7044,7 +5699,7 @@ next_insn_to_bundle (rtx r, rtx end)
 	return r;
     }
 
-  return NULL_RTX;
+  return NULL;
 }
 
 static struct bundle_state *
@@ -7062,8 +5717,8 @@ get_free_bundle_state (void)
       result = XNEW (struct bundle_state);
       result->next = NULL;
 
-      result->insn = NULL_RTX;
-      result->last_insn = NULL_RTX;
+      result->insn = NULL;
+      result->last_insn = NULL;
       result->insns_num = 0;
 
       CLEAR_HARD_REG_SET (result->reg_defs);
@@ -7074,7 +5729,8 @@ get_free_bundle_state (void)
       result->allocated_states_chain = allocated_bundle_states_chain;
       allocated_bundle_states_chain = result;
     }
-  result->unique_num = bundle_states_num++;
+  result->unique_num = bundle_states_num;
+  bundle_states_num++;
   return result;
 }
 
@@ -7113,8 +5769,11 @@ k1_gen_bundles (void)
   basic_block bb;
   FOR_EACH_BB_FN (bb, cfun)
     {
-      rtx insn, next, prev;
-      rtx end = NEXT_INSN (BB_END (bb));
+      rtx_insn *next, *prev;
+      rtx_insn *end = NEXT_INSN (BB_END (bb));
+
+      if (next_insn_to_bundle (BB_HEAD (bb), end) == NULL)
+	continue;
 
       /* BB has no insn to bundle */
       if (next_insn_to_bundle (BB_HEAD (bb), end) == NULL_RTX)
@@ -7135,8 +5794,8 @@ k1_gen_bundles (void)
 	  cur_bstate = cur_bstate->next;
 	}
 
-      prev = NULL_RTX;
-      for (insn = next_insn_to_bundle (BB_HEAD (bb), end); insn;
+      prev = NULL;
+      for (rtx_insn *insn = next_insn_to_bundle (BB_HEAD (bb), end); insn;
 	   prev = insn, insn = next)
 	{
 	  next = next_insn_to_bundle (NEXT_INSN (insn), end);
@@ -7157,14 +5816,14 @@ k1_gen_bundles (void)
 	  const int insn_waw = hard_reg_set_intersect_p (cur_insn_regs.defs,
 							 cur_bstate->reg_defs);
 	  const int insn_jump = JUMP_P (insn) || CALL_P (insn);
-	  const int next_is_label = (next != NULL_RTX) && LABEL_P (next);
+	  const int next_is_label = (next != NULL) && LABEL_P (next);
 
 	  /* Current insn can be bundled with other insn, create a new one. */
 	  if (!can_issue || insn_raw || insn_waw)
 	    {
-	      gcc_assert (cur_bstate->insn != NULL_RTX);
+	      gcc_assert (cur_bstate->insn != NULL);
 
-	      gcc_assert (prev != NULL_RTX);
+	      gcc_assert (prev != NULL);
 
 	      cur_bstate->next = get_free_bundle_state ();
 	      cur_bstate = cur_bstate->next;
@@ -7172,7 +5831,7 @@ k1_gen_bundles (void)
 	      state_transition (cur_bstate->dfa_state, insn);
 	    }
 
-	  if (cur_bstate->insn == NULL_RTX)
+	  if (cur_bstate->insn == NULL)
 	    {
 	      /* First insn in bundle */
 	      cur_bstate->insn = insn;
@@ -7189,9 +5848,9 @@ k1_gen_bundles (void)
 	  /* Current insn is a jump, don't bundle following insns. */
 	  /* If there is a label in the middle of a possible bundle,
 	     split it */
-	  if (insn_jump && next != NULL_RTX || next_is_label)
+	  if ((insn_jump && next != NULL) || next_is_label)
 	    {
-	      gcc_assert (cur_bstate->insn != NULL_RTX);
+	      gcc_assert (cur_bstate->insn != NULL);
 	      cur_bstate->next = get_free_bundle_state ();
 	      cur_bstate = cur_bstate->next;
 	    }
@@ -7208,7 +5867,7 @@ k1_dump_bundles (void)
   for (i = cur_bundle_list; i; i = i->next)
     {
 
-      rtx binsn = i->insn;
+      rtx_insn *binsn = i->insn;
       fprintf (stderr, "BUNDLE START %d\n", i->unique_num);
 
       if (i->insn == NULL_RTX)
@@ -7279,10 +5938,10 @@ k1_fix_debug_for_bundles (void)
 
   for (i = cur_bundle_list; i; i = i->next)
     {
-      rtx binsn = i->last_insn;
+      rtx_insn *binsn = i->last_insn;
 
-      gcc_assert (i->insn != NULL_RTX);
-      gcc_assert (i->last_insn != NULL_RTX);
+      gcc_assert (i->insn != NULL);
+      gcc_assert (i->last_insn != NULL);
 
       int bundle_start;
       int bundle_end;
@@ -7404,7 +6063,7 @@ k1_fix_debug_for_bundles (void)
 }
 
 static void
-k1_target_asm_final_postscan_insn (FILE *file, rtx insn,
+k1_target_asm_final_postscan_insn (FILE *file, rtx_insn *insn,
 				   rtx *opvec ATTRIBUTE_UNUSED,
 				   int noperands ATTRIBUTE_UNUSED)
 {
@@ -7509,7 +6168,7 @@ k1_rtx_operand_cost (rtx *x, void *arg)
 /* FIXME AUTO: fix cost function for coolidge */
 /* See T7748 */
 static bool
-k1_target_rtx_costs (rtx x, int code ATTRIBUTE_UNUSED,
+k1_target_rtx_costs (rtx x, machine_mode mode ATTRIBUTE_UNUSED,
 		     int outer_code ATTRIBUTE_UNUSED, int opno ATTRIBUTE_UNUSED,
 		     int *total, bool speed ATTRIBUTE_UNUSED)
 {
@@ -7547,7 +6206,13 @@ k1_target_rtx_costs (rtx x, int code ATTRIBUTE_UNUSED,
      instructions. That should help for performance also as the code
      footprint gets lower. */
 
-  for_each_rtx (cost.toplevel, k1_rtx_operand_cost, &cost);
+  subrtx_ptr_iterator::array_type array;
+  FOR_EACH_SUBRTX_PTR (iter, array, cost.toplevel, ALL)
+    {
+      rtx *x = *iter;
+      k1_rtx_operand_cost (x, &cost);
+    }
+
   *total = cost.total;
   return true;
 }
@@ -7603,95 +6268,6 @@ k1_target_sched_init_global (FILE *file ATTRIBUTE_UNUSED,
 			     int max_ready ATTRIBUTE_UNUSED)
 {
   scheduling = true;
-  packed_mems = 0;
-}
-
-static void
-k1_target_sched_finish_global (FILE *file ATTRIBUTE_UNUSED,
-			       int verbose ATTRIBUTE_UNUSED)
-{
-  if (packed_mems)
-    {
-      while (post_packing_action)
-	{
-	  struct post_packing_action *action = post_packing_action;
-	  post_packing_action = action->next;
-	  if (action->type == CLOBBER_INSERT)
-	    {
-	      rtx head = BB_HEAD (BLOCK_FOR_INSN (action->insn));
-	      rtx insn = action->insn;
-
-	      if (insn == head)
-		{
-		  /* Do not insert the CLOBBER before the basic-block
-		     start note. */
-		  while (GET_CODE (action->insn) == NOTE
-			 || GET_CODE (action->insn) == CODE_LABEL)
-		    {
-		      action->insn = NEXT_INSN (action->insn);
-		    }
-		}
-	      else
-		{
-		  rtx set;
-		  /* Both parts of the double reg might have been
-		     set in the same tick, thus we might arbitrarily
-		     insert the clobber inbetween the subreg
-		     sets... check that it's not the case.  */
-		  /* we know that  (insn != head) here. */
-		  do
-		    {
-		      insn = PREV_INSN (insn);
-		      set = single_set (insn);
-		      if (set && GET_CODE (SET_DEST (set)) == SUBREG
-			  && SUBREG_REG (SET_DEST (set)) == action->reg)
-			{
-			  action->insn = insn;
-			  break;
-			}
-		    }
-		  while (insn != head);
-		}
-
-	      emit_insn_before (gen_rtx_CLOBBER (DImode, action->reg),
-				action->insn);
-	    }
-	  else if (action->type == INSN_DELETE)
-	    {
-	      rtx insn_to_remove = action->insn;
-	      rtx set;
-	      /* rtx x; */
-	      /* x = copy_rtx (x); */
-	      /* replace_rtx (x, SET_DEST (single_set (insn_to_remove)), */
-	      /*              SET_SRC (single_set (insn_to_remove))); */
-
-	      /* Replace the register it defines everywhere
-		 (should be only in the MEM of one of the mem
-		 acesses.)  */
-	      if ((set = single_set (insn_to_remove)) && REG_P (SET_DEST (set))
-		  && k1_replace_reg_rtx (REGNO (SET_DEST (set)), SET_DEST (set),
-					 SET_SRC (set), insn_to_remove, NULL,
-					 true, false))
-		{
-		  remove_insn (insn_to_remove);
-		  set_insn_deleted (insn_to_remove);
-		}
-	    }
-	  else if (action->type == REG_COPY_INSERT)
-	    {
-	      emit_insn_after (k1_gen_reg_copy (action->reg, action->reg2),
-			       action->insn);
-	    }
-	  else
-	    {
-	      gcc_unreachable ();
-	    }
-	  free (action);
-	}
-
-      df_insn_rescan_all ();
-      free_dominance_info (CDI_DOMINATORS);
-    }
 }
 
 static bool
@@ -7998,9 +6574,9 @@ k1_function_epilogue (FILE *file ATTRIBUTE_UNUSED,
 /* } */
 
 static void
-k1_dependencies_evaluation_hook (rtx head, rtx tail)
+k1_dependencies_evaluation_hook (rtx_insn *head, rtx_insn *tail)
 {
-  rtx insn, insn2, next_tail, last_sync = head;
+  rtx_insn *insn, *insn2, *next_tail, *last_sync = head;
 
   next_tail = NEXT_INSN (tail);
 
@@ -8027,7 +6603,7 @@ k1_dependencies_evaluation_hook (rtx head, rtx tail)
 }
 
 static const char *
-k1_invalid_within_doloop (const_rtx insn)
+k1_invalid_within_doloop (const rtx_insn *insn)
 {
   rtx asm_ops, body;
 
@@ -8072,7 +6648,7 @@ static void
 hwloop_fail (hwloop_info loop)
 {
   rtx test;
-  rtx insn = loop->loop_end;
+  rtx_insn *insn = loop->loop_end;
   int has_reload = (recog_memoized (insn) == CODE_FOR_loop_end_withreload);
 
   emit_insn_before (gen_addsi3 (loop->iter_reg, loop->iter_reg, constm1_rtx),
@@ -8102,7 +6678,7 @@ hwloop_fail (hwloop_info loop)
    loop counter.  Otherwise, return NULL_RTX.  */
 
 static rtx
-hwloop_pattern_reg (rtx insn)
+hwloop_pattern_reg (rtx_insn *insn)
 {
   rtx reg;
 
@@ -8125,7 +6701,8 @@ hwloop_optimize (hwloop_info loop)
   edge entry_edge;
   basic_block entry_bb;
   rtx iter_reg;
-  rtx insn, seq, entry_after;
+  rtx_insn *insn;
+  rtx_insn *seq, *entry_after;
 
   if (!TARGET_HWLOOP)
     {
@@ -8696,15 +7273,8 @@ k1_profile_hook (void)
 #undef TARGET_SCHED_INIT_GLOBAL
 #define TARGET_SCHED_INIT_GLOBAL k1_target_sched_init_global
 
-#undef TARGET_SCHED_FINISH_GLOBAL
-#define TARGET_SCHED_FINISH_GLOBAL k1_target_sched_finish_global
-
 #undef TARGET_SCHED_DFA_NEW_CYCLE
 #define TARGET_SCHED_DFA_NEW_CYCLE k1_target_sched_dfa_new_cycle
-
-/* FIXME AUTO: do not pack mem on coolidge yet */
-/* #undef TARGET_SCHED_REORDER */
-/* #define TARGET_SCHED_REORDER k1_target_sched_reorder */
 
 #undef TARGET_SCHED_REASSOCIATION_WIDTH
 #define TARGET_SCHED_REASSOCIATION_WIDTH k1_reassociation_width

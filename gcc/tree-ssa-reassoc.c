@@ -44,9 +44,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "gimplify-me.h"
 #include "tree-cfg.h"
 #include "tree-ssa-loop.h"
-#include "expr.h"
-#include "optabs.h"
-#include "tree-dfa.h"
+#include "flags.h"
 #include "tree-ssa.h"
 #include "langhooks.h"
 #include "cfgloop.h"
@@ -2727,16 +2725,6 @@ update_range_test (struct range_entry *range, struct range_entry *otherrange,
     warning_at (loc, OPT_Wstrict_overflow,
 		"assuming signed overflow does not occur "
 		"when simplifying range test");
-
-  /* If the range checking operation requires a conversion, for a very
-     small range it at best won't gain anything to 'optimize' the
-     range check. It might be a net loss if the target can issue
-     multiple simple comparison ops in the same cycle. */
-  if (low && high
-      && (tree_to_double_int (high) - tree_to_double_int (low)).is_one ()
-      && optab_handler (optab_for_tree_code (MINUS_EXPR, TREE_TYPE (exp), optab_default), 
-			TYPE_MODE (TREE_TYPE (exp))) == CODE_FOR_nothing)
-      return false;
 
   if (dump_file && (dump_flags & TDF_DETAILS))
     {
