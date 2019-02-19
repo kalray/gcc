@@ -505,12 +505,14 @@ k1_hard_regno_rename_ok (unsigned int from, unsigned int to)
       && to >= K1C_GRF_FIRST_REGNO && to <= K1C_GRF_LAST_REGNO)
     {
       /* Retain quad alignement */
-      if (from % 4 == 0)
-	return (to % 4 == 0);
+      if ((from % 4) == 0)
+	return ((to % 4) == 0);
 
       /* Retain pair alignement */
-      return (from & 1) == (to & 1);
+      if ((from % 2) == 0)
+	return ((to % 2) == 0);
     }
+
   return 1;
 }
 
