@@ -1413,7 +1413,7 @@ k1_target_print_operand (FILE *file, rtx x, int code)
 		 (INTVAL (x) - 48) * 2 + 32);
       return;
     case 'C': /* Print an additional 'u' in the case of uncached load/store */
-      if (k1_is_uncached_mem_op (x))
+      if (k1_is_uncached_mem_op_p (x))
 	fprintf (file, ".u");
       return;
     default:
@@ -5473,8 +5473,11 @@ k1_has_big_immediate (rtx x)
     }
 }
 
-int
-k1_is_uncached_mem_op (rtx op)
+/* Test whether the memory operand OP should be accessed cached or
+   uncached regarding it's name address space and the value of the
+   flag K1_FORCE_UNCACHED_LSU. */
+bool
+k1_is_uncached_mem_op_p (rtx op)
 {
   /* __convert[_no_sync] addr space should not come here. */
   gcc_assert (!MEM_P (op)
@@ -5482,6 +5485,112 @@ k1_is_uncached_mem_op (rtx op)
 		  || MEM_ADDR_SPACE (op) == K1_ADDR_SPACE_UNCACHED));
 
   return MEM_P (op) && MEM_ADDR_SPACE (op) == K1_ADDR_SPACE_UNCACHED;
+}
+
+/*
+ * Returns TRUE if OP is a load multiple operation and all mems are
+ * cached/uncached depending on IS_UNCACHED.
+ */
+bool
+k1_load_multiple_operation_p (rtx op, bool is_uncached)
+{
+  int count = XVECLEN (op, 0);
+  unsigned int dest_regno;
+  rtx src_addr;
+  int i;
+
+  /* Perform a quick check so we don't blow up below.  */
+  if (count != 2 && count != 4)
+    return 0;
+
+  for (i = 0; i < count; i++)
+    {
+      rtx set = XVECEXP (op, 0, i);
+
+      if (GET_CODE (set) != SET || !REG_P (SET_DEST (set))
+	  || !MEM_P (SET_SRC (set)) || MEM_VOLATILE_P (SET_SRC (set)))
+	return 0;
+
+      if (is_uncached != k1_is_uncached_mem_op_p (SET_SRC (set)))
+	return 0;
+    }
+
+  dest_regno = REGNO (SET_DEST (XVECEXP (op, 0, 0)));
+
+  /* register number must be correctly aligned */
+  if (dest_regno < FIRST_PSEUDO_REGISTER && (dest_regno % count != 0))
+    return 0;
+
+  src_addr = XEXP (SET_SRC (XVECEXP (op, 0, 0)), 0);
+  HOST_WIDE_INT expected_offset = 0;
+  int base_regno = -1;
+
+  for (i = 0; i < count; i++)
+    {
+      rtx elt = XVECEXP (op, 0, i);
+      rtx base, offset;
+
+      if (!k1_split_mem (XEXP (SET_SRC (elt), 0), &base, &offset, true))
+	return 0;
+
+      if (i == 0)
+	{
+	  expected_offset = INTVAL (offset);
+	  base_regno = REGNO (base);
+	}
+      else
+	{
+	  expected_offset += UNITS_PER_WORD;
+	}
+
+      if (!REG_P (SET_DEST (elt)) || GET_MODE (SET_DEST (elt)) != DImode
+	  || REGNO (SET_DEST (elt)) != dest_regno + i
+	  || GET_MODE (SET_SRC (elt)) != DImode || base_regno != REGNO (base)
+	  || expected_offset != INTVAL (offset))
+
+	return 0;
+    }
+
+  return 1;
+}
+
+/*
+ * Returns TRUE if OP is a store multiple operation.
+ */
+bool
+k1_store_multiple_operation_p (rtx op)
+{
+  int count = XVECLEN (op, 0);
+  unsigned int src_regno;
+  rtx dest_addr;
+  int i;
+
+  /* Perform a quick check so we don't blow up below.  */
+  if ((count != 2 && count != 4) || GET_CODE (XVECEXP (op, 0, 0)) != SET
+      || GET_CODE (SET_DEST (XVECEXP (op, 0, 0))) != MEM
+      || GET_CODE (SET_SRC (XVECEXP (op, 0, 0))) != REG)
+    return 0;
+
+  src_regno = REGNO (SET_SRC (XVECEXP (op, 0, 0)));
+  dest_addr = XEXP (SET_DEST (XVECEXP (op, 0, 0)), 0);
+
+  for (i = 1; i < count; i++)
+    {
+      rtx elt = XVECEXP (op, 0, i);
+
+      if (GET_CODE (elt) != SET || !REG_P (SET_SRC (elt))
+	  || GET_MODE (SET_SRC (elt)) != DImode
+	  || REGNO (SET_SRC (elt)) != src_regno + i || !MEM_P (SET_DEST (elt))
+	  || MEM_VOLATILE_P (SET_DEST (elt))
+	  || GET_MODE (SET_DEST (elt)) != DImode
+	  || GET_CODE (XEXP (SET_DEST (elt), 0)) != PLUS
+	  || !rtx_equal_p (XEXP (XEXP (SET_DEST (elt), 0), 0), dest_addr)
+	  || GET_CODE (XEXP (XEXP (SET_DEST (elt), 0), 1)) != CONST_INT
+	  || INTVAL (XEXP (XEXP (SET_DEST (elt), 0), 1)) != i * 8)
+	return 0;
+    }
+
+  return 1;
 }
 
 /* Following funtions are used for bundling insn before ASM emission */
