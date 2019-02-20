@@ -843,10 +843,6 @@ extern void k1_profile_hook (void);
     c_register_addr_space ("__convert", K1_ADDR_SPACE_CONVERT);		\
   } while(0)
 
-/* Test whether the memory operand OP should be accessed cached or
-   uncached regarding it's name address space and the value of the
-   flag K1_FORCE_UNCACHED_LSU. */
-int k1_is_uncached_mem_op(rtx op);
 
 #ifndef IN_LIBGCC2
 
