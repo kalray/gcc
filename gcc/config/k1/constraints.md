@@ -120,7 +120,7 @@
 (define_memory_constraint "u"
   "Uncached memory operands"
   (and (match_code "mem")
-       (match_test "k1_is_uncached_mem_op (op)")))
+       (match_test "k1_is_uncached_mem_op_p (op)")))
 
 ;; (define_memory_constraint "Q"
 ;;   "Packed memory operand, need not be correct."
@@ -131,25 +131,25 @@
   "Cached memory operands with big immediates"
   (and (match_code "mem")
        (match_test "k1_has_big_immediate (op)")
-       (match_test "!k1_is_uncached_mem_op (op)")))
+       (match_test "!k1_is_uncached_mem_op_p (op)")))
 
 (define_memory_constraint "Ca"
   "Cached memory operands with small immediates"
   (and (match_code "mem")
        (match_test "!k1_has_big_immediate (op)")
-       (match_test "!k1_is_uncached_mem_op (op)")))
+       (match_test "!k1_is_uncached_mem_op_p (op)")))
 
 (define_memory_constraint "Zm"
   "Uncached memory operands with big immediates"
   (and (match_code "mem")
        (match_test "k1_has_big_immediate (op)")
-       (match_test "k1_is_uncached_mem_op (op)")))
+       (match_test "k1_is_uncached_mem_op_p (op)")))
 
 (define_memory_constraint "Za"
   "Uncached memory operands with small immediates"
   (and (match_code "mem")
        (match_test "!k1_has_big_immediate (op)")
-       (match_test "k1_is_uncached_mem_op (op)")))
+       (match_test "k1_is_uncached_mem_op_p (op)")))
 
 
 (define_address_constraint "A"  

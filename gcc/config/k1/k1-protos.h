@@ -59,6 +59,12 @@ extern void k1_target_print_operand_address (FILE *file, rtx x);
 
 extern bool k1_target_print_punct_valid_p (unsigned char code);
 
+extern bool k1_is_uncached_mem_op_p (rtx op);
+
+extern bool k1_load_multiple_operation_p (rtx op, bool is_uncached);
+
+extern bool k1_store_multiple_operation_p (rtx op);
+
 extern void k1_init_expanders (void);
 
 extern void k1_init_cumulative_args (CUMULATIVE_ARGS *cum, const_tree fntype,
