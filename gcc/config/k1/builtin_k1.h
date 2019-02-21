@@ -543,6 +543,12 @@ extern unsigned long long __builtin_k1_maduuciwd (unsigned long long,
  * FPU Instructions (ALU and MAU)
  */
 
+/* FINVW */
+extern float __builtin_k1_finvw (float op0, unsigned int silent,
+				 unsigned int rounding);
+/* FISRW */
+extern float __builtin_k1_fisrw (float op0, unsigned int silent,
+				 unsigned int rounding);
 /* FABSW */
 /* FABSD */
 /* FABSWP */
