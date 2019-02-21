@@ -5316,6 +5316,9 @@ k1_load_multiple_operation_p (rtx op, bool is_uncached)
 	  return 0;
     }
 
+  if (MEM_ALIGN (SET_SRC (XVECEXP (op, 0, 0))) < (count * UNITS_PER_WORD))
+    return 0;
+
   dest_regno = REGNO (SET_DEST (XVECEXP (op, 0, 0)));
 
   /* register number must be correctly aligned */
@@ -5374,6 +5377,9 @@ k1_store_multiple_operation_p (rtx op)
       || GET_CODE (XVECEXP (op, 0, 0)) != SET
       || GET_CODE (SET_DEST (XVECEXP (op, 0, 0))) != MEM
       || GET_CODE (SET_SRC (XVECEXP (op, 0, 0))) != REG)
+    return 0;
+
+  if (MEM_ALIGN (SET_DEST (XVECEXP (op, 0, 0))) < (count * UNITS_PER_WORD))
     return 0;
 
   src_regno = REGNO (SET_SRC (XVECEXP (op, 0, 0)));
