@@ -2662,11 +2662,10 @@ enum k1_builtin {
     K1_BUILTIN_DTOUCHL,
     K1_BUILTIN_DZEROL,
     K1_BUILTIN_EXTFZ,
+    K1_BUILTIN_FINVW,
+    K1_BUILTIN_FISRW,
     K1_BUILTIN_FADDRN,
     K1_BUILTIN_FADDRND,
-    /* FIXME AUTO: disabling vector support */
-    /* K1_BUILTIN_FADDWP, */
-    /* K1_BUILTIN_FADDRNWP, */
     K1_BUILTIN_FCDIVW,
     K1_BUILTIN_FCDIVD,
     K1_BUILTIN_FENCE,
@@ -2674,9 +2673,6 @@ enum k1_builtin {
     K1_BUILTIN_FFMAWRN,
     K1_BUILTIN_FFMAD,
     K1_BUILTIN_FFMADRN,
-    /* FIXME AUTO: disabling vector support */
-    /* K1_BUILTIN_FFMAWP, */
-    /* K1_BUILTIN_FFMARNWP, */
     K1_BUILTIN_FFMAWD,
     K1_BUILTIN_FFMAWDRN,
     K1_BUILTIN_FFMSW,
@@ -2687,7 +2683,6 @@ enum k1_builtin {
     K1_BUILTIN_FFMSDRN,
     K1_BUILTIN_FFMSWD,
     K1_BUILTIN_FFMSWDRN,
-
     K1_BUILTIN_FLOAT,
     K1_BUILTIN_FLOATD,
     K1_BUILTIN_FLOATU,
@@ -2730,18 +2725,11 @@ enum k1_builtin {
     K1_BUILTIN_LDU,
     K1_BUILTIN_LWZU,
     K1_BUILTIN_MADUUCIWD,
-    /* FIXME AUTO: disabling vector support */
-    /* K1_BUILTIN_SBFHP, */
     K1_BUILTIN_SBMM8,
     K1_BUILTIN_SBMMT8,
     K1_BUILTIN_SCALL,
     K1_BUILTIN_SET,
     K1_BUILTIN_SET_PS,
-	/* FIXME AUTO: disabling vector support */
-    /* K1_BUILTIN_SLLHPS, */
-    /* K1_BUILTIN_SLLHPS_R, */
-    /* K1_BUILTIN_SRAHPS, */
-    /* K1_BUILTIN_SRAHPS_R, */
     K1_BUILTIN_SLEEP,
     K1_BUILTIN_STOP,
     K1_BUILTIN_STSUW,
@@ -2884,8 +2872,10 @@ k1_target_init_builtins (void)
     ADD_K1_BUILTIN (DTOUCHL, "dtouchl",     VOID, constVoidPTR);
     ADD_K1_BUILTIN (DZEROL,  "dzerol",      VOID, voidPTR);
     ADD_K1_BUILTIN (EXTFZ,   "extfz",       uintSI, uintSI, uintSI, uintSI);
-    ADD_K1_BUILTIN (FADDRN,  "faddrn",      floatSF,floatSF,floatSF);
-    ADD_K1_BUILTIN (FADDRND, "faddrnd",     floatDF,floatDF,floatDF);
+    ADD_K1_BUILTIN (FINVW,   "finvw",       floatSF, floatSF, uintSI, uintSI);
+    ADD_K1_BUILTIN (FISRW,   "fisrw",       floatSF, floatSF, uintSI, uintSI);
+    ADD_K1_BUILTIN (FADDRN,  "faddrn",      floatSF, floatSF, floatSF);
+    ADD_K1_BUILTIN (FADDRND, "faddrnd",     floatDF, floatDF, floatDF);
 
     /* FIXME AUTO: disabling vector support */
     /* ADD_K1_BUILTIN (FADDWP,  "faddwp",      vect2SF,vect2SF,vect2SF); */
@@ -3016,6 +3006,31 @@ k1_target_builtin_decl (unsigned code, bool initialize_p ATTRIBUTE_UNUSED)
 }
 
 static bool
+verify_const_bool_arg (rtx arg)
+{
+    if (   GET_CODE (arg) != CONST_INT
+        || GET_MODE (arg) != VOIDmode) return false;
+
+    unsigned long long tmp = INTVAL(arg);
+    return tmp == 0LL || tmp == 1LL;
+}
+
+static bool
+verify_const_field_arg (rtx arg, int bits)
+{
+    if (   GET_CODE (arg) != CONST_INT
+        || GET_MODE (arg) != VOIDmode) return false;
+
+    unsigned shift = 64-bits;
+    long long tmp = INTVAL(arg);
+    signed long long stmp = tmp;
+    unsigned long long utmp = tmp;
+    if (tmp == (stmp<<shift)>>shift) return true;
+    if (tmp == (utmp<<shift)>>shift) return true;
+    return false;
+}
+
+static bool
 verify_const_int_arg (rtx arg, int bits, bool signed_p)
 {
     if (GET_CODE (arg) != CONST_INT
@@ -3042,8 +3057,8 @@ k1_expand_builtin_get (rtx target, tree args)
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
     rtx reg;
 
-    if (!verify_const_int_arg (arg1, 12, false)) {
-        error ("__builtin_k1_get expects a 12 bits immediate argument.");
+    if (!verify_const_int_arg (arg1, 9, false)) {
+        error ("__builtin_k1_get expects a 9-bit unsigned immediate argument.");
         return NULL_RTX;
     }
     const int regno = INTVAL(arg1) + K1C_SRF_FIRST_REGNO;
@@ -3089,8 +3104,8 @@ k1_expand_builtin_set (rtx target ATTRIBUTE_UNUSED, tree args, bool ps)
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
 
-    if (!verify_const_int_arg (arg1, 12, false)) {
-        error ("__builtin_k1_set expects a 12 bits immediate first argument.");
+    if (!verify_const_int_arg (arg1, 9, false)) {
+        error ("__builtin_k1_set expects a 9-bit unsigned immediate first argument.");
         return NULL_RTX;
     }
 
@@ -3137,8 +3152,8 @@ k1_expand_builtin_wfxl (rtx target ATTRIBUTE_UNUSED, tree args)
 {
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-    if (!verify_const_int_arg (arg1, 12, false)) {
-        error ("__builtin_k1_wfxl expects a 12 bits immediate first argument.");
+    if (!verify_const_int_arg (arg1, 9, false)) {
+        error ("__builtin_k1_wfxl expects a 9-bit unsigned immediate first argument.");
         return NULL_RTX;
     }
     int regno = INTVAL (arg1) + K1C_SRF_FIRST_REGNO;
@@ -3157,8 +3172,8 @@ k1_expand_builtin_wfxm (rtx target ATTRIBUTE_UNUSED, tree args)
 {
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-    if (!verify_const_int_arg (arg1, 12, false)) {
-        error ("__builtin_k1_wfxm expects a 12 bits immediate first argument.");
+    if (!verify_const_int_arg (arg1, 9, false)) {
+        error ("__builtin_k1_wfxm expects a 9-bit unsigned immediate first argument.");
         return NULL_RTX;
     }
     int regno = INTVAL (arg1) + K1C_SRF_FIRST_REGNO;
@@ -3938,6 +3953,60 @@ k1_expand_builtin_alclr (rtx target, tree args, enum machine_mode mode)
 }
 
 static rtx
+k1_expand_builtin_finvw (rtx target, tree args)
+{
+    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+    rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
+
+    arg1 = force_reg (SFmode, arg1);
+    if (!verify_const_bool_arg (arg2)) {
+        error ("__builtin_k1_finvw expects a boolean immediate second argument.");
+        return NULL_RTX;
+    }
+    if (!verify_const_field_arg (arg3, 3)) {
+        error ("__builtin_k1_finvw expects a 3-bit field immediate third argument.");
+        return NULL_RTX;
+    }
+
+    if (!target)
+        target = gen_reg_rtx (SFmode);
+    if (!REG_P(target) || GET_MODE (target) != SFmode) {
+        target = force_reg (SFmode, target);
+    }
+    emit_insn (gen_finvw (target, arg1));
+
+    return target;
+}
+
+static rtx
+k1_expand_builtin_fisrw (rtx target, tree args)
+{
+    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+    rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
+
+    arg1 = force_reg (SFmode, arg1);
+    if (!verify_const_bool_arg (arg2)) {
+        error ("__builtin_k1_fisrw expects a boolean immediate second argument.");
+        return NULL_RTX;
+    }
+    if (!verify_const_field_arg (arg3, 3)) {
+        error ("__builtin_k1_fisrw expects a 3-bit field immediate third argument.");
+        return NULL_RTX;
+    }
+
+    if (!target)
+        target = gen_reg_rtx (SFmode);
+    if (!REG_P(target) || GET_MODE (target) != SFmode) {
+        target = force_reg (SFmode, target);
+    }
+    emit_insn (gen_fisrw (target, arg1));
+
+    return target;
+}
+
+static rtx
 k1_expand_builtin_faddrn (rtx target, tree args)
 {
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
@@ -4150,13 +4219,13 @@ k1_expand_builtin_float (rtx target, tree args, bool usigned)
     rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
 
     if (!verify_const_int_arg (arg1, 2, false)) {
-        error ("__builtin_k1_float%s expects an unsigned 2bits immediate first argument.",
+        error ("__builtin_k1_float%s expects a 2-bit unsigned immediate first argument.",
                usigned ? "u" : "");
         return NULL_RTX;
     }
 
     if (!verify_const_int_arg (arg3, 6, false)) {
-        error ("__builtin_k1_float%s expects an unsigned 6 bits immediate third argument.",
+        error ("__builtin_k1_float%s expects a 6-bit unsigned immediate third argument.",
                usigned ? "u" : "");
         return NULL_RTX;
     }
@@ -4185,13 +4254,13 @@ k1_expand_builtin_floatd (rtx target, tree args, bool usigned)
     rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
 
     if (!verify_const_int_arg (arg1, 2, false)) {
-        error ("__builtin_k1_float%sd expects an unsigned 2bits immediate first argument.",
+        error ("__builtin_k1_float%sd expects a 2-bit unsigned immediate first argument.",
                usigned ? "u" : "");
         return NULL_RTX;
     }
 
     if (!verify_const_int_arg (arg3, 6, false)) {
-        error ("__builtin_k1_float%sd expects an unsigned 6 bits immediate third argument.",
+        error ("__builtin_k1_float%sd expects a 6-bit unsigned immediate third argument.",
                usigned ? "u" : "");
         return NULL_RTX;
     }
@@ -4220,13 +4289,13 @@ k1_expand_builtin_fixed (rtx target, tree args, bool usigned)
     rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
 
     if (!verify_const_int_arg (arg1, 2, false)) {
-        error ("__builtin_k1_fixed%s expects an unsigned 2bits immediate first argument.",
+        error ("__builtin_k1_fixed%s expects a 2-bit unsigned immediate first argument.",
                usigned ? "u" : "");
         return NULL_RTX;
     }
 
     if (!verify_const_int_arg (arg3, 6, false)) {
-        error ("__builtin_k1_fixed%s expects an unsigned 6 bits immediate third argument.",
+        error ("__builtin_k1_fixed%s expects a 6-bit unsigned immediate third argument.",
                usigned ? "u" : "");
         return NULL_RTX;
     }
@@ -4256,13 +4325,13 @@ k1_expand_builtin_fixedd (rtx target, tree args, bool usigned)
     rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
 
     if (!verify_const_int_arg (arg1, 2, false)) {
-        error ("__builtin_k1_fixed%sd expects an unsigned 2bits immediate first argument.",
+        error ("__builtin_k1_fixed%sd expects a 2-bit unsigned immediate first argument.",
                usigned ? "u" : "");
         return NULL_RTX;
     }
 
     if (!verify_const_int_arg (arg3, 6, false)) {
-        error ("__builtin_k1_fixed%sd expects an unsigned 6 bits immediate third argument.",
+        error ("__builtin_k1_fixed%sd expects a 6-bit unsigned immediate third argument.",
                usigned ? "u" : "");
         return NULL_RTX;
     }
@@ -4737,13 +4806,13 @@ k1_expand_builtin_extfz (rtx target, tree args)
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
     rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
 
-    if (!verify_const_int_arg (arg2, 5, false)) {
-        error ("__builtin_k1_extfz expects a 5 bits immediate second argument.");
+    if (!verify_const_int_arg (arg2, 6, false)) {
+        error ("__builtin_k1_extfz expects a 6-bit unsigned immediate second argument.");
         return NULL_RTX;
     }
 
-    if (!verify_const_int_arg (arg3, 5, false)) {
-        error ("__builtin_k1_extfz expects a 5 bits immediate third argument.");
+    if (!verify_const_int_arg (arg3, 6, false)) {
+        error ("__builtin_k1_extfz expects a 6-bit unsigned immediate third argument.");
         return NULL_RTX;
     }
 
@@ -4938,26 +5007,18 @@ k1_target_expand_builtin (tree exp,
         return k1_expand_builtin_dzerol (target, exp);
     case K1_BUILTIN_EXTFZ:
         return k1_expand_builtin_extfz (target, exp);
+    case K1_BUILTIN_FINVW:
+        return k1_expand_builtin_finvw (target, exp);
+    case K1_BUILTIN_FISRW:
+        return k1_expand_builtin_fisrw (target, exp);
     case K1_BUILTIN_FADDRN:
         return k1_expand_builtin_faddrn (target, exp);
     case K1_BUILTIN_FADDRND:
         return k1_expand_builtin_faddrnd (target, exp);
-
-	/* FIXME AUTO: disabling vector support */
-    /* case K1_BUILTIN_FADDWP: */
-    /* case K1_BUILTIN_FADDRNWP: */
-    /*     return k1_expand_builtin_faddwp (target, exp, fcode == K1_BUILTIN_FADDRNWP); */
-
     case K1_BUILTIN_FSBFRN:
         return k1_expand_builtin_fsbfrn (target, exp);
     case K1_BUILTIN_FSBFRND:
         return k1_expand_builtin_fsbfrnd (target, exp);
-
-	/* FIXME AUTO: disabling vector support */
-    /* case K1_BUILTIN_FSBFWP: */
-    /* case K1_BUILTIN_FSBFRNWP: */
-    /*     return k1_expand_builtin_fsbfwp (target, exp, fcode == K1_BUILTIN_FSBFRNWP); */
-
     case K1_BUILTIN_FENCE:
         return k1_expand_builtin_fence ();
     case K1_BUILTIN_FFMAW:
@@ -4966,30 +5027,18 @@ k1_target_expand_builtin (tree exp,
     case K1_BUILTIN_FFMAD:
     case K1_BUILTIN_FFMADRN:
         return k1_expand_builtin_ffmad (target, exp, fcode == K1_BUILTIN_FFMADRN);
-
-	/* FIXME AUTO: disabling vector support */
-    /* case K1_BUILTIN_FFMAWP: */
-    /* case K1_BUILTIN_FFMARNWP: */
-    /*     return k1_expand_builtin_ffmawp (target, exp, fcode == K1_BUILTIN_FFMARNWP); */
-
     case K1_BUILTIN_FFMAWD:
     case K1_BUILTIN_FFMAWDRN:
         return k1_expand_builtin_ffmawd (target, exp, fcode == K1_BUILTIN_FFMAWDRN);
     case K1_BUILTIN_FFMSW:
     case K1_BUILTIN_FFMSWRN:
         return k1_expand_builtin_ffmsw (target, exp, fcode == K1_BUILTIN_FFMSWRN);
-	/* FIXME AUTO: disabling vector support */
-    /* case K1_BUILTIN_FFMSWP: */
-    /* case K1_BUILTIN_FFMSRNWP: */
-    /*     return k1_expand_builtin_ffmswp (target, exp, fcode == K1_BUILTIN_FFMSRNWP); */
     case K1_BUILTIN_FFMSD:
     case K1_BUILTIN_FFMSDRN:
         return k1_expand_builtin_ffmsd (target, exp, fcode == K1_BUILTIN_FFMSDRN);
-
     case K1_BUILTIN_FFMSWD:
     case K1_BUILTIN_FFMSWDRN:
         return k1_expand_builtin_ffmswd (target, exp, fcode == K1_BUILTIN_FFMSWDRN);
-
     case K1_BUILTIN_FLOAT:
     case K1_BUILTIN_FLOATU:
         return k1_expand_builtin_float (target, exp, fcode == K1_BUILTIN_FLOATU);
@@ -5006,16 +5055,9 @@ k1_target_expand_builtin (tree exp,
         return k1_expand_builtin_fmulrn (target, exp);
     case K1_BUILTIN_FMULRND:
         return k1_expand_builtin_fmulrnd (target, exp);
-
-	/* FIXME AUTO: disabling vector support */
-    /* case K1_BUILTIN_FMULWP: */
-    /* case K1_BUILTIN_FMULRNWP: */
-    /*     return k1_expand_builtin_fmulwp (target, exp, fcode == K1_BUILTIN_FMULRNWP); */
-
     case K1_BUILTIN_FMULWD:
     case K1_BUILTIN_FMULRNWD:
         return k1_expand_builtin_fmulwd (target, exp, fcode == K1_BUILTIN_FMULRNWD);
-
     case K1_BUILTIN_FSDIVW:
         return k1_expand_builtin_fsdivw (target, exp);
     case K1_BUILTIN_FSDIVD:
@@ -5045,9 +5087,6 @@ k1_target_expand_builtin (tree exp,
         return k1_expand_builtin_iinval ();
     case K1_BUILTIN_IINVALS:
         return k1_expand_builtin_iinvals (target, exp);
-	/* FIXME AUTO: disabling vector support */
-    /* case K1_BUILTIN_LANDHP: */
-    /*     return k1_expand_builtin_landhp (target, exp); */
     case K1_BUILTIN_LBSU:
         return k1_expand_builtin_lbsu (target, exp);
     case K1_BUILTIN_LBZU:
@@ -5064,9 +5103,6 @@ k1_target_expand_builtin (tree exp,
         return k1_expand_builtin_satd (target, exp);
     case K1_BUILTIN_SATUD:
         return k1_expand_builtin_satud (target, exp);
-	/* FIXME AUTO: disabling vector support */
-    /* case K1_BUILTIN_SBFHP: */
-    /*     return k1_expand_builtin_sbfhp (target, exp); */
     case K1_BUILTIN_SBMM8:
         return k1_expand_builtin_sbmm8 (target, exp);
     case K1_BUILTIN_SBMMT8:
@@ -5074,13 +5110,6 @@ k1_target_expand_builtin (tree exp,
     case K1_BUILTIN_SET:
     case K1_BUILTIN_SET_PS:
       return k1_expand_builtin_set (target, exp, fcode == K1_BUILTIN_SET_PS);
-	/* FIXME AUTO: disabling vector support */
-    /* case K1_BUILTIN_SLLHPS: */
-    /* case K1_BUILTIN_SLLHPS_R: */
-    /*     return k1_expand_builtin_sllhps (target, exp); */
-    /* case K1_BUILTIN_SRAHPS: */
-    /* case K1_BUILTIN_SRAHPS_R: */
-    /*     return k1_expand_builtin_srahps (target, exp); */
     case K1_BUILTIN_SLEEP:
         return k1_expand_builtin_sleep (target, exp);
     case K1_BUILTIN_STOP:
@@ -5103,28 +5132,12 @@ k1_target_expand_builtin (tree exp,
         return k1_expand_builtin_tlbwrite ();
     case K1_BUILTIN_FWIDENLHW:
       return k1_expand_builtin_fwiden (target, exp, 1);
-
-      /* FIXME AUTO: disabling vector support */
-    /* case K1_BUILTIN_FWIDENLHWP: */
-    /*   return k1_expand_builtin_fwiden_wp (target, exp, 1); */
-
     case K1_BUILTIN_FWIDENMHW:
       return k1_expand_builtin_fwiden (target, exp, 0);
-
-      /* FIXME AUTO: disabling vector support */
-    /* case K1_BUILTIN_FWIDENMHWP: */
-    /*   return k1_expand_builtin_fwiden_wp (target, exp, 0); */
-
     case K1_BUILTIN_FNARROWWH:
       return k1_expand_builtin_fnarrowwh (target, exp);
-
-    /* FIXME AUTO: disabling vector support */
-    /* case K1_BUILTIN_FNARROWDWP: */
-    /*   return k1_expand_builtin_fnarrowdwp (target, exp); */
-
     case K1_BUILTIN_WAITIT:
       return k1_expand_builtin_waitit (target, exp);
-
     default:
         internal_error ("bad builtin code");
         break;
