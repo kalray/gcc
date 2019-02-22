@@ -8,6 +8,16 @@
   (and (match_code "const_int")
        (match_test "op == const0_rtx")))
 
+(define_predicate "const_float_1_operand"
+  (match_code "const_int")
+{
+  if (GET_CODE (op) != CONST_DOUBLE
+      || mode != GET_MODE (op)
+      || (mode != DFmode && mode != SFmode))
+    return 0;
+  return op == CONST1_RTX(mode);
+})
+
 ;; used for some 32bits ALU
 ;; register or immediate up to signed 32
 (define_predicate "register_s32_operand"
