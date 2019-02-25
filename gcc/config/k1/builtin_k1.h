@@ -35,14 +35,9 @@
 #ifndef _BUILTIN_K1_H_
 #define _BUILTIN_K1_H_
 
-#ifdef __cplusplus__
+#ifdef __cplusplus
 extern "C" {
 #endif
-
-#if defined(__native__)
-#include "builtins_k1_native.h"
-
-#else /* include for k1-compilation */
 
 /*
  * BCU Instructions
@@ -729,7 +724,7 @@ extern int __builtin_k1_srfsize (int);
  */
 extern unsigned long long __builtin_k1_get_r (int);
 
-#if defined(__open64__) || defined(__clang__)
+#if defined(__clang__)
 #define __builtin_error(MSG)                                                   \
   do                                                                           \
     {                                                                          \
@@ -741,7 +736,7 @@ extern unsigned long long __builtin_k1_get_r (int);
     extern int __attribute__ ((error (#MSG))) __builtin_compile_time_check (); \
     __builtin_compile_time_check ();                                           \
   }
-#endif /* defined(__open64__) || defined(__clang__) */
+#endif /* defined(__clang__) */
 
 /* xord
  *
@@ -759,10 +754,8 @@ extern void __builtin_k1_set (int, unsigned long long);
  */
 extern void __builtin_k1_set_ps (int, unsigned long long);
 
-#ifdef __cplusplus__
+#ifdef __cplusplus
 }
-#endif
-
 #endif
 
 #endif /* _BUILTIN_K1_H_ */
