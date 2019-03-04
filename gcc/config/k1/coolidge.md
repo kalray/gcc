@@ -10,7 +10,6 @@
    k1c_bcu_u,
    k1c_mau_u, k1c_tiny_mau_u,
    k1c_lsu_u, k1c_tiny_lsu_u, k1c_lsu_store_u,
-   k1c_odd_u,
    k1c_auxw_u, k1c_auxr_u"
   "coolidge_exu")
 
@@ -76,13 +75,6 @@
 ;; (define_reservation "k1c_alud_full.z_r"
 ;;  "k1c_alu0_u + k1c_alu1_u + k1c_issue_x4_r")
 
-;; Should be used when addcd/sbfcd/addcid/sbfcid are introduced with monodouble fmts
-;; (define_reservation "k1c_alud_full_odd_r"
-;;     "k1c_alu0_u + k1c_alu1_u + k1c_odd_u + k1c_issue_r")
-
-;; (define_reservation "k1c_alud_full_odd.x_r"
-;;     "k1c_alu0_u + k1c_alu1_u + k1c_odd_u + k1c_issue_x2_r")
-
 ;; (define_reservation "k1c_alud_lite_r"
 ;;    "(k1c_lite_double_r + k1c_issue_r)")
 
@@ -103,9 +95,6 @@
 
 (define_reservation "k1c_alu_full.y_r"
   "k1c_alu_r + k1c_issue_x3_r")
-
-(define_reservation "k1c_alu_full_odd_r"
-  "k1c_alu0_u + k1c_odd_u + k1c_issue_r")
 
 (define_reservation "k1c_alu_lite_r"
   "k1c_lite_r + k1c_issue_r")
@@ -175,27 +164,12 @@
 (define_reservation "k1c_mau_acc.y_r"
   "k1c_mau_u + k1c_lsu_store_u + k1c_issue_x3_r")
 
-(define_reservation "k1c_mau_acc_odd_r"
-   "k1c_mau_u + k1c_lsu_store_u + k1c_issue_r")
-
 (define_insn_reservation "k1c_all" 1 (and (eq_attr "arch" "coolidge")
                                           (eq_attr "type" "all"))
                          "k1c_all_r")
 
-
-;; (define_insn_reservation "k1c_tiny_double" 1 (and (eq_attr "arch" "coolidge")
-;;                                                   (eq_attr "type" "alud_tiny"))
-;;                          "k1c_alud_tiny_r")
-
-;; (define_insn_reservation "k1c_tiny_double.x" 1 (and (eq_attr "arch" "coolidge")
-;;                                                     (eq_attr "type" "alud_tiny_x"))
-;;                          "k1c_alud_tiny.x_r")
-
-
 (define_insn_reservation "k1c_tiny" 1 (and (eq_attr "arch" "coolidge")
-                                           (eq_attr "type" "tiny,sbfhp,maxuhp,\
-                                                   minuhp,maxhp,minhp,comphp,addhp,\
-                                                   and_Ilh"))
+                                           (eq_attr "type" "tiny"))
                          "k1c_alu_tiny_r")
 
 (define_insn_reservation "k1c_tiny.x" 1 (and (eq_attr "arch" "coolidge")
@@ -206,26 +180,12 @@
                                              (eq_attr "type" "tiny_y"))
                          "k1c_alu_tiny.y_r")
 
-
-;; (define_insn_reservation "k1c_lite_double" 1 (and (eq_attr "arch" "coolidge")
-;;                                                   (eq_attr "type" "alud_lite,addshp"))
-;;                          "k1c_alud_lite_r")
-
-;; (define_insn_reservation "k1c_lite_double.x" 1 (and (eq_attr "arch" "coolidge")
-;;                                                     (eq_attr "type" "alud_lite_x"))
-;;                          "k1c_alud_lite.x_r")
-
-
 (define_insn_reservation "k1c_lite" 1 (and (eq_attr "arch" "coolidge")
-                 (eq_attr "type" "lite, \
-                      shift32,abdhp,abd,abs, \
-                      cmovehp,landhp,extfs,cbs, \
-                      sat,ctz,adds,insf,cmove, \
-                      stsu,clz,extfz"))
-                 "k1c_alu_lite_r")
+                                           (eq_attr "type" "lite"))
+                         "k1c_alu_lite_r")
 
 (define_insn_reservation "k1c_lite.x" 1 (and (eq_attr "arch" "coolidge")
-                                             (eq_attr "type" "abd_x,cmove_x,lite_x"))
+                                             (eq_attr "type" "lite_x"))
                          "k1c_alu_lite.x_r")
 
 (define_insn_reservation "k1c_lite.y" 1 (and (eq_attr "arch" "coolidge")
@@ -236,10 +196,6 @@
                                            (eq_attr "type" "alu"))
                          "k1c_alu_full_r")
 
-(define_insn_reservation "k1c_alu_full_odd" 1 (and (eq_attr "arch" "coolidge")
-                                                   (eq_attr "type" "alu_full_odd"))
-                         "k1c_alu_full_odd_r")
-
 (define_insn_reservation "k1c_alu.x" 1 (and (eq_attr "arch" "coolidge")
                                            (eq_attr "type" "alu_x"))
                          "k1c_alu_full.x_r")
@@ -247,30 +203,6 @@
 (define_insn_reservation "k1c_alu.y" 1 (and (eq_attr "arch" "coolidge")
                                            (eq_attr "type" "alu_y"))
                          "k1c_alu_full.y_r")
-
-;; (define_insn_reservation "k1c_alud" 1 (and (eq_attr "arch" "coolidge")
-;;                                            (eq_attr "type" "alud"))
-;;                          "k1c_alud_full_r")
-
-;; (define_insn_reservation "k1c_alud_full_odd" 1 (and (eq_attr "arch" "coolidge")
-;;                                                     (eq_attr "type" "alud_full_odd"))
-;;                          "k1c_alud_full_odd_r")
-
-;; (define_insn_reservation "k1c_alud_full_odd.x" 1 (and (eq_attr "arch" "coolidge")
-;;                                                       (eq_attr "type" "alud_full_odd_x"))
-;;                          "k1c_alud_full_odd.x_r")
-
-;; (define_insn_reservation "k1c_alud.x" 1 (and (eq_attr "arch" "coolidge")
-;;                                              (eq_attr "type" "alud_x"))
-;;                          "k1c_alud_full.x_r")
-
-;; (define_insn_reservation "k1c_alud.y" 1 (and (eq_attr "arch" "coolidge")
-;;                                              (eq_attr "type" "alud_y"))
-;;                          "k1c_alud_full.y_r")
-
-;; (define_insn_reservation "k1c_alud.z" 1 (and (eq_attr "arch" "coolidge")
-;;                                              (eq_attr "type" "alud_z"))
-;;                          "k1c_alud_full.z_r")
 
 (define_insn_reservation "k1c_bcu" 1 (and (eq_attr "arch" "coolidge")
                                           (eq_attr "type" "bcu"))
@@ -304,10 +236,6 @@
                                               (eq_attr "type" "mau_acc"))
                          "k1c_mau_acc_r,nothing")
 
-(define_insn_reservation "k1c_mau_acc_odd" 1 (and (eq_attr "arch" "coolidge")
-                                                  (eq_attr "type" "mau_acc_odd"))
-                         "k1c_mau_acc_odd_r,nothing")
-
 (define_insn_reservation "k1c_acc.x" 2 (and (eq_attr "arch" "coolidge")
                                             (eq_attr "type" "mau_acc_x"))
                          "k1c_mau_acc.x_r,nothing")
@@ -319,7 +247,7 @@
 
 ;; Bug workaround : insn issuing a FPU must not be bundled with store insn
 (define_insn_reservation "k1c_mau_fpu" 4 (and (eq_attr "arch" "coolidge")
-                                         (eq_attr "type" "mau_fpu,fmuld,faddd,fsbfd"))
+                                         (eq_attr "type" "mau_fpu"))
                          "k1c_mau_r + k1c_lsu_store_u,nothing,nothing,nothing")
 
 (define_insn_reservation "k1c_mau_lsu_fpu" 4 (and (eq_attr "arch" "coolidge")
