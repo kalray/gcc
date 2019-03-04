@@ -7,7 +7,6 @@
   lite_x, \
   lite_y, \
   alu,\
-  alu0,\
   alu_x,\
   alu_y,\
   bcu,\
@@ -43,41 +42,9 @@
   lsu_load_auxw_uncached,\
   lsu_load_auxw_uncached_x,\
   lsu_load_auxw_uncached_y,\
-  alu_full_odd, \
   mau_acc, \
   mau_acc_x, \
-  mau_acc_y, \
-  mau_acc_odd, \
-  and_Ilh, \
-  extfz, \
-  extfs, \
-  insf, \
-  abs, \
-  clz, \
-  ctz, \
-  cbs, \
-  stsu, \
-  sat, \
-  adds, \
-  cmove, \
-  fmuld, \
-  faddd, \
-  fsbfd, \
-  cmove_x, \
-  addhp, \
-  sbfhp, \
-  abdhp, \
-  landhp, \
-  addshp, \
-  cmovehp, \
-  comphp, \
-  minuhp, \
-  maxhp, \
-  minhp, \
-  maxuhp, \
-  abd, \
-  abd_x, \
-  shift32"
+  mau_acc_y"
 
   (const_string "all"))
 
