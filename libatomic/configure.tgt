@@ -142,6 +142,10 @@ case "${target}" in
 	config_path="${config_path} posix"
 	;;
 
+  *-*-cos)
+      config_path="${config_path} posix"
+      ;;
+
   *-*-mingw*)
 	# OS support for atomic primitives.
         case ${target_thread_file} in
