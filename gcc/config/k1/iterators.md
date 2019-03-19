@@ -137,3 +137,17 @@
 (define_attr "enabled" ""
   (cond [(eq_attr "disabled" "yes") (const_int 0)]
         (const_int 1)))
+
+;; Iterator for Atomic Integer modes
+(define_mode_iterator AI [QI HI SI DI TI])
+
+;; Iterator for atomic binary operations
+;; (mult op stands for nand)
+(define_code_iterator atomic_op [plus ior xor minus and mult])
+(define_code_attr atomic_optab [
+  (plus "add")
+  (ior "or")
+  (xor "xor")
+  (minus "sub")
+  (and "and")
+  (mult "nand")])
