@@ -116,6 +116,11 @@
   (and (match_code "mem")
        (match_test "!k1_has_big_immediate (op)")))
 
+(define_memory_constraint "b"
+  "Memory operands with 37-bit immediates"
+  (and (match_code "mem")
+       (match_test "k1_has_37bit_immediate_p (op)")))
+
 (define_memory_constraint "u"
   "Uncached memory operands"
   (and (match_code "mem")
