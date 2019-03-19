@@ -22,8 +22,10 @@
   mau_auxr_fpu,\
   lsu_auxw_atomic,\
   lsu_auxw_atomic_x,\
+  lsu_auxw_atomic_y,\
   lsu_auxr_auxw_atomic,\
   lsu_auxr_auxw_atomic_x,\
+  lsu_auxr_auxw_atomic_y,\
   lsu_auxw_load,\
   lsu_auxw_load_x,\
   lsu_auxw_load_y,\
