@@ -97,17 +97,19 @@ extern void k1_override_options (void);
 
 extern int k1_has_big_immediate (rtx x);
 
+bool k1_has_37bit_immediate_p (rtx x);
+
 extern void k1_expand_vcondv2si (rtx *);
 
 extern void k1_expand_vcondv4hi (rtx *);
 
-extern void k1_expand_old_sync_instruction (enum rtx_code code, rtx dest,
-					    rtx addr, rtx val);
+void k1_emit_pre_barrier (rtx, bool);
 
-extern void k1_expand_new_sync_instruction (enum rtx_code code, rtx dest,
-					    rtx addr, rtx val);
+void k1_emit_post_barrier (rtx, bool);
 
-extern void k1_expand_sync_instruction (enum rtx_code code, rtx addr, rtx val);
+void k1_expand_compare_and_swap (rtx op[]);
+
+void k1_expand_atomic_op (enum rtx_code, rtx, bool, rtx, rtx, rtx);
 
 extern int k1_mau_lsu_double_port_bypass_p (rtx_insn *producer,
 					    rtx_insn *consumer);

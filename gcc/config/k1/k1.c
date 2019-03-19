@@ -733,7 +733,7 @@ k1_analyze_address (rtx x, bool strict, struct k1_address *addr)
 	   && ((CONSTANT_P (XEXP (x, 1))
 		&& k1_legitimate_constant_p (VOIDmode, XEXP (x, 1)))
 	       || GET_CODE (XEXP (x, 1)) == CONST_INT)
-	   && immediate_operand (XEXP (x, 1), SImode))
+	   && immediate_operand (XEXP (x, 1), DImode))
     {
 
       /*
@@ -2405,84 +2405,219 @@ k1_target_register_move_cost (enum machine_mode mode,
 /*                               gen_highpart (V2HImode, operands[2]))); */
 /* } */
 
-// FIXME AUTO: disabling legacy code for atomic
-/* enum sync_insn_type { SYNC_OLD, SYNC_NEW, SYNC }; */
+/* Emit a barrier, that is appropriate for memory model MODEL, at the
+   start of a sequence implementing an atomic operation. We always use
+   a very conservative memory model since K1C has a relaxed memory
+   consistency model meaning that all loads and stores are scheduled
+   out-of-order at different memory addresses. Only simple load/store
+   operations are performed with more usual memory constraints (if
+   MOVE is true). */
 
-/* static void */
-/* k1_generic_expand_sync_instruction (enum rtx_code code, rtx dest, rtx addr,
- * rtx val, */
-/*                                     enum sync_insn_type type) */
-/* { */
-/*     rtx reg = gen_reg_rtx (DImode); */
-/*     rtx res = gen_reg_rtx (SImode); */
-/*     rtx label = gen_label_rtx (); */
-/*     rtx lowpart = gen_lowpart (SImode, reg); */
-/*     rtx highpart = gen_highpart (SImode, reg); */
+void
+k1_emit_pre_barrier (rtx model, bool move)
+{
+  const enum memmodel mm = memmodel_from_int (INTVAL (model));
+  switch (mm & !MEMMODEL_SYNC) // treat sync operations as atomic ones
+    {
+    case MEMMODEL_RELAXED:
+    case MEMMODEL_CONSUME:
+    case MEMMODEL_ACQUIRE:
+    case MEMMODEL_ACQ_REL:
+      // no barrier is required for RELAXED, CONSUME, ACQUIRE, and
+      // ACQ_REL memory models with MOVE operations (loads/stores). Be
+      // conservative for any other cases, emit a fence.
+      if (move)
+	break;
+    case MEMMODEL_RELEASE:
+    case MEMMODEL_SEQ_CST:
+      emit_insn (gen_mem_thread_fence (model));
+      break;
+    default:
+      gcc_unreachable ();
+    }
+}
 
-/*     /\* Force a register operand. If that's not necessary, a following */
-/*        pass will simplify it. *\/ */
-/*     if (!REG_P (val)) */
-/*         val = force_reg (SImode, val); */
+/* Emit a barrier, that is appropriate for memory model MODEL, at the
+   end of a sequence implementing an atomic operation. See
+   k1_emit_pre_barrier () for MOVE. */
 
-/*     emit_insn (gen_rtx_CLOBBER (DImode, reg)); */
-/*     emit_insn (gen_memory_barrier ()); */
-/*     emit_insn (gen_lwzu (lowpart, addr)); */
-/*     emit_label (label); */
-/*     emit_move_insn (highpart, lowpart); */
+void
+k1_emit_post_barrier (rtx model, bool move)
+{
+  const enum memmodel mm = memmodel_from_int (INTVAL (model));
+  switch (mm & !MEMMODEL_SYNC) // treat sync operations as atomic ones
+    {
+    case MEMMODEL_RELAXED:
+    case MEMMODEL_RELEASE:
+    case MEMMODEL_ACQ_REL:
+      // no barrier is required for RELAXED, RELEASE, and ACQ_REL
+      // memory models with MOVE operations (loads/stores). Be
+      // conservative for any other cases, emit a fence.
+      if (move)
+	break;
+    case MEMMODEL_ACQUIRE:
+    case MEMMODEL_CONSUME:
+    case MEMMODEL_SEQ_CST:
+      emit_insn (gen_mem_thread_fence (model));
+      break;
+    default:
+      gcc_unreachable ();
+    }
+}
 
-/*     switch (code) { */
-/*     case PLUS: */
-/*         emit_insn (gen_addsi3 (lowpart, highpart, val)); break; */
-/*     case MINUS: */
-/*         emit_insn (gen_sub3_insn (lowpart, highpart, val)); break; */
-/*     case IOR: */
-/*         emit_insn (gen_iorsi3 (lowpart, highpart, val)); break; */
-/*     case AND: */
-/*         emit_insn (gen_andsi3 (lowpart, highpart, val)); break; */
-/*     case XOR: */
-/*         emit_insn (gen_xorsi3 (lowpart, highpart, val)); break; */
-/*     case NOT: */
-/*         emit_insn (gen_nand (lowpart, highpart, val)); break; */
-/*     case SET: */
-/*         emit_move_insn (lowpart, val); break; */
-/*     default: */
-/*         gcc_unreachable (); */
-/*     }; */
+/* Expand a compare and swap pattern. We do not support weak operation
+   (operands[5], operands[6] and operands[7] can be ignored).  */
 
-/*     if (type == SYNC_NEW) */
-/*         emit_move_insn (res, lowpart); */
+void
+k1_expand_compare_and_swap (rtx operands[])
+{
+  rtx bval, mem, oldval, newval, currval;
+  rtx cas_retry = gen_label_rtx ();
+  rtx cas_return = gen_label_rtx ();
+  machine_mode mode = GET_MODE (operands[2]);
 
-/*     emit_insn (gen_cws (reg, addr, reg)); */
-/*     emit_cmp_and_jump_insns (lowpart, highpart, NE, NULL_RTX, SImode, 0,
- * label); */
+  gcc_assert ((mode == SImode || mode == DImode));
 
-/*     if (dest) { */
-/*         if (type == SYNC_NEW) */
-/*             emit_move_insn (dest, res); */
-/*         else if (type == SYNC_OLD) */
-/*             emit_move_insn (dest, lowpart); */
-/*     } */
-/* } */
+  mem = operands[2];
+  oldval = operands[3];
+  newval = operands[4];
 
-/* void */
-/* k1_expand_old_sync_instruction (enum rtx_code code, rtx dest, rtx addr, rtx
- * val) */
-/* { */
-/*     k1_generic_expand_sync_instruction (code, dest, addr, val, SYNC_OLD); */
-/* } */
+  rtx tmp = gen_reg_rtx (TImode);
+  rtx low = gen_lowpart (DImode, tmp);
+  rtx high = gen_highpart (DImode, tmp);
 
-/* void */
-/* k1_expand_new_sync_instruction (enum rtx_code code, rtx dest, rtx addr, rtx
- * val) */
-/* { */
-/*     k1_generic_expand_sync_instruction (code, dest, addr, val, SYNC_NEW); */
-/* } */
+  // We don't care of operands[6] and operands[7] (memory models to
+  // use after the operation). We just need to ensure that memory is
+  // consistent before the compare-and-swap.
+  emit_insn (gen_mem_thread_fence (GEN_INT (MEMMODEL_SEQ_CST)));
 
-/* void */
-/* k1_expand_sync_instruction (enum rtx_code code, rtx addr, rtx val) */
-/* { */
-/*     k1_generic_expand_sync_instruction (code, NULL, addr, val, SYNC); */
-/* } */
+  // Packing data to swap for acswap[wd] insns.
+  emit_move_insn (gen_lowpart (mode, high), oldval);
+  emit_label (cas_retry);
+  emit_move_insn (gen_lowpart (mode, low), newval);
+
+  emit_insn (mode == SImode ? gen_acswapw (tmp, mem) : gen_acswapd (tmp, mem));
+
+  // If acswap succeeds (LOW is equal to 0x1), then return.
+  emit_cmp_and_jump_insns (gen_lowpart (mode, low), const1_rtx, EQ, NULL_RTX,
+			   mode, true, cas_return);
+
+  // Else, the acswap has failed, reload MEM to ensure that the value
+  // wasn't updated to the expected one since.
+  currval = gen_reg_rtx (mode);
+  emit_move_insn (currval, mem);
+  // If the reloaded MEM is equal to the expected one (HIGH), retry
+  // the acswap.
+  emit_cmp_and_jump_insns (currval, gen_lowpart (mode, high), EQ, NULL_RTX,
+			   mode, true, cas_retry);
+  // Else, update HIGH with the current value of MEM, then return.
+  emit_move_insn (gen_lowpart (mode, high), currval);
+
+  // LOW contains the boolean to return.
+  // HIGH contains the value present in memory before the operation.
+  emit_label (cas_return);
+  // operands[0] is an output operand which is set to true of false
+  // based on whether the operation succeeded.
+  emit_move_insn (operands[0], gen_lowpart (SImode, low));
+  // operands[1] is an output operand which is set to the contents of
+  // the memory before the operation was attempted.
+  emit_move_insn (operands[1], gen_lowpart (mode, high));
+}
+
+/* Expand an atomic operation pattern (CODE). Only for SImode and
+   DImode (cas loop is too difficult to handle for HI, QI, and TI
+   modes). Others modes will be expanded by libatomic if enabled
+   anyway. MEM is the memory location where to perform the atomic
+   operation with value in VAL. If AFTER is true then store the value
+   from MEM into TARGET holds after the operation, if AFTER is false
+   then store the value from MEM into TARGET holds before the
+   operation. If TARGET is NULL_RTX then discard that value, else
+   store the result to TARGET. */
+
+void
+k1_expand_atomic_op (enum rtx_code code, rtx target, bool after, rtx mem,
+		     rtx val, rtx model)
+{
+  machine_mode mode = GET_MODE (mem);
+  rtx csloop = gen_label_rtx ();
+  rtx tmp = gen_reg_rtx (TImode);
+  rtx ret = gen_reg_rtx (mode);
+  rtx new_mem_val = gen_lowpart (DImode, tmp);
+  rtx curr_mem_val = gen_highpart (DImode, tmp);
+  rtx op_res, op_res_copy;
+
+  if (target && after)
+    op_res_copy = gen_reg_rtx (mode);
+
+  gcc_assert ((mode == SImode || mode == DImode));
+
+  k1_emit_pre_barrier (model, false);
+
+  emit_label (csloop); /* cas loop entry point */
+  /* copy memory content to perform op on it */
+  emit_move_insn (gen_lowpart (mode, curr_mem_val), force_reg (mode, mem));
+
+  /* Perform operation in a cas loop, we do not need to convert
+  CURR_MEM_VAL, NEW_MEM_VAL (DImode) and VAL (SImode or
+  DImode). expand_simple_binop () is smart enough to select the right
+  insn depending on MODE. */
+  switch (code)
+    {
+    case PLUS:
+    case IOR:
+    case XOR:
+    case MINUS:
+    case AND:
+      op_res = expand_simple_binop (mode, code, curr_mem_val, val, new_mem_val,
+				    1, OPTAB_LIB_WIDEN);
+      break;
+      case MULT: /* NAND */
+      {
+	rtx x = expand_simple_binop (mode, AND, curr_mem_val, val, NULL_RTX, 1,
+				     OPTAB_LIB_WIDEN);
+	op_res = expand_simple_unop (mode, NOT, x, new_mem_val, 1);
+	break;
+      }
+    case SET:
+      op_res = gen_reg_rtx (mode);
+      emit_move_insn (op_res, val);
+      break;
+    default:
+      gcc_unreachable ();
+    }
+
+  if (op_res != gen_lowpart (mode, new_mem_val))
+    emit_move_insn (gen_lowpart (mode, new_mem_val), op_res);
+
+  /* Save OP_RES when returning it (the result of the operation),
+     because ACSWAP will erase it. */
+  if (target && after)
+    emit_move_insn (op_res_copy, op_res);
+
+  /* Update memory with op result iff memory hasn't been modifyed
+  since, i.e: if CURR_MEM_VAL == MEM; then update MEM with
+  NEW_MEM_VAL; else try again */
+  emit_insn (mode == SImode ? gen_acswapw (tmp, mem) : gen_acswapd (tmp, mem));
+  /* ACSWAP insn returns 0x0 (fail) or 0x1 (success) in the low part
+     of TMP:
+     - if successful: MEM is updated, do not loop
+     - if failing: MEM has changed, try again */
+  emit_cmp_and_jump_insns (gen_lowpart (mode, new_mem_val), const1_rtx, NE,
+			   NULL_RTX, mode, true, csloop);
+
+  /* In addition to modifying MEM, return a value if needed */
+  if (target)
+    {
+      ret = (after
+	       /* returning op result */
+	       ? op_res_copy
+	       /* returning mem content before op */
+	       : gen_lowpart (mode, curr_mem_val));
+      emit_move_insn (target, ret);
+    }
+
+  k1_emit_post_barrier (model, false);
+}
 
 enum k1_builtin
 {
@@ -3392,33 +3527,30 @@ k1_builtin_helper_memref_ptr (rtx ptr, enum machine_mode mode)
   varname = force_reg (mode, varname);
 
 static rtx
-k1_expand_builtin_afaddd (rtx target, tree args)
+k1_expand_builtin_afadd (rtx target, tree args, enum machine_mode mode)
 {
-  MEMREF (0, DImode, mem_target);
-  GETREG (1, DImode, addend_and_return);
+  MEMREF (0, mode, mem_target);
+  GETREG (1, mode, addend_and_return);
 
-  target = k1_builtin_helper_check_reg_target (target, DImode);
+  target = k1_builtin_helper_check_reg_target (target, mode);
 
-  emit_insn (gen_afaddd (target, mem_target, addend_and_return,
-			 gen_rtx_CONST_INT (SImode, 0) /* unused mem model */));
+  switch (mode)
+    {
+    case DImode:
+      emit_insn (gen_afaddd (target, mem_target, addend_and_return));
+      break;
+    case SImode:
+      emit_insn (gen_afaddw (target, mem_target, addend_and_return));
+      break;
+    default:
+      gcc_unreachable ();
+    }
+
   return target;
 }
 
 static rtx
-k1_expand_builtin_afaddw (rtx target, tree args)
-{
-  MEMREF (0, DImode, mem_target);
-  GETREG (1, SImode, addend_and_return);
-
-  target = k1_builtin_helper_check_reg_target (target, SImode);
-
-  emit_insn (gen_afaddw (target, mem_target, addend_and_return,
-			 gen_rtx_CONST_INT (SImode, 0) /* unused mem model */));
-  return target;
-}
-
-static rtx
-k1_expand_builtin_acswap (rtx target, tree args, bool double_p)
+k1_expand_builtin_acswap (rtx target, tree args, enum machine_mode mode)
 {
   rtx ptr = expand_normal (CALL_EXPR_ARG (args, 0));
 
@@ -3427,7 +3559,7 @@ k1_expand_builtin_acswap (rtx target, tree args, bool double_p)
   if (!REG_P (ptr))
     ptr = force_reg (Pmode, ptr);
 
-  mem_ref = gen_rtx_MEM (double_p ? DImode : SImode, ptr);
+  mem_ref = gen_rtx_MEM (mode, ptr);
 
   rtx new_val = expand_normal (CALL_EXPR_ARG (args, 1));
   rtx expect_val = expand_normal (CALL_EXPR_ARG (args, 2));
@@ -3442,10 +3574,17 @@ k1_expand_builtin_acswap (rtx target, tree args, bool double_p)
   emit_move_insn (gen_lowpart (DImode, tmp), new_val);
   emit_move_insn (gen_highpart (DImode, tmp), expect_val);
 
-  if (double_p)
-    emit_insn (gen_acswapd (tmp, mem_ref));
-  else
-    emit_insn (gen_acswapw (tmp, mem_ref));
+  switch (mode)
+    {
+    case DImode:
+      emit_insn (gen_acswapd (tmp, mem_ref));
+      break;
+    case SImode:
+      emit_insn (gen_acswapw (tmp, mem_ref));
+      break;
+    default:
+      gcc_unreachable ();
+    }
 
   emit_move_insn (target, tmp);
 
@@ -4506,13 +4645,13 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case K1_BUILTIN_BARRIER:
       return k1_expand_builtin_barrier ();
     case K1_BUILTIN_ACSWAPW:
-      return k1_expand_builtin_acswap (target, exp, 0);
+      return k1_expand_builtin_acswap (target, exp, SImode);
     case K1_BUILTIN_ACSWAPD:
-      return k1_expand_builtin_acswap (target, exp, 1);
+      return k1_expand_builtin_acswap (target, exp, DImode);
     case K1_BUILTIN_AFADDD:
-      return k1_expand_builtin_afaddd (target, exp);
+      return k1_expand_builtin_afadd (target, exp, DImode);
     case K1_BUILTIN_AFADDW:
-      return k1_expand_builtin_afaddw (target, exp);
+      return k1_expand_builtin_afadd (target, exp, SImode);
     case K1_BUILTIN_ALCLRD:
       return k1_expand_builtin_alclr (target, exp, DImode);
     case K1_BUILTIN_ALCLRW:
@@ -4835,6 +4974,22 @@ k1_has_big_immediate (rtx x)
 	}
     }
   return 0;
+}
+
+bool
+k1_has_37bit_immediate_p (rtx x)
+{
+  subrtx_ptr_iterator::array_type array;
+  FOR_EACH_SUBRTX_PTR (iter, array, &x, ALL)
+    {
+      rtx *x = *iter;
+      if ((GET_CODE (*x) == CONST_INT
+	   && (INTVAL (*x) >= -0x1000000000 && INTVAL (*x) <= 0xFFFFFFFFF)))
+	{
+	  return true;
+	}
+    }
+  return false;
 }
 
 /* Test whether the memory operand OP should be accessed cached or
