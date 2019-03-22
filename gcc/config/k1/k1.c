@@ -5114,6 +5114,7 @@ k1_has_big_immediate (rtx x)
 	return 1;
       }
     }
+  return 0;
 }
 
 /* Test whether the memory operand OP should be accessed cached or
