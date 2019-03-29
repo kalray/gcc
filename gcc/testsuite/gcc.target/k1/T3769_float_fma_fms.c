@@ -1,5 +1,5 @@
 /* { dg-do  compile } */
-/* { dg-options "-O1"  } */
+/* { dg-options "-O2 -ffp-contract=off" } */
 
 #include <math.h>
 
