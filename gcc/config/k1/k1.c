@@ -5340,8 +5340,7 @@ k1_has_big_immediate (rtx x)
 }
 
 /* Test whether the memory operand OP should be accessed cached or
-   uncached regarding it's name address space and the value of the
-   flag K1_FORCE_UNCACHED_LSU. */
+   uncached regarding it's name address space. */
 bool
 k1_is_uncached_mem_op_p (rtx op)
 {
