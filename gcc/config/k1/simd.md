@@ -16,7 +16,7 @@
 ;;    [(set (match_operand:V2SF 0 "nonimmediate_operand" "=r,=r,=r,=a,=m,=r,=r,=r")
 ;;          (match_operand:V2SF 1 "general_operand" "r, a, m, r, r,I16,D37,i"))]
 ;;     "  (!immediate_operand(operands[1], V2SFmode) || !memory_operand(operands[0], V2SFmode))
-;;     && !((memory_operand(operands[0], V2SFmode) || memory_operand(operands[1], V2SFmode)) && K1_FORCE_UNCACHED_LSU)"
+;;     "
 ;; {
 ;;     switch (which_alternative) {
 ;;     	   case 0: return "ord   %d0 = %d1, 0";
@@ -32,24 +32,6 @@
 ;; }
 ;; [(set_attr "type" "alud,lsu_load,lsu_load_x,lsu_store,lsu_store_x,alud,alud_y,alud_z")
 ;;  (set_attr "length" "8,4,8,4,8,8,12,16")]
-;; )
-;; 
-;; (define_insn "*movv2sf_uncached"
-;;    [(set (match_operand:V2SF 0 "nonimmediate_operand" "=r,r,a,m")
-;;          (match_operand:V2SF 1 "nonimmediate_operand" " a,m,r,r"))]
-;;     "  !(memory_operand(operands[0], V2SFmode) && memory_operand(operands[1], V2SFmode))
-;;     && K1_FORCE_UNCACHED_LSU"
-;; {
-;;     switch (which_alternative) {
-;;     	   case 0:
-;; 	   case 1: return "ld%m1   %0 = %1";
-;; 	   case 2:
-;; 	   case 3: return "sd%m0   %0 = %1";
-;; 	   default: gcc_unreachable ();
-;;     }
-;; }
-;; [(set_attr "type" "lsu_load_uncached,lsu_load_uncached_x,lsu_store,lsu_store_x")
-;;  (set_attr "length" "4,8,4,8")]
 ;; )
 ;; 
 ;; (define_expand "movv8sf"
