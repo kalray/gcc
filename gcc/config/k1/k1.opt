@@ -24,10 +24,6 @@ mfarcall
 Target Report Var(K1_FARCALL)
 Avoid all range limits on call instructions
 
-mforce-uncached-lsu
-Target Report Var(K1_FORCE_UNCACHED_LSU)
-Force the use of uncached instructions for all memory accesses. 
-
 mcore=k1c
 Target RejectNegative Report Mask(K1C)
 Compile for K1C ISA
