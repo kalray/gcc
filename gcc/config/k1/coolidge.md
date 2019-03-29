@@ -169,6 +169,10 @@
   (eq_attr "type" "alu_full_y")
   "k1c_alu_full.y_r")
 
+(define_insn_reservation "k1c_alu_copro" 15
+  (eq_attr "type" "alu_full_copro")
+  "k1c_alu_full_r")
+
 (define_insn_reservation "k1c_bcu" 1
   (eq_attr "type" "bcu")
   "k1c_bcu_r")
