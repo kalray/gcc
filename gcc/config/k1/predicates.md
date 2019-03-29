@@ -9,7 +9,7 @@
        (match_test "op == const0_rtx")))
 
 (define_predicate "const_float_1_operand"
-  (match_code "const_int")
+  (match_code "const_double")
 {
   if (GET_CODE (op) != CONST_DOUBLE
       || mode != GET_MODE (op)
