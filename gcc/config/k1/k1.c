@@ -557,6 +557,8 @@ static bool
 k1_target_legitimate_address_p (enum machine_mode ATTRIBUTE_UNUSED mode, rtx x,
 				bool strict);
 
+static bool k1_scalar_mode_supported_p (enum machine_mode mode);
+
 bool k1_legitimate_pic_symbolic_ref_p (rtx op);
 
 static bool k1_legitimate_constant_p (enum machine_mode mode ATTRIBUTE_UNUSED,
@@ -5238,7 +5240,7 @@ k1_target_sched_adjust_cost (rtx_insn *insn, int dep_type, rtx_insn *dep_insn,
 static int
 k1_target_sched_issue_rate (void)
 {
-  return 5;
+  return 4;
 }
 
 static int
@@ -6346,6 +6348,19 @@ k1_target_legitimate_address_p (enum machine_mode ATTRIBUTE_UNUSED mode, rtx x,
   return ret;
 }
 
+/* We enable OImode in addition to the C modes (including TImode). */
+static bool
+k1_scalar_mode_supported_p (enum machine_mode mode)
+{
+  switch (mode)
+    {
+    case OImode:
+      return true;
+    default:
+      return default_scalar_mode_supported_p (mode);
+    }
+}
+
 static bool
 k1_legitimate_constant_p (enum machine_mode mode ATTRIBUTE_UNUSED, rtx x)
 {
@@ -7083,6 +7098,22 @@ k1_mode_dependent_address_p (const_rtx addr ATTRIBUTE_UNUSED,
   return current_pass->tv_id == TV_LOWER_SUBREG;
 }
 
+/* Implement TARGET_SCHED_CAN_SPECULATE_INSN.  Return true if INSN can be
+   scheduled for speculative execution.  Reject the long-running division
+   and square-root instructions. (Like in aarch64.c) */
+
+static bool
+k1_sched_can_speculate_insn (rtx_insn *insn)
+{
+  switch (get_attr_type (insn))
+    {
+    case TYPE_ALU_FULL_COPRO:
+      return false;
+    default:
+      return true;
+    }
+}
+
 static bool
 k1_lra_p (void)
 {
@@ -7201,6 +7232,9 @@ k1_profile_hook (void)
 
 #undef TARGET_LEGITIMATE_ADDRESS_P
 #define TARGET_LEGITIMATE_ADDRESS_P k1_target_legitimate_address_p
+
+#undef TARGET_SCALAR_MODE_SUPPORTED_P
+#define TARGET_SCALAR_MODE_SUPPORTED_P k1_scalar_mode_supported_p
 
 #undef TARGET_DECIMAL_FLOAT_SUPPORTED_P
 #define TARGET_DECIMAL_FLOAT_SUPPORTED_P k1_target_decimal_float_supported_p
@@ -7334,6 +7368,9 @@ k1_profile_hook (void)
 
 #undef TARGET_MODE_DEPENDENT_ADDRESS_P
 #define TARGET_MODE_DEPENDENT_ADDRESS_P k1_mode_dependent_address_p
+
+#undef TARGET_SCHED_CAN_SPECULATE_INSN
+#define TARGET_SCHED_CAN_SPECULATE_INSN k1_sched_can_speculate_insn
 
 #undef TARGET_CAN_USE_DOLOOP_P
 #define TARGET_CAN_USE_DOLOOP_P can_use_doloop_if_innermost
