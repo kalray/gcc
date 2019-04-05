@@ -127,6 +127,7 @@ extern HOST_WIDE_INT k1_initial_elimination_offset (int, int);
 enum k1_symbol_type
 {
   LABEL_PCREL_ABSOLUTE,
+  LABEL_ABSOLUTE,
   SYMBOL_ABSOLUTE,
   SYMBOL_GOT,
   SYMBOL_GOTOFF,
