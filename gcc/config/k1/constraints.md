@@ -6,6 +6,10 @@
   (ior (match_code "const_double,const_int")
        (match_test "k1_symbol_operand(op,mode)")))
 
+(define_constraint "T"
+  "A label reference"
+  (match_code "label_ref"))
+
 (define_constraint "U02"
   "An unsigned 2-bit constant."
   (and (match_code "const_int")
