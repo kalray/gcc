@@ -1226,6 +1226,12 @@ k1_target_print_operand (FILE *file, rtx x, int code)
       is_float = true;
       break;
 
+    case 'T':
+      fprintf (file, "@pcrel(");
+      output_addr_const (file, operand);
+      fprintf (file, ")");
+      return;
+
     case 'm':
       addressing_mode = true;
       break;
@@ -2108,10 +2114,9 @@ k1_legitimate_pic_symbolic_ref_p (rtx op)
 bool
 k1_legitimate_pic_operand_p (rtx x)
 {
-  if (GET_CODE (x) == SYMBOL_REF || GET_CODE (x) == LABEL_REF
+  if (GET_CODE (x) == SYMBOL_REF
       || (GET_CODE (x) == CONST && GET_CODE (XEXP (x, 0)) == PLUS
-	  && (GET_CODE (XEXP (XEXP (x, 0), 0)) == SYMBOL_REF
-	      || GET_CODE (XEXP (XEXP (x, 0), 0)) == LABEL_REF)))
+	  && GET_CODE (XEXP (XEXP (x, 0), 0)) == SYMBOL_REF))
     return false;
 
   return true;
@@ -2136,8 +2141,11 @@ k1_classify_symbol (rtx x)
   if (k1_tls_symbol_p (x))
     return SYMBOL_TPREL;
 
+  /* We keep both way of materializing the absolute address of a label
+     because the use of pcrel insn has greater constraints on bundling
+     (ALU_FULL) versus a simple make (ALU_TINY) */
   if (GET_CODE (x) == LABEL_REF)
-    return flag_pic ? LABEL_PCREL_ABSOLUTE : SYMBOL_ABSOLUTE;
+    return flag_pic ? LABEL_PCREL_ABSOLUTE : LABEL_ABSOLUTE;
 
   if (GET_CODE (x) == SYMBOL_REF)
     {
@@ -2168,8 +2176,6 @@ k1_expand_mov_constant (rtx operands[])
       rtx pic_reg;
       rtx (*gen_set_gotp) (rtx target)
 	= !TARGET_32 ? gen_set_gotp_di : gen_set_gotp_si;
-      rtx (*gen_addpcrel) (rtx target, rtx label)
-	= !TARGET_32 ? gen_add_pcrel_di : gen_add_pcrel_si;
 
       /* If we have (const (plus symbol offset)), separate out the offset
 	 before we start classifying the symbol.  */
@@ -2179,17 +2185,12 @@ k1_expand_mov_constant (rtx operands[])
       switch (sty)
 	{
 	case SYMBOL_ABSOLUTE:
-	  /* Emit: dest = sym */
-	  emit_insn (gen_rtx_SET (dest, src));
-	  break;
-
+	case LABEL_ABSOLUTE:
 	case LABEL_PCREL_ABSOLUTE:
-	  /* Emit: dest = @pcrel(sym) */
-	  emit_insn (gen_addpcrel (dest, XEXP (base, 0)));
-
-	  if (INTVAL (offset) != 0)
-	    emit_insn (gen_add2_insn (dest, offset));
-
+	  /* Emit: dest = sym */
+	  /* In case we need a pcrel for a label, it should be handled
+	     by the pcrel insn */
+	  emit_insn (gen_rtx_SET (dest, src));
 	  break;
 
 	case SYMBOL_GOT:
@@ -2239,6 +2240,9 @@ k1_expand_mov_constant (rtx operands[])
 	  emit_insn (gen_rtx_SET (dest, operands[1]));
 	  gcc_assert (operands[1] != src);
 	  break;
+
+	default:
+	  gcc_unreachable ();
 	}
       return;
     }
