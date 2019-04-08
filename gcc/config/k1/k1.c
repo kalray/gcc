@@ -544,8 +544,6 @@ static bool k1_output_addr_const_extra (FILE *, rtx);
 static bool k1_target_legitimate_address_p (enum machine_mode ATTRIBUTE_UNUSED mode,
 					    rtx x, bool strict);
 
-static bool k1_scalar_mode_supported_p (enum machine_mode mode);
-
 bool k1_legitimate_pic_symbolic_ref_p (rtx op);
 
 static bool k1_legitimate_constant_p (enum machine_mode mode ATTRIBUTE_UNUSED, rtx x);
@@ -6098,19 +6096,6 @@ k1_target_legitimate_address_p (enum machine_mode ATTRIBUTE_UNUSED mode,
     return ret;
 }
 
-/* We enable OImode in addition to the C modes (including TImode). */
-static bool
-k1_scalar_mode_supported_p (enum machine_mode mode)
-{
-  switch (mode)
-    {
-    case OImode:
-      return true;
-    default:
-      return default_scalar_mode_supported_p (mode);
-    }
-}
-
 static bool
 k1_legitimate_constant_p (enum machine_mode mode ATTRIBUTE_UNUSED, rtx x)
 {
@@ -6966,9 +6951,6 @@ void k1_profile_hook (void)
 
 #undef TARGET_LEGITIMATE_ADDRESS_P
 #define TARGET_LEGITIMATE_ADDRESS_P k1_target_legitimate_address_p
-
-#undef TARGET_SCALAR_MODE_SUPPORTED_P
-#define TARGET_SCALAR_MODE_SUPPORTED_P k1_scalar_mode_supported_p
 
 #undef TARGET_DECIMAL_FLOAT_SUPPORTED_P
 #define TARGET_DECIMAL_FLOAT_SUPPORTED_P k1_target_decimal_float_supported_p
