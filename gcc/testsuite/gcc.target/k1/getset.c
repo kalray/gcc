@@ -46,15 +46,15 @@ profile(unsigned int iter)
 
     for (i = 0; i < iter; ++i) {
         TH_StartTimer ();
-        asm(NOP ::: "memory");
+        __asm__(NOP ::: "memory");
         timer1 += TH_StopTimer ();
         
         TH_StartTimer ();
-        asm(NOP5 ::: "memory");
+        __asm__(NOP5 ::: "memory");
         timer2 += TH_StopTimer ();
 
         TH_StartTimer ();
-        asm(NOP5 NOP5 ::: "memory");
+        __asm__(NOP5 NOP5 ::: "memory");
         timer3 += TH_StopTimer ();
     }
 
