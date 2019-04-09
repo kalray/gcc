@@ -2651,6 +2651,7 @@ do {								        \
 
 /* Nonzero when we are generating CONCATs.  */
 extern int generating_concat_p;
+extern int generating_concat_minsize;
 
 /* Nonzero when we are expanding trees to RTL.  */
 extern int currently_expanding_to_rtl;

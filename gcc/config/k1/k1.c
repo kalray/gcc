@@ -518,9 +518,9 @@ k1_hard_regno_mode_ok (unsigned regno, enum machine_mode mode)
   if (GET_MODE_SIZE (mode) <= UNITS_PER_WORD)
     return 1;
   if (regno >= K1C_GRF_FIRST_REGNO && regno <= K1C_GRF_LAST_REGNO) {
-    if (mode == TImode)
+    if (GET_MODE_SIZE (mode) == 2 * UNITS_PER_WORD)
       return (regno % 2 == 0);
-    if (mode == OImode)
+    if (GET_MODE_SIZE (mode) == 4 * UNITS_PER_WORD)
       return (regno % 4 == 0);
   }
   return 0;
@@ -1729,6 +1729,7 @@ k1_init_expanders (void)
 {
     /* Arrange to initialize and mark the machine per-function status.  */
     init_machine_status = k1_init_machine_status;
+    generating_concat_minsize = GET_MODE_SIZE (DCmode) + 1;
 }
 
 bool
@@ -2664,17 +2665,33 @@ enum k1_builtin {
     K1_BUILTIN_FISRW,
     K1_BUILTIN_FADDW,
     K1_BUILTIN_FADDD,
+    K1_BUILTIN_FADDWC,
+    K1_BUILTIN_FADDCWC,
+    K1_BUILTIN_FADDDC,
+    K1_BUILTIN_FADDCDC,
     K1_BUILTIN_FSBFW,
     K1_BUILTIN_FSBFD,
+    K1_BUILTIN_FSBFWC,
+    K1_BUILTIN_FSBFCWC,
+    K1_BUILTIN_FSBFDC,
+    K1_BUILTIN_FSBFCDC,
     K1_BUILTIN_FMULW,
     K1_BUILTIN_FMULD,
     K1_BUILTIN_FMULWD,
+    K1_BUILTIN_FMULWC,
+    K1_BUILTIN_FMULCWC,
+    K1_BUILTIN_FMULDC,
+    K1_BUILTIN_FMULCDC,
     K1_BUILTIN_FFMAW,
     K1_BUILTIN_FFMAD,
     K1_BUILTIN_FFMAWD,
+    K1_BUILTIN_FFMAWC,
+    K1_BUILTIN_FFMADC,
     K1_BUILTIN_FFMSW,
     K1_BUILTIN_FFMSD,
     K1_BUILTIN_FFMSWD,
+    K1_BUILTIN_FFMSWC,
+    K1_BUILTIN_FFMSDC,
 
     K1_BUILTIN_FCDIVW,
     K1_BUILTIN_FCDIVD,
@@ -2808,6 +2825,9 @@ k1_target_init_builtins (void)
 
 #define floatSF float_type_node
 #define floatDF double_type_node
+#define floatSC complex_float_type_node
+#define floatDC complex_double_type_node
+
 #define VOID void_type_node
 
 #define voidPTR ptr_type_node
@@ -2876,37 +2896,53 @@ k1_target_init_builtins (void)
     ADD_K1_BUILTIN (FISRW,   "fisrw",       floatSF, floatSF, uintSI, uintSI);
     ADD_K1_BUILTIN (FADDW,   "faddw",       floatSF, floatSF, floatSF, uintSI, uintSI);
     ADD_K1_BUILTIN (FADDD,   "faddd",       floatDF, floatDF, floatDF, uintSI, uintSI);
+    ADD_K1_BUILTIN (FADDWC,  "faddwc",      floatSC, floatSC, floatSC, uintSI, uintSI);
+    ADD_K1_BUILTIN (FADDCWC, "faddcwc",     floatSC, floatSC, floatSC, uintSI, uintSI);
+    ADD_K1_BUILTIN (FADDDC,  "fadddc",      floatDC, floatDC, floatDC, uintSI, uintSI);
+    ADD_K1_BUILTIN (FADDCDC, "faddcdc",     floatDC, floatDC, floatDC, uintSI, uintSI);
     ADD_K1_BUILTIN (FSBFW,   "fsbfw",       floatSF, floatSF, floatSF, uintSI, uintSI);
     ADD_K1_BUILTIN (FSBFD,   "fsbfd",       floatDF, floatDF, floatDF, uintSI, uintSI);
+    ADD_K1_BUILTIN (FSBFWC,  "fsbfwc",      floatSC, floatSC, floatSC, uintSI, uintSI);
+    ADD_K1_BUILTIN (FSBFCWC, "fsbfcwc",     floatSC, floatSC, floatSC, uintSI, uintSI);
+    ADD_K1_BUILTIN (FSBFDC,  "fsbfdc",      floatDC, floatDC, floatDC, uintSI, uintSI);
+    ADD_K1_BUILTIN (FSBFCDC, "fsbfcdc",     floatDC, floatDC, floatDC, uintSI, uintSI);
     ADD_K1_BUILTIN (FMULW,   "fmulw",       floatSF, floatSF, floatSF, uintSI, uintSI);
     ADD_K1_BUILTIN (FMULD,   "fmuld",       floatDF, floatDF, floatDF, uintSI, uintSI);
     ADD_K1_BUILTIN (FMULWD,  "fmulwd",      floatDF, floatSF, floatSF, uintSI, uintSI);
+    ADD_K1_BUILTIN (FMULWC,  "fmulwc",      floatSC, floatSC, floatSC, uintSI, uintSI);
+    ADD_K1_BUILTIN (FMULCWC, "fmulcwc",     floatSC, floatSC, floatSC, uintSI, uintSI);
+    ADD_K1_BUILTIN (FMULDC,  "fmuldc",      floatDC, floatDC, floatDC, uintSI, uintSI);
+    ADD_K1_BUILTIN (FMULCDC, "fmulcdc",     floatDC, floatDC, floatDC, uintSI, uintSI);
     ADD_K1_BUILTIN (FFMAW,   "ffmaw",       floatSF, floatSF, floatSF, floatSF, uintSI, uintSI);
     ADD_K1_BUILTIN (FFMAD,   "ffmad",       floatDF, floatDF, floatDF, floatDF, uintSI, uintSI);
     ADD_K1_BUILTIN (FFMAWD,  "ffmawd",      floatDF, floatDF, floatSF, floatSF, uintSI, uintSI);
+    ADD_K1_BUILTIN (FFMAWC,  "ffmawc",      floatSC, floatSC, floatSC, floatSC, uintSI, uintSI);
+    ADD_K1_BUILTIN (FFMADC,  "ffmadc",      floatDC, floatDC, floatDC, floatDC, uintSI, uintSI);
     ADD_K1_BUILTIN (FFMSW,   "ffmsw",       floatSF, floatSF, floatSF, floatSF, uintSI, uintSI);
     ADD_K1_BUILTIN (FFMSD,   "ffmsd",       floatDF, floatDF, floatDF, floatDF, uintSI, uintSI);
     ADD_K1_BUILTIN (FFMSWD,  "ffmswd",      floatDF, floatDF, floatSF, floatSF, uintSI, uintSI);
+    ADD_K1_BUILTIN (FFMSWC,  "ffmswc",      floatSC, floatSC, floatSC, floatSC, uintSI, uintSI);
+    ADD_K1_BUILTIN (FFMSDC,  "ffmsdc",      floatDC, floatDC, floatDC, floatDC, uintSI, uintSI);
 
-    ADD_K1_BUILTIN (FCDIVW,   "fcdivw",       floatSF,floatSF,floatSF);
-    ADD_K1_BUILTIN (FCDIVD,   "fcdivd",       floatDF,floatDF,floatDF);
-    ADD_K1_BUILTIN (FENCE,    "fence",       VOID);
+    ADD_K1_BUILTIN (FCDIVW,   "fcdivw",     floatSF,floatSF,floatSF);
+    ADD_K1_BUILTIN (FCDIVD,   "fcdivd",     floatDF,floatDF,floatDF);
+    ADD_K1_BUILTIN (FENCE,    "fence",      VOID);
 
     ADD_K1_BUILTIN (FLOAT,   "float",       floatSF, uintQI,  intSI, uintQI);
     ADD_K1_BUILTIN (FLOATD,  "floatd",      floatDF, uintQI,  intDI, uintQI);
     ADD_K1_BUILTIN (FLOATU,  "floatu",      floatSF, uintQI, uintSI, uintQI);
     ADD_K1_BUILTIN (FLOATUD, "floatud",     floatDF, uintQI, uintDI, uintQI);
-    ADD_K1_BUILTIN (FIXED,   "fixed",         intSI, uintQI,floatSF, uintQI);
-    ADD_K1_BUILTIN (FIXEDD,  "fixedd",        intDI, uintQI,floatDF, uintQI);
-    ADD_K1_BUILTIN (FIXEDU,  "fixedu",       uintSI, uintQI,floatSF, uintQI);
-    ADD_K1_BUILTIN (FIXEDUD, "fixedud",      uintDI, uintQI,floatDF, uintQI);
+    ADD_K1_BUILTIN (FIXED,   "fixed",       intSI, uintQI,floatSF, uintQI);
+    ADD_K1_BUILTIN (FIXEDD,  "fixedd",      intDI, uintQI,floatDF, uintQI);
+    ADD_K1_BUILTIN (FIXEDU,  "fixedu",      uintSI, uintQI,floatSF, uintQI);
+    ADD_K1_BUILTIN (FIXEDUD, "fixedud",     uintDI, uintQI,floatDF, uintQI);
 
-    ADD_K1_BUILTIN (FSDIVW,  "fsdivw",       floatSF,floatSF,floatSF);
-    ADD_K1_BUILTIN (FSDIVD,  "fsdivd",       floatDF,floatDF,floatDF);
-    ADD_K1_BUILTIN (FSINVW,  "fsinvw",       floatSF,floatSF);
-    ADD_K1_BUILTIN (FSINVD,  "fsinvd",       floatDF,floatDF);
-    ADD_K1_BUILTIN (FSISRW,  "fsisrw",       floatSF,floatSF);
-    ADD_K1_BUILTIN (FSISRD,  "fsisrd",       floatDF,floatDF);
+    ADD_K1_BUILTIN (FSDIVW,  "fsdivw",      floatSF,floatSF,floatSF);
+    ADD_K1_BUILTIN (FSDIVD,  "fsdivd",      floatDF,floatDF,floatDF);
+    ADD_K1_BUILTIN (FSINVW,  "fsinvw",      floatSF,floatSF);
+    ADD_K1_BUILTIN (FSINVD,  "fsinvd",      floatDF,floatDF);
+    ADD_K1_BUILTIN (FSISRW,  "fsisrw",      floatSF,floatSF);
+    ADD_K1_BUILTIN (FSISRD,  "fsisrd",      floatDF,floatDF);
     ADD_K1_BUILTIN (GET,     "get",         uintDI,  intSI);
     /* FIXME AUTO: Disabling get builtin. Ref T7705 */
     /* ADD_K1_BUILTIN (GET_R,   "get_r",       uintDI,  intSI); */
@@ -4052,14 +4088,24 @@ k1_expand_builtin_##name (rtx target, tree args) \
 }
 
 K1_EXPAND_BUILTIN_3_MODIFIERS(faddw, SFmode, SFmode)
-K1_EXPAND_BUILTIN_3_MODIFIERS(fsbfw, SFmode, SFmode)
-K1_EXPAND_BUILTIN_3_MODIFIERS(fmulw, SFmode, SFmode)
-
 K1_EXPAND_BUILTIN_3_MODIFIERS(faddd, DFmode, DFmode)
+K1_EXPAND_BUILTIN_3_MODIFIERS(faddwc, SCmode, SCmode)
+K1_EXPAND_BUILTIN_3_MODIFIERS(faddcwc, SCmode, SCmode)
+K1_EXPAND_BUILTIN_3_MODIFIERS(fadddc, DCmode, DCmode)
+K1_EXPAND_BUILTIN_3_MODIFIERS(faddcdc, DCmode, DCmode)
+K1_EXPAND_BUILTIN_3_MODIFIERS(fsbfw, SFmode, SFmode)
 K1_EXPAND_BUILTIN_3_MODIFIERS(fsbfd, DFmode, DFmode)
+K1_EXPAND_BUILTIN_3_MODIFIERS(fsbfwc, SCmode, SCmode)
+K1_EXPAND_BUILTIN_3_MODIFIERS(fsbfcwc, SCmode, SCmode)
+K1_EXPAND_BUILTIN_3_MODIFIERS(fsbfdc, DCmode, DCmode)
+K1_EXPAND_BUILTIN_3_MODIFIERS(fsbfcdc, DCmode, DCmode)
+K1_EXPAND_BUILTIN_3_MODIFIERS(fmulw, SFmode, SFmode)
 K1_EXPAND_BUILTIN_3_MODIFIERS(fmuld, DFmode, DFmode)
-
 K1_EXPAND_BUILTIN_3_MODIFIERS(fmulwd, DFmode, SFmode)
+K1_EXPAND_BUILTIN_3_MODIFIERS(fmulwc, SCmode, SCmode)
+K1_EXPAND_BUILTIN_3_MODIFIERS(fmulcwc, SCmode, SCmode)
+K1_EXPAND_BUILTIN_3_MODIFIERS(fmuldc, DCmode, DCmode)
+K1_EXPAND_BUILTIN_3_MODIFIERS(fmulcdc, DCmode, DCmode)
 
 #define K1_EXPAND_BUILTIN_4_MODIFIERS(name, tmode, smode) \
 static rtx \
@@ -4087,13 +4133,15 @@ k1_expand_builtin_##name (rtx target, tree args) \
 }
 
 K1_EXPAND_BUILTIN_4_MODIFIERS(ffmaw, SFmode, SFmode)
-K1_EXPAND_BUILTIN_4_MODIFIERS(ffmsw, SFmode, SFmode)
-
 K1_EXPAND_BUILTIN_4_MODIFIERS(ffmad, DFmode, DFmode)
-K1_EXPAND_BUILTIN_4_MODIFIERS(ffmsd, DFmode, DFmode)
-
 K1_EXPAND_BUILTIN_4_MODIFIERS(ffmawd, DFmode, SFmode)
+K1_EXPAND_BUILTIN_4_MODIFIERS(ffmawc, SCmode, SCmode)
+K1_EXPAND_BUILTIN_4_MODIFIERS(ffmadc, DCmode, DCmode)
+K1_EXPAND_BUILTIN_4_MODIFIERS(ffmsw, SFmode, SFmode)
+K1_EXPAND_BUILTIN_4_MODIFIERS(ffmsd, DFmode, DFmode)
 K1_EXPAND_BUILTIN_4_MODIFIERS(ffmswd, DFmode, SFmode)
+K1_EXPAND_BUILTIN_4_MODIFIERS(ffmswc, SCmode, SCmode)
+K1_EXPAND_BUILTIN_4_MODIFIERS(ffmsdc, DCmode, DCmode)
 
 
 static rtx
@@ -4780,116 +4828,78 @@ k1_target_expand_builtin (tree exp,
     unsigned int fcode = DECL_FUNCTION_CODE (fndecl);
 
     switch (fcode) {
-    case K1_BUILTIN_ABDW:
-        return k1_expand_builtin_abdw (target, exp);
-    case K1_BUILTIN_ABDD:
-        return k1_expand_builtin_abdd (target, exp);
-    case K1_BUILTIN_ADDSW:
-        return k1_expand_builtin_addsw (target, exp);
-    case K1_BUILTIN_ADDSD:
-        return k1_expand_builtin_addsd (target, exp);
-    case K1_BUILTIN_SBFSW:
-        return k1_expand_builtin_sbfsw (target, exp);
-    case K1_BUILTIN_SBFSD:
-        return k1_expand_builtin_sbfsd (target, exp);
-    case K1_BUILTIN_AVGW:
-        return k1_expand_builtin_avgw (target, exp);
-    case K1_BUILTIN_AVGUW:
-        return k1_expand_builtin_avguw (target, exp);
-    case K1_BUILTIN_AVGRW:
-        return k1_expand_builtin_avgrw (target, exp);
-    case K1_BUILTIN_AVGRUW:
-        return k1_expand_builtin_avgruw (target, exp);
-    case K1_BUILTIN_AWAIT:
-        return k1_expand_builtin_await (target, exp);
-    case K1_BUILTIN_BARRIER:
-        return k1_expand_builtin_barrier ();
-    case K1_BUILTIN_ACSWAPW:
-      return k1_expand_builtin_acswap (target, exp, 0);
-    case K1_BUILTIN_ACSWAPD:
-      return k1_expand_builtin_acswap (target, exp, 1);
-    case K1_BUILTIN_AFADDD:
-      return k1_expand_builtin_afaddd (target, exp);
-    case K1_BUILTIN_AFADDW:
-      return k1_expand_builtin_afaddw (target, exp);
-    case K1_BUILTIN_ALCLRD:
-      return k1_expand_builtin_alclr (target, exp, DImode);
-    case K1_BUILTIN_ALCLRW:
-      return k1_expand_builtin_alclr (target, exp, SImode);
-    case K1_BUILTIN_CBSW:
-        return k1_expand_builtin_cbsw (target, exp);
-    case K1_BUILTIN_CBSD:
-        return k1_expand_builtin_cbsd (target, exp);
-    case K1_BUILTIN_CLZW:
-        return k1_expand_builtin_clzw (target, exp);
-    case K1_BUILTIN_CLZD:
-        return k1_expand_builtin_clzd (target, exp);
-    case K1_BUILTIN_CTZW:
-        return k1_expand_builtin_ctzw (target, exp);
-    case K1_BUILTIN_CTZD:
-        return k1_expand_builtin_ctzd (target, exp);
-    case K1_BUILTIN_DINVAL:
-        return k1_expand_builtin_dinval ();
-    case K1_BUILTIN_DINVALL:
-        return k1_expand_builtin_dinvall (target, exp);
-    case K1_BUILTIN_DOZE:
-        return k1_expand_builtin_doze (target, exp);
-    case K1_BUILTIN_DTOUCHL:
-        return k1_expand_builtin_dtouchl (target, exp);
-    case K1_BUILTIN_DZEROL:
-        return k1_expand_builtin_dzerol (target, exp);
-    case K1_BUILTIN_EXTFZ:
-        return k1_expand_builtin_extfz (target, exp);
+    case K1_BUILTIN_ABDW: return k1_expand_builtin_abdw (target, exp);
+    case K1_BUILTIN_ABDD: return k1_expand_builtin_abdd (target, exp);
+    case K1_BUILTIN_ADDSW: return k1_expand_builtin_addsw (target, exp);
+    case K1_BUILTIN_ADDSD: return k1_expand_builtin_addsd (target, exp);
+    case K1_BUILTIN_SBFSW: return k1_expand_builtin_sbfsw (target, exp);
+    case K1_BUILTIN_SBFSD: return k1_expand_builtin_sbfsd (target, exp);
+    case K1_BUILTIN_AVGW: return k1_expand_builtin_avgw (target, exp);
+    case K1_BUILTIN_AVGUW: return k1_expand_builtin_avguw (target, exp);
+    case K1_BUILTIN_AVGRW: return k1_expand_builtin_avgrw (target, exp);
+    case K1_BUILTIN_AVGRUW: return k1_expand_builtin_avgruw (target, exp);
+    case K1_BUILTIN_AWAIT: return k1_expand_builtin_await (target, exp);
+    case K1_BUILTIN_BARRIER: return k1_expand_builtin_barrier ();
+    case K1_BUILTIN_ACSWAPW: return k1_expand_builtin_acswap (target, exp, 0);
+    case K1_BUILTIN_ACSWAPD: return k1_expand_builtin_acswap (target, exp, 1);
+    case K1_BUILTIN_AFADDD: return k1_expand_builtin_afaddd (target, exp);
+    case K1_BUILTIN_AFADDW: return k1_expand_builtin_afaddw (target, exp);
+    case K1_BUILTIN_ALCLRD: return k1_expand_builtin_alclr (target, exp, DImode);
+    case K1_BUILTIN_ALCLRW: return k1_expand_builtin_alclr (target, exp, SImode);
+    case K1_BUILTIN_CBSW: return k1_expand_builtin_cbsw (target, exp);
+    case K1_BUILTIN_CBSD: return k1_expand_builtin_cbsd (target, exp);
+    case K1_BUILTIN_CLZW: return k1_expand_builtin_clzw (target, exp);
+    case K1_BUILTIN_CLZD: return k1_expand_builtin_clzd (target, exp);
+    case K1_BUILTIN_CTZW: return k1_expand_builtin_ctzw (target, exp);
+    case K1_BUILTIN_CTZD: return k1_expand_builtin_ctzd (target, exp);
+    case K1_BUILTIN_DINVAL: return k1_expand_builtin_dinval ();
+    case K1_BUILTIN_DINVALL: return k1_expand_builtin_dinvall (target, exp);
+    case K1_BUILTIN_DOZE: return k1_expand_builtin_doze (target, exp);
+    case K1_BUILTIN_DTOUCHL: return k1_expand_builtin_dtouchl (target, exp);
+    case K1_BUILTIN_DZEROL: return k1_expand_builtin_dzerol (target, exp);
+    case K1_BUILTIN_EXTFZ: return k1_expand_builtin_extfz (target, exp);
 
-    case K1_BUILTIN_FABSW:
-        return k1_expand_builtin_fabsw (target, exp);
-    case K1_BUILTIN_FABSD:
-        return k1_expand_builtin_fabsd (target, exp);
-    case K1_BUILTIN_FNEGW:
-        return k1_expand_builtin_fnegw (target, exp);
-    case K1_BUILTIN_FNEGD:
-        return k1_expand_builtin_fnegd (target, exp);
-    case K1_BUILTIN_FMAXW:
-        return k1_expand_builtin_fmaxw (target, exp);
-    case K1_BUILTIN_FMAXD:
-        return k1_expand_builtin_fmaxd (target, exp);
-    case K1_BUILTIN_FMINW:
-        return k1_expand_builtin_fminw (target, exp);
-    case K1_BUILTIN_FMIND:
-        return k1_expand_builtin_fmind (target, exp);
-    case K1_BUILTIN_FINVW:
-        return k1_expand_builtin_finvw (target, exp);
-    case K1_BUILTIN_FISRW:
-        return k1_expand_builtin_fisrw (target, exp);
-    case K1_BUILTIN_FADDW:
-        return k1_expand_builtin_faddw (target, exp);
-    case K1_BUILTIN_FADDD:
-        return k1_expand_builtin_faddd (target, exp);
-    case K1_BUILTIN_FSBFW:
-        return k1_expand_builtin_fsbfw (target, exp);
-    case K1_BUILTIN_FSBFD:
-        return k1_expand_builtin_fsbfd (target, exp);
-    case K1_BUILTIN_FMULW:
-        return k1_expand_builtin_fmulw (target, exp);
-    case K1_BUILTIN_FMULD:
-        return k1_expand_builtin_fmuld (target, exp);
-    case K1_BUILTIN_FMULWD:
-        return k1_expand_builtin_fmulwd (target, exp);
-    case K1_BUILTIN_FFMAW:
-        return k1_expand_builtin_ffmaw (target, exp);
-    case K1_BUILTIN_FFMAD:
-        return k1_expand_builtin_ffmad (target, exp);
-    case K1_BUILTIN_FFMAWD:
-        return k1_expand_builtin_ffmawd (target, exp);
-    case K1_BUILTIN_FFMSW:
-        return k1_expand_builtin_ffmsw (target, exp);
-    case K1_BUILTIN_FFMSD:
-        return k1_expand_builtin_ffmsd (target, exp);
-    case K1_BUILTIN_FFMSWD:
-        return k1_expand_builtin_ffmswd (target, exp);
+    case K1_BUILTIN_FABSW: return k1_expand_builtin_fabsw (target, exp);
+    case K1_BUILTIN_FABSD: return k1_expand_builtin_fabsd (target, exp);
+    case K1_BUILTIN_FNEGW: return k1_expand_builtin_fnegw (target, exp);
+    case K1_BUILTIN_FNEGD: return k1_expand_builtin_fnegd (target, exp);
+    case K1_BUILTIN_FMAXW: return k1_expand_builtin_fmaxw (target, exp);
+    case K1_BUILTIN_FMAXD: return k1_expand_builtin_fmaxd (target, exp);
+    case K1_BUILTIN_FMINW: return k1_expand_builtin_fminw (target, exp);
+    case K1_BUILTIN_FMIND: return k1_expand_builtin_fmind (target, exp);
+    case K1_BUILTIN_FINVW: return k1_expand_builtin_finvw (target, exp);
+    case K1_BUILTIN_FISRW: return k1_expand_builtin_fisrw (target, exp);
+    case K1_BUILTIN_FADDW: return k1_expand_builtin_faddw (target, exp);
+    case K1_BUILTIN_FADDD: return k1_expand_builtin_faddd (target, exp);
+    case K1_BUILTIN_FADDWC: return k1_expand_builtin_faddwc (target, exp);
+    case K1_BUILTIN_FADDCWC: return k1_expand_builtin_faddcwc (target, exp);
+    case K1_BUILTIN_FADDDC: return k1_expand_builtin_fadddc (target, exp);
+    case K1_BUILTIN_FADDCDC: return k1_expand_builtin_faddcdc (target, exp);
+    case K1_BUILTIN_FSBFW: return k1_expand_builtin_fsbfw (target, exp);
+    case K1_BUILTIN_FSBFD: return k1_expand_builtin_fsbfd (target, exp);
+    case K1_BUILTIN_FSBFWC: return k1_expand_builtin_fsbfwc (target, exp);
+    case K1_BUILTIN_FSBFCWC: return k1_expand_builtin_fsbfcwc (target, exp);
+    case K1_BUILTIN_FSBFDC: return k1_expand_builtin_fsbfdc (target, exp);
+    case K1_BUILTIN_FSBFCDC: return k1_expand_builtin_fsbfcdc (target, exp);
+    case K1_BUILTIN_FMULW: return k1_expand_builtin_fmulw (target, exp);
+    case K1_BUILTIN_FMULD: return k1_expand_builtin_fmuld (target, exp);
+    case K1_BUILTIN_FMULWD: return k1_expand_builtin_fmulwd (target, exp);
+    case K1_BUILTIN_FMULWC: return k1_expand_builtin_fmulwc (target, exp);
+    case K1_BUILTIN_FMULCWC: return k1_expand_builtin_fmulcwc (target, exp);
+    case K1_BUILTIN_FMULDC: return k1_expand_builtin_fmuldc (target, exp);
+    case K1_BUILTIN_FMULCDC: return k1_expand_builtin_fmulcdc (target, exp);
+    case K1_BUILTIN_FFMAW: return k1_expand_builtin_ffmaw (target, exp);
+    case K1_BUILTIN_FFMAD: return k1_expand_builtin_ffmad (target, exp);
+    case K1_BUILTIN_FFMAWD: return k1_expand_builtin_ffmawd (target, exp);
+    case K1_BUILTIN_FFMAWC: return k1_expand_builtin_ffmawc (target, exp);
+    case K1_BUILTIN_FFMADC: return k1_expand_builtin_ffmadc (target, exp);
+    case K1_BUILTIN_FFMSW: return k1_expand_builtin_ffmsw (target, exp);
+    case K1_BUILTIN_FFMSD: return k1_expand_builtin_ffmsd (target, exp);
+    case K1_BUILTIN_FFMSWD: return k1_expand_builtin_ffmswd (target, exp);
+    case K1_BUILTIN_FFMSWC: return k1_expand_builtin_ffmswc (target, exp);
+    case K1_BUILTIN_FFMSDC: return k1_expand_builtin_ffmsdc (target, exp);
 
-    case K1_BUILTIN_FENCE:
-        return k1_expand_builtin_fence ();
+    case K1_BUILTIN_FENCE: return k1_expand_builtin_fence ();
     case K1_BUILTIN_FLOAT:
     case K1_BUILTIN_FLOATU:
         return k1_expand_builtin_float (target, exp, fcode == K1_BUILTIN_FLOATU);
@@ -4902,86 +4912,49 @@ k1_target_expand_builtin (tree exp,
     case K1_BUILTIN_FIXEDD:
     case K1_BUILTIN_FIXEDUD:
         return k1_expand_builtin_fixedd (target, exp, fcode == K1_BUILTIN_FIXEDUD);
-    case K1_BUILTIN_FSDIVW:
-        return k1_expand_builtin_fsdivw (target, exp);
-    case K1_BUILTIN_FSDIVD:
-        return k1_expand_builtin_fsdivd (target, exp);
-    case K1_BUILTIN_FSINVW:
-        return k1_expand_builtin_fsinvw (target, exp);
-    case K1_BUILTIN_FSINVD:
-        return k1_expand_builtin_fsinvd (target, exp);
-    case K1_BUILTIN_FSISRW:
-        return k1_expand_builtin_fsisrw (target, exp);
-    case K1_BUILTIN_FSISRD:
-        return k1_expand_builtin_fsisrd (target, exp);
-    case K1_BUILTIN_FCDIVW:
-        return k1_expand_builtin_fcdivw (target, exp);
-    case K1_BUILTIN_FCDIVD:
-        return k1_expand_builtin_fcdivd (target, exp);
-    case K1_BUILTIN_GET:
-      return k1_expand_builtin_get (target, exp);
+
+    case K1_BUILTIN_FSDIVW: return k1_expand_builtin_fsdivw (target, exp);
+    case K1_BUILTIN_FSDIVD: return k1_expand_builtin_fsdivd (target, exp);
+    case K1_BUILTIN_FSINVW: return k1_expand_builtin_fsinvw (target, exp);
+    case K1_BUILTIN_FSINVD: return k1_expand_builtin_fsinvd (target, exp);
+    case K1_BUILTIN_FSISRW: return k1_expand_builtin_fsisrw (target, exp);
+    case K1_BUILTIN_FSISRD: return k1_expand_builtin_fsisrd (target, exp);
+    case K1_BUILTIN_FCDIVW: return k1_expand_builtin_fcdivw (target, exp);
+    case K1_BUILTIN_FCDIVD: return k1_expand_builtin_fcdivd (target, exp);
+    case K1_BUILTIN_GET: return k1_expand_builtin_get (target, exp);
     /* FIXME AUTO: Disabling get builtin. Ref T7705 */
-    /* case K1_BUILTIN_GET_R: */
-    /*   return k1_expand_builtin_get_r (target, exp); */
-    case K1_BUILTIN_WFXL:
-        return k1_expand_builtin_wfxl (target, exp);
-    case K1_BUILTIN_WFXM:
-        return k1_expand_builtin_wfxm (target, exp);
-    case K1_BUILTIN_IINVAL:
-        return k1_expand_builtin_iinval ();
-    case K1_BUILTIN_IINVALS:
-        return k1_expand_builtin_iinvals (target, exp);
-    case K1_BUILTIN_LBSU:
-        return k1_expand_builtin_lbsu (target, exp);
-    case K1_BUILTIN_LBZU:
-        return k1_expand_builtin_lbzu (target, exp);
-    case K1_BUILTIN_LDU:
-        return k1_expand_builtin_ldu (target, exp);
-    case K1_BUILTIN_LHSU:
-        return k1_expand_builtin_lhsu (target, exp);
-    case K1_BUILTIN_LHZU:
-        return k1_expand_builtin_lhzu (target, exp);
-    case K1_BUILTIN_LWZU:
-        return k1_expand_builtin_lwzu (target, exp);
-    case K1_BUILTIN_SATD:
-        return k1_expand_builtin_satd (target, exp);
-    case K1_BUILTIN_SATUD:
-        return k1_expand_builtin_satud (target, exp);
-    case K1_BUILTIN_SBMM8:
-        return k1_expand_builtin_sbmm8 (target, exp);
-    case K1_BUILTIN_SBMMT8:
-        return k1_expand_builtin_sbmmt8 (target, exp);
+    /* case K1_BUILTIN_GET_R: return k1_expand_builtin_get_r (target, exp); */
+    case K1_BUILTIN_WFXL: return k1_expand_builtin_wfxl (target, exp);
+    case K1_BUILTIN_WFXM: return k1_expand_builtin_wfxm (target, exp);
+    case K1_BUILTIN_IINVAL: return k1_expand_builtin_iinval ();
+    case K1_BUILTIN_IINVALS: return k1_expand_builtin_iinvals (target, exp);
+    case K1_BUILTIN_LBSU: return k1_expand_builtin_lbsu (target, exp);
+    case K1_BUILTIN_LBZU: return k1_expand_builtin_lbzu (target, exp);
+    case K1_BUILTIN_LDU: return k1_expand_builtin_ldu (target, exp);
+    case K1_BUILTIN_LHSU: return k1_expand_builtin_lhsu (target, exp);
+    case K1_BUILTIN_LHZU: return k1_expand_builtin_lhzu (target, exp);
+    case K1_BUILTIN_LWZU: return k1_expand_builtin_lwzu (target, exp);
+    case K1_BUILTIN_SATD: return k1_expand_builtin_satd (target, exp);
+    case K1_BUILTIN_SATUD: return k1_expand_builtin_satud (target, exp);
+    case K1_BUILTIN_SBMM8: return k1_expand_builtin_sbmm8 (target, exp);
+    case K1_BUILTIN_SBMMT8: return k1_expand_builtin_sbmmt8 (target, exp);
     case K1_BUILTIN_SET:
     case K1_BUILTIN_SET_PS:
       return k1_expand_builtin_set (target, exp, fcode == K1_BUILTIN_SET_PS);
-    case K1_BUILTIN_SLEEP:
-        return k1_expand_builtin_sleep (target, exp);
-    case K1_BUILTIN_STOP:
-        return k1_expand_builtin_stop (target, exp);
-    case K1_BUILTIN_STSUW:
-        return k1_expand_builtin_stsuw (target, exp);
-    case K1_BUILTIN_STSUD:
-        return k1_expand_builtin_stsud (target, exp);
-    case K1_BUILTIN_SYNCGROUP:
-        return k1_expand_builtin_syncgroup (target, exp);
-    case K1_BUILTIN_TLBDINVAL:
-        return k1_expand_builtin_tlbdinval ();
-    case K1_BUILTIN_TLBIINVAL:
-        return k1_expand_builtin_tlbiinval ();
-    case K1_BUILTIN_TLBPROBE:
-        return k1_expand_builtin_tlbprobe ();
-    case K1_BUILTIN_TLBREAD:
-        return k1_expand_builtin_tlbread ();
-    case K1_BUILTIN_TLBWRITE:
-        return k1_expand_builtin_tlbwrite ();
-    case K1_BUILTIN_FWIDENLHW:
-      return k1_expand_builtin_fwiden (target, exp, 1);
-    case K1_BUILTIN_FWIDENMHW:
-      return k1_expand_builtin_fwiden (target, exp, 0);
-    case K1_BUILTIN_FNARROWWH:
-      return k1_expand_builtin_fnarrowwh (target, exp);
-    case K1_BUILTIN_WAITIT:
-      return k1_expand_builtin_waitit (target, exp);
+    case K1_BUILTIN_SLEEP: return k1_expand_builtin_sleep (target, exp);
+    case K1_BUILTIN_STOP: return k1_expand_builtin_stop (target, exp);
+    case K1_BUILTIN_STSUW: return k1_expand_builtin_stsuw (target, exp);
+    case K1_BUILTIN_STSUD: return k1_expand_builtin_stsud (target, exp);
+    case K1_BUILTIN_SYNCGROUP: return k1_expand_builtin_syncgroup (target, exp);
+    case K1_BUILTIN_TLBDINVAL: return k1_expand_builtin_tlbdinval ();
+    case K1_BUILTIN_TLBIINVAL: return k1_expand_builtin_tlbiinval ();
+    case K1_BUILTIN_TLBPROBE: return k1_expand_builtin_tlbprobe ();
+    case K1_BUILTIN_TLBREAD: return k1_expand_builtin_tlbread ();
+    case K1_BUILTIN_TLBWRITE: return k1_expand_builtin_tlbwrite ();
+    case K1_BUILTIN_FWIDENLHW: return k1_expand_builtin_fwiden (target, exp, 1);
+    case K1_BUILTIN_FWIDENMHW: return k1_expand_builtin_fwiden (target, exp, 0);
+    case K1_BUILTIN_FNARROWWH: return k1_expand_builtin_fnarrowwh (target, exp);
+    case K1_BUILTIN_WAITIT: return k1_expand_builtin_waitit (target, exp);
     default:
         internal_error ("bad builtin code");
         break;
@@ -5039,27 +5012,6 @@ static int k1_target_sched_dfa_new_cycle (FILE *dump ATTRIBUTE_UNUSED,
         return 1;
 
     return 0;
-}
-
-static rtx
-k1_gen_reg_copy (rtx reg, rtx reg2)
-{
-    rtx insn;
-
-    if (GET_MODE (reg) == SImode) {
-        insn = gen_movsi (reg, reg2);
-    } else if (GET_MODE (reg) == SFmode){
-        insn = gen_movsf (reg, reg2);
-    }
-    /* FIXME AUTO: disabling vector support */
- /* else if (GET_MODE (reg) == V2HImode){ */
-    /*     insn = gen_movv2hi (reg, reg2); */
-    /* }  */
-    else {
-        gcc_unreachable ();
-    }
-
-    return insn;
 }
 
 static int
