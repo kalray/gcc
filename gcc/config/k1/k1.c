@@ -3373,106 +3373,11 @@ k1_expand_builtin_satud (rtx target, tree args)
   return target;
   } */
 
-/* FIXME AUTO: disabling vector support */
-/* static rtx */
-/* k1_expand_builtin_abdhp (rtx target, tree args) */
-/* { */
-/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
-/*     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1)); */
-
-/*     if (!target) */
-/*         target = gen_reg_rtx (SImode); */
-/*     target = force_reg (SImode, target); */
-/*     arg1 = force_reg (SImode, arg1); */
-/*     arg2 = force_reg (SImode, arg2); */
-/*     emit_insn (gen_abdhp (target, arg1, arg2)); */
-/*     return target; */
-/* } */
-
-/* static rtx */
-/* k1_expand_builtin_addhp (rtx target, tree args) */
-/* { */
-/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
-/*     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1)); */
-
-/*     if (!target) */
-/*         target = gen_reg_rtx (SImode); */
-/*     target = force_reg (SImode, target); */
-/*     arg1 = force_reg (SImode, arg1); */
-/*     arg2 = force_reg (SImode, arg2); */
-/*     emit_insn (gen_addhp (target, arg1, arg2)); */
-/*     return target; */
-/* } */
-
-/* static rtx */
-/* k1_expand_builtin_sbfhp (rtx target, tree args) */
-/* { */
-/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
-/*     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1)); */
-
-/*     if (!target) */
-/*         target = gen_reg_rtx (SImode); */
-/*     target = force_reg (SImode, target); */
-/*     arg1 = force_reg (SImode, arg1); */
-/*     arg2 = force_reg (SImode, arg2); */
-/*     emit_insn (gen_sbfhp (target, arg1, arg2)); */
-/*     return target; */
-/* } */
-
-	/* FIXME AUTO: disabling vector support */
-/* static rtx */
-/* k1_expand_builtin_landhp (rtx target, tree args) */
-/* { */
-/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
-/*     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1)); */
-
-/*     if (!target) */
-/*         target = gen_reg_rtx (SImode); */
-/*     target = force_reg (SImode, target); */
-/*     arg1 = force_reg (SImode, arg1); */
-/*     arg2 = force_reg (SImode, arg2); */
-/*     emit_insn (gen_landhp (target, arg1, arg2)); */
-/*     return target; */
-/* } */
-
-/* FIXME AUTO: disabling vector support */
-/* static rtx */
-/* k1_expand_builtin_sllhps (rtx target, tree args) */
-/* { */
-/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
-/*     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1)); */
-
-/*     if (!target) */
-/*         target = gen_reg_rtx (SImode); */
-/*     target = force_reg (SImode, target); */
-/*     arg1 = force_reg (SImode, arg1); */
-/*     arg2 = force_reg (SImode, arg2); */
-/*     emit_insn (gen_sllhps (target, arg1, arg2)); */
-/*     return target; */
-/* } */
-
-	/* FIXME AUTO: disabling vector support */
-/* static rtx */
-/* k1_expand_builtin_srahps (rtx target, tree args) */
-/* { */
-/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
-/*     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1)); */
-
-/*     if (!target) */
-/*         target = gen_reg_rtx (SImode); */
-/*     target = force_reg (SImode, target); */
-/*     arg1 = force_reg (SImode, arg1); */
-/*     arg2 = force_reg (SImode, arg2); */
-/*     emit_insn (gen_srahps (target, arg1, arg2)); */
-/*     return target; */
-/* } */
-
 static rtx
 k1_expand_builtin_addsw (rtx target, tree args)
 {
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-
     if (!target)
         target = gen_reg_rtx (SImode);
     target = force_reg (SImode, target);
@@ -3487,7 +3392,6 @@ k1_expand_builtin_addsd (rtx target, tree args)
 {
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-
     if (!target)
         target = gen_reg_rtx (DImode);
     target = force_reg (DImode, target);
@@ -3502,7 +3406,6 @@ k1_expand_builtin_sbfsw (rtx target, tree args)
 {
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-
     if (!target)
         target = gen_reg_rtx (SImode);
     target = force_reg (SImode, target);
@@ -3517,7 +3420,6 @@ k1_expand_builtin_sbfsd (rtx target, tree args)
 {
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-
     if (!target)
         target = gen_reg_rtx (DImode);
     target = force_reg (DImode, target);
@@ -3528,106 +3430,14 @@ k1_expand_builtin_sbfsd (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_abdw (rtx target, tree args)
-{
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-
-    if (!target)
-        target = gen_reg_rtx (SImode);
-    target = force_reg (SImode, target);
-    arg1 = force_reg (SImode, arg1);
-    arg2 = force_reg (SImode, arg2);
-    emit_insn (gen_k1_abdw (target, arg1, arg2));
-    return target;
-}
-
-static rtx
-k1_expand_builtin_abdd (rtx target, tree args)
-{
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-
-    if (!target)
-        target = gen_reg_rtx (DImode);
-    target = force_reg (DImode, target);
-    arg1 = force_reg (DImode, arg1);
-    arg2 = force_reg (DImode, arg2);
-    emit_insn (gen_k1_abdd (target, arg1, arg2));
-    return target;
-}
-
-static rtx
-k1_expand_builtin_avgw (rtx target, tree args)
-{
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-
-    if (!target)
-        target = gen_reg_rtx (SImode);
-    target = force_reg (SImode, target);
-    arg1 = force_reg (SImode, arg1);
-    arg2 = force_reg (SImode, arg2);
-    emit_insn (gen_k1_avgw (target, arg1, arg2));
-    return target;
-}
-
-static rtx
-k1_expand_builtin_avguw (rtx target, tree args)
-{
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-
-    if (!target)
-        target = gen_reg_rtx (SImode);
-    target = force_reg (SImode, target);
-    arg1 = force_reg (SImode, arg1);
-    arg2 = force_reg (SImode, arg2);
-    emit_insn (gen_k1_avguw (target, arg1, arg2));
-    return target;
-}
-
-static rtx
-k1_expand_builtin_avgrw (rtx target, tree args)
-{
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-
-    if (!target)
-        target = gen_reg_rtx (SImode);
-    target = force_reg (SImode, target);
-    arg1 = force_reg (SImode, arg1);
-    arg2 = force_reg (SImode, arg2);
-    emit_insn (gen_k1_avgrw (target, arg1, arg2));
-    return target;
-}
-
-static rtx
-k1_expand_builtin_avgruw (rtx target, tree args)
-{
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-
-    if (!target)
-        target = gen_reg_rtx (SImode);
-    target = force_reg (SImode, target);
-    arg1 = force_reg (SImode, arg1);
-    arg2 = force_reg (SImode, arg2);
-    emit_insn (gen_k1_avgruw (target, arg1, arg2));
-    return target;
-}
-
-static rtx
 k1_expand_builtin_cbsw (rtx target, tree args)
 {
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-
     if (!target)
         target = gen_reg_rtx (SImode);
     target = force_reg (SImode, target);
     arg1 = force_reg (SImode, arg1);
     emit_insn (gen_popcountsi2 (target, arg1));
-
     return target;
 }
 
@@ -3635,10 +3445,8 @@ static rtx
 k1_expand_builtin_cbsd (rtx target, tree args)
 {
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-
     if (!target)
         target = gen_reg_rtx (DImode);
-
     target = force_reg (DImode, target);
     arg1 = force_reg (DImode, arg1);
     emit_insn (gen_popcountdi2 (target, arg1));
@@ -3950,9 +3758,6 @@ k1_expand_builtin_##name (rtx target, tree args) \
     arg1 = force_reg (smode, arg1); \
     if (!target) \
         target = gen_reg_rtx (tmode); \
-    if (!REG_P(target) || GET_MODE (target) != tmode) { \
-        target = force_reg (tmode, target); \
-    } \
     emit_insn (gen_k1_##name (target, arg1)); \
     return target; \
 }
@@ -3972,12 +3777,16 @@ k1_expand_builtin_##name (rtx target, tree args) \
     arg2 = force_reg (smode, arg2); \
     if (!target) \
         target = gen_reg_rtx (tmode); \
-    if (!REG_P(target) || GET_MODE (target) != tmode) { \
-        target = force_reg (tmode, target); \
-    } \
     emit_insn (gen_k1_##name (target, arg1, arg2)); \
     return target; \
 }
+
+K1_EXPAND_BUILTIN_3_(abdw, SImode, SImode)
+K1_EXPAND_BUILTIN_3_(abdd, DImode, DImode)
+K1_EXPAND_BUILTIN_3_(avgw, SImode, SImode)
+K1_EXPAND_BUILTIN_3_(avguw, SImode, SImode)
+K1_EXPAND_BUILTIN_3_(avgrw, SImode, SImode)
+K1_EXPAND_BUILTIN_3_(avgruw, SImode, SImode)
 
 K1_EXPAND_BUILTIN_3_(fmaxw, SFmode, SFmode)
 K1_EXPAND_BUILTIN_3_(fmaxd, DFmode, DFmode)
@@ -3993,9 +3802,6 @@ k1_expand_builtin_##name (rtx target, tree args) \
     arg1 = force_reg (smode, arg1); \
     if (!target) \
         target = gen_reg_rtx (tmode); \
-    if (!REG_P(target) || GET_MODE (target) != tmode) { \
-        target = force_reg (tmode, target); \
-    } \
     emit_insn (gen_k1_##name (target, arg1, arg2)); \
     return target; \
 }
@@ -4014,9 +3820,6 @@ k1_expand_builtin_##name (rtx target, tree args) \
     arg2 = force_reg (smode, arg2); \
     if (!target) \
         target = gen_reg_rtx (tmode); \
-    if (!REG_P(target) || GET_MODE (target) != tmode) { \
-        target = force_reg (tmode, target); \
-    } \
     emit_insn (gen_k1_##name (target, arg1, arg2, arg3)); \
     return target; \
 }
@@ -4054,9 +3857,6 @@ k1_expand_builtin_##name (rtx target, tree args) \
     arg3 = force_reg (smode, arg3); \
     if (!target) \
         target = gen_reg_rtx (tmode); \
-    if (!REG_P(target) || GET_MODE (target) != tmode) { \
-        target = force_reg (tmode, target); \
-    } \
     emit_insn (gen_k1_##name (target, arg1, arg2, arg3, arg4)); \
     return target; \
 }
