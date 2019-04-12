@@ -194,7 +194,6 @@ struct GTY (()) machine_function
 
   rtx stack_check_block_label;
   rtx stack_check_block_seq, stack_check_block_last;
-  /* vec<fake_SC_t,va_gc> *fake_SC_registers; */
 };
 
 /*
@@ -327,7 +326,7 @@ k1_compute_frame_info (void)
 }
 
 HOST_WIDE_INT
-k1_first_parm_offset (tree decl)
+k1_first_parm_offset (tree decl ATTRIBUTE_UNUSED)
 {
   struct k1_frame_info *frame;
   k1_compute_frame_info ();
@@ -337,12 +336,8 @@ k1_first_parm_offset (tree decl)
 }
 
 static rtx
-k1_static_chain (const_tree fndecl, bool incoming_p)
+k1_static_chain (const_tree fndecl, bool incoming_p ATTRIBUTE_UNUSED)
 {
-  struct k1_frame_info *frame;
-  k1_compute_frame_info ();
-  frame = &cfun->machine->frame;
-
   if (!DECL_STATIC_CHAIN (fndecl))
     return NULL;
 
@@ -393,9 +388,9 @@ k1_pack_load_store (rtx operands[], unsigned int nops)
   rtx set_dests[K1_MAX_PACKED_LSU];
   rtx set_srcs[K1_MAX_PACKED_LSU];
   bool is_load = true;
-  rtx sorted_operands[nops];
+  rtx sorted_operands[2 * K1_MAX_PACKED_LSU];
 
-  /* Only ld +ld => lq */
+  /* Only ld + ld => lq */
   if (nops != 2)
     return false;
 
@@ -536,7 +531,8 @@ k1_hard_regno_mode_ok (unsigned regno, enum machine_mode mode)
 }
 
 static unsigned char
-k1_class_max_nregs (reg_class_t regclass, enum machine_mode mode)
+k1_class_max_nregs (reg_class_t regclass ATTRIBUTE_UNUSED,
+		    enum machine_mode mode)
 {
   return HARD_REGNO_NREGS (0, mode);
 }
@@ -634,22 +630,6 @@ k1_has_unspec_reference_1 (rtx *x)
   return (GET_CODE (*x) == UNSPEC
 	  && (XINT (*x, 1) == UNSPEC_GOT || XINT (*x, 1) == UNSPEC_GOTOFF
 	      || XINT (*x, 1) == UNSPEC_PCREL || XINT (*x, 1) == UNSPEC_TLS));
-}
-
-static int
-k1_needs_symbol_reloc (rtx x)
-{
-  subrtx_ptr_iterator::array_type array;
-  FOR_EACH_SUBRTX_PTR (iter, array, &x, ALL)
-    {
-      rtx *x = *iter;
-
-      if (k1_has_unspec_reference_1 (x))
-	iter.skip_subrtxes ();
-      else if (GET_CODE (*x) == SYMBOL_REF)
-	return 1;
-    }
-  return 0;
 }
 
 static int
@@ -817,7 +797,9 @@ k1_return_addr_rtx (int count, rtx frameaddr ATTRIBUTE_UNUSED)
 /* Implements the macro INIT_CUMULATIVE_ARGS defined in k1.h. */
 
 void
-k1_init_cumulative_args (CUMULATIVE_ARGS *cum, const_tree fntype, rtx libname,
+k1_init_cumulative_args (CUMULATIVE_ARGS *cum,
+			 const_tree fntype ATTRIBUTE_UNUSED,
+			 rtx libname ATTRIBUTE_UNUSED,
 			 tree fndecl ATTRIBUTE_UNUSED,
 			 int n_named_args ATTRIBUTE_UNUSED)
 {
@@ -1045,7 +1027,6 @@ k1_target_expand_builtin_saveregs (void)
 {
   int regno;
   int slot = 0;
-  HOST_WIDE_INT arg_fp_offset;
   struct k1_frame_info *frame;
 
   k1_compute_frame_info ();
@@ -1121,7 +1102,7 @@ k1_target_fixed_point_supported_p (void)
 }
 
 static bool
-k1_target_vector_mode_supported_p (enum machine_mode mode)
+k1_target_vector_mode_supported_p (enum machine_mode mode ATTRIBUTE_UNUSED)
 {
   switch (mode)
     {
@@ -1202,7 +1183,6 @@ k1_target_print_operand (FILE *file, rtx x, int code)
   bool addressing_mode = false;
   bool as_address = false;
   bool is_float = false;
-  int lowbit, highbit;
   int addr_space = 0;
 
   switch (code)
@@ -1817,7 +1797,6 @@ k1_save_or_restore_callee_save_registers (bool restore)
 
   unsigned limit = FIRST_PSEUDO_REGISTER;
   unsigned regno;
-  unsigned regno2;
 
   for (regno = 0; regno < limit; regno++)
     {
@@ -1828,8 +1807,7 @@ k1_save_or_restore_callee_save_registers (bool restore)
 	  mem = gen_mem_ref (DImode, plus_constant (Pmode, base_rtx,
 						    frame->reg_offset[regno]));
 
-	  regno2 = k1_register_saved_on_entry (regno + 1) ? regno + 1 : 0;
-
+	  /* regno2 = k1_register_saved_on_entry(regno+1)? regno + 1 : 0; */
 	  /* if (0 && regno2) */
 	  /*   { */
 	  /*     rtx mem2; */
@@ -1931,7 +1909,6 @@ k1_save_or_restore_callee_save_registers (bool restore)
 HOST_WIDE_INT
 k1_initial_elimination_offset (int from, int to)
 {
-  HOST_WIDE_INT src, dest;
   k1_compute_frame_info ();
   struct k1_frame_info *frame = &cfun->machine->frame;
 
@@ -2007,9 +1984,7 @@ k1_expand_epilogue (void)
 		  Pmode, stack_pointer_rtx,
 		  cfun->machine->frame.reg_offset[HARD_FRAME_POINTER_REGNUM]));
 
-      rtx insn
-	= emit_move_insn (gen_rtx_REG (DImode, HARD_FRAME_POINTER_REGNUM),
-			  fp_mem);
+      emit_move_insn (gen_rtx_REG (DImode, HARD_FRAME_POINTER_REGNUM), fp_mem);
     }
 
   k1_save_or_restore_callee_save_registers (1);
@@ -2201,7 +2176,7 @@ k1_expand_mov_constant (rtx operands[])
   if (GET_CODE (src) == SYMBOL_REF || GET_CODE (src) == LABEL_REF
       || GET_CODE (src) == CONST)
     {
-      rtx mem, base, offset;
+      rtx base, offset;
       enum k1_symbol_type sty;
       rtx pic_reg;
       rtx (*gen_set_gotp) (rtx target)
@@ -3018,8 +2993,8 @@ k1_rounding_silent (tree arg, const char *mnemonic)
     ".rn",  ".rn.s",  ".ru",  ".ru.s",	".rd", ".rd.s", ".rz", ".rz.s",
     ".rna", ".rna.s", ".rnz", ".rnz.s", ".ro", ".ro.s", "",    ".s",
   };
-  int i;
-  for (i = 0; i < sizeof (table) / sizeof (*table); i++)
+
+  for (unsigned int i = 0; i < sizeof (table) / sizeof (*table); i++)
     {
       if (!strcmp (modifiers, table[i]))
 	return gen_rtx_CONST_STRING (VOIDmode, table[i]);
@@ -3264,7 +3239,8 @@ k1_expand_builtin_sbmmt8 (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_await (rtx target ATTRIBUTE_UNUSED, tree args)
+k1_expand_builtin_await (rtx target ATTRIBUTE_UNUSED,
+			 tree args ATTRIBUTE_UNUSED)
 {
   emit_insn (gen_await (k1_sync_reg_rtx));
 
@@ -3272,7 +3248,7 @@ k1_expand_builtin_await (rtx target ATTRIBUTE_UNUSED, tree args)
 }
 
 static rtx
-k1_expand_builtin_doze (rtx target ATTRIBUTE_UNUSED, tree args)
+k1_expand_builtin_doze (rtx target ATTRIBUTE_UNUSED, tree args ATTRIBUTE_UNUSED)
 {
   emit_insn (gen_doze (k1_sync_reg_rtx));
 
@@ -3280,7 +3256,8 @@ k1_expand_builtin_doze (rtx target ATTRIBUTE_UNUSED, tree args)
 }
 
 static rtx
-k1_expand_builtin_sleep (rtx target ATTRIBUTE_UNUSED, tree args)
+k1_expand_builtin_sleep (rtx target ATTRIBUTE_UNUSED,
+			 tree args ATTRIBUTE_UNUSED)
 {
   emit_insn (gen_sleep (k1_sync_reg_rtx));
 
@@ -3288,7 +3265,7 @@ k1_expand_builtin_sleep (rtx target ATTRIBUTE_UNUSED, tree args)
 }
 
 static rtx
-k1_expand_builtin_stop (rtx target ATTRIBUTE_UNUSED, tree args)
+k1_expand_builtin_stop (rtx target ATTRIBUTE_UNUSED, tree args ATTRIBUTE_UNUSED)
 {
   emit_insn (gen_stop (k1_sync_reg_rtx));
 
@@ -4930,8 +4907,9 @@ k1_mau_lsu_double_port_bypass_p (rtx_insn *producer, rtx_insn *consumer)
 }
 
 static int
-k1_target_sched_adjust_cost (rtx_insn *insn, int dep_type, rtx_insn *dep_insn,
-			     int cost, unsigned int)
+k1_target_sched_adjust_cost (rtx_insn *insn, int dep_type,
+			     rtx_insn *dep_insn ATTRIBUTE_UNUSED, int cost,
+			     unsigned int)
 {
   enum attr_class insn_class = get_attr_class (insn);
   /* On the k1, it is possible to read then write the same register in a bundle
@@ -4968,45 +4946,6 @@ k1_target_sched_dfa_new_cycle (FILE *dump ATTRIBUTE_UNUSED,
 
   if (reg_mentioned_p (k1_sync_reg_rtx, insn))
     return 1;
-
-  return 0;
-}
-
-static int
-k1_patch_mem_for_double_access_1 (rtx *x, void *data ATTRIBUTE_UNUSED)
-{
-  if (MEM_P (*x))
-    {
-      *x = shallow_copy_rtx (*x);
-      XEXP (*x, 0)
-	= plus_constant (Pmode, XEXP (*x, 0), GET_MODE_SIZE (GET_MODE (*x)));
-      return 1;
-    }
-
-  return 0;
-}
-
-static int
-k1_decr_reg_use_count (rtx *x, void *data ATTRIBUTE_UNUSED)
-{
-  if (REG_P (*x) && REGNO (*x) >= FIRST_PSEUDO_REGISTER
-      && DF_REG_USE_GET (REGNO (*x)))
-    {
-      if (DF_REG_USE_COUNT (REGNO (*x)) >= 1)
-	DF_REG_USE_COUNT (REGNO (*x))--;
-    }
-
-  return 0;
-}
-
-static int
-k1_incr_reg_use_count (rtx *x, void *data ATTRIBUTE_UNUSED)
-{
-  if (REG_P (*x) && REGNO (*x) >= FIRST_PSEUDO_REGISTER
-      && DF_REG_USE_GET (REGNO (*x)))
-    {
-      DF_REG_USE_COUNT (REGNO (*x))++;
-    }
 
   return 0;
 }
@@ -5070,7 +5009,6 @@ k1_load_multiple_operation_p (rtx op, bool is_uncached)
 {
   int count = XVECLEN (op, 0);
   unsigned int dest_regno;
-  rtx src_addr;
   int i;
 
   /* Perform a quick check so we don't blow up below.  */
@@ -5098,7 +5036,6 @@ k1_load_multiple_operation_p (rtx op, bool is_uncached)
   if (dest_regno < FIRST_PSEUDO_REGISTER && (dest_regno % count != 0))
     return 0;
 
-  src_addr = XEXP (SET_SRC (XVECEXP (op, 0, 0)), 0);
   HOST_WIDE_INT expected_offset = 0;
   int base_regno = -1;
 
@@ -5175,11 +5112,6 @@ k1_store_multiple_operation_p (rtx op)
 
 /* Following funtions are used for bundling insn before ASM emission */
 
-/* Contains the state corresponding to the bundle under construction */
-static state_t state;
-/* Track registers being defined within the bundle */
-static HARD_REG_SET current_bundle_reg_defs;
-
 struct bundle_state
 {
   /* Unique bundle state number to identify them in the debugging
@@ -5225,40 +5157,6 @@ struct bundle_regs
   HARD_REG_SET uses;
   HARD_REG_SET defs;
 };
-
-static int
-k1_uses_register (rtx x)
-{
-  rtx set_dst = NULL;
-
-  subrtx_ptr_iterator::array_type array;
-  FOR_EACH_SUBRTX_PTR (iter, array, &x, ALL)
-    {
-      rtx *x = *iter;
-
-      if (!*x)
-	{
-	  continue;
-	}
-
-      if (GET_CODE (*x) == CLOBBER || GET_CODE (*x) == USE
-	  || GET_CODE (*x) == EXPR_LIST)
-	{
-	  iter.skip_subrtxes ();
-	}
-      else if (GET_CODE (*x) == SET)
-	{
-	  set_dst = SET_DEST (*x);
-	}
-
-      if (GET_CODE (*x) == REG && *x != set_dst)
-	{
-	  return 1;
-	}
-    }
-  /* return for_each_rtx (&x, k1_uses_register_1, &set_dst); */
-  return 0;
-}
 
 static void k1_scan_insn_registers_wrap (rtx *x, void *data);
 
@@ -5345,9 +5243,6 @@ k1_scan_insn_registers_1 (rtx *x, void *data)
 static void
 k1_scan_insn_registers_wrap (rtx *x, void *data)
 {
-  /* for_each_rtx (&SET_DEST (*x), k1_scan_insn_registers_1, regs); */
-  struct bundle_regs *regs = (struct bundle_regs *) data;
-
   subrtx_ptr_iterator::array_type array;
   FOR_EACH_SUBRTX_PTR (iter, array, x, ALL)
     {
@@ -5371,12 +5266,6 @@ k1_scan_insn_registers (rtx insn, struct bundle_regs *regs)
   CLEAR_HARD_REG_SET (regs->defs);
   /* for_each_rtx (&insn, k1_scan_insn_registers_1, regs); */
   k1_scan_insn_registers_wrap (&insn, regs);
-}
-
-static void
-k1_clear_insn_registers (void)
-{
-  CLEAR_HARD_REG_SET (current_bundle_reg_defs);
 }
 
 /* Skip over irrelevant NOTEs and such and look for the next insn we
@@ -5427,6 +5316,7 @@ get_free_bundle_state (void)
 }
 
 /* The following function frees given bundle state.  */
+static void free_bundle_state (struct bundle_state *state) ATTRIBUTE_UNUSED;
 
 static void
 free_bundle_state (struct bundle_state *state)
@@ -5552,6 +5442,8 @@ k1_gen_bundles (void)
   dfa_finish ();
 }
 
+static void k1_dump_bundles (void) ATTRIBUTE_UNUSED;
+
 static void
 k1_dump_bundles (void)
 {
@@ -5626,7 +5518,7 @@ static void
 k1_fix_debug_for_bundles (void)
 {
   bundle_state *i;
-  int cur_cfa_reg = REGNO (stack_pointer_rtx);
+  unsigned int cur_cfa_reg = REGNO (stack_pointer_rtx);
 
   for (i = cur_bundle_list; i; i = i->next)
     {
@@ -5649,7 +5541,6 @@ k1_fix_debug_for_bundles (void)
 	      bool handled = false;
 	      for (note = REG_NOTES (binsn); note; note = XEXP (note, 1))
 		{
-		  rtx pat = XEXP (note, 0);
 		  switch (REG_NOTE_KIND (note))
 		    {
 		    case REG_CFA_DEF_CFA:
@@ -5720,30 +5611,34 @@ k1_fix_debug_for_bundles (void)
 		      break;
 
 		      /* We only need to fixup register spill */
-		    case REG_CFA_OFFSET:
-		      gcc_assert (GET_CODE (pat) == SET);
+		      case REG_CFA_OFFSET: {
+			gcc_assert (GET_CODE (pat) == SET);
 
-		      rtx mem_dest = SET_DEST (pat);
-		      rtx base_reg;
-		      if (GET_CODE (XEXP (mem_dest, 0)) == PLUS)
-			{
-			  base_reg = XEXP (XEXP (mem_dest, 0), 0);
-			}
-		      else
-			{
-			  base_reg = XEXP (mem_dest, 0);
-			}
-		      gcc_assert (REG_P (base_reg));
+			rtx mem_dest = SET_DEST (pat);
+			rtx base_reg;
+			if (GET_CODE (XEXP (mem_dest, 0)) == PLUS)
+			  {
+			    base_reg = XEXP (XEXP (mem_dest, 0), 0);
+			  }
+			else
+			  {
+			    base_reg = XEXP (mem_dest, 0);
+			  }
+			gcc_assert (REG_P (base_reg));
 
-		      if (REGNO (base_reg) != cur_cfa_reg)
-			{
-			  /* Most likely an insn was moved around and
-			     its note has not been modified accordingly.
-			     We need to rebuild an offset based on
-			     current CFA.
-			  */
-			  k1_swap_fp_sp_in_note (note, base_reg);
-			}
+			if (REGNO (base_reg) != cur_cfa_reg)
+			  {
+			    /* Most likely an insn was moved around and
+			       its note has not been modified accordingly.
+			       We need to rebuild an offset based on
+			       current CFA.
+			    */
+			    k1_swap_fp_sp_in_note (note, base_reg);
+			  }
+		      }
+		      break;
+
+		    default:
 		      break;
 		    }
 		}
@@ -5994,56 +5889,6 @@ k1_function_ok_for_sibcall (tree decl, tree exp ATTRIBUTE_UNUSED)
   return true;
 }
 
-static void
-k1_target_trampoline_init (rtx m_tramp, tree fndecl, rtx static_chain)
-{
-  /* FIXME AUTO: trampoline are broken T6775 */
-
-  /* rtx fun_addr = copy_to_reg (XEXP (DECL_RTL (fndecl), 0)); */
-  /* rtx chain = copy_to_reg (static_chain); */
-  /* rtx mem = adjust_address (m_tramp, Pmode, 0); */
-
-  /* rtx scratch = gen_reg_rtx (Pmode); */
-  /* rtx scratch2 = gen_reg_rtx (Pmode); */
-
-  /* /\* make using 2 words: lower10/upper22 format *\/ */
-
-  /* /\* first word with lower10 + make opcode *\/ */
-  /* emit_move_insn (scratch, chain); */
-  /* emit_insn (gen_extzv (scratch, scratch, GEN_INT (10), GEN_INT (0))); */
-  /* emit_insn (gen_ashlsi3 (scratch, scratch, GEN_INT (6))); */
-  /* emit_insn (gen_iorsi3 (scratch, scratch, GEN_INT ((int)0xe02c0000))); */
-
-  /* /\* second word immx with upper22 *\/ */
-  /* emit_insn (gen_lshrsi3 (chain, chain, GEN_INT (10))); */
-
-  /* /\* goto with addr from m_tramp *\/ */
-  /* emit_move_insn (scratch2, XEXP(m_tramp, 0)); */
-  /* emit_insn (gen_subsi3 (scratch2, fun_addr, scratch2)); */
-  /* emit_insn (gen_extzv (scratch2, scratch2, GEN_INT (27), GEN_INT(2))); */
-  /* emit_insn (gen_iorsi3 (scratch2, scratch2, GEN_INT ((int)0x90000000))); */
-
-  /* emit_move_insn (mem, scratch2); */
-  /* mem = adjust_address (m_tramp, Pmode, 4); */
-  /* emit_move_insn (mem, scratch); */
-  /* mem = adjust_address (m_tramp, Pmode, 8); */
-  /* emit_move_insn (mem, chain); */
-
-  /* emit_insn (gen_iinvals (adjust_address (m_tramp, Pmode, 0),
-   * k1_sync_reg_rtx)); */
-  /* emit_insn (gen_iinvals (mem, k1_sync_reg_rtx)); */
-}
-
-/* We recognize patterns that aren't canonical addresses, because we
-   might generate those with our use of simplify_replace_rtx() in our
-   mem access packing. */
-/* bool */
-/* k1_legitimate_modulo_addressing_p (rtx x, bool strict) */
-/* { */
-/*     struct k1_address addr; */
-/*     return k1_analyze_modulo_address (x, strict, &addr); */
-/* } */
-
 /* We recognize patterns that aren't canonical addresses, because we
    might generate those with our use of simplify_replace_rtx() in our
    mem access packing. */
@@ -6193,70 +6038,6 @@ k1_function_epilogue (FILE *file ATTRIBUTE_UNUSED,
 {
   dfa_finish ();
 }
-
-/* FIXME AUTO : Disable use of create_SC_* */
-/* rtx */
-/* k1_find_or_create_SC_register (rtx curr_insn, rtx low, rtx high) */
-/* { */
-/*     int i, generating_concat = generating_concat_p; */
-/*     struct fake_SC sc; */
-/*     struct fake_SC *elt; */
-
-/*     if (cfun->machine->fake_SC_registers) */
-/*     FOR_EACH_VEC_ELT (*cfun->machine->fake_SC_registers, i, elt) { */
-/*        if (rtx_equal_p (low, elt->low) */
-/*             && rtx_equal_p (high, elt->high)) { */
-/*             rtx l = SET_DEST (PATTERN (elt->low_insn)); */
-/*             rtx h = SET_DEST (PATTERN (elt->high_insn)); */
-/*             rtx p; */
-/*             int parts = 0; */
-
-/*             for (p = prev_nonnote_insn_bb (curr_insn); p != NULL_RTX ; */
-/*                  p = prev_nonnote_insn_bb (p)) */
-/*                 if (INSN_P (p)) { */
-/*                     rtx set = single_set (p); */
-
-/* 		    if (reg_set_p (low, p) */
-/* 			|| reg_set_p (high, p)) */
-/* 		      break; */
-
-/*                     if (set */
-/*                         && elt->low_insn == p */
-/*                         && rtx_equal_p (l, SET_DEST (set))) { */
-/*                         parts |= 1; */
-/*                     } else if (set */
-/*                                && elt->high_insn == p */
-/*                                && rtx_equal_p (h, SET_DEST (set))) { */
-/*                         parts |= 2; */
-/*                     } */
-
-/*                     if (parts == 3) break; */
-/*                 } */
-
-/*             if (parts == 3) return elt->sc; */
-/*         } */
-/*     } */
-
-/*     /\* If we want the RTL patterns to match, don't generate a SC register */
-/*        containing a concat. *\/ */
-/*     generating_concat_p = 0; */
-/*     sc.sc = gen_reg_rtx (SCmode); */
-/*     /\* We'll access the register only by subparts. Emit a */
-/*        clobber of the whole register so that the liveness */
-/*        analysis can deduce that it's live only from this point */
-/*        on. *\/ */
-/*     emit_insn (gen_rtx_CLOBBER (SCmode, sc.sc)); */
-/*     generating_concat_p = generating_concat; */
-/*     sc.low = low; */
-/*     sc.high = high; */
-
-/*     sc.low_insn = emit_move_insn (gen_lowpart(SFmode, sc.sc), low); */
-/*     sc.high_insn = emit_move_insn (gen_highpart(SFmode, sc.sc), high); */
-
-/*     vec_safe_push (cfun->machine->fake_SC_registers, sc); */
-
-/*     return sc.sc; */
-/* } */
 
 static void
 k1_dependencies_evaluation_hook (rtx_insn *head, rtx_insn *tail)
@@ -6686,13 +6467,6 @@ k1_option_override (void)
 	  }
       }
 
-  // FIXME FOR COOLIDGE
-
-  /* if (k1_architecture() >= K1B) */
-  /*   k1_arch_schedule = ARCH_BOSTAN; */
-  /* else */
-  /*   k1_arch_schedule = ARCH_ANDEY; */
-
   k1_arch_schedule = ARCH_COOLIDGE;
 }
 
@@ -6982,9 +6756,6 @@ k1_profile_hook (void)
 
 #undef TARGET_FUNCTION_OK_FOR_SIBCALL
 #define TARGET_FUNCTION_OK_FOR_SIBCALL k1_function_ok_for_sibcall
-
-#undef TARGET_TRAMPOLINE_INIT
-#define TARGET_TRAMPOLINE_INIT k1_target_trampoline_init
 
 #undef TARGET_BUILTIN_DECL
 #define TARGET_BUILTIN_DECL k1_target_builtin_decl
