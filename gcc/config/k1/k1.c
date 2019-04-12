@@ -6599,15 +6599,6 @@ k1_lra_p (void)
   return !TARGET_RELOAD;
 }
 
-static int
-k1_target_register_priority (int regno)
-{
-  if (regno == 10 || regno == 15)
-    return 0;
-
-  return 1;
-}
-
 bool
 k1_float_fits_bits (const REAL_VALUE_TYPE *r, unsigned bitsz,
 		    enum machine_mode mode)
@@ -6779,9 +6770,6 @@ k1_profile_hook (void)
 
 #undef TARGET_REGISTER_MOVE_COST
 #define TARGET_REGISTER_MOVE_COST k1_target_register_move_cost
-
-#undef TARGET_REGISTER_PRIORITY
-#define TARGET_REGISTER_PRIORITY k1_target_register_priority
 
 #undef TARGET_FUNCTION_OK_FOR_SIBCALL
 #define TARGET_FUNCTION_OK_FOR_SIBCALL k1_function_ok_for_sibcall
