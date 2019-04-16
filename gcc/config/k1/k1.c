@@ -1838,7 +1838,6 @@ k1_init_expanders (void)
 {
   /* Arrange to initialize and mark the machine per-function status.  */
   init_machine_status = k1_init_machine_status;
-  generating_concat_minsize = GET_MODE_SIZE (DCmode) + 1;
 }
 
 bool
