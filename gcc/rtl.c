@@ -390,7 +390,6 @@ shallow_copy_rtx_stat (const_rtx orig MEM_STAT_DECL)
 
 /* Nonzero when we are generating CONCATs.  */
 int generating_concat_p;
-int generating_concat_minsize;
 
 /* Nonzero when we are expanding trees to RTL.  */
 int currently_expanding_to_rtl;

@@ -1038,7 +1038,6 @@ gen_reg_rtx (machine_mode mode)
     }
 
   if (generating_concat_p
-      && (GET_MODE_SIZE (mode) >= generating_concat_minsize)
       && (GET_MODE_CLASS (mode) == MODE_COMPLEX_FLOAT
 	  || GET_MODE_CLASS (mode) == MODE_COMPLEX_INT))
     {
