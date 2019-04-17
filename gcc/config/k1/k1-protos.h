@@ -59,7 +59,7 @@ extern void k1_target_print_operand_address (FILE *file, rtx x);
 
 extern bool k1_target_print_punct_valid_p (unsigned char code);
 
-extern bool k1_is_uncached_mem_op_p (rtx op);
+extern int k1_is_uncached_mem_op_p (rtx op);
 
 extern bool k1_load_multiple_operation_p (rtx op, bool is_uncached);
 
@@ -90,9 +90,6 @@ extern bool k1_legitimate_modulo_addressing_p (rtx x, bool strict);
 extern bool k1_split_mem (rtx x, rtx *base_out, rtx *offset_out, bool strict);
 
 extern bool k1_pack_load_store (rtx operands[], unsigned int nops);
-
-extern bool k1_lowbit_highbit_constant_p (HOST_WIDE_INT val, int *lowbit,
-					  int *highbit);
 
 extern bool k1_is_farcall_p (rtx);
 
