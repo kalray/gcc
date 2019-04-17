@@ -107,11 +107,6 @@
   (and (match_code "const_int")
        (match_test "SIGNED_INT_FITS_N_BITS (ival, 43)")))
 
-(define_constraint "Ilh"  
-  "Constants that can be expressed as lowbit/highbit pair"
-  (and (match_code "const_int")
-       (match_test "k1_lowbit_highbit_constant_p (ival, NULL, NULL)")))
-
 (define_memory_constraint "a"
   "Memory operands with small immediates"
   (and (match_code "mem")
