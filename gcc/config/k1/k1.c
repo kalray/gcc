@@ -1298,42 +1298,6 @@ k1_target_secondary_reload (bool in_p ATTRIBUTE_UNUSED, rtx x ATTRIBUTE_UNUSED,
   return NO_REGS;
 }
 
-bool
-k1_lowbit_highbit_constant_p (HOST_WIDE_INT val_, int *lowbit, int *highbit)
-{
-  uint32_t val = val_ & 0xFFFFFFFF;
-  int popcount = __builtin_popcount (val);
-  int ctz = __builtin_ctz (val);
-  int clz = __builtin_clz (val);
-  int res = 0;
-  int tmp;
-
-  if (32 - clz - ctz == popcount)
-    {
-      res = 1;
-      clz = 31 - clz;
-      goto end;
-    }
-
-  val = ~val;
-  popcount = __builtin_popcount (val);
-  ctz = __builtin_ctz (val);
-  clz = __builtin_clz (val);
-
-  res = 32 - clz - ctz == popcount;
-  tmp = 31 - clz;
-  clz = ctz - 1;
-  ctz = tmp;
-
-end:
-  if (lowbit)
-    *lowbit = ctz;
-  if (highbit)
-    *highbit = clz;
-
-  return res;
-}
-
 void
 k1_target_print_operand (FILE *file, rtx x, int code)
 {
@@ -1344,12 +1308,9 @@ k1_target_print_operand (FILE *file, rtx x, int code)
   bool addressing_mode = false;
   bool as_address = false;
   bool is_float = false;
-  /* bool low = false; */
-  /* bool high = false; */
-  bool lowbit_highbit = false;
   bool signed10 = false;
+  int addr_space = 0;
   /* bool want_plt = false; */
-  int lowbit, highbit;
 
   switch (code)
     {
@@ -1358,9 +1319,6 @@ k1_target_print_operand (FILE *file, rtx x, int code)
       break;
     case 'a':
       as_address = true;
-      break;
-    case 'b':
-      lowbit_highbit = true;
       break;
     case 'Q': /* Force the use of quadruple even if mode is not compatible */
       quadword_reg++;
@@ -1381,15 +1339,7 @@ k1_target_print_operand (FILE *file, rtx x, int code)
     case 'j':
       signed10 = true;
       break;
-    case 'S':
-      /* high = true; */
-      error ("Using %S (high) in asm format");
-      break;
     case 'P':
-      break;
-    case 's':
-      /* low = true; */
-      error ("Using %s (low) in asm format");
       break;
     case 'u':
       u32 = true;
@@ -1412,9 +1362,13 @@ k1_target_print_operand (FILE *file, rtx x, int code)
 	fprintf (file, "$nd" HOST_WIDE_INT_PRINT_DEC,
 		 (INTVAL (x) - 48) * 2 + 32);
       return;
-    case 'C': /* Print an additional 'u' in the case of uncached load/store */
-      if (k1_is_uncached_mem_op_p (x))
+    case 'C': /* Print an additional '.u' or '.us' in the case of uncached load
+	       */
+      addr_space = k1_is_uncached_mem_op_p (x);
+      if (addr_space == K1_ADDR_SPACE_BYPASS)
 	fprintf (file, ".u");
+      if (addr_space == K1_ADDR_SPACE_STREAM)
+	fprintf (file, ".us");
       return;
     default:
       gcc_unreachable ();
@@ -1496,11 +1450,6 @@ k1_target_print_operand (FILE *file, rtx x, int code)
 		   reg_names[REGNO (operand) + 3]);
 	}
 
-      /* else if (low) */
-      /*     fprintf (file, "$%s", reg_names[REGNO (operand)]); */
-      /* else if (high) */
-      /*     fprintf (file, "$%s", reg_names[REGNO (operand)+1]); */
-
       // FIXME AUTO: coolidge, monoquadruple ?
       else if ((GET_MODE_SIZE (GET_MODE (x)) == 16)
 	       && (!system_register_operand (operand, VOIDmode)))
@@ -1573,23 +1522,6 @@ k1_target_print_operand (FILE *file, rtx x, int code)
       return;
 
     case CONST_INT:
-      if (lowbit_highbit && (INTVAL (x) < -512 || INTVAL (x) > 511)
-	  && k1_lowbit_highbit_constant_p (INTVAL (x), &lowbit, &highbit))
-	{
-	  fprintf (file, "%i, %i", highbit, lowbit);
-	  return;
-	}
-      /* FIXME, MAKED can take 16 bits immediates */
-      /* if (paired_reg) { */
-      /*     /\* [JV]: ??? It doesn't work with value 0...: */
-      /*        && (INTVAL (x) < -512 || INTVAL (x) > 511)) { */
-      /*     *\/ */
-      /*     long long val = INTVAL (x); */
-      /*     fprintf (file, "0x%x:0x%x", */
-      /*              (unsigned int)(val & 0xFFFFFFFF), */
-      /*              (unsigned int)(val >> 32)); */
-      /*     return; */
-      /* } */
       if (u32)
 	{
 	  /* Unsigned 32 bits value. */
@@ -1614,42 +1546,6 @@ k1_target_print_operand (FILE *file, rtx x, int code)
 	  fprintf (file, HOST_WIDE_INT_PRINT_DEC, INTVAL (x));
 	}
       return;
-
-      /* FIXME AUTO: disabling vector support */
-      /* case CONST_VECTOR: */
-      /*     if (GET_MODE (x) == V2HImode) { */
-      /*         gcc_assert (CONST_INT_P (CONST_VECTOR_ELT (x, 0)) */
-      /*                     && CONST_INT_P (CONST_VECTOR_ELT (x, 1))); */
-
-      /*         fprintf (file, HOST_WIDE_INT_PRINT_DEC, */
-      /*                  (INTVAL (CONST_VECTOR_ELT (x, 0)) & 0xFFFF) */
-      /*                  | (INTVAL (CONST_VECTOR_ELT (x, 1)) & 0xFFFF) << 16);
-       */
-      /*     } else if (GET_MODE (x) == V4HImode) { */
-      /*         gcc_assert (CONST_INT_P (CONST_VECTOR_ELT (x, 0)) */
-      /*                     && CONST_INT_P (CONST_VECTOR_ELT (x, 1)) */
-      /*                     && CONST_INT_P (CONST_VECTOR_ELT (x, 2)) */
-      /*                     && CONST_INT_P (CONST_VECTOR_ELT (x, 3))); */
-
-      /*         fprintf (file, "0x%x:0x%x", */
-      /*                  (uint32_t)((INTVAL (CONST_VECTOR_ELT (x, 0)) & 0xFFFF)
-       */
-      /*                             | ((INTVAL (CONST_VECTOR_ELT (x, 1)) &
-       * 0xFFFF) << 16)), */
-      /*                  (uint32_t)((INTVAL (CONST_VECTOR_ELT (x, 2)) & 0xFFFF)
-       */
-      /*                             | ((INTVAL (CONST_VECTOR_ELT (x, 3)) &
-       * 0xFFFF) << 16))); */
-      /*     } else { */
-      /*         gcc_assert (GET_MODE (x) == V2SImode || GET_MODE (x) ==
-       * V2SFmode); */
-      /*         k1_target_print_operand (file, CONST_VECTOR_ELT (x, 0), 'u');
-       */
-      /*         fprintf (file, ":"); */
-      /*         k1_target_print_operand (file, CONST_VECTOR_ELT (x, 1), 'u');
-       */
-      /*     } */
-      /*     return; */
 
     case CONST_STRING:
       /* Case for modifier strings */
@@ -5100,16 +4996,18 @@ k1_has_big_immediate (rtx x)
 }
 
 /* Test whether the memory operand OP should be accessed cached or
-   uncached regarding it's name address space. */
-bool
+   uncached (bypass or stream) regarding it's name address space.
+   If non-zero, the return value is the MEM_ADDR_SPACE. */
+int
 k1_is_uncached_mem_op_p (rtx op)
 {
   /* __convert[_no_sync] addr space should not come here. */
-  gcc_assert (!MEM_P (op)
-	      || (MEM_ADDR_SPACE (op) == ADDR_SPACE_GENERIC
-		  || MEM_ADDR_SPACE (op) == K1_ADDR_SPACE_UNCACHED));
-
-  return MEM_P (op) && MEM_ADDR_SPACE (op) == K1_ADDR_SPACE_UNCACHED;
+  gcc_assert (!MEM_P (op) || (MEM_ADDR_SPACE (op) < K1_ADDR_SPACE_CONVERT));
+  if (MEM_P (op))
+    {
+      return MEM_ADDR_SPACE (op);
+    }
+  return 0;
 }
 
 /*
@@ -5136,7 +5034,7 @@ k1_load_multiple_operation_p (rtx op, bool is_uncached)
 	  || !MEM_P (SET_SRC (set)) || MEM_VOLATILE_P (SET_SRC (set)))
 	return 0;
 
-      if (is_uncached != k1_is_uncached_mem_op_p (SET_SRC (set)))
+      if (is_uncached != !!k1_is_uncached_mem_op_p (SET_SRC (set)))
 	return 0;
     }
 
@@ -5308,6 +5206,7 @@ k1_uses_register (rtx x)
 	}
     }
   /* return for_each_rtx (&x, k1_uses_register_1, &set_dst); */
+  return 0;
 }
 
 static void k1_scan_insn_registers_wrap (rtx *x, void *data);
@@ -6190,7 +6089,8 @@ k1_addr_space_legitimate_address_p (machine_mode mode, rtx exp, bool strict,
       gcc_unreachable ();
 
     case ADDR_SPACE_GENERIC:
-    case K1_ADDR_SPACE_UNCACHED:
+    case K1_ADDR_SPACE_BYPASS:
+    case K1_ADDR_SPACE_STREAM:
       return k1_target_legitimate_address_p (mode, exp, strict);
 
     case K1_ADDR_SPACE_CONVERT:
@@ -6228,7 +6128,7 @@ k1_addr_space_convert (rtx op, tree from_type, tree to_type ATTRIBUTE_UNUSED)
     {
 
       warning (0,
-	       TYPE_ADDR_SPACE (TREE_TYPE (from_type)) == K1_ADDR_SPACE_UNCACHED
+	       TYPE_ADDR_SPACE (TREE_TYPE (from_type)) == K1_ADDR_SPACE_BYPASS
 		 ? "Implicit conversion of uncached pointer to cached one"
 		 : "Implicit conversion of cached pointer to uncached one");
       inform (input_location,
