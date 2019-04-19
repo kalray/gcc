@@ -1317,7 +1317,7 @@ k1_target_print_operand (FILE *file, rtx x, int code)
          addr_space = k1_is_uncached_mem_op_p (x);
         if (addr_space == K1_ADDR_SPACE_BYPASS)
             fprintf(file, ".u");
-        if (addr_space == K1_ADDR_SPACE_STREAM)
+        if (addr_space == K1_ADDR_SPACE_PRELOAD)
             fprintf(file, ".us");
         return;
     default:
@@ -4701,7 +4701,7 @@ k1_has_big_immediate (rtx x)
 }
 
 /* Test whether the memory operand OP should be accessed cached or
-   uncached (bypass or stream) regarding it's name address space.
+   uncached (bypass or preload) regarding it's name address space.
    If non-zero, the return value is the MEM_ADDR_SPACE. */
 int
 k1_is_uncached_mem_op_p (rtx op)
@@ -5768,7 +5768,7 @@ k1_addr_space_legitimate_address_p (machine_mode mode, rtx exp, bool strict,
 
     case ADDR_SPACE_GENERIC:
     case K1_ADDR_SPACE_BYPASS:
-    case K1_ADDR_SPACE_STREAM:
+    case K1_ADDR_SPACE_PRELOAD:
       return k1_target_legitimate_address_p (mode, exp, strict);
 
     case K1_ADDR_SPACE_CONVERT:
@@ -5804,9 +5804,9 @@ k1_addr_space_convert (rtx op, tree from_type, tree to_type ATTRIBUTE_UNUSED)
       && TYPE_ADDR_SPACE (TREE_TYPE (to_type  )) != K1_ADDR_SPACE_CONVERT)
     {
 
-      warning (0, TYPE_ADDR_SPACE (TREE_TYPE (from_type)) == K1_ADDR_SPACE_BYPASS
-	       ? "Implicit conversion of uncached pointer to cached one"
-	       : "Implicit conversion of cached pointer to uncached one");
+      warning (0, TYPE_ADDR_SPACE (TREE_TYPE (from_type)) > ADDR_SPACE_GENERIC
+	       ? "Implicit conversion from uncached pointer to cached one"
+	       : "Implicit conversion from cached pointer to uncached one");
       inform (input_location,
 	      "Use (__convert <type> *) to acknowledge this conversion");
     }

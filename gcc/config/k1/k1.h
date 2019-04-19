@@ -831,18 +831,18 @@ extern void k1_profile_hook (void);
 
 /* Address spaces
 
-   The __bypass and __stream address spaces refers to same space as the generic
-   one but accesses to __bypass and __stream objects are achieved using uncached
+   The __bypass and __preload address spaces refers to same space as the generic
+   one but accesses to __bypass and __preload objects are achieved using uncached
    and uncached speculative load instructions. */
 #define K1_ADDR_SPACE_BYPASS 1
-#define K1_ADDR_SPACE_STREAM 2
+#define K1_ADDR_SPACE_PRELOAD 2
 #define K1_ADDR_SPACE_CONVERT 3
 
-#define REGISTER_TARGET_PRAGMAS() do {					\
-    c_register_addr_space ("__uncached", K1_ADDR_SPACE_BYPASS);	\
-    c_register_addr_space ("__bypass", K1_ADDR_SPACE_BYPASS);	\
-    c_register_addr_space ("__stream", K1_ADDR_SPACE_STREAM);	\
-    c_register_addr_space ("__convert", K1_ADDR_SPACE_CONVERT);		\
+#define REGISTER_TARGET_PRAGMAS() do { \
+    c_register_addr_space ("__uncached", K1_ADDR_SPACE_BYPASS); \
+    c_register_addr_space ("__bypass", K1_ADDR_SPACE_BYPASS); \
+    c_register_addr_space ("__preload", K1_ADDR_SPACE_PRELOAD); \
+    c_register_addr_space ("__convert", K1_ADDR_SPACE_CONVERT); \
   } while(0)
 
 
