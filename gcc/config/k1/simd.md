@@ -1,39 +1,38 @@
 
-;; (define_expand "movv2sf"
-;;    [(set (match_operand:V2SI 0 "nonimmediate_operand" "")
-;;          (match_operand:V2SI 1 "general_operand" " "))]
-;;    ""
-;; {
-;;         if (MEM_P(operands[0]) && can_create_pseudo_p()) {
-;;            rtx reg = gen_reg_rtx(V2SFmode);
-;;            emit_move_insn (reg, operands[1]);
-;;            operands[1] = reg;
-;;         }
-;; }
-;; )
-;; 
-;; (define_insn "*movv2sf_real"
-;;    [(set (match_operand:V2SF 0 "nonimmediate_operand" "=r,=r,=r,=a,=m,=r,=r,=r")
-;;          (match_operand:V2SF 1 "general_operand" "r, a, m, r, r,I16,D37,i"))]
-;;     "  (!immediate_operand(operands[1], V2SFmode) || !memory_operand(operands[0], V2SFmode))
-;;     "
-;; {
-;;     switch (which_alternative) {
-;;     	   case 0: return "ord   %d0 = %d1, 0";
-;; 	   case 1:
-;; 	   case 2: return "ld%m1   %0 = %1";
-;; 	   case 3:
-;; 	   case 4: return "sd%m0   %0 = %1";
-;;            case 5:
-;;            case 6:
-;;            case 7: return "maked %d0 = %d1";
-;; 	   default: gcc_unreachable ();
-;;     }
-;; }
-;; [(set_attr "type" "alud,lsu_load,lsu_load_x,lsu_store,lsu_store_x,alud,alud_y,alud_z")
-;;  (set_attr "length" "8,4,8,4,8,8,12,16")]
-;; )
-;; 
+(define_expand "movv2sf"
+   [(set (match_operand:V2SF 0 "nonimmediate_operand" "")
+         (match_operand:V2SF 1 "general_operand" ""))]
+    ""
+    {
+        if (MEM_P(operands[0]) && can_create_pseudo_p()) {
+           rtx reg = gen_reg_rtx(V2SFmode);
+           emit_move_insn (reg, operands[1]);
+           operands[1] = reg;
+        }
+    }
+)
+
+(define_insn "*movv2sf_real"
+   [(set (match_operand:V2SF 0 "nonimmediate_operand" "=r,r,r,a,m,r,r,r")
+         (match_operand:V2SF 1 "general_operand" "r,a,m,r,r,I16,I37,i"))]
+    "(!immediate_operand(operands[1], V2SFmode) || !memory_operand(operands[0], V2SFmode))"
+    {
+        switch (which_alternative) {
+        case 0: return "copyd %0 = %1";
+        case 1:
+        case 2: return "ld%m1 %0 = %1";
+        case 3:
+        case 4: return "sd%m0 %0 = %1";
+        case 5:
+        case 6:
+        case 7: return "make %0 = %1";
+        default: gcc_unreachable ();
+        }
+    }
+  [(set_attr "type" "alu_tiny, lsu_auxw_load, lsu_auxw_load_x, lsu_auxr_store, lsu_auxr_store_x, alu_tiny, alu_tiny_x, alu_tiny_y")
+   (set_attr "length" "     4,             4,               8,              4,                8,        4,          8,         12")]
+)
+
 ;; (define_expand "movv8sf"
 ;;    [(set (match_operand:V8SF 0 "nonimmediate_operand" "")
 ;;          (match_operand:V8SF 1 "general_operand" " "))]
