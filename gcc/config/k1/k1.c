@@ -390,8 +390,12 @@ k1_pack_load_store (rtx operands[], unsigned int nops)
   bool is_load = true;
   rtx sorted_operands[2 * K1_MAX_PACKED_LSU];
 
-  /* Only ld + ld => lq */
-  if (nops != 2)
+  /* Only:
+     ld + ld => lq
+     ld + ld + ld + ld => lo
+  */
+
+  if (nops != 2 && nops != 4)
     return false;
 
   for (unsigned i = 0; i < nops; i++)
