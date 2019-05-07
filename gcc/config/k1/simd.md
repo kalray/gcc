@@ -13,24 +13,24 @@
 )
 
 (define_insn "*movv2sf_real"
-   [(set (match_operand:V2SF 0 "nonimmediate_operand" "=r,r,r,a,m,r,r,r")
-         (match_operand:V2SF 1 "general_operand" "r,a,m,r,r,I16,I37,i"))]
+   [(set (match_operand:V2SF 0 "nonimmediate_operand" "=r,r,r,r,r,a,m,r")
+         (match_operand:V2SF 1 "general_operand" "r,Ca,Cm,Za,Zm,r,r,i"))]
     "(!immediate_operand(operands[1], V2SFmode) || !memory_operand(operands[0], V2SFmode))"
     {
         switch (which_alternative) {
         case 0: return "copyd %0 = %1";
         case 1:
-        case 2: return "ld%m1 %0 = %1";
+        case 2:
         case 3:
-        case 4: return "sd%m0 %0 = %1";
+        case 4: return "ld%C1%m1 %0 = %1";
         case 5:
-        case 6:
+        case 6: return "sd%m0 %0 = %1";
         case 7: return "make %0 = %1";
         default: gcc_unreachable ();
         }
     }
-  [(set_attr "type" "alu_tiny, lsu_auxw_load, lsu_auxw_load_x, lsu_auxr_store, lsu_auxr_store_x, alu_tiny, alu_tiny_x, alu_tiny_y")
-   (set_attr "length" "     4,             4,               8,              4,                8,        4,          8,         12")]
+  [(set_attr "type" "alu_tiny, lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxr_store, lsu_auxr_store_x, alu_tiny_y")
+   (set_attr "length" "     4,             4,               8,                      4,                        8,              4,                8,         12")]
 )
 
 ;; (define_expand "movv8sf"
