@@ -10,6 +10,7 @@
   alu_full_x,\
   alu_full_y,\
   alu_full_copro,\
+  alu_dual_y,\
   bcu,\
   bcu_get,\
   mau,\
