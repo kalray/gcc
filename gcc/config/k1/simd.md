@@ -1,34 +1,140 @@
 
-(define_expand "movv2sf"
-   [(set (match_operand:V2SF 0 "nonimmediate_operand" "")
-         (match_operand:V2SF 1 "general_operand" ""))]
-    ""
-    {
-        if (MEM_P(operands[0]) && can_create_pseudo_p()) {
-           rtx reg = gen_reg_rtx(V2SFmode);
-           emit_move_insn (reg, operands[1]);
-           operands[1] = reg;
-        }
+;; V2DI
+
+(define_expand "movv2di"
+  [(set (match_operand:V2DI 0 "nonimmediate_operand" "")
+        (match_operand:V2DI 1 "general_operand" ""))]
+  ""
+  {
+    if (MEM_P(operands[0])) {
+      operands[1] = force_reg (V2DImode, operands[1]);
     }
+  }
+)
+
+;; TODO: factor with "*mov_quad"
+(define_insn "*movv2di_real"
+  [(set (match_operand:V2DI 0 "nonimmediate_operand" "=r, r, r, r, r,a,m,r")
+        (match_operand:V2DI 1 "general_operand"       "r,Ca,Cm,Za,Zm,r,r,i"))]
+  "(!immediate_operand(operands[1], V2DImode) || !memory_operand(operands[0], V2DImode))"
+  {
+    switch (which_alternative) {
+    case 0:
+      {
+        rtx x = operands[1];
+        int regno =  REGNO (x);
+        static char instruction[256];
+        sprintf (instruction,
+                 "copyq %%Q0 = $r%d, $r%d",
+                 regno, regno + 1);
+        return instruction;
+      }
+      return "copyo %O0 = %O1";
+    case 1: case 2: case 3: case 4:
+      return "lq%C1%m1 %Q0 = %1";
+    case 5: case 6:
+      return "sq%m0 %0 = %Q1";
+    case 7:
+      {
+        rtx x = operands[1];
+        int regno =  REGNO (operands[0]);
+        gcc_assert (GET_CODE (x) == CONST_VECTOR);
+        long long val_0 = INTVAL (CONST_VECTOR_ELT (x, 0));
+        long long val_1 = INTVAL (CONST_VECTOR_ELT (x, 1));
+        static char instruction[256];
+        sprintf (instruction,
+                 "make $r%d = 0x%llx\n\tmake $r%d = 0x%llx",
+                 regno, val_0, regno + 1, val_1);
+        return instruction;
+      }
+    default:
+      gcc_unreachable ();
+    }
+  }
+  [(set_attr "type"    "lsu_auxr_auxw, lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxr_store, lsu_auxr_store_x, alu_dual_y")
+   (set_attr "length"  "            4,              4,              8,                      4,                        8,              4,                8,         24")]
+)
+
+;; V4DI
+
+(define_expand "movv4di"
+  [(set (match_operand:V4DI 0 "nonimmediate_operand" "")
+        (match_operand:V4DI 1 "general_operand" ""))]
+  ""
+  {
+    if (MEM_P(operands[0])) {
+      operands[1] = force_reg (V4DImode, operands[1]);
+    }
+  }
+)
+
+;; TODO: factor with "*mov_octuple"
+(define_insn "*movv4di_real"
+  [(set (match_operand:V4DI 0 "nonimmediate_operand" "=r, r, r, r, r,a,m,r")
+        (match_operand:V4DI 1 "general_operand"       "r,Ca,Cm,Za,Zm,r,r,i"))]
+  "(!immediate_operand(operands[1], V4DImode) || !memory_operand(operands[0], V4DImode))"
+  {
+    switch (which_alternative) {
+    case 0:
+      return "copyo %O0 = %O1";
+    case 1: case 2: case 3: case 4:
+      return "lo%C1%m1 %O0 = %1";
+    case 5: case 6:
+      return "so%m0 %0 = %O1";
+    case 7:
+      {
+        rtx x = operands[1];
+        int regno =  REGNO (operands[0]);
+        gcc_assert (GET_CODE (x) == CONST_VECTOR);
+        long long val_0 = INTVAL (CONST_VECTOR_ELT (x, 0));
+        long long val_1 = INTVAL (CONST_VECTOR_ELT (x, 1));
+        long long val_2 = INTVAL (CONST_VECTOR_ELT (x, 2));
+        long long val_3 = INTVAL (CONST_VECTOR_ELT (x, 3));
+        static char instruction[256];
+        sprintf (instruction,
+                 "make $r%d = 0x%llx\n\tmake $r%d = 0x%llx\n\t;;\n\t" 
+                 "make $r%d = 0x%llx\n\tmake $r%d = 0x%llx",
+                 regno, val_0, regno + 1, val_1, regno + 2, val_2, regno + 3, val_3);
+        return instruction;
+      }
+    default:
+      gcc_unreachable ();
+    }
+  }
+  [(set_attr "type"    "lsu_auxr_auxw, lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxr_store, lsu_auxr_store_x, alu_dual_y")
+   (set_attr "length"  "            4,              4,              8,                      4,                        8,              4,                8,         24")]
+)
+
+;; V2SF
+
+(define_expand "movv2sf"
+  [(set (match_operand:V2SF 0 "nonimmediate_operand" "")
+        (match_operand:V2SF 1 "general_operand" ""))]
+  ""
+  {
+    if (MEM_P(operands[0])) {
+      operands[1] = force_reg (V2SFmode, operands[1]);
+    }
+  }
 )
 
 (define_insn "*movv2sf_real"
-   [(set (match_operand:V2SF 0 "nonimmediate_operand" "=r,r,r,r,r,a,m,r")
-         (match_operand:V2SF 1 "general_operand" "r,Ca,Cm,Za,Zm,r,r,i"))]
-    "(!immediate_operand(operands[1], V2SFmode) || !memory_operand(operands[0], V2SFmode))"
-    {
-        switch (which_alternative) {
-        case 0: return "copyd %0 = %1";
-        case 1:
-        case 2:
-        case 3:
-        case 4: return "ld%C1%m1 %0 = %1";
-        case 5:
-        case 6: return "sd%m0 %0 = %1";
-        case 7: return "make %0 = %1";
-        default: gcc_unreachable ();
-        }
+  [(set (match_operand:V2SF 0 "nonimmediate_operand" "=r, r, r, r, r,a,m,r")
+        (match_operand:V2SF 1 "general_operand"       "r,Ca,Cm,Za,Zm,r,r,i"))]
+  "(!immediate_operand(operands[1], V2SFmode) || !memory_operand(operands[0], V2SFmode))"
+  {
+    switch (which_alternative) {
+    case 0: return "copyd %0 = %1";
+    case 1:
+    case 2:
+    case 3:
+    case 4: return "ld%C1%m1 %0 = %1";
+    case 5:
+    case 6: return "sd%m0 %0 = %1";
+    case 7: return "make %0 = %1";
+    default: gcc_unreachable ();
     }
+  }
   [(set_attr "type" "alu_tiny, lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxr_store, lsu_auxr_store_x, alu_tiny_y")
    (set_attr "length" "     4,             4,               8,                      4,                        8,              4,                8,         12")]
 )
