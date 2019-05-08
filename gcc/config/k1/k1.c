@@ -1111,10 +1111,11 @@ k1_target_vector_mode_supported_p (enum machine_mode mode ATTRIBUTE_UNUSED)
   switch (mode)
     {
     // case V4HImode:
-    // case V2SImode:
     // case V8HImode:
+    // case V2SImode:
     // case V4SImode:
-    // case V2DImode:
+    case V2DImode:
+    case V4DImode:
     case V2SFmode:
       // case V4SFmode:
       // case V2DFmode:
@@ -1456,17 +1457,21 @@ k1_target_print_operand (FILE *file, rtx x, int code)
 static const char *
 k1_regname (rtx x)
 {
+  machine_mode mode;
   unsigned int regno;
 
   switch (GET_CODE (x))
     {
     case REG:
-      if (GET_MODE (x) == TImode)
+      mode = GET_MODE (x);
+      if (GET_MODE_SIZE (mode) <= UNITS_PER_WORD)
+	return reg_names[REGNO (x)];
+      else if (GET_MODE_SIZE (mode) <= 2 * UNITS_PER_WORD)
 	return prf_reg_names[REGNO (x)];
-      else if (GET_MODE (x) == OImode)
+      else if (GET_MODE_SIZE (mode) <= 4 * UNITS_PER_WORD)
 	return qrf_reg_names[REGNO (x)];
       else
-	return reg_names[REGNO (x)];
+	gcc_unreachable ();
     case SUBREG:
       gcc_assert (TARGET_32); // FIXME AUTO: don't understand this assert
       gcc_assert (GET_MODE (x) == DImode);
