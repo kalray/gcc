@@ -96,6 +96,8 @@ size_int_pair_stack (struct int_pair_stack *stack)
   return stack->top - &stack->arr[0];
 }
 
+extern void pthread_yield();
+
 static inline void
 busy_wait (void)
 {
@@ -106,12 +108,8 @@ busy_wait (void)
 #elif defined __sparc__ && (defined __arch64__ || defined __sparc_v9__)
   __asm volatile ("membar #LoadLoad" : : : "memory");
 #elif defined __k1__
-  extern int MPPA_COS_ENABLE_DINVAL __attribute__((weak));
-  if (&MPPA_COS_ENABLE_DINVAL) {
-    __builtin_k1_fence();
-    __builtin_k1_dinval();
-  }
   __asm volatile ("" : : : "memory");
+  pthread_yield();
 #else
   __asm volatile ("" : : : "memory");
 #endif
