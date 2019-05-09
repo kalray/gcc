@@ -164,6 +164,9 @@ case "${target}" in
 	fi
 	;;
 
+  k1*-*-cos)
+	config_path="cos"
+	;;
   *)
 	;;
 
