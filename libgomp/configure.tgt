@@ -171,6 +171,9 @@ case "${target}" in
 	config_path="gcn accel"
 	;;
 
+  k1*-*-cos)
+	config_path="cos"
+	;;
   *)
 	;;
 
