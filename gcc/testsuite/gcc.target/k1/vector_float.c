@@ -55,7 +55,7 @@ float32x2_t k1_ffmawp(float32x2_t a, float32x2_t b, float32x2_t c) {
 /* { dg-final { scan-assembler-times "ffmawp \\\$r0 = \\\$r1, \\\$r2" 1 } } */
 
 float32x2_t k1_ffmawp_builtin(float32x2_t a, float32x2_t b, float32x2_t c) {
-    return __builtin_k1_ffmawp(a, b, c, ".rn.s");
+    return __builtin_k1_ffmawp(b, c, a, ".rn.s");
 }
 /* { dg-final { scan-assembler-times "ffmawp.rn.s \\\$r0 = \\\$r1, \\\$r2" 1 } } */
 
@@ -66,7 +66,7 @@ float32x2_t k1_ffmswp(float32x2_t a, float32x2_t b, float32x2_t c) {
 /* { dg-final { scan-assembler-times "ffmswp \\\$r0 = \\\$r1, \\\$r2" 1 } } */
 
 float32x2_t k1_ffmswp_builtin(float32x2_t a, float32x2_t b, float32x2_t c) {
-    return __builtin_k1_ffmswp(a, b, c, ".rn.s");
+    return __builtin_k1_ffmswp(b, c, a, ".rn.s");
 }
 /* { dg-final { scan-assembler-times "ffmswp.rn.s \\\$r0 = \\\$r1, \\\$r2" 1 } } */
 
