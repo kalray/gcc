@@ -72,34 +72,34 @@ double k1_ffmswd2_math_builtin(float a, float b, double c) {
 
 
 float k1_ffmaw_k1_builtin(float a, float b, float c) {
-  return __builtin_k1_ffmaw(a, b, c, 0);
+  return __builtin_k1_ffmaw(b, c, a, ".rn.s");
 }
-/* { dg-final { scan-assembler-times "ffmaw \\\$r0 = \\\$r1, \\\$r2" 1 } } */
+/* { dg-final { scan-assembler-times "ffmaw.rn.s \\\$r0 = \\\$r1, \\\$r2" 1 } } */
 
 double k1_ffmad_k1_builtin(double a, double b, double c) {
-  return __builtin_k1_ffmad(a, b, c, 0);
+  return __builtin_k1_ffmad(b, c, a, ".rn.s");
 }
-/* { dg-final { scan-assembler-times "ffmad \\\$r0 = \\\$r1, \\\$r2" 1 } } */
+/* { dg-final { scan-assembler-times "ffmad.rn.s \\\$r0 = \\\$r1, \\\$r2" 1 } } */
 
 double k1_ffmawd_k1_builtin(double a, float b, float c) {
-  return __builtin_k1_ffmawd(a, b, c, 0);
+  return __builtin_k1_ffmawd(b, c, a, ".rn.s");
 }
-/* { dg-final { scan-assembler-times "ffmawd \\\$r0 = \\\$r1, \\\$r2" 1 } } */
+/* { dg-final { scan-assembler-times "ffmawd.rn.s \\\$r0 = \\\$r1, \\\$r2" 1 } } */
 
 
 float k1_ffmsw_k1_builtin(float a, float b, float c) {
-  return __builtin_k1_ffmsw(a, b, c, 0);
+  return __builtin_k1_ffmsw(b, c, a, ".rn.s");
 }
-/* { dg-final { scan-assembler-times "ffmsw \\\$r0 = \\\$r1, \\\$r2" 1 } } */
+/* { dg-final { scan-assembler-times "ffmsw.rn.s \\\$r0 = \\\$r1, \\\$r2" 1 } } */
 
 double k1_ffmsd_k1_builtin(double a, double b, double c) {
-  return __builtin_k1_ffmsd(a, b, c, 0);
+  return __builtin_k1_ffmsd(b, c, a, ".rn.s");
 }
-/* { dg-final { scan-assembler-times "ffmsd \\\$r0 = \\\$r1, \\\$r2" 1 } } */
+/* { dg-final { scan-assembler-times "ffmsd.rn.s \\\$r0 = \\\$r1, \\\$r2" 1 } } */
 
 double k1_ffmswd_k1_builtin(double a, float b, float c) {
-  return __builtin_k1_ffmswd(a, b, c, 0);
+  return __builtin_k1_ffmswd(b, c, a, ".rn.s");
 }
-/* { dg-final { scan-assembler-times "ffmswd \\\$r0 = \\\$r1, \\\$r2" 1 } } */
+/* { dg-final { scan-assembler-times "ffmswd.rn.s \\\$r0 = \\\$r1, \\\$r2" 1 } } */
 
 
