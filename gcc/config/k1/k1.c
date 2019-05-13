@@ -2383,6 +2383,7 @@ k1_expand_compare_and_swap (rtx operands[])
   rtx bval, mem, oldval, newval, currval;
   rtx cas_retry = gen_label_rtx ();
   rtx cas_return = gen_label_rtx ();
+  rtx (*gen) (rtx, rtx, rtx);
   machine_mode mode = GET_MODE (operands[2]);
 
   gcc_assert((mode == SImode || mode == DImode));
@@ -2412,10 +2413,12 @@ k1_expand_compare_and_swap (rtx operands[])
   emit_cmp_and_jump_insns (gen_lowpart (mode, low), const1_rtx,
 			   EQ, NULL_RTX, mode, true, cas_return);
 
-  // Else, the acswap has failed, reload MEM to ensure that the value
-  // wasn't updated to the expected one since.
+  // Else, the acswap has failed, reload MEM (atomically) to ensure
+  // that the value wasn't updated to the expected one since.
   currval = gen_reg_rtx (mode);
-  emit_move_insn (currval, mem);
+  gen = mode == SImode ? gen_atomic_loadsi : gen_atomic_loaddi;
+  emit_insn (gen (gen_lowpart (mode, currval), mem, GEN_INT (MEMMODEL_RELAXED)));
+
   // If the reloaded MEM is equal to the expected one (HIGH), retry
   // the acswap.
   emit_cmp_and_jump_insns (currval, gen_lowpart (mode, high),
@@ -2454,6 +2457,7 @@ k1_expand_atomic_op (enum rtx_code code, rtx target, bool after,
   rtx ret = gen_reg_rtx (mode);
   rtx new_mem_val = gen_lowpart (DImode, tmp);
   rtx curr_mem_val = gen_highpart (DImode, tmp);
+  rtx (*gen) (rtx, rtx, rtx);
   rtx op_res, op_res_copy;
 
   if (target && after)
@@ -2464,8 +2468,9 @@ k1_expand_atomic_op (enum rtx_code code, rtx target, bool after,
   k1_emit_pre_barrier (model, false);
 
   emit_label (csloop); /* cas loop entry point */
-  /* copy memory content to perform op on it */
-  emit_move_insn (gen_lowpart (mode, curr_mem_val), force_reg (mode, mem));
+  /* copy memory content to perform op on it (atomic uncached load) */
+  gen = mode == SImode ? gen_atomic_loadsi : gen_atomic_loaddi;
+  emit_insn (gen (gen_lowpart (mode, curr_mem_val), mem, GEN_INT (MEMMODEL_RELAXED)));
 
   /* Perform operation in a cas loop, we do not need to convert
   CURR_MEM_VAL, NEW_MEM_VAL (DImode) and VAL (SImode or
