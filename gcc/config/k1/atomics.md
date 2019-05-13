@@ -45,7 +45,16 @@
   ""
 {
   k1_emit_pre_barrier(operands[2], true);
-  emit_move_insn (operands[0], operands[1]);
+
+  switch (<MODE>mode) {
+    case TImode: emit_insn (gen_lqu (operands[0], operands[1]));  break;
+    case DImode: emit_insn (gen_ldu (operands[0], operands[1]));  break;
+    case SImode: emit_insn (gen_lwzu (operands[0], operands[1])); break;
+    case HImode: emit_insn (gen_lhzu (operands[0], operands[1])); break;
+    case QImode: emit_insn (gen_lbzu (operands[0], operands[1])); break;
+    default: gcc_unreachable ();
+    }
+
   k1_emit_post_barrier(operands[2], true);
   DONE;
 })
