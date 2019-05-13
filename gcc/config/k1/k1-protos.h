@@ -97,7 +97,21 @@ extern void k1_override_options (void);
 
 extern int k1_has_big_immediate (rtx x);
 
-bool k1_has_37bit_immediate_p (rtx x);
+extern bool k1_has_37bit_immediate_p (rtx x);
+
+extern HOST_WIDE_INT k1_const_vector_value (rtx x);
+
+extern bool k1_has_10bit_vector_const_p (rtx x);
+
+extern bool k1_has_16bit_vector_const_p (rtx x);
+
+extern bool k1_has_32bit_vector_const_p (rtx x);
+
+extern bool k1_has_37bit_vector_const_p (rtx x);
+
+extern bool k1_has_43bit_vector_const_p (rtx x);
+
+extern bool k1_has_32x2bit_vector_const_p (rtx x);
 
 extern void k1_expand_vcondv2si (rtx *);
 
