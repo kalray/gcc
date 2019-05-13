@@ -142,39 +142,39 @@
   (eq_attr "type" "all")
   "k1c_all_r")
 
-(define_insn_reservation "k1c_tiny" 1
+(define_insn_reservation "k1c_alu_tiny" 1
   (eq_attr "type" "alu_tiny")
   "k1c_alu_tiny_r")
 
-(define_insn_reservation "k1c_tiny.x" 1
+(define_insn_reservation "k1c_alu_tiny.x" 1
   (eq_attr "type" "alu_tiny_x")
   "k1c_alu_tiny.x_r")
 
-(define_insn_reservation "k1c_tiny.y" 1
+(define_insn_reservation "k1c_alu_tiny.y" 1
   (eq_attr "type" "alu_tiny_y")
   "k1c_alu_tiny.y_r")
 
-(define_insn_reservation "k1c_lite" 1
+(define_insn_reservation "k1c_alu_lite" 1
   (eq_attr "type" "alu_lite")
   "k1c_alu_lite_r")
 
-(define_insn_reservation "k1c_lite.x" 1
+(define_insn_reservation "k1c_alu_lite.x" 1
   (eq_attr "type" "alu_lite_x")
   "k1c_alu_lite.x_r")
 
-(define_insn_reservation "k1c_lite.y" 1
+(define_insn_reservation "k1c_alu_lite.y" 1
   (eq_attr "type" "alu_lite_y")
   "k1c_alu_lite.y_r")
 
-(define_insn_reservation "k1c_alu" 1
+(define_insn_reservation "k1c_alu_full" 1
   (eq_attr "type" "alu_full")
   "k1c_alu_full_r")
 
-(define_insn_reservation "k1c_alu.x" 1
+(define_insn_reservation "k1c_alu_full.x" 1
   (eq_attr "type" "alu_full_x")
   "k1c_alu_full.x_r")
 
-(define_insn_reservation "k1c_alu.y" 1
+(define_insn_reservation "k1c_alu_full.y" 1
   (eq_attr "type" "alu_full_y")
   "k1c_alu_full.y_r")
 
@@ -308,9 +308,9 @@
 
 
 /* The BCU reads GPRs 1 cycle earlier */
-(define_bypass 2 "k1c_alu,k1c_alu.x,k1c_dual.y" "k1c_bcu,k1c_bcu_get")
-(define_bypass 2 "k1c_lite,k1c_lite.x,k1c_lite.y" "k1c_bcu,k1c_bcu_get")
-(define_bypass 2 "k1c_tiny,k1c_tiny.x,k1c_tiny.y" "k1c_bcu,k1c_bcu_get")
+(define_bypass 2 "k1c_alu_full,k1c_alu_full.x,k1c_dual.y" "k1c_bcu,k1c_bcu_get")
+(define_bypass 2 "k1c_alu_lite,k1c_alu_lite.x,k1c_alu_lite.y" "k1c_bcu,k1c_bcu_get")
+(define_bypass 2 "k1c_alu_tiny,k1c_alu_tiny.x,k1c_alu_tiny.y" "k1c_bcu,k1c_bcu_get")
 (define_bypass 3 "k1c_mau,k1c_mau.x,k1c_mau_auxr" "k1c_bcu,k1c_bcu_get")
 (define_bypass 5 "k1c_mau_fpu,k1c_mau_auxr_fpu" "k1c_bcu,k1c_bcu_get")
 (define_bypass 4 "k1c_lsu_auxw_load,k1c_lsu_auxw_load.x" "k1c_bcu,k1c_bcu_get")
