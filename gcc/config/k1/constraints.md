@@ -117,6 +117,36 @@
   (and (match_code "const_int")
        (match_test "SIGNED_INT_FITS_N_BITS (ival, 43)")))
 
+(define_constraint "v10"
+  "A manifest vector constant whose value fits in signed 10 bits."
+  (and (match_code "const_vector")
+       (match_test "k1_has_10bit_vector_const_p (op)")))
+
+(define_constraint "v16"
+  "A manifest vector constant whose value fits in signed 16 bits."
+  (and (match_code "const_vector")
+       (match_test "k1_has_16bit_vector_const_p (op)")))
+
+(define_constraint "v32"
+  "A manifest vector constant whose value fits in signed 32 bits."
+  (and (match_code "const_vector")
+       (match_test "k1_has_32bit_vector_const_p (op)")))
+
+(define_constraint "v37"
+  "A manifest vector constant whose value fits in signed 37 bits."
+  (and (match_code "const_vector")
+       (match_test "k1_has_37bit_vector_const_p (op)")))
+
+(define_constraint "v43"
+  "A manifest vector constant whose value fits in signed 43 bits."
+  (and (match_code "const_vector")
+       (match_test "k1_has_43bit_vector_const_p (op)")))
+
+(define_constraint "vx2"
+  "A 64-bit vector constant made of two identical 32-bit manifest values"
+  (and (match_code "const_vector")
+       (match_test "k1_has_32x2bit_vector_const_p (op)")))
+
 (define_memory_constraint "a"
   "Memory operands with small immediates"
   (and (match_code "mem")

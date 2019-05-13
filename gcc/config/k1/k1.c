@@ -1110,10 +1110,10 @@ k1_target_vector_mode_supported_p (enum machine_mode mode ATTRIBUTE_UNUSED)
 {
   switch (mode)
     {
-    // case V4HImode:
+    case V4HImode:
     // case V8HImode:
-    // case V2SImode:
-    // case V4SImode:
+    case V2SImode:
+    case V4SImode:
     case V2DImode:
     case V4DImode:
     case V2SFmode:
@@ -1388,22 +1388,7 @@ k1_target_print_operand (FILE *file, rtx x, int code)
       return;
 
     case CONST_VECTOR:
-      if (GET_MODE (x) == V2SFmode)
-	{
-	  HOST_WIDE_INT val_0, val_1;
-	  rtx elt_0 = CONST_VECTOR_ELT (x, 0);
-	  rtx elt_1 = CONST_VECTOR_ELT (x, 1);
-	  gcc_assert (GET_CODE (elt_0) == CONST_DOUBLE);
-	  gcc_assert (GET_CODE (elt_1) == CONST_DOUBLE);
-	  REAL_VALUE_TO_TARGET_SINGLE (*CONST_DOUBLE_REAL_VALUE (elt_0), val_0);
-	  REAL_VALUE_TO_TARGET_SINGLE (*CONST_DOUBLE_REAL_VALUE (elt_1), val_1);
-	  fprintf (file, HOST_WIDE_INT_PRINT_HEX,
-		   (val_0 & 0xFFFFFFFF) | (val_1) << 32);
-	}
-      else
-	{
-	  gcc_unreachable ();
-	}
+      fprintf (file, HOST_WIDE_INT_PRINT_HEX, k1_const_vector_value (x));
       return;
 
     case CONST_STRING:
@@ -4850,6 +4835,89 @@ k1_has_37bit_immediate_p (rtx x)
 	  return true;
 	}
     }
+  return false;
+}
+
+HOST_WIDE_INT
+k1_const_vector_value (rtx x)
+{
+  HOST_WIDE_INT value = 0;
+  if (GET_CODE (x) == CONST_VECTOR)
+    {
+      if (GET_MODE (x) == V4HImode)
+	{
+	  HOST_WIDE_INT val_0 = INTVAL (CONST_VECTOR_ELT (x, 0));
+	  HOST_WIDE_INT val_1 = INTVAL (CONST_VECTOR_ELT (x, 1));
+	  HOST_WIDE_INT val_2 = INTVAL (CONST_VECTOR_ELT (x, 2));
+	  HOST_WIDE_INT val_3 = INTVAL (CONST_VECTOR_ELT (x, 3));
+	  value = (val_0 & 0xFFFF) | (val_1 & 0xFFFF) << 16
+		  | (val_2 & 0xFFFF) << 32 | (val_3 & 0xFFFF) << 48;
+	}
+      else if (GET_MODE (x) == V2SImode)
+	{
+	  HOST_WIDE_INT val_0 = INTVAL (CONST_VECTOR_ELT (x, 0));
+	  HOST_WIDE_INT val_1 = INTVAL (CONST_VECTOR_ELT (x, 1));
+	  value = (val_0 & 0xFFFFFFFF) | (val_1 & 0xFFFFFFFF) << 32;
+	}
+      else if (GET_MODE (x) == V2SFmode)
+	{
+	  HOST_WIDE_INT val_0 = 0, val_1 = 0;
+	  rtx elt_0 = CONST_VECTOR_ELT (x, 0);
+	  rtx elt_1 = CONST_VECTOR_ELT (x, 1);
+	  REAL_VALUE_TO_TARGET_SINGLE (*CONST_DOUBLE_REAL_VALUE (elt_0), val_0);
+	  REAL_VALUE_TO_TARGET_SINGLE (*CONST_DOUBLE_REAL_VALUE (elt_1), val_1);
+	  value = (val_0 & 0xFFFFFFFF) | (val_1 & 0xFFFFFFFF) << 32;
+	}
+      else
+	gcc_unreachable ();
+      return value;
+    }
+  else
+    gcc_unreachable ();
+  return value;
+}
+
+bool
+k1_has_10bit_vector_const_p (rtx x)
+{
+  HOST_WIDE_INT value = k1_const_vector_value (x);
+  return SIGNED_INT_FITS_N_BITS (value, 10);
+}
+
+bool
+k1_has_16bit_vector_const_p (rtx x)
+{
+  HOST_WIDE_INT value = k1_const_vector_value (x);
+  return SIGNED_INT_FITS_N_BITS (value, 16);
+}
+
+bool
+k1_has_32bit_vector_const_p (rtx x)
+{
+  HOST_WIDE_INT value = k1_const_vector_value (x);
+  return SIGNED_INT_FITS_N_BITS (value, 32);
+}
+
+bool
+k1_has_37bit_vector_const_p (rtx x)
+{
+  HOST_WIDE_INT value = k1_const_vector_value (x);
+  return SIGNED_INT_FITS_N_BITS (value, 37);
+}
+
+bool
+k1_has_43bit_vector_const_p (rtx x)
+{
+  HOST_WIDE_INT value = k1_const_vector_value (x);
+  return SIGNED_INT_FITS_N_BITS (value, 43);
+}
+
+bool
+k1_has_32x2bit_vector_const_p (rtx x)
+{
+  HOST_WIDE_INT value = k1_const_vector_value (x);
+  // Need the dual immediate syntax to be fixed in assembler.
+  // return (value&0xFFFFFFFF) == ((value>>32)&0xFFFFFFFF);
   return false;
 }
 
