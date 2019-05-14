@@ -4,7 +4,13 @@ int
 main ()
 {
   int i, j, l, m;
+  #ifndef __CLUSTER_OS__
   int a[10000], b[10000], c[10000];
+  #else
+  int *a = malloc(10000*sizeof(int));
+  int *c = malloc(10000*sizeof(int));
+  int *b = malloc(10000*sizeof(int));
+  #endif
   for (i = 0; i < 10000; i++)
     {
       a[i] = i;
@@ -43,5 +49,10 @@ main ()
       __builtin_abort ();
   if (l != 10000 || m != 10100)
     __builtin_abort ();
+  #ifdef __CLUSTER_OS__
+  free(a);
+  free(b);
+  free(c);
+  #endif
   return 0;
 }
