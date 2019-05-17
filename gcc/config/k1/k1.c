@@ -695,43 +695,32 @@ k1_analyze_address (rtx x, bool strict, struct k1_address *addr)
     return false;
 
   /*
-   * Valid :
    * ld reg = @got[reg]
    * ld reg = @gotoff[reg]
    */
-  if (GET_CODE (x) == PLUS
-      && (GET_CODE (XEXP (x, 1)) == UNSPEC
-	  && (XINT (XEXP (x, 1), 1) == UNSPEC_GOT
-	      || XINT (XEXP (x, 1), 1) == UNSPEC_GOTOFF))
-      && k1_legitimate_address_register_p (XEXP (x, 0), strict))
-    {
-      addr->mode = ADDR_OFFSET;
-      addr->offset = XEXP (x, 1);
-      addr->base_reg = XEXP (x, 0);
+  const bool is_got_ref
+    = (GET_CODE (x) == PLUS
+       && (GET_CODE (XEXP (x, 1)) == UNSPEC
+	   && (XINT (XEXP (x, 1), 1) == UNSPEC_GOT
+	       || XINT (XEXP (x, 1), 1) == UNSPEC_GOTOFF))
+       && k1_legitimate_address_register_p (XEXP (x, 0), strict));
 
-      return true;
-    }
-  else if ((!current_pass || current_pass->tv_id != TV_CPROP)
-	   && GET_CODE (x) == PLUS
-	   && k1_legitimate_address_register_p (XEXP (x, 0), strict)
-	   && ((CONSTANT_P (XEXP (x, 1))
-		&& k1_legitimate_constant_p (VOIDmode, XEXP (x, 1)))
-	       || GET_CODE (XEXP (x, 1)) == CONST_INT)
-	   && immediate_operand (XEXP (x, 1), DImode))
+  /*
+   * ld reg = const[reg]
+   * ld reg = symbol[reg]
+   * ld reg = @pcrel(symbol)[reg]
+   */
+  const bool is_imm_offset_ref
+    = ((!current_pass || current_pass->tv_id != TV_CPROP)
+       && GET_CODE (x) == PLUS
+       && k1_legitimate_address_register_p (XEXP (x, 0), strict)
+       && ((CONSTANT_P (XEXP (x, 1))
+	    && k1_legitimate_constant_p (VOIDmode, XEXP (x, 1)))
+	   || GET_CODE (XEXP (x, 1)) == CONST_INT)
+       && immediate_operand (XEXP (x, 1), DImode));
+  if (is_got_ref || is_imm_offset_ref)
     {
 
-      /*
-       * Valid:
-       * ld reg = const[reg] if const fits in 32bits
-       * ld reg = symbol[reg] in 32bits mode only !
-       * Invalid:
-       * ld reg = symbol[reg] in 64bits
-       * ld reg = const[reg] if const does NOT fit in 32bits
-       *
-       * The constant used by LSU 64 insn cannot hold a full length
-       * pointer. Basically, in 64bits, we can't handle a symbol/label
-       * in mem ref as we can't guarantee it will fit.
-       */
       addr->mode = ADDR_OFFSET;
       addr->offset = XEXP (x, 1);
       addr->base_reg = XEXP (x, 0);
@@ -1611,10 +1600,8 @@ k1_expand_tablejump (rtx op0, rtx op1)
 {
   if (flag_pic)
     {
-      rtx (*gen_addpcrel) (rtx target, rtx label)
-	= !TARGET_32 ? gen_add_pcrel_di : gen_add_pcrel_si;
       rtx tmp_reg = gen_reg_rtx (Pmode);
-      emit_insn (gen_addpcrel (tmp_reg, op1));
+      emit_move_insn (tmp_reg, gen_rtx_LABEL_REF (VOIDmode, op1));
 
       /* Relative addrs are stored as 32bits value. */
       if (GET_MODE (op0) != Pmode)
@@ -2109,13 +2096,16 @@ k1_legitimate_pic_symbolic_ref_p (rtx op)
 }
 
 /* Returns TRUE if X can be used as an operand in PIC code.
-   Mainly */
+ * LABELs are rejected as they should be handled by mov expand
+ */
+
 bool
 k1_legitimate_pic_operand_p (rtx x)
 {
-  if (GET_CODE (x) == SYMBOL_REF
+  if (GET_CODE (x) == SYMBOL_REF || GET_CODE (x) == LABEL_REF
       || (GET_CODE (x) == CONST && GET_CODE (XEXP (x, 0)) == PLUS
-	  && GET_CODE (XEXP (XEXP (x, 0), 0)) == SYMBOL_REF))
+	  && (GET_CODE (XEXP (XEXP (x, 0), 0)) == SYMBOL_REF
+	      || GET_CODE (XEXP (XEXP (x, 0), 0)) == LABEL_REF)))
     return false;
 
   return true;
@@ -2134,7 +2124,7 @@ k1_tls_symbol_p (rtx x)
   return SYMBOL_REF_TLS_MODEL (x) != 0;
 }
 
-enum k1_symbol_type
+static enum k1_symbol_type
 k1_classify_symbol (rtx x)
 {
   if (k1_tls_symbol_p (x))
@@ -2157,6 +2147,15 @@ k1_classify_symbol (rtx x)
 	return SYMBOL_GOT;
     }
   return SYMBOL_ABSOLUTE;
+}
+
+static rtx
+gen_add2_pcrel_insn (rtx dest, rtx pcrel_offset)
+{
+  if (TARGET_32)
+    return gen_add_pcrel_si (dest, pcrel_offset);
+  else
+    return gen_add_pcrel_di (dest, pcrel_offset);
 }
 
 /* Expands a mov which second operand is a constant. */
@@ -2185,11 +2184,13 @@ k1_expand_mov_constant (rtx operands[])
 	{
 	case SYMBOL_ABSOLUTE:
 	case LABEL_ABSOLUTE:
-	case LABEL_PCREL_ABSOLUTE:
 	  /* Emit: dest = sym */
-	  /* In case we need a pcrel for a label, it should be handled
-	     by the pcrel insn */
 	  emit_insn (gen_rtx_SET (dest, src));
+	  break;
+
+	case LABEL_PCREL_ABSOLUTE:
+	  /* Emit dest = pc + @pcrel(label) */
+	  emit_insn (gen_add2_pcrel_insn (dest, src));
 	  break;
 
 	case SYMBOL_GOT:
@@ -6420,36 +6421,36 @@ k1_output_addr_const_extra (FILE *fp, rtx x)
 	  /* GLOBAL_OFFSET_TABLE or local symbols, no suffix.  */
 	  output_addr_const ((fp), XVECEXP ((x), 0, 0));
 	  return true;
+
 	case UNSPEC_GOT:
 	  fputs ("@got", (fp));
-	  /* if (TARGET_64) fputs ("64", (fp)); */
 	  fputs ("(", (fp));
-
 	  output_addr_const ((fp), XVECEXP ((x), 0, 0));
 	  fputs (")", (fp));
 	  return true;
-	case UNSPEC_GOTOFF:
-	  fputs ("@gotoff", (fp));
-	  /* if (TARGET_64) fputs ("64", (fp)); */
-	  fputs ("(", (fp));
 
-	  output_addr_const ((fp), XVECEXP ((x), 0, 0));
-	  fputs (")", (fp));
-	  return true;
-	case UNSPEC_TLS:
-	  fputs ("@tprel", (fp));
-	  if (!TARGET_32)
-	    fputs ("64", (fp));
-	  fputs ("(", (fp));
-
-	  output_addr_const ((fp), XVECEXP ((x), 0, 0));
-	  fputs (")", (fp));
-	  return true;
 	case UNSPEC_PCREL:
 	  fputs ("@pcrel(", (fp));
 	  output_addr_const ((fp), XVECEXP ((x), 0, 0));
 	  fputs (")", (fp));
 	  return true;
+
+	case UNSPEC_GOTOFF:
+	  fputs ("@gotoff", (fp));
+	  fputs ("(", (fp));
+	  output_addr_const ((fp), XVECEXP ((x), 0, 0));
+	  fputs (")", (fp));
+	  return true;
+
+	case UNSPEC_TLS:
+	  fputs ("@tprel", (fp));
+	  if (!TARGET_32)
+	    fputs ("64", (fp));
+	  fputs ("(", (fp));
+	  output_addr_const ((fp), XVECEXP ((x), 0, 0));
+	  fputs (")", (fp));
+	  return true;
+
 	default:
 	  return false;
 	}
