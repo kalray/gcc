@@ -18,6 +18,15 @@
   return op == CONST1_RTX(mode);
 })
 
+;; Allow for LABELs to be used in the mov expander
+;; It will split it using add_pcrel insn.
+;; This predicates should only be used in the expander as LABELs
+;; are not to be accepted during insn matching.
+(define_predicate "k1_mov_operand"
+ (ior (match_operand 0 "general_operand")
+      (and (match_test "flag_pic")
+           (match_code "label_ref"))))
+
 ;; used for some 32bits ALU
 ;; register or immediate up to signed 32
 (define_predicate "register_s32_operand"
@@ -53,7 +62,6 @@
 {
 	return register_operand (op,mode);
 })
-
 
 (define_predicate "jump_operand"
   (match_code "mem")
@@ -122,6 +130,9 @@
       (match_code "const_int")
       (match_operand 0 "register_operand")
       (match_test "k1_legitimate_pic_symbolic_ref_p(op)")))
+
+(define_predicate "symbolic_operand"
+  (match_code "const,symbol_ref,label_ref"))
 
 (define_predicate "k1_symbol_operand"
   (match_code "symbol_ref,label_ref,const,unspec")
