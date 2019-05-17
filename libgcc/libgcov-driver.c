@@ -34,6 +34,15 @@ void __gcov_init (struct gcov_info *p __attribute__ ((unused))) {}
 
 #else /* inhibit_libc */
 
+/* Because the MPPA has a limited stack size, tests failed when trying to
+ * execute gcov_exit. This is mainly due to the allocation of 'gcov_summary'
+ * (size = 6088 byte) on the stack. The MALLOC_SUMMARY flag allows to allocate
+ * instances on the heap.
+ */
+#if defined(__CLUSTER_OS__)
+#define MALLOC_SUMMARY
+#endif
+
 #include <string.h>
 #if GCOV_LOCKED
 #include <fcntl.h>
@@ -378,7 +387,16 @@ merge_one_data (const char *filename,
   /* Look for program summary.  */
   for (f_ix = 0;;)
     {
+#if defined(MALLOC_SUMMARY)
+#define tmp (*tmp_ptr)
+      struct gcov_summary *tmp_ptr;
+      tmp_ptr = xmalloc (sizeof (struct gcov_summary));
+      if (tmp_ptr == NULL)
+          gcov_error ("profiling:%s:%s; merging\n", filename,
+                      "Memory allocation error");
+#else
       struct gcov_summary tmp;
+#endif
 
       *eof_pos_p = gcov_position ();
       tag = gcov_read_unsigned ();
@@ -414,6 +432,10 @@ merge_one_data (const char *filename,
       *summary_pos_p = *eof_pos_p;
 
     next_summary:;
+#if defined(MALLOC_SUMMARY)
+#undef tmp
+      free (tmp_ptr);
+#endif
     }
 
   /* Merge execution counts for each function.  */
@@ -764,7 +786,17 @@ dump_one_gcov (struct gcov_info *gi_ptr, struct gcov_filename *gf,
 	       gcov_unsigned_t crc32, struct gcov_summary *all_prg,
 	       struct gcov_summary *this_prg)
 {
+#if defined(MALLOC_SUMMARY)
+#define prg (*prg_ptr)
+  struct gcov_summary *prg_ptr; /* summary for this object over all program.  */
+  prg_ptr = xmalloc (sizeof (struct gcov_summary));
+  if (prg_ptr == NULL)
+      gcov_error ("profiling:%s:%s; dump one\n", gf->filename,
+                  "Memory allocation error");
+#else
   struct gcov_summary prg; /* summary for this object over all program.  */
+#endif
+
   int error;
   gcov_unsigned_t tag;
   gcov_position_t summary_pos = 0;
@@ -814,6 +846,11 @@ read_fatal:;
   while (fn_buffer)
     fn_buffer = free_fn_data (gi_ptr, fn_buffer, GCOV_COUNTERS);
 
+#if defined(MALLOC_SUMMARY)
+#undef prg
+  free (prg_ptr);
+#endif
+
   if ((error = gcov_close ()))
     gcov_error (error  < 0 ?
                 "profiling:%s:Overflow writing\n" :
@@ -835,8 +872,21 @@ gcov_do_dump (struct gcov_info *list, int run_counted)
   struct gcov_info *gi_ptr;
   struct gcov_filename gf;
   gcov_unsigned_t crc32;
+
+#if defined(MALLOC_SUMMARY)
+#define all_prg (*all_prg_ptr)
+#define this_prg (*this_prg_ptr)
+  struct gcov_summary *all_prg_ptr;
+  struct gcov_summary *this_prg_ptr;
+  all_prg_ptr = xmalloc (sizeof (struct gcov_summary));
+  this_prg_ptr = xmalloc (sizeof (struct gcov_summary));
+  if (all_prg_ptr == NULL || this_prg_ptr == NULL)
+      gcov_error ("profiling:no_filename:"
+                  "Memory allocation error; gcov_do_dump\n");
+#else
   struct gcov_summary all_prg;
   struct gcov_summary this_prg;
+#endif
 
   crc32 = compute_summary (list, &this_prg, &gf.max_length);
 
@@ -850,6 +900,13 @@ gcov_do_dump (struct gcov_info *list, int run_counted)
     dump_one_gcov (gi_ptr, &gf, run_counted, crc32, &all_prg, &this_prg);
 
   free (gf.filename);
+
+#if defined(MALLOC_SUMMARY)
+#undef all_prg
+#undef this_prg
+  free (all_prg_ptr);
+  free (this_prg_ptr);
+#endif
 }
 
 #if IN_GCOV_TOOL
