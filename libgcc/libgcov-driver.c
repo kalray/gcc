@@ -35,6 +35,15 @@ void __gcov_init (struct gcov_info *p __attribute__ ((unused))) {}
 
 #else /* inhibit_libc */
 
+/* Because the MPPA has a limited stack size, tests failed when trying to
+ * execute gcov_exit. This is mainly due to the allocation of 'gcov_summary'
+ * (size = 6088 byte) on the stack. The MALLOC_SUMMARY flag allows to allocate
+ * instances on the heap.
+ */
+#if defined(__CLUSTER_OS__)
+#define MALLOC_SUMMARY
+#endif
+
 #include <string.h>
 #if GCOV_LOCKED
 #include <fcntl.h>
@@ -471,7 +480,18 @@ static void
 dump_one_gcov (struct gcov_info *gi_ptr, struct gcov_filename *gf,
 	       unsigned run_counted, gcov_type run_max)
 {
+#if defined(MALLOC_SUMMARY)
+#define summary (*summary_ptr)
+  struct gcov_summary *summary_ptr;
+  summary_ptr = xcalloc (1, sizeof (struct gcov_summary));
+
+  if (summary_ptr == NULL)
+    gcov_error ("profiling:%s:%s; dump one\n", gf->filename,
+		"Memory allocation error");
+#else
   struct gcov_summary summary = {};
+#endif
+
   int error;
   gcov_unsigned_t tag;
   fn_buffer = 0;
@@ -508,6 +528,11 @@ dump_one_gcov (struct gcov_info *gi_ptr, struct gcov_filename *gf,
 read_fatal:;
   while (fn_buffer)
     fn_buffer = free_fn_data (gi_ptr, fn_buffer, GCOV_COUNTERS);
+
+#if defined(MALLOC_SUMMARY)
+#undef summary
+  free (summary_ptr);
+#endif
 
   if ((error = gcov_close ()))
     gcov_error (error  < 0 ?
