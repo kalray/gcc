@@ -37,6 +37,16 @@
 /* About the target.  */
 /* This path will be used by libgcov runtime.  */
 
+/* As the libc is available in ClusterOS, it is possible to use 'libgcov'.
+ * Undefining 'inhibit_libc' prevents getting stubs in 'libgcov' functions and
+ * as a consequence use the libc. The natural solution would be to configure
+ * gcc pointing on the available stdio.h, but then, one needs to evaluate the
+ * side effects on the entire toolchain.
+ */
+#if defined(__CLUSTER_OS__)
+#undef inhibit_libc
+#endif
+
 #include "tconfig.h"
 #include "auto-target.h"
 #include "tsystem.h"
