@@ -97,6 +97,16 @@ extern bool k1_is_farcall_p (rtx);
 
 extern void k1_override_options (void);
 
+const char *k1_asm_pat_copyq (rtx srcreg);
+const char *k1_asm_pat_copyo (void);
+
+bool k1_ok_for_paired_reg_p (rtx op);
+bool k1_ok_for_quad_reg_p (rtx op);
+bool k1_is_reg_subreg_p (rtx op);
+
+void k1_split_128bits_move (rtx dst, rtx src, enum machine_mode mode);
+void k1_split_256bits_move (rtx dst, rtx src, enum machine_mode mode);
+
 extern bool k1_has_10bit_imm_or_register_p (rtx x);
 extern bool k1_has_10bit_immediate_p (rtx x);
 extern bool k1_has_37bit_immediate_p (rtx x);
