@@ -289,8 +289,8 @@ k1_compute_frame_info (void)
   /* Next are automatic variables. */
   sp_offset += get_frame_size ();
 
-  /* ABI requires 16-bytes (128bits) alignment. */
-#define K1_STACK_ALIGN(LOC) (((LOC) + 0xF) & ~0xF)
+  /* ABI requires 8-bytes (64-bits) alignment. */
+#define K1_STACK_ALIGN(LOC) (((LOC) + 0x7) & ~0x7)
 
   /* Vararg area must be correctly aligned, else var args may not be correctly
    * pushed */
@@ -755,7 +755,8 @@ struct k1_arg_info
 /* Analyzes a single argument and fills INFO struct. Does not modify
    CUM_V. Returns a reg rtx pointing at first argument register to be
    used for given argument or NULL_RTX if argument must be stacked
-   because there is no argument slot in registers free. */
+   because there is no argument slot in registers free/correctly
+   aligned. */
 
 static rtx
 k1_get_arg_info (struct k1_arg_info *info, cumulative_args_t cum_v,
@@ -767,18 +768,16 @@ k1_get_arg_info (struct k1_arg_info *info, cumulative_args_t cum_v,
     = type ? int_size_in_bytes (type) : GET_MODE_SIZE (mode);
   HOST_WIDE_INT n_words = (n_bytes + UNITS_PER_WORD - 1) / UNITS_PER_WORD;
 
-  /* Arguments larger than 8 bytes start at the next even boundary.  */
-  HOST_WIDE_INT offset = (n_words > 1 && (cum->next_arg_reg & 1)) ? 1 : 0;
+  info->first_reg = cum->next_arg_reg;
 
   /* If all argument slots are used, then it must go on the stack.  */
-  if ((cum->next_arg_reg + offset) >= K1C_ARG_REG_SLOTS)
+  if (cum->next_arg_reg >= K1C_ARG_REG_SLOTS)
     {
       info->num_stack = n_words;
       info->num_regs = 0;
       return NULL_RTX;
     }
 
-  info->first_reg = cum->next_arg_reg + offset;
   info->num_regs = K1C_ARG_REG_SLOTS - info->first_reg;
 
   if (info->num_regs >= n_words)
@@ -789,7 +788,6 @@ k1_get_arg_info (struct k1_arg_info *info, cumulative_args_t cum_v,
     }
   else
     {
-
       /* At least one word on stack */
       info->num_stack = n_words - info->num_regs;
     }
@@ -810,18 +808,6 @@ k1_function_arg (cumulative_args_t cum_v, enum machine_mode mode,
   return k1_get_arg_info (&info, cum_v, mode, type, named);
 }
 
-/* Implements TARGET_FUNCTION_ARG_BOUNDARY.
-   Align arguments on a 64bits boundary for small arguments, 128 for bigger
-   ones. */
-
-static unsigned int
-k1_function_arg_boundary (enum machine_mode mode, const_tree type)
-{
-  HOST_WIDE_INT sz
-    = (mode == BLKmode ? int_size_in_bytes (type) : GET_MODE_SIZE (mode));
-  return ((sz > UNITS_PER_WORD) ? UNITS_PER_WORD * 2 : UNITS_PER_WORD);
-}
-
 /* Implements TARGET_ARG_PARTIAL_BYTES.
    Return the number of bytes, at the beginning of an argument,
    that must be put in registers */
@@ -831,15 +817,15 @@ k1_arg_partial_bytes (cumulative_args_t cum_v, enum machine_mode mode,
 		      tree type, bool named ATTRIBUTE_UNUSED)
 {
   struct k1_arg_info info = {0};
-  k1_get_arg_info (&info, cum_v, mode, type, named);
-  if (info.num_regs > 0 && info.num_stack > 0)
+  rtx reg = k1_get_arg_info (&info, cum_v, mode, type, named);
+  if (reg != NULL_RTX && info.num_regs > 0 && info.num_stack > 0)
     {
       return info.num_regs * UNITS_PER_WORD;
     }
   return 0;
 }
 
-/* Implements TARGET_FUNCTION_ARG.
+/* Implements TARGET_FUNCTION_ARG_ADVANCE.
    Update CUM to point after this argument. */
 
 static void
@@ -895,8 +881,9 @@ k1_target_return_in_memory (const_tree type, const_tree fntype ATTRIBUTE_UNUSED)
 {
   HOST_WIDE_INT sz = int_size_in_bytes (type);
 
-  return TYPE_MODE (type) == BLKmode
-	 && (sz > (K1C_ARG_REG_SLOTS * UNITS_PER_WORD) || sz < 0);
+  /* Return value can use up to 4 registers (256bits). Larger values
+   * or variable sized type must be returned in memory. */
+  return (sz > (4 * UNITS_PER_WORD) || sz < 0);
 }
 
 /* Implements TARGET_STRUCT_VALUE_RTX */
@@ -1072,11 +1059,28 @@ k1_target_promote_prototypes (const_tree fndecl ATTRIBUTE_UNUSED)
 
 static bool
 k1_target_pass_by_reference (cumulative_args_t cum ATTRIBUTE_UNUSED,
-			     enum machine_mode mode ATTRIBUTE_UNUSED,
-			     const_tree type ATTRIBUTE_UNUSED,
+			     enum machine_mode mode, const_tree type,
 			     bool named ATTRIBUTE_UNUSED)
 {
-  return false;
+  HOST_WIDE_INT size;
+  machine_mode dummymode;
+  int nregs;
+
+  /* GET_MODE_SIZE (BLKmode) is useless since it is 0.  */
+  size = (mode == BLKmode && type) ? int_size_in_bytes (type)
+				   : (int) GET_MODE_SIZE (mode);
+
+  /* Aggregates are passed by reference based on their size.  */
+  if (type && AGGREGATE_TYPE_P (type))
+    size = int_size_in_bytes (type);
+
+  /* Variable sized arguments are always returned by reference.  */
+  if (size < 0)
+    return true;
+
+  /* Arguments which are variable sized or larger than 4 registers are
+     passed by reference */
+  return (size > (4 * UNITS_PER_WORD)) && mode == BLKmode;
 }
 
 static reg_class_t
@@ -6777,6 +6781,116 @@ k1_float_fits_bits (const REAL_VALUE_TYPE *r, unsigned bitsz,
     }
 }
 
+/* Returns a pattern suitable for copyq asm insn with the paired
+   register SRCREG correctly split in 2 separate register reference:
+   $r0r1 => "copyq %0 = $r0, $r1" if optimising for size.  Returns "#"
+   if it is not the case to force the insn to be split in 2 copyd
+   insns at the cost of an extra instruction.
+ */
+const char *
+k1_asm_pat_copyq (rtx srcreg)
+{
+  static char templ[128];
+
+  /* The single-word copyq will be split in 2 copyd */
+  if (!optimize_size)
+    return "#";
+
+  snprintf (templ, sizeof (templ), "copyq %%0 = $r%d, $r%d", REGNO (srcreg),
+	    REGNO (srcreg) + 1);
+  return templ;
+}
+
+/* Returns the pattern for copyo when optimizing for code size or
+   forces a split by returning #
+ */
+const char *
+k1_asm_pat_copyo (void)
+{
+  if (!optimize_size)
+    return "#";
+  return "copyo %0 = %1";
+}
+
+/* Returns TRUE if OP is a REG (directly or through a SUBREG) */
+bool
+k1_is_reg_subreg_p (rtx op)
+{
+  return REG_P (op) || (SUBREG_P (op) && REG_P (SUBREG_REG (op)));
+}
+
+/* Returns TRUE if OP is a pseudo REG (directly or through a
+   SUBREG) */
+static bool
+k1_is_pseudo_reg_subreg_p (rtx op)
+{
+  return ((REG_P (op) && !HARD_REGISTER_P (op))
+	  || (SUBREG_P (op) && REG_P (SUBREG_REG (op))
+	      && !HARD_REGISTER_P (SUBREG_REG (op))));
+}
+
+/* Returns TRUE if OP is a hard (sub)register aligned on ALIGN or a
+ * pseudo (sub)register, FALSE for all other cases. */
+static bool
+k1_check_align_reg (rtx op, int align)
+{
+  if (!k1_is_reg_subreg_p (op))
+    return false;
+  if (k1_is_pseudo_reg_subreg_p (op))
+    return true;
+
+  const bool aligned_reg = REG_P (op) && REGNO (op) % align == 0;
+
+  const bool aligned_subreg
+    = SUBREG_P (op) && REG_P (SUBREG_REG (op))
+      && (REGNO (SUBREG_REG (op)) + SUBREG_BYTE (op) / UNITS_PER_WORD) % align
+	   == 0;
+
+  return aligned_reg || aligned_subreg;
+}
+
+/* Returns TRUE if OP is an even hard (sub)register or a pseudo
+ * (sub)register, FALSE for all other cases. It is used to check
+ * correct alignement for some SIMD insn or 128bits load/store */
+bool
+k1_ok_for_paired_reg_p (rtx op)
+{
+  return k1_check_align_reg (op, 2);
+}
+
+/* Returns TRUE if OP is a hard (sub)register quad aligned or a pseudo
+ * (sub)register, FALSE for all other cases. It is used to check
+ * correct alignement for some SIMD insn or 256bits load/store */
+bool
+k1_ok_for_quad_reg_p (rtx op)
+{
+  return k1_check_align_reg (op, 4);
+}
+
+/* Split a 128bit move op in mode MODE from SRC to DST in 2 smaller
+   64bit moves */
+void
+k1_split_128bits_move (rtx dst, rtx src, enum machine_mode mode)
+{
+  rtx lo_src = gen_lowpart (word_mode, src);
+  rtx hi_src = gen_highpart_mode (word_mode, mode, src);
+
+  emit_insn (gen_movdi (gen_lowpart (word_mode, dst), lo_src));
+  emit_insn (gen_movdi (gen_highpart (word_mode, dst), hi_src));
+}
+
+/* Split a 256bit move op in mode MODE from SRC to DST in 2 smaller
+   128bit moves */
+void
+k1_split_256bits_move (rtx dst, rtx src, enum machine_mode mode)
+{
+  emit_insn (gen_movti (simplify_gen_subreg (TImode, dst, mode, 0),
+			simplify_gen_subreg (TImode, src, mode, 0)));
+
+  emit_insn (gen_movti (simplify_gen_subreg (TImode, dst, mode, 16),
+			simplify_gen_subreg (TImode, src, mode, 16)));
+}
+
 /* Returns TRUE if OP is a symbol and has the farcall attribute or if
    -mfarcall is in use. */
 bool
@@ -6945,9 +7059,6 @@ k1_profile_hook (void)
 
 #undef TARGET_FUNCTION_ARG
 #define TARGET_FUNCTION_ARG k1_function_arg
-
-#undef TARGET_FUNCTION_ARG_BOUNDARY
-#define TARGET_FUNCTION_ARG_BOUNDARY k1_function_arg_boundary
 
 #undef TARGET_FUNCTION_ARG_ADVANCE
 #define TARGET_FUNCTION_ARG_ADVANCE k1_function_arg_advance
