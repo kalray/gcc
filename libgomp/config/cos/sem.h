@@ -65,32 +65,83 @@ extern void gomp_sem_post (gomp_sem_t *sem);
 
 extern void gomp_sem_destroy (gomp_sem_t *sem);
 
-#else  /* HAVE_BROKEN_POSIX_SEMAPHORES  */
+#else /* HAVE_BROKEN_POSIX_SEMAPHORES  */
+
+#include <hal/cos_apic_mailbox.h>
+#include <hal/cos_atomic.h>
+#include <hal/cos_bsp.h>
+#include <hal/cos_cache.h>
 
 extern void abort (void);
 typedef sem_t gomp_sem_t;
 
+extern int MPPA_COS_THREAD_PER_CORE_SHIFT;
+
+static inline void
+gomp_sem_write_set (gomp_sem_t *sem, const int value)
+{
+  volatile uintptr_t *ptr = (void *) sem;
+
+  *ptr = value;
+  __builtin_k1_fence ();
+}
+
 static inline void
 gomp_sem_init (gomp_sem_t *sem, int value)
 {
-  if (sem_init (sem, 0, value))
-    abort ();
+  gomp_sem_write_set (sem, value);
 }
 
-extern void gomp_sem_wait (gomp_sem_t *sem);
+static inline void
+gomp_sem_wait (gomp_sem_t *sem)
+{
+  __cos_swap_t c;
+
+  __builtin_k1_fence ();
+
+  while (1)
+    {
+      __uncached volatile uintptr_t *ptr = (void *) sem;
+
+      uintptr_t count = *ptr;
+
+      if (count == 0)
+	{
+	  if ((uintptr_t) &MPPA_COS_THREAD_PER_CORE_SHIFT
+	      != 0) /* yield if more than one thread per core */
+	    mppa_cos_synchronization_wait (NULL);
+	}
+      else
+	{
+#if (__SIZEOF_PTRDIFF_T__ == 8)
+	  c.ret = __builtin_k1_acswapd ((void *) ptr, count - 1, count);
+#else
+	  c.ret = __builtin_k1_acswapw ((void *) ptr, count - 1, count);
+#endif
+	  if (c.test == 1)
+	    break;
+	}
+    }
+  MPPA_COS_DINVAL ();
+}
 
 static inline void
 gomp_sem_post (gomp_sem_t *sem)
 {
-  if (sem_post (sem))
-    abort ();
+  __builtin_k1_fence (); /* consistency before post */
+#if (__SIZEOF_PTRDIFF_T__ == 8)
+  MPPA_COS_AFADDD ((void *) sem, 1);
+#else
+  MPPA_COS_AFADDW ((void *) sem, 1);
+#endif
+  mppa_cos_doorbell (mppa_mailbox_local);
+  MPPA_COS_DINVAL ();
 }
 
 static inline void
 gomp_sem_destroy (gomp_sem_t *sem)
 {
-  if (sem_destroy (sem))
-    abort ();
+  gomp_sem_write_set (sem, 0);
 }
 #endif /* doesn't HAVE_BROKEN_POSIX_SEMAPHORES  */
 #endif /* GOMP_SEM_H  */

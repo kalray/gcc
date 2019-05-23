@@ -31,38 +31,62 @@
 #define GOMP_MUTEX_H 1
 extern void abort (void);
 
+#include <hal/cos_apic_mailbox.h>
+#include <hal/cos_bsp.h>
+#include <hal/cos_cache.h>
 #include <pthread.h>
 
 typedef pthread_mutex_t gomp_mutex_t;
 
 #define GOMP_MUTEX_INIT_0 0
 
+extern int MPPA_COS_THREAD_PER_CORE_SHIFT;
+
+static inline void
+gomp_mutex_write_set (void *mutex, const int value)
+{
+  volatile uintptr_t *ptr = (void *) mutex;
+
+  *ptr = value;
+}
+
 static inline void
 gomp_mutex_init (gomp_mutex_t *mutex)
 {
-  if (pthread_mutex_init (mutex, NULL))
-    abort ();
+  gomp_mutex_write_set (mutex, 1);
+  __builtin_k1_fence ();
 }
 
 static inline void
 gomp_mutex_lock (gomp_mutex_t *mutex)
 {
-  if (pthread_mutex_lock (mutex))
-    abort ();
+#if (__SIZEOF_PTRDIFF_T__ == 8)
+  while (!(__builtin_k1_alclrd ((void *) mutex) == 1ULL))
+#else
+  while (!(__builtin_k1_alclrw ((void *) mutex) == 1ULL))
+#endif
+    {
+      if ((uintptr_t) &MPPA_COS_THREAD_PER_CORE_SHIFT
+	  != 0) /* yield if more than one thread per core */
+	mppa_cos_synchronization_wait (NULL);
+    }
+  MPPA_COS_DINVAL ();
 }
 
 static inline void
 gomp_mutex_unlock (gomp_mutex_t *mutex)
 {
-  if (pthread_mutex_unlock (mutex))
-    abort ();
+  __builtin_k1_fence (); /* consitency before unlock */
+  gomp_mutex_write_set (mutex, 1);
+  mppa_cos_doorbell (mppa_mailbox_local);
+  MPPA_COS_DINVAL ();
 }
 
 static inline void
 gomp_mutex_destroy (gomp_mutex_t *mutex)
 {
-  if (pthread_mutex_destroy (mutex))
-    abort ();
+  gomp_mutex_write_set (mutex, 0);
+  __builtin_k1_fence ();
 }
 
 #endif /* GOMP_MUTEX_H */
