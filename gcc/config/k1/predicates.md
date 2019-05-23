@@ -24,7 +24,7 @@
 ;; used for some 32bits ALU
 ;; register or immediate up to signed 32
 (define_predicate "register_s32_operand"
- (ior (match_code "reg")
+ (ior (match_code "reg,subreg")
       (and (match_code "const,const_int")
            (match_test "satisfies_constraint_I32(op)"))))
 
@@ -41,14 +41,14 @@
 
 ;; register or immediate up to signed 37
 (define_predicate "register_s37_operand"
- (ior (match_code "reg")
+ (ior (match_code "reg,subreg")
       (match_operand 0 "s37_operand")))
 
 ;; register or immediate up to signed 64
 ;; Does not really check value fits on 64bits as HOST_WIDE_INT
 ;; is at most 64bits.
 (define_predicate "register_s64_operand"
- (ior (match_code "reg")
+ (ior (match_code "reg,subreg")
       (match_code "const,const_int")))
 
 (define_predicate "nonmemory64_register32_w_operand"
@@ -261,3 +261,49 @@
 (define_predicate "load_multiple_operation_uncached"
   (and (match_code "parallel")
        (match_test "k1_load_multiple_operation_p (op, true)")))
+
+;; Predicates used for register pair for 128-bits.
+
+;; Returns TRUE if OP is suitable for paired-register (pseudo reg are
+;; accepted)
+(define_predicate "k1_register_pair_operand"
+  (and (match_code "reg,subreg")
+       (match_test "k1_ok_for_paired_reg_p (op)")))
+
+;; Returns TRUE if OP is a paired-register or if it is a
+;; nonimmediate_operand and not a register
+(define_predicate "k1_nonimmediate_operand_pair"
+ (and (match_operand 0 "nonimmediate_operand")
+      (ior (not (match_code "reg,subreg"))
+           (match_operand 0 "k1_register_pair_operand"))))
+
+;; Returns TRUE if OP is a paired-register or a general_operand and
+;; not a register.
+(define_predicate "k1_general_operand_pair"
+ (and (match_operand 0 "general_operand")
+      (ior (not (match_code "reg,subreg"))
+           (match_operand 0 "k1_register_pair_operand"))))
+
+
+;; Predicates used for register quad for 256-bits.
+
+;; Returns TRUE if OP is suitable for quad-register (pseudo reg are
+;; accepted)
+(define_predicate "k1_register_quad_operand"
+  (and (match_code "reg,subreg")
+       (match_test "k1_ok_for_quad_reg_p (op)")))
+
+;; Returns TRUE if OP is a quad-register or if it is a
+;; nonimmediate_operand and not a register
+(define_predicate "k1_nonimmediate_operand_quad"
+ (and (match_operand 0 "nonimmediate_operand")
+      (ior (not (match_code "reg,subreg"))
+           (match_operand 0 "k1_register_quad_operand"))))
+
+;; Returns TRUE if OP is a quad-register or a general_operand and
+;; not a register.
+(define_predicate "k1_general_operand_quad"
+ (and (match_operand 0 "general_operand")
+      (ior (not (match_code "reg,subreg"))
+           (match_operand 0 "k1_register_quad_operand"))))
+

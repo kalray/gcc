@@ -94,7 +94,6 @@ enum k1_abi_type
 
 #define WORDS_BIG_ENDIAN 0
 
-/* Number of storage units in a word; normally 4. */
 #define UNITS_PER_WORD 8
 
 #define PROMOTE_MODE(MODE, UNSIGNEDP, TYPE)                                    \
@@ -109,12 +108,11 @@ enum k1_abi_type
 
 #define PARM_BOUNDARY 64
 
-#define STACK_BOUNDARY 128
+#define STACK_BOUNDARY 64
+#define BIGGEST_ALIGNMENT 64
 
 /* Alignment required for a function entry point, in bits.  */
 #define FUNCTION_BOUNDARY 64
-
-#define BIGGEST_ALIGNMENT 128
 
 #define PCC_BITFIELD_TYPE_MATTERS 1
 
@@ -136,9 +134,6 @@ enum k1_abi_type
 #define LOCAL_ALIGNMENT(EXP, ALIGN) DATA_ALIGNMENT (EXP, ALIGN)
 
 #define STRICT_ALIGNMENT TARGET_STRICT_ALIGN
-
-//#define STACK_SLOT_ALIGNMENT(type, mode, align) ( (mode == BLKmode ? 8 :
-//GET_MODE_SIZE (mode)) > 4 ? BIGGEST_ALIGNMENT : BITS_PER_WORD )
 
 /* ********** Type Layout ********** */
 
