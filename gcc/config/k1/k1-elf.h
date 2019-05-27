@@ -25,6 +25,16 @@
 
 #define DRIVER_SELF_SPECS DRIVER_SELF_SPECS_COMMON
 
+/* Link against Newlib libraries, because the bare (elf) backend assumes Newlib.
+   This part can be modified for OS porting and other libc.
+   Handle the circular dependence between libc and libgloss.
+   Link against MPPA Bare Runtime
+ */
+#undef LIB_SPEC
+#define LIB_SPEC                                                               \
+  "--start-group -lc -lgloss --end-group "                                     \
+  "%{!nostartfiles:%{!nodefaultlibs:%{!nostdlib:%{!T*:-Tbare.ld}}}}"
+
 #undef LINK_SPEC
 #define LINK_SPEC LINK_SPEC_COMMON
 
