@@ -1607,7 +1607,7 @@ k1_expand_tablejump (rtx op0, rtx op1)
       if (GET_MODE (op0) != Pmode)
 	{
 	  rtx dreg = gen_reg_rtx (Pmode);
-	  emit_insn (gen_extend_insn (dreg, op0, Pmode, GET_MODE (op0), 1));
+	  emit_insn (gen_extend_insn (dreg, op0, Pmode, GET_MODE (op0), 0));
 	  op0 = dreg;
 	}
       emit_insn (gen_add2_insn (op0, tmp_reg));
