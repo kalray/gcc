@@ -123,6 +123,8 @@ void k1_expand_compare_and_swap (rtx op[]);
 
 void k1_expand_atomic_op (enum rtx_code, rtx, bool, rtx, rtx, rtx);
 
+void k1_expand_atomic_test_and_set (rtx op[]);
+
 extern int k1_mau_lsu_double_port_bypass_p (rtx_insn *producer, rtx_insn *consumer);
 
 extern int k1_has_pic_reference (rtx x);
