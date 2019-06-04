@@ -2471,7 +2471,7 @@ k1_emit_post_barrier (rtx model, bool move)
 void
 k1_expand_compare_and_swap (rtx operands[])
 {
-  rtx bval, mem, oldval, newval, currval;
+  rtx mem, oldval, newval, currval;
   rtx cas_retry = gen_label_rtx ();
   rtx cas_return = gen_label_rtx ();
   rtx (*gen) (rtx, rtx, rtx);
@@ -2622,6 +2622,90 @@ k1_expand_atomic_op (enum rtx_code code, rtx target, bool after, rtx mem,
 	       : gen_lowpart (mode, curr_mem_val));
       emit_move_insn (target, ret);
     }
+
+  k1_emit_post_barrier (model, false);
+}
+
+/* Expand the atomic test-and-set on byte atomic operation using the
+   acswapw insn. */
+
+void
+k1_expand_atomic_test_and_set (rtx operands[])
+{
+  rtx mem = operands[1];   /* memory to be modified */
+  rtx model = operands[2]; /* memory model */
+
+  rtx retry = gen_label_rtx ();
+  rtx fini = gen_label_rtx ();
+  rtx pos = gen_reg_rtx (Pmode);
+  rtx offset = gen_reg_rtx (Pmode);
+  rtx memsi;
+  rtx tmp = gen_reg_rtx (TImode);
+  rtx val = gen_lowpart (SImode, (gen_highpart (DImode, tmp)));
+  rtx newval = gen_lowpart (SImode, (gen_lowpart (DImode, tmp)));
+  rtx byte = gen_reg_rtx (SImode);
+  rtx mask = gen_reg_rtx (SImode);
+  rtx (*gen3) (rtx, rtx, rtx);
+  rtx (*gen2) (rtx, rtx);
+
+  k1_emit_pre_barrier (model, false);
+
+  emit_move_insn (pos, XEXP (mem, 0)); /* copy MEM pointer */
+  /* find the place of the byte to test-and-set within the memory
+     word-aligned it belongs to (POS is 0, 1, 2, or 3) */
+  gen3 = Pmode == SImode ? gen_andsi3 : gen_anddi3;
+  emit_insn (gen3 (pos, pos, GEN_INT (0x3)));
+  /* the address of word containing the byte is MEM+OFFSET, with
+     OFFSET <- -POS */
+  gen2 = Pmode == SImode ? gen_negsi2 : gen_negdi2;
+  emit_insn (gen2 (offset, pos));
+  /* if MEM already has an offset, update OFFSET */
+  gen3 = Pmode == SImode ? gen_addsi3 : gen_adddi3;
+  if (GET_CODE (XEXP (mem, 0)) == PLUS
+      && GET_CODE (XEXP (XEXP (mem, 0), 1)) == CONST_INT)
+    emit_insn (gen3 (offset, offset, XEXP (XEXP (mem, 0), 1)));
+
+  /* load the word containing the byte to test-and-set
+    - if MEM is already of the form offset[addr]: load OFFSET[addr]
+    - else: load OFFSET[MEM] */
+  if (GET_CODE (XEXP (mem, 0)) == PLUS
+      && GET_CODE (XEXP (XEXP (mem, 0), 1)) == CONST_INT)
+    memsi = gen_rtx_MEM (SImode,
+			 gen_rtx_PLUS (Pmode, XEXP (XEXP (mem, 0), 0), offset));
+  else
+    memsi = gen_rtx_MEM (SImode, gen_rtx_PLUS (Pmode, XEXP (mem, 0), offset));
+
+  /* POS = (POS*BITS_PER_UNIT) */
+  gen3 = Pmode == SImode ? gen_mulsi3 : gen_muldi3;
+  emit_insn (gen3 (pos, pos, GEN_INT (BITS_PER_UNIT)));
+
+  emit_label (retry); /* cas loop entry point */
+  emit_insn (gen_atomic_loadsi (val, memsi, GEN_INT (MEMMODEL_RELAXED)));
+
+  /* keep only the byte to test-and-set: BYTE <- VAL >> POS & 0xFF */
+  emit_insn (gen_lshrsi3 (byte, val, gen_lowpart (SImode, pos)));
+  emit_insn (gen_andsi3 (byte, byte, GEN_INT (0xFF)));
+
+  /* if BYTE is false, try a compare-and-swap with the byte set to
+     TRUE, else return true (i.e. BYTE) because the lock is already
+     acquired */
+  emit_cmp_and_jump_insns (byte, const0_rtx, NE, NULL_RTX, SImode, true, fini);
+  /* NEWVAL <- VAL | TRUE << (POS*BITS_PER_UNIT) */
+  emit_move_insn (mask, const1_rtx);
+  emit_insn (gen_ashlsi3 (mask, mask, gen_lowpart (SImode, pos)));
+  emit_insn (gen_iorsi3 (newval, val, mask));
+  emit_insn (gen_acswapw (tmp, memsi));
+
+  /* ACSWAP insn returns 0x0 (fail) or 0x1 (success) in the low part
+     of TMP:
+     - if successful: MEM is updated, do not loop,
+		      lock is acquired, return false (i.e. BYTE)
+     - if failing: MEM has changed, try again */
+  emit_cmp_and_jump_insns (newval, const1_rtx, NE, NULL_RTX, SImode, true,
+			   retry);
+
+  emit_label (fini);
+  emit_move_insn (operands[0], gen_lowpart (QImode, byte));
 
   k1_emit_post_barrier (model, false);
 }
