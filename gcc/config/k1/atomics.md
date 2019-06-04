@@ -132,16 +132,15 @@
 
 ;; Atomic test-and-set operation on memory byte with memory model
 ;; semantics.
-;; (define_expand "atomic_test_and_set"
-;;  [(match_operand:QI 0 "register_operand" "")   ;; output (memory content)
-;;   (match_operand:QI 1 "memory_operand" "")     ;; memory
-;;   (match_operand:SI 2 "const_int_operand" "")] ;; model
-;;   ""
-;; {
-;;   FAIL;
-;; })
-;; This builtin is not implemented: we rely on default implementation
-;; provided by gcc (WARNING: this is non-atomic).
+(define_expand "atomic_test_and_set"
+ [(match_operand:QI 0 "register_operand" "")   ;; output (memory content)
+  (match_operand:QI 1 "memory_operand" "")     ;; memory
+  (match_operand:SI 2 "const_int_operand" "")] ;; model
+  ""
+{
+  k1_expand_atomic_test_and_set (operands);
+  DONE;
+})
 
 ;; Atomic bitwise operation on memory with memory model semantics,
 ;; return the original value of the specified bit.
