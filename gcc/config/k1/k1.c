@@ -2313,7 +2313,7 @@ void
 k1_emit_pre_barrier (rtx model, bool move)
 {
   const enum memmodel mm = memmodel_from_int (INTVAL (model));
-  switch(mm & !MEMMODEL_SYNC) // treat sync operations as atomic ones
+  switch(mm & MEMMODEL_BASE_MASK) // treat sync operations as atomic ones
     {
     case MEMMODEL_RELAXED:
     case MEMMODEL_CONSUME:
@@ -2342,7 +2342,7 @@ void
 k1_emit_post_barrier (rtx model, bool move)
 {
   const enum memmodel mm = memmodel_from_int (INTVAL (model));
-  switch(mm & !MEMMODEL_SYNC) // treat sync operations as atomic ones
+  switch(mm & MEMMODEL_BASE_MASK) // treat sync operations as atomic ones
     {
     case MEMMODEL_RELAXED:
     case MEMMODEL_RELEASE:
