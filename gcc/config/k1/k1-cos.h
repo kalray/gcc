@@ -28,6 +28,10 @@
   DRIVER_SELF_SPECS_COMMON, "%{lpthread: -pthread} "                           \
 			    "%{pthread:%<pthread}"
 
+/* The GNU C++ standard library requires that these macros be defined.  */
+#undef CPLUSPLUS_CPP_SPEC
+#define CPLUSPLUS_CPP_SPEC "-D_GNU_SOURCE %(cpp)"
+
 /* Link against Newlib libraries, because the COS backend assumes Newlib.
    Handle the circular dependence between libc and libgloss.
    Link against MPPA Bare Runtime
