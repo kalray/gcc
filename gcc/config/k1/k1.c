@@ -597,6 +597,7 @@ k1_has_tls_reference (rtx x)
 {
   if (!TARGET_HAVE_TLS)
     return false;
+
   subrtx_iterator::array_type array;
   FOR_EACH_SUBRTX (iter, array, x, ALL)
     {
@@ -605,25 +606,11 @@ k1_has_tls_reference (rtx x)
 	return true;
       /* Don't recurse into UNSPEC_TLS looking for TLS symbols; these are
 	 TLS offsets, not real symbol references.  */
-      if (GET_CODE (x) == UNSPEC && XINT (x, 1) == UNSPEC_TLS)
+      if (GET_CODE (x) == UNSPEC
+	  && (XINT (x, 1) == UNSPEC_TLS_GD || XINT (x, 1) == UNSPEC_TLS_LD
+	      || XINT (x, 1) == UNSPEC_TLS_DTPOFF
+	      || XINT (x, 1) == UNSPEC_TLS_LE || XINT (x, 1) == UNSPEC_TLS_IE))
 	iter.skip_subrtxes ();
-    }
-  return false;
-}
-
-/* Returns 1 if an UNSPEC_TLS has been found (ie. a TLS offset), 0 if
-   not */
-static int
-k1_has_tprel (rtx x)
-{
-  if (!TARGET_HAVE_TLS)
-    return false;
-  subrtx_iterator::array_type array;
-  FOR_EACH_SUBRTX (iter, array, x, ALL)
-    {
-      const_rtx x = *iter;
-      if (GET_CODE (x) == UNSPEC && XINT (x, 1) == UNSPEC_TLS)
-	return true;
     }
   return false;
 }
@@ -633,7 +620,9 @@ k1_has_unspec_reference_1 (rtx *x)
 {
   return (GET_CODE (*x) == UNSPEC
 	  && (XINT (*x, 1) == UNSPEC_GOT || XINT (*x, 1) == UNSPEC_GOTOFF
-	      || XINT (*x, 1) == UNSPEC_PCREL || XINT (*x, 1) == UNSPEC_TLS));
+	      || XINT (*x, 1) == UNSPEC_PCREL || XINT (*x, 1) == UNSPEC_TLS_GD
+	      || XINT (*x, 1) == UNSPEC_TLS_LD || XINT (*x, 1) == UNSPEC_TLS_LE
+	      || XINT (*x, 1) == UNSPEC_TLS_IE));
 }
 
 static int
@@ -690,9 +679,6 @@ static bool
 k1_analyze_address (rtx x, bool strict, struct k1_address *addr)
 {
   addr->mode = ADDR_INVALID;
-
-  if (k1_has_tprel (x))
-    return false;
 
   /*
    * ld reg = @got[reg]
@@ -1163,10 +1149,14 @@ k1_target_secondary_reload (bool in_p ATTRIBUTE_UNUSED, rtx x ATTRIBUTE_UNUSED,
 	}
     }
   else if (SYMBOLIC_CONST (x) && !k1_legitimate_constant_p (VOIDmode, x))
-    gcc_unreachable ();
-
+    {
+      gcc_unreachable ();
+    }
   return NO_REGS;
 }
+
+static char *k1_unspec_tls_asm_op[]
+  = {"@tlsgd", "@tlsld", "@tlsle", "@dtpoff", "@tlsie"};
 
 void
 k1_target_print_operand (FILE *file, rtx x, int code)
@@ -1435,9 +1425,16 @@ k1_target_print_operand (FILE *file, rtx x, int code)
 	  {
 	    switch (unspec)
 	      {
-	      case UNSPEC_TLS:
-		fprintf (file, "@tprel(");
+
+	      case UNSPEC_TLS_GD:
+	      case UNSPEC_TLS_LD:
+	      case UNSPEC_TLS_DTPOFF:
+	      case UNSPEC_TLS_LE:
+	      case UNSPEC_TLS_IE:
+		fputs (k1_unspec_tls_asm_op[unspec - UNSPEC_TLS_GD], (file));
+		fputs ("(", (file));
 		break;
+
 	      case UNSPEC_GOT:
 		fprintf (file, "@got(");
 		break;
@@ -1714,54 +1711,56 @@ k1_get_stack_check_block (void)
 void
 k1_expand_stack_check_allocate_stack (rtx target, rtx adjust)
 {
-  int saved_stack_pointer_delta;
-  tree stack_end = get_identifier ("__stack_end");
-  rtx stack_end_sym
-    = gen_rtx_SYMBOL_REF (Pmode, IDENTIFIER_POINTER (stack_end));
-  rtx stack_end_val = gen_reg_rtx (Pmode), tmp = gen_reg_rtx (Pmode);
-  rtx label, seq, last, jump_over;
+  gcc_unreachable ();
+  /* int saved_stack_pointer_delta; */
+  /* tree stack_end = get_identifier ("__stack_end"); */
+  /* rtx stack_end_sym = gen_rtx_SYMBOL_REF (Pmode, IDENTIFIER_POINTER
+   * (stack_end)); */
+  /* rtx stack_end_val = gen_reg_rtx (Pmode), tmp = gen_reg_rtx (Pmode); */
+  /* rtx label, seq, last, jump_over; */
 
-  saved_stack_pointer_delta = stack_pointer_delta;
+  /* saved_stack_pointer_delta = stack_pointer_delta; */
 
-  anti_adjust_stack (adjust);
+  /* anti_adjust_stack (adjust); */
 
-  /* Even if size is constant, don't modify stack_pointer_delta.
-     The constant size alloca should preserve
-     crtl->preferred_stack_boundary alignment.  */
-  stack_pointer_delta = saved_stack_pointer_delta;
+  /* /\* Even if size is constant, don't modify stack_pointer_delta. */
+  /*    The constant size alloca should preserve */
+  /*    crtl->preferred_stack_boundary alignment.  *\/ */
+  /* stack_pointer_delta = saved_stack_pointer_delta; */
 
-  emit_move_insn (target, virtual_stack_dynamic_rtx);
+  /* emit_move_insn (target, virtual_stack_dynamic_rtx); */
 
-  label = k1_get_stack_check_block ();
+  /* label = k1_get_stack_check_block (); */
 
-  if (TARGET_STACK_CHECK_USE_TLS)
-    {
-      stack_end_sym
-	= gen_rtx_UNSPEC (Pmode, gen_rtvec (1, stack_end_sym), UNSPEC_TLS);
-      emit_move_insn (
-	stack_end_val,
-	gen_rtx_MEM (Pmode,
-		     gen_rtx_PLUS (Pmode,
-				   gen_rtx_REG (Pmode, K1C_LOCAL_POINTER_REGNO),
-				   gen_rtx_CONST (Pmode, stack_end_sym))));
-    }
-  else
-    {
-      /* [JV] Multiring: Waiting for allocated VSFR0 and maturity. */
-      /*BD3 emit_move_insn (stack_end_val,
-		      gen_rtx_REG (Pmode, K1C_VSFR0_REGNO));*/
-      gcc_unreachable ();
-    }
-  emit_insn (
-    gen_rtx_SET (tmp, gen_rtx_MINUS (Pmode, stack_pointer_rtx, stack_end_val)));
-  emit_cmp_and_jump_insns (tmp, const0_rtx, LT, NULL_RTX, Pmode, 0, label);
-  JUMP_LABEL (get_last_insn ()) = label;
+  /* if (TARGET_STACK_CHECK_USE_TLS) { */
+  /*     stack_end_sym = gen_rtx_UNSPEC(Pmode, gen_rtvec (1, stack_end_sym),
+   * UNSPEC_TLS); */
+  /*     emit_move_insn (stack_end_val, */
+  /*                     gen_rtx_MEM (Pmode, */
+  /*                                  gen_rtx_PLUS (Pmode, */
+  /*                                                gen_rtx_REG(Pmode,
+   * K1C_LOCAL_POINTER_REGNO), */
+  /*                                                gen_rtx_CONST(Pmode,
+   * stack_end_sym)))); */
+  /* } else { */
+  /*     /\* [JV] Multiring: Waiting for allocated VSFR0 and maturity. *\/ */
+  /*     /\*BD3 emit_move_insn (stack_end_val, */
+  /*                     gen_rtx_REG (Pmode, K1C_VSFR0_REGNO));*\/ */
+  /*     gcc_unreachable(); */
+  /* } */
+  /* emit_insn (gen_rtx_SET (tmp, */
+  /*                         gen_rtx_MINUS (Pmode, */
+  /*                                        stack_pointer_rtx, */
+  /*                                        stack_end_val))); */
+  /* emit_cmp_and_jump_insns (tmp, const0_rtx, LT, */
+  /*                          NULL_RTX, Pmode, 0, label); */
+  /* JUMP_LABEL(get_last_insn ()) = label; */
 
-  jump_over = gen_label_rtx ();
-  emit_jump_insn (gen_jump (jump_over));
-  JUMP_LABEL (get_last_insn ()) = jump_over;
-  k1_emit_stack_overflow_block (&seq, &last);
-  emit_label (jump_over);
+  /* jump_over = gen_label_rtx (); */
+  /* emit_jump_insn (gen_jump (jump_over)); */
+  /* JUMP_LABEL (get_last_insn ()) = jump_over; */
+  /* k1_emit_stack_overflow_block (&seq, &last); */
+  /* emit_label (jump_over); */
 }
 
 /* Return TRUE if REGNO should be saves in the prologue of current function */
@@ -2012,23 +2011,225 @@ k1_expand_epilogue (void)
     }
 }
 
+/* Return the TLS model to use for ADDR.  */
+
+static enum tls_model
+tls_symbolic_operand_type (rtx addr)
+{
+  enum tls_model tls_kind = TLS_MODEL_NONE;
+
+  if (GET_CODE (addr) == CONST)
+    {
+      if (GET_CODE (XEXP (addr, 0)) == PLUS
+	  && GET_CODE (XEXP (XEXP (addr, 0), 0)) == SYMBOL_REF)
+	tls_kind = SYMBOL_REF_TLS_MODEL (XEXP (XEXP (addr, 0), 0));
+    }
+  else if (GET_CODE (addr) == SYMBOL_REF)
+    tls_kind = SYMBOL_REF_TLS_MODEL (addr);
+
+    /* General TLS model only supported on Linux. ClusterOS and bare
+       only supports local exec. */
+
+#ifndef GCC_K1_MPPA_LINUX
+  if (tls_kind != TLS_MODEL_NONE)
+    tls_kind = TLS_MODEL_LOCAL_EXEC;
+#endif
+  return tls_kind;
+}
+
+/* Return true if SYMBOL_REF X is thread local */
+static bool
+k1_tls_symbol_p (rtx x)
+{
+  if (!TARGET_HAVE_TLS)
+    return false;
+
+  if (GET_CODE (x) != SYMBOL_REF)
+    return false;
+
+  return SYMBOL_REF_TLS_MODEL (x) != 0;
+}
+
+static rtx
+gen_set_gotp_insn (rtx target)
+{
+  if (TARGET_32)
+    return gen_set_gotp_si (target);
+  else
+    return gen_set_gotp_di (target);
+}
+
+static enum k1_symbol_type
+k1_classify_tls_symbol (rtx x)
+{
+  enum tls_model tls_kind = tls_symbolic_operand_type (x);
+  switch (tls_kind)
+    {
+    case TLS_MODEL_LOCAL_EXEC:
+      return SYMBOL_TLSLE;
+
+      /* General TLS model only supported on Linux. ClusterOS and bare
+	 only supports local exec. */
+#ifdef GCC_K1_MPPA_LINUX
+    case TLS_MODEL_LOCAL_DYNAMIC:
+      return SYMBOL_TLSLD;
+
+    case TLS_MODEL_GLOBAL_DYNAMIC:
+      return SYMBOL_TLSGD;
+
+    case TLS_MODEL_INITIAL_EXEC:
+      return SYMBOL_TLSIE;
+#else
+    case TLS_MODEL_LOCAL_DYNAMIC:
+    case TLS_MODEL_GLOBAL_DYNAMIC:
+    case TLS_MODEL_INITIAL_EXEC:
+#endif
+    case TLS_MODEL_EMULATED:
+    case TLS_MODEL_NONE:
+      error ("TLS model not supported.");
+      break;
+
+    default:
+      gcc_unreachable ();
+    }
+}
+
+static enum k1_symbol_type
+k1_classify_symbol (rtx x)
+{
+  if (k1_tls_symbol_p (x))
+    return k1_classify_tls_symbol (x);
+
+  /* We keep both way of materializing the absolute address of a label
+     because the use of pcrel insn has greater constraints on bundling
+     (ALU_FULL) versus a simple make (ALU_TINY) */
+  if (GET_CODE (x) == LABEL_REF)
+    return flag_pic ? LABEL_PCREL_ABSOLUTE : LABEL_ABSOLUTE;
+
+  if (GET_CODE (x) == SYMBOL_REF)
+    {
+      if (!flag_pic)
+	return SYMBOL_ABSOLUTE;
+
+      if (SYMBOL_REF_LOCAL_P (x) && !SYMBOL_REF_EXTERNAL_P (x))
+	return SYMBOL_GOTOFF;
+      else
+	return SYMBOL_GOT;
+    }
+  return SYMBOL_ABSOLUTE;
+}
+
+static GTY (()) rtx k1_tls_symbol;
+
+/* Return an instruction sequence that calls __tls_get_addr.  SYM is
+   the TLS symbol we are referencing and TYPE is the symbol type to use
+   (either global dynamic or local dynamic).  RESULT is an RTX for the
+   return value location.  */
+
+static rtx_insn *
+k1_call_tls_get_addr (rtx sym, rtx result, int unspec)
+{
+  rtx a0 = gen_rtx_REG (Pmode, K1C_ARGUMENT_POINTER_REGNO), func;
+  rtx_insn *insn;
+
+  if (!k1_tls_symbol)
+    k1_tls_symbol = init_one_libfunc ("__tls_get_addr");
+  func = gen_rtx_MEM (FUNCTION_MODE, k1_tls_symbol);
+
+  start_sequence ();
+
+  /* sequence for getting TLS desc address from GOT slot:
+   */
+  rtx pic_reg = gen_reg_rtx (Pmode);
+  emit_insn (gen_set_gotp_insn (pic_reg));
+
+  rtx new_rtx
+    = gen_rtx_CONST (Pmode, gen_rtx_UNSPEC (Pmode, gen_rtvec (1, sym), unspec));
+  emit_insn (gen_add3_insn (a0, pic_reg, new_rtx));
+
+  insn = emit_call_insn (gen_call_value (result, func, const0_rtx));
+  RTL_CONST_CALL_P (insn) = 1;
+  use_reg (&CALL_INSN_FUNCTION_USAGE (insn), a0);
+  insn = get_insns ();
+
+  end_sequence ();
+
+  return insn;
+}
+
 static rtx
 k1_legitimize_tls_reference (rtx x)
 {
-  rtx reg;
-  rtx (*gen_add) (rtx target, rtx op1, rtx op2)
-    = !TARGET_32 ? gen_adddi3 : gen_addsi3;
+  rtx reg, addr, pic_reg, eqv;
+  rtx dest, tp, tmp;
 
   if (reload_completed || reload_in_progress)
     return x;
 
-  reg = gen_reg_rtx (Pmode);
-  emit_move_insn (reg,
-		  gen_rtx_CONST (Pmode, gen_rtx_UNSPEC (Pmode, gen_rtvec (1, x),
-							UNSPEC_TLS)));
+  enum k1_symbol_type sty = k1_classify_symbol (x);
 
-  emit_insn (gen_add (reg, gen_rtx_REG (Pmode, K1C_LOCAL_POINTER_REGNO), reg));
-  return reg;
+  switch (sty)
+    {
+    case SYMBOL_TLSLE:
+      /* address is @tlsle(symbol)[$tp]
+       */
+      addr
+	= gen_rtx_PLUS (Pmode, gen_rtx_REG (Pmode, K1C_LOCAL_POINTER_REGNO),
+			gen_rtx_CONST (Pmode,
+				       gen_rtx_UNSPEC (Pmode, gen_rtvec (1, x),
+						       UNSPEC_TLS_LE)));
+      return addr;
+
+    case SYMBOL_TLSGD:
+      /* Sequence is:
+       * $r0 = @tlsgd(sym) + $got
+       * addr = __tls_get_addr()
+       */
+      tmp = gen_rtx_REG (Pmode, K1C_ARGUMENT_POINTER_REGNO);
+      dest = gen_reg_rtx (Pmode);
+      emit_libcall_block (k1_call_tls_get_addr (x, tmp, UNSPEC_TLS_GD),
+			  dest /* target */, tmp /* result */, x /* equiv */);
+      return dest;
+
+    case SYMBOL_TLSIE:
+      pic_reg = gen_reg_rtx (Pmode);
+      dest = gen_reg_rtx (Pmode);
+
+      emit_insn (gen_set_gotp_insn (pic_reg));
+
+      addr
+	= gen_rtx_PLUS (Pmode, pic_reg,
+			gen_rtx_CONST (Pmode,
+				       gen_rtx_UNSPEC (Pmode, gen_rtvec (1, x),
+						       UNSPEC_TLS_IE)));
+      emit_move_insn (dest, gen_rtx_MEM (Pmode, addr));
+
+      return gen_rtx_PLUS (Pmode, gen_rtx_REG (Pmode, K1C_LOCAL_POINTER_REGNO),
+			   dest);
+
+    case SYMBOL_TLSLD:
+      tmp = gen_rtx_REG (Pmode, K1C_ARGUMENT_POINTER_REGNO);
+      dest = gen_reg_rtx (Pmode);
+
+      /* Attach a unique REG_EQUIV, to allow the RTL optimizers to
+	 share the LD result with other LD model accesses.  */
+      eqv
+	= gen_rtx_UNSPEC (Pmode, gen_rtvec (1, const0_rtx), UNSPEC_TLS_LD_CALL);
+
+      emit_libcall_block (k1_call_tls_get_addr (x, tmp, UNSPEC_TLS_LD),
+			  dest /* target */, tmp /* result */, eqv /* equiv */);
+
+      addr
+	= gen_rtx_PLUS (Pmode, dest,
+			gen_rtx_CONST (Pmode,
+				       gen_rtx_UNSPEC (Pmode, gen_rtvec (1, x),
+						       UNSPEC_TLS_DTPOFF)));
+
+      return addr;
+
+    default:
+      gcc_unreachable ();
+    }
 }
 
 static bool
@@ -2073,7 +2274,7 @@ function_symbol_referenced_p (rtx x)
   return FALSE;
 }
 
-/* Returns TRUE if OP contains a symbol or label reference */
+/* Returns TRUE if OP contains a symbol reference or a label reference */
 bool
 symbolic_reference_mentioned_p (rtx op)
 {
@@ -2086,7 +2287,10 @@ symbolic_reference_mentioned_p (rtx op)
   /* UNSPEC_TLS entries for a symbol include a LABEL_REF for the
      referencing instruction, but they are constant offsets, not
      symbols.  */
-  if (GET_CODE (op) == UNSPEC && XINT (op, 1) == UNSPEC_TLS)
+  if (GET_CODE (op) == UNSPEC
+      && (XINT (op, 1) == UNSPEC_TLS_LE || XINT (op, 1) == UNSPEC_TLS_LD
+	  || XINT (op, 1) == UNSPEC_TLS_DTPOFF || XINT (op, 1) == UNSPEC_TLS_GD
+	  || XINT (op, 1) == UNSPEC_TLS_IE))
     return false;
 
   fmt = GET_RTX_FORMAT (GET_CODE (op));
@@ -2125,7 +2329,9 @@ k1_legitimate_pic_symbolic_ref_p (rtx op)
 
   int unspec = XINT ((op), 1);
   return (unspec == UNSPEC_GOT || unspec == UNSPEC_GOTOFF
-	  || unspec == UNSPEC_TLS || unspec == UNSPEC_PCREL);
+	  || unspec == UNSPEC_TLS_DTPOFF || unspec == UNSPEC_TLS_GD
+	  || unspec == UNSPEC_TLS_LD || unspec == UNSPEC_TLS_LE
+	  || unspec == UNSPEC_TLS_IE || unspec == UNSPEC_PCREL);
 }
 
 /* Returns TRUE if X can be used as an operand in PIC code.
@@ -2142,44 +2348,6 @@ k1_legitimate_pic_operand_p (rtx x)
     return false;
 
   return true;
-}
-
-/* Return true if SYMBOL_REF X is thread local */
-static bool
-k1_tls_symbol_p (rtx x)
-{
-  if (!TARGET_HAVE_TLS)
-    return false;
-
-  if (GET_CODE (x) != SYMBOL_REF)
-    return false;
-
-  return SYMBOL_REF_TLS_MODEL (x) != 0;
-}
-
-static enum k1_symbol_type
-k1_classify_symbol (rtx x)
-{
-  if (k1_tls_symbol_p (x))
-    return SYMBOL_TPREL;
-
-  /* We keep both way of materializing the absolute address of a label
-     because the use of pcrel insn has greater constraints on bundling
-     (ALU_FULL) versus a simple make (ALU_TINY) */
-  if (GET_CODE (x) == LABEL_REF)
-    return flag_pic ? LABEL_PCREL_ABSOLUTE : LABEL_ABSOLUTE;
-
-  if (GET_CODE (x) == SYMBOL_REF)
-    {
-      if (!flag_pic)
-	return SYMBOL_ABSOLUTE;
-
-      if (SYMBOL_REF_LOCAL_P (x) && !SYMBOL_REF_EXTERNAL_P (x))
-	return SYMBOL_GOTOFF;
-      else
-	return SYMBOL_GOT;
-    }
-  return SYMBOL_ABSOLUTE;
 }
 
 static rtx
@@ -2205,8 +2373,6 @@ k1_expand_mov_constant (rtx operands[])
       rtx base, offset;
       enum k1_symbol_type sty;
       rtx pic_reg;
-      rtx (*gen_set_gotp) (rtx target)
-	= !TARGET_32 ? gen_set_gotp_di : gen_set_gotp_si;
 
       /* If we have (const (plus symbol offset)), separate out the offset
 	 before we start classifying the symbol.  */
@@ -2231,7 +2397,7 @@ k1_expand_mov_constant (rtx operands[])
 	   * Emit dest = *(@got(sym) + $pic)
 	   */
 	  pic_reg = gen_reg_rtx (Pmode);
-	  emit_insn (gen_set_gotp (pic_reg));
+	  emit_insn (gen_set_gotp_insn (pic_reg));
 
 	  new_rtx
 	    = gen_rtx_CONST (Pmode, gen_rtx_UNSPEC (Pmode, gen_rtvec (1, base),
@@ -2252,7 +2418,7 @@ k1_expand_mov_constant (rtx operands[])
 	   * Emit dest = @gotoff(sym)[$pic]
 	   */
 	  pic_reg = gen_reg_rtx (Pmode);
-	  emit_insn (gen_set_gotp (pic_reg));
+	  emit_insn (gen_set_gotp_insn (pic_reg));
 
 	  new_rtx
 	    = gen_rtx_CONST (Pmode, gen_rtx_UNSPEC (Pmode, gen_rtvec (1, base),
@@ -2268,10 +2434,18 @@ k1_expand_mov_constant (rtx operands[])
 	  crtl->uses_pic_offset_table = true;
 	  break;
 
-	case SYMBOL_TPREL:
-	  operands[1] = k1_legitimize_tls_reference (src);
-	  emit_insn (gen_rtx_SET (dest, operands[1]));
+	case SYMBOL_TLSIE:
+	case SYMBOL_TLSLD:
+	case SYMBOL_TLSGD:
+	case SYMBOL_TLSLE:
+	  operands[1] = k1_legitimize_tls_reference (base);
 	  gcc_assert (operands[1] != src);
+
+	  emit_insn (gen_rtx_SET (dest, operands[1]));
+
+	  if (INTVAL (offset) != 0)
+	    emit_insn (gen_add2_insn (dest, offset));
+
 	  break;
 
 	default:
@@ -6609,7 +6783,8 @@ k1_output_addr_const_extra (FILE *fp, rtx x)
 {
   if (GET_CODE (x) == UNSPEC)
     {
-      switch (XINT ((x), 1))
+      int unspec_code = XINT ((x), 1);
+      switch (unspec_code)
 	{
 	case UNSPEC_PIC:
 	  /* GLOBAL_OFFSET_TABLE or local symbols, no suffix.  */
@@ -6636,10 +6811,12 @@ k1_output_addr_const_extra (FILE *fp, rtx x)
 	  fputs (")", (fp));
 	  return true;
 
-	case UNSPEC_TLS:
-	  fputs ("@tprel", (fp));
-	  if (!TARGET_32)
-	    fputs ("64", (fp));
+	case UNSPEC_TLS_GD:
+	case UNSPEC_TLS_LD:
+	case UNSPEC_TLS_DTPOFF:
+	case UNSPEC_TLS_LE:
+	case UNSPEC_TLS_IE:
+	  fputs (k1_unspec_tls_asm_op[unspec_code - UNSPEC_TLS_GD], (fp));
 	  fputs ("(", (fp));
 	  output_addr_const ((fp), XVECEXP ((x), 0, 0));
 	  fputs (")", (fp));
