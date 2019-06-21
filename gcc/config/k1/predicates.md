@@ -156,8 +156,12 @@
     case UNSPEC:
       if (XINT (base, 1) == UNSPEC_GOTOFF
           || XINT (base, 1) == UNSPEC_GOT
-          || XINT (base, 1) == UNSPEC_PCREL
-          || XINT (base, 1) == UNSPEC_TLS)
+          || XINT (base, 1) == UNSPEC_TLS_DTPOFF
+          || XINT (base, 1) == UNSPEC_TLS_GD
+          || XINT (base, 1) == UNSPEC_TLS_LD
+          || XINT (base, 1) == UNSPEC_TLS_IE
+          || XINT (base, 1) == UNSPEC_TLS_LE
+          || XINT (base, 1) == UNSPEC_PCREL)
 	  return true;
       break;
 

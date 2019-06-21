@@ -22,7 +22,6 @@
         UNSPEC_DFLUSH
         UNSPEC_SBMM8
         UNSPEC_SBMMT8
-        UNSPEC_TLS
         UNSPEC_DINVAL
         UNSPEC_IINVAL
         UNSPEC_DFLUSHL
@@ -148,6 +147,17 @@
         UNSPEC_PIC
         UNSPEC_GOT
         UNSPEC_GOTOFF
+        UNSPEC_TLS_LD_CALL
+
+	;; Keep this part in sync with k1_unspec_tls_asm_op in k1.c
+	;; The order must match
+        UNSPEC_TLS_GD
+        UNSPEC_TLS_LD
+        UNSPEC_TLS_LE
+        UNSPEC_TLS_DTPOFF
+        UNSPEC_TLS_IE
+	;;
+
         UNSPEC_PCREL
         UNSPEC_GETCARRY
         UNSPEC_ADDCD

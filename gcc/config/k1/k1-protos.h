@@ -150,7 +150,11 @@ enum k1_symbol_type
   SYMBOL_ABSOLUTE,
   SYMBOL_GOT,
   SYMBOL_GOTOFF,
-  SYMBOL_TPREL
+
+  SYMBOL_TLSGD,
+  SYMBOL_TLSLD,
+  SYMBOL_TLSIE,
+  SYMBOL_TLSLE
 };
 
 extern GTY (()) rtx k1_sync_reg_rtx;
