@@ -4,7 +4,7 @@
 #ifndef STACK_SIZE
 #define	VLEN	2055
 #else
-#define VLEN ((STACK_SIZE/16) - 1)
+#define VLEN ((STACK_SIZE/32) - 1)
 #endif
 main ()
 {
