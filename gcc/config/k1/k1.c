@@ -2661,15 +2661,13 @@ k1_expand_atomic_test_and_set (rtx operands[])
   emit_insn (gen2 (offset, pos));
   /* if MEM already has an offset, update OFFSET */
   gen3 = Pmode == SImode ? gen_addsi3 : gen_adddi3;
-  if (GET_CODE (XEXP (mem, 0)) == PLUS
-      && GET_CODE (XEXP (XEXP (mem, 0), 1)) == CONST_INT)
+  if (GET_CODE (XEXP (mem, 0)) == PLUS)
     emit_insn (gen3 (offset, offset, XEXP (XEXP (mem, 0), 1)));
 
   /* load the word containing the byte to test-and-set
     - if MEM is already of the form offset[addr]: load OFFSET[addr]
     - else: load OFFSET[MEM] */
-  if (GET_CODE (XEXP (mem, 0)) == PLUS
-      && GET_CODE (XEXP (XEXP (mem, 0), 1)) == CONST_INT)
+  if (GET_CODE (XEXP (mem, 0)) == PLUS)
     memsi = gen_rtx_MEM (SImode,
 			 gen_rtx_PLUS (Pmode, XEXP (XEXP (mem, 0), 0), offset));
   else
