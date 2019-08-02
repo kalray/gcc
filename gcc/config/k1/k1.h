@@ -77,7 +77,7 @@ enum k1_abi_type
 
 #define CC1_SPEC " %{G*}"
 
-#define ASM_SPEC "%{mcore*} --no-check-resources %{!m32:-m64} "
+#define ASM_SPEC "%{mcore*} --no-check-resources %{m32} "
 
 #define CRT_CALL_STATIC_FUNCTION(SECTION_OP, FUNC)                             \
   asm(SECTION_OP "\ncall " #FUNC "\n;;\n.previous\n");
