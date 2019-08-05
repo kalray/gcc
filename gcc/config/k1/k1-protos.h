@@ -99,7 +99,7 @@ extern int k1_has_big_immediate (rtx x);
 
 extern bool k1_has_37bit_immediate_p (rtx x);
 
-extern HOST_WIDE_INT k1_const_vector_value (rtx x);
+extern HOST_WIDE_INT k1_const_vector_value (rtx x, int index);
 
 extern bool k1_has_10bit_vector_const_p (rtx x);
 
