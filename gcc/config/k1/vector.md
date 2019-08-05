@@ -575,6 +575,60 @@
 )
 
 
+;; V8HI
+
+(define_expand "movv8hi"
+  [(set (match_operand:V8HI 0 "nonimmediate_operand" "")
+        (match_operand:V8HI 1 "general_operand" ""))]
+  ""
+  {
+    if (MEM_P(operands[0])) {
+      operands[1] = force_reg (V8HImode, operands[1]);
+    }
+  }
+)
+
+(define_insn "*movv8hi_real"
+  [(set (match_operand:V8HI 0 "nonimmediate_operand" "=r, r, r, r, r,a,m,r")
+        (match_operand:V8HI 1 "general_operand"       "r,Ca,Cm,Za,Zm,r,r,i"))]
+  "(!immediate_operand(operands[1], V8HImode) || !memory_operand(operands[0], V8HImode))"
+  {
+    switch (which_alternative) {
+    case 0:
+      {
+        rtx x = operands[1];
+        int regno =  REGNO (x);
+        static char instruction[256];
+        sprintf (instruction,
+                 "copyq %%Q0 = $r%d, $r%d",
+                 regno, regno + 1);
+        return instruction;
+      }
+      return "copyo %O0 = %O1";
+    case 1: case 2: case 3: case 4:
+      return "lq%C1%m1 %Q0 = %1";
+    case 5: case 6:
+      return "sq%m0 %0 = %Q1";
+    case 7:
+      {
+        rtx x = operands[1];
+        int regno =  REGNO (operands[0]);
+        HOST_WIDE_INT value_0 = k1_const_vector_value (x, 0);
+        HOST_WIDE_INT value_1 = k1_const_vector_value (x, 4);
+        static char instruction[256];
+        sprintf (instruction,
+                 "make $r%d = 0x%llx\n\tmake $r%d = 0x%llx",
+                 regno, (long long)value_0, regno + 1, (long long)value_1);
+        return instruction;
+      }
+    default:
+      gcc_unreachable ();
+    }
+  }
+  [(set_attr "type"    "lsu_auxr_auxw, lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxr_store, lsu_auxr_store_x, alu_dual_y")
+   (set_attr "length"  "            4,              4,              8,                      4,                        8,              4,                8,         24")]
+)
+
 
 ;; V2SI
 
@@ -1190,13 +1244,8 @@
       {
         rtx x = operands[1];
         int regno =  REGNO (operands[0]);
-        gcc_assert (GET_CODE (x) == CONST_VECTOR);
-        HOST_WIDE_INT val_0 = INTVAL (CONST_VECTOR_ELT (x, 0));
-        HOST_WIDE_INT val_1 = INTVAL (CONST_VECTOR_ELT (x, 1));
-        HOST_WIDE_INT val_2 = INTVAL (CONST_VECTOR_ELT (x, 2));
-        HOST_WIDE_INT val_3 = INTVAL (CONST_VECTOR_ELT (x, 3));
-        HOST_WIDE_INT value_0 = (val_0&0xFFFFFFFF) | (val_1&0xFFFFFFFF)<<32;
-        HOST_WIDE_INT value_1 = (val_2&0xFFFFFFFF) | (val_3&0xFFFFFFFF)<<32;
+        HOST_WIDE_INT value_0 = k1_const_vector_value (x, 0);
+        HOST_WIDE_INT value_1 = k1_const_vector_value (x, 2);
         static char instruction[256];
         sprintf (instruction,
                  "make $r%d = 0x%llx\n\tmake $r%d = 0x%llx",
@@ -1209,6 +1258,15 @@
   }
   [(set_attr "type"    "lsu_auxr_auxw, lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxr_store, lsu_auxr_store_x, alu_dual_y")
    (set_attr "length"  "            4,              4,              8,                      4,                        8,              4,                8,         24")]
+)
+
+(define_insn "mulv4si3"
+  [(set (match_operand:V4SI 0 "register_operand" "=r")
+        (mult:V4SI (match_operand:V4SI 1 "register_operand" "r")
+                   (match_operand:V4SI 2 "nonmemory_operand" "r")))]
+  ""
+  "mulwq %0 = %1, %2"
+  [(set_attr "type" "mau_auxr")]
 )
 
 
@@ -1250,13 +1308,12 @@
       {
         rtx x = operands[1];
         int regno =  REGNO (operands[0]);
-        gcc_assert (GET_CODE (x) == CONST_VECTOR);
-        HOST_WIDE_INT val_0 = INTVAL (CONST_VECTOR_ELT (x, 0));
-        HOST_WIDE_INT val_1 = INTVAL (CONST_VECTOR_ELT (x, 1));
+        HOST_WIDE_INT value_0 = k1_const_vector_value (x, 0);
+        HOST_WIDE_INT value_1 = k1_const_vector_value (x, 1);
         static char instruction[256];
         sprintf (instruction,
                  "make $r%d = 0x%llx\n\tmake $r%d = 0x%llx",
-                 regno, (long long)val_0, regno + 1, (long long)val_1);
+                 regno, (long long)value_0, regno + 1, (long long)value_1);
         return instruction;
       }
     default:
@@ -1297,17 +1354,16 @@
       {
         rtx x = operands[1];
         int regno =  REGNO (operands[0]);
-        gcc_assert (GET_CODE (x) == CONST_VECTOR);
-        HOST_WIDE_INT val_0 = INTVAL (CONST_VECTOR_ELT (x, 0));
-        HOST_WIDE_INT val_1 = INTVAL (CONST_VECTOR_ELT (x, 1));
-        HOST_WIDE_INT val_2 = INTVAL (CONST_VECTOR_ELT (x, 2));
-        HOST_WIDE_INT val_3 = INTVAL (CONST_VECTOR_ELT (x, 3));
+        HOST_WIDE_INT value_0 = k1_const_vector_value (x, 0);
+        HOST_WIDE_INT value_1 = k1_const_vector_value (x, 1);
+        HOST_WIDE_INT value_2 = k1_const_vector_value (x, 2);
+        HOST_WIDE_INT value_3 = k1_const_vector_value (x, 3);
         static char instruction[256];
         sprintf (instruction,
                  "make $r%d = 0x%llx\n\tmake $r%d = 0x%llx\n\t;;\n\t" 
                  "make $r%d = 0x%llx\n\tmake $r%d = 0x%llx",
-                 regno, (long long)val_0, regno + 1, (long long)val_1,
-                 regno + 2, (long long)val_2, regno + 3, (long long)val_3);
+                 regno, (long long)value_0, regno + 1, (long long)value_1,
+                 regno + 2, (long long)value_2, regno + 3, (long long)value_3);
         return instruction;
       }
     default:
@@ -1315,7 +1371,7 @@
     }
   }
   [(set_attr "type"    "lsu_auxr_auxw, lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxr_store, lsu_auxr_store_x, alu_dual_y")
-   (set_attr "length"  "            4,              4,              8,                      4,                        8,              4,                8,         24")]
+   (set_attr "length"  "            4,              4,              8,                      4,                        8,              4,                8,         48")]
 )
 
 
@@ -1414,9 +1470,9 @@
 
 (define_insn "fmav2sf4"
   [(set (match_operand:V2SF 0 "register_operand" "=r")
-        (fma:V2SF  (match_operand:V2SF 1 "register_operand" "r")
-                   (match_operand:V2SF 2 "register_operand" "r")
-                   (match_operand:V2SF 3 "register_operand" "0")))]
+        (fma:V2SF (match_operand:V2SF 1 "register_operand" "r")
+                  (match_operand:V2SF 2 "register_operand" "r")
+                  (match_operand:V2SF 3 "register_operand" "0")))]
   ""
   "ffmawp %0 = %1, %2"
   [(set_attr "type" "mau_auxr_fpu")]
@@ -1435,9 +1491,9 @@
 
 (define_insn "fnmav2sf4"
   [(set (match_operand:V2SF 0 "register_operand" "=r")
-        (fma:V2SF  (neg:V2SF (match_operand:V2SF 1 "register_operand" "r"))
-                   (match_operand:V2SF 2 "register_operand" "r")
-                   (match_operand:V2SF 3 "register_operand" "0")))]
+        (fma:V2SF (neg:V2SF (match_operand:V2SF 1 "register_operand" "r"))
+                  (match_operand:V2SF 2 "register_operand" "r")
+                  (match_operand:V2SF 3 "register_operand" "0")))]
   ""
   "ffmswp %0 = %1, %2"
   [(set_attr "type" "mau_auxr_fpu")]
@@ -1521,4 +1577,456 @@
   "fabswp %0 = %1"
   [(set_attr "type" "alu_lite")]
 )
+
+
+;; V4SF
+
+(define_expand "movv4sf"
+  [(set (match_operand:V4SF 0 "nonimmediate_operand" "")
+        (match_operand:V4SF 1 "general_operand" ""))]
+  ""
+  {
+    if (MEM_P(operands[0])) {
+      operands[1] = force_reg (V4SFmode, operands[1]);
+    }
+  }
+)
+
+(define_insn "*movv4sf_real"
+  [(set (match_operand:V4SF 0 "nonimmediate_operand" "=r, r, r, r, r,a,m,r")
+        (match_operand:V4SF 1 "general_operand"       "r,Ca,Cm,Za,Zm,r,r,i"))]
+  "(!immediate_operand(operands[1], V4SFmode) || !memory_operand(operands[0], V4SFmode))"
+  {
+    switch (which_alternative) {
+    case 0:
+      {
+        rtx x = operands[1];
+        int regno =  REGNO (x);
+        static char instruction[256];
+        sprintf (instruction,
+                 "copyq %%Q0 = $r%d, $r%d",
+                 regno, regno + 1);
+        return instruction;
+      }
+      return "copyo %O0 = %O1";
+    case 1: case 2: case 3: case 4:
+      return "lq%C1%m1 %Q0 = %1";
+    case 5: case 6:
+      return "sq%m0 %0 = %Q1";
+    case 7:
+      {
+        rtx x = operands[1];
+        int regno =  REGNO (operands[0]);
+        HOST_WIDE_INT value_0 = k1_const_vector_value (x, 0);
+        HOST_WIDE_INT value_1 = k1_const_vector_value (x, 2);
+        static char instruction[256];
+        sprintf (instruction,
+                 "make $r%d = 0x%llx\n\tmake $r%d = 0x%llx",
+                 regno, (long long)value_0, regno + 1, (long long)value_1);
+        return instruction;
+      }
+    default:
+      gcc_unreachable ();
+    }
+  }
+  [(set_attr "type"    "lsu_auxr_auxw, lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxr_store, lsu_auxr_store_x, alu_dual_y")
+   (set_attr "length"  "            4,              4,              8,                      4,                        8,              4,                8,         24")]
+)
+
+(define_insn "addv4sf3"
+  [(set (match_operand:V4SF 0 "register_operand" "=r")
+        (plus:V4SF (match_operand:V4SF 1 "register_operand" "r")
+                   (match_operand:V4SF 2 "register_operand" "r")))]
+  ""
+  "faddwq %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn "k1_faddwq"
+  [(set (match_operand:V4SF 0 "register_operand" "=r")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
+                      (match_operand:V4SF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FADDWQ))]
+  ""
+  "faddwq%3 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn "subv4sf3"
+  [(set (match_operand:V4SF 0 "register_operand" "=r")
+        (minus:V4SF (match_operand:V4SF 1 "register_operand" "r")
+                    (match_operand:V4SF 2 "register_operand" "r")))]
+  ""
+  "fsbfwq %0 = %2, %1"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn "k1_fsbfwq"
+  [(set (match_operand:V4SF 0 "register_operand" "=r")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
+                      (match_operand:V4SF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FSBFWQ))]
+  ""
+  "fsbfwq%3 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn "mulv4sf3"
+  [(set (match_operand:V4SF 0 "register_operand" "=r")
+        (mult:V4SF (match_operand:V4SF 1 "register_operand" "r")
+                   (match_operand:V4SF 2 "register_operand" "r")))]
+  ""
+  "fmulwq %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn "k1_fmulwq"
+  [(set (match_operand:V4SF 0 "register_operand" "=r")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
+                      (match_operand:V4SF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FMULWQ))]
+  ""
+  "fmulwq%3 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+;; (define_expand "fmav4sf4"
+;;   [(set (match_operand:V4SF 0 "register_operand" "")
+;;         (fma:V4SF (match_operand:V4SF 1 "register_operand" "")
+;;                   (match_operand:V4SF 2 "register_operand" "")
+;;                   (match_operand:V4SF 3 "register_operand" "")))]
+;;   ""
+;;   {
+;;     rtx empty = gen_rtx_CONST_STRING (VOIDmode, "");
+;;     emit_insn (gen_k1_ffmawq (operands[0], operands[1], operands[2], operands[3], empty));
+;;     DONE;
+;;   }
+;; )
+
+;; Expand above leads to unrecognizable (subreg:V2SF (subreg:V4SF (reg:OI ) 0) 0) in fmav8sf4.
+(define_insn "fmav4sf4"
+  [(set (match_operand:V4SF 0 "register_operand" "=r")
+        (fma:V4SF (match_operand:V4SF 1 "register_operand" "r")
+                  (match_operand:V4SF 2 "register_operand" "r")
+                  (match_operand:V4SF 3 "register_operand" "0")))]
+  ""
+  {
+    static char instruction[256];
+    int regno_0 =  REGNO (operands[0]);
+    int regno_1 =  REGNO (operands[1]);
+    int regno_2 =  REGNO (operands[2]);
+    sprintf (instruction,
+             "ffmawp $r%d = $r%d, $r%d\n\t;;\n\tffmawp $r%d = $r%d, $r%d",
+             regno_0, regno_1, regno_2, regno_0+1, regno_1+1, regno_2+1);
+    return instruction;
+  }
+  [(set_attr "type" "mau_auxr_fpu")
+   (set_attr "length"          "8")]
+)
+
+(define_expand "k1_ffmawq"
+  [(set (match_operand:V4SF 0 "register_operand" "")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "")
+                      (match_operand:V4SF 2 "register_operand" "")
+                      (match_operand:V4SF 3 "register_operand" "")
+                      (match_operand 4 "" "")] UNSPEC_FFMAWQ))]
+  ""
+  {
+    rtx operands_0_lo = gen_rtx_SUBREG (V2SFmode, operands[0], 0);
+    rtx operands_0_hi = gen_rtx_SUBREG (V2SFmode, operands[0], 8);
+    rtx operands_1_lo = gen_rtx_SUBREG (V2SFmode, operands[1], 0);
+    rtx operands_1_hi = gen_rtx_SUBREG (V2SFmode, operands[1], 8);
+    rtx operands_2_lo = gen_rtx_SUBREG (V2SFmode, operands[2], 0);
+    rtx operands_2_hi = gen_rtx_SUBREG (V2SFmode, operands[2], 8);
+    rtx operands_3_lo = gen_rtx_SUBREG (V2SFmode, operands[3], 0);
+    rtx operands_3_hi = gen_rtx_SUBREG (V2SFmode, operands[3], 8);
+    emit_insn (gen_k1_ffmawp (operands_0_lo, operands_1_lo, operands_2_lo, operands_3_lo, operands[4]));
+    emit_insn (gen_k1_ffmawp (operands_0_hi, operands_1_hi, operands_2_hi, operands_3_hi, operands[4]));
+    DONE;
+  }
+)
+
+;; (define_expand "fnmav4sf4"
+;;   [(set (subreg:V2SF (match_operand:V4SF 0 "register_operand" "") 0)
+;;         (fma:V2SF (neg:V2SF (subreg:V2SF (match_operand:V4SF 1 "register_operand" "") 0))
+;;                   (subreg:V2SF (match_operand:V4SF 2 "register_operand" "") 0)
+;;                   (subreg:V2SF (match_operand:V4SF 3 "register_operand" "") 0)))
+;;    (set (subreg:V2SF (match_dup 0) 8)
+;;         (fma:V2SF (neg:V2SF (subreg:V2SF (match_dup 1) 8))
+;;                   (subreg:V2SF (match_dup 2) 8)
+;;                   (subreg:V2SF (match_dup 3) 8)))]
+;;   ""
+;;   {
+;;     rtx empty = gen_rtx_CONST_STRING (VOIDmode, "");
+;;     emit_insn (gen_k1_ffmswq (operands[0], operands[1], operands[2], operands[3], empty));
+;;     DONE;
+;;   }
+;; )
+
+;; Apply same workaround as for fmav4sf4.
+(define_insn "fnmav4sf4"
+  [(set (match_operand:V4SF 0 "register_operand" "=r")
+        (fma:V4SF (neg:V4SF (match_operand:V4SF 1 "register_operand" "r"))
+                  (match_operand:V4SF 2 "register_operand" "r")
+                  (match_operand:V4SF 3 "register_operand" "0")))]
+  ""
+  {
+    static char instruction[256];
+    int regno_0 =  REGNO (operands[0]);
+    int regno_1 =  REGNO (operands[1]);
+    int regno_2 =  REGNO (operands[2]);
+    sprintf (instruction,
+             "ffmswp $r%d = $r%d, $r%d\n\t;;\n\tffmswp $r%d = $r%d, $r%d",
+             regno_0, regno_1, regno_2, regno_0+1, regno_1+1, regno_2+1);
+    return instruction;
+  }
+  [(set_attr "type" "mau_auxr_fpu")
+   (set_attr "length"          "8")]
+)
+
+(define_expand "k1_ffmswq"
+  [(set (match_operand:V4SF 0 "register_operand" "")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "")
+                      (match_operand:V4SF 2 "register_operand" "")
+                      (match_operand:V4SF 3 "register_operand" "")
+                      (match_operand 4 "" "")] UNSPEC_FFMSWQ))]
+  ""
+  {
+    rtx operands_0_lo = gen_rtx_SUBREG (V2SFmode, operands[0], 0);
+    rtx operands_0_hi = gen_rtx_SUBREG (V2SFmode, operands[0], 8);
+    rtx operands_1_lo = gen_rtx_SUBREG (V2SFmode, operands[1], 0);
+    rtx operands_1_hi = gen_rtx_SUBREG (V2SFmode, operands[1], 8);
+    rtx operands_2_lo = gen_rtx_SUBREG (V2SFmode, operands[2], 0);
+    rtx operands_2_hi = gen_rtx_SUBREG (V2SFmode, operands[2], 8);
+    rtx operands_3_lo = gen_rtx_SUBREG (V2SFmode, operands[3], 0);
+    rtx operands_3_hi = gen_rtx_SUBREG (V2SFmode, operands[3], 8);
+    emit_insn (gen_k1_ffmswp (operands_0_lo, operands_1_lo, operands_2_lo, operands_3_lo, operands[4]));
+    emit_insn (gen_k1_ffmswp (operands_0_hi, operands_1_hi, operands_2_hi, operands_3_hi, operands[4]));
+    DONE;
+  }
+)
+
+
+;; V2DF
+
+(define_expand "movv2df"
+  [(set (match_operand:V2DF 0 "nonimmediate_operand" "")
+        (match_operand:V2DF 1 "general_operand" ""))]
+  ""
+  {
+    if (MEM_P(operands[0])) {
+      operands[1] = force_reg (V2DFmode, operands[1]);
+    }
+  }
+)
+
+(define_insn "*movv2df_real"
+  [(set (match_operand:V2DF 0 "nonimmediate_operand" "=r, r, r, r, r,a,m,r")
+        (match_operand:V2DF 1 "general_operand"       "r,Ca,Cm,Za,Zm,r,r,i"))]
+  "(!immediate_operand(operands[1], V2DFmode) || !memory_operand(operands[0], V2DFmode))"
+  {
+    switch (which_alternative) {
+    case 0:
+      {
+        rtx x = operands[1];
+        int regno =  REGNO (x);
+        static char instruction[256];
+        sprintf (instruction,
+                 "copyq %%Q0 = $r%d, $r%d",
+                 regno, regno + 1);
+        return instruction;
+      }
+      return "copyo %O0 = %O1";
+    case 1: case 2: case 3: case 4:
+      return "lq%C1%m1 %Q0 = %1";
+    case 5: case 6:
+      return "sq%m0 %0 = %Q1";
+    case 7:
+      {
+        rtx x = operands[1];
+        int regno =  REGNO (operands[0]);
+        HOST_WIDE_INT value_0 = k1_const_vector_value (x, 0);
+        HOST_WIDE_INT value_1 = k1_const_vector_value (x, 1);
+        static char instruction[256];
+        sprintf (instruction,
+                 "make $r%d = 0x%llx\n\tmake $r%d = 0x%llx",
+                 regno, (long long)value_0, regno + 1, (long long)value_1);
+        return instruction;
+      }
+    default:
+      gcc_unreachable ();
+    }
+  }
+  [(set_attr "type"    "lsu_auxr_auxw, lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxr_store, lsu_auxr_store_x, alu_dual_y")
+   (set_attr "length"  "            4,              4,              8,                      4,                        8,              4,                8,         24")]
+)
+
+(define_insn "addv2df3"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (plus:V2DF (match_operand:V2DF 1 "register_operand" "r")
+                   (match_operand:V2DF 2 "register_operand" "r")))]
+  ""
+  "fadddp %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn "k1_fadddp"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")
+                      (match_operand:V2DF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FADDDP))]
+  ""
+  "fadddp%3 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn "subv2df3"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (minus:V2DF (match_operand:V2DF 1 "register_operand" "r")
+                    (match_operand:V2DF 2 "register_operand" "r")))]
+  ""
+  "fsbfdp %0 = %2, %1"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn "k1_fsbfdp"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")
+                      (match_operand:V2DF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FSBFDP))]
+  ""
+  "fsbfdp%3 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+;; (define_insn "mulv2df3"
+;;   [(set (match_operand:V2DF 0 "register_operand" "=r")
+;;         (mult:V2DF (match_operand:V2DF 1 "register_operand" "r")
+;;                    (match_operand:V2DF 2 "register_operand" "r")))]
+;;   ""
+;;   "FMULDP %0 = %1, %2"
+;;   [(set_attr "type" "mau_fpu")]
+;; )
+
+(define_expand "mulv2df3"
+  [(set (match_operand:V2DF 0 "register_operand" "")
+        (mult:V2DF (match_operand:V2DF 1 "register_operand" "")
+                   (match_operand:V2DF 2 "register_operand" "")))]
+  ""
+  {
+    rtx empty = gen_rtx_CONST_STRING (VOIDmode, "");
+    emit_insn (gen_k1_fmuldp (operands[0], operands[1], operands[2], empty));
+    DONE;
+  }
+)
+
+(define_expand "k1_fmuldp"
+  [(set (match_operand:V2DF 0 "register_operand" "")
+        (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "")
+                      (match_operand:V2DF 2 "register_operand" "")
+                      (match_operand 3 "" "")] UNSPEC_FMULDP))]
+  ""
+  {
+    rtx operands_0_lo = gen_rtx_SUBREG (DFmode, operands[0], 0);
+    rtx operands_0_hi = gen_rtx_SUBREG (DFmode, operands[0], 8);
+    rtx operands_1_lo = gen_rtx_SUBREG (DFmode, operands[1], 0);
+    rtx operands_1_hi = gen_rtx_SUBREG (DFmode, operands[1], 8);
+    rtx operands_2_lo = gen_rtx_SUBREG (DFmode, operands[2], 0);
+    rtx operands_2_hi = gen_rtx_SUBREG (DFmode, operands[2], 8);
+    emit_insn (gen_k1_fmuld (operands_0_lo, operands_1_lo, operands_2_lo, operands[3]));
+    emit_insn (gen_k1_fmuld (operands_0_hi, operands_1_hi, operands_2_hi, operands[3]));
+    DONE;
+  }
+)
+
+;; (define_insn "fmav2df4"
+;;   [(set (match_operand:V2DF 0 "register_operand" "=r")
+;;         (fma:V2DF (match_operand:V2DF 1 "register_operand" "r")
+;;                   (match_operand:V2DF 2 "register_operand" "r")
+;;                   (match_operand:V2DF 3 "register_operand" "0")))]
+;;   ""
+;;   "FFMADP %0 = %1, %2"
+;;   [(set_attr "type" "mau_auxr_fpu")]
+;; )
+
+(define_expand "fmav2df4"
+  [(set (match_operand:V2DF 0 "register_operand" "")
+        (fma:V2DF (match_operand:V2DF 1 "register_operand" "")
+                  (match_operand:V2DF 2 "register_operand" "")
+                  (match_operand:V2DF 3 "register_operand" "")))]
+  ""
+  {
+    rtx empty = gen_rtx_CONST_STRING (VOIDmode, "");
+    emit_insn (gen_k1_ffmadp (operands[0], operands[1], operands[2], operands[3], empty));
+    DONE;
+  }
+)
+
+(define_expand "k1_ffmadp"
+  [(set (match_operand:V2DF 0 "register_operand" "")
+        (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "")
+                      (match_operand:V2DF 2 "register_operand" "")
+                      (match_operand:V2DF 3 "register_operand" "")
+                      (match_operand 4 "" "")] UNSPEC_FFMADP))]
+  ""
+  {
+    rtx operands_0_lo = gen_rtx_SUBREG (DFmode, operands[0], 0);
+    rtx operands_0_hi = gen_rtx_SUBREG (DFmode, operands[0], 8);
+    rtx operands_1_lo = gen_rtx_SUBREG (DFmode, operands[1], 0);
+    rtx operands_1_hi = gen_rtx_SUBREG (DFmode, operands[1], 8);
+    rtx operands_2_lo = gen_rtx_SUBREG (DFmode, operands[2], 0);
+    rtx operands_2_hi = gen_rtx_SUBREG (DFmode, operands[2], 8);
+    rtx operands_3_lo = gen_rtx_SUBREG (DFmode, operands[3], 0);
+    rtx operands_3_hi = gen_rtx_SUBREG (DFmode, operands[3], 8);
+    emit_insn (gen_k1_ffmad (operands_0_lo, operands_1_lo, operands_2_lo, operands_3_lo, operands[4]));
+    emit_insn (gen_k1_ffmad (operands_0_hi, operands_1_hi, operands_2_hi, operands_3_hi, operands[4]));
+    DONE;
+  }
+)
+
+;; (define_insn "fnmav2df4"
+;;   [(set (match_operand:V2DF 0 "register_operand" "=r")
+;;         (fma:V2DF (neg:V2DF (match_operand:V2DF 1 "register_operand" "r"))
+;;                   (match_operand:V2DF 2 "register_operand" "r")
+;;                   (match_operand:V2DF 3 "register_operand" "0")))]
+;;   ""
+;;   "FFMSDP %0 = %1, %2"
+;;   [(set_attr "type" "mau_auxr_fpu")]
+;; )
+
+(define_expand "fnmav2df4"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (fma:V2DF (neg:V2DF (match_operand:V2DF 1 "register_operand" ""))
+                  (match_operand:V2DF 2 "register_operand" "")
+                  (match_operand:V2DF 3 "register_operand" "")))]
+  ""
+  {
+    rtx empty = gen_rtx_CONST_STRING (VOIDmode, "");
+    emit_insn (gen_k1_ffmsdp (operands[0], operands[1], operands[2], operands[3], empty));
+    DONE;
+  }
+)
+
+(define_expand "k1_ffmsdp"
+  [(set (match_operand:V2DF 0 "register_operand" "")
+        (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "")
+                      (match_operand:V2DF 2 "register_operand" "")
+                      (match_operand:V2DF 3 "register_operand" "")
+                      (match_operand 4 "" "")] UNSPEC_FFMSDP))]
+  ""
+  {
+    rtx operands_0_lo = gen_rtx_SUBREG (DFmode, operands[0], 0);
+    rtx operands_0_hi = gen_rtx_SUBREG (DFmode, operands[0], 8);
+    rtx operands_1_lo = gen_rtx_SUBREG (DFmode, operands[1], 0);
+    rtx operands_1_hi = gen_rtx_SUBREG (DFmode, operands[1], 8);
+    rtx operands_2_lo = gen_rtx_SUBREG (DFmode, operands[2], 0);
+    rtx operands_2_hi = gen_rtx_SUBREG (DFmode, operands[2], 8);
+    rtx operands_3_lo = gen_rtx_SUBREG (DFmode, operands[3], 0);
+    rtx operands_3_hi = gen_rtx_SUBREG (DFmode, operands[3], 8);
+    emit_insn (gen_k1_ffmsd (operands_0_lo, operands_1_lo, operands_2_lo, operands_3_lo, operands[4]));
+    emit_insn (gen_k1_ffmsd (operands_0_hi, operands_1_hi, operands_2_hi, operands_3_hi, operands[4]));
+    DONE;
+  }
+)
+
 
