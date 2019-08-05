@@ -1063,14 +1063,14 @@ k1_target_vector_mode_supported_p (enum machine_mode mode ATTRIBUTE_UNUSED)
 {
   switch (mode) {
   case V4HImode:
-  //case V8HImode:
+  case V8HImode:
   case V2SImode:
   case V4SImode:
   case V2DImode:
   case V4DImode:
   case V2SFmode:
-  //case V4SFmode:
-  //case V2DFmode:
+  case V4SFmode:
+  case V2DFmode:
     return true;
   default: break;
   }
@@ -1296,7 +1296,7 @@ k1_target_print_operand (FILE *file, rtx x, int code)
     return;
 
   case CONST_VECTOR:
-    fprintf (file, HOST_WIDE_INT_PRINT_HEX, k1_const_vector_value (x));
+    fprintf (file, HOST_WIDE_INT_PRINT_HEX, k1_const_vector_value (x, 0));
     return;
 
   case CONST_STRING:
@@ -2661,6 +2661,8 @@ enum k1_builtin {
     K1_BUILTIN_FADDDC,
     K1_BUILTIN_FADDCDC,
     K1_BUILTIN_FADDWP,
+    K1_BUILTIN_FADDWQ,
+    K1_BUILTIN_FADDDP,
     K1_BUILTIN_FSBFW,
     K1_BUILTIN_FSBFD,
     K1_BUILTIN_FSBFWC,
@@ -2668,6 +2670,8 @@ enum k1_builtin {
     K1_BUILTIN_FSBFDC,
     K1_BUILTIN_FSBFCDC,
     K1_BUILTIN_FSBFWP,
+    K1_BUILTIN_FSBFWQ,
+    K1_BUILTIN_FSBFDP,
     K1_BUILTIN_FMULW,
     K1_BUILTIN_FMULD,
     K1_BUILTIN_FMULWD,
@@ -2676,18 +2680,24 @@ enum k1_builtin {
     K1_BUILTIN_FMULDC,
     K1_BUILTIN_FMULCDC,
     K1_BUILTIN_FMULWP,
+    K1_BUILTIN_FMULWQ,
+    K1_BUILTIN_FMULDP,
     K1_BUILTIN_FFMAW,
     K1_BUILTIN_FFMAD,
     K1_BUILTIN_FFMAWD,
     K1_BUILTIN_FFMAWC,
     K1_BUILTIN_FFMADC,
     K1_BUILTIN_FFMAWP,
+    K1_BUILTIN_FFMAWQ,
+    K1_BUILTIN_FFMADP,
     K1_BUILTIN_FFMSW,
     K1_BUILTIN_FFMSD,
     K1_BUILTIN_FFMSWD,
     K1_BUILTIN_FFMSWC,
     K1_BUILTIN_FFMSDC,
     K1_BUILTIN_FFMSWP,
+    K1_BUILTIN_FFMSWQ,
+    K1_BUILTIN_FFMSDP,
 
     K1_BUILTIN_FCDIVW,
     K1_BUILTIN_FCDIVD,
@@ -2784,13 +2794,18 @@ k1_target_init_builtins (void)
   tree STRING = build_pointer_type (build_qualified_type (char_type_node, TYPE_QUAL_CONST));
 
   tree INT16X4 = build_vector_type (INT16, 4);
-  tree INT32X2 = build_vector_type (INT32, 2);
   tree INT16X8 = build_vector_type (INT16, 8);
+  tree INT16X16 = build_vector_type (INT16, 16);
+  tree INT32X2 = build_vector_type (INT32, 2);
   tree INT32X4 = build_vector_type (INT32, 4);
+  tree INT32X8 = build_vector_type (INT32, 8);
   tree INT64X2 = build_vector_type (INT64, 2);
+  tree INT64X4 = build_vector_type (INT64, 4);
   tree FLOAT32X2 = build_vector_type (FLOAT32, 2);
   tree FLOAT32X4 = build_vector_type (FLOAT32, 4);
+  tree FLOAT32X8 = build_vector_type (FLOAT32, 8);
   tree FLOAT64X2 = build_vector_type (FLOAT64, 2);
+  tree FLOAT64X4 = build_vector_type (FLOAT64, 4);
 
 #define ADD_K1_BUILTIN_VARAGS(UC_NAME, LC_NAME, ...)                    \
     builtin_fndecls[K1_BUILTIN_##UC_NAME] =                             \
@@ -2860,6 +2875,8 @@ k1_target_init_builtins (void)
     ADD_K1_BUILTIN (FADDDC,  "fadddc",      COMPLEX128, COMPLEX128, COMPLEX128, STRING);
     ADD_K1_BUILTIN (FADDCDC, "faddcdc",     COMPLEX128, COMPLEX128, COMPLEX128, STRING);
     ADD_K1_BUILTIN (FADDWP,  "faddwp",      FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
+    ADD_K1_BUILTIN (FADDWQ,  "faddwq",      FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
+    ADD_K1_BUILTIN (FADDDP,  "fadddp",      FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
     ADD_K1_BUILTIN (FSBFW,   "fsbfw",       FLOAT32, FLOAT32, FLOAT32, STRING);
     ADD_K1_BUILTIN (FSBFD,   "fsbfd",       FLOAT64, FLOAT64, FLOAT64, STRING);
     ADD_K1_BUILTIN (FSBFWC,  "fsbfwc",      COMPLEX64, COMPLEX64, COMPLEX64, STRING);
@@ -2867,6 +2884,8 @@ k1_target_init_builtins (void)
     ADD_K1_BUILTIN (FSBFDC,  "fsbfdc",      COMPLEX128, COMPLEX128, COMPLEX128, STRING);
     ADD_K1_BUILTIN (FSBFCDC, "fsbfcdc",     COMPLEX128, COMPLEX128, COMPLEX128, STRING);
     ADD_K1_BUILTIN (FSBFWP,  "fsbfwp",      FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
+    ADD_K1_BUILTIN (FSBFWQ,  "fsbfwq",      FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
+    ADD_K1_BUILTIN (FSBFDP,  "fsbfdp",      FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
     ADD_K1_BUILTIN (FMULW,   "fmulw",       FLOAT32, FLOAT32, FLOAT32, STRING);
     ADD_K1_BUILTIN (FMULD,   "fmuld",       FLOAT64, FLOAT64, FLOAT64, STRING);
     ADD_K1_BUILTIN (FMULWD,  "fmulwd",      FLOAT64, FLOAT32, FLOAT32, STRING);
@@ -2875,18 +2894,24 @@ k1_target_init_builtins (void)
     ADD_K1_BUILTIN (FMULDC,  "fmuldc",      COMPLEX128, COMPLEX128, COMPLEX128, STRING);
     ADD_K1_BUILTIN (FMULCDC, "fmulcdc",     COMPLEX128, COMPLEX128, COMPLEX128, STRING);
     ADD_K1_BUILTIN (FMULWP,  "fmulwp",      FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
+    ADD_K1_BUILTIN (FMULWQ,  "fmulwq",      FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
+    ADD_K1_BUILTIN (FMULDP,  "fmuldp",      FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
     ADD_K1_BUILTIN (FFMAW,   "ffmaw",       FLOAT32, FLOAT32, FLOAT32, FLOAT32, STRING);
     ADD_K1_BUILTIN (FFMAD,   "ffmad",       FLOAT64, FLOAT64, FLOAT64, FLOAT64, STRING);
     ADD_K1_BUILTIN (FFMAWD,  "ffmawd",      FLOAT64, FLOAT32, FLOAT32, FLOAT64, STRING);
     ADD_K1_BUILTIN (FFMAWC,  "ffmawc",      COMPLEX64, COMPLEX64, COMPLEX64, COMPLEX64, STRING);
     ADD_K1_BUILTIN (FFMADC,  "ffmadc",      COMPLEX128, COMPLEX128, COMPLEX128, COMPLEX128, STRING);
     ADD_K1_BUILTIN (FFMAWP,  "ffmawp",      FLOAT32X2, FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
+    ADD_K1_BUILTIN (FFMAWQ,  "ffmawq",      FLOAT32X4, FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
+    ADD_K1_BUILTIN (FFMADP,  "ffmadp",      FLOAT64X2, FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
     ADD_K1_BUILTIN (FFMSW,   "ffmsw",       FLOAT32, FLOAT32, FLOAT32, FLOAT32, STRING);
     ADD_K1_BUILTIN (FFMSD,   "ffmsd",       FLOAT64, FLOAT64, FLOAT64, FLOAT64, STRING);
     ADD_K1_BUILTIN (FFMSWD,  "ffmswd",      FLOAT64, FLOAT32, FLOAT32, FLOAT64, STRING);
     ADD_K1_BUILTIN (FFMSWC,  "ffmswc",      COMPLEX64, COMPLEX64, COMPLEX64, COMPLEX64, STRING);
     ADD_K1_BUILTIN (FFMSDC,  "ffmsdc",      COMPLEX128, COMPLEX128, COMPLEX128, COMPLEX128, STRING);
     ADD_K1_BUILTIN (FFMSWP,  "ffmswp",      FLOAT32X2, FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
+    ADD_K1_BUILTIN (FFMSWQ,  "ffmswq",      FLOAT32X4, FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
+    ADD_K1_BUILTIN (FFMSDP,  "ffmsdp",      FLOAT64X2, FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
 
     ADD_K1_BUILTIN (FCDIVW,   "fcdivw",     FLOAT32,FLOAT32,FLOAT32);
     ADD_K1_BUILTIN (FCDIVD,   "fcdivd",     FLOAT64,FLOAT64,FLOAT64);
@@ -3819,6 +3844,8 @@ K1_EXPAND_BUILTIN_3_MODIFIERS(faddcwc, SCmode, SCmode)
 K1_EXPAND_BUILTIN_3_MODIFIERS(fadddc, DCmode, DCmode)
 K1_EXPAND_BUILTIN_3_MODIFIERS(faddcdc, DCmode, DCmode)
 K1_EXPAND_BUILTIN_3_MODIFIERS(faddwp, V2SFmode, V2SFmode)
+K1_EXPAND_BUILTIN_3_MODIFIERS(faddwq, V4SFmode, V4SFmode)
+K1_EXPAND_BUILTIN_3_MODIFIERS(fadddp, V2DFmode, V2DFmode)
 
 K1_EXPAND_BUILTIN_3_MODIFIERS(fsbfw, SFmode, SFmode)
 K1_EXPAND_BUILTIN_3_MODIFIERS(fsbfd, DFmode, DFmode)
@@ -3827,6 +3854,8 @@ K1_EXPAND_BUILTIN_3_MODIFIERS(fsbfcwc, SCmode, SCmode)
 K1_EXPAND_BUILTIN_3_MODIFIERS(fsbfdc, DCmode, DCmode)
 K1_EXPAND_BUILTIN_3_MODIFIERS(fsbfcdc, DCmode, DCmode)
 K1_EXPAND_BUILTIN_3_MODIFIERS(fsbfwp, V2SFmode, V2SFmode)
+K1_EXPAND_BUILTIN_3_MODIFIERS(fsbfwq, V4SFmode, V4SFmode)
+K1_EXPAND_BUILTIN_3_MODIFIERS(fsbfdp, V2DFmode, V2DFmode)
 
 K1_EXPAND_BUILTIN_3_MODIFIERS(fmulw, SFmode, SFmode)
 K1_EXPAND_BUILTIN_3_MODIFIERS(fmuld, DFmode, DFmode)
@@ -3836,6 +3865,8 @@ K1_EXPAND_BUILTIN_3_MODIFIERS(fmulcwc, SCmode, SCmode)
 K1_EXPAND_BUILTIN_3_MODIFIERS(fmuldc, DCmode, DCmode)
 K1_EXPAND_BUILTIN_3_MODIFIERS(fmulcdc, DCmode, DCmode)
 K1_EXPAND_BUILTIN_3_MODIFIERS(fmulwp, V2SFmode, V2SFmode)
+K1_EXPAND_BUILTIN_3_MODIFIERS(fmulwq, V4SFmode, V4SFmode)
+K1_EXPAND_BUILTIN_3_MODIFIERS(fmuldp, V2DFmode, V2DFmode)
 
 #define K1_EXPAND_BUILTIN_4_MODIFIERS(name, tmode, smode) \
 static rtx \
@@ -3860,6 +3891,8 @@ K1_EXPAND_BUILTIN_4_MODIFIERS(ffmawd, SFmode, DFmode)
 K1_EXPAND_BUILTIN_4_MODIFIERS(ffmawc, SCmode, SCmode)
 K1_EXPAND_BUILTIN_4_MODIFIERS(ffmadc, DCmode, DCmode)
 K1_EXPAND_BUILTIN_4_MODIFIERS(ffmawp, V2SFmode, V2SFmode)
+K1_EXPAND_BUILTIN_4_MODIFIERS(ffmawq, V4SFmode, V4SFmode)
+K1_EXPAND_BUILTIN_4_MODIFIERS(ffmadp, V2DFmode, V2DFmode)
 
 K1_EXPAND_BUILTIN_4_MODIFIERS(ffmsw, SFmode, SFmode)
 K1_EXPAND_BUILTIN_4_MODIFIERS(ffmsd, DFmode, DFmode)
@@ -3867,6 +3900,8 @@ K1_EXPAND_BUILTIN_4_MODIFIERS(ffmswd, SFmode, DFmode)
 K1_EXPAND_BUILTIN_4_MODIFIERS(ffmswc, SCmode, SCmode)
 K1_EXPAND_BUILTIN_4_MODIFIERS(ffmsdc, DCmode, DCmode)
 K1_EXPAND_BUILTIN_4_MODIFIERS(ffmswp, V2SFmode, V2SFmode)
+K1_EXPAND_BUILTIN_4_MODIFIERS(ffmswq, V4SFmode, V4SFmode)
+K1_EXPAND_BUILTIN_4_MODIFIERS(ffmsdp, V2DFmode, V2DFmode)
 
 
 static rtx
@@ -4457,6 +4492,8 @@ k1_target_expand_builtin (tree exp,
     case K1_BUILTIN_FADDDC: return k1_expand_builtin_fadddc (target, exp);
     case K1_BUILTIN_FADDCDC: return k1_expand_builtin_faddcdc (target, exp);
     case K1_BUILTIN_FADDWP: return k1_expand_builtin_faddwp (target, exp);
+    case K1_BUILTIN_FADDWQ: return k1_expand_builtin_faddwq (target, exp);
+    case K1_BUILTIN_FADDDP: return k1_expand_builtin_fadddp (target, exp);
     case K1_BUILTIN_FSBFW: return k1_expand_builtin_fsbfw (target, exp);
     case K1_BUILTIN_FSBFD: return k1_expand_builtin_fsbfd (target, exp);
     case K1_BUILTIN_FSBFWC: return k1_expand_builtin_fsbfwc (target, exp);
@@ -4464,6 +4501,8 @@ k1_target_expand_builtin (tree exp,
     case K1_BUILTIN_FSBFDC: return k1_expand_builtin_fsbfdc (target, exp);
     case K1_BUILTIN_FSBFCDC: return k1_expand_builtin_fsbfcdc (target, exp);
     case K1_BUILTIN_FSBFWP: return k1_expand_builtin_fsbfwp (target, exp);
+    case K1_BUILTIN_FSBFWQ: return k1_expand_builtin_fsbfwq (target, exp);
+    case K1_BUILTIN_FSBFDP: return k1_expand_builtin_fsbfdp (target, exp);
     case K1_BUILTIN_FMULW: return k1_expand_builtin_fmulw (target, exp);
     case K1_BUILTIN_FMULD: return k1_expand_builtin_fmuld (target, exp);
     case K1_BUILTIN_FMULWD: return k1_expand_builtin_fmulwd (target, exp);
@@ -4472,18 +4511,24 @@ k1_target_expand_builtin (tree exp,
     case K1_BUILTIN_FMULDC: return k1_expand_builtin_fmuldc (target, exp);
     case K1_BUILTIN_FMULCDC: return k1_expand_builtin_fmulcdc (target, exp);
     case K1_BUILTIN_FMULWP: return k1_expand_builtin_fmulwp (target, exp);
+    case K1_BUILTIN_FMULWQ: return k1_expand_builtin_fmulwq (target, exp);
+    case K1_BUILTIN_FMULDP: return k1_expand_builtin_fmuldp (target, exp);
     case K1_BUILTIN_FFMAW: return k1_expand_builtin_ffmaw (target, exp);
     case K1_BUILTIN_FFMAD: return k1_expand_builtin_ffmad (target, exp);
     case K1_BUILTIN_FFMAWD: return k1_expand_builtin_ffmawd (target, exp);
     case K1_BUILTIN_FFMAWC: return k1_expand_builtin_ffmawc (target, exp);
     case K1_BUILTIN_FFMADC: return k1_expand_builtin_ffmadc (target, exp);
     case K1_BUILTIN_FFMAWP: return k1_expand_builtin_ffmawp (target, exp);
+    case K1_BUILTIN_FFMAWQ: return k1_expand_builtin_ffmawq (target, exp);
+    case K1_BUILTIN_FFMADP: return k1_expand_builtin_ffmadp (target, exp);
     case K1_BUILTIN_FFMSW: return k1_expand_builtin_ffmsw (target, exp);
     case K1_BUILTIN_FFMSD: return k1_expand_builtin_ffmsd (target, exp);
     case K1_BUILTIN_FFMSWD: return k1_expand_builtin_ffmswd (target, exp);
     case K1_BUILTIN_FFMSWC: return k1_expand_builtin_ffmswc (target, exp);
     case K1_BUILTIN_FFMSDC: return k1_expand_builtin_ffmsdc (target, exp);
     case K1_BUILTIN_FFMSWP: return k1_expand_builtin_ffmswp (target, exp);
+    case K1_BUILTIN_FFMSWQ: return k1_expand_builtin_ffmswq (target, exp);
+    case K1_BUILTIN_FFMSDP: return k1_expand_builtin_ffmsdp (target, exp);
 
     case K1_BUILTIN_FENCE: return k1_expand_builtin_fence ();
     case K1_BUILTIN_FLOAT:
@@ -4636,29 +4681,40 @@ k1_has_37bit_immediate_p (rtx x)
 }
 
 HOST_WIDE_INT
-k1_const_vector_value (rtx x) 
+k1_const_vector_value (rtx x, int index) 
 {
   HOST_WIDE_INT value = 0;
   if (GET_CODE (x) == CONST_VECTOR) {
-    if (GET_MODE (x) == V4HImode) {
-      HOST_WIDE_INT val_0 = INTVAL (CONST_VECTOR_ELT (x, 0));
-      HOST_WIDE_INT val_1 = INTVAL (CONST_VECTOR_ELT (x, 1));
-      HOST_WIDE_INT val_2 = INTVAL (CONST_VECTOR_ELT (x, 2));
-      HOST_WIDE_INT val_3 = INTVAL (CONST_VECTOR_ELT (x, 3));
+    machine_mode mode = GET_MODE (x);
+    machine_mode inner_mode = GET_MODE_INNER (mode);
+    if (inner_mode == HImode) {
+      HOST_WIDE_INT val_0 = INTVAL (CONST_VECTOR_ELT (x, index+0));
+      HOST_WIDE_INT val_1 = INTVAL (CONST_VECTOR_ELT (x, index+1));
+      HOST_WIDE_INT val_2 = INTVAL (CONST_VECTOR_ELT (x, index+2));
+      HOST_WIDE_INT val_3 = INTVAL (CONST_VECTOR_ELT (x, index+3));
       value = (val_0&0xFFFF) | (val_1&0xFFFF)<<16 | (val_2&0xFFFF)<<32 | (val_3&0xFFFF)<<48;
     } else
-    if (GET_MODE (x) == V2SImode) {
-      HOST_WIDE_INT val_0 = INTVAL (CONST_VECTOR_ELT (x, 0));
-      HOST_WIDE_INT val_1 = INTVAL (CONST_VECTOR_ELT (x, 1));
+    if (inner_mode == SImode) {
+      HOST_WIDE_INT val_0 = INTVAL (CONST_VECTOR_ELT (x, index+0));
+      HOST_WIDE_INT val_1 = INTVAL (CONST_VECTOR_ELT (x, index+1));
       value = (val_0&0xFFFFFFFF) | (val_1&0xFFFFFFFF)<<32;
     } else
-    if (GET_MODE (x) == V2SFmode) {
-      HOST_WIDE_INT val_0 = 0, val_1 = 0;
-      rtx elt_0 = CONST_VECTOR_ELT (x, 0);
-      rtx elt_1 = CONST_VECTOR_ELT (x, 1);
-      REAL_VALUE_TO_TARGET_SINGLE (*CONST_DOUBLE_REAL_VALUE (elt_0), val_0);
-      REAL_VALUE_TO_TARGET_SINGLE (*CONST_DOUBLE_REAL_VALUE (elt_1), val_1);
-      value = (val_0&0xFFFFFFFF) | (val_1&0xFFFFFFFF)<<32;
+    if (inner_mode == DImode) {
+      value = INTVAL (CONST_VECTOR_ELT (x, index+0));
+    } else
+    if (inner_mode == SFmode) {
+      long val[2] = { 0, 0 };
+      rtx elt_0 = CONST_VECTOR_ELT (x, index+0);
+      rtx elt_1 = CONST_VECTOR_ELT (x, index+1);
+      REAL_VALUE_TO_TARGET_SINGLE (*CONST_DOUBLE_REAL_VALUE (elt_0), val[0]);
+      REAL_VALUE_TO_TARGET_SINGLE (*CONST_DOUBLE_REAL_VALUE (elt_1), val[1]);
+      value = ((HOST_WIDE_INT)val[0]&0xFFFFFFFF) | ((HOST_WIDE_INT)val[1]&0xFFFFFFFF)<<32;
+    } else
+    if (inner_mode == DFmode) {
+      long val[2] = { 0, 0 };
+      rtx elt_0 = CONST_VECTOR_ELT (x, index+0);
+      REAL_VALUE_TO_TARGET_DOUBLE (*CONST_DOUBLE_REAL_VALUE (elt_0), val);
+      value = ((HOST_WIDE_INT)val[0]&0xFFFFFFFF) | ((HOST_WIDE_INT)val[1]&0xFFFFFFFF)<<32;
     } else
       gcc_unreachable ();
     return value;
@@ -4669,37 +4725,37 @@ k1_const_vector_value (rtx x)
 
 bool k1_has_10bit_vector_const_p (rtx x)
 {
-  HOST_WIDE_INT value = k1_const_vector_value (x);
+  HOST_WIDE_INT value = k1_const_vector_value (x, 0);
   return SIGNED_INT_FITS_N_BITS (value, 10);
 }
 
 bool k1_has_16bit_vector_const_p (rtx x)
 {
-  HOST_WIDE_INT value = k1_const_vector_value (x);
+  HOST_WIDE_INT value = k1_const_vector_value (x, 0);
   return SIGNED_INT_FITS_N_BITS (value, 16);
 }
 
 bool k1_has_32bit_vector_const_p (rtx x)
 {
-  HOST_WIDE_INT value = k1_const_vector_value (x);
+  HOST_WIDE_INT value = k1_const_vector_value (x, 0);
   return SIGNED_INT_FITS_N_BITS (value, 32);
 }
 
 bool k1_has_37bit_vector_const_p (rtx x)
 {
-  HOST_WIDE_INT value = k1_const_vector_value (x);
+  HOST_WIDE_INT value = k1_const_vector_value (x, 0);
   return SIGNED_INT_FITS_N_BITS (value, 37);
 }
 
 bool k1_has_43bit_vector_const_p (rtx x)
 {
-  HOST_WIDE_INT value = k1_const_vector_value (x);
+  HOST_WIDE_INT value = k1_const_vector_value (x, 0);
   return SIGNED_INT_FITS_N_BITS (value, 43);
 }
 
 bool k1_has_32x2bit_vector_const_p (rtx x)
 {
-  HOST_WIDE_INT value = k1_const_vector_value (x);
+  HOST_WIDE_INT value = k1_const_vector_value (x, 0);
   // Need the dual immediate syntax to be fixed in assembler.
   //return (value&0xFFFFFFFF) == ((value>>32)&0xFFFFFFFF);
   return false;
@@ -4767,7 +4823,7 @@ k1_load_multiple_operation_p (rtx op, bool is_uncached)
       rtx elt = XVECEXP (op, 0, i);
       rtx base, offset;
 
-      if (! k1_split_mem (XEXP (SET_SRC (elt), 0), &base, &offset, true))
+      if (! k1_split_mem (XEXP (SET_SRC (elt), 0), &base, &offset, false))
         return 0;
 
       if (i == 0)
