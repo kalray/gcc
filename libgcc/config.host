@@ -923,6 +923,10 @@ k1-*-linux*)
         extra_parts="$extra_parts crtbegin.o crtend.o"
 	tmake_file="$tmake_file ${cpu_type}/t-k1 t-softfp-sfdf t-libgcc-pic t-softfp "
         ;;
+k1-*-cos)
+        extra_parts="$extra_parts crtbegin.o crtend.o crti.o crtn.o"
+	tmake_file="$tmake_file k1/t-k1 t-softfp-sfdf t-libgcc-pic t-softfp "
+	;;
 k1-*-*)
         extra_parts="$extra_parts crtbegin.o crtend.o crti.o crtn.o"
 	tmake_file="$tmake_file k1/t-k1 t-softfp-sfdf t-softfp "
