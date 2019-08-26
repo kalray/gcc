@@ -35,14 +35,14 @@
 
 (define_reservation "k1c_alu_r"  "(k1c_alu_u)")
 (define_reservation "k1c_lite_r" "(k1c_lite0_u | k1c_lite1_u)")
+(define_reservation "k1c_lite_x2_r" "(k1c_lite0_u+k1c_lite1_u)")
 (define_reservation "k1c_tiny_r" "(k1c_tiny0_u | k1c_tiny1_u | k1c_tiny2_u | k1c_tiny3_u )")
 (define_reservation "k1c_tiny_x2_r" "((k1c_tiny0_u+k1c_tiny1_u) | (k1c_tiny1_u+k1c_tiny2_u) | (k1c_tiny2_u+k1c_tiny3_u))")
 
 (define_reservation "k1c_issue_r" "(k1c_issue0|k1c_issue1|k1c_issue2|k1c_issue3|k1c_issue4|k1c_issue5|k1c_issue6|k1c_issue7)")
 (define_reservation "k1c_issue_x2_r" "(k1c_issue0+k1c_issue1)|(k1c_issue1+k1c_issue2)|(k1c_issue2+k1c_issue3)|(k1c_issue3+k1c_issue4)|(k1c_issue4+k1c_issue5)|(k1c_issue5+k1c_issue6)|(k1c_issue6+k1c_issue7)")
-
 (define_reservation "k1c_issue_x3_r" "(k1c_issue0+k1c_issue1+k1c_issue2)|(k1c_issue1+k1c_issue2+k1c_issue3)|(k1c_issue2+k1c_issue3+k1c_issue4)|(k1c_issue3+k1c_issue4+k1c_issue5)|(k1c_issue4+k1c_issue5+k1c_issue6)|(k1c_issue5+k1c_issue6+k1c_issue7)")
-
+(define_reservation "k1c_issue_x4_r" "(k1c_issue0+k1c_issue1+k1c_issue2+k1c_issue3)|(k1c_issue1+k1c_issue2+k1c_issue3+k1c_issue4)|(k1c_issue2+k1c_issue3+k1c_issue4+k1c_issue5)|(k1c_issue3+k1c_issue4+k1c_issue5+k1c_issue6)|(k1c_issue4+k1c_issue5+k1c_issue6+k1c_issue7)")
 (define_reservation "k1c_issue_x6_r" "(k1c_issue0+k1c_issue1+k1c_issue2+k1c_issue3+k1c_issue4+k1c_issue5)|(k1c_issue1+k1c_issue2+k1c_issue3+k1c_issue4+k1c_issue5+k1c_issue6)|(k1c_issue2+k1c_issue3+k1c_issue4+k1c_issue5+k1c_issue6+k1c_issue7)")
 
 (define_reservation "k1c_all_r"
@@ -66,6 +66,9 @@
 (define_reservation "k1c_alu_lite.y_r"
   "k1c_lite_r + k1c_issue_x3_r")
 
+(define_reservation "k1c_alu_lite_x2_r"
+  "k1c_lite_x2_r + k1c_issue_x2_r")
+
 (define_reservation "k1c_alu_tiny_r"
   "k1c_tiny_r + k1c_issue_r")
 
@@ -75,7 +78,13 @@
 (define_reservation "k1c_alu_tiny.y_r"
   "k1c_tiny_r + k1c_issue_x3_r")
 
-(define_reservation "k1c_alu_dual.y_r"
+(define_reservation "k1c_alu_tiny_x2_r"
+  "k1c_tiny_x2_r + k1c_issue_x2_r")
+
+(define_reservation "k1c_alu_tiny_x2.x_r"
+  "k1c_tiny_x2_r + k1c_issue_x4_r")
+
+(define_reservation "k1c_alu_tiny_x2.y_r"
   "k1c_tiny_x2_r + k1c_issue_x6_r")
 
 (define_reservation "k1c_bcu_r"
@@ -166,6 +175,10 @@
   (eq_attr "type" "alu_lite_y")
   "k1c_alu_lite.y_r")
 
+(define_insn_reservation "k1c_lite_x2" 1
+  (eq_attr "type" "alu_lite_x2")
+  "k1c_alu_lite_x2_r")
+
 (define_insn_reservation "k1c_alu_full" 1
   (eq_attr "type" "alu_full")
   "k1c_alu_full_r")
@@ -182,9 +195,17 @@
   (eq_attr "type" "alu_full_copro")
   "k1c_alu_full_r")
 
-(define_insn_reservation "k1c_dual.y" 1
-  (eq_attr "type" "alu_dual_y")
-  "k1c_alu_dual.y_r")
+(define_insn_reservation "k1c_tiny_x2" 1
+  (eq_attr "type" "alu_tiny_x2")
+  "k1c_alu_tiny_x2_r")
+
+(define_insn_reservation "k1c_tiny_x2.x" 1
+  (eq_attr "type" "alu_tiny_x2_x")
+  "k1c_alu_tiny_x2.x_r")
+
+(define_insn_reservation "k1c_tiny_x2.y" 1
+  (eq_attr "type" "alu_tiny_x2_y")
+  "k1c_alu_tiny_x2.y_r")
 
 (define_insn_reservation "k1c_bcu" 1
   (eq_attr "type" "bcu")
@@ -308,7 +329,7 @@
 
 
 /* The BCU reads GPRs 1 cycle earlier */
-(define_bypass 2 "k1c_alu_full,k1c_alu_full.x,k1c_dual.y" "k1c_bcu,k1c_bcu_get")
+(define_bypass 2 "k1c_alu_full,k1c_alu_full.x,k1c_lite_x2,k1c_tiny_x2,k1c_tiny_x2.x,k1c_tiny_x2.y" "k1c_bcu,k1c_bcu_get")
 (define_bypass 2 "k1c_alu_lite,k1c_alu_lite.x,k1c_alu_lite.y" "k1c_bcu,k1c_bcu_get")
 (define_bypass 2 "k1c_alu_tiny,k1c_alu_tiny.x,k1c_alu_tiny.y" "k1c_bcu,k1c_bcu_get")
 (define_bypass 3 "k1c_mau,k1c_mau.x,k1c_mau_auxr" "k1c_bcu,k1c_bcu_get")
