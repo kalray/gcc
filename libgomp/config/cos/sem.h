@@ -132,7 +132,7 @@ static inline void gomp_sem_post (gomp_sem_t *sem)
 #else
   MPPA_COS_AFADDW ((void *) sem, 1);
 #endif
-  mppa_cos_doorbell (mppa_mailbox_local);
+  mppa_cos_doorbell_all ();
   MPPA_COS_DINVAL ();
 }
 
