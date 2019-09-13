@@ -95,9 +95,10 @@ extern bool k1_is_farcall_p (rtx);
 
 extern void k1_override_options (void);
 
-extern int k1_has_big_immediate (rtx x);
-
+extern bool k1_has_10bit_imm_or_register_p (rtx x);
+extern bool k1_has_10bit_immediate_p (rtx x);
 extern bool k1_has_37bit_immediate_p (rtx x);
+extern bool k1_has_64bit_immediate_p (rtx x);
 
 extern HOST_WIDE_INT k1_const_vector_value (rtx x, int index);
 

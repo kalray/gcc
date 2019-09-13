@@ -41,6 +41,7 @@
   lsu_auxr_auxw_x,\
   lsu_auxr_auxw_y,\
   lsu_x, \
+  lsu_y, \
   lsu_auxw_load_uncached,\
   lsu_auxw_load_uncached_x,\
   lsu_auxw_load_uncached_y,\
