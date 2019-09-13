@@ -110,6 +110,9 @@
 (define_reservation "k1c_lsu.x_r"
   "k1c_lsu_u + k1c_tiny3_u + k1c_issue_x2_r")
 
+(define_reservation "k1c_lsu.y_r"
+  "k1c_lsu_u + k1c_tiny3_u + k1c_issue_x3_r")
+
 (define_reservation "k1c_lsu_auxw_r"
   "k1c_lsu_u + k1c_tiny3_u + k1c_auxw_u + k1c_issue_r")
 
@@ -322,6 +325,10 @@
 (define_insn_reservation "k1c_lsu.x" 1
   (eq_attr "type" "lsu_x")
   "k1c_lsu.x_r")
+
+(define_insn_reservation "k1c_lsu.y" 1
+  (eq_attr "type" "lsu_y")
+  "k1c_lsu.y_r")
 
 (define_insn_reservation "k1c_lsu_auxr_auxw" 1
   (eq_attr "type" "lsu_auxr_auxw")

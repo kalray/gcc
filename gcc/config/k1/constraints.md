@@ -148,9 +148,9 @@
        (match_test "k1_has_32x2bit_vector_const_p (op)")))
 
 (define_memory_constraint "a"
-  "Memory operands with small immediates"
+  "Memory operands with 10-bit immediates or register"
   (and (match_code "mem")
-       (match_test "!k1_has_big_immediate (op)")))
+       (match_test "k1_has_10bit_imm_or_register_p (op)")))
 
 (define_memory_constraint "b"
   "Memory operands with 37-bit immediates"
@@ -168,31 +168,47 @@
 
 
 (define_memory_constraint "Cm"
-  "Cached memory operands with big immediates"
+  "Cached memory operands with 64-bit immediates"
   (and (match_code "mem")
-       (match_test "k1_has_big_immediate (op)")
+       (match_test "k1_has_64bit_immediate_p (op)")
+       (match_test "!k1_is_uncached_mem_op_p (op)")))
+
+(define_memory_constraint "Cb"
+  "Cached memory operands with 37-bit immediates"
+  (and (match_code "mem")
+       (match_test "k1_has_37bit_immediate_p (op)")
        (match_test "!k1_is_uncached_mem_op_p (op)")))
 
 (define_memory_constraint "Ca"
-  "Cached memory operands with small immediates"
+  "Cached memory operands with 10-bit immediates or register"
   (and (match_code "mem")
-       (match_test "!k1_has_big_immediate (op)")
+       (match_test "k1_has_10bit_imm_or_register_p (op)")
        (match_test "!k1_is_uncached_mem_op_p (op)")))
 
 (define_memory_constraint "Zm"
-  "Uncached memory operands with big immediates"
+  "Uncached memory operands with 64-bit immediates"
   (and (match_code "mem")
-       (match_test "k1_has_big_immediate (op)")
+       (match_test "k1_has_64bit_immediate_p (op)")
+       (match_test "k1_is_uncached_mem_op_p (op)")))
+
+(define_memory_constraint "Zb"
+  "Uncached memory operands with 37-bit immediates"
+  (and (match_code "mem")
+       (match_test "k1_has_37bit_immediate_p (op)")
        (match_test "k1_is_uncached_mem_op_p (op)")))
 
 (define_memory_constraint "Za"
-  "Uncached memory operands with small immediates"
+  "Uncached memory operands with 10-bit immediates or register"
   (and (match_code "mem")
-       (match_test "!k1_has_big_immediate (op)")
+       (match_test "k1_has_10bit_imm_or_register_p (op)")
        (match_test "k1_is_uncached_mem_op_p (op)")))
 
-
-(define_address_constraint "A"  
-  "Memory address with small immediates"
+(define_address_constraint "Aa"
+  "Memory address with 10-bit immediates or register"
   (and (match_test "address_operand (op, mode)")
-       (match_test "!k1_has_big_immediate (op)")))
+       (match_test "k1_has_10bit_imm_or_register_p (op)")))
+
+(define_address_constraint "Ab"
+  "Memory address with 37-bit immediates"
+  (and (match_test "address_operand (op, mode)")
+       (match_test "k1_has_37bit_immediate_p (op)")))
