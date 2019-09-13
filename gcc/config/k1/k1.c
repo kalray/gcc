@@ -4957,23 +4957,33 @@ k1_target_sched_dfa_new_cycle (FILE *dump ATTRIBUTE_UNUSED,
   return 0;
 }
 
-int
-k1_has_big_immediate (rtx x)
+/* Returns TRUE if X is of the form reg[reg] or signed10bits[reg] */
+bool
+k1_has_10bit_imm_or_register_p (rtx x)
 {
-  /* return for_each_rtx (&x, k1_has_big_immediate_1, NULL); */
+  if (!MEM_P (x))
+    return false;
+
+  rtx op = XEXP (x, 0);
+
+  bool is_reg_reg
+    = (GET_CODE (op) == PLUS && REG_P (XEXP (op, 0)) && REG_P (XEXP (op, 1)))
+      || REG_P (op);
+
+  return is_reg_reg || k1_has_10bit_immediate_p (op);
+}
+
+bool
+k1_has_10bit_immediate_p (rtx x)
+{
   subrtx_ptr_iterator::array_type array;
   FOR_EACH_SUBRTX_PTR (iter, array, &x, ALL)
     {
       rtx *x = *iter;
-      if (GET_CODE (*x) == SYMBOL_REF || GET_CODE (*x) == LABEL_REF
-	  || GET_CODE (*x) == CONST_DOUBLE
-	  || (GET_CODE (*x) == CONST_INT
-	      && (INTVAL (*x) < -512 || INTVAL (*x) > 511)))
-	{
-	  return 1;
-	}
+      if (GET_CODE (*x) == CONST_INT && (IN_RANGE (INTVAL (*x), -512, 511)))
+	return true;
     }
-  return 0;
+  return false;
 }
 
 bool
@@ -4983,11 +4993,24 @@ k1_has_37bit_immediate_p (rtx x)
   FOR_EACH_SUBRTX_PTR (iter, array, &x, ALL)
     {
       rtx *x = *iter;
-      if ((GET_CODE (*x) == CONST_INT
-	   && (INTVAL (*x) >= -0x1000000000 && INTVAL (*x) <= 0xFFFFFFFFF)))
-	{
-	  return true;
-	}
+      if (GET_CODE (*x) == CONST_INT
+	  && (IN_RANGE (INTVAL (*x), -(1LL << 36), (1LL << 36) - 1)))
+	return true;
+    }
+  return false;
+}
+
+bool
+k1_has_64bit_immediate_p (rtx x)
+{
+  subrtx_ptr_iterator::array_type array;
+  FOR_EACH_SUBRTX_PTR (iter, array, &x, ALL)
+    {
+      rtx *x = *iter;
+      if (GET_CODE (*x) == SYMBOL_REF || GET_CODE (*x) == LABEL_REF
+	  || GET_CODE (*x) == CONST_DOUBLE
+	  || (GET_CODE (*x) == CONST_INT && (!k1_has_37bit_immediate_p (*x))))
+	return true;
     }
   return false;
 }
