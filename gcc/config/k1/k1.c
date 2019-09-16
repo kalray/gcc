@@ -499,8 +499,8 @@ k1_pack_load_store (rtx operands[], unsigned int nops)
 int
 k1_hard_regno_rename_ok (unsigned int from, unsigned int to)
 {
-  if (from >= K1C_GRF_FIRST_REGNO && from <= K1C_GRF_LAST_REGNO
-      && to >= K1C_GRF_FIRST_REGNO && to <= K1C_GRF_LAST_REGNO)
+  if (IN_RANGE (from, K1C_GRF_FIRST_REGNO, K1C_GRF_LAST_REGNO)
+      && IN_RANGE (to, K1C_GRF_FIRST_REGNO, K1C_GRF_LAST_REGNO))
     {
       /* Retain quad alignement */
       if ((from % 4) == 0)
@@ -524,7 +524,7 @@ k1_hard_regno_mode_ok (unsigned regno, enum machine_mode mode)
   // OI    -> K1C_GRF_FIRST_REGNO - K1C_GRF_LAST_REGNO && 0mod4 => OK
   if (GET_MODE_SIZE (mode) <= UNITS_PER_WORD)
     return 1;
-  if (regno >= K1C_GRF_FIRST_REGNO && regno <= K1C_GRF_LAST_REGNO)
+  if (IN_RANGE (regno, K1C_GRF_FIRST_REGNO, K1C_GRF_LAST_REGNO))
     {
       if (GET_MODE_SIZE (mode) == 2 * UNITS_PER_WORD)
 	return (regno % 2 == 0);
