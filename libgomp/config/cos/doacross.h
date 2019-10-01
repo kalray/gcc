@@ -33,10 +33,14 @@
 #include <errno.h>
 
 #ifdef HAVE_ATTRIBUTE_VISIBILITY
-# pragma GCC visibility push(hidden)
+# pragma GCC visibility push(default)
 #endif
 
 extern void pthread_yield();
+
+#ifdef HAVE_ATTRIBUTE_VISIBILITY
+# pragma GCC visibility pop
+#endif
 
 static inline void
 cpu_relax (void)
@@ -62,9 +66,5 @@ static inline void doacross_spin (unsigned long *addr, unsigned long expected,
     }
   while (1);
 }
-
-#ifdef HAVE_ATTRIBUTE_VISIBILITY
-# pragma GCC visibility pop
-#endif
 
 #endif /* GOMP_DOACROSS_H */
