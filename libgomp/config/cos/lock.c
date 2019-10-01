@@ -36,7 +36,15 @@
    Solaris requires this for C99 and later.  */
 #define _XOPEN_SOURCE 600
 
+#ifdef HAVE_ATTRIBUTE_VISIBILITY
+#pragma GCC visibility push(default)
+#endif
+
 extern void abort (void);
+
+#ifdef HAVE_ATTRIBUTE_VISIBILITY
+#pragma GCC visibility pop
+#endif
 
 #include "libgomp.h"
 
