@@ -29,6 +29,11 @@
 
 #ifndef GOMP_MUTEX_H
 #define GOMP_MUTEX_H 1
+
+#ifdef HAVE_ATTRIBUTE_VISIBILITY
+#pragma GCC visibility push(default)
+#endif
+
 extern void abort (void);
 
 #include <hal/cos_apic_mailbox.h>
@@ -36,11 +41,15 @@ extern void abort (void);
 #include <hal/cos_cache.h>
 #include <pthread.h>
 
+extern int MPPA_COS_THREAD_PER_CORE_SHIFT;
+
+#ifdef HAVE_ATTRIBUTE_VISIBILITY
+#pragma GCC visibility pop
+#endif
+
 typedef pthread_mutex_t gomp_mutex_t;
 
 #define GOMP_MUTEX_INIT_0 0
-
-extern int MPPA_COS_THREAD_PER_CORE_SHIFT;
 
 static inline void
 gomp_mutex_write_set (void *mutex, const int value)

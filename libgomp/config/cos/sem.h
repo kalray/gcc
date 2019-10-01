@@ -67,15 +67,24 @@ extern void gomp_sem_destroy (gomp_sem_t *sem);
 
 #else /* HAVE_BROKEN_POSIX_SEMAPHORES  */
 
+#ifdef HAVE_ATTRIBUTE_VISIBILITY
+#pragma GCC visibility push(default)
+#endif
+
 #include <hal/cos_apic_mailbox.h>
 #include <hal/cos_atomic.h>
 #include <hal/cos_bsp.h>
 #include <hal/cos_cache.h>
 
 extern void abort (void);
-typedef sem_t gomp_sem_t;
 
 extern int MPPA_COS_THREAD_PER_CORE_SHIFT;
+
+#ifdef HAVE_ATTRIBUTE_VISIBILITY
+#pragma GCC visibility pop
+#endif
+
+typedef sem_t gomp_sem_t;
 
 static inline void
 gomp_sem_write_set (gomp_sem_t *sem, const int value)
