@@ -1,4 +1,7 @@
 {
 	"repository.callsign": "GCCRD",
-	"phabricator.codereview": "true"
-}
+	"phabricator.codereview": "true",
+        "load": [
+            "clang-format-linter"
+        ]
+ }
