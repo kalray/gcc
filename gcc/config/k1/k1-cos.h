@@ -36,7 +36,7 @@
    Link against MPPA Bare Runtime
  */
 #undef  LIB_SPEC
-#define LIB_SPEC "--start-group -lmppacos -lc -lgloss --end-group " \
+#define LIB_SPEC "--start-group -lmppacos -lmppa_rsrc -lc -lgloss --end-group " \
   "%{!nostartfiles:%{!nodefaultlibs:%{!nostdlib:%{!T*:-Tmppacos.ld}}}}"
 
 #undef LINK_SPEC
