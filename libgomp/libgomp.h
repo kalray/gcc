@@ -613,6 +613,13 @@ struct gomp_thread
 
   /* User pthread thread pool */
   struct gomp_thread_pool *thread_pool;
+
+#ifdef __CLUSTER_OS__
+  /* user pthread ids for joins in ClusterOS target
+     it avoids memory leaks and race at thread exit when recreating threads.  */
+  pthread_t *pthreads;
+  unsigned int nthreads;
+#endif
 };
 
 
