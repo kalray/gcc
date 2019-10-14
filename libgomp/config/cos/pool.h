@@ -47,6 +47,10 @@ gomp_get_thread_pool (struct gomp_thread *thr, unsigned nthreads)
       pool->last_team = NULL;
       pool->threads_busy = nthreads;
       thr->thread_pool = pool;
+#ifdef __CLUSTER_OS__
+      thr->pthreads = NULL;
+      thr->nthreads = 0;
+#endif
       pthread_setspecific (gomp_thread_destructor, thr);
     }
   return pool;
