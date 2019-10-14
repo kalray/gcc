@@ -714,6 +714,13 @@ struct gomp_thread
 #define GOMP_NEEDS_THREAD_HANDLE 1
   pthread_t handle;
 #endif
+
+#ifdef __CLUSTER_OS__
+  /* user pthread ids for joins in ClusterOS target
+     it avoids memory leaks and race at thread exit when recreating threads.  */
+  pthread_t *pthreads;
+  unsigned int nthreads;
+#endif
 };
 
 
