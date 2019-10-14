@@ -282,11 +282,26 @@ gomp_free_thread (void *arg __attribute__((unused)))
 	  gomp_managed_threads -= pool->threads_used - 1L;
 	  gomp_mutex_unlock (&gomp_managed_threads_lock);
 #endif
+#ifdef __CLUSTER_OS__
+    for (i = 1; i < thr->nthreads; i++)
+      {
+        if (pthread_join(thr->pthreads[i], NULL) != 0)
+          gomp_fatal ("Thread %d join failed\n", i);
+      }
+#endif
 	}
       if (pool->last_team)
 	free_team (pool->last_team);
 #ifndef __nvptx__
       free (pool->threads);
+#ifdef __CLUSTER_OS__
+      if (thr->pthreads)
+        {
+          free(thr->pthreads);
+          thr->pthreads = NULL;
+        }
+      thr->nthreads = 0;
+#endif
       free (pool);
 #endif
       thr->thread_pool = NULL;
@@ -744,6 +759,16 @@ gomp_team_start (void (*fn) (void *), void *data, unsigned nthreads,
   start_data = gomp_alloca (sizeof (struct gomp_thread_start_data)
 			    * (nthreads - i));
 
+#ifdef __CLUSTER_OS__
+  if (nthreads > thr->nthreads) {
+    thr->pthreads
+      = gomp_realloc (thr->pthreads,
+          nthreads
+          * sizeof (*thr->pthreads));
+    thr->nthreads = nthreads;
+  }
+#endif
+
   /* Launch new threads.  */
   for (; i < nthreads; ++i)
     {
@@ -839,6 +864,9 @@ gomp_team_start (void (*fn) (void *), void *data, unsigned nthreads,
       attr = gomp_adjust_thread_attr (attr, &thread_attr);
       err = pthread_create (&start_data->handle, attr, gomp_thread_start,
 			    start_data);
+#ifdef __CLUSTER_OS__
+      thr->pthreads[i] = start_data->handle;
+#endif
       start_data++;
       if (err != 0)
 	gomp_fatal ("Thread creation failed: %s", strerror (err));
