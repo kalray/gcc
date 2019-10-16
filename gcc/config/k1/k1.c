@@ -346,8 +346,8 @@ k1_static_chain (const_tree fndecl, bool incoming_p ATTRIBUTE_UNUSED)
   return gen_frame_mem (Pmode, frame_pointer_rtx);
 }
 
-static const char *prf_reg_names[] = {K1C_PRF_REGISTER_NAMES};
-static const char *qrf_reg_names[] = {K1C_QRF_REGISTER_NAMES};
+static const char *prf_reg_names[] = {K1C_PGR_REGISTER_NAMES};
+static const char *qrf_reg_names[] = {K1C_QGR_REGISTER_NAMES};
 
 /* Splits X as a base + offset. Returns true if split successful,
    false if not. BASE_OUT and OFFSET_OUT contain the corresponding
@@ -499,8 +499,8 @@ k1_pack_load_store (rtx operands[], unsigned int nops)
 int
 k1_hard_regno_rename_ok (unsigned int from, unsigned int to)
 {
-  if (IN_RANGE (from, K1C_GRF_FIRST_REGNO, K1C_GRF_LAST_REGNO)
-      && IN_RANGE (to, K1C_GRF_FIRST_REGNO, K1C_GRF_LAST_REGNO))
+  if (IN_RANGE (from, K1C_GPR_FIRST_REGNO, K1C_GPR_LAST_REGNO)
+      && IN_RANGE (to, K1C_GPR_FIRST_REGNO, K1C_GPR_LAST_REGNO))
     {
       /* Retain quad alignement */
       if ((from % 4) == 0)
@@ -518,13 +518,13 @@ k1_hard_regno_rename_ok (unsigned int from, unsigned int to)
 int
 k1_hard_regno_mode_ok (unsigned regno, enum machine_mode mode)
 {
-  // SI/DI -> K1C_GRF_FIRST_REGNO - K1C_GRF_LAST_REGNO => OK
-  // SI/DI -> K1C_SRF_FIRST_REGNO - K1C_SRF_LAST_REGNO => OK
-  // TI    -> K1C_GRF_FIRST_REGNO - K1C_GRF_LAST_REGNO && even => OK
-  // OI    -> K1C_GRF_FIRST_REGNO - K1C_GRF_LAST_REGNO && 0mod4 => OK
+  // SI/DI -> K1C_GPR_FIRST_REGNO - K1C_GPR_LAST_REGNO => OK
+  // SI/DI -> K1C_SFR_FIRST_REGNO - K1C_SFR_LAST_REGNO => OK
+  // TI    -> K1C_GPR_FIRST_REGNO - K1C_GPR_LAST_REGNO && even => OK
+  // OI    -> K1C_GPR_FIRST_REGNO - K1C_GPR_LAST_REGNO && 0mod4 => OK
   if (GET_MODE_SIZE (mode) <= UNITS_PER_WORD)
     return 1;
-  if (IN_RANGE (regno, K1C_GRF_FIRST_REGNO, K1C_GRF_LAST_REGNO))
+  if (IN_RANGE (regno, K1C_GPR_FIRST_REGNO, K1C_GPR_LAST_REGNO))
     {
       if (GET_MODE_SIZE (mode) == 2 * UNITS_PER_WORD)
 	return (regno % 2 == 0);
@@ -1139,7 +1139,7 @@ k1_target_secondary_reload (bool in_p ATTRIBUTE_UNUSED, rtx x ATTRIBUTE_UNUSED,
     {
       if (sri->prev_sri == NULL)
 	{
-	  return GRF_REGS;
+	  return GPR_REGS;
 	}
       else
 	{
@@ -3434,11 +3434,11 @@ k1_expand_builtin_get (rtx target, tree args)
       error ("__builtin_k1_get expects a 9-bit unsigned immediate argument.");
       return NULL_RTX;
     }
-  const int regno = INTVAL (arg1) + K1C_SRF_FIRST_REGNO;
+  const int regno = INTVAL (arg1) + K1C_SFR_FIRST_REGNO;
 
-  if (regno > K1C_SRF_LAST_REGNO)
+  if (regno > K1C_SFR_LAST_REGNO)
     {
-      error ("__builtin_k1_get called with illegal SRF register index : %d",
+      error ("__builtin_k1_get called with illegal SFR register index %d",
 	     INTVAL (arg1));
     }
 
@@ -3449,7 +3449,7 @@ k1_expand_builtin_get (rtx target, tree args)
 
   reg = gen_rtx_REG (DImode, regno);
 
-  if (INTVAL (arg1) == K1C_PCR_REGNO - K1C_SRF_FIRST_REGNO)
+  if (INTVAL (arg1) == K1C_PCR_REGNO - K1C_SFR_FIRST_REGNO)
     emit_move_insn (target, reg);
   else
     emit_insn (gen_get_volatile (target, reg, k1_sync_reg_rtx));
@@ -3486,19 +3486,19 @@ k1_expand_builtin_set (rtx target ATTRIBUTE_UNUSED, tree args, bool ps)
       return NULL_RTX;
     }
 
-  if (ps && INTVAL (arg1) != K1C_PS_REGNO - K1C_SRF_FIRST_REGNO)
+  if (ps && INTVAL (arg1) != K1C_PS_REGNO - K1C_SFR_FIRST_REGNO)
     {
       error ("__builtin_k1_set_ps must be called on the $ps register.");
     }
-  int regno = INTVAL (arg1) + K1C_SRF_FIRST_REGNO;
+  int regno = INTVAL (arg1) + K1C_SFR_FIRST_REGNO;
 
-  if (regno > K1C_SRF_LAST_REGNO)
+  if (regno > K1C_SFR_LAST_REGNO)
     {
-      error ("__builtin_k1_set called with illegal SRF register index : %d",
+      error ("__builtin_k1_set called with illegal SFR register index %d",
 	     INTVAL (arg1));
     }
 
-  if (!ps && INTVAL (arg1) == K1C_PS_REGNO - K1C_SRF_FIRST_REGNO)
+  if (!ps && INTVAL (arg1) == K1C_PS_REGNO - K1C_SFR_FIRST_REGNO)
     {
       ps = true;
     }
@@ -3539,10 +3539,10 @@ k1_expand_builtin_wfxl (rtx target ATTRIBUTE_UNUSED, tree args)
 	"__builtin_k1_wfxl expects a 9-bit unsigned immediate first argument.");
       return NULL_RTX;
     }
-  int regno = INTVAL (arg1) + K1C_SRF_FIRST_REGNO;
+  int regno = INTVAL (arg1) + K1C_SFR_FIRST_REGNO;
   rtx arg = gen_rtx_REG (DImode, regno);
   arg2 = force_reg (DImode, arg2);
-  if (INTVAL (arg1) == K1C_PS_REGNO - K1C_SRF_FIRST_REGNO)
+  if (INTVAL (arg1) == K1C_PS_REGNO - K1C_SFR_FIRST_REGNO)
     {
       emit_insn (gen_wfxl_ps (arg, arg2, k1_sync_reg_rtx));
     }
@@ -3564,10 +3564,10 @@ k1_expand_builtin_wfxm (rtx target ATTRIBUTE_UNUSED, tree args)
 	"__builtin_k1_wfxm expects a 9-bit unsigned immediate first argument.");
       return NULL_RTX;
     }
-  int regno = INTVAL (arg1) + K1C_SRF_FIRST_REGNO;
+  int regno = INTVAL (arg1) + K1C_SFR_FIRST_REGNO;
   rtx arg = gen_rtx_REG (DImode, regno);
   arg2 = force_reg (DImode, arg2);
-  if (INTVAL (arg1) == K1C_PS_REGNO - K1C_SRF_FIRST_REGNO)
+  if (INTVAL (arg1) == K1C_PS_REGNO - K1C_SFR_FIRST_REGNO)
     {
       emit_insn (gen_wfxm_ps (arg, arg2, k1_sync_reg_rtx));
     }
