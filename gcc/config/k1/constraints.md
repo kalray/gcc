@@ -1,4 +1,4 @@
-(define_register_constraint "RXX" "(SRF_REGS)"
+(define_register_constraint "RXX" "(SFR_REGS)"
      "A system register constraint.")
 
 (define_constraint "S"
