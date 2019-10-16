@@ -234,7 +234,7 @@ enum k1_abi_type
 #define N_REG_CLASSES (int) LIM_REG_CLASSES
 
 /* Provide the GENERAL_REGS definitions */
-#define GENERAL_REGS GRF_REGS
+#define GENERAL_REGS GPR_REGS
 
 /* A macro whose definition is the name of the class to which a valid
    base register must belong. A base register is one used in an
@@ -339,7 +339,7 @@ enum k1_abi_type
    the reload pass. */
 // #define CLASS_MAX_NREGS(CLASS, MODE) HARD_REGNO_NREGS(0, MODE)
 /*#define CLASS_MAX_NREGS(CLASS, MODE) (HARD_REGNO_NREGS(0, MODE) / (CLASS ==
- * PRF_REGS ? 2 : 1))*/
+ * PGR_REGS ? 2 : 1))*/
 
 /* ********** Frame Layout ********** */
 

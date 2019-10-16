@@ -22,24 +22,24 @@
 enum reg_class
 {
   NO_REGS,
-  GRF_REGS,
-  PRF_REGS,
-  QRF_REGS,
-  SRF_REGS,
+  GPR_REGS,
+  PGR_REGS,
+  QGR_REGS,
+  SFR_REGS,
   ALL_REGS,
   LIM_REG_CLASSES
 };
 
 #define REG_CLASS_NAMES                                                        \
   {                                                                            \
-    "NO_REGS", "GRF_REGS", "PRF_REGS", "QRF_REGS", "SRF_REGS", "ALL_REGS",     \
+    "NO_REGS", "GPR_REGS", "PGR_REGS", "QGR_REGS", "SFR_REGS", "ALL_REGS",     \
       "LIM_REG_CLASSES"                                                        \
   }
 
-#define K1C_GRF_FIRST_REGNO 0
-#define K1C_GRF_LAST_REGNO 63
-#define K1C_SRF_FIRST_REGNO 64
-#define K1C_SRF_LAST_REGNO 255
+#define K1C_GPR_FIRST_REGNO 0
+#define K1C_GPR_LAST_REGNO 63
+#define K1C_SFR_FIRST_REGNO 64
+#define K1C_SFR_LAST_REGNO 255
 
 #define K1C_MDS_REGISTERS 256
 
@@ -48,25 +48,25 @@ enum reg_class
     {0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,               \
      0x00000000, 0x00000000, 0x00000000, 0x0}, /* NO_REGS */                   \
       {0xffffffff, 0xffffffff, 0x00000000, 0x00000000, 0x00000000,             \
-       0x00000000, 0x00000000, 0x00000000, 0x2}, /* GRF_REGS */                \
+       0x00000000, 0x00000000, 0x00000000, 0x2}, /* GPR_REGS */                \
       {0xffffffff, 0xffffffff, 0x00000000, 0x00000000, 0x00000000,             \
-       0x00000000, 0x00000000, 0x00000000, 0x0}, /* PRF_REGS */                \
+       0x00000000, 0x00000000, 0x00000000, 0x0}, /* PGR_REGS */                \
       {0xffffffff, 0xffffffff, 0x00000000, 0x00000000, 0x00000000,             \
-       0x00000000, 0x00000000, 0x00000000, 0x0}, /* QRF_REGS */                \
+       0x00000000, 0x00000000, 0x00000000, 0x0}, /* QGR_REGS */                \
       {0x00000000, 0x00000000, 0xffffffff, 0xffffffff, 0xffffffff,             \
-       0xffffffff, 0xffffffff, 0xffffffff, 0x1}, /* SRF_REGS */                \
+       0xffffffff, 0xffffffff, 0xffffffff, 0x1}, /* SFR_REGS */                \
       {0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,             \
        0xffffffff, 0xffffffff, 0xffffffff, 0x3}, /* ALL_REGS */                \
   }
 
 #define REGNO_REG_CLASS(REGNO)                                                 \
-  ((((REGNO) <= K1C_GRF_LAST_REGNO)                                            \
-      ? GRF_REGS                                                               \
-      : (((REGNO) >= K1C_SRF_FIRST_REGNO && (REGNO) <= K1C_SRF_LAST_REGNO)     \
-	   ? SRF_REGS                                                          \
+  ((((REGNO) <= K1C_GPR_LAST_REGNO)                                            \
+      ? GPR_REGS                                                               \
+      : (((REGNO) >= K1C_SFR_FIRST_REGNO && (REGNO) <= K1C_SFR_LAST_REGNO)     \
+	   ? SFR_REGS                                                          \
 	   : ((REGNO) == K1C_MDS_REGISTERS                                     \
-		? SRF_REGS                                                     \
-		: ((REGNO) == K1C_MDS_REGISTERS + 1 ? GRF_REGS : NO_REGS)))))
+		? SFR_REGS                                                     \
+		: ((REGNO) == K1C_MDS_REGISTERS + 1 ? GPR_REGS : NO_REGS)))))
 
 #define K1C_REGISTER_NAMES                                                     \
   "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11",    \
@@ -101,7 +101,7 @@ enum reg_class
     "res180", "res181", "res182", "res183", "res184", "res185", "res186",      \
     "res187", "res188", "res189", "res190", "res191",
 
-#define K1C_GRF_REGISTER_NAMES                                                 \
+#define K1C_GPR_REGISTER_NAMES                                                 \
   "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11",    \
     "r12", "r13", "r14", "r15", "r16", "r17", "r18", "r19", "r20", "r21",      \
     "r22", "r23", "r24", "r25", "r26", "r27", "r28", "r29", "r30", "r31",      \
@@ -110,26 +110,31 @@ enum reg_class
     "r52", "r53", "r54", "r55", "r56", "r57", "r58", "r59", "r60", "r61",      \
     "r62", "r63",
 
-#define K1C_PRF_REGISTER_NAMES                                                 \
-  "r0r1", "NA", "r2r3", "NA", "r4r5", "NA", "r6r7", "NA", "r8r9", "NA",        \
-    "r10r11", "NA", "r12r13", "NA", "r14r15", "NA", "r16r17", "NA", "r18r19",  \
-    "NA", "r20r21", "NA", "r22r23", "NA", "r24r25", "NA", "r26r27", "NA",      \
-    "r28r29", "NA", "r30r31", "NA", "r32r33", "NA", "r34r35", "NA", "r36r37",  \
-    "NA", "r38r39", "NA", "r40r41", "NA", "r42r43", "NA", "r44r45", "NA",      \
-    "r46r47", "NA", "r48r49", "NA", "r50r51", "NA", "r52r53", "NA", "r54r55",  \
-    "NA", "r56r57", "NA", "r58r59", "NA", "r60r61", "NA", "r62r63", "NA",
+#define K1C_PGR_REGISTER_NAMES                                                 \
+  "r0r1", "ERROR", "r2r3", "ERROR", "r4r5", "ERROR", "r6r7", "ERROR", "r8r9",  \
+    "ERROR", "r10r11", "ERROR", "r12r13", "ERROR", "r14r15", "ERROR",          \
+    "r16r17", "ERROR", "r18r19", "ERROR", "r20r21", "ERROR", "r22r23",         \
+    "ERROR", "r24r25", "ERROR", "r26r27", "ERROR", "r28r29", "ERROR",          \
+    "r30r31", "ERROR", "r32r33", "ERROR", "r34r35", "ERROR", "r36r37",         \
+    "ERROR", "r38r39", "ERROR", "r40r41", "ERROR", "r42r43", "ERROR",          \
+    "r44r45", "ERROR", "r46r47", "ERROR", "r48r49", "ERROR", "r50r51",         \
+    "ERROR", "r52r53", "ERROR", "r54r55", "ERROR", "r56r57", "ERROR",          \
+    "r58r59", "ERROR", "r60r61", "ERROR", "r62r63", "ERROR",
 
-#define K1C_QRF_REGISTER_NAMES                                                 \
-  "r0r1r2r3", "NA", "NA", "NA", "r4r5r6r7", "NA", "NA", "NA", "r8r9r10r11",    \
-    "NA", "NA", "NA", "r12r13r14r15", "NA", "NA", "NA", "r16r17r18r19", "NA",  \
-    "NA", "NA", "r20r21r22r23", "NA", "NA", "NA", "r24r25r26r27", "NA", "NA",  \
-    "NA", "r28r29r30r31", "NA", "NA", "NA", "r32r33r34r35", "NA", "NA", "NA",  \
-    "r36r37r38r39", "NA", "NA", "NA", "r40r41r42r43", "NA", "NA", "NA",        \
-    "r44r45r46r47", "NA", "NA", "NA", "r48r49r50r51", "NA", "NA", "NA",        \
-    "r52r53r54r55", "NA", "NA", "NA", "r56r57r58r59", "NA", "NA", "NA",        \
-    "r60r61r62r63", "NA", "NA", "NA",
+#define K1C_QGR_REGISTER_NAMES                                                 \
+  "r0r1r2r3", "ERROR", "ERROR", "ERROR", "r4r5r6r7", "ERROR", "ERROR",         \
+    "ERROR", "r8r9r10r11", "ERROR", "ERROR", "ERROR", "r12r13r14r15", "ERROR", \
+    "ERROR", "ERROR", "r16r17r18r19", "ERROR", "ERROR", "ERROR",               \
+    "r20r21r22r23", "ERROR", "ERROR", "ERROR", "r24r25r26r27", "ERROR",        \
+    "ERROR", "ERROR", "r28r29r30r31", "ERROR", "ERROR", "ERROR",               \
+    "r32r33r34r35", "ERROR", "ERROR", "ERROR", "r36r37r38r39", "ERROR",        \
+    "ERROR", "ERROR", "r40r41r42r43", "ERROR", "ERROR", "ERROR",               \
+    "r44r45r46r47", "ERROR", "ERROR", "ERROR", "r48r49r50r51", "ERROR",        \
+    "ERROR", "ERROR", "r52r53r54r55", "ERROR", "ERROR", "ERROR",               \
+    "r56r57r58r59", "ERROR", "ERROR", "ERROR", "r60r61r62r63", "ERROR",        \
+    "ERROR", "ERROR",
 
-#define K1C_SRF_REGISTER_NAMES                                                 \
+#define K1C_SFR_REGISTER_NAMES                                                 \
   "pc", "ps", "pcr", "ra", "cs", "csit", "aespc", "ls", "le", "lc", "ipe",     \
     "men", "pmc", "pm0", "pm1", "pm2", "pm3", "pmsa", "tcr", "t0v", "t1v",     \
     "t0r", "t1r", "wdv", "wdr", "ile", "ill", "ilr", "mmc", "tel", "teh",      \
