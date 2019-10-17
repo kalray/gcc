@@ -1162,8 +1162,8 @@ void
 k1_target_print_operand (FILE *file, rtx x, int code)
 {
   rtx operand = x;
-  bool select_oreg = 0;
   bool select_qreg = 0;
+  bool select_preg = 0;
   bool select_treg = 0;
   bool select_zreg = 0;
   bool select_yreg = 0;
@@ -1184,11 +1184,11 @@ k1_target_print_operand (FILE *file, rtx x, int code)
       break;
 
     case 'o':
-      select_oreg = true;
+      select_qreg = true;
       break;
 
     case 'q':
-      select_qreg = true;
+      select_preg = true;
       break;
 
     case 't':
@@ -1291,52 +1291,44 @@ k1_target_print_operand (FILE *file, rtx x, int code)
 	error ("internal error: bad register: %d", REGNO (operand));
       if (system_register_operand (operand, VOIDmode))
 	gcc_assert (GET_MODE_SIZE (GET_MODE (x)) <= UNITS_PER_WORD);
-      if (select_oreg)
+      if (select_qreg)
 	{
-	  gcc_assert (REGNO (operand) % 4 == 0);
 	  fprintf (file, "$%s", qrf_reg_names[REGNO (operand)]);
 	}
-      else if (select_qreg)
+      else if (select_preg)
 	{
-	  gcc_assert (REGNO (operand) % 2 == 0);
 	  fprintf (file, "$%s", prf_reg_names[REGNO (operand)]);
 	}
       else if (select_treg)
 	{
 	  if (GET_MODE_SIZE (GET_MODE (x)) < UNITS_PER_WORD * 4)
-	    warning (0,
-		     "using %%t format with operand smaller than 4 registers");
+	    error ("using %%t format with operand smaller than 4 registers");
 	  fprintf (file, "$%s", reg_names[REGNO (operand) + 3]);
 	}
       else if (select_zreg)
 	{
 	  if (GET_MODE_SIZE (GET_MODE (x)) < UNITS_PER_WORD * 4)
-	    warning (0,
-		     "using %%z format with operand smaller than 4 registers");
+	    error ("using %%z format with operand smaller than 4 registers");
 	  fprintf (file, "$%s", reg_names[REGNO (operand) + 2]);
 	}
       else if (select_yreg)
 	{
 	  if (GET_MODE_SIZE (GET_MODE (x)) < UNITS_PER_WORD * 2)
-	    warning (0,
-		     "using %%y format with operand smaller than 2 registers");
+	    error ("using %%y format with operand smaller than 2 registers");
 	  fprintf (file, "$%s", reg_names[REGNO (operand) + 1]);
 	}
       else if (select_xreg)
 	{
 	  if (GET_MODE_SIZE (GET_MODE (x)) < UNITS_PER_WORD * 2)
-	    warning (0,
-		     "using %%x format with operand smaller than 2 registers");
+	    error ("using %%x format with operand smaller than 2 registers");
 	  fprintf (file, "$%s", reg_names[REGNO (operand)]);
 	}
       else if (GET_MODE_SIZE (GET_MODE (x)) == UNITS_PER_WORD * 4)
 	{
-	  gcc_assert (REGNO (operand) % 4 == 0);
 	  fprintf (file, "$%s", qrf_reg_names[REGNO (operand)]);
 	}
       else if (GET_MODE_SIZE (GET_MODE (x)) == UNITS_PER_WORD * 2)
 	{
-	  gcc_assert (REGNO (operand) % 2 == 0);
 	  fprintf (file, "$%s", prf_reg_names[REGNO (operand)]);
 	}
       else
@@ -1399,8 +1391,12 @@ k1_target_print_operand (FILE *file, rtx x, int code)
       fprintf (file, HOST_WIDE_INT_PRINT_DEC, INTVAL (x));
       return;
 
-    case CONST_VECTOR:
-      fprintf (file, HOST_WIDE_INT_PRINT_HEX, k1_const_vector_value (x, 0));
+      case CONST_VECTOR: {
+	int slice = 0 * select_xreg + 1 * select_yreg + 2 * select_zreg
+		    + 3 * select_treg;
+	fprintf (file, HOST_WIDE_INT_PRINT_HEX,
+		 k1_const_vector_value (x, slice));
+      }
       return;
 
     case CONST_STRING:
@@ -2953,89 +2949,89 @@ enum k1_builtin
   K1_BUILTIN_EXTFZ,
 
   K1_BUILTIN_FABSW,
-  K1_BUILTIN_FABSD,
   K1_BUILTIN_FABSWP,
   K1_BUILTIN_FABSWQ,
+  K1_BUILTIN_FABSD,
   K1_BUILTIN_FABSDP,
   K1_BUILTIN_FNEGW,
-  K1_BUILTIN_FNEGD,
   K1_BUILTIN_FNEGWP,
   K1_BUILTIN_FNEGWQ,
+  K1_BUILTIN_FNEGD,
   K1_BUILTIN_FNEGDP,
   K1_BUILTIN_FMAXW,
-  K1_BUILTIN_FMAXD,
   K1_BUILTIN_FMAXWP,
   K1_BUILTIN_FMAXWQ,
+  K1_BUILTIN_FMAXD,
   K1_BUILTIN_FMAXDP,
   K1_BUILTIN_FMINW,
-  K1_BUILTIN_FMIND,
   K1_BUILTIN_FMINWP,
   K1_BUILTIN_FMINWQ,
+  K1_BUILTIN_FMIND,
   K1_BUILTIN_FMINDP,
   K1_BUILTIN_FINVW,
   K1_BUILTIN_FISRW,
   K1_BUILTIN_FADDW,
-  K1_BUILTIN_FADDD,
   K1_BUILTIN_FADDWP,
-  K1_BUILTIN_FADDCWC,
   K1_BUILTIN_FADDWQ,
-  K1_BUILTIN_FADDCWCP,
+  K1_BUILTIN_FADDD,
   K1_BUILTIN_FADDDP,
+  K1_BUILTIN_FADDCWC,
+  K1_BUILTIN_FADDCWCP,
   K1_BUILTIN_FADDCDC,
   K1_BUILTIN_FSBFW,
-  K1_BUILTIN_FSBFD,
   K1_BUILTIN_FSBFWP,
-  K1_BUILTIN_FSBFCWC,
   K1_BUILTIN_FSBFWQ,
-  K1_BUILTIN_FSBFCWCP,
+  K1_BUILTIN_FSBFD,
   K1_BUILTIN_FSBFDP,
+  K1_BUILTIN_FSBFCWC,
+  K1_BUILTIN_FSBFCWCP,
   K1_BUILTIN_FSBFCDC,
   K1_BUILTIN_FMULW,
-  K1_BUILTIN_FMULD,
-  K1_BUILTIN_FMULWD,
   K1_BUILTIN_FMULWP,
-  K1_BUILTIN_FMULWC,
-  K1_BUILTIN_FMULCWC,
   K1_BUILTIN_FMULWQ,
-  K1_BUILTIN_FMULWCP,
-  K1_BUILTIN_FMULCWCP,
+  K1_BUILTIN_FMULD,
   K1_BUILTIN_FMULDP,
+  K1_BUILTIN_FMULWD,
+  K1_BUILTIN_FMULWC,
+  K1_BUILTIN_FMULWCP,
+  K1_BUILTIN_FMULCWC,
+  K1_BUILTIN_FMULCWCP,
   K1_BUILTIN_FMULDC,
   K1_BUILTIN_FMULCDC,
   K1_BUILTIN_FMM2WQ,
   K1_BUILTIN_FFMAW,
-  K1_BUILTIN_FFMAD,
-  K1_BUILTIN_FFMAWD,
   K1_BUILTIN_FFMAWP,
   K1_BUILTIN_FFMAWQ,
+  K1_BUILTIN_FFMAD,
   K1_BUILTIN_FFMADP,
+  K1_BUILTIN_FFMAWD,
   K1_BUILTIN_FMM2AWQ,
   K1_BUILTIN_FFMSW,
-  K1_BUILTIN_FFMSD,
-  K1_BUILTIN_FFMSWD,
   K1_BUILTIN_FFMSWP,
   K1_BUILTIN_FFMSWQ,
+  K1_BUILTIN_FFMSD,
   K1_BUILTIN_FFMSDP,
+  K1_BUILTIN_FFMSWD,
   K1_BUILTIN_FMM2SWQ,
   K1_BUILTIN_FLOATW,
-  K1_BUILTIN_FLOATD,
   K1_BUILTIN_FLOATWP,
   K1_BUILTIN_FLOATWQ,
+  K1_BUILTIN_FLOATD,
   K1_BUILTIN_FLOATDP,
   K1_BUILTIN_FLOATUW,
-  K1_BUILTIN_FLOATUD,
   K1_BUILTIN_FLOATUWP,
   K1_BUILTIN_FLOATUWQ,
+  K1_BUILTIN_FLOATUD,
   K1_BUILTIN_FLOATUDP,
   K1_BUILTIN_FIXEDW,
-  K1_BUILTIN_FIXEDD,
   K1_BUILTIN_FIXEDWP,
   K1_BUILTIN_FIXEDWQ,
+  K1_BUILTIN_FIXEDD,
   K1_BUILTIN_FIXEDDP,
   K1_BUILTIN_FIXEDUW,
-  K1_BUILTIN_FIXEDUD,
   K1_BUILTIN_FIXEDUWP,
   K1_BUILTIN_FIXEDUWQ,
+  K1_BUILTIN_FIXEDUD,
   K1_BUILTIN_FIXEDUDP,
 
   K1_BUILTIN_FCDIVW,
@@ -3098,8 +3094,9 @@ k1_target_init_builtins (void)
 {
 
 #define VOID void_type_node
-#define voidPTR ptr_type_node
-#define constVoidPTR const_ptr_type_node
+#define VPTR ptr_type_node
+#define CVPTR const_ptr_type_node
+#define BOOL boolean_type_node
 
 #define INT8 intQI_type_node
 #define INT16 intHI_type_node
@@ -3121,6 +3118,9 @@ k1_target_init_builtins (void)
   tree STRING = build_pointer_type (
     build_qualified_type (char_type_node, TYPE_QUAL_CONST));
 
+  tree INT8X8 = build_vector_type (INT8, 8);
+  tree INT8X16 = build_vector_type (INT8, 16);
+  tree INT8X32 = build_vector_type (INT8, 32);
   tree INT16X4 = build_vector_type (INT16, 4);
   tree INT16X8 = build_vector_type (INT16, 8);
   tree INT16X16 = build_vector_type (INT16, 16);
@@ -3176,114 +3176,114 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (CLZD, "clzd", INT64, UINT64);
   ADD_K1_BUILTIN (CTZW, "ctzw", INT32, UINT32);
   ADD_K1_BUILTIN (CTZD, "ctzd", INT64, UINT64);
-  ADD_K1_BUILTIN (ACSWAPW, "acswapw", UINT128, voidPTR, UINT64, UINT64);
-  ADD_K1_BUILTIN (ACSWAPD, "acswapd", UINT128, voidPTR, UINT64, UINT64);
-  ADD_K1_BUILTIN (AFADDD, "afaddd", UINT64, voidPTR, INT64);
-  ADD_K1_BUILTIN (AFADDW, "afaddw", UINT32, voidPTR, INT32);
-  ADD_K1_BUILTIN (ALCLRD, "alclrd", UINT64, voidPTR);
-  ADD_K1_BUILTIN (ALCLRW, "alclrw", UINT32, voidPTR);
+  ADD_K1_BUILTIN (ACSWAPW, "acswapw", UINT128, VPTR, UINT64, UINT64);
+  ADD_K1_BUILTIN (ACSWAPD, "acswapd", UINT128, VPTR, UINT64, UINT64);
+  ADD_K1_BUILTIN (AFADDD, "afaddd", UINT64, VPTR, INT64);
+  ADD_K1_BUILTIN (AFADDW, "afaddw", UINT32, VPTR, INT32);
+  ADD_K1_BUILTIN (ALCLRD, "alclrd", UINT64, VPTR);
+  ADD_K1_BUILTIN (ALCLRW, "alclrw", UINT32, VPTR);
   ADD_K1_BUILTIN (DINVAL, "dinval", VOID);
-  ADD_K1_BUILTIN (DINVALL, "dinvall", VOID, constVoidPTR);
+  ADD_K1_BUILTIN (DINVALL, "dinvall", VOID, CVPTR);
   ADD_K1_BUILTIN (DOZE, "doze", VOID);
-  ADD_K1_BUILTIN (DTOUCHL, "dtouchl", VOID, constVoidPTR);
-  ADD_K1_BUILTIN (DZEROL, "dzerol", VOID, voidPTR);
+  ADD_K1_BUILTIN (DTOUCHL, "dtouchl", VOID, CVPTR);
+  ADD_K1_BUILTIN (DZEROL, "dzerol", VOID, VPTR);
   ADD_K1_BUILTIN (EXTFZ, "extfz", UINT32, UINT32, UINT32, UINT32);
 
   ADD_K1_BUILTIN (FABSW, "fabsw", FLOAT32, FLOAT32);
-  ADD_K1_BUILTIN (FABSD, "fabsd", FLOAT64, FLOAT64);
   ADD_K1_BUILTIN (FABSWP, "fabswp", FLOAT32X2, FLOAT32X2);
   ADD_K1_BUILTIN (FABSWQ, "fabswq", FLOAT32X4, FLOAT32X4);
+  ADD_K1_BUILTIN (FABSD, "fabsd", FLOAT64, FLOAT64);
   ADD_K1_BUILTIN (FABSDP, "fabsdp", FLOAT64X2, FLOAT64X2);
   ADD_K1_BUILTIN (FNEGW, "fnegw", FLOAT32, FLOAT32);
-  ADD_K1_BUILTIN (FNEGD, "fnegd", FLOAT64, FLOAT64);
   ADD_K1_BUILTIN (FNEGWP, "fnegwp", FLOAT32X2, FLOAT32X2);
   ADD_K1_BUILTIN (FNEGWQ, "fnegwq", FLOAT32X4, FLOAT32X4);
+  ADD_K1_BUILTIN (FNEGD, "fnegd", FLOAT64, FLOAT64);
   ADD_K1_BUILTIN (FNEGDP, "fnegdp", FLOAT64X2, FLOAT64X2);
   ADD_K1_BUILTIN (FMAXW, "fmaxw", FLOAT32, FLOAT32, FLOAT32);
-  ADD_K1_BUILTIN (FMAXD, "fmaxd", FLOAT64, FLOAT64, FLOAT64);
   ADD_K1_BUILTIN (FMAXWP, "fmaxwp", FLOAT32X2, FLOAT32X2, FLOAT32X2);
   ADD_K1_BUILTIN (FMAXWQ, "fmaxwq", FLOAT32X4, FLOAT32X4, FLOAT32X4);
+  ADD_K1_BUILTIN (FMAXD, "fmaxd", FLOAT64, FLOAT64, FLOAT64);
   ADD_K1_BUILTIN (FMAXDP, "fmaxdp", FLOAT64X2, FLOAT64X2, FLOAT64X2);
   ADD_K1_BUILTIN (FMINW, "fminw", FLOAT32, FLOAT32, FLOAT32);
-  ADD_K1_BUILTIN (FMIND, "fmind", FLOAT64, FLOAT64, FLOAT64);
   ADD_K1_BUILTIN (FMINWP, "fminwp", FLOAT32X2, FLOAT32X2, FLOAT32X2);
   ADD_K1_BUILTIN (FMINWQ, "fminwq", FLOAT32X4, FLOAT32X4, FLOAT32X4);
+  ADD_K1_BUILTIN (FMIND, "fmind", FLOAT64, FLOAT64, FLOAT64);
   ADD_K1_BUILTIN (FMINDP, "fmindp", FLOAT64X2, FLOAT64X2, FLOAT64X2);
   ADD_K1_BUILTIN (FINVW, "finvw", FLOAT32, FLOAT32, STRING);
   ADD_K1_BUILTIN (FISRW, "fisrw", FLOAT32, FLOAT32, STRING);
   ADD_K1_BUILTIN (FADDW, "faddw", FLOAT32, FLOAT32, FLOAT32, STRING);
-  ADD_K1_BUILTIN (FADDD, "faddd", FLOAT64, FLOAT64, FLOAT64, STRING);
   ADD_K1_BUILTIN (FADDWP, "faddwp", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
-  ADD_K1_BUILTIN (FADDCWC, "faddcwc", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
   ADD_K1_BUILTIN (FADDWQ, "faddwq", FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
+  ADD_K1_BUILTIN (FADDD, "faddd", FLOAT64, FLOAT64, FLOAT64, STRING);
+  ADD_K1_BUILTIN (FADDDP, "fadddp", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
+  ADD_K1_BUILTIN (FADDCWC, "faddcwc", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
   ADD_K1_BUILTIN (FADDCWCP, "faddcwcp", FLOAT32X4, FLOAT32X4, FLOAT32X4,
 		  STRING);
-  ADD_K1_BUILTIN (FADDDP, "fadddp", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
   ADD_K1_BUILTIN (FADDCDC, "faddcdc", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
   ADD_K1_BUILTIN (FSBFW, "fsbfw", FLOAT32, FLOAT32, FLOAT32, STRING);
-  ADD_K1_BUILTIN (FSBFD, "fsbfd", FLOAT64, FLOAT64, FLOAT64, STRING);
   ADD_K1_BUILTIN (FSBFWP, "fsbfwp", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
-  ADD_K1_BUILTIN (FSBFCWC, "fsbfcwc", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
   ADD_K1_BUILTIN (FSBFWQ, "fsbfwq", FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
+  ADD_K1_BUILTIN (FSBFD, "fsbfd", FLOAT64, FLOAT64, FLOAT64, STRING);
+  ADD_K1_BUILTIN (FSBFDP, "fsbfdp", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
+  ADD_K1_BUILTIN (FSBFCWC, "fsbfcwc", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
   ADD_K1_BUILTIN (FSBFCWCP, "fsbfcwcp", FLOAT32X4, FLOAT32X4, FLOAT32X4,
 		  STRING);
-  ADD_K1_BUILTIN (FSBFDP, "fsbfdp", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
   ADD_K1_BUILTIN (FSBFCDC, "fsbfcdc", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
   ADD_K1_BUILTIN (FMULW, "fmulw", FLOAT32, FLOAT32, FLOAT32, STRING);
-  ADD_K1_BUILTIN (FMULD, "fmuld", FLOAT64, FLOAT64, FLOAT64, STRING);
-  ADD_K1_BUILTIN (FMULWD, "fmulwd", FLOAT64, FLOAT32, FLOAT32, STRING);
   ADD_K1_BUILTIN (FMULWP, "fmulwp", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
-  ADD_K1_BUILTIN (FMULWC, "fmulwc", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
-  ADD_K1_BUILTIN (FMULCWC, "fmulcwc", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
   ADD_K1_BUILTIN (FMULWQ, "fmulwq", FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
+  ADD_K1_BUILTIN (FMULD, "fmuld", FLOAT64, FLOAT64, FLOAT64, STRING);
+  ADD_K1_BUILTIN (FMULDP, "fmuldp", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
+  ADD_K1_BUILTIN (FMULWD, "fmulwd", FLOAT64, FLOAT32, FLOAT32, STRING);
+  ADD_K1_BUILTIN (FMULWC, "fmulwc", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
   ADD_K1_BUILTIN (FMULWCP, "fmulwcp", FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
+  ADD_K1_BUILTIN (FMULCWC, "fmulcwc", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
   ADD_K1_BUILTIN (FMULCWCP, "fmulcwcp", FLOAT32X4, FLOAT32X4, FLOAT32X4,
 		  STRING);
-  ADD_K1_BUILTIN (FMULDP, "fmuldp", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
   ADD_K1_BUILTIN (FMULDC, "fmuldc", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
   ADD_K1_BUILTIN (FMULCDC, "fmulcdc", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
   ADD_K1_BUILTIN (FMM2WQ, "fmm2wq", FLOAT32X4, FLOAT32X2, FLOAT32X2, STRING);
   ADD_K1_BUILTIN (FFMAW, "ffmaw", FLOAT32, FLOAT32, FLOAT32, FLOAT32, STRING);
-  ADD_K1_BUILTIN (FFMAD, "ffmad", FLOAT64, FLOAT64, FLOAT64, FLOAT64, STRING);
-  ADD_K1_BUILTIN (FFMAWD, "ffmawd", FLOAT64, FLOAT32, FLOAT32, FLOAT64, STRING);
   ADD_K1_BUILTIN (FFMAWP, "ffmawp", FLOAT32X2, FLOAT32X2, FLOAT32X2, FLOAT32X2,
 		  STRING);
   ADD_K1_BUILTIN (FFMAWQ, "ffmawq", FLOAT32X4, FLOAT32X4, FLOAT32X4, FLOAT32X4,
 		  STRING);
+  ADD_K1_BUILTIN (FFMAD, "ffmad", FLOAT64, FLOAT64, FLOAT64, FLOAT64, STRING);
   ADD_K1_BUILTIN (FFMADP, "ffmadp", FLOAT64X2, FLOAT64X2, FLOAT64X2, FLOAT64X2,
 		  STRING);
+  ADD_K1_BUILTIN (FFMAWD, "ffmawd", FLOAT64, FLOAT32, FLOAT32, FLOAT64, STRING);
   ADD_K1_BUILTIN (FMM2AWQ, "fmm2awq", FLOAT32X4, FLOAT32X2, FLOAT32X2,
 		  FLOAT32X4, STRING);
   ADD_K1_BUILTIN (FFMSW, "ffmsw", FLOAT32, FLOAT32, FLOAT32, FLOAT32, STRING);
-  ADD_K1_BUILTIN (FFMSD, "ffmsd", FLOAT64, FLOAT64, FLOAT64, FLOAT64, STRING);
-  ADD_K1_BUILTIN (FFMSWD, "ffmswd", FLOAT64, FLOAT32, FLOAT32, FLOAT64, STRING);
   ADD_K1_BUILTIN (FFMSWP, "ffmswp", FLOAT32X2, FLOAT32X2, FLOAT32X2, FLOAT32X2,
 		  STRING);
   ADD_K1_BUILTIN (FFMSWQ, "ffmswq", FLOAT32X4, FLOAT32X4, FLOAT32X4, FLOAT32X4,
 		  STRING);
+  ADD_K1_BUILTIN (FFMSD, "ffmsd", FLOAT64, FLOAT64, FLOAT64, FLOAT64, STRING);
   ADD_K1_BUILTIN (FFMSDP, "ffmsdp", FLOAT64X2, FLOAT64X2, FLOAT64X2, FLOAT64X2,
 		  STRING);
+  ADD_K1_BUILTIN (FFMSWD, "ffmswd", FLOAT64, FLOAT32, FLOAT32, FLOAT64, STRING);
   ADD_K1_BUILTIN (FMM2SWQ, "fmm2swq", FLOAT32X4, FLOAT32X2, FLOAT32X2,
 		  FLOAT32X4, STRING);
   ADD_K1_BUILTIN (FLOATW, "floatw", FLOAT32, INT32, UINT8, STRING);
-  ADD_K1_BUILTIN (FLOATD, "floatd", FLOAT64, INT64, UINT8, STRING);
   ADD_K1_BUILTIN (FLOATWP, "floatwp", FLOAT32X2, INT32X2, UINT8, STRING);
   ADD_K1_BUILTIN (FLOATWQ, "floatwq", FLOAT32X4, INT32X4, UINT8, STRING);
+  ADD_K1_BUILTIN (FLOATD, "floatd", FLOAT64, INT64, UINT8, STRING);
   ADD_K1_BUILTIN (FLOATDP, "floatdp", FLOAT64X2, INT64X2, UINT8, STRING);
   ADD_K1_BUILTIN (FLOATUW, "floatuw", FLOAT32, UINT32, UINT8, STRING);
-  ADD_K1_BUILTIN (FLOATUD, "floatud", FLOAT64, UINT64, UINT8, STRING);
   ADD_K1_BUILTIN (FLOATUWP, "floatuwp", FLOAT32X2, UINT32X2, UINT8, STRING);
   ADD_K1_BUILTIN (FLOATUWQ, "floatuwq", FLOAT32X4, UINT32X4, UINT8, STRING);
+  ADD_K1_BUILTIN (FLOATUD, "floatud", FLOAT64, UINT64, UINT8, STRING);
   ADD_K1_BUILTIN (FLOATUDP, "floatudp", FLOAT64X2, UINT64X2, UINT8, STRING);
   ADD_K1_BUILTIN (FIXEDW, "fixedw", INT32, FLOAT32, UINT8, STRING);
-  ADD_K1_BUILTIN (FIXEDD, "fixedd", INT64, FLOAT64, UINT8, STRING);
   ADD_K1_BUILTIN (FIXEDWP, "fixedwp", INT32X2, FLOAT32X2, UINT8, STRING);
   ADD_K1_BUILTIN (FIXEDWQ, "fixedwq", INT32X4, FLOAT32X4, UINT8, STRING);
+  ADD_K1_BUILTIN (FIXEDD, "fixedd", INT64, FLOAT64, UINT8, STRING);
   ADD_K1_BUILTIN (FIXEDDP, "fixeddp", INT64X2, FLOAT64X2, UINT8, STRING);
   ADD_K1_BUILTIN (FIXEDUW, "fixeduw", UINT32, FLOAT32, UINT8, STRING);
-  ADD_K1_BUILTIN (FIXEDUD, "fixedud", UINT64, FLOAT64, UINT8, STRING);
   ADD_K1_BUILTIN (FIXEDUWP, "fixeduwp", UINT32X2, FLOAT32X2, UINT8, STRING);
   ADD_K1_BUILTIN (FIXEDUWQ, "fixeduwq", UINT32X4, FLOAT32X4, UINT8, STRING);
+  ADD_K1_BUILTIN (FIXEDUD, "fixedud", UINT64, FLOAT64, UINT8, STRING);
   ADD_K1_BUILTIN (FIXEDUDP, "fixedudp", UINT64X2, FLOAT64X2, UINT8, STRING);
 
   ADD_K1_BUILTIN (FCDIVW, "fcdivw", FLOAT32, FLOAT32, FLOAT32);
@@ -3302,13 +3302,13 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (WFXL, "wfxl", VOID, UINT8, UINT64);
   ADD_K1_BUILTIN (WFXM, "wfxm", VOID, UINT8, UINT64);
   ADD_K1_BUILTIN (IINVAL, "iinval", VOID);
-  ADD_K1_BUILTIN (IINVALS, "iinvals", VOID, constVoidPTR);
-  ADD_K1_BUILTIN (LBSU, "lbsu", INT8, constVoidPTR);
-  ADD_K1_BUILTIN (LBZU, "lbzu", UINT8, constVoidPTR);
-  ADD_K1_BUILTIN (LHSU, "lhsu", INT16, constVoidPTR);
-  ADD_K1_BUILTIN (LHZU, "lhzu", UINT16, constVoidPTR);
-  ADD_K1_BUILTIN (LDU, "ldu", UINT64, constVoidPTR);
-  ADD_K1_BUILTIN (LWZU, "lwzu", UINT32, constVoidPTR);
+  ADD_K1_BUILTIN (IINVALS, "iinvals", VOID, CVPTR);
+  ADD_K1_BUILTIN (LBSU, "lbsu", INT8, CVPTR);
+  ADD_K1_BUILTIN (LBZU, "lbzu", UINT8, CVPTR);
+  ADD_K1_BUILTIN (LHSU, "lhsu", INT16, CVPTR);
+  ADD_K1_BUILTIN (LHZU, "lhzu", UINT16, CVPTR);
+  ADD_K1_BUILTIN (LDU, "ldu", UINT64, CVPTR);
+  ADD_K1_BUILTIN (LWZU, "lwzu", UINT32, CVPTR);
   ADD_K1_BUILTIN (SBMM8, "sbmm8", UINT64, UINT64, UINT64);
   ADD_K1_BUILTIN (SBMMT8, "sbmmt8", UINT64, UINT64, UINT64);
   ADD_K1_BUILTIN (SATD, "satd", INT64, INT64, UINT8);
@@ -3329,7 +3329,6 @@ k1_target_init_builtins (void)
 
   ADD_K1_BUILTIN (FWIDENLHW, "fwidenlhw", FLOAT32, UINT32);
   ADD_K1_BUILTIN (FWIDENMHW, "fwidenmhw", FLOAT32, UINT32);
-
   ADD_K1_BUILTIN (FNARROWWH, "fnarrowwh", UINT16, FLOAT32);
   ADD_K1_BUILTIN (WAITIT, "waitit", UINT32, UINT32);
 }
@@ -3342,103 +3341,190 @@ k1_target_builtin_decl (unsigned code, bool initialize_p ATTRIBUTE_UNUSED)
   return builtin_fndecls[code];
 }
 
-static rtx
-k1_rounding_silent (tree arg, const char *mnemonic)
+static inline const char *
+tree_string_constant (tree arg)
 {
   tree offset_tree = 0;
   arg = string_constant (arg, &offset_tree);
-  const char *modifiers = arg ? TREE_STRING_POINTER (arg) : "";
+  return arg ? TREE_STRING_POINTER (arg) : "";
+}
+
+static rtx
+build_rounding_silent_arg (tree arg, const char *name)
+{
+  const char *modifier = tree_string_constant (arg);
   static const char *table[] = {
     ".rn",  ".rn.s",  ".ru",  ".ru.s",	".rd", ".rd.s", ".rz", ".rz.s",
     ".rna", ".rna.s", ".rnz", ".rnz.s", ".ro", ".ro.s", "",    ".s",
   };
-
-  for (unsigned int i = 0; i < sizeof (table) / sizeof (*table); i++)
+  for (int i = 0; i < sizeof (table) / sizeof (*table); i++)
     {
-      if (!strcmp (modifiers, table[i]))
+      if (!strcmp (modifier, table[i]))
 	return gen_rtx_CONST_STRING (VOIDmode, table[i]);
     }
-  error ("__builtin_k1_%s modifiers %s not recognized.", mnemonic, modifiers);
+  error ("__builtin_k1_%s modifier %s not recognized.", name, modifier);
   return 0;
 }
 
-static bool
-verify_const_bool_arg (rtx arg)
+static rtx
+build_bypass_speculate_arg (tree arg, const char *name)
 {
-  if (GET_CODE (arg) != CONST_INT || GET_MODE (arg) != VOIDmode)
-    return false;
-  unsigned long long tmp = INTVAL (arg);
-  return tmp == 0LL || tmp == 1LL;
-}
-
-static bool
-verify_const_uint_arg (rtx arg, int bits)
-{
-  if (GET_CODE (arg) != CONST_INT || GET_MODE (arg) != VOIDmode)
-    return false;
-  unsigned shift = 64 - bits;
-  long long tmp = INTVAL (arg);
-  unsigned long long utmp = tmp;
-  if (tmp == (utmp << shift) >> shift)
-    return true;
-  return false;
-}
-
-static bool
-verify_const_field_arg (rtx arg, int bits)
-{
-  if (GET_CODE (arg) != CONST_INT || GET_MODE (arg) != VOIDmode)
-    return false;
-  unsigned shift = 64 - bits;
-  long long tmp = INTVAL (arg);
-  signed long long stmp = tmp;
-  unsigned long long utmp = tmp;
-  if (tmp == (stmp << shift) >> shift)
-    return true;
-  if (tmp == (utmp << shift) >> shift)
-    return true;
-  return false;
-}
-
-static bool
-verify_const_int_arg (rtx arg, int bits, bool signed_p)
-{
-  if (GET_CODE (arg) != CONST_INT
-      && (GET_CODE (arg) != CONST_DOUBLE || GET_MODE (arg) != VOIDmode))
-    return false;
-
-  if (signed_p)
+  const char *modifier = tree_string_constant (arg);
+  static const char *table[] = {
+    ".u",
+    ".us",
+    "",
+    ".s",
+  };
+  for (int i = 0; i < sizeof (table) / sizeof (*table); i++)
     {
-      signed long long tmp
-	= CONST_INT_P (arg) ? INTVAL (arg) : CONST_DOUBLE_LOW (arg);
-      return tmp >= ~((1LL << (bits - 1)) - 1)
-	     && tmp <= ((1LL << (bits - 1)) - 1);
+      if (!strcmp (modifier, table[i]))
+	return gen_rtx_CONST_STRING (VOIDmode, table[i]);
     }
-  else
+  error ("__builtin_k1_%s modifier %s not recognized.", name, modifier);
+  return 0;
+}
+
+static rtx
+build_scatter_speculate_arg (tree arg, const char *name)
+{
+  const char *modifier = tree_string_constant (arg);
+  static const char *table[] = {
+    ".c0", ".c0.s", ".c1", ".c1.s", ".c2", ".c2.s", ".c3", ".c3.s", "", ".s",
+  };
+  for (int i = 0; i < sizeof (table) / sizeof (*table); i++)
     {
-      unsigned long long tmp
-	= (unsigned int) (CONST_INT_P (arg) ? INTVAL (arg)
-					    : CONST_DOUBLE_LOW (arg));
-      return tmp <= (1ULL << bits) - 1;
+      if (!strcmp (modifier, table[i]))
+	return gen_rtx_CONST_STRING (VOIDmode, table[i]);
     }
+  error ("__builtin_k1_%s modifier %s not recognized.", name, modifier);
+  return 0;
+}
+
+static rtx
+build_arf_reg_name_arg (rtx arg)
+{
+  if (GET_CODE (arg) == CONST_INT && GET_MODE (arg) == VOIDmode)
+    {
+      unsigned regno = INTVAL (arg);
+      if (regno < 64)
+	{
+	  static const char *arf_reg_names[] = {
+	    "a0",  "a1",  "a2",	 "a3",	"a4",  "a5",  "a6",  "a7",
+	    "a8",  "a9",  "a10", "a11", "a12", "a13", "a14", "a15",
+	    "a16", "a17", "a18", "a19", "a20", "a21", "a22", "a23",
+	    "a24", "a25", "a26", "a27", "a28", "a29", "a30", "a31",
+	    "a32", "a33", "a34", "a35", "a36", "a37", "a38", "a39",
+	    "a40", "a41", "a42", "a43", "a44", "a45", "a46", "a47",
+	    "a48", "a49", "a50", "a51", "a52", "a53", "a54", "a55",
+	    "a56", "a57", "a58", "a59", "a60", "a61", "a62", "a63",
+	  };
+	  return gen_rtx_CONST_STRING (VOIDmode, arf_reg_names[regno]);
+	}
+    }
+  return 0;
+}
+
+static rtx
+build_xrf_reg_name_arg (rtx arg)
+{
+  if (GET_CODE (arg) == CONST_INT && GET_MODE (arg) == VOIDmode)
+    {
+      unsigned regno = INTVAL (arg);
+      if (regno < 64)
+	{
+	  static const char *xrf_reg_names[] = {
+	    "a0a1a2a3",	    "NA", "NA", "NA", "a4a5a6a7",     "NA", "NA", "NA",
+	    "a8a9a10a11",   "NA", "NA", "NA", "a12a13a14a15", "NA", "NA", "NA",
+	    "a16a17a18a19", "NA", "NA", "NA", "a20a21a22a23", "NA", "NA", "NA",
+	    "a24a25a26a27", "NA", "NA", "NA", "a28a29a30a31", "NA", "NA", "NA",
+	    "a32a33a34a35", "NA", "NA", "NA", "a36a37a38a39", "NA", "NA", "NA",
+	    "a40a41a42a43", "NA", "NA", "NA", "a44a45a46a47", "NA", "NA", "NA",
+	    "a48a49a50a51", "NA", "NA", "NA", "a52a53a54a55", "NA", "NA", "NA",
+	    "a56a57a58a59", "NA", "NA", "NA", "a60a61a62a63", "NA", "NA", "NA",
+	  };
+	  return gen_rtx_CONST_STRING (VOIDmode, xrf_reg_names[regno]);
+	}
+    }
+  return 0;
+}
+
+static rtx
+verify_const_bool_arg (rtx arg, const char *name, const char *where)
+{
+  if (GET_CODE (arg) == CONST_INT && GET_MODE (arg) == VOIDmode)
+    {
+      unsigned long long tmp = INTVAL (arg);
+      if (tmp == 0LL || tmp == 1LL)
+	return arg;
+    }
+  error ("__builtin_k1_%s expects a boolean immediate in %s argument.", name,
+	 where);
+  return 0;
+}
+
+static rtx
+verify_const_int_arg (rtx arg, int bits, const char *name, const char *where)
+{
+  if (GET_CODE (arg) == CONST_INT && GET_MODE (arg) == VOIDmode)
+    {
+      unsigned shift = 64 - bits;
+      long long tmp = INTVAL (arg);
+      signed long long stmp = tmp;
+      if (tmp == (stmp << shift) >> shift)
+	return arg;
+    }
+  error ("__builtin_k1_%s expects a %d-bit signed immediate in %s argument.",
+	 name, bits, where);
+  return 0;
+}
+
+static rtx
+verify_const_uint_arg (rtx arg, int bits, const char *name, const char *where)
+{
+  if (GET_CODE (arg) == CONST_INT && GET_MODE (arg) == VOIDmode)
+    {
+      unsigned shift = 64 - bits;
+      long long tmp = INTVAL (arg);
+      unsigned long long utmp = tmp;
+      if (tmp == (utmp << shift) >> shift)
+	return arg;
+    }
+  error ("__builtin_k1_%s expects a %d-bit unsigned immediate in %s argument.",
+	 name, bits, where);
+  return 0;
+}
+
+static rtx
+verify_const_field_arg (rtx arg, int bits, const char *name, const char *where)
+{
+  if (GET_CODE (arg) == CONST_INT && GET_MODE (arg) == VOIDmode)
+    {
+      unsigned shift = 64 - bits;
+      long long tmp = INTVAL (arg);
+      signed long long stmp = tmp;
+      unsigned long long utmp = tmp;
+      if (tmp == (stmp << shift) >> shift)
+	return arg;
+      if (tmp == (utmp << shift) >> shift)
+	return arg;
+    }
+  error ("__builtin_k1_%s expects a %d-bit signed or unsigned immediate in %s "
+	 "argument.",
+	 name, bits, where);
+  return 0;
 }
 
 static rtx
 k1_expand_builtin_get (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  rtx reg;
+  arg1 = verify_const_uint_arg (arg1, 9, "get", "first");
 
-  if (!verify_const_int_arg (arg1, 9, false))
-    {
-      error ("__builtin_k1_get expects a 9-bit unsigned immediate argument.");
-      return NULL_RTX;
-    }
   const int regno = INTVAL (arg1) + K1C_SFR_FIRST_REGNO;
-
   if (regno > K1C_SFR_LAST_REGNO)
     {
-      error ("__builtin_k1_get called with illegal SFR register index %d",
+      error ("__builtin_k1_get called with illegal SFR register index : %d",
 	     INTVAL (arg1));
     }
 
@@ -3447,7 +3533,7 @@ k1_expand_builtin_get (rtx target, tree args)
   else
     target = force_reg (DImode, target);
 
-  reg = gen_rtx_REG (DImode, regno);
+  rtx reg = gen_rtx_REG (DImode, regno);
 
   if (INTVAL (arg1) == K1C_PCR_REGNO - K1C_SFR_FIRST_REGNO)
     emit_move_insn (target, reg);
@@ -3479,12 +3565,7 @@ k1_expand_builtin_set (rtx target ATTRIBUTE_UNUSED, tree args, bool ps)
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
 
-  if (!verify_const_int_arg (arg1, 9, false))
-    {
-      error (
-	"__builtin_k1_set expects a 9-bit unsigned immediate first argument.");
-      return NULL_RTX;
-    }
+  arg1 = verify_const_uint_arg (arg1, 9, "set", "first");
 
   if (ps && INTVAL (arg1) != K1C_PS_REGNO - K1C_SFR_FIRST_REGNO)
     {
@@ -3533,12 +3614,7 @@ k1_expand_builtin_wfxl (rtx target ATTRIBUTE_UNUSED, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-  if (!verify_const_int_arg (arg1, 9, false))
-    {
-      error (
-	"__builtin_k1_wfxl expects a 9-bit unsigned immediate first argument.");
-      return NULL_RTX;
-    }
+  arg1 = verify_const_uint_arg (arg1, 9, "wfxl", "first");
   int regno = INTVAL (arg1) + K1C_SFR_FIRST_REGNO;
   rtx arg = gen_rtx_REG (DImode, regno);
   arg2 = force_reg (DImode, arg2);
@@ -3558,12 +3634,7 @@ k1_expand_builtin_wfxm (rtx target ATTRIBUTE_UNUSED, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-  if (!verify_const_int_arg (arg1, 9, false))
-    {
-      error (
-	"__builtin_k1_wfxm expects a 9-bit unsigned immediate first argument.");
-      return NULL_RTX;
-    }
+  arg1 = verify_const_uint_arg (arg1, 9, "wfxm", "first");
   int regno = INTVAL (arg1) + K1C_SFR_FIRST_REGNO;
   rtx arg = gen_rtx_REG (DImode, regno);
   arg2 = force_reg (DImode, arg2);
@@ -3747,31 +3818,6 @@ k1_expand_builtin_satud (rtx target, tree args)
   emit_insn (gen_satud (target, arg1, arg2));
   return target;
 }
-
-/*
-  static rtx
-  k1_expand_builtin_scall (rtx target, tree args)
-  {
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  rtx arg;
-  int i;
-
-  if (!verify_const_int_arg (arg1, 12, false)) {
-  error ("__builtin_k1_scall expects a 12 bits immediate argument.");
-  return NULL_RTX;
-  }
-
-  for (i = 0; i < call_expr_nargs(args) - 1; ++i) {
-  arg = expand_normal (CALL_EXPR_ARG (args, i+1));
-  emit_move_insn (gen_rtx_REG (SImode, i), arg);
-  }
-
-  emit_call_insn (gen_scall (arg1));
-  if (target != NULL)
-  emit_move_insn (target, gen_rtx_REG (SImode, FIRST_ARG_REGNO));
-
-  return target;
-  } */
 
 static rtx
 k1_expand_builtin_addsw (rtx target, tree args)
@@ -4152,30 +4198,32 @@ k1_expand_builtin_alclr (rtx target, tree args, enum machine_mode mode)
   return target;
 }
 
-#define K1_EXPAND_BUILTIN_2_(name, tmode, smode)                               \
+#define K1_EXPAND_BUILTIN_2_STANDARD(name, name2, tmode, smode)                \
   static rtx k1_expand_builtin_##name (rtx target, tree args)                  \
   {                                                                            \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     arg1 = force_reg (smode, arg1);                                            \
     if (!target)                                                               \
       target = gen_reg_rtx (tmode);                                            \
-    emit_insn (gen_k1_##name (target, arg1));                                  \
+    else                                                                       \
+      target = force_reg (tmode, target);                                      \
+    emit_insn (gen_##name2 (target, arg1));                                    \
     return target;                                                             \
   }
 
-K1_EXPAND_BUILTIN_2_ (fabsw, SFmode, SFmode)
-K1_EXPAND_BUILTIN_2_ (fabsd, DFmode, DFmode)
-K1_EXPAND_BUILTIN_2_ (fabswp, V2SFmode, V2SFmode)
-K1_EXPAND_BUILTIN_2_ (fabswq, V4SFmode, V4SFmode)
-K1_EXPAND_BUILTIN_2_ (fabsdp, V2DFmode, V2DFmode)
+K1_EXPAND_BUILTIN_2_STANDARD (fabsw, abssf2, SFmode, SFmode)
+K1_EXPAND_BUILTIN_2_STANDARD (fabswp, absv2sf2, V2SFmode, V2SFmode)
+K1_EXPAND_BUILTIN_2_STANDARD (fabswq, absv4sf2, V4SFmode, V4SFmode)
+K1_EXPAND_BUILTIN_2_STANDARD (fabsd, absdf2, DFmode, DFmode)
+K1_EXPAND_BUILTIN_2_STANDARD (fabsdp, absv2df2, V2DFmode, V2DFmode)
 
-K1_EXPAND_BUILTIN_2_ (fnegw, SFmode, SFmode)
-K1_EXPAND_BUILTIN_2_ (fnegd, DFmode, DFmode)
-K1_EXPAND_BUILTIN_2_ (fnegwp, V2SFmode, V2SFmode)
-K1_EXPAND_BUILTIN_2_ (fnegwq, V4SFmode, V4SFmode)
-K1_EXPAND_BUILTIN_2_ (fnegdp, V2DFmode, V2DFmode)
+K1_EXPAND_BUILTIN_2_STANDARD (fnegw, negsf2, SFmode, SFmode)
+K1_EXPAND_BUILTIN_2_STANDARD (fnegwp, negv2sf2, V2SFmode, V2SFmode)
+K1_EXPAND_BUILTIN_2_STANDARD (fnegwq, negv4sf2, V4SFmode, V4SFmode)
+K1_EXPAND_BUILTIN_2_STANDARD (fnegd, negdf2, DFmode, DFmode)
+K1_EXPAND_BUILTIN_2_STANDARD (fnegdp, negv2df2, V2DFmode, V2DFmode)
 
-#define K1_EXPAND_BUILTIN_3_(name, tmode, smode)                               \
+#define K1_EXPAND_BUILTIN_3_STANDARD(name, name2, tmode, smode)                \
   static rtx k1_expand_builtin_##name (rtx target, tree args)                  \
   {                                                                            \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
@@ -4184,37 +4232,41 @@ K1_EXPAND_BUILTIN_2_ (fnegdp, V2DFmode, V2DFmode)
     arg2 = force_reg (smode, arg2);                                            \
     if (!target)                                                               \
       target = gen_reg_rtx (tmode);                                            \
-    emit_insn (gen_k1_##name (target, arg1, arg2));                            \
+    else                                                                       \
+      target = force_reg (tmode, target);                                      \
+    emit_insn (gen_##name2 (target, arg1, arg2));                              \
     return target;                                                             \
   }
 
-K1_EXPAND_BUILTIN_3_ (abdw, SImode, SImode)
-K1_EXPAND_BUILTIN_3_ (abdd, DImode, DImode)
-K1_EXPAND_BUILTIN_3_ (avgw, SImode, SImode)
-K1_EXPAND_BUILTIN_3_ (avguw, SImode, SImode)
-K1_EXPAND_BUILTIN_3_ (avgrw, SImode, SImode)
-K1_EXPAND_BUILTIN_3_ (avgruw, SImode, SImode)
+K1_EXPAND_BUILTIN_3_STANDARD (abdw, k1_abdw, SImode, SImode)
+K1_EXPAND_BUILTIN_3_STANDARD (abdd, k1_abdd, DImode, DImode)
+K1_EXPAND_BUILTIN_3_STANDARD (avgw, k1_avgw, SImode, SImode)
+K1_EXPAND_BUILTIN_3_STANDARD (avguw, k1_avguw, SImode, SImode)
+K1_EXPAND_BUILTIN_3_STANDARD (avgrw, k1_avgrw, SImode, SImode)
+K1_EXPAND_BUILTIN_3_STANDARD (avgruw, k1_avgruw, SImode, SImode)
 
-K1_EXPAND_BUILTIN_3_ (fmaxw, SFmode, SFmode)
-K1_EXPAND_BUILTIN_3_ (fmaxd, DFmode, DFmode)
-K1_EXPAND_BUILTIN_3_ (fmaxwp, V2SFmode, V2SFmode)
-K1_EXPAND_BUILTIN_3_ (fmaxwq, V4SFmode, V4SFmode)
-K1_EXPAND_BUILTIN_3_ (fmaxdp, V2DFmode, V2DFmode)
+K1_EXPAND_BUILTIN_3_STANDARD (fmaxw, fmaxsf3, SFmode, SFmode)
+K1_EXPAND_BUILTIN_3_STANDARD (fmaxwp, fmaxv2sf3, V2SFmode, V2SFmode)
+K1_EXPAND_BUILTIN_3_STANDARD (fmaxwq, fmaxv4sf3, V4SFmode, V4SFmode)
+K1_EXPAND_BUILTIN_3_STANDARD (fmaxd, fmaxdf3, DFmode, DFmode)
+K1_EXPAND_BUILTIN_3_STANDARD (fmaxdp, fmaxv2df3, V2DFmode, V2DFmode)
 
-K1_EXPAND_BUILTIN_3_ (fminw, SFmode, SFmode)
-K1_EXPAND_BUILTIN_3_ (fmind, DFmode, DFmode)
-K1_EXPAND_BUILTIN_3_ (fminwp, V2SFmode, V2SFmode)
-K1_EXPAND_BUILTIN_3_ (fminwq, V4SFmode, V4SFmode)
-K1_EXPAND_BUILTIN_3_ (fmindp, V2DFmode, V2DFmode)
+K1_EXPAND_BUILTIN_3_STANDARD (fminw, fminsf3, SFmode, SFmode)
+K1_EXPAND_BUILTIN_3_STANDARD (fminwp, fminv2sf3, V2SFmode, V2SFmode)
+K1_EXPAND_BUILTIN_3_STANDARD (fminwq, fminv4sf3, V4SFmode, V4SFmode)
+K1_EXPAND_BUILTIN_3_STANDARD (fmind, fmindf3, DFmode, DFmode)
+K1_EXPAND_BUILTIN_3_STANDARD (fmindp, fminv2df3, V2DFmode, V2DFmode)
 
 #define K1_EXPAND_BUILTIN_2_MODIFIERS(name, tmode, smode)                      \
   static rtx k1_expand_builtin_##name (rtx target, tree args)                  \
   {                                                                            \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
-    rtx arg2 = k1_rounding_silent (CALL_EXPR_ARG (args, 1), #name);            \
+    rtx arg2 = build_rounding_silent_arg (CALL_EXPR_ARG (args, 1), #name);     \
     arg1 = force_reg (smode, arg1);                                            \
     if (!target)                                                               \
       target = gen_reg_rtx (tmode);                                            \
+    else                                                                       \
+      target = force_reg (tmode, target);                                      \
     emit_insn (gen_k1_##name (target, arg1, arg2));                            \
     return target;                                                             \
   }
@@ -4227,43 +4279,45 @@ K1_EXPAND_BUILTIN_2_MODIFIERS (fisrw, SFmode, SFmode)
   {                                                                            \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
-    rtx arg3 = k1_rounding_silent (CALL_EXPR_ARG (args, 2), #name);            \
+    rtx arg3 = build_rounding_silent_arg (CALL_EXPR_ARG (args, 2), #name);     \
     arg1 = force_reg (smode, arg1);                                            \
     arg2 = force_reg (smode, arg2);                                            \
     if (!target)                                                               \
       target = gen_reg_rtx (tmode);                                            \
+    else                                                                       \
+      target = force_reg (tmode, target);                                      \
     emit_insn (gen_k1_##name (target, arg1, arg2, arg3));                      \
     return target;                                                             \
   }
 
 K1_EXPAND_BUILTIN_3_MODIFIERS (faddw, SFmode, SFmode)
-K1_EXPAND_BUILTIN_3_MODIFIERS (faddd, DFmode, DFmode)
 K1_EXPAND_BUILTIN_3_MODIFIERS (faddwp, V2SFmode, V2SFmode)
-K1_EXPAND_BUILTIN_3_MODIFIERS (faddcwc, V2SFmode, V2SFmode)
 K1_EXPAND_BUILTIN_3_MODIFIERS (faddwq, V4SFmode, V4SFmode)
-K1_EXPAND_BUILTIN_3_MODIFIERS (faddcwcp, V4SFmode, V4SFmode)
+K1_EXPAND_BUILTIN_3_MODIFIERS (faddd, DFmode, DFmode)
 K1_EXPAND_BUILTIN_3_MODIFIERS (fadddp, V2DFmode, V2DFmode)
+K1_EXPAND_BUILTIN_3_MODIFIERS (faddcwc, V2SFmode, V2SFmode)
+K1_EXPAND_BUILTIN_3_MODIFIERS (faddcwcp, V4SFmode, V4SFmode)
 K1_EXPAND_BUILTIN_3_MODIFIERS (faddcdc, V2DFmode, V2DFmode)
 
 K1_EXPAND_BUILTIN_3_MODIFIERS (fsbfw, SFmode, SFmode)
-K1_EXPAND_BUILTIN_3_MODIFIERS (fsbfd, DFmode, DFmode)
 K1_EXPAND_BUILTIN_3_MODIFIERS (fsbfwp, V2SFmode, V2SFmode)
-K1_EXPAND_BUILTIN_3_MODIFIERS (fsbfcwc, V2SFmode, V2SFmode)
 K1_EXPAND_BUILTIN_3_MODIFIERS (fsbfwq, V4SFmode, V4SFmode)
-K1_EXPAND_BUILTIN_3_MODIFIERS (fsbfcwcp, V4SFmode, V4SFmode)
+K1_EXPAND_BUILTIN_3_MODIFIERS (fsbfd, DFmode, DFmode)
 K1_EXPAND_BUILTIN_3_MODIFIERS (fsbfdp, V2DFmode, V2DFmode)
+K1_EXPAND_BUILTIN_3_MODIFIERS (fsbfcwc, V2SFmode, V2SFmode)
+K1_EXPAND_BUILTIN_3_MODIFIERS (fsbfcwcp, V4SFmode, V4SFmode)
 K1_EXPAND_BUILTIN_3_MODIFIERS (fsbfcdc, V2DFmode, V2DFmode)
 
 K1_EXPAND_BUILTIN_3_MODIFIERS (fmulw, SFmode, SFmode)
-K1_EXPAND_BUILTIN_3_MODIFIERS (fmuld, DFmode, DFmode)
-K1_EXPAND_BUILTIN_3_MODIFIERS (fmulwd, DFmode, SFmode)
 K1_EXPAND_BUILTIN_3_MODIFIERS (fmulwp, V2SFmode, V2SFmode)
-K1_EXPAND_BUILTIN_3_MODIFIERS (fmulwc, V2SFmode, V2SFmode)
-K1_EXPAND_BUILTIN_3_MODIFIERS (fmulcwc, V2SFmode, V2SFmode)
 K1_EXPAND_BUILTIN_3_MODIFIERS (fmulwq, V4SFmode, V4SFmode)
-K1_EXPAND_BUILTIN_3_MODIFIERS (fmulwcp, V4SFmode, V4SFmode)
-K1_EXPAND_BUILTIN_3_MODIFIERS (fmulcwcp, V4SFmode, V4SFmode)
+K1_EXPAND_BUILTIN_3_MODIFIERS (fmuld, DFmode, DFmode)
 K1_EXPAND_BUILTIN_3_MODIFIERS (fmuldp, V2DFmode, V2DFmode)
+K1_EXPAND_BUILTIN_3_MODIFIERS (fmulwd, DFmode, SFmode)
+K1_EXPAND_BUILTIN_3_MODIFIERS (fmulwc, V2SFmode, V2SFmode)
+K1_EXPAND_BUILTIN_3_MODIFIERS (fmulwcp, V4SFmode, V4SFmode)
+K1_EXPAND_BUILTIN_3_MODIFIERS (fmulcwc, V2SFmode, V2SFmode)
+K1_EXPAND_BUILTIN_3_MODIFIERS (fmulcwcp, V4SFmode, V4SFmode)
 K1_EXPAND_BUILTIN_3_MODIFIERS (fmuldc, V2DFmode, V2DFmode)
 K1_EXPAND_BUILTIN_3_MODIFIERS (fmulcdc, V2DFmode, V2DFmode)
 K1_EXPAND_BUILTIN_3_MODIFIERS (fmm2wq, V4SFmode, V2SFmode)
@@ -4274,30 +4328,32 @@ K1_EXPAND_BUILTIN_3_MODIFIERS (fmm2wq, V4SFmode, V2SFmode)
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
     rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));                        \
-    rtx arg4 = k1_rounding_silent (CALL_EXPR_ARG (args, 3), #name);            \
+    rtx arg4 = build_rounding_silent_arg (CALL_EXPR_ARG (args, 3), #name);     \
     arg1 = force_reg (smode, arg1);                                            \
     arg2 = force_reg (smode, arg2);                                            \
     arg3 = force_reg (tmode, arg3);                                            \
     if (!target)                                                               \
       target = gen_reg_rtx (tmode);                                            \
+    else                                                                       \
+      target = force_reg (tmode, target);                                      \
     emit_insn (gen_k1_##name (target, arg1, arg2, arg3, arg4));                \
     return target;                                                             \
   }
 
 K1_EXPAND_BUILTIN_4_MODIFIERS (ffmaw, SFmode, SFmode)
-K1_EXPAND_BUILTIN_4_MODIFIERS (ffmad, DFmode, DFmode)
-K1_EXPAND_BUILTIN_4_MODIFIERS (ffmawd, SFmode, DFmode)
 K1_EXPAND_BUILTIN_4_MODIFIERS (ffmawp, V2SFmode, V2SFmode)
 K1_EXPAND_BUILTIN_4_MODIFIERS (ffmawq, V4SFmode, V4SFmode)
+K1_EXPAND_BUILTIN_4_MODIFIERS (ffmad, DFmode, DFmode)
 K1_EXPAND_BUILTIN_4_MODIFIERS (ffmadp, V2DFmode, V2DFmode)
+K1_EXPAND_BUILTIN_4_MODIFIERS (ffmawd, SFmode, DFmode)
 K1_EXPAND_BUILTIN_4_MODIFIERS (fmm2awq, V4SFmode, V2SFmode)
 
 K1_EXPAND_BUILTIN_4_MODIFIERS (ffmsw, SFmode, SFmode)
-K1_EXPAND_BUILTIN_4_MODIFIERS (ffmsd, DFmode, DFmode)
-K1_EXPAND_BUILTIN_4_MODIFIERS (ffmswd, SFmode, DFmode)
 K1_EXPAND_BUILTIN_4_MODIFIERS (ffmswp, V2SFmode, V2SFmode)
 K1_EXPAND_BUILTIN_4_MODIFIERS (ffmswq, V4SFmode, V4SFmode)
+K1_EXPAND_BUILTIN_4_MODIFIERS (ffmsd, DFmode, DFmode)
 K1_EXPAND_BUILTIN_4_MODIFIERS (ffmsdp, V2DFmode, V2DFmode)
+K1_EXPAND_BUILTIN_4_MODIFIERS (ffmswd, SFmode, DFmode)
 K1_EXPAND_BUILTIN_4_MODIFIERS (fmm2swq, V4SFmode, V2SFmode)
 
 #define K1_EXPAND_BUILTIN_FCONVERT(name, tmode, smode)                         \
@@ -4305,39 +4361,36 @@ K1_EXPAND_BUILTIN_4_MODIFIERS (fmm2swq, V4SFmode, V2SFmode)
   {                                                                            \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
-    rtx arg3 = k1_rounding_silent (CALL_EXPR_ARG (args, 2), #name);            \
-    if (!verify_const_uint_arg (arg2, 6))                                      \
-      {                                                                        \
-	error ("__builtin_k1_" #name                                           \
-	       " expects a 6-bit unsigned immediate second argument.");        \
-	return NULL_RTX;                                                       \
-      }                                                                        \
+    rtx arg3 = build_rounding_silent_arg (CALL_EXPR_ARG (args, 2), #name);     \
+    arg2 = verify_const_uint_arg (arg2, 6, #name, "second");                   \
     if (!target)                                                               \
       target = gen_reg_rtx (tmode);                                            \
+    else                                                                       \
+      target = force_reg (tmode, target);                                      \
     arg1 = force_reg (smode, arg1);                                            \
     emit_insn (gen_k1_##name (target, arg1, arg2, arg3));                      \
     return target;                                                             \
   }
 
 K1_EXPAND_BUILTIN_FCONVERT (floatw, SFmode, SImode)
-K1_EXPAND_BUILTIN_FCONVERT (floatd, DFmode, DImode)
 K1_EXPAND_BUILTIN_FCONVERT (floatwp, V2SFmode, V2SImode)
 K1_EXPAND_BUILTIN_FCONVERT (floatwq, V4SFmode, V4SImode)
+K1_EXPAND_BUILTIN_FCONVERT (floatd, DFmode, DImode)
 K1_EXPAND_BUILTIN_FCONVERT (floatdp, V2DFmode, V2DImode)
 K1_EXPAND_BUILTIN_FCONVERT (floatuw, SFmode, SImode)
-K1_EXPAND_BUILTIN_FCONVERT (floatud, DFmode, DImode)
 K1_EXPAND_BUILTIN_FCONVERT (floatuwp, V2SFmode, V2SImode)
 K1_EXPAND_BUILTIN_FCONVERT (floatuwq, V4SFmode, V4SImode)
+K1_EXPAND_BUILTIN_FCONVERT (floatud, DFmode, DImode)
 K1_EXPAND_BUILTIN_FCONVERT (floatudp, V2DFmode, V2DImode)
 K1_EXPAND_BUILTIN_FCONVERT (fixedw, SImode, SFmode)
-K1_EXPAND_BUILTIN_FCONVERT (fixedd, DImode, DFmode)
 K1_EXPAND_BUILTIN_FCONVERT (fixedwp, V2SImode, V2SFmode)
 K1_EXPAND_BUILTIN_FCONVERT (fixedwq, V4SImode, V4SFmode)
+K1_EXPAND_BUILTIN_FCONVERT (fixedd, DImode, DFmode)
 K1_EXPAND_BUILTIN_FCONVERT (fixeddp, V2DImode, V2DFmode)
 K1_EXPAND_BUILTIN_FCONVERT (fixeduw, SImode, SFmode)
-K1_EXPAND_BUILTIN_FCONVERT (fixedud, DImode, DFmode)
 K1_EXPAND_BUILTIN_FCONVERT (fixeduwp, V2SImode, V2SFmode)
 K1_EXPAND_BUILTIN_FCONVERT (fixeduwq, V4SImode, V4SFmode)
+K1_EXPAND_BUILTIN_FCONVERT (fixedud, DImode, DFmode)
 K1_EXPAND_BUILTIN_FCONVERT (fixedudp, V2DImode, V2DFmode)
 
 static rtx
@@ -4608,25 +4661,14 @@ k1_expand_builtin_extfz (rtx target, tree args)
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
   rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
 
-  if (!verify_const_int_arg (arg2, 6, false))
-    {
-      error ("__builtin_k1_extfz expects a 6-bit unsigned immediate second "
-	     "argument.");
-      return NULL_RTX;
-    }
-
-  if (!verify_const_int_arg (arg3, 6, false))
-    {
-      error ("__builtin_k1_extfz expects a 6-bit unsigned immediate third "
-	     "argument.");
-      return NULL_RTX;
-    }
+  arg2 = verify_const_uint_arg (arg2, 6, "extfz", "second");
+  arg3 = verify_const_uint_arg (arg3, 6, "extfz", "third");
 
   if (!target)
     target = gen_reg_rtx (SImode);
-  target = force_reg (SImode, target);
+  else
+    target = force_reg (SImode, target);
   arg1 = force_reg (SImode, arg1);
-
   arg2 = gen_rtx_CONST_INT (SImode, INTVAL (arg2) - INTVAL (arg3) + 1);
 
   emit_insn (gen_extzv (target, arg1, arg2, arg3));
@@ -4687,27 +4729,6 @@ k1_expand_builtin_fwiden (rtx target, tree args, int low_bits)
   return target;
 }
 
-/* FIXME AUTO: disabling vector support */
-/* static rtx */
-/* k1_expand_builtin_fwiden_wp (rtx target, tree args, int low_bits) */
-/* { */
-/*   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
-
-/*   arg1 = force_reg (DImode, arg1); */
-
-/*   if (!target) */
-/*     target = gen_reg_rtx (V2SFmode); */
-/*   if (!REG_P(target) || GET_MODE (target) != V2SFmode) { */
-/*     target = force_reg (V2SFmode, target); */
-/*   } */
-/*   if(low_bits) */
-/*     emit_insn (gen_builtin_extendv2hfv2sf2 (target, arg1)); */
-/*   else */
-/*     emit_insn (gen_builtin_extendv2hfv2sf2_tophalf (target, arg1)); */
-
-/*   return target; */
-/* } */
-
 static rtx
 k1_expand_builtin_fnarrowwh (rtx target, tree args)
 {
@@ -4725,24 +4746,6 @@ k1_expand_builtin_fnarrowwh (rtx target, tree args)
 
   return target;
 }
-
-/* FIXME AUTO: disabling vector support */
-/* static rtx */
-/* k1_expand_builtin_fnarrowdwp (rtx target, tree args) */
-/* { */
-/*   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
-
-/*   arg1 = force_reg (V2SFmode, arg1); */
-
-/*   if (!target) */
-/*     target = gen_reg_rtx (V2SImode); */
-/*   if (!REG_P(target) || GET_MODE (target) != V2SImode) { */
-/*     target = force_reg (HImode, target); */
-/*   } */
-/*   emit_insn (gen_builtin_truncv2sf_2hf2(target, arg1)); */
-
-/*   return target; */
-/* } */
 
 static rtx
 k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
@@ -4817,42 +4820,42 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
 
     case K1_BUILTIN_FABSW:
       return k1_expand_builtin_fabsw (target, exp);
-    case K1_BUILTIN_FABSD:
-      return k1_expand_builtin_fabsd (target, exp);
     case K1_BUILTIN_FABSWP:
       return k1_expand_builtin_fabswp (target, exp);
     case K1_BUILTIN_FABSWQ:
       return k1_expand_builtin_fabswq (target, exp);
+    case K1_BUILTIN_FABSD:
+      return k1_expand_builtin_fabsd (target, exp);
     case K1_BUILTIN_FABSDP:
       return k1_expand_builtin_fabsdp (target, exp);
     case K1_BUILTIN_FNEGW:
       return k1_expand_builtin_fnegw (target, exp);
-    case K1_BUILTIN_FNEGD:
-      return k1_expand_builtin_fnegd (target, exp);
     case K1_BUILTIN_FNEGWP:
       return k1_expand_builtin_fnegwp (target, exp);
     case K1_BUILTIN_FNEGWQ:
       return k1_expand_builtin_fnegwq (target, exp);
+    case K1_BUILTIN_FNEGD:
+      return k1_expand_builtin_fnegd (target, exp);
     case K1_BUILTIN_FNEGDP:
       return k1_expand_builtin_fnegdp (target, exp);
     case K1_BUILTIN_FMAXW:
       return k1_expand_builtin_fmaxw (target, exp);
-    case K1_BUILTIN_FMAXD:
-      return k1_expand_builtin_fmaxd (target, exp);
     case K1_BUILTIN_FMAXWP:
       return k1_expand_builtin_fmaxwp (target, exp);
     case K1_BUILTIN_FMAXWQ:
       return k1_expand_builtin_fmaxwq (target, exp);
+    case K1_BUILTIN_FMAXD:
+      return k1_expand_builtin_fmaxd (target, exp);
     case K1_BUILTIN_FMAXDP:
       return k1_expand_builtin_fmaxdp (target, exp);
     case K1_BUILTIN_FMINW:
       return k1_expand_builtin_fminw (target, exp);
-    case K1_BUILTIN_FMIND:
-      return k1_expand_builtin_fmind (target, exp);
     case K1_BUILTIN_FMINWP:
       return k1_expand_builtin_fminwp (target, exp);
     case K1_BUILTIN_FMINWQ:
       return k1_expand_builtin_fminwq (target, exp);
+    case K1_BUILTIN_FMIND:
+      return k1_expand_builtin_fmind (target, exp);
     case K1_BUILTIN_FMINDP:
       return k1_expand_builtin_fmindp (target, exp);
     case K1_BUILTIN_FINVW:
@@ -4861,56 +4864,56 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_fisrw (target, exp);
     case K1_BUILTIN_FADDW:
       return k1_expand_builtin_faddw (target, exp);
-    case K1_BUILTIN_FADDD:
-      return k1_expand_builtin_faddd (target, exp);
     case K1_BUILTIN_FADDWP:
       return k1_expand_builtin_faddwp (target, exp);
-    case K1_BUILTIN_FADDCWC:
-      return k1_expand_builtin_faddcwc (target, exp);
     case K1_BUILTIN_FADDWQ:
       return k1_expand_builtin_faddwq (target, exp);
-    case K1_BUILTIN_FADDCWCP:
-      return k1_expand_builtin_faddcwcp (target, exp);
+    case K1_BUILTIN_FADDD:
+      return k1_expand_builtin_faddd (target, exp);
     case K1_BUILTIN_FADDDP:
       return k1_expand_builtin_fadddp (target, exp);
+    case K1_BUILTIN_FADDCWC:
+      return k1_expand_builtin_faddcwc (target, exp);
+    case K1_BUILTIN_FADDCWCP:
+      return k1_expand_builtin_faddcwcp (target, exp);
     case K1_BUILTIN_FADDCDC:
       return k1_expand_builtin_faddcdc (target, exp);
     case K1_BUILTIN_FSBFW:
       return k1_expand_builtin_fsbfw (target, exp);
-    case K1_BUILTIN_FSBFD:
-      return k1_expand_builtin_fsbfd (target, exp);
     case K1_BUILTIN_FSBFWP:
       return k1_expand_builtin_fsbfwp (target, exp);
-    case K1_BUILTIN_FSBFCWC:
-      return k1_expand_builtin_fsbfcwc (target, exp);
     case K1_BUILTIN_FSBFWQ:
       return k1_expand_builtin_fsbfwq (target, exp);
-    case K1_BUILTIN_FSBFCWCP:
-      return k1_expand_builtin_fsbfcwcp (target, exp);
+    case K1_BUILTIN_FSBFD:
+      return k1_expand_builtin_fsbfd (target, exp);
     case K1_BUILTIN_FSBFDP:
       return k1_expand_builtin_fsbfdp (target, exp);
+    case K1_BUILTIN_FSBFCWC:
+      return k1_expand_builtin_fsbfcwc (target, exp);
+    case K1_BUILTIN_FSBFCWCP:
+      return k1_expand_builtin_fsbfcwcp (target, exp);
     case K1_BUILTIN_FSBFCDC:
       return k1_expand_builtin_fsbfcdc (target, exp);
     case K1_BUILTIN_FMULW:
       return k1_expand_builtin_fmulw (target, exp);
-    case K1_BUILTIN_FMULD:
-      return k1_expand_builtin_fmuld (target, exp);
-    case K1_BUILTIN_FMULWD:
-      return k1_expand_builtin_fmulwd (target, exp);
     case K1_BUILTIN_FMULWP:
       return k1_expand_builtin_fmulwp (target, exp);
-    case K1_BUILTIN_FMULWC:
-      return k1_expand_builtin_fmulwc (target, exp);
-    case K1_BUILTIN_FMULCWC:
-      return k1_expand_builtin_fmulcwc (target, exp);
     case K1_BUILTIN_FMULWQ:
       return k1_expand_builtin_fmulwq (target, exp);
-    case K1_BUILTIN_FMULWCP:
-      return k1_expand_builtin_fmulwcp (target, exp);
-    case K1_BUILTIN_FMULCWCP:
-      return k1_expand_builtin_fmulcwcp (target, exp);
+    case K1_BUILTIN_FMULD:
+      return k1_expand_builtin_fmuld (target, exp);
     case K1_BUILTIN_FMULDP:
       return k1_expand_builtin_fmuldp (target, exp);
+    case K1_BUILTIN_FMULWD:
+      return k1_expand_builtin_fmulwd (target, exp);
+    case K1_BUILTIN_FMULWC:
+      return k1_expand_builtin_fmulwc (target, exp);
+    case K1_BUILTIN_FMULWCP:
+      return k1_expand_builtin_fmulwcp (target, exp);
+    case K1_BUILTIN_FMULCWC:
+      return k1_expand_builtin_fmulcwc (target, exp);
+    case K1_BUILTIN_FMULCWCP:
+      return k1_expand_builtin_fmulcwcp (target, exp);
     case K1_BUILTIN_FMULDC:
       return k1_expand_builtin_fmuldc (target, exp);
     case K1_BUILTIN_FMULCDC:
@@ -4919,70 +4922,70 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_fmm2wq (target, exp);
     case K1_BUILTIN_FFMAW:
       return k1_expand_builtin_ffmaw (target, exp);
-    case K1_BUILTIN_FFMAD:
-      return k1_expand_builtin_ffmad (target, exp);
-    case K1_BUILTIN_FFMAWD:
-      return k1_expand_builtin_ffmawd (target, exp);
     case K1_BUILTIN_FFMAWP:
       return k1_expand_builtin_ffmawp (target, exp);
     case K1_BUILTIN_FFMAWQ:
       return k1_expand_builtin_ffmawq (target, exp);
+    case K1_BUILTIN_FFMAD:
+      return k1_expand_builtin_ffmad (target, exp);
     case K1_BUILTIN_FFMADP:
       return k1_expand_builtin_ffmadp (target, exp);
+    case K1_BUILTIN_FFMAWD:
+      return k1_expand_builtin_ffmawd (target, exp);
     case K1_BUILTIN_FMM2AWQ:
       return k1_expand_builtin_fmm2awq (target, exp);
     case K1_BUILTIN_FFMSW:
       return k1_expand_builtin_ffmsw (target, exp);
-    case K1_BUILTIN_FFMSD:
-      return k1_expand_builtin_ffmsd (target, exp);
-    case K1_BUILTIN_FFMSWD:
-      return k1_expand_builtin_ffmswd (target, exp);
     case K1_BUILTIN_FFMSWP:
       return k1_expand_builtin_ffmswp (target, exp);
     case K1_BUILTIN_FFMSWQ:
       return k1_expand_builtin_ffmswq (target, exp);
+    case K1_BUILTIN_FFMSD:
+      return k1_expand_builtin_ffmsd (target, exp);
     case K1_BUILTIN_FFMSDP:
       return k1_expand_builtin_ffmsdp (target, exp);
+    case K1_BUILTIN_FFMSWD:
+      return k1_expand_builtin_ffmswd (target, exp);
     case K1_BUILTIN_FMM2SWQ:
       return k1_expand_builtin_fmm2swq (target, exp);
     case K1_BUILTIN_FLOATW:
       return k1_expand_builtin_floatw (target, exp);
-    case K1_BUILTIN_FLOATD:
-      return k1_expand_builtin_floatd (target, exp);
     case K1_BUILTIN_FLOATWP:
       return k1_expand_builtin_floatwp (target, exp);
     case K1_BUILTIN_FLOATWQ:
       return k1_expand_builtin_floatwq (target, exp);
+    case K1_BUILTIN_FLOATD:
+      return k1_expand_builtin_floatd (target, exp);
     case K1_BUILTIN_FLOATDP:
       return k1_expand_builtin_floatdp (target, exp);
     case K1_BUILTIN_FLOATUW:
       return k1_expand_builtin_floatuw (target, exp);
-    case K1_BUILTIN_FLOATUD:
-      return k1_expand_builtin_floatud (target, exp);
     case K1_BUILTIN_FLOATUWP:
       return k1_expand_builtin_floatuwp (target, exp);
     case K1_BUILTIN_FLOATUWQ:
       return k1_expand_builtin_floatuwq (target, exp);
+    case K1_BUILTIN_FLOATUD:
+      return k1_expand_builtin_floatud (target, exp);
     case K1_BUILTIN_FLOATUDP:
       return k1_expand_builtin_floatudp (target, exp);
     case K1_BUILTIN_FIXEDW:
       return k1_expand_builtin_fixedw (target, exp);
-    case K1_BUILTIN_FIXEDD:
-      return k1_expand_builtin_fixedd (target, exp);
     case K1_BUILTIN_FIXEDWP:
       return k1_expand_builtin_fixedwp (target, exp);
     case K1_BUILTIN_FIXEDWQ:
       return k1_expand_builtin_fixedwq (target, exp);
+    case K1_BUILTIN_FIXEDD:
+      return k1_expand_builtin_fixedd (target, exp);
     case K1_BUILTIN_FIXEDDP:
       return k1_expand_builtin_fixeddp (target, exp);
     case K1_BUILTIN_FIXEDUW:
       return k1_expand_builtin_fixeduw (target, exp);
-    case K1_BUILTIN_FIXEDUD:
-      return k1_expand_builtin_fixedud (target, exp);
     case K1_BUILTIN_FIXEDUWP:
       return k1_expand_builtin_fixeduwp (target, exp);
     case K1_BUILTIN_FIXEDUWQ:
       return k1_expand_builtin_fixeduwq (target, exp);
+    case K1_BUILTIN_FIXEDUD:
+      return k1_expand_builtin_fixedud (target, exp);
     case K1_BUILTIN_FIXEDUDP:
       return k1_expand_builtin_fixedudp (target, exp);
 
@@ -5198,7 +5201,22 @@ k1_const_vector_value (rtx x, int slice)
       machine_mode mode = GET_MODE (x);
       machine_mode inner_mode = GET_MODE_INNER (mode);
       int index = slice * (8 / GET_MODE_SIZE (inner_mode));
-      if (inner_mode == HImode)
+      if (inner_mode == QImode)
+	{
+	  HOST_WIDE_INT val_0 = INTVAL (CONST_VECTOR_ELT (x, index + 0));
+	  HOST_WIDE_INT val_1 = INTVAL (CONST_VECTOR_ELT (x, index + 1));
+	  HOST_WIDE_INT val_2 = INTVAL (CONST_VECTOR_ELT (x, index + 2));
+	  HOST_WIDE_INT val_3 = INTVAL (CONST_VECTOR_ELT (x, index + 3));
+	  HOST_WIDE_INT val_4 = INTVAL (CONST_VECTOR_ELT (x, index + 4));
+	  HOST_WIDE_INT val_5 = INTVAL (CONST_VECTOR_ELT (x, index + 5));
+	  HOST_WIDE_INT val_6 = INTVAL (CONST_VECTOR_ELT (x, index + 6));
+	  HOST_WIDE_INT val_7 = INTVAL (CONST_VECTOR_ELT (x, index + 7));
+	  value = (val_0 & 0xFF) | (val_1 & 0xFF) << 8 | (val_2 & 0xFF) << 16
+		  | (val_3 & 0xFF) << 24 | (val_4 & 0xFF) << 32
+		  | (val_5 & 0xFF) << 40 | (val_6 & 0xFF) << 48
+		  | (val_7 & 0xFF) << 56;
+	}
+      else if (inner_mode == HImode)
 	{
 	  HOST_WIDE_INT val_0 = INTVAL (CONST_VECTOR_ELT (x, index + 0));
 	  HOST_WIDE_INT val_1 = INTVAL (CONST_VECTOR_ELT (x, index + 1));
@@ -6675,23 +6693,6 @@ k1_reorg (void)
 
   df_finish_pass (false);
 }
-
-/* FIXME AUTO: disabling vector support */
-/* static enum machine_mode */
-/* k1_units_preffered_simd_mode (enum machine_mode mode) */
-/* { */
-/*     switch (mode) { */
-/*     case SImode: */
-/*         return V2SImode; */
-/*     case HImode: */
-/*         return V4HImode; */
-/*     case SFmode: */
-/*         return V8SFmode; */
-/*     default:; */
-/*     } */
-
-/*     return SImode; */
-/* } */
 
 static bool
 k1_handle_fixed_reg_option (const char *arg)
