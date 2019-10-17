@@ -849,6 +849,8 @@ extern void k1_profile_hook (void);
     comp;                                                                      \
   })
 
+#define SHIFT_COUNT_TRUNCATED 1
+
 #define STACK_CHECK_BUILTIN 1
 
 /* Address spaces
