@@ -1947,7 +1947,7 @@ k1_expand_prologue (void)
       insn = emit_insn (gen_add2_insn (stack_pointer_rtx, GEN_INT (-size)));
       RTX_FRAME_RELATED_P (insn) = 1;
 
-      add_reg_note (insn, REG_CFA_ADJUST_CFA, PATTERN (insn));
+      add_reg_note (insn, REG_CFA_ADJUST_CFA, copy_rtx (PATTERN (insn)));
     }
 
   /* Save registers */
@@ -2003,7 +2003,7 @@ k1_expand_epilogue (void)
       insn = GEN_INT (frame_size);
       insn = emit_insn (gen_add2_insn (stack_pointer_rtx, insn));
       RTX_FRAME_RELATED_P (insn) = 1;
-      add_reg_note (insn, REG_CFA_ADJUST_CFA, PATTERN (insn));
+      add_reg_note (insn, REG_CFA_ADJUST_CFA, copy_rtx (PATTERN (insn)));
     }
 }
 
@@ -5884,7 +5884,7 @@ k1_fix_debug_for_bundles (void)
 	  bundle_start = (binsn == i->insn);
 	  bundle_end = (binsn == i->last_insn);
 
-	  if (RTX_FRAME_RELATED_P (binsn))
+	  if (INSN_P (binsn) && RTX_FRAME_RELATED_P (binsn))
 	    {
 	      rtx note;
 	      bool handled = false;
@@ -5944,23 +5944,27 @@ k1_fix_debug_for_bundles (void)
 	  bundle_start = (binsn == i->insn);
 	  bundle_end = (binsn == i->last_insn);
 
-	  if (RTX_FRAME_RELATED_P (binsn))
+	  if (INSN_P (binsn) && RTX_FRAME_RELATED_P (binsn))
 	    {
 	      rtx note;
 
 	      for (note = REG_NOTES (binsn); note; note = XEXP (note, 1))
 		{
-		  rtx pat = XEXP (note, 0);
+
 		  switch (REG_NOTE_KIND (note))
 		    {
-		    case REG_CFA_DEF_CFA:
-		      /* (PLUS ( CFA_REG, OFFSET)) */
-		      gcc_assert (GET_CODE (pat) == PLUS);
-		      cur_cfa_reg = REGNO (XEXP (pat, 0));
-		      break;
+		      case REG_CFA_DEF_CFA: {
+			rtx pat = XEXP (note, 0);
 
+			/* (PLUS ( CFA_REG, OFFSET)) */
+			gcc_assert (GET_CODE (pat) == PLUS);
+			cur_cfa_reg = REGNO (XEXP (pat, 0));
+			break;
+		      }
 		      /* We only need to fixup register spill */
 		      case REG_CFA_OFFSET: {
+			rtx pat = XEXP (note, 0);
+
 			gcc_assert (GET_CODE (pat) == SET);
 
 			rtx mem_dest = SET_DEST (pat);
