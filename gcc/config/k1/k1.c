@@ -2488,8 +2488,9 @@ k1_target_register_move_cost (enum machine_mode mode,
     return 5;
   else if (GET_MODE_SIZE (mode) == 2 * UNITS_PER_WORD)
     return 10;
-  else
-    return INT_MAX;
+
+  /* The maximum value possible */
+  return 65534;
 }
 
 /* Expander for vector cmove with the pattern:
