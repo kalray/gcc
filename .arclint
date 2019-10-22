@@ -1,0 +1,13 @@
+{
+  "linters": {
+        "clang-format": {
+            "type": "clang-format",
+            "bin": "/work/common/tools/creduce-llvm/root/bin/clang-format",
+            "flags": ["-style=file"],
+            "include": [
+                "(\\.(c|h)$)",
+                "(\\.(cpp|hpp)$)"
+                ]
+        }
+  }
+}
