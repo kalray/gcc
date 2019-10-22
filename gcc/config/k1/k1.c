@@ -6641,12 +6641,6 @@ k1_sched_can_speculate_insn (rtx_insn *insn)
     }
 }
 
-static bool
-k1_lra_p (void)
-{
-  return !TARGET_RELOAD;
-}
-
 bool
 k1_float_fits_bits (const REAL_VALUE_TYPE *r, unsigned bitsz,
 		    enum machine_mode mode)
@@ -6699,9 +6693,6 @@ void k1_profile_hook (void)
 
 #undef TARGET_CLASS_MAX_NREGS
 #define TARGET_CLASS_MAX_NREGS k1_class_max_nregs
-
-#undef TARGET_LRA_P
-#define TARGET_LRA_P k1_lra_p
 
 #undef TARGET_OPTION_OVERRIDE
 #define TARGET_OPTION_OVERRIDE k1_option_override

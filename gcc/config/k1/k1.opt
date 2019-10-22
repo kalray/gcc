@@ -16,10 +16,6 @@ Known K1 architecture types (for use with the -march option):
 EnumValue
 Enum(k1_arch_type) String(k1c) Value(K1_ARCH_C)
 
-mreload
-Target RejectNegative Report Mask(RELOAD)
-Use the deprecated reload pass to fixup the register allocation
-
 mfarcall
 Target Report Var(K1_FARCALL)
 Avoid all range limits on call instructions
