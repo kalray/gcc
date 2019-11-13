@@ -128,9 +128,6 @@
       (match_test "k1_legitimate_pic_symbolic_ref_p(op)"))
 )
 
-(define_predicate "k1_imm_float_operand"
-   (match_code "const_double"))
-
 ;; Operand valid as the 3rd op of an MAU insn (mul*, …)
 (define_predicate "k1_mau_op3_operand"
  (ior (and (match_test "!flag_pic")
@@ -232,12 +229,6 @@
                 && (INTVAL (op) >= 0 && INTVAL (op) < (1<<6));
 })
 
-/*
- * (define_predicate "immediate_float_43bits_operand"
- *  (and (match_code "const_double")
- *       (match_test "k1_float_fits_bits(CONST_DOUBLE_REAL_VALUE(op),43,mode)")))
- */
-
 (define_predicate "reg_or_s32_operand"
  ( ior (match_operand 0 "register_operand")
        (and (match_code "const_int")
@@ -288,43 +279,6 @@
   (match_code "reg")
 {
   return (REGNO_REG_CLASS (REGNO (op)) == SFR_REGS);
-})
-
-;; Return true if VALUE can be stored in the zero extended 32bits immediate field.
-(define_predicate "k1_unsigned32_immediate_operand"
-  (match_code "const_double,const_int,symbol_ref,label_ref")
-{
-  switch (GET_CODE (op))
-    {
-    case CONST_DOUBLE:
-      if (HOST_BITS_PER_WIDE_INT == 32)
-	return (GET_MODE (op) == VOIDmode && !CONST_DOUBLE_HIGH (op));
-      else
-	return false;
-
-    case CONST_INT:
-      if (HOST_BITS_PER_WIDE_INT == 32)
-	return INTVAL (op) >= 0;
-      else{
-	return !(INTVAL (op) & ~(HOST_WIDE_INT) 0xffffffff);
-      }
-
-    case SYMBOL_REF:
-      /* For certain code models, the symbolic references are known to fit.  */
-      /* TLS symbols are not constant.  */
-      if (SYMBOL_REF_TLS_MODEL (op))
-	return false;
-      return (TARGET_32);
-
-    case LABEL_REF:
-      /* For certain code models, the code is near as well.  */
-      /* return ix86_cmodel == CM_SMALL || ix86_cmodel == CM_MEDIUM; */
-      return (TARGET_32);
-
-    default:
-      gcc_unreachable ();
-    }
-  return false;
 })
 
 (define_predicate "store_multiple_operation"

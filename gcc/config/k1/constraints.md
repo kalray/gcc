@@ -58,12 +58,6 @@
   (and (match_code "const_int")
        (match_test "(ival >= 0 && ival <= 511) || (__builtin_clz (~ival) >= 23)")))
 
-(define_constraint "G37"
-  "An unsigned constant expressible as a signed 37."
-  (and (match_code "const_double")
-       (match_test "(hval >= 0 && hval <= 7) || (__builtin_clz (~hval) >= 29)")))
-
-
 (define_constraint "H16"
   "A real value that fits on 16bits"
   (and (match_code "const_double")
