@@ -1313,8 +1313,8 @@ k1_target_print_operand (FILE *file, rtx x, int code)
 	fprintf (file, "0x%x%08x", (unsigned int) l[1], (unsigned int) l[0]);
 	return;
       }
-    output_addr_const (file, operand);
-    return;
+      gcc_unreachable ();
+      return;
 
   case CONST_INT:
     fprintf (file, HOST_WIDE_INT_PRINT_DEC, INTVAL (x));
@@ -5786,14 +5786,6 @@ static int k1_rtx_operand_cost (rtx *x, void *arg) {
                 && INTVAL (XEXP(*x, 1)) > 0) {
                 cost->total += COSTS_N_INSNS (1);
                 break;
-            } else if (GET_CODE (XEXP(*x, 1)) == CONST_DOUBLE
-                       && GET_MODE (XEXP(*x, 1)) == VOIDmode) {
-                rtx op = XEXP(*x, 1);
-                long long div = CONST_INT_P(op) ? INTVAL(op)
-                    : ((long long)CONST_DOUBLE_HIGH(op) << 32
-                       | CONST_DOUBLE_LOW (op));
-                if (div > 0 && __builtin_popcount (div) == 1)
-                    break;
             }
             /* Fall through */
         case UDIV:
