@@ -849,6 +849,8 @@ extern void k1_profile_hook (void);
     comp;                                                                      \
   })
 
+#define TARGET_SUPPORTS_WIDE_INT 1
+
 #define SHIFT_COUNT_TRUNCATED 1
 
 #define STACK_CHECK_BUILTIN 1
