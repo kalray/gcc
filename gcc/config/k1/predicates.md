@@ -99,8 +99,16 @@
 
 ;; Immediate suitable for PIC code (insn must have corresponding
 ;; relocation)
-(define_predicate "k1_imm_pic_operand"
-  (ior (match_code "const_int")
+;; These predicates are used with some widening 32->64 MAU insn.
+;; Symbols are rejected here as they would only fit in 32bits mode.
+(define_predicate "k1_imm_z32_pic_operand"
+  (ior (and (match_code "const_int")
+            (match_test "IN_RANGE (INTVAL (op), 0, (1LL << 32)-1)"))
+       (match_test "k1_legitimate_pic_symbolic_ref_p(op)")))
+
+(define_predicate "k1_imm_s32_pic_operand"
+  (ior (and (match_code "const_int")
+            (match_test "IN_RANGE (INTVAL (op),  -(1LL<<31), (1LL<<31)-1)"))
        (match_test "k1_legitimate_pic_symbolic_ref_p(op)")))
 
 ;; Operand valid as the 2nd/2 op of an ALU insn (make, …)
@@ -271,18 +279,6 @@
   return ((reload_in_progress || reload_completed)
 	  ? general_operand : register_operand) (op, mode);
 })
-
-;; (define_predicate "reg_or_unsigned_mul_immediate_37"
-;;  (ior (match_operand 0 "register_operand")
-;;       (match_test "satisfies_constraint_J10(op)")
-;;       (match_test "satisfies_constraint_U37(op)")))
-
-(define_predicate "uimmediate_operand"
-  (and (match_code "const_int")
-       (match_test "INTVAL (op) >= 0")))
-
-(define_predicate "u32immediate_operand"
-  (match_test "satisfies_constraint_U32(op)"))
 
 (define_predicate "register_or_u32immediate"
   (ior (match_operand 0 "register_operand")
