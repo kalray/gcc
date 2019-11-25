@@ -151,3 +151,13 @@
   (minus "sub")
   (and "and")
   (mult "nand")])
+
+;; Iterator for the 64-bit vector modes
+(define_mode_iterator SIMD64 [V4HI V2SI V2SF])
+
+;; Iterator for the 128-bit vector modes
+(define_mode_iterator SIMD128 [V8HI V4SI V2DI V4SF V2DF])
+
+;; Iterator for the 256-bit vector modes
+(define_mode_iterator SIMD256 [V4DI])
+
