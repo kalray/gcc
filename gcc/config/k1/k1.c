@@ -540,8 +540,8 @@ static bool symbolic_reference_mentioned_p (rtx op);
 
 static bool k1_output_addr_const_extra (FILE *, rtx);
 
-static bool k1_target_legitimate_address_p (enum machine_mode ATTRIBUTE_UNUSED mode,
-					    rtx x, bool strict);
+static bool k1_target_legitimate_address_p (enum machine_mode mode, rtx x,
+					    bool strict);
 
 bool k1_legitimate_pic_symbolic_ref_p (rtx op);
 
@@ -553,17 +553,6 @@ static const struct attribute_spec k1_attribute_table[] = {
     { "no_save_regs", 0, 0, true,  false, false, k1_handle_fndecl_attribute, false },
     { "farcall",      0, 0, true, false, false, k1_handle_fndecl_attribute, false},
     { NULL,           0, 0, false, false, false, NULL, false }
-};
-
-enum addressing_mode { ADDR_INVALID, ADDR_OFFSET, ADDR_MULT, ADDR_MOD };
-
-struct k1_address {
-    enum addressing_mode mode;
-    rtx offset;
-    rtx base_reg;
-    rtx offset_reg;
-    int mult;
-    int mod;
 };
 
 /* Returns 0 if there is no TLS ref, != 0 if there is.
@@ -628,112 +617,85 @@ k1_has_unspec_reference (rtx x)
 static bool
 k1_legitimate_address_register_p (rtx reg, bool strict)
 {
-    return (REG_P (reg)
-            && IS_GENERAL_REGNO (REGNO (reg), strict)
-	    && GET_MODE(reg) == Pmode);
-    // FIXME AUTO: subreg in MEM
-        /* || (GET_CODE (reg) == SUBREG */
-        /*     && GET_MODE (reg) == Pmode */
-        /*     && REG_P (SUBREG_REG (reg)) */
-        /*     && IS_GENERAL_REGNO (REGNO (SUBREG_REG (reg)), strict)); */
+  return (REG_P (reg) && IS_GENERAL_REGNO (REGNO (reg), strict)
+	  && GET_MODE (reg) == Pmode);
 }
 
 static bool
 k1_legitimate_address_offset_register_p (rtx reg, bool strict)
 {
-    return (REG_P (reg)
-            && IS_GENERAL_REGNO (REGNO (reg), strict)
-	    // AUTO FIXME: was DImode instead of Pmode here. Correct ?
-	    && GET_MODE(reg) == Pmode);
+  machine_mode mode = GET_MODE (reg);
+
+  if (GET_CODE (reg) == SUBREG)
+    reg = SUBREG_REG (reg);
+
+  return (REG_P (reg) && IS_GENERAL_REGNO (REGNO (reg), strict)
+	  && mode == Pmode);
 }
 
 /**
  * Legitimate address :
- * - (plus (reg) (constant)) : {ADDR_OFFSET, offset:constant, base:reg}
- * - (reg) : {ADDR_OFFSET, offset:0, base:reg}
- * - (plus (reg1) (reg2)) : {ADDR_MULT, offset:reg1, base:reg2, mult:1}
- * - (plus (reg1)
+ * - (reg)
+ * - (plus (reg) (constant))
+ * - (plus (reg) (reg))
+ * - (plus (mult (reg) (constant)) (reg))
  */
 static bool
-k1_analyze_address (rtx x, bool strict, struct k1_address *addr)
+k1_target_legitimate_address_p (machine_mode mode, rtx x, bool strict)
 {
-    addr->mode = ADDR_INVALID;
 
-    /*
-     * ld reg = @got[reg]
-     * ld reg = @gotoff[reg]
-     */
-    const bool is_got_ref
-      = (GET_CODE (x) == PLUS
-	 && (GET_CODE (XEXP (x, 1)) == UNSPEC
-	     && (XINT (XEXP (x, 1), 1) == UNSPEC_GOT
-		 || XINT (XEXP (x, 1), 1) == UNSPEC_GOTOFF))
-	 && k1_legitimate_address_register_p (XEXP (x, 0), strict));
+  /*
+   * ld reg = 0[reg]
+   */
+  if (k1_legitimate_address_register_p (x, strict))
+    return true;
 
-    /*
-     * ld reg = const[reg]
-     * ld reg = symbol[reg]
-     * ld reg = @pcrel(symbol)[reg]
-     */
-    const bool is_imm_offset_ref
-      = ((!current_pass || current_pass->tv_id != TV_CPROP)
-	 && GET_CODE (x) == PLUS
-	 && k1_legitimate_address_register_p (XEXP (x, 0), strict)
-	 && ((CONSTANT_P (XEXP (x, 1))
-	      && k1_legitimate_constant_p (VOIDmode, XEXP (x, 1)))
-	     || GET_CODE (XEXP (x, 1)) == CONST_INT)
-	 && immediate_operand (XEXP (x, 1), DImode));
-    if (is_got_ref || is_imm_offset_ref)
-      {
+  /*
+   * ld reg = @got[reg]
+   * ld reg = @gotoff[reg]
+   */
+  if (GET_CODE (x) == PLUS
+      && k1_legitimate_address_register_p (XEXP (x, 0), strict)
+      && (GET_CODE (XEXP (x, 1)) == UNSPEC
+	  && (XINT (XEXP (x, 1), 1) == UNSPEC_GOT
+	      || XINT (XEXP (x, 1), 1) == UNSPEC_GOTOFF)))
+    return true;
 
-	addr->mode = ADDR_OFFSET;
-        addr->offset = XEXP (x, 1);
-        addr->base_reg = XEXP (x, 0);
+  /*
+   * ld reg = const[reg]
+   * ld reg = symbol[reg]
+   * ld reg = @pcrel(symbol)[reg]
+   */
+  if (GET_CODE (x) == PLUS
+      && k1_legitimate_address_register_p (XEXP (x, 0), strict)
+      && ((CONSTANT_P (XEXP (x, 1))
+	   && k1_legitimate_constant_p (VOIDmode, XEXP (x, 1)))
+	  || GET_CODE (XEXP (x, 1)) == CONST_INT)
+      && immediate_operand (XEXP (x, 1), DImode)
+      && (!current_pass || current_pass->tv_id != TV_CPROP))
+    return true;
 
-	return true;
-      }
-    else if (k1_legitimate_address_register_p (x, strict))
-      {
-        addr->mode = ADDR_OFFSET;
-        addr->offset = const0_rtx;
-        addr->base_reg = x;
-        return true;
-      }
-    else if (GET_CODE (x) == PLUS
-               && k1_legitimate_address_register_p (XEXP (x, 0), strict)
-               && k1_legitimate_address_offset_register_p (XEXP (x, 1), strict)) {
-        addr->mode = ADDR_MULT;
-        addr->mult = 1;
-        addr->base_reg = XEXP (x, 0);
-        addr->offset_reg = XEXP (x, 1);
-        return true;
-    }
+  /*
+   * ld reg = reg[reg]
+   */
+  if (GET_CODE (x) == PLUS
+      && k1_legitimate_address_register_p (XEXP (x, 0), strict)
+      && k1_legitimate_address_offset_register_p (XEXP (x, 1), strict))
+    return true;
 
-    /* FIXME AUTO: disable .xs scaling as it is broken in MDS */
-    /* else if (GET_CODE (x) == PLUS */
-    /*            && k1_legitimate_address_register_p (XEXP (x, 1), strict) */
-    /*            && ((GET_CODE (XEXP (x, 0)) == MULT */
-    /*                 && GET_CODE (XEXP (XEXP (x, 0), 1)) == CONST_INT */
-    /*                 && (INTVAL (XEXP (XEXP (x, 0), 1)) == 1 */
-    /*                     || INTVAL (XEXP (XEXP (x, 0), 1)) == 2 */
-    /*                     || INTVAL (XEXP (XEXP (x, 0), 1)) == 4 */
-    /*                     || INTVAL (XEXP (XEXP (x, 0), 1)) == 8)) */
-    /*                || (GET_CODE (XEXP (x, 0)) == ASHIFT */
-    /*                    && GET_CODE (XEXP (XEXP (x, 0), 1)) == CONST_INT */
-    /*                    && (INTVAL (XEXP (XEXP (x, 0), 1)) == 0 */
-    /*                        || INTVAL (XEXP (XEXP (x, 0), 1)) == 1 */
-    /*                        || INTVAL (XEXP (XEXP (x, 0), 1)) == 2 */
-    /*                        || INTVAL (XEXP (XEXP (x, 0), 1)) == 3))) */
-    /*            && k1_legitimate_address_offset_register_p (XEXP (XEXP (x, 0), 0), strict)) { */
-    /*     addr->mode = ADDR_MULT; */
-    /*     addr->base_reg = XEXP (x, 1); */
-    /*     addr->offset_reg = XEXP (XEXP (x, 0), 0); */
-    /*     addr->mult = INTVAL (XEXP (XEXP (x, 0), 1)); */
-    /*     if (GET_CODE (XEXP (x, 0)) == ASHIFT) */
-    /*         addr->mult = 1 << addr->mult; */
-    /* } */
+  /*
+   * ld.xs reg = reg[reg]
+   */
+  if (GET_CODE (x) == PLUS
+      && k1_legitimate_address_register_p (XEXP (x, 1), strict)
+      && GET_CODE (XEXP (x, 0)) == MULT
+      && GET_CODE (XEXP (XEXP (x, 0), 1)) == CONST_INT
+      && (INTVAL (XEXP (XEXP (x, 0), 1)) == GET_MODE_SIZE (mode))
+      && k1_legitimate_address_offset_register_p (XEXP (XEXP (x, 0), 0), strict))
+    // The .xs addressing mode applies to object sizes 2, 4, 8, 16, 32.
+    return GET_MODE_SIZE (mode) > 1 && GET_MODE_SIZE (mode) <= 32;
 
-    return false;
+  return false;
 }
 
 static void
@@ -1045,19 +1007,21 @@ k1_target_fixed_point_supported_p (void)
 static bool
 k1_target_vector_mode_supported_p (enum machine_mode mode ATTRIBUTE_UNUSED)
 {
-  switch (mode) {
-  case V4HImode:
-  case V8HImode:
-  case V2SImode:
-  case V4SImode:
-  case V2DImode:
-  case V4DImode:
-  case V2SFmode:
-  case V4SFmode:
-  case V2DFmode:
-    return true;
-  default: break;
-  }
+  switch (mode)
+    {
+    case V4HImode:
+    case V8HImode:
+    case V2SImode:
+    case V4SImode:
+    case V2DImode:
+    case V4DImode:
+    case V2SFmode:
+    case V4SFmode:
+    case V2DFmode:
+      return true;
+    default:
+      break;
+    }
   return false;
 }
 
@@ -1116,7 +1080,7 @@ k1_target_secondary_reload (bool in_p ATTRIBUTE_UNUSED,
   return NO_REGS;
 }
 
-static char *k1_unspec_tls_asm_op[]
+static const char *k1_unspec_tls_asm_op[]
   = {"@tlsgd", "@tlsld", "@tlsle", "@dtpoff", "@tlsie"};
 
 void
@@ -1134,351 +1098,341 @@ k1_target_print_operand (FILE *file, rtx x, int code)
   bool is_float = false;
   int addr_space = 0;
 
-  switch (code) {
-  case 0:
-    /* No code, print as usual.  */
-    break;
+  switch (code)
+    {
+    case 0:
+      /* No code, print as usual.  */
+      break;
 
-  case 'a':
-    as_address = true;
-    break;
+    case 'a':
+      as_address = true;
+      break;
 
-  case 'o':
-    select_qreg = true;
-    break;
+    case 'o':
+      select_qreg = true;
+      break;
 
-  case 'q':
-    select_preg = true;
-    break;
+    case 'q':
+      select_preg = true;
+      break;
 
-  case 't':
-    select_treg = true;
-    break;
+    case 't':
+      select_treg = true;
+      break;
 
-  case 'z':
-    select_zreg = true;
-    break;
+    case 'z':
+      select_zreg = true;
+      break;
 
-  case 'y':
-    select_yreg = true;
-    break;
+    case 'y':
+      select_yreg = true;
+      break;
 
-  case 'x':
-    select_xreg = true;
-    break;
+    case 'x':
+      select_xreg = true;
+      break;
 
-  case 'f':
-    is_float = true;
-    break;
+    case 'f':
+      is_float = true;
+      break;
 
-  case 'T':
-    fprintf (file, "@pcrel(");
-    output_addr_const (file, operand);
-    fprintf (file, ")");
-    return;
-
-  case 'm':
-    addressing_mode = true;
-    break;
-
-  case 'C':     /* Print an additional '.u' or '.us' in the case of uncached load */
-    addr_space = k1_is_uncached_mem_op_p (x);
-    if (addr_space == K1_ADDR_SPACE_BYPASS)
-      fprintf(file, ".u");
-    if (addr_space == K1_ADDR_SPACE_PRELOAD)
-      fprintf(file, ".us");
-    return;
-
-  default:
-    gcc_unreachable ();
-  }
-
-  if ((as_address || addressing_mode)
-      && GET_CODE (x) != MEM) {
-    x = gen_rtx_MEM (Pmode, x);
-    operand = x;
-  }
-
-  if (COMPARISON_P (x)) {
-    if (! is_float) {
-      fprintf (file, "%s", GET_RTX_NAME (GET_CODE (x)));
-    } else {
-      const char *name;
-
-      switch (GET_CODE (x)) {
-      case NE: name = "une"; break;
-      case EQ: name = "oeq"; break;
-      case GE: name = "oge"; break;
-      case LT: name = "olt"; break;
-      case UNEQ: name = "ueq"; break;
-      case UNGE: name = "uge"; break;
-      case UNLT: name = "ult"; break;
-      case LTGT: name = "one"; break;
-      default:
-	gcc_unreachable ();
-      }
-      fprintf (file, "%s", name);
-    }
-    return;
-  }
-
-  switch (GET_CODE (operand)) {
-  case REG:
-    if (REGNO (operand) >= FIRST_PSEUDO_REGISTER)
-      error ("internal error: bad register: %d", REGNO (operand));
-    if (system_register_operand(operand, VOIDmode))
-      gcc_assert(GET_MODE_SIZE (GET_MODE (x)) <= UNITS_PER_WORD);
-    if (select_qreg)
-      {
-	fprintf (file, "$%s", qrf_reg_names[REGNO (operand)]);
-      }
-    else if (select_preg)
-      {
-	fprintf (file, "$%s", prf_reg_names[REGNO (operand)]);
-      }
-    else if (select_treg)
-      {
-	if (GET_MODE_SIZE (GET_MODE (x)) < UNITS_PER_WORD * 4)
-	  error ("using %%t format with operand smaller than 4 registers");
-	fprintf (file, "$%s", reg_names[REGNO (operand) + 3]);
-      }
-    else if (select_zreg)
-      {
-	if (GET_MODE_SIZE (GET_MODE (x)) < UNITS_PER_WORD * 4)
-	  error ("using %%z format with operand smaller than 4 registers");
-	fprintf (file, "$%s", reg_names[REGNO (operand) + 2]);
-      }
-    else if (select_yreg)
-      {
-	if (GET_MODE_SIZE (GET_MODE (x)) < UNITS_PER_WORD * 2)
-	  error ("using %%y format with operand smaller than 2 registers");
-	fprintf (file, "$%s", reg_names[REGNO (operand) + 1]);
-      }
-    else if (select_xreg)
-      {
-	if (GET_MODE_SIZE (GET_MODE (x)) < UNITS_PER_WORD * 2)
-	  error ("using %%x format with operand smaller than 2 registers");
-	fprintf (file, "$%s", reg_names[REGNO (operand)]);
-      }
-    else if (GET_MODE_SIZE (GET_MODE (x)) == UNITS_PER_WORD * 4)
-      {
-	fprintf (file, "$%s", qrf_reg_names[REGNO (operand)]);
-      }
-    else if (GET_MODE_SIZE (GET_MODE (x)) == UNITS_PER_WORD * 2)
-      {
-	fprintf (file, "$%s", prf_reg_names[REGNO (operand)]);
-      }
-    else
-      fprintf (file, "$%s", reg_names[REGNO (operand)]);
-    return;
-
-  case MEM:
-    if (addressing_mode) {
-      x = XEXP (x, 0);
-      if (   GET_CODE (x) == PLUS && GET_CODE (XEXP (x, 0)) == MULT
-	     && INTVAL (XEXP (XEXP (x, 0), 1)) > HOST_WIDE_INT_1) {
-	fprintf (file, ".xs");
-      } else
-	if (   GET_CODE (x) == PLUS && GET_CODE (XEXP (x, 0)) == ASHIFT
-	       && INTVAL (XEXP (XEXP (x, 0), 1)) > (HOST_WIDE_INT)0) {
-	  fprintf (file, ".xs");
-	} else if (GET_CODE (x) == PLUS && REG_P (XEXP (x, 1))) {
-	  /* fprintf (file, ".x1"); */
-	}
-    } else {
-      x = XEXP (x, 0);
-      if (GET_CODE (x) == UNSPEC)
-	k1_target_print_operand (file, x, 0);
-      else
-	output_address (GET_MODE (XEXP (operand, 0)), XEXP (operand, 0));
-    }
-    return;
-
-  case CONST_DOUBLE:
-    if (GET_MODE (x) == SFmode) {
-      REAL_VALUE_TYPE r;
-      long l;
-      r = *CONST_DOUBLE_REAL_VALUE (operand);
-      REAL_VALUE_TO_TARGET_SINGLE (r, l);
-      fprintf (file, "0x%x", (unsigned int)l);
+    case 'T':
+      fprintf (file, "@pcrel(");
+      output_addr_const (file, operand);
+      fprintf (file, ")");
       return;
-      }
-    else if (GET_MODE (x) == DFmode)
-      {
-	/* this is a double that should fit on less than 64bits */
-	REAL_VALUE_TYPE r;
-	long l[2];
-	r = *CONST_DOUBLE_REAL_VALUE (operand);
-	REAL_VALUE_TO_TARGET_DOUBLE (r, l);
-	fprintf (file, "0x%x%08x", (unsigned int) l[1], (unsigned int) l[0]);
-	return;
-      }
+
+    case 'm':
+      addressing_mode = true;
+      break;
+
+    case 'C': /* Print an additional '.u' or '.us' in the case of uncached load
+	       */
+      addr_space = k1_is_uncached_mem_op_p (x);
+      if (addr_space == K1_ADDR_SPACE_BYPASS)
+	fprintf (file, ".u");
+      if (addr_space == K1_ADDR_SPACE_PRELOAD)
+	fprintf (file, ".us");
+      return;
+
+    default:
+      gcc_unreachable ();
+    }
+
+  if ((as_address || addressing_mode) && GET_CODE (x) != MEM)
+    {
+      x = gen_rtx_MEM (Pmode, x);
+      operand = x;
+    }
+
+  if (COMPARISON_P (x))
+    {
+      if (!is_float)
+	{
+	  fprintf (file, "%s", GET_RTX_NAME (GET_CODE (x)));
+	}
+      else
+	{
+	  const char *name;
+	  switch (GET_CODE (x))
+	    {
+	    case NE:
+	      name = "une";
+	      break;
+	    case EQ:
+	      name = "oeq";
+	      break;
+	    case GE:
+	      name = "oge";
+	      break;
+	    case LT:
+	      name = "olt";
+	      break;
+	    case UNEQ:
+	      name = "ueq";
+	      break;
+	    case UNGE:
+	      name = "uge";
+	      break;
+	    case UNLT:
+	      name = "ult";
+	      break;
+	    case LTGT:
+	      name = "one";
+	      break;
+	    default:
+	      gcc_unreachable ();
+	    }
+	  fprintf (file, "%s", name);
+	}
+      return;
+    }
+
+  switch (GET_CODE (operand))
+    {
+    case REG:
+      if (REGNO (operand) >= FIRST_PSEUDO_REGISTER)
+	error ("internal error: bad register: %d", REGNO (operand));
+      if (system_register_operand (operand, VOIDmode))
+	gcc_assert (GET_MODE_SIZE (GET_MODE (x)) <= UNITS_PER_WORD);
+      if (select_qreg)
+	{
+	  fprintf (file, "$%s", qrf_reg_names[REGNO (operand)]);
+	}
+      else if (select_preg)
+	{
+	  fprintf (file, "$%s", prf_reg_names[REGNO (operand)]);
+	}
+      else if (select_treg)
+	{
+	  if (GET_MODE_SIZE (GET_MODE (x)) < UNITS_PER_WORD * 4)
+	    error ("using %%t format with operand smaller than 4 registers");
+	  fprintf (file, "$%s", reg_names[REGNO (operand) + 3]);
+	}
+      else if (select_zreg)
+	{
+	  if (GET_MODE_SIZE (GET_MODE (x)) < UNITS_PER_WORD * 4)
+	    error ("using %%z format with operand smaller than 4 registers");
+	  fprintf (file, "$%s", reg_names[REGNO (operand) + 2]);
+	}
+      else if (select_yreg)
+	{
+	  if (GET_MODE_SIZE (GET_MODE (x)) < UNITS_PER_WORD * 2)
+	    error ("using %%y format with operand smaller than 2 registers");
+	  fprintf (file, "$%s", reg_names[REGNO (operand) + 1]);
+	}
+      else if (select_xreg)
+	{
+	  if (GET_MODE_SIZE (GET_MODE (x)) < UNITS_PER_WORD * 2)
+	    error ("using %%x format with operand smaller than 2 registers");
+	  fprintf (file, "$%s", reg_names[REGNO (operand)]);
+	}
+      else if (GET_MODE_SIZE (GET_MODE (x)) == UNITS_PER_WORD * 4)
+	{
+	  fprintf (file, "$%s", qrf_reg_names[REGNO (operand)]);
+	}
+      else if (GET_MODE_SIZE (GET_MODE (x)) == UNITS_PER_WORD * 2)
+	{
+	  fprintf (file, "$%s", prf_reg_names[REGNO (operand)]);
+	}
+      else
+	fprintf (file, "$%s", reg_names[REGNO (operand)]);
+      return;
+
+    case MEM:
+      if (addressing_mode)
+	{
+	  x = XEXP (x, 0);
+	  if (GET_CODE (x) == PLUS && GET_CODE (XEXP (x, 0)) == MULT
+	      && GET_CODE (XEXP (XEXP (x, 0), 1)) == CONST_INT
+	      && INTVAL (XEXP (XEXP (x, 0), 1)) > HOST_WIDE_INT_1)
+	    fprintf (file, ".xs");
+	}
+      else
+	{
+	  x = XEXP (x, 0);
+	  if (GET_CODE (x) == UNSPEC)
+	    k1_target_print_operand (file, x, 0);
+	  else
+	    output_address (GET_MODE (XEXP (operand, 0)), XEXP (operand, 0));
+	}
+      return;
+
+    case CONST_DOUBLE:
+      if (GET_MODE (x) == SFmode)
+	{
+	  REAL_VALUE_TYPE r;
+	  long l;
+	  r = *CONST_DOUBLE_REAL_VALUE (operand);
+	  REAL_VALUE_TO_TARGET_SINGLE (r, l);
+	  fprintf (file, "0x%x", (unsigned int) l);
+	  return;
+	}
+      else if (GET_MODE (x) == DFmode)
+	{
+	  /* this is a double that should fit on less than 64bits */
+	  REAL_VALUE_TYPE r;
+	  long l[2];
+	  r = *CONST_DOUBLE_REAL_VALUE (operand);
+	  REAL_VALUE_TO_TARGET_DOUBLE (r, l);
+	  fprintf (file, "0x%x%08x", (unsigned int) l[1], (unsigned int) l[0]);
+	  return;
+	}
       gcc_unreachable ();
       return;
 
-  case CONST_INT:
-    fprintf (file, HOST_WIDE_INT_PRINT_DEC, INTVAL (x));
-    return;
+    case CONST_INT:
+      fprintf (file, HOST_WIDE_INT_PRINT_DEC, INTVAL (x));
+      return;
 
-  case CONST_VECTOR:
-    {
-      int slice
-	= 0 * select_xreg + 1 * select_yreg + 2 * select_zreg + 3 * select_treg;
-      fprintf (file, HOST_WIDE_INT_PRINT_HEX, k1_const_vector_value (x, slice));
-    }
-    return;
+    case CONST_VECTOR:
+      {
+	int slice = 1 * select_yreg + 2 * select_zreg + 3 * select_treg;
+	fprintf (file, HOST_WIDE_INT_PRINT_HEX,
+		 k1_const_vector_value (x, slice));
+      }
+      return;
 
-  case CONST_STRING:
-    /* Case for modifier strings */
-    fputs (XSTR (operand, 0), file);
-    return;
+    case CONST_STRING:
+      /* Case for modifier strings */
+      fputs (XSTR (operand, 0), file);
+      return;
 
+      default: {
+	int is_unspec = 0, unspec;
 
-  default: {
-    int is_unspec = 0, unspec;
+	if (GET_CODE (operand) == CONST)
+	  operand = XEXP (operand, 0);
 
-    if (GET_CODE (operand) == CONST)
-      operand = XEXP (operand, 0);
+	if (GET_CODE (operand) == UNSPEC)
+	  {
+	    is_unspec = 1;
+	    unspec = XINT (operand, 1);
+	    operand = XVECEXP (operand, 0, 0);
+	  }
 
-    if (GET_CODE (operand) == UNSPEC) {
-      is_unspec = 1; unspec = XINT (operand, 1);
-      operand = XVECEXP (operand, 0, 0);
-    }
+	if (is_unspec)
+	  {
+	    switch (unspec)
+	      {
+	      case UNSPEC_TLS_GD:
+	      case UNSPEC_TLS_LD:
+	      case UNSPEC_TLS_DTPOFF:
+	      case UNSPEC_TLS_LE:
+	      case UNSPEC_TLS_IE:
+		fputs (k1_unspec_tls_asm_op[unspec - UNSPEC_TLS_GD], (file));
+		fputs ("(", (file));
+		break;
+	      case UNSPEC_GOT:
+		fprintf (file, "@got(");
+		break;
+	      case UNSPEC_GOTOFF:
+		fprintf (file, "@gotoff(");
+		break;
+	      case UNSPEC_PCREL:
+		fprintf (file, "@pcrel(");
+		break;
+	      default:
+		gcc_unreachable ();
+	      }
+	  }
 
-    if (is_unspec) {
-      switch (unspec) {
-
-	case UNSPEC_TLS_GD:
-	case UNSPEC_TLS_LD:
-	case UNSPEC_TLS_DTPOFF:
-	case UNSPEC_TLS_LE:
-	case UNSPEC_TLS_IE:
-	  fputs (k1_unspec_tls_asm_op[unspec - UNSPEC_TLS_GD], (file));
-	  fputs ("(", (file));
-	  break;
-
-	case UNSPEC_GOT:
-	  fprintf (file, "@got(");
-	  break;
-	case UNSPEC_GOTOFF:
-	  fprintf (file, "@gotoff(");
-	  break;
-	case UNSPEC_PCREL:
-	  fprintf (file, "@pcrel(");
-	  break;
-	default:
-	  gcc_unreachable ();
+	/* No need to handle all strange variants, let output_addr_const
+	   do it for us.  */
+	output_addr_const (file, operand);
+	if (is_unspec)
+	  fprintf (file, ")");
       }
     }
-
-    /* No need to handle all strange variants, let output_addr_const
-       do it for us.  */
-    output_addr_const (file, operand);
-    if (is_unspec)
-      fprintf (file, ")");
-  }
-  }
 }
 
 static const char *
 k1_regname (rtx x)
 {
-    machine_mode mode;
-    unsigned int regno;
+  machine_mode mode = GET_MODE (x);
 
-    switch (GET_CODE (x)) {
+  switch (GET_CODE (x))
+    {
     case REG:
-        mode = GET_MODE (x);
-        if (GET_MODE_SIZE (mode) <= UNITS_PER_WORD)
-            return reg_names[REGNO (x)];
-        else if (GET_MODE_SIZE (mode) <= 2*UNITS_PER_WORD)
-            return prf_reg_names[REGNO (x)];
-        else if (GET_MODE_SIZE (mode) <= 4*UNITS_PER_WORD)
-            return qrf_reg_names[REGNO (x)];
-        else
-            gcc_unreachable ();
+      if (GET_MODE_SIZE (mode) <= UNITS_PER_WORD)
+	return reg_names[REGNO (x)];
+      else if (GET_MODE_SIZE (mode) <= 2 * UNITS_PER_WORD)
+	return prf_reg_names[REGNO (x)];
+      else if (GET_MODE_SIZE (mode) <= 4 * UNITS_PER_WORD)
+	return qrf_reg_names[REGNO (x)];
+      gcc_unreachable ();
     case SUBREG:
-        gcc_assert (TARGET_32); // FIXME AUTO: don't understand this assert
-        gcc_assert (GET_MODE (x) == DImode);
-        gcc_assert (GET_MODE (SUBREG_REG (x)) == TImode);
-        regno = REGNO (SUBREG_REG (x));
-        if (SUBREG_BYTE (x))
-            regno++;
-        return reg_names[regno];
+      // Addressing mode with register offset
+      gcc_assert (TARGET_32);
+      gcc_assert (SUBREG_BYTE (x) == 0);
+      return k1_regname (SUBREG_REG (x));
     default:
-        gcc_unreachable ();
+      gcc_unreachable ();
     }
 }
 
 void
 k1_target_print_operand_address (FILE *file, rtx x)
 {
-    rtx op, reg;
-
-    op = simplify_rtx (x);
-
-    if (op != NULL && k1_target_legitimate_address_p(GET_MODE(op),op, 0)) x = op;
-
-/*
-    is_tls = k1_has_tls_reference (x);
-
-    if (is_tls)
-        fprintf (file, "@tprel(");
-*/
-    switch (GET_CODE (x)) {
+  switch (GET_CODE (x))
+    {
     case REG:
     case SUBREG:
-        fprintf (file, "0[$%s]", k1_regname (x));
-        break;
+      fprintf (file, "0[$%s]", k1_regname (x));
+      break;
 
     case PLUS:
-        switch (GET_CODE (XEXP (x, 1))) {
-        case CONST_INT:
-            fprintf (file, HOST_WIDE_INT_PRINT_DEC, INTVAL(XEXP (x, 1)));
-            break;
-        case LABEL_REF:
-        case SYMBOL_REF:
-        case CONST:
+      switch (GET_CODE (XEXP (x, 1)))
+	{
+	case CONST_INT:
+	  fprintf (file, HOST_WIDE_INT_PRINT_DEC, INTVAL (XEXP (x, 1)));
+	  break;
+	case LABEL_REF:
+	case SYMBOL_REF:
+	case CONST:
 	case UNSPEC:
-            output_addr_const (file, XEXP (x, 1));
-            break;
-        case REG:
-            if (GET_CODE (XEXP (x, 0)) == AND
-                && (GET_CODE (XEXP (XEXP (x, 0), 0)) == MULT
-                    || GET_CODE (XEXP (XEXP (x, 0), 0)) == ASHIFT))
-                fprintf (file, "$%s", k1_regname (XEXP (XEXP (XEXP (x, 0), 0), 0)));
-            else if (GET_CODE (XEXP (x, 0)) == AND
-                     || GET_CODE (XEXP (x, 0)) == MULT
-		     || GET_CODE (XEXP (x, 0)) == ZERO_EXTEND
-                     || GET_CODE (XEXP (x, 0)) == ASHIFT)
-                fprintf (file, "$%s", k1_regname (XEXP (XEXP (x, 0), 0)));
-            else
-                fprintf (file, "$%s", k1_regname (XEXP (x, 1)));
-            break;
-        default:
-            abort();
-        }
-/*         if (is_tls)
-             fprintf (file, ")");
-*/
-        if (GET_CODE (XEXP (x, 0)) == MULT
-            || GET_CODE (XEXP (x, 0)) == AND
-            || GET_CODE (XEXP (x, 0)) == ZERO_EXTEND
-            || GET_CODE (XEXP (x, 0)) == ASHIFT)
-            reg = XEXP (x, 1);
-        else
-            reg = XEXP (x, 0);
-        fprintf (file, "[$%s]", k1_regname (reg));
-        return; /* RETURN here! not break */
+	  output_addr_const (file, XEXP (x, 1));
+	  break;
+	case REG:
+	case SUBREG:
+	  if (GET_CODE (XEXP (x, 0)) == MULT)
+	    fprintf (file, "$%s", k1_regname (XEXP (XEXP (x, 0), 0)));
+	  else
+	    fprintf (file, "$%s", k1_regname (XEXP (x, 1)));
+	  break;
+	default:
+	  abort ();
+	}
+      if (GET_CODE (XEXP (x, 0)) == MULT)
+	fprintf (file, "[$%s]", k1_regname (XEXP (x, 1)));
+      else
+	fprintf (file, "[$%s]", k1_regname (XEXP (x, 0)));
+      return;
 
     default:
-        output_addr_const (file, x);
-        break;
+      output_addr_const (file, x);
+      break;
     }
-
-/*     if (is_tls)
-         fprintf (file, ")");
-*/
 }
 
 static void
@@ -2379,11 +2333,12 @@ k1_expand_mov_constant (rtx operands[]) {
 /* FIXME AUTO: fix cost function for coolidge */
 /* See T7748 */
 static int
-k1_target_register_move_cost (enum machine_mode mode,
-                              reg_class_t from ATTRIBUTE_UNUSED,
-                              reg_class_t to ATTRIBUTE_UNUSED)
+k1_target_register_move_cost (machine_mode mode,
+			      reg_class_t from ATTRIBUTE_UNUSED,
+			      reg_class_t to ATTRIBUTE_UNUSED)
 {
-    /* Provide a cost slightly above one of a simple instruction. This prevents
+  int n_copyd = (GET_MODE_SIZE (mode) + UNITS_PER_WORD - 1) / UNITS_PER_WORD;
+  /* Provide a cost slightly above one of a simple instruction. This prevents
        postreload from transforming:
           make $r2 = 0
           make $r3 = 0
@@ -2394,13 +2349,7 @@ k1_target_register_move_cost (enum machine_mode mode,
           make $r3 = $r2
           ;;
     */
-    if (GET_MODE_SIZE (mode) <= UNITS_PER_WORD)
-        return 5;
-    else if (GET_MODE_SIZE (mode) == 2 * UNITS_PER_WORD)
-        return 10;
-
-    /* The maximum value possible */
-    return 65534;
+  return (COSTS_N_INSNS (1) + 1) * n_copyd;
 }
 
 
@@ -3259,10 +3208,10 @@ build_rounding_silent_arg (tree arg, const char *name)
 {
   const char *modifier = tree_string_constant (arg);
   static const char *table[] = {
-    ".rn",  ".rn.s",  ".ru",  ".ru.s",  ".rd", ".rd.s", ".rz", ".rz.s",
+    ".rn",  ".rn.s",  ".ru",  ".ru.s",	".rd", ".rd.s", ".rz", ".rz.s",
     ".rna", ".rna.s", ".rnz", ".rnz.s", ".ro", ".ro.s", "",    ".s",
   };
-  for (int i = 0; i < sizeof (table) / sizeof (*table); i++)
+  for (int i = 0; i < (int) (sizeof (table) / sizeof (*table)); i++)
     {
       if (!strcmp (modifier, table[i]))
 	return gen_rtx_CONST_STRING (VOIDmode, table[i]);
@@ -3281,7 +3230,7 @@ build_bypass_speculate_arg (tree arg, const char *name)
     "",
     ".s",
   };
-  for (int i = 0; i < sizeof (table) / sizeof (*table); i++)
+  for (int i = 0; i < (int) (sizeof (table) / sizeof (*table)); i++)
     {
       if (!strcmp (modifier, table[i]))
 	return gen_rtx_CONST_STRING (VOIDmode, table[i]);
@@ -3297,7 +3246,7 @@ build_scatter_speculate_arg (tree arg, const char *name)
   static const char *table[] = {
     ".c0", ".c0.s", ".c1", ".c1.s", ".c2", ".c2.s", ".c3", ".c3.s", "", ".s",
   };
-  for (int i = 0; i < sizeof (table) / sizeof (*table); i++)
+  for (int i = 0; i < (int) (sizeof (table) / sizeof (*table)); i++)
     {
       if (!strcmp (modifier, table[i]))
 	return gen_rtx_CONST_STRING (VOIDmode, table[i]);
@@ -3423,29 +3372,27 @@ verify_const_field_arg (rtx arg, int bits, const char *name, const char *where)
 static rtx
 k1_expand_builtin_get (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    arg1 = verify_const_uint_arg (arg1, 9, "get", "first");
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  arg1 = verify_const_uint_arg (arg1, 9, "get", "first");
 
-    const int regno = INTVAL(arg1) + K1C_SFR_FIRST_REGNO;
-    if (regno > K1C_SFR_LAST_REGNO)
-      {
-	error ("__builtin_k1_get called with illegal SFR register index : %d",
-	       INTVAL (arg1));
-      }
+  const int regno = INTVAL (arg1) + K1C_SFR_FIRST_REGNO;
+  if (regno > K1C_SFR_LAST_REGNO)
+    error ("__builtin_k1_get called with illegal SFR register index %d",
+	   INTVAL (arg1));
 
-    if (!target)
-        target = gen_reg_rtx (DImode);
-    else
-      target = force_reg (DImode, target);
+  if (!target)
+    target = gen_reg_rtx (DImode);
+  else
+    target = force_reg (DImode, target);
 
-    rtx reg = gen_rtx_REG (DImode, regno);
+  rtx reg = gen_rtx_REG (DImode, regno);
 
-    if (INTVAL (arg1) == K1C_PCR_REGNO - K1C_SFR_FIRST_REGNO)
-        emit_move_insn (target, reg);
-    else
-        emit_insn (gen_get_volatile (target, reg, k1_sync_reg_rtx));
+  if (INTVAL (arg1) == K1C_PCR_REGNO - K1C_SFR_FIRST_REGNO)
+    emit_move_insn (target, reg);
+  else
+    emit_insn (gen_get_volatile (target, reg, k1_sync_reg_rtx));
 
-    return target;
+  return target;
 }
 
 /* FIXME AUTO: Disabling get builtin. Ref T7705 */
@@ -4824,9 +4771,10 @@ k1_target_expand_builtin (tree exp,
     case K1_BUILTIN_FNARROWWH: return k1_expand_builtin_fnarrowwh (target, exp);
     case K1_BUILTIN_WAITIT: return k1_expand_builtin_waitit (target, exp);
     default:
-        internal_error ("bad builtin code");
         break;
     }
+  internal_error ("bad builtin code");
+  return NULL_RTX;
 }
 
 int
@@ -4885,62 +4833,88 @@ k1_target_sched_dfa_new_cycle (FILE *dump ATTRIBUTE_UNUSED,
     return 0;
 }
 
-/* Returns TRUE if X is of the form reg[reg] or signed10bits[reg] */
+/* Return TRUE if X is of the form reg[reg] or .xs reg = reg[reg] or
+ * signed10bits[reg] */
 bool
 k1_has_10bit_imm_or_register_p (rtx x)
 {
-  if (!MEM_P (x))
-    return false;
+  if (MEM_P (x))
+    x = XEXP (x, 0);
 
-  rtx op = XEXP (x, 0);
+  if (REG_P (x))
+    return true;
 
-  bool is_reg_reg
-    = (GET_CODE (op) == PLUS && REG_P (XEXP (op, 0)) && REG_P (XEXP (op, 1)))
-      || REG_P (op);
+  /*
+   * ld reg = reg[reg]
+   */
+  if (GET_CODE (x) == PLUS && REG_P (XEXP (x, 0)) && REG_P (XEXP (x, 1)))
+    return true;
 
-  return is_reg_reg || k1_has_10bit_immediate_p (op);
+  /*
+   * ld.xs reg = reg[reg]
+   */
+  if (GET_CODE (x) == PLUS && GET_CODE (XEXP (x, 0)) == MULT
+      && GET_CODE (XEXP (XEXP (x, 0), 1)) == CONST_INT
+      && INTVAL (XEXP (XEXP (x, 0), 1)) > HOST_WIDE_INT_1)
+    return true;
+
+  return k1_has_10bit_immediate_p (x);
 }
 
 bool
 k1_has_10bit_immediate_p (rtx x)
 {
-  subrtx_ptr_iterator::array_type array;
-  FOR_EACH_SUBRTX_PTR (iter, array, &x, ALL)
-    {
-      rtx *x = *iter;
-      if (GET_CODE (*x) == CONST_INT && (IN_RANGE (INTVAL (*x), -512, 511)))
-	return true;
-    }
+  if (MEM_P (x))
+    x = XEXP (x, 0);
+
+  if (GET_CODE (x) == PLUS && GET_CODE (XEXP (x, 1)) == CONST_INT)
+    return IN_RANGE (INTVAL (XEXP (x, 1)), -512, 511);
+
   return false;
 }
 
 bool
 k1_has_37bit_immediate_p (rtx x)
 {
-  subrtx_ptr_iterator::array_type array;
-  FOR_EACH_SUBRTX_PTR (iter, array, &x, ALL)
-    {
-      rtx *x = *iter;
-      if (GET_CODE (*x) == CONST_INT
-	  && (IN_RANGE (INTVAL (*x), -(1LL<<36), (1LL<<36)-1)))
-	return true;
-    }
+  if (MEM_P (x))
+    x = XEXP (x, 0);
+
+  if (GET_CODE (x) == PLUS && GET_CODE (XEXP (x, 1)) == CONST_INT)
+    return !IN_RANGE (INTVAL (XEXP (x, 1)), -512, 511)
+	   && IN_RANGE (INTVAL (XEXP (x, 1)), -(1LL << 36), (1LL << 36) - 1);
+
   return false;
 }
 
 bool
 k1_has_64bit_immediate_p (rtx x)
 {
-  subrtx_ptr_iterator::array_type array;
-  FOR_EACH_SUBRTX_PTR (iter, array, &x, ALL)
-    {
-      rtx *x = *iter;
-      if (GET_CODE (*x) == SYMBOL_REF || GET_CODE (*x) == LABEL_REF
-	  || GET_CODE (*x) == CONST_DOUBLE
-	  || (GET_CODE (*x) == CONST_INT && (!k1_has_37bit_immediate_p (*x))))
-	return true;
-    }
+  if (MEM_P (x))
+    x = XEXP (x, 0);
+
+  if (GET_CODE (x) == PLUS && GET_CODE (XEXP (x, 1)) == CONST_INT)
+    return !IN_RANGE (INTVAL (XEXP (x, 1)), -(1LL << 36), (1LL << 36) - 1);
+
+  if (GET_CODE (x) == PLUS && GET_CODE (XEXP (x, 1)) != CONST_INT)
+    return true;
+
   return false;
+}
+
+/* Test whether the memory operand X should be accessed cached or
+   uncached (bypass or preload) regarding it's name address space.
+   If non-zero, the return value is the MEM_ADDR_SPACE. */
+int
+k1_is_uncached_mem_op_p (rtx x)
+{
+  gcc_assert (MEM_P (x));
+  if (!MEM_P (x))
+    return false;
+
+  /* __convert[_no_sync] addr space should not come here. */
+  gcc_assert (MEM_ADDR_SPACE (x) < K1_ADDR_SPACE_CONVERT);
+
+  return MEM_ADDR_SPACE (x);
 }
 
 HOST_WIDE_INT
@@ -5055,21 +5029,6 @@ k1_has_32x2bit_vector_const_p (rtx x)
   return false;
 }
 
-/* Test whether the memory operand OP should be accessed cached or
-   uncached (bypass or preload) regarding it's name address space.
-   If non-zero, the return value is the MEM_ADDR_SPACE. */
-int
-k1_is_uncached_mem_op_p (rtx op)
-{
-    /* __convert[_no_sync] addr space should not come here. */
-    gcc_assert (   !MEM_P (op)
-                || (MEM_ADDR_SPACE (op) < K1_ADDR_SPACE_CONVERT));
-    if (MEM_P (op)) {
-        return MEM_ADDR_SPACE (op);
-    }
-    return 0;
-}
-
 /*
  * Returns TRUE if OP is a load multiple operation and all mems are
  * cached/uncached depending on IS_UNCACHED.
@@ -5150,7 +5109,6 @@ k1_store_multiple_operation_p (rtx op)
 {
   int count = XVECLEN (op, 0);
   unsigned int src_regno;
-  rtx dest_addr;
   int i;
 
   /* Perform a quick check so we don't blow up below.  */
@@ -5873,39 +5831,21 @@ static bool k1_target_rtx_costs (rtx x,
     return true;
 }
 
-/* FIXME AUTO: fix cost function for coolidge */
-/* See T7748 */
-static int k1_target_address_cost (rtx x,
-                                   machine_mode mode ATTRIBUTE_UNUSED,
-                                   addr_space_t space ATTRIBUTE_UNUSED,
-                                   bool speed ATTRIBUTE_UNUSED)
+static int
+k1_target_address_cost (rtx x, machine_mode mode ATTRIBUTE_UNUSED,
+			addr_space_t space ATTRIBUTE_UNUSED,
+			bool speed ATTRIBUTE_UNUSED)
 {
-    struct k1_address addr;
-    int cost;
+  int cost = COSTS_N_INSNS (1);
+  gcc_assert (cost > 1);
 
-    /* Just compare the size of the operands */
-    if (!k1_analyze_address (x, false, &addr))
-        gcc_unreachable ();
+  // Lower cost in case of .xs addressing mode
+  if (GET_CODE (x) == PLUS && GET_CODE (XEXP (x, 0)) == MULT
+      && GET_CODE (XEXP (XEXP (x, 0), 1)) == CONST_INT
+      && INTVAL (XEXP (XEXP (x, 0), 1)) > HOST_WIDE_INT_1)
+    return cost - 1;
 
-    if (addr.mode == ADDR_OFFSET
-        && (!CONST_INT_P (addr.offset)
-            || INTVAL (addr.offset) > 511
-            || INTVAL (addr.offset) < -512))
-        cost = COSTS_N_INSNS (2);
-    else
-        cost = COSTS_N_INSNS (1);
-
-    /* Give a slight advantage to more complicated addressing
-       modes. This allows fwprop to create more complicated addressing
-       modes and thus possibly to remove preliminary computations
-       that are used more than once. (combine handles the case where
-       it's used only once.) */
-    if (current_pass->tv_id == TV_FWPROP
-        && (addr.mode == ADDR_MOD
-            || (addr.mode == ADDR_MULT && addr.mult != 1)))
-            cost --;
-
-    return cost;
+  return cost;
 }
 
 static void
@@ -5958,18 +5898,6 @@ k1_function_ok_for_sibcall (tree decl,
   return true;
 }
 
-/* We recognize patterns that aren't canonical addresses, because we
-   might generate those with our use of simplify_replace_rtx() in our
-   mem access packing. */
-static bool
-k1_target_legitimate_address_p (enum machine_mode ATTRIBUTE_UNUSED mode,
-                                rtx x, bool strict)
-{
-    struct k1_address addr;
-    bool ret = k1_analyze_address (x, strict, &addr);
-    return ret;
-}
-
 static bool
 k1_legitimate_constant_p (enum machine_mode mode ATTRIBUTE_UNUSED, rtx x)
 {
@@ -5997,7 +5925,7 @@ k1_legitimate_constant_p (enum machine_mode mode ATTRIBUTE_UNUSED, rtx x)
 static rtx
 k1_target_legitimize_address (rtx x,
                               rtx oldx ATTRIBUTE_UNUSED,
-                              enum machine_mode mode ATTRIBUTE_UNUSED)
+			      enum machine_mode mode)
 {
     if (k1_has_tls_reference (x))
         return k1_legitimize_tls_reference (x);
@@ -6006,15 +5934,17 @@ k1_target_legitimize_address (rtx x,
         	   || GET_CODE (XEXP (x, 0)) == ZERO_EXTEND)) {
         rtx reg = gen_reg_rtx (Pmode);
         rtx cst = XEXP (x, 1);
-        struct k1_address addr;
 
         XEXP (x, 1) = reg;
-        if (k1_analyze_address (x, false, &addr)) {
-            emit_move_insn (reg, cst);
-            return copy_rtx (x);
-        } else {
-            XEXP (x, 1) = cst;
-            return x;
+      if (k1_target_legitimate_address_p (mode, x, false))
+	{
+	  emit_move_insn (reg, cst);
+	  return copy_rtx (x);
+	}
+      else
+	{
+	  XEXP (x, 1) = cst;
+	  return x;
         }
     }
     return x;
@@ -6611,10 +6541,20 @@ k1_reassociation_width (unsigned int opc,
   return res;
 }
 
+/* Return true for the .xs addressing modes, else false. */
 static bool
-k1_mode_dependent_address_p (const_rtx addr ATTRIBUTE_UNUSED, addr_space_t space ATTRIBUTE_UNUSED)
+k1_mode_dependent_address_p (const_rtx addr,
+			     addr_space_t space ATTRIBUTE_UNUSED)
 {
-    return current_pass->tv_id == TV_LOWER_SUBREG;
+  const_rtx x = addr;
+
+  // Same logic as .xs addressing mode in k1_target_print_operand
+  if (GET_CODE (x) == PLUS && GET_CODE (XEXP (x, 0)) == MULT
+      && GET_CODE (XEXP (XEXP (x, 0), 1)) == CONST_INT
+      && INTVAL (XEXP (XEXP (x, 0), 1)) > HOST_WIDE_INT_1)
+    return true;
+
+  return false;
 }
 
 /* Implement TARGET_SCHED_CAN_SPECULATE_INSN.  Return true if INSN can be
