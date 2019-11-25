@@ -43,3 +43,8 @@ char foo_64bits (void) {
 
 /* { dg-final { scan-assembler-times "lbz \\\$r0 = \[0-9-\]+\\\[\\\$r\[0-9\]+\\\]" 8 } } */
 
+extern struct { long long params[5]; float array[0]; } buffer;
+float access_sym(long i) { return buffer.array[i]; }
+
+/* { dg-final { scan-rtl-dump-times "Choosing alt 9 in insn \[0-9\]+:  \\\(0\\\) r  \\\(1\\\) Cm \\\{\\\*movsf_all\\\}" 1 "reload"} } */
+

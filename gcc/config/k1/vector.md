@@ -1,39 +1,115 @@
+;; 64-bit Vector Moves
 
-;; V4HI
-
-(define_expand "movv4hi"
-  [(set (match_operand:V4HI 0 "nonimmediate_operand" "")
-        (match_operand:V4HI 1 "general_operand" ""))]
+(define_expand "mov<mode>"
+  [(set (match_operand:SIMD64 0 "nonimmediate_operand" "")
+        (match_operand:SIMD64 1 "general_operand" ""))]
   ""
   {
     if (MEM_P(operands[0])) {
-      operands[1] = force_reg (V4HImode, operands[1]);
+      operands[1] = force_reg (<MODE>mode, operands[1]);
     }
   }
 )
 
-(define_insn "*movv4hi_real"
-  [(set (match_operand:V4HI 0 "nonimmediate_operand" "=r, r, r, r, r,a,m,r,r,r")
-        (match_operand:V4HI 1 "general_operand"       "r,Ca,Cm,Za,Zm,r,r,v16,v43,i"))]
-  "(!immediate_operand(operands[1], V4HImode) || !memory_operand(operands[0], V4HImode))"
+(define_insn "*mov<mode>_real"
+  [(set (match_operand:SIMD64 0 "nonimmediate_operand" "=r, r, r, r, r, r, r,a,b,m,  r,  r,r")
+        (match_operand:SIMD64 1 "general_operand"       "r,Ca,Cb,Cm,Za,Zb,Zm,r,r,r,v16,v43,i"))]
+  "(!immediate_operand(operands[1], <MODE>mode) || !memory_operand(operands[0], <MODE>mode))"
   {
     switch (which_alternative) {
-    case 0: return "copyd %0 = %1";
-    case 1:
-    case 2:
-    case 3:
-    case 4: return "ld%C1%m1 %0 = %1";
-    case 5:
-    case 6: return "sd%m0 %0 = %1";
-    case 7:
-    case 8:
-    case 9: return "make %0 = %1";
-    default: gcc_unreachable ();
+    case 0:
+      return "copyd %0 = %1";
+    case 1: case 2: case 3: case 4: case 5: case 6:
+      return "ld%C1%m1 %0 = %1";
+    case 7: case 8: case 9:
+      return "sd%m0 %0 = %1";
+    case 10: case 11: case 12:
+      return "make %0 = %1";
+    default:
+      gcc_unreachable ();
     }
   }
-  [(set_attr "type" "alu_tiny,lsu_auxw_load,lsu_auxw_load_x,lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxr_store,lsu_auxr_store_x,alu_tiny,alu_tiny_x,alu_tiny_y")
-   (set_attr "length" "     4,            4,              8,                     4,                       8,             4,               8,       4,         8,        12")]
+  [(set_attr "type" "alu_tiny,lsu_auxw_load,lsu_auxw_load_x,lsu_auxw_load_y,lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y,lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y,alu_tiny,alu_tiny_x,alu_tiny_y")
+   (set_attr "length" "     4,            4,              8,             12,                     4,                       8,                      12,             4,               8,              12,       4,         8,        12")]
 )
+
+
+;; 128-bit Vector Moves
+
+(define_expand "mov<mode>"
+  [(set (match_operand:SIMD128 0 "nonimmediate_operand" "")
+        (match_operand:SIMD128 1 "general_operand" ""))]
+  ""
+  {
+    if (MEM_P(operands[0])) {
+      operands[1] = force_reg (<MODE>mode, operands[1]);
+    }
+  }
+)
+
+(define_insn "*mov<mode>_real"
+  [(set (match_operand:SIMD128 0 "nonimmediate_operand" "=r, r, r, r, r, r, r,a,b,m,r")
+        (match_operand:SIMD128 1 "general_operand"       "r,Ca,Cb,Cm,Za,Zb,Zm,r,r,r,i"))]
+  "(!immediate_operand(operands[1], <MODE>mode) || !memory_operand(operands[0], <MODE>mode))"
+  {
+    switch (which_alternative) {
+    case 0:
+      return "copyd %x0 = %x1\n\tcopyd %y0 = %y1";
+    case 1: case 2: case 3: case 4: case 5: case 6:
+      return "lq%C1%m1 %0 = %1";
+    case 7: case 8: case 9:
+      return "sq%m0 %0 = %1";
+    case 10:
+      return "make %x0 = %x1\n\tmake %y0 = %y1";
+    default:
+      gcc_unreachable ();
+    }
+  }
+  [(set_attr "type"    "alu_tiny_x2,lsu_auxw_load,lsu_auxw_load_x,lsu_auxw_load_y,lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y,lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y,alu_tiny_x2_y")
+   (set_attr "length"  "          8,            4,              8,             12,                     4,                       8,                      12,             4,               8,              12,           24")]
+)
+
+
+;; 256-bit Vector Moves
+
+(define_expand "mov<mode>"
+  [(set (match_operand:SIMD256 0 "nonimmediate_operand" "")
+        (match_operand:SIMD256 1 "general_operand" ""))]
+  ""
+  {
+    if (MEM_P(operands[0])) {
+      operands[1] = force_reg (<MODE>mode, operands[1]);
+    }
+  }
+)
+
+(define_insn "*mov<mode>_real"
+  [(set (match_operand:SIMD256 0 "nonimmediate_operand" "=r, r, r, r, r, r, r,a,b,m,r")
+        (match_operand:SIMD256 1 "general_operand"       "r,Ca,Cb,Cm,Za,Zb,Zm,r,r,r,i"))]
+  "(!immediate_operand(operands[1], <MODE>mode) || !memory_operand(operands[0], <MODE>mode))"
+  {
+    switch (which_alternative) {
+    case 0:
+      return "copyd %x0 = %x1\n\tcopyd %y0 = %y1\n\t"
+             "copyd %z0 = %z1\n\tcopyd %t0 = %t1";
+    case 1: case 2: case 3: case 4: case 5: case 6:
+      return "lo%C1%m1 %0 = %1";
+    case 7: case 8: case 9:
+      return "so%m0 %0 = %1";
+    case 10:
+      return "make %x0 = %x1\n\tmake %y0 = %y1\n\t;;\n\t"
+             "make %z0 = %z1\n\tmake %t0 = %t1";
+    default:
+      gcc_unreachable ();
+    }
+  }
+  [(set_attr "type"    "alu_tiny_x4,lsu_auxw_load,lsu_auxw_load_x,lsu_auxw_load_y,lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y,lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y,alu_tiny_x2_y")
+   (set_attr "length"  "         16,            4,              8,             12,                     4,                       8,                      12,             4,               8,              12,           48")]
+)
+
+
+
+;; V4HI
 
 (define_insn "addv4hi3"
   [(set (match_operand:V4HI 0 "register_operand" "=r,r,r")
@@ -577,52 +653,6 @@
 
 ;; V8HI
 
-(define_expand "movv8hi"
-  [(set (match_operand:V8HI 0 "nonimmediate_operand" "")
-        (match_operand:V8HI 1 "general_operand" ""))]
-  ""
-  {
-    if (MEM_P(operands[0])) {
-      operands[1] = force_reg (V8HImode, operands[1]);
-    }
-  }
-)
-
-(define_insn "*movv8hi_real"
-  [(set (match_operand:V8HI 0 "nonimmediate_operand" "=r, r, r, r, r,a,m,r")
-        (match_operand:V8HI 1 "general_operand"       "r,Ca,Cm,Za,Zm,r,r,i"))]
-  "(!immediate_operand(operands[1], V8HImode) || !memory_operand(operands[0], V8HImode))"
-  {
-    switch (which_alternative) {
-    case 0:
-      return "copyd %x0 = %x1\n\tcopyd %y0 = %y1";
-    case 1: case 2: case 3: case 4:
-      return (REGNO(operands[0])&0x1)?
-             "ld%C1%m1 %x0 = %1\n\t;;\n\tld%C1%m1 %y0 = 8+%1":
-             "lq%C1%m1 %0 = %1";
-    case 5: case 6:
-      return (REGNO(operands[1])&0x1)?
-             "sd%m0 %0 = %x1\n\t;;\n\tsd%m0 8+%0 = %y1":
-             "sq%m0 %0 = %1";
-    case 7:
-      {
-        rtx x = operands[1];
-        HOST_WIDE_INT value_0 = k1_const_vector_value (x, 0);
-        HOST_WIDE_INT value_1 = k1_const_vector_value (x, 1);
-        static char instruction[256];
-        sprintf (instruction,
-                 "make %%x0 = 0x%llx\n\tmake %%y0 = 0x%llx",
-                 (long long)value_0, (long long)value_1);
-        return instruction;
-      }
-    default:
-      gcc_unreachable ();
-    }
-  }
-  [(set_attr "type"    "alu_tiny_x2, lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxr_store, lsu_auxr_store_x, alu_tiny_x2_y")
-   (set_attr "length"  "          8,              4,              8,                      4,                        8,              4,                8,            24")]
-)
-
 (define_insn "addv8hi3"
   [(set (match_operand:V8HI 0 "register_operand" "=r")
         (plus:V8HI (match_operand:V8HI 1 "register_operand" "r")
@@ -1056,40 +1086,6 @@
 
 
 ;; V2SI
-
-(define_expand "movv2si"
-  [(set (match_operand:V2SI 0 "nonimmediate_operand" "")
-        (match_operand:V2SI 1 "general_operand" ""))]
-  ""
-  {
-    if (MEM_P(operands[0])) {
-      operands[1] = force_reg (V2SImode, operands[1]);
-    }
-  }
-)
-
-(define_insn "*movv2si_real"
-  [(set (match_operand:V2SI 0 "nonimmediate_operand" "=r, r, r, r, r,a,m,r,r,r")
-        (match_operand:V2SI 1 "general_operand"       "r,Ca,Cm,Za,Zm,r,r,v16,v43,i"))]
-  "(!immediate_operand(operands[1], V2SImode) || !memory_operand(operands[0], V2SImode))"
-  {
-    switch (which_alternative) {
-    case 0: return "copyd %0 = %1";
-    case 1:
-    case 2:
-    case 3:
-    case 4: return "ld%C1%m1 %0 = %1";
-    case 5:
-    case 6: return "sd%m0 %0 = %1";
-    case 7:
-    case 8:
-    case 9: return "make %0 = %1";
-    default: gcc_unreachable ();
-    }
-  }
-  [(set_attr "type" "alu_tiny,lsu_auxw_load,lsu_auxw_load_x,lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxr_store,lsu_auxr_store_x,alu_tiny,alu_tiny_x,alu_tiny_y")
-   (set_attr "length" "     4,            4,              8,                     4,                       8,             4,               8,       4,         8,        12")]
-)
 
 (define_insn "addv2si3"
   [(set (match_operand:V2SI 0 "register_operand" "=r,r,r")
@@ -1593,52 +1589,6 @@
 
 ;; V4SI
 
-(define_expand "movv4si"
-  [(set (match_operand:V4SI 0 "nonimmediate_operand" "")
-        (match_operand:V4SI 1 "general_operand" ""))]
-  ""
-  {
-    if (MEM_P(operands[0])) {
-      operands[1] = force_reg (V4SImode, operands[1]);
-    }
-  }
-)
-
-(define_insn "*movv4si_real"
-  [(set (match_operand:V4SI 0 "nonimmediate_operand" "=r, r, r, r, r,a,m,r")
-        (match_operand:V4SI 1 "general_operand"       "r,Ca,Cm,Za,Zm,r,r,i"))]
-  "(!immediate_operand(operands[1], V4SImode) || !memory_operand(operands[0], V4SImode))"
-  {
-    switch (which_alternative) {
-    case 0:
-      return "copyd %x0 = %x1\n\tcopyd %y0 = %y1";
-    case 1: case 2: case 3: case 4:
-      return (REGNO(operands[0])&0x1)?
-             "ld%C1%m1 %x0 = %1\n\t;;\n\tld%C1%m1 %y0 = 8+%1":
-             "lq%C1%m1 %0 = %1";
-    case 5: case 6:
-      return (REGNO(operands[1])&0x1)?
-             "sd%m0 %0 = %x1\n\t;;\n\tsd%m0 8+%0 = %y1":
-             "sq%m0 %0 = %1";
-    case 7:
-      {
-        rtx x = operands[1];
-        HOST_WIDE_INT value_0 = k1_const_vector_value (x, 0);
-        HOST_WIDE_INT value_1 = k1_const_vector_value (x, 1);
-        static char instruction[256];
-        sprintf (instruction,
-                 "make %%x0 = 0x%llx\n\tmake %%y0 = 0x%llx",
-                 (long long)value_0, (long long)value_1);
-        return instruction;
-      }
-    default:
-      gcc_unreachable ();
-    }
-  }
-  [(set_attr "type"    "alu_tiny_x2, lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxr_store, lsu_auxr_store_x, alu_tiny_x2_y")
-   (set_attr "length"  "          8,              4,              8,                      4,                        8,              4,                8,            24")]
-)
-
 (define_insn "addv4si3"
   [(set (match_operand:V4SI 0 "register_operand" "=r")
         (plus:V4SI (match_operand:V4SI 1 "register_operand" "r")
@@ -2072,137 +2022,11 @@
 
 ;; V2DI
 
-(define_expand "movv2di"
-  [(set (match_operand:V2DI 0 "nonimmediate_operand" "")
-        (match_operand:V2DI 1 "general_operand" ""))]
-  ""
-  {
-    if (MEM_P(operands[0])) {
-      operands[1] = force_reg (V2DImode, operands[1]);
-    }
-  }
-)
-
-(define_insn "*movv2di_real"
-  [(set (match_operand:V2DI 0 "nonimmediate_operand" "=r, r, r, r, r,a,m,r")
-        (match_operand:V2DI 1 "general_operand"       "r,Ca,Cm,Za,Zm,r,r,i"))]
-  "(!immediate_operand(operands[1], V2DImode) || !memory_operand(operands[0], V2DImode))"
-  {
-    switch (which_alternative) {
-    case 0:
-      return "copyd %x0 = %x1\n\tcopyd %y0 = %y1";
-    case 1: case 2: case 3: case 4:
-      return (REGNO(operands[0])&0x1)?
-             "ld%C1%m1 %x0 = %1\n\t;;\n\tld%C1%m1 %y0 = 8+%1":
-             "lq%C1%m1 %0 = %1";
-    case 5: case 6:
-      return (REGNO(operands[1])&0x1)?
-             "sd%m0 %0 = %x1\n\t;;\n\tsd%m0 8+%0 = %y1":
-             "sq%m0 %0 = %1";
-    case 7:
-      {
-        rtx x = operands[1];
-        HOST_WIDE_INT value_0 = k1_const_vector_value (x, 0);
-        HOST_WIDE_INT value_1 = k1_const_vector_value (x, 1);
-        static char instruction[256];
-        sprintf (instruction,
-                 "make %%x0 = 0x%llx\n\tmake %%y0 = 0x%llx",
-                 (long long)value_0, (long long)value_1);
-        return instruction;
-      }
-    default:
-      gcc_unreachable ();
-    }
-  }
-  [(set_attr "type"    "alu_tiny_x2, lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxr_store, lsu_auxr_store_x, alu_tiny_x2_y")
-   (set_attr "length"  "          8,              4,              8,                      4,                        8,              4,                8,            24")]
-)
-
 
 ;; V4DI
 
-(define_expand "movv4di"
-  [(set (match_operand:V4DI 0 "nonimmediate_operand" "")
-        (match_operand:V4DI 1 "general_operand" ""))]
-  ""
-  {
-    if (MEM_P(operands[0])) {
-      operands[1] = force_reg (V4DImode, operands[1]);
-    }
-  }
-)
-
-(define_insn "*movv4di_real"
-  [(set (match_operand:V4DI 0 "nonimmediate_operand" "=r, r, r, r, r,a,m,r")
-        (match_operand:V4DI 1 "general_operand"       "r,Ca,Cm,Za,Zm,r,r,i"))]
-  "(!immediate_operand(operands[1], V4DImode) || !memory_operand(operands[0], V4DImode))"
-  {
-    switch (which_alternative) {
-    case 0:
-      return "copyo %0 = %1";
-    case 1: case 2: case 3: case 4:
-      return "lo%C1%m1 %0 = %1";
-    case 5: case 6:
-      return "so%m0 %0 = %1";
-    case 7:
-      {
-        rtx x = operands[1];
-        HOST_WIDE_INT value_0 = k1_const_vector_value (x, 0);
-        HOST_WIDE_INT value_1 = k1_const_vector_value (x, 1);
-        HOST_WIDE_INT value_2 = k1_const_vector_value (x, 2);
-        HOST_WIDE_INT value_3 = k1_const_vector_value (x, 3);
-        static char instruction[256];
-        sprintf (instruction,
-                 "make %%x0 = 0x%llx\n\tmake %%y0 = 0x%llx\n\t;;\n\t" 
-                 "make %%z0 = 0x%llx\n\tmake %%t0 = 0x%llx",
-                 (long long)value_0, (long long)value_1,
-                 (long long)value_2, (long long)value_3);
-        return instruction;
-      }
-    default:
-      gcc_unreachable ();
-    }
-  }
-  [(set_attr "type"    "lsu_auxr_auxw, lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxr_store, lsu_auxr_store_x, alu_tiny_x2_y")
-   (set_attr "length"  "            4,              4,              8,                      4,                        8,              4,                8,            48")]
-)
-
 
 ;; V2SF
-
-(define_expand "movv2sf"
-  [(set (match_operand:V2SF 0 "nonimmediate_operand" "")
-        (match_operand:V2SF 1 "general_operand" ""))]
-  ""
-  {
-    if (MEM_P(operands[0])) {
-      operands[1] = force_reg (V2SFmode, operands[1]);
-    }
-  }
-)
-
-(define_insn "*movv2sf_real"
-  [(set (match_operand:V2SF 0 "nonimmediate_operand" "=r, r, r, r, r,a,m,r,r,r")
-        (match_operand:V2SF 1 "general_operand"       "r,Ca,Cm,Za,Zm,r,r,v16,v43,i"))]
-  "(!immediate_operand(operands[1], V2SFmode) || !memory_operand(operands[0], V2SFmode))"
-  {
-    switch (which_alternative) {
-    case 0: return "copyd %0 = %1";
-    case 1:
-    case 2:
-    case 3:
-    case 4: return "ld%C1%m1 %0 = %1";
-    case 5:
-    case 6: return "sd%m0 %0 = %1";
-    case 7:
-    case 8:
-    case 9: return "make %0 = %1";
-    default: gcc_unreachable ();
-    }
-  }
-  [(set_attr "type" "alu_tiny,lsu_auxw_load,lsu_auxw_load_x,lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxr_store,lsu_auxr_store_x,alu_tiny,alu_tiny_x,alu_tiny_y")
-   (set_attr "length" "     4,            4,              8,                     4,                       8,             4,               8,       4,         8,        12")]
-)
 
 (define_insn "addv2sf3"
   [(set (match_operand:V2SF 0 "register_operand" "=r")
@@ -2518,52 +2342,6 @@
 
 ;; V4SF
 
-(define_expand "movv4sf"
-  [(set (match_operand:V4SF 0 "nonimmediate_operand" "")
-        (match_operand:V4SF 1 "general_operand" ""))]
-  ""
-  {
-    if (MEM_P(operands[0])) {
-      operands[1] = force_reg (V4SFmode, operands[1]);
-    }
-  }
-)
-
-(define_insn "*movv4sf_real"
-  [(set (match_operand:V4SF 0 "nonimmediate_operand" "=r, r, r, r, r,a,m,r")
-        (match_operand:V4SF 1 "general_operand"       "r,Ca,Cm,Za,Zm,r,r,i"))]
-  "(!immediate_operand(operands[1], V4SFmode) || !memory_operand(operands[0], V4SFmode))"
-  {
-    switch (which_alternative) {
-    case 0:
-      return "copyd %x0 = %x1\n\tcopyd %y0 = %y1";
-    case 1: case 2: case 3: case 4:
-      return (REGNO(operands[0])&0x1)?
-             "ld%C1%m1 %x0 = %1\n\t;;\n\tld%C1%m1 %y0 = 8+%1":
-             "lq%C1%m1 %0 = %1";
-    case 5: case 6:
-      return (REGNO(operands[1])&0x1)?
-             "sd%m0 %0 = %x1\n\t;;\n\tsd%m0 8+%0 = %y1":
-             "sq%m0 %0 = %1";
-    case 7:
-      {
-        rtx x = operands[1];
-        HOST_WIDE_INT value_0 = k1_const_vector_value (x, 0);
-        HOST_WIDE_INT value_1 = k1_const_vector_value (x, 1);
-        static char instruction[256];
-        sprintf (instruction,
-                 "make %%x0 = 0x%llx\n\tmake %%y0 = 0x%llx",
-                 (long long)value_0, (long long)value_1);
-        return instruction;
-      }
-    default:
-      gcc_unreachable ();
-    }
-  }
-  [(set_attr "type"    "alu_tiny_x2, lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxr_store, lsu_auxr_store_x, alu_tiny_x2_y")
-   (set_attr "length"  "          8,              4,              8,                      4,                        8,              4,                8,            24")]
-)
-
 (define_insn "addv4sf3"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (plus:V4SF (match_operand:V4SF 1 "register_operand" "r")
@@ -2678,7 +2456,7 @@
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
                       (match_operand:V4SF 2 "register_operand" "r")
-                      (match_operand:V4SF 3 "register_operand" "r")
+                      (match_operand:V4SF 3 "register_operand" "0")
                       (match_operand 4 "" "")] UNSPEC_FFMAWQ))]
   ""
   "ffmawp%4 %x0 = %x1, %x2\n\t;;\n\tffmawp%4 %y0 = %y1, %y2"
@@ -2701,7 +2479,7 @@
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
                       (match_operand:V4SF 2 "register_operand" "r")
-                      (match_operand:V4SF 3 "register_operand" "r")
+                      (match_operand:V4SF 3 "register_operand" "0")
                       (match_operand 4 "" "")] UNSPEC_FFMSWQ))]
   ""
   "ffmswp%4 %x0 = %x1, %x2\n\t;;\n\tffmswp%4 %y0 = %y1, %y2"
@@ -2872,52 +2650,6 @@
 
 ;; V2DF
 
-(define_expand "movv2df"
-  [(set (match_operand:V2DF 0 "nonimmediate_operand" "")
-        (match_operand:V2DF 1 "general_operand" ""))]
-  ""
-  {
-    if (MEM_P(operands[0])) {
-      operands[1] = force_reg (V2DFmode, operands[1]);
-    }
-  }
-)
-
-(define_insn "*movv2df_real"
-  [(set (match_operand:V2DF 0 "nonimmediate_operand" "=r, r, r, r, r,a,m,r")
-        (match_operand:V2DF 1 "general_operand"       "r,Ca,Cm,Za,Zm,r,r,i"))]
-  "(!immediate_operand(operands[1], V2DFmode) || !memory_operand(operands[0], V2DFmode))"
-  {
-    switch (which_alternative) {
-    case 0:
-      return "copyd %x0 = %x1\n\tcopyd %y0 = %y1";
-    case 1: case 2: case 3: case 4:
-      return (REGNO(operands[0])&0x1)?
-             "ld%C1%m1 %x0 = %1\n\t;;\n\tld%C1%m1 %y0 = 8+%1":
-             "lq%C1%m1 %0 = %1";
-    case 5: case 6:
-      return (REGNO(operands[1])&0x1)?
-             "sd%m0 %0 = %x1\n\t;;\n\tsd%m0 8+%0 = %y1":
-             "sq%m0 %0 = %1";
-    case 7:
-      {
-        rtx x = operands[1];
-        HOST_WIDE_INT value_0 = k1_const_vector_value (x, 0);
-        HOST_WIDE_INT value_1 = k1_const_vector_value (x, 1);
-        static char instruction[256];
-        sprintf (instruction,
-                 "make %%x0 = 0x%llx\n\tmake %%y0 = 0x%llx",
-                 (long long)value_0, (long long)value_1);
-        return instruction;
-      }
-    default:
-      gcc_unreachable ();
-    }
-  }
-  [(set_attr "type"    "alu_tiny_x2, lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxr_store, lsu_auxr_store_x, alu_tiny_x2_y")
-   (set_attr "length"  "          8,              4,              8,                      4,                        8,              4,                8,            24")]
-)
-
 (define_insn "addv2df3"
   [(set (match_operand:V2DF 0 "register_operand" "=r")
         (plus:V2DF (match_operand:V2DF 1 "register_operand" "r")
@@ -3065,7 +2797,7 @@
   [(set (match_operand:V2DF 0 "register_operand" "=r")
         (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")
                       (match_operand:V2DF 2 "register_operand" "r")
-                      (match_operand:V2DF 3 "register_operand" "r")
+                      (match_operand:V2DF 3 "register_operand" "0")
                       (match_operand 4 "" "")] UNSPEC_FFMADP))]
   ""
   "ffmad%4 %x0 = %x1, %x2\n\t;;\n\tffmad%4 %y0 = %y1, %y2"
@@ -3088,7 +2820,7 @@
   [(set (match_operand:V2DF 0 "register_operand" "=r")
         (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")
                       (match_operand:V2DF 2 "register_operand" "r")
-                      (match_operand:V2DF 3 "register_operand" "r")
+                      (match_operand:V2DF 3 "register_operand" "0")
                       (match_operand 4 "" "")] UNSPEC_FFMSDP))]
   ""
   "ffmsd%4 %x0 = %x1, %x2\n\t;;\n\tffmsd%4 %y0 = %y1, %y2"
