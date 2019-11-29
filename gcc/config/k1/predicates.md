@@ -106,21 +106,10 @@
             (match_test "IN_RANGE (INTVAL (op), 0, (1LL << 32)-1)"))
        (match_test "k1_legitimate_pic_symbolic_ref_p(op)")))
 
-(define_predicate "k1_imm_s32_pic_operand"
-  (ior (and (match_code "const_int")
-            (match_test "IN_RANGE (INTVAL (op),  -(1LL<<31), (1LL<<31)-1)"))
-       (match_test "k1_legitimate_pic_symbolic_ref_p(op)")))
-
-;; Operand valid as the 2nd/2 op of an ALU insn (make, …)
-(define_predicate "k1_make_int_operand"
- (ior (and (match_test "!flag_pic")
-           (match_operand 0 "immediate_operand"))
-      (match_code "const_int")
-      (match_test "k1_legitimate_pic_symbolic_ref_p(op)"))
-)
-
-;; Operand valid as the 3rd/3 op of an ALU insn (add*, sbf*, …)
-(define_predicate "k1_alu_op3_operand"
+;; Returns TRUE if op is a register or an immediate suitable for sign
+;; extension from the format signed10, upper27_lower10 or
+;; extend27_upper27_lower10
+(define_predicate "k1_r_s10_s37_s64_operand"
  (ior (and (match_test "!flag_pic")
            (match_operand 0 "nonmemory_operand"))
       (match_code "const_int")
