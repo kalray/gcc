@@ -1,9 +1,3 @@
-(define_predicate "nonmemory64_register32_d_operand"
-   (match_code "const,const_int,reg,subreg,mem,symbol_ref,label_ref")
-{
-	return nonmemory_operand (op,mode);
-})
-
 (define_predicate "k1_zero"
   (and (match_code "const_int")
        (match_test "op == const0_rtx")))
@@ -97,15 +91,6 @@
 	return true;
 })
 
-;; Immediate suitable for PIC code (insn must have corresponding
-;; relocation)
-;; These predicates are used with some widening 32->64 MAU insn.
-;; Symbols are rejected here as they would only fit in 32bits mode.
-(define_predicate "k1_imm_z32_pic_operand"
-  (ior (and (match_code "const_int")
-            (match_test "IN_RANGE (INTVAL (op), 0, (1LL << 32)-1)"))
-       (match_test "k1_legitimate_pic_symbolic_ref_p(op)")))
-
 ;; Returns TRUE if op is a register or an immediate suitable for sign
 ;; extension from the format signed10, upper27_lower10 or
 ;; extend27_upper27_lower10
@@ -117,13 +102,15 @@
       (match_test "k1_legitimate_pic_symbolic_ref_p(op)"))
 )
 
-;; Operand valid as the 3rd op of an MAU insn (mul*, …)
-(define_predicate "k1_mau_op3_operand"
- (ior (and (match_test "!flag_pic")
-           (match_operand 0 "nonmemory_operand"))
-      (match_code "const_int")
-      (match_operand 0 "register_operand")
-      (match_test "k1_legitimate_pic_symbolic_ref_p(op)")))
+;; Returns TRUE for a register, a 32-bit immediate constant, a symbol
+;; reference if 32bit mode and all PIC related symbolic ref
+(define_predicate "k1_r_any32_operand"
+  (ior (and (match_test "!flag_pic && (Pmode == SImode)")
+            (match_operand 0 "nonmemory_operand"))
+       (match_code "const_int")
+       (match_operand 0 "register_operand")
+       (match_test "k1_legitimate_pic_symbolic_ref_p(op)"))
+ )
 
 (define_predicate "symbolic_operand"
   (match_code "const,symbol_ref,label_ref"))
@@ -222,14 +209,6 @@
  ( ior (match_operand 0 "register_operand")
        (and (match_code "const_int")
             (match_test "satisfies_constraint_I32(op)"))))
-
-(define_predicate "immediate_unsigned_32bits_operand"
-  (and (match_code "const_int")
-       (match_test "INTVAL (op) >= 0 && INTVAL (op) < (1LL << 32)")))
-
-(define_predicate "immediate_unsigned_37bits_operand"
-  (and (match_code "const_int")
-       (match_test "INTVAL (op) >= 0 && INTVAL (op) < (1LL << 37)")))
 
 (define_predicate "poweroftwo_6bits_immediate_operand"
   (match_code "const_int")
