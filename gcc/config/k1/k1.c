@@ -5541,6 +5541,35 @@ next_insn_to_bundle (rtx_insn *r, rtx_insn *end)
 
   return NULL;
 }
+/* Finish work with abstract data `bundle states'.  */
+
+static void
+finish_bundle_states (void)
+{
+  struct bundle_state *curr_state, *next_state;
+
+  for (curr_state = allocated_bundle_states_chain; curr_state != NULL;
+       curr_state = next_state)
+    {
+      next_state = curr_state->allocated_states_chain;
+      free (curr_state->dfa_state);
+      free (curr_state);
+    }
+}
+
+/* Start work with abstract data `bundle states'.  */
+
+static void
+initiate_bundle_states (void)
+{
+  if (cur_bundle_list != NULL)
+    finish_bundle_states ();
+
+  bundle_states_num = 0;
+  cur_bundle_list = NULL;
+  free_bundle_state_chain = NULL;
+  allocated_bundle_states_chain = NULL;
+}
 
 static struct bundle_state *
 get_free_bundle_state (void)
@@ -5555,22 +5584,22 @@ get_free_bundle_state (void)
   else
     {
       result = XNEW (struct bundle_state);
-      result->next = NULL;
-
-      result->insn = NULL;
-      result->last_insn = NULL;
-      result->insns_num = 0;
-
-      CLEAR_HARD_REG_SET (result->reg_defs);
-
-      result->dfa_state = xmalloc (dfa_state_size);
-      state_reset (result->dfa_state);
-
       result->allocated_states_chain = allocated_bundle_states_chain;
       allocated_bundle_states_chain = result;
+      result->dfa_state = xmalloc (dfa_state_size);
     }
+
+  result->next = NULL;
+  result->insn = NULL;
+  result->last_insn = NULL;
+  result->insns_num = 0;
+
+  CLEAR_HARD_REG_SET (result->reg_defs);
+  state_reset (result->dfa_state);
+
   result->unique_num = bundle_states_num;
   bundle_states_num++;
+
   return result;
 }
 
@@ -5786,8 +5815,8 @@ k1_fix_debug_for_bundles (void)
       gcc_assert (i->insn != NULL);
       gcc_assert (i->last_insn != NULL);
 
-      int bundle_start;
-      int bundle_end;
+      bool bundle_start;
+      bool bundle_end;
       /* Start from the end so that NOTEs will be added in the correct order. */
       do
 	{
@@ -6574,6 +6603,10 @@ k1_reorg (void)
 
   /* Doloop optimization. */
   k1_reorg_loops ();
+
+  /* Do it even if ! TARGET_BUNDLING because it also takes care of
+   cleaning previous data */
+  initiate_bundle_states ();
 
   if (scheduling && TARGET_BUNDLING)
     {
