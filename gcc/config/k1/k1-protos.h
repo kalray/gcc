@@ -44,11 +44,13 @@ extern void k1_expand_call (rtx fnaddr, rtx arg, rtx retval, bool sibcall);
 
 extern rtx k1_return_addr_rtx (int count, rtx frameaddr);
 
+extern bool k1_have_stack_checking (void);
+
 extern void k1_expand_prologue (void);
 
 extern void k1_expand_epilogue (void);
 
-extern void k1_expand_stack_check_allocate_stack (rtx target, rtx adjust);
+extern void k1_expand_stack_check (rtx addr);
 
 extern void k1_expand_helper_pic_call (rtx retval, rtx fnaddr, rtx callarg,
 				       int sibcall);
