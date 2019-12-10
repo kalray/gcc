@@ -2313,7 +2313,7 @@ k1-*-cos*)
 	tmake_file="k1/t-k1 k1/t-cos"
 	extra_options="${extra_options} k1/k1-cos.opt"
 	;;
-k1-*-linux-uclibc)
+k1-*-linux*)
 	tm_file="${tm_file} dbxelf.h elfos.h gnu-user.h linux.h k1/k1-linux.h glibc-stdint.h"
 	tmake_file="${tmake_file} t-linux k1/t-linux"
 	;;
