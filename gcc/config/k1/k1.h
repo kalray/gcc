@@ -853,8 +853,6 @@ extern void k1_profile_hook (void);
 
 #define SHIFT_COUNT_TRUNCATED 1
 
-#define STACK_CHECK_BUILTIN 1
-
 /* Address spaces
 
    The __bypass and __preload address spaces refers to same space as the generic
