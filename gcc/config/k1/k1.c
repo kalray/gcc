@@ -1125,6 +1125,7 @@ k1_target_print_operand (FILE *file, rtx x, int code)
   bool addressing_mode = false;
   bool as_address = false;
   bool is_float = false;
+  bool must_be_reversed = false;
   int addr_space = 0;
 
   switch (code)
@@ -1165,6 +1166,10 @@ k1_target_print_operand (FILE *file, rtx x, int code)
       is_float = true;
       break;
 
+    case 'R':
+      must_be_reversed = true;
+      break;
+
     case 'T':
       fprintf (file, "@pcrel(");
       output_addr_const (file, operand);
@@ -1198,7 +1203,11 @@ k1_target_print_operand (FILE *file, rtx x, int code)
     {
       if (!is_float)
 	{
-	  fprintf (file, "%s", GET_RTX_NAME (GET_CODE (x)));
+	  if (must_be_reversed)
+	    fprintf (file, "%s",
+		     GET_RTX_NAME (reverse_condition (GET_CODE (x))));
+	  else
+	    fprintf (file, "%s", GET_RTX_NAME (GET_CODE (x)));
 	}
       else
 	{
@@ -1554,116 +1563,6 @@ k1_expand_tablejump (rtx op0, rtx op1)
     }
 }
 
-void
-k1_emit_stack_overflow_block (rtx *seq, rtx *last)
-{
-  tree handler_name;
-  rtx handler_name_rtx;
-
-  if (cfun->machine->stack_check_block_seq != NULL_RTX)
-    {
-      *seq = cfun->machine->stack_check_block_seq;
-      *last = cfun->machine->stack_check_block_last;
-      return;
-    }
-
-  handler_name = get_identifier ("__stack_overflow_detected");
-  handler_name_rtx
-    = gen_rtx_SYMBOL_REF (Pmode, IDENTIFIER_POINTER (handler_name));
-
-  *seq = emit_label (cfun->machine->stack_check_block_label);
-  LABEL_NUSES (cfun->machine->stack_check_block_label) = 1;
-  *last = emit_call_insn (
-    gen_call (gen_rtx_MEM (Pmode, handler_name_rtx), const0_rtx));
-  emit_barrier_after (*last);
-
-  cfun->machine->stack_check_block_seq = *seq;
-  cfun->machine->stack_check_block_last = *last;
-}
-
-rtx
-k1_get_stack_check_block (void)
-{
-  rtx seq, last;
-
-  if (cfun->machine->stack_check_block_seq)
-    {
-      if (BLOCK_FOR_INSN (cfun->machine->stack_check_block_seq))
-	return block_label (
-	  BLOCK_FOR_INSN (cfun->machine->stack_check_block_seq));
-      else
-	return cfun->machine->stack_check_block_label;
-    }
-
-  if (cfun->machine->stack_check_block_label == NULL_RTX)
-    cfun->machine->stack_check_block_label = gen_label_rtx ();
-
-  if (currently_expanding_to_rtl)
-    return cfun->machine->stack_check_block_label;
-
-  push_topmost_sequence ();
-  k1_emit_stack_overflow_block (&seq, &last);
-  pop_topmost_sequence ();
-  create_basic_block (seq, last, EXIT_BLOCK_PTR_FOR_FN (cfun)->prev_bb);
-
-  return cfun->machine->stack_check_block_label;
-}
-
-void
-k1_expand_stack_check_allocate_stack (rtx target, rtx adjust)
-{
-  gcc_unreachable ();
-  /* int saved_stack_pointer_delta; */
-  /* tree stack_end = get_identifier ("__stack_end"); */
-  /* rtx stack_end_sym = gen_rtx_SYMBOL_REF (Pmode, IDENTIFIER_POINTER
-   * (stack_end)); */
-  /* rtx stack_end_val = gen_reg_rtx (Pmode), tmp = gen_reg_rtx (Pmode); */
-  /* rtx label, seq, last, jump_over; */
-
-  /* saved_stack_pointer_delta = stack_pointer_delta; */
-
-  /* anti_adjust_stack (adjust); */
-
-  /* /\* Even if size is constant, don't modify stack_pointer_delta. */
-  /*    The constant size alloca should preserve */
-  /*    crtl->preferred_stack_boundary alignment.  *\/ */
-  /* stack_pointer_delta = saved_stack_pointer_delta; */
-
-  /* emit_move_insn (target, virtual_stack_dynamic_rtx); */
-
-  /* label = k1_get_stack_check_block (); */
-
-  /* if (TARGET_STACK_CHECK_USE_TLS) { */
-  /*     stack_end_sym = gen_rtx_UNSPEC(Pmode, gen_rtvec (1, stack_end_sym),
-   * UNSPEC_TLS); */
-  /*     emit_move_insn (stack_end_val, */
-  /*                     gen_rtx_MEM (Pmode, */
-  /*                                  gen_rtx_PLUS (Pmode, */
-  /*                                                gen_rtx_REG(Pmode,
-   * K1C_LOCAL_POINTER_REGNO), */
-  /*                                                gen_rtx_CONST(Pmode,
-   * stack_end_sym)))); */
-  /* } else { */
-  /*     /\* [JV] Multiring: Waiting for allocated VSFR0 and maturity. *\/ */
-  /*     /\*BD3 emit_move_insn (stack_end_val, */
-  /*                     gen_rtx_REG (Pmode, K1C_VSFR0_REGNO));*\/ */
-  /*     gcc_unreachable(); */
-  /* } */
-  /* emit_insn (gen_rtx_SET (tmp, */
-  /*                         gen_rtx_MINUS (Pmode, */
-  /*                                        stack_pointer_rtx, */
-  /*                                        stack_end_val))); */
-  /* emit_cmp_and_jump_insns (tmp, const0_rtx, LT, */
-  /*                          NULL_RTX, Pmode, 0, label); */
-  /* JUMP_LABEL(get_last_insn ()) = label; */
-
-  /* jump_over = gen_label_rtx (); */
-  /* emit_jump_insn (gen_jump (jump_over)); */
-  /* JUMP_LABEL (get_last_insn ()) = jump_over; */
-  /* k1_emit_stack_overflow_block (&seq, &last); */
-  /* emit_label (jump_over); */
-}
-
 /* Return TRUE if REGNO should be saves in the prologue of current function */
 static bool
 should_be_saved_in_prologue (int regno)
@@ -1679,18 +1578,19 @@ k1_register_saved_on_entry (int regno)
   return cfun->machine->frame.reg_offset[regno] >= 0;
 }
 
-/* Returns a REG rtx with a hard reg that is safe to use in prologue
+/* Returns a REG rtx with the nth hard reg that is safe to use in prologue
    (caller-saved and non fixed reg). Returns NULL_RTX and emits an
    error if no such register can be found. */
 static rtx
-k1_get_callersaved_nonfixed_reg (machine_mode mode)
+k1_get_callersaved_nonfixed_reg (machine_mode mode, unsigned int n)
 {
   int regno;
+  unsigned int i;
   // start at R16 as as everything before that may be used.
   // We should be able to use the veneer regs if not fixed.
-  for (regno = 16; regno < FIRST_PSEUDO_REGISTER; regno++)
+  for (i = 0, regno = 16; regno < FIRST_PSEUDO_REGISTER; regno++)
     {
-      if (call_really_used_regs[regno] && !fixed_regs[regno])
+      if (call_really_used_regs[regno] && !fixed_regs[regno] && (i++ == n))
 	return gen_rtx_REG (mode, regno);
     }
 
@@ -1778,7 +1678,7 @@ k1_save_or_restore_callee_save_registers (bool restore)
 	    if (regno == K1C_RETURN_POINTER_REGNO)
 	      {
 		/* spill_mode = Pmode; */
-		saved_reg = k1_get_callersaved_nonfixed_reg (spill_mode);
+		saved_reg = k1_get_callersaved_nonfixed_reg (spill_mode, 0);
 		gcc_assert (saved_reg != NULL_RTX);
 
 		if (restore == false)
@@ -1839,6 +1739,18 @@ k1_initial_elimination_offset (int from, int to)
   gcc_unreachable ();
 }
 
+/* Return TRUE if target supports -fstack-limit-register */
+
+bool
+k1_have_stack_checking (void)
+{
+#if defined(GCC_K1_MPPA_COS)
+  return true;
+#else
+  return false;
+#endif
+}
+
 void
 k1_expand_prologue (void)
 {
@@ -1849,6 +1761,31 @@ k1_expand_prologue (void)
 
   if (size > 0)
     {
+
+      if (crtl->limit_stack)
+	{
+	  if (k1_have_stack_checking ())
+	    {
+	      rtx new_stack_pointer_rtx
+		= k1_get_callersaved_nonfixed_reg (Pmode, 0);
+	      rtx stack_limit_reg = k1_get_callersaved_nonfixed_reg (Pmode, 1);
+
+	      emit_move_insn (stack_limit_reg, stack_limit_rtx);
+	      emit_insn (gen_add3_insn (new_stack_pointer_rtx,
+					stack_pointer_rtx, GEN_INT (-size)));
+	      emit_insn (gen_sub3_insn (new_stack_pointer_rtx, stack_limit_reg,
+					new_stack_pointer_rtx));
+	      emit_insn (
+		gen_ctrapsi4 (gen_rtx_GT (VOIDmode, new_stack_pointer_rtx,
+					  const0_rtx),
+			      new_stack_pointer_rtx, const0_rtx, GEN_INT (0)));
+	    }
+	  else
+	    {
+	      error ("-fstack-limit-* is not supported.");
+	    }
+	}
+
       insn = emit_insn (gen_add2_insn (stack_pointer_rtx, GEN_INT (-size)));
       RTX_FRAME_RELATED_P (insn) = 1;
 
