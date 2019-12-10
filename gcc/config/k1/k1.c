@@ -6883,11 +6883,9 @@ k1_is_farcall_p (rtx op)
 void
 k1_profile_hook (void)
 {
-  rtx mem_p_saved_ra = gen_rtx_REG (SImode, 38);
-  rtx fp = memory_address (Pmode, frame_pointer_rtx);
+  rtx ra_arg = get_hard_reg_initial_val (Pmode, K1C_RETURN_POINTER_REGNO);
   rtx fun = gen_rtx_SYMBOL_REF (Pmode, "__mcount");
-  emit_library_call (fun, LCT_NORMAL, VOIDmode, 2, mem_p_saved_ra, Pmode, fp,
-		     Pmode);
+  emit_library_call (fun, LCT_NORMAL, VOIDmode, 1, ra_arg, Pmode);
 }
 
 /* Initialize the GCC target structure.  */
