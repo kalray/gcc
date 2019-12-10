@@ -21,6 +21,8 @@
 #define GCC_K1_MPPA_LINUX
 
 #define GLIBC_DYNAMIC_LINKER "/lib/ld-linux-k1c.so.1"
+#undef MUSL_DYNAMIC_LINKER
+#define MUSL_DYNAMIC_LINKER "/lib/ld-musl-k1c.so.1"
 
 #define TARGET_OS_CPP_BUILTINS()                                               \
   do                                                                           \
