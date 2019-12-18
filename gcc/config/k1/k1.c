@@ -1472,29 +1472,6 @@ k1_target_print_operand_address (FILE *file, rtx x)
     }
 }
 
-static void
-k1_file_start ()
-{
-
-  /* Variable tracking should be run after all optimizations which change order
-     of insns (like machine reorg).  It also needs a valid CFG.  This can't be
-     done in k1_override_options, because flag_var_tracking is finalized after
-     that.  */
-  k1_flag_var_tracking = flag_var_tracking;
-}
-
-static void
-k1_set_current_function (tree decl ATTRIBUTE_UNUSED)
-{
-
-  /* flag_var_tracking might be reset by cl_optimization_restore in
-     invoke_set_current_function_hook(). This hook is called right
-     after that, reset flag_var_tracking to 0. Reminder: The
-     var_tracking pass is run explicitely in our machine_reorg. */
-
-  flag_var_tracking = 0;
-}
-
 /* Functions to save and restore machine-specific function data.  */
 static struct machine_function *
 k1_init_machine_status (void)
@@ -6552,7 +6529,7 @@ k1_reorg (void)
     }
 
   /* This is needed. Else final pass will crash on debug_insn-s */
-  if (k1_flag_var_tracking)
+  if (flag_var_tracking)
     {
       compute_bb_for_insn ();
       timevar_push (TV_VAR_TRACKING);
@@ -6995,12 +6972,6 @@ k1_profile_hook (void)
 
 #undef TARGET_CAN_USE_DOLOOP_P
 #define TARGET_CAN_USE_DOLOOP_P can_use_doloop_if_innermost
-
-#undef TARGET_SET_CURRENT_FUNCTION
-#define TARGET_SET_CURRENT_FUNCTION k1_set_current_function
-
-#undef TARGET_ASM_FILE_START
-#define TARGET_ASM_FILE_START k1_file_start
 
 #undef TARGET_ADDR_SPACE_POINTER_MODE
 #define TARGET_ADDR_SPACE_POINTER_MODE k1_addr_space_pointer_mode
