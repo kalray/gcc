@@ -1,6 +1,9 @@
 (define_register_constraint "RXX" "(SFR_REGS)"
      "A system register constraint.")
 
+(define_register_constraint "RYY" "(AIB_REGS)"
+     "A system register forcing SET and WFX* alone in bundle.")
+
 (define_constraint "S"
   "An immediate or symbol operand"
   (ior (match_code "const_double,const_int")
