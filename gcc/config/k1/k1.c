@@ -133,8 +133,6 @@
 
 static bool scheduling = false;
 
-#define K1C_SYNC_REG_REGNO (K1C_MDS_REGISTERS + 0)
-
 rtx k1_sync_reg_rtx;
 rtx k1_link_reg_rtx;
 
@@ -708,9 +706,9 @@ k1_target_conditional_register_usage (void)
 rtx
 k1_return_addr_rtx (int count, rtx frameaddr ATTRIBUTE_UNUSED)
 {
-    return count == 0
-        ? get_hard_reg_initial_val (Pmode, K1C_RETURN_POINTER_REGNO)
-        : NULL_RTX;
+  return count == 0
+         ? get_hard_reg_initial_val (Pmode, K1C_RETURN_POINTER_REGNO)
+         : NULL_RTX;
 }
 
 /* Implements the macro INIT_CUMULATIVE_ARGS defined in k1.h. */
@@ -2679,13 +2677,11 @@ k1_expand_atomic_test_and_set (rtx operands[])
   emit_insn (gen_iorsi3 (newval, val, mask));
   emit_insn (gen_acswapw (tmp, memsi));
 
-  /* ACSWAP insn returns 0x0 (fail) or 0x1 (success) in the low part
-     of TMP:
+  /* ACSWAP insn returns 0x0 (fail) or 0x1 (success) in the low part of TMP:
      - if successful: MEM is updated, do not loop,
 		      lock is acquired, return false (i.e. BYTE)
      - if failing: MEM has changed, try again */
-  emit_cmp_and_jump_insns (newval, const1_rtx, NE, NULL_RTX, SImode, true,
-			   retry);
+  emit_cmp_and_jump_insns (newval, const1_rtx, NE, NULL_RTX, SImode, true, retry);
 
   emit_label (fini);
   emit_move_insn (operands[0], gen_lowpart (QImode, byte));
@@ -2828,7 +2824,6 @@ enum k1_builtin
   K1_BUILTIN_FSISRW,
   K1_BUILTIN_FSISRD,
   K1_BUILTIN_GET,
-  /* K1_BUILTIN_GET_R, */
   K1_BUILTIN_WFXL,
   K1_BUILTIN_WFXM,
   K1_BUILTIN_IINVAL,
@@ -2845,7 +2840,6 @@ enum k1_builtin
   K1_BUILTIN_SBMMT8,
   K1_BUILTIN_SCALL,
   K1_BUILTIN_SET,
-  K1_BUILTIN_SET_PS,
   K1_BUILTIN_SLEEP,
   K1_BUILTIN_STOP,
   K1_BUILTIN_STSUW,
@@ -2940,175 +2934,165 @@ k1_target_init_builtins (void)
                               K1_BUILTIN_##UC_NAME,                     \
                               BUILT_IN_MD, NULL, NULL_TREE)
 
-    ADD_K1_BUILTIN (ABDW,    "abdw",        INT32, INT32, INT32);
-    ADD_K1_BUILTIN (ABDD,    "abdd",        INT64, INT64, INT64);
-    ADD_K1_BUILTIN (ADDSW,   "addsw",       INT32, INT32, INT32);
-    ADD_K1_BUILTIN (ADDSD,   "addsd",       INT64, INT64, INT64);
-    ADD_K1_BUILTIN (SBFSW,   "sbfsw",       INT32, INT32, INT32);
-    ADD_K1_BUILTIN (SBFSD,   "sbfsd",       INT64, INT64, INT64);
-    ADD_K1_BUILTIN (AVGW,    "avgw",        INT32, INT32, INT32);
-    ADD_K1_BUILTIN (AVGUW,   "avguw",       UINT32, UINT32, UINT32);
-    ADD_K1_BUILTIN (AVGRW,   "avgrw",       INT32, INT32, INT32);
-    ADD_K1_BUILTIN (AVGRUW,  "avgruw",      UINT32, UINT32, UINT32);
-    ADD_K1_BUILTIN (AWAIT,   "await",       VOID);
-    ADD_K1_BUILTIN (BARRIER, "barrier",     VOID);
-    ADD_K1_BUILTIN (CBSW,    "cbsw",        INT32, UINT32);
-    ADD_K1_BUILTIN (CBSD,    "cbsd",        INT64, UINT64);
-    ADD_K1_BUILTIN (CLZW,    "clzw",        INT32, UINT32);
-    ADD_K1_BUILTIN (CLZD,    "clzd",        INT64, UINT64);
-    ADD_K1_BUILTIN (CTZW,    "ctzw",        INT32, UINT32);
-    ADD_K1_BUILTIN (CTZD,    "ctzd",        INT64, UINT64);
-    ADD_K1_BUILTIN (ACSWAPW, "acswapw", UINT128, VPTR, UINT64, UINT64);
-    ADD_K1_BUILTIN (ACSWAPD, "acswapd", UINT128, VPTR, UINT64, UINT64);
-    ADD_K1_BUILTIN (AFADDD, "afaddd", UINT64, VPTR, INT64);
-    ADD_K1_BUILTIN (AFADDW, "afaddw", UINT32, VPTR, INT32);
-    ADD_K1_BUILTIN (ALCLRD, "alclrd", UINT64, VPTR);
-    ADD_K1_BUILTIN (ALCLRW, "alclrw", UINT32, VPTR);
-    ADD_K1_BUILTIN (DINVAL,  "dinval",      VOID);
-    ADD_K1_BUILTIN (DINVALL, "dinvall", VOID, CVPTR);
-    ADD_K1_BUILTIN (DOZE,    "doze",        VOID);
-    ADD_K1_BUILTIN (DTOUCHL, "dtouchl", VOID, CVPTR);
-    ADD_K1_BUILTIN (DZEROL, "dzerol", VOID, VPTR);
-    ADD_K1_BUILTIN (EXTFZ,   "extfz",       UINT32, UINT32, UINT32, UINT32);
+  ADD_K1_BUILTIN (ABDW, "abdw", INT32, INT32, INT32);
+  ADD_K1_BUILTIN (ABDD, "abdd", INT64, INT64, INT64);
+  ADD_K1_BUILTIN (ADDSW, "addsw", INT32, INT32, INT32);
+  ADD_K1_BUILTIN (ADDSD, "addsd", INT64, INT64, INT64);
+  ADD_K1_BUILTIN (SBFSW, "sbfsw", INT32, INT32, INT32);
+  ADD_K1_BUILTIN (SBFSD, "sbfsd", INT64, INT64, INT64);
+  ADD_K1_BUILTIN (AVGW, "avgw", INT32, INT32, INT32);
+  ADD_K1_BUILTIN (AVGUW, "avguw", UINT32, UINT32, UINT32);
+  ADD_K1_BUILTIN (AVGRW, "avgrw", INT32, INT32, INT32);
+  ADD_K1_BUILTIN (AVGRUW, "avgruw", UINT32, UINT32, UINT32);
+  ADD_K1_BUILTIN (AWAIT, "await", VOID);
+  ADD_K1_BUILTIN (BARRIER, "barrier", VOID);
+  ADD_K1_BUILTIN (CBSW, "cbsw", INT32, UINT32);
+  ADD_K1_BUILTIN (CBSD, "cbsd", INT64, UINT64);
+  ADD_K1_BUILTIN (CLZW, "clzw", INT32, UINT32);
+  ADD_K1_BUILTIN (CLZD, "clzd", INT64, UINT64);
+  ADD_K1_BUILTIN (CTZW, "ctzw", INT32, UINT32);
+  ADD_K1_BUILTIN (CTZD, "ctzd", INT64, UINT64);
+  ADD_K1_BUILTIN (ACSWAPW, "acswapw", UINT32, VPTR, UINT32, UINT32);
+  ADD_K1_BUILTIN (ACSWAPD, "acswapd", UINT64, VPTR, UINT64, UINT64);
+  ADD_K1_BUILTIN (AFADDD, "afaddd", UINT64, VPTR, INT64);
+  ADD_K1_BUILTIN (AFADDW, "afaddw", UINT32, VPTR, INT32);
+  ADD_K1_BUILTIN (ALCLRD, "alclrd", UINT64, VPTR);
+  ADD_K1_BUILTIN (ALCLRW, "alclrw", UINT32, VPTR);
+  ADD_K1_BUILTIN (DINVAL, "dinval", VOID);
+  ADD_K1_BUILTIN (DINVALL, "dinvall", VOID, CVPTR);
+  ADD_K1_BUILTIN (DOZE, "doze", VOID);
+  ADD_K1_BUILTIN (DTOUCHL, "dtouchl", VOID, CVPTR);
+  ADD_K1_BUILTIN (DZEROL, "dzerol", VOID, VPTR);
+  ADD_K1_BUILTIN (EXTFZ, "extfz", UINT32, UINT32, UINT32, UINT32);
 
-    ADD_K1_BUILTIN (FABSW,   "fabsw",       FLOAT32, FLOAT32);
-    ADD_K1_BUILTIN (FABSWP,  "fabswp",      FLOAT32X2, FLOAT32X2);
-    ADD_K1_BUILTIN (FABSWQ,  "fabswq",      FLOAT32X4, FLOAT32X4);
-    ADD_K1_BUILTIN (FABSD, "fabsd", FLOAT64, FLOAT64);
-    ADD_K1_BUILTIN (FABSDP,  "fabsdp",      FLOAT64X2, FLOAT64X2);
-    ADD_K1_BUILTIN (FNEGW,   "fnegw",       FLOAT32, FLOAT32);
-    ADD_K1_BUILTIN (FNEGWP,  "fnegwp",      FLOAT32X2, FLOAT32X2);
-    ADD_K1_BUILTIN (FNEGWQ,  "fnegwq",      FLOAT32X4, FLOAT32X4);
-    ADD_K1_BUILTIN (FNEGD, "fnegd", FLOAT64, FLOAT64);
-    ADD_K1_BUILTIN (FNEGDP,  "fnegdp",      FLOAT64X2, FLOAT64X2);
-    ADD_K1_BUILTIN (FMAXW,   "fmaxw",       FLOAT32, FLOAT32, FLOAT32);
-    ADD_K1_BUILTIN (FMAXWP,  "fmaxwp",      FLOAT32X2, FLOAT32X2, FLOAT32X2);
-    ADD_K1_BUILTIN (FMAXWQ,  "fmaxwq",      FLOAT32X4, FLOAT32X4, FLOAT32X4);
-    ADD_K1_BUILTIN (FMAXD, "fmaxd", FLOAT64, FLOAT64, FLOAT64);
-    ADD_K1_BUILTIN (FMAXDP,  "fmaxdp",      FLOAT64X2, FLOAT64X2, FLOAT64X2);
-    ADD_K1_BUILTIN (FMINW,   "fminw",       FLOAT32, FLOAT32, FLOAT32);
-    ADD_K1_BUILTIN (FMINWP,  "fminwp",      FLOAT32X2, FLOAT32X2, FLOAT32X2);
-    ADD_K1_BUILTIN (FMINWQ,  "fminwq",      FLOAT32X4, FLOAT32X4, FLOAT32X4);
-    ADD_K1_BUILTIN (FMIND, "fmind", FLOAT64, FLOAT64, FLOAT64);
-    ADD_K1_BUILTIN (FMINDP,  "fmindp",      FLOAT64X2, FLOAT64X2, FLOAT64X2);
-    ADD_K1_BUILTIN (FINVW,   "finvw",       FLOAT32, FLOAT32, STRING);
-    ADD_K1_BUILTIN (FISRW,   "fisrw",       FLOAT32, FLOAT32, STRING);
-    ADD_K1_BUILTIN (FADDW,   "faddw",       FLOAT32, FLOAT32, FLOAT32, STRING);
-    ADD_K1_BUILTIN (FADDWP,  "faddwp",      FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
-    ADD_K1_BUILTIN (FADDWQ,  "faddwq",      FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
-    ADD_K1_BUILTIN (FADDD, "faddd", FLOAT64, FLOAT64, FLOAT64, STRING);
-    ADD_K1_BUILTIN (FADDDP,  "fadddp",      FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
-    ADD_K1_BUILTIN (FADDCWC, "faddcwc", FLOAT32X2, FLOAT32X2, FLOAT32X2,
-		    STRING);
-    ADD_K1_BUILTIN (FADDCWCP, "faddcwcp", FLOAT32X4, FLOAT32X4, FLOAT32X4,
-		    STRING);
-    ADD_K1_BUILTIN (FADDCDC, "faddcdc",     FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
-    ADD_K1_BUILTIN (FSBFW,   "fsbfw",       FLOAT32, FLOAT32, FLOAT32, STRING);
-    ADD_K1_BUILTIN (FSBFWP,  "fsbfwp",      FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
-    ADD_K1_BUILTIN (FSBFWQ,  "fsbfwq",      FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
-    ADD_K1_BUILTIN (FSBFD, "fsbfd", FLOAT64, FLOAT64, FLOAT64, STRING);
-    ADD_K1_BUILTIN (FSBFDP,  "fsbfdp",      FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
-    ADD_K1_BUILTIN (FSBFCWC, "fsbfcwc", FLOAT32X2, FLOAT32X2, FLOAT32X2,
-		    STRING);
-    ADD_K1_BUILTIN (FSBFCWCP, "fsbfcwcp", FLOAT32X4, FLOAT32X4, FLOAT32X4,
-		    STRING);
-    ADD_K1_BUILTIN (FSBFCDC, "fsbfcdc",     FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
-    ADD_K1_BUILTIN (FMULW,   "fmulw",       FLOAT32, FLOAT32, FLOAT32, STRING);
-    ADD_K1_BUILTIN (FMULWP, "fmulwp", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
-    ADD_K1_BUILTIN (FMULWQ, "fmulwq", FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
-    ADD_K1_BUILTIN (FMULD,   "fmuld",       FLOAT64, FLOAT64, FLOAT64, STRING);
-    ADD_K1_BUILTIN (FMULDP, "fmuldp", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
-    ADD_K1_BUILTIN (FMULWD,  "fmulwd",      FLOAT64, FLOAT32, FLOAT32, STRING);
-    ADD_K1_BUILTIN (FMULWC,  "fmulwc",      FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
-    ADD_K1_BUILTIN (FMULWCP, "fmulwcp",     FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
-    ADD_K1_BUILTIN (FMULCWC, "fmulcwc", FLOAT32X2, FLOAT32X2, FLOAT32X2,
-		    STRING);
-    ADD_K1_BUILTIN (FMULCWCP,"fmulcwcp",    FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
-    ADD_K1_BUILTIN (FMULDC,  "fmuldc",      FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
-    ADD_K1_BUILTIN (FMULCDC, "fmulcdc",     FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
-    ADD_K1_BUILTIN (FMM2WQ,  "fmm2wq",      FLOAT32X4, FLOAT32X2, FLOAT32X2, STRING);
-    ADD_K1_BUILTIN (FFMAW,   "ffmaw",       FLOAT32, FLOAT32, FLOAT32, FLOAT32, STRING);
-    ADD_K1_BUILTIN (FFMAWP,  "ffmawp",      FLOAT32X2, FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
-    ADD_K1_BUILTIN (FFMAWQ,  "ffmawq",      FLOAT32X4, FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
-    ADD_K1_BUILTIN (FFMAD, "ffmad", FLOAT64, FLOAT64, FLOAT64, FLOAT64, STRING);
-    ADD_K1_BUILTIN (FFMADP,  "ffmadp",      FLOAT64X2, FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
-    ADD_K1_BUILTIN (FFMAWD, "ffmawd", FLOAT64, FLOAT32, FLOAT32, FLOAT64,
-		    STRING);
-    ADD_K1_BUILTIN (FMM2AWQ, "fmm2awq",     FLOAT32X4, FLOAT32X2, FLOAT32X2, FLOAT32X4, STRING);
-    ADD_K1_BUILTIN (FFMSW,   "ffmsw",       FLOAT32, FLOAT32, FLOAT32, FLOAT32, STRING);
-    ADD_K1_BUILTIN (FFMSWP,  "ffmswp",      FLOAT32X2, FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
-    ADD_K1_BUILTIN (FFMSWQ,  "ffmswq",      FLOAT32X4, FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
-    ADD_K1_BUILTIN (FFMSD, "ffmsd", FLOAT64, FLOAT64, FLOAT64, FLOAT64, STRING);
-    ADD_K1_BUILTIN (FFMSDP,  "ffmsdp",      FLOAT64X2, FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
-    ADD_K1_BUILTIN (FFMSWD, "ffmswd", FLOAT64, FLOAT32, FLOAT32, FLOAT64,
-		    STRING);
-    ADD_K1_BUILTIN (FMM2SWQ, "fmm2swq",     FLOAT32X4, FLOAT32X2, FLOAT32X2, FLOAT32X4, STRING);
-    ADD_K1_BUILTIN (FLOATW,  "floatw",      FLOAT32, INT32, UINT8, STRING);
-    ADD_K1_BUILTIN (FLOATWP, "floatwp",     FLOAT32X2, INT32X2, UINT8, STRING);
-    ADD_K1_BUILTIN (FLOATWQ, "floatwq",     FLOAT32X4, INT32X4, UINT8, STRING);
-    ADD_K1_BUILTIN (FLOATD, "floatd", FLOAT64, INT64, UINT8, STRING);
-    ADD_K1_BUILTIN (FLOATDP, "floatdp",     FLOAT64X2, INT64X2, UINT8, STRING);
-    ADD_K1_BUILTIN (FLOATUW, "floatuw",     FLOAT32, UINT32, UINT8, STRING);
-    ADD_K1_BUILTIN (FLOATUWP,"floatuwp",    FLOAT32X2, UINT32X2, UINT8, STRING);
-    ADD_K1_BUILTIN (FLOATUWQ,"floatuwq",    FLOAT32X4, UINT32X4, UINT8, STRING);
-    ADD_K1_BUILTIN (FLOATUD, "floatud", FLOAT64, UINT64, UINT8, STRING);
-    ADD_K1_BUILTIN (FLOATUDP,"floatudp",    FLOAT64X2, UINT64X2, UINT8, STRING);
-    ADD_K1_BUILTIN (FIXEDW,  "fixedw",      INT32, FLOAT32, UINT8, STRING);
-    ADD_K1_BUILTIN (FIXEDWP, "fixedwp",     INT32X2, FLOAT32X2, UINT8, STRING);
-    ADD_K1_BUILTIN (FIXEDWQ, "fixedwq",     INT32X4, FLOAT32X4, UINT8, STRING);
-    ADD_K1_BUILTIN (FIXEDD, "fixedd", INT64, FLOAT64, UINT8, STRING);
-    ADD_K1_BUILTIN (FIXEDDP, "fixeddp",     INT64X2, FLOAT64X2, UINT8, STRING);
-    ADD_K1_BUILTIN (FIXEDUW, "fixeduw",     UINT32, FLOAT32, UINT8, STRING);
-    ADD_K1_BUILTIN (FIXEDUWP,"fixeduwp",    UINT32X2, FLOAT32X2, UINT8, STRING);
-    ADD_K1_BUILTIN (FIXEDUWQ,"fixeduwq",    UINT32X4, FLOAT32X4, UINT8, STRING);
-    ADD_K1_BUILTIN (FIXEDUD, "fixedud", UINT64, FLOAT64, UINT8, STRING);
-    ADD_K1_BUILTIN (FIXEDUDP,"fixedudp",    UINT64X2, FLOAT64X2, UINT8, STRING);
+  ADD_K1_BUILTIN (FABSW, "fabsw", FLOAT32, FLOAT32);
+  ADD_K1_BUILTIN (FABSWP, "fabswp", FLOAT32X2, FLOAT32X2);
+  ADD_K1_BUILTIN (FABSWQ, "fabswq", FLOAT32X4, FLOAT32X4);
+  ADD_K1_BUILTIN (FABSD, "fabsd", FLOAT64, FLOAT64);
+  ADD_K1_BUILTIN (FABSDP, "fabsdp", FLOAT64X2, FLOAT64X2);
+  ADD_K1_BUILTIN (FNEGW, "fnegw", FLOAT32, FLOAT32);
+  ADD_K1_BUILTIN (FNEGWP, "fnegwp", FLOAT32X2, FLOAT32X2);
+  ADD_K1_BUILTIN (FNEGWQ, "fnegwq", FLOAT32X4, FLOAT32X4);
+  ADD_K1_BUILTIN (FNEGD, "fnegd", FLOAT64, FLOAT64);
+  ADD_K1_BUILTIN (FNEGDP, "fnegdp", FLOAT64X2, FLOAT64X2);
+  ADD_K1_BUILTIN (FMAXW, "fmaxw", FLOAT32, FLOAT32, FLOAT32);
+  ADD_K1_BUILTIN (FMAXWP, "fmaxwp", FLOAT32X2, FLOAT32X2, FLOAT32X2);
+  ADD_K1_BUILTIN (FMAXWQ, "fmaxwq", FLOAT32X4, FLOAT32X4, FLOAT32X4);
+  ADD_K1_BUILTIN (FMAXD, "fmaxd", FLOAT64, FLOAT64, FLOAT64);
+  ADD_K1_BUILTIN (FMAXDP, "fmaxdp", FLOAT64X2, FLOAT64X2, FLOAT64X2);
+  ADD_K1_BUILTIN (FMINW, "fminw", FLOAT32, FLOAT32, FLOAT32);
+  ADD_K1_BUILTIN (FMINWP, "fminwp", FLOAT32X2, FLOAT32X2, FLOAT32X2);
+  ADD_K1_BUILTIN (FMINWQ, "fminwq", FLOAT32X4, FLOAT32X4, FLOAT32X4);
+  ADD_K1_BUILTIN (FMIND, "fmind", FLOAT64, FLOAT64, FLOAT64);
+  ADD_K1_BUILTIN (FMINDP, "fmindp", FLOAT64X2, FLOAT64X2, FLOAT64X2);
+  ADD_K1_BUILTIN (FINVW, "finvw", FLOAT32, FLOAT32, STRING);
+  ADD_K1_BUILTIN (FISRW, "fisrw", FLOAT32, FLOAT32, STRING);
+  ADD_K1_BUILTIN (FADDW, "faddw", FLOAT32, FLOAT32, FLOAT32, STRING);
+  ADD_K1_BUILTIN (FADDWP, "faddwp", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
+  ADD_K1_BUILTIN (FADDWQ, "faddwq", FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
+  ADD_K1_BUILTIN (FADDD, "faddd", FLOAT64, FLOAT64, FLOAT64, STRING);
+  ADD_K1_BUILTIN (FADDDP, "fadddp", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
+  ADD_K1_BUILTIN (FADDCWC, "faddcwc", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
+  ADD_K1_BUILTIN (FADDCWCP, "faddcwcp", FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
+  ADD_K1_BUILTIN (FADDCDC, "faddcdc", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
+  ADD_K1_BUILTIN (FSBFW, "fsbfw", FLOAT32, FLOAT32, FLOAT32, STRING);
+  ADD_K1_BUILTIN (FSBFWP, "fsbfwp", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
+  ADD_K1_BUILTIN (FSBFWQ, "fsbfwq", FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
+  ADD_K1_BUILTIN (FSBFD, "fsbfd", FLOAT64, FLOAT64, FLOAT64, STRING);
+  ADD_K1_BUILTIN (FSBFDP, "fsbfdp", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
+  ADD_K1_BUILTIN (FSBFCWC, "fsbfcwc", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
+  ADD_K1_BUILTIN (FSBFCWCP, "fsbfcwcp", FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
+  ADD_K1_BUILTIN (FSBFCDC, "fsbfcdc", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
+  ADD_K1_BUILTIN (FMULW, "fmulw", FLOAT32, FLOAT32, FLOAT32, STRING);
+  ADD_K1_BUILTIN (FMULWP, "fmulwp", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
+  ADD_K1_BUILTIN (FMULWQ, "fmulwq", FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
+  ADD_K1_BUILTIN (FMULD, "fmuld", FLOAT64, FLOAT64, FLOAT64, STRING);
+  ADD_K1_BUILTIN (FMULDP, "fmuldp", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
+  ADD_K1_BUILTIN (FMULWD, "fmulwd", FLOAT64, FLOAT32, FLOAT32, STRING);
+  ADD_K1_BUILTIN (FMULWC, "fmulwc", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
+  ADD_K1_BUILTIN (FMULWCP, "fmulwcp", FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
+  ADD_K1_BUILTIN (FMULCWC, "fmulcwc", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
+  ADD_K1_BUILTIN (FMULCWCP,"fmulcwcp", FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
+  ADD_K1_BUILTIN (FMULDC, "fmuldc", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
+  ADD_K1_BUILTIN (FMULCDC, "fmulcdc", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
+  ADD_K1_BUILTIN (FMM2WQ, "fmm2wq", FLOAT32X4, FLOAT32X2, FLOAT32X2, STRING);
+  ADD_K1_BUILTIN (FFMAW, "ffmaw", FLOAT32, FLOAT32, FLOAT32, FLOAT32, STRING);
+  ADD_K1_BUILTIN (FFMAWP, "ffmawp", FLOAT32X2, FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
+  ADD_K1_BUILTIN (FFMAWQ, "ffmawq", FLOAT32X4, FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
+  ADD_K1_BUILTIN (FFMAD, "ffmad", FLOAT64, FLOAT64, FLOAT64, FLOAT64, STRING);
+  ADD_K1_BUILTIN (FFMADP, "ffmadp", FLOAT64X2, FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
+  ADD_K1_BUILTIN (FFMAWD, "ffmawd", FLOAT64, FLOAT32, FLOAT32, FLOAT64, STRING);
+  ADD_K1_BUILTIN (FMM2AWQ, "fmm2awq", FLOAT32X4, FLOAT32X2, FLOAT32X2, FLOAT32X4, STRING);
+  ADD_K1_BUILTIN (FFMSW, "ffmsw", FLOAT32, FLOAT32, FLOAT32, FLOAT32, STRING);
+  ADD_K1_BUILTIN (FFMSWP, "ffmswp", FLOAT32X2, FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
+  ADD_K1_BUILTIN (FFMSWQ, "ffmswq", FLOAT32X4, FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
+  ADD_K1_BUILTIN (FFMSD, "ffmsd", FLOAT64, FLOAT64, FLOAT64, FLOAT64, STRING);
+  ADD_K1_BUILTIN (FFMSDP, "ffmsdp", FLOAT64X2, FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
+  ADD_K1_BUILTIN (FFMSWD, "ffmswd", FLOAT64, FLOAT32, FLOAT32, FLOAT64, STRING);
+  ADD_K1_BUILTIN (FMM2SWQ, "fmm2swq", FLOAT32X4, FLOAT32X2, FLOAT32X2, FLOAT32X4, STRING);
+  ADD_K1_BUILTIN (FLOATW, "floatw", FLOAT32, INT32, UINT8, STRING);
+  ADD_K1_BUILTIN (FLOATWP, "floatwp", FLOAT32X2, INT32X2, UINT8, STRING);
+  ADD_K1_BUILTIN (FLOATWQ, "floatwq", FLOAT32X4, INT32X4, UINT8, STRING);
+  ADD_K1_BUILTIN (FLOATD, "floatd", FLOAT64, INT64, UINT8, STRING);
+  ADD_K1_BUILTIN (FLOATDP, "floatdp", FLOAT64X2, INT64X2, UINT8, STRING);
+  ADD_K1_BUILTIN (FLOATUW, "floatuw", FLOAT32, UINT32, UINT8, STRING);
+  ADD_K1_BUILTIN (FLOATUWP,"floatuwp", FLOAT32X2, UINT32X2, UINT8, STRING);
+  ADD_K1_BUILTIN (FLOATUWQ,"floatuwq", FLOAT32X4, UINT32X4, UINT8, STRING);
+  ADD_K1_BUILTIN (FLOATUD, "floatud", FLOAT64, UINT64, UINT8, STRING);
+  ADD_K1_BUILTIN (FLOATUDP,"floatudp", FLOAT64X2, UINT64X2, UINT8, STRING);
+  ADD_K1_BUILTIN (FIXEDW, "fixedw", INT32, FLOAT32, UINT8, STRING);
+  ADD_K1_BUILTIN (FIXEDWP, "fixedwp", INT32X2, FLOAT32X2, UINT8, STRING);
+  ADD_K1_BUILTIN (FIXEDWQ, "fixedwq", INT32X4, FLOAT32X4, UINT8, STRING);
+  ADD_K1_BUILTIN (FIXEDD, "fixedd", INT64, FLOAT64, UINT8, STRING);
+  ADD_K1_BUILTIN (FIXEDDP, "fixeddp", INT64X2, FLOAT64X2, UINT8, STRING);
+  ADD_K1_BUILTIN (FIXEDUW, "fixeduw", UINT32, FLOAT32, UINT8, STRING);
+  ADD_K1_BUILTIN (FIXEDUWP,"fixeduwp", UINT32X2, FLOAT32X2, UINT8, STRING);
+  ADD_K1_BUILTIN (FIXEDUWQ,"fixeduwq", UINT32X4, FLOAT32X4, UINT8, STRING);
+  ADD_K1_BUILTIN (FIXEDUD, "fixedud", UINT64, FLOAT64, UINT8, STRING);
+  ADD_K1_BUILTIN (FIXEDUDP,"fixedudp", UINT64X2, FLOAT64X2, UINT8, STRING);
 
-    ADD_K1_BUILTIN (FCDIVW,   "fcdivw",     FLOAT32,FLOAT32,FLOAT32);
-    ADD_K1_BUILTIN (FCDIVD,   "fcdivd",     FLOAT64,FLOAT64,FLOAT64);
-    ADD_K1_BUILTIN (FENCE,    "fence",      VOID);
+  ADD_K1_BUILTIN (FCDIVW, "fcdivw", FLOAT32,FLOAT32,FLOAT32);
+  ADD_K1_BUILTIN (FCDIVD, "fcdivd", FLOAT64,FLOAT64,FLOAT64);
+  ADD_K1_BUILTIN (FENCE, "fence", VOID);
 
-    ADD_K1_BUILTIN (FSDIVW,  "fsdivw",      FLOAT32,FLOAT32,FLOAT32);
-    ADD_K1_BUILTIN (FSDIVD,  "fsdivd",      FLOAT64,FLOAT64,FLOAT64);
-    ADD_K1_BUILTIN (FSINVW,  "fsinvw",      FLOAT32,FLOAT32);
-    ADD_K1_BUILTIN (FSINVD,  "fsinvd",      FLOAT64,FLOAT64);
-    ADD_K1_BUILTIN (FSISRW,  "fsisrw",      FLOAT32,FLOAT32);
-    ADD_K1_BUILTIN (FSISRD,  "fsisrd",      FLOAT64,FLOAT64);
-    ADD_K1_BUILTIN (GET,     "get",         UINT64,  INT32);
-    /* FIXME AUTO: Disabling get builtin. Ref T7705 */
-    /* ADD_K1_BUILTIN (GET_R,   "get_r",       UINT64,  INT32); */
-    ADD_K1_BUILTIN (WFXL,    "wfxl",        VOID,   UINT8, UINT64);
-    ADD_K1_BUILTIN (WFXM,    "wfxm",        VOID,   UINT8, UINT64);
-    ADD_K1_BUILTIN (IINVAL,  "iinval",      VOID);
-    ADD_K1_BUILTIN (IINVALS, "iinvals", VOID, CVPTR);
-    ADD_K1_BUILTIN (LBSU, "lbsu", INT8, CVPTR);
-    ADD_K1_BUILTIN (LBZU, "lbzu", UINT8, CVPTR);
-    ADD_K1_BUILTIN (LHSU, "lhsu", INT16, CVPTR);
-    ADD_K1_BUILTIN (LHZU, "lhzu", UINT16, CVPTR);
-    ADD_K1_BUILTIN (LDU, "ldu", UINT64, CVPTR);
-    ADD_K1_BUILTIN (LWZU, "lwzu", UINT32, CVPTR);
-    ADD_K1_BUILTIN (SBMM8,   "sbmm8",       UINT64, UINT64, UINT64);
-    ADD_K1_BUILTIN (SBMMT8,  "sbmmt8",      UINT64, UINT64, UINT64);
-    ADD_K1_BUILTIN (SATD,    "satd",        INT64,  INT64,  UINT8);
-    ADD_K1_BUILTIN (SATUD,   "satud",       UINT64, INT64,  UINT8);
-    ADD_K1_BUILTIN (SET,     "set",         VOID,   INT32,  UINT64);
-    ADD_K1_BUILTIN (SET_PS,  "set_ps",      VOID,   INT32,  UINT64);
+  ADD_K1_BUILTIN (FSDIVW, "fsdivw", FLOAT32,FLOAT32,FLOAT32);
+  ADD_K1_BUILTIN (FSDIVD, "fsdivd", FLOAT64,FLOAT64,FLOAT64);
+  ADD_K1_BUILTIN (FSINVW, "fsinvw", FLOAT32,FLOAT32);
+  ADD_K1_BUILTIN (FSINVD, "fsinvd", FLOAT64,FLOAT64);
+  ADD_K1_BUILTIN (FSISRW, "fsisrw", FLOAT32,FLOAT32);
+  ADD_K1_BUILTIN (FSISRD, "fsisrd", FLOAT64,FLOAT64);
+  ADD_K1_BUILTIN (GET, "get", UINT64, INT32);
+  ADD_K1_BUILTIN (WFXL, "wfxl", VOID, UINT8, UINT64);
+  ADD_K1_BUILTIN (WFXM, "wfxm", VOID, UINT8, UINT64);
+  ADD_K1_BUILTIN (IINVAL, "iinval", VOID);
+  ADD_K1_BUILTIN (IINVALS, "iinvals", VOID, CVPTR);
+  ADD_K1_BUILTIN (LBSU, "lbsu", INT8, CVPTR);
+  ADD_K1_BUILTIN (LBZU, "lbzu", UINT8, CVPTR);
+  ADD_K1_BUILTIN (LHSU, "lhsu", INT16, CVPTR);
+  ADD_K1_BUILTIN (LHZU, "lhzu", UINT16, CVPTR);
+  ADD_K1_BUILTIN (LDU, "ldu", UINT64, CVPTR);
+  ADD_K1_BUILTIN (LWZU, "lwzu", UINT32, CVPTR);
+  ADD_K1_BUILTIN (SBMM8, "sbmm8", UINT64, UINT64, UINT64);
+  ADD_K1_BUILTIN (SBMMT8, "sbmmt8", UINT64, UINT64, UINT64);
+  ADD_K1_BUILTIN (SATD, "satd", INT64, INT64, UINT8);
+  ADD_K1_BUILTIN (SATUD, "satud", UINT64, INT64, UINT8);
+  ADD_K1_BUILTIN (SET, "set", VOID, INT32, UINT64);
 
-    ADD_K1_BUILTIN (SLEEP,   "sleep",       VOID);
-    ADD_K1_BUILTIN (STOP,    "stop",       VOID);
-    ADD_K1_BUILTIN (STSUW,   "stsuw",       UINT32, UINT32, UINT32);
-    ADD_K1_BUILTIN (STSUD,   "stsud",       UINT64, UINT64, UINT64);
-    ADD_K1_BUILTIN (SYNCGROUP,"syncgroup",  VOID, UINT64);
-    ADD_K1_BUILTIN (TLBDINVAL, "tlbdinval", VOID);
-    ADD_K1_BUILTIN (TLBIINVAL, "tlbiinval", VOID);
-    ADD_K1_BUILTIN (TLBPROBE,"tlbprobe",    VOID);
-    ADD_K1_BUILTIN (TLBREAD, "tlbread",     VOID);
-    ADD_K1_BUILTIN (TLBWRITE,"tlbwrite",    VOID);
+  ADD_K1_BUILTIN (SLEEP, "sleep", VOID);
+  ADD_K1_BUILTIN (STOP, "stop", VOID);
+  ADD_K1_BUILTIN (STSUW, "stsuw", UINT32, UINT32, UINT32);
+  ADD_K1_BUILTIN (STSUD, "stsud", UINT64, UINT64, UINT64);
+  ADD_K1_BUILTIN (SYNCGROUP,"syncgroup", VOID, UINT64);
+  ADD_K1_BUILTIN (TLBDINVAL, "tlbdinval", VOID);
+  ADD_K1_BUILTIN (TLBIINVAL, "tlbiinval", VOID);
+  ADD_K1_BUILTIN (TLBPROBE,"tlbprobe", VOID);
+  ADD_K1_BUILTIN (TLBREAD, "tlbread", VOID);
+  ADD_K1_BUILTIN (TLBWRITE,"tlbwrite", VOID);
 
-    ADD_K1_BUILTIN (FWIDENLHW,  "fwidenlhw", FLOAT32 , UINT32);
-    ADD_K1_BUILTIN (FWIDENMHW,  "fwidenmhw", FLOAT32 , UINT32);
-    ADD_K1_BUILTIN (FNARROWWH,  "fnarrowwh", UINT16 , FLOAT32);
-    ADD_K1_BUILTIN (WAITIT,     "waitit",    UINT32,  UINT32);
+  ADD_K1_BUILTIN (FWIDENLHW, "fwidenlhw", FLOAT32 , UINT32);
+  ADD_K1_BUILTIN (FWIDENMHW, "fwidenmhw", FLOAT32 , UINT32);
+  ADD_K1_BUILTIN (FNARROWWH, "fnarrowwh", UINT16 , FLOAT32);
+  ADD_K1_BUILTIN (WAITIT, "waitit", UINT32, UINT32);
 }
 
 static tree
@@ -3212,14 +3196,22 @@ build_xrf_reg_name_arg (rtx arg)
       if (regno < 64)
 	{
 	  static const char *xrf_reg_names[] = {
-	    "a0a1a2a3",     "NA", "NA", "NA", "a4a5a6a7",     "NA", "NA", "NA",
-	    "a8a9a10a11",   "NA", "NA", "NA", "a12a13a14a15", "NA", "NA", "NA",
-	    "a16a17a18a19", "NA", "NA", "NA", "a20a21a22a23", "NA", "NA", "NA",
-	    "a24a25a26a27", "NA", "NA", "NA", "a28a29a30a31", "NA", "NA", "NA",
-	    "a32a33a34a35", "NA", "NA", "NA", "a36a37a38a39", "NA", "NA", "NA",
-	    "a40a41a42a43", "NA", "NA", "NA", "a44a45a46a47", "NA", "NA", "NA",
-	    "a48a49a50a51", "NA", "NA", "NA", "a52a53a54a55", "NA", "NA", "NA",
-	    "a56a57a58a59", "NA", "NA", "NA", "a60a61a62a63", "NA", "NA", "NA",
+	    "a0a1a2a3",     "ERROR", "ERROR", "ERROR",
+	    "a4a5a6a7",     "ERROR", "ERROR", "ERROR",
+	    "a8a9a10a11",   "ERROR", "ERROR", "ERROR",
+	    "a12a13a14a15", "ERROR", "ERROR", "ERROR",
+	    "a16a17a18a19", "ERROR", "ERROR", "ERROR",
+	    "a20a21a22a23", "ERROR", "ERROR", "ERROR",
+	    "a24a25a26a27", "ERROR", "ERROR", "ERROR",
+	    "a28a29a30a31", "ERROR", "ERROR", "ERROR",
+	    "a32a33a34a35", "ERROR", "ERROR", "ERROR",
+	    "a36a37a38a39", "ERROR", "ERROR", "ERROR",
+	    "a40a41a42a43", "ERROR", "ERROR", "ERROR",
+	    "a44a45a46a47", "ERROR", "ERROR", "ERROR",
+	    "a48a49a50a51", "ERROR", "ERROR", "ERROR",
+	    "a52a53a54a55", "ERROR", "ERROR", "ERROR",
+	    "a56a57a58a59", "ERROR", "ERROR", "ERROR",
+	    "a60a61a62a63", "ERROR", "ERROR", "ERROR",
 	  };
 	  return gen_rtx_CONST_STRING (VOIDmode, xrf_reg_names[regno]);
 	}
@@ -3298,391 +3290,356 @@ k1_expand_builtin_get (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   arg1 = verify_const_uint_arg (arg1, 9, "get", "first");
-
-  const int regno = INTVAL (arg1) + K1C_SFR_FIRST_REGNO;
-  if (regno > K1C_SFR_LAST_REGNO)
-    error ("__builtin_k1_get called with illegal SFR register index %d",
-	   INTVAL (arg1));
+  int regno = INTVAL (arg1) + K1C_SFR_FIRST_REGNO;
+  rtx sys_reg = gen_rtx_REG (DImode, regno);
 
   if (!target)
     target = gen_reg_rtx (DImode);
   else
     target = force_reg (DImode, target);
 
-  rtx reg = gen_rtx_REG (DImode, regno);
-
-  if (INTVAL (arg1) == K1C_PCR_REGNO - K1C_SFR_FIRST_REGNO)
-    emit_move_insn (target, reg);
+  if (regno == K1C_PCR_REGNO)
+    emit_move_insn (target, sys_reg);
   else
-    emit_insn (gen_get_volatile (target, reg, k1_sync_reg_rtx));
+    emit_insn (gen_k1_get (target, sys_reg, k1_sync_reg_rtx));
 
   return target;
 }
 
-/* FIXME AUTO: Disabling get builtin. Ref T7705 */
-/* static rtx */
-/* k1_expand_builtin_get_r (rtx target, tree args) */
-/* { */
-/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
-
-/*     if (!target) */
-/*         target = gen_reg_rtx (DImode); */
-
-/*     target = force_reg (DImode, target); */
-/*     arg1 = force_reg (DImode, arg1); */
-/*     emit_insn (gen_getdi_r (target, arg1, k1_sync_reg_rtx)); */
-
-/*     return target; */
-/* } */
-
 static rtx
-k1_expand_builtin_set (rtx target ATTRIBUTE_UNUSED, tree args, bool ps)
+k1_expand_builtin_set (rtx target ATTRIBUTE_UNUSED, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  arg1 = verify_const_uint_arg (arg1, 9, "set", "first");
+  arg2 = force_reg (DImode, arg2);
+  int regno = INTVAL (arg1) + K1C_SFR_FIRST_REGNO;
+  rtx sys_reg = gen_rtx_REG (DImode, regno);
 
-    arg1 = verify_const_uint_arg (arg1, 9, "set", "first");
+  emit_insn (gen_k1_set (sys_reg, arg2, k1_sync_reg_rtx));
 
-    if (ps && INTVAL (arg1) != K1C_PS_REGNO - K1C_SFR_FIRST_REGNO) {
-        error ("__builtin_k1_set_ps must be called on the $ps register.");
-    }
-    int regno = INTVAL(arg1) + K1C_SFR_FIRST_REGNO;
-
-    if (regno > K1C_SFR_LAST_REGNO)
-      {
-	error ("__builtin_k1_set called with illegal SFR register index %d",
-	       INTVAL (arg1));
-      }
-
-    if (!ps && INTVAL (arg1) == K1C_PS_REGNO - K1C_SFR_FIRST_REGNO) {
-        ps = true;
-    }
-
-    arg2 = force_reg (DImode, arg2);
-    rtx sys_reg = gen_rtx_REG (DImode, regno);
-
-    if (ps)
-        emit_insn (gen_set_ps_volatile (sys_reg, arg2, k1_sync_reg_rtx));
-    else
-        emit_insn (gen_set_volatile (sys_reg, arg2, k1_sync_reg_rtx));
-
-    return NULL_RTX;
-}
-
-static rtx
-k1_expand_builtin_waitit (rtx target, tree args)
-{
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-
-    if (!target)
-        target = gen_reg_rtx (SImode);
-    target = force_reg (SImode, target);
-    arg1 = force_reg (SImode, arg1);
-    emit_insn (gen_waitit (target, arg1, k1_sync_reg_rtx));
-
-    return target;
+  return NULL_RTX;
 }
 
 static rtx
 k1_expand_builtin_wfxl (rtx target ATTRIBUTE_UNUSED, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-    arg1 = verify_const_uint_arg (arg1, 9, "wfxl", "first");
-    int regno = INTVAL (arg1) + K1C_SFR_FIRST_REGNO;
-    rtx arg = gen_rtx_REG (DImode, regno);
-    arg2 = force_reg (DImode, arg2);
-    if (INTVAL(arg1) == K1C_PS_REGNO - K1C_SFR_FIRST_REGNO) {
-      emit_insn (gen_wfxl_ps (arg, arg2, k1_sync_reg_rtx));
-    } else {
-      emit_insn (gen_wfxl (arg, arg2, k1_sync_reg_rtx));
-    }
-    return NULL_RTX;
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  arg1 = verify_const_uint_arg (arg1, 9, "wfxl", "first");
+  arg2 = force_reg (DImode, arg2);
+  int regno = INTVAL (arg1) + K1C_SFR_FIRST_REGNO;
+  rtx sys_reg = gen_rtx_REG (DImode, regno);
+
+  emit_insn (gen_k1_wfxl (sys_reg, arg2, k1_sync_reg_rtx));
+
+  return NULL_RTX;
 }
 
 static rtx
 k1_expand_builtin_wfxm (rtx target ATTRIBUTE_UNUSED, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-    arg1 = verify_const_uint_arg (arg1, 9, "wfxm", "first");
-    int regno = INTVAL (arg1) + K1C_SFR_FIRST_REGNO;
-    rtx arg = gen_rtx_REG (DImode, regno);
-    arg2 = force_reg (DImode, arg2);
-    if (INTVAL(arg1) == K1C_PS_REGNO - K1C_SFR_FIRST_REGNO) {
-        emit_insn (gen_wfxm_ps (arg, arg2, k1_sync_reg_rtx));
-    } else {
-        emit_insn (gen_wfxm (arg, arg2, k1_sync_reg_rtx));
-    }
-    return NULL_RTX;
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  arg1 = verify_const_uint_arg (arg1, 9, "wfxm", "first");
+  arg2 = force_reg (DImode, arg2);
+  int regno = INTVAL (arg1) + K1C_SFR_FIRST_REGNO;
+  rtx sys_reg = gen_rtx_REG (DImode, regno);
+
+  emit_insn (gen_k1_wfxm (sys_reg, arg2, k1_sync_reg_rtx));
+
+  return NULL_RTX;
+}
+
+static rtx
+k1_expand_builtin_waitit (rtx target, tree args)
+{
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  arg1 = force_reg (SImode, arg1);
+
+  if (!target)
+    target = gen_reg_rtx (SImode);
+  else
+    target = force_reg (SImode, target);
+
+  emit_insn (gen_waitit (target, arg1, k1_sync_reg_rtx));
+
+  return target;
 }
 
 
 static rtx
 k1_expand_builtin_sbmm8 (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  arg1 = force_reg (DImode, arg1);
+  arg2 = force_reg (DImode, arg2);
 
-    if (!target)
-        target = gen_reg_rtx (DImode);
+  if (!target)
+    target = gen_reg_rtx (DImode);
+  else
     target = force_reg (DImode, target);
-    arg1 = force_reg (DImode, arg1);
-    arg2 = force_reg (DImode, arg2);
-    emit_insn (gen_sbmm8 (target, arg1, arg2));
 
-    return target;
+  emit_insn (gen_sbmm8 (target, arg1, arg2));
+
+  return target;
 }
 
 static rtx
 k1_expand_builtin_sbmmt8 (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  arg1 = force_reg (DImode, arg1);
+  arg2 = force_reg (DImode, arg2);
 
-    if (!target)
-        target = gen_reg_rtx (DImode);
+  if (!target)
+    target = gen_reg_rtx (DImode);
+  else
     target = force_reg (DImode, target);
-    arg1 = force_reg (DImode, arg1);
-    arg2 = force_reg (DImode, arg2);
-    emit_insn (gen_sbmmt8 (target, arg1, arg2));
 
-    return target;
+  emit_insn (gen_sbmmt8 (target, arg1, arg2));
+
+  return target;
 }
 
 static rtx
 k1_expand_builtin_await (rtx target ATTRIBUTE_UNUSED, tree args ATTRIBUTE_UNUSED)
 {
-    emit_insn (gen_await (k1_sync_reg_rtx));
+  emit_insn (gen_await (k1_sync_reg_rtx));
 
-    return NULL_RTX;
+  return NULL_RTX;
 }
 
 static rtx
 k1_expand_builtin_doze (rtx target ATTRIBUTE_UNUSED, tree args ATTRIBUTE_UNUSED)
 {
-    emit_insn (gen_doze (k1_sync_reg_rtx));
+  emit_insn (gen_doze (k1_sync_reg_rtx));
 
-    return NULL_RTX;
+  return NULL_RTX;
 }
 
 static rtx
 k1_expand_builtin_sleep (rtx target ATTRIBUTE_UNUSED, tree args ATTRIBUTE_UNUSED)
 {
-    emit_insn (gen_sleep (k1_sync_reg_rtx));
+  emit_insn (gen_sleep (k1_sync_reg_rtx));
 
-    return NULL_RTX;
+  return NULL_RTX;
 }
 
 static rtx
 k1_expand_builtin_stop (rtx target ATTRIBUTE_UNUSED, tree args ATTRIBUTE_UNUSED)
 {
-    emit_insn (gen_stop (k1_sync_reg_rtx));
+  emit_insn (gen_stop (k1_sync_reg_rtx));
 
-    return NULL_RTX;
+  return NULL_RTX;
 }
 
 static rtx
 k1_expand_builtin_syncgroup (rtx target ATTRIBUTE_UNUSED, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  arg1 = force_reg (DImode, arg1);
 
-    arg1 = force_reg (DImode, arg1);
-    emit_insn (gen_syncgroup (arg1, k1_sync_reg_rtx));
+  emit_insn (gen_syncgroup (arg1, k1_sync_reg_rtx));
 
-    return NULL_RTX;
+  return NULL_RTX;
 }
 
 static rtx
 k1_expand_builtin_barrier (void)
 {
-    emit_insn (gen_barrier (k1_sync_reg_rtx));
+  emit_insn (gen_barrier (k1_sync_reg_rtx));
 
-    return NULL_RTX;
+  return NULL_RTX;
 }
 
 static rtx
 k1_expand_builtin_dinval (void)
 {
   emit_insn (gen_dinval (k1_sync_reg_rtx));
+
   return NULL_RTX;
 }
-
 
 static rtx
 k1_expand_builtin_iinval (void)
 {
-    emit_insn (gen_iinval (k1_sync_reg_rtx));
+  emit_insn (gen_iinval (k1_sync_reg_rtx));
 
-    return NULL_RTX;
+  return NULL_RTX;
 }
 
 static rtx
 k1_expand_builtin_tlbdinval (void)
 {
-    emit_insn (gen_tlbdinval (k1_sync_reg_rtx));
+  emit_insn (gen_tlbdinval (k1_sync_reg_rtx));
 
-    return NULL_RTX;
+  return NULL_RTX;
 }
 
 static rtx
 k1_expand_builtin_tlbiinval (void)
 {
-    emit_insn (gen_tlbiinval (k1_sync_reg_rtx));
+  emit_insn (gen_tlbiinval (k1_sync_reg_rtx));
 
-    return NULL_RTX;
+  return NULL_RTX;
 }
 
 static rtx
 k1_expand_builtin_tlbprobe (void)
 {
-    emit_insn (gen_tlbprobe (k1_sync_reg_rtx));
+  emit_insn (gen_tlbprobe (k1_sync_reg_rtx));
 
-    return NULL_RTX;
+  return NULL_RTX;
 }
 
 static rtx
 k1_expand_builtin_tlbread (void)
 {
-    emit_insn (gen_tlbread (k1_sync_reg_rtx));
+  emit_insn (gen_tlbread (k1_sync_reg_rtx));
 
-    return NULL_RTX;
+  return NULL_RTX;
 }
 
 static rtx
 k1_expand_builtin_tlbwrite (void)
 {
-    emit_insn (gen_tlbwrite (k1_sync_reg_rtx));
+  emit_insn (gen_tlbwrite (k1_sync_reg_rtx));
 
-    return NULL_RTX;
+  return NULL_RTX;
 }
 
 static rtx
 k1_expand_builtin_satd (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  arg1 = force_reg (DImode, arg1);
+  arg2 = force_reg (SImode, arg2);
 
-    if (!target)
-        target = gen_reg_rtx (DImode);
+  if (!target)
+    target = gen_reg_rtx (DImode);
+  else
     target = force_reg (DImode, target);
-    arg1 = force_reg (DImode, arg1);
-    arg2 = force_reg (SImode, arg2);
-    emit_insn (gen_satd (target, arg1, arg2));
-    return target;
+
+  emit_insn (gen_satd (target, arg1, arg2));
+  return target;
 }
 
 static rtx
 k1_expand_builtin_satud (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  arg1 = force_reg (DImode, arg1);
+  arg2 = force_reg (SImode, arg2);
 
-    if (!target)
-        target = gen_reg_rtx (DImode);
+  if (!target)
+    target = gen_reg_rtx (DImode);
+  else
     target = force_reg (DImode, target);
-    arg1 = force_reg (DImode, arg1);
-    arg2 = force_reg (SImode, arg2);
-    emit_insn (gen_satud (target, arg1, arg2));
-    return target;
+
+  emit_insn (gen_satud (target, arg1, arg2));
+  return target;
 }
 
 static rtx
 k1_expand_builtin_addsw (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-    if (!target)
-        target = gen_reg_rtx (SImode);
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  arg1 = force_reg (SImode, arg1);
+  arg2 = force_reg (SImode, arg2);
+
+  if (!target)
+    target = gen_reg_rtx (SImode);
+  else
     target = force_reg (SImode, target);
-    arg1 = force_reg (SImode, arg1);
-    arg2 = force_reg (SImode, arg2);
-    emit_insn (gen_ssaddsi3 (target, arg1, arg2));
-    return target;
+
+  emit_insn (gen_ssaddsi3 (target, arg1, arg2));
+  return target;
 }
 
 static rtx
 k1_expand_builtin_addsd (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-    if (!target)
-        target = gen_reg_rtx (DImode);
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  arg1 = force_reg (DImode, arg1);
+  arg2 = force_reg (DImode, arg2);
+
+  if (!target)
+    target = gen_reg_rtx (DImode);
+  else
     target = force_reg (DImode, target);
-    arg1 = force_reg (DImode, arg1);
-    arg2 = force_reg (DImode, arg2);
-    emit_insn (gen_ssadddi3 (target, arg1, arg2));
-    return target;
+
+  emit_insn (gen_ssadddi3 (target, arg1, arg2));
+  return target;
 }
 
 static rtx
 k1_expand_builtin_sbfsw (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-    if (!target)
-        target = gen_reg_rtx (SImode);
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  arg1 = force_reg (SImode, arg1);
+  arg2 = force_reg (SImode, arg2);
+
+  if (!target)
+    target = gen_reg_rtx (SImode);
+  else
     target = force_reg (SImode, target);
-    arg1 = force_reg (SImode, arg1);
-    arg2 = force_reg (SImode, arg2);
-    emit_insn (gen_sssubsi3 (target, arg1, arg2));
-    return target;
+
+  emit_insn (gen_sssubsi3 (target, arg1, arg2));
+  return target;
 }
 
 static rtx
 k1_expand_builtin_sbfsd (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-    if (!target)
-        target = gen_reg_rtx (DImode);
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  arg1 = force_reg (DImode, arg1);
+  arg2 = force_reg (DImode, arg2);
+
+  if (!target)
+    target = gen_reg_rtx (DImode);
+  else
     target = force_reg (DImode, target);
-    arg1 = force_reg (DImode, arg1);
-    arg2 = force_reg (DImode, arg2);
-    emit_insn (gen_sssubdi3 (target, arg1, arg2));
-    return target;
+
+  emit_insn (gen_sssubdi3 (target, arg1, arg2));
+  return target;
 }
 
 static rtx
 k1_expand_builtin_cbsw (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    if (!target)
-        target = gen_reg_rtx (SImode);
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  arg1 = force_reg (SImode, arg1);
+
+  if (!target)
+    target = gen_reg_rtx (SImode);
+  else
     target = force_reg (SImode, target);
-    arg1 = force_reg (SImode, arg1);
-    emit_insn (gen_popcountsi2 (target, arg1));
-    return target;
+
+  emit_insn (gen_popcountsi2 (target, arg1));
+  return target;
 }
 
 static rtx
 k1_expand_builtin_cbsd (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    if (!target)
-        target = gen_reg_rtx (DImode);
-    target = force_reg (DImode, target);
-    arg1 = force_reg (DImode, arg1);
-    emit_insn (gen_popcountdi2 (target, arg1));
-    return target;
-}
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  arg1 = force_reg (DImode, arg1);
 
-/*
- * Checks the that the TARGET rtx is valid:
- * - is non null
- * - is a register
- * - has the correct mode MODE
- */
-static rtx
-k1_builtin_helper_check_reg_target (rtx target, enum machine_mode mode)
-{
   if (!target)
-    target = gen_reg_rtx (mode);
+    target = gen_reg_rtx (DImode);
+  else
+    target = force_reg (DImode, target);
 
-  target = force_reg (DImode, target);
-
-  gcc_assert(GET_MODE(target) == mode);
-
+  emit_insn (gen_popcountdi2 (target, arg1));
   return target;
 }
 
@@ -3717,7 +3674,10 @@ k1_expand_builtin_afadd (rtx target, tree args, enum machine_mode mode)
   MEMREF (0, mode, mem_target);
   GETREG (1, mode, addend_and_return);
 
-  target = k1_builtin_helper_check_reg_target (target, mode);
+  if (!target)
+    target = gen_reg_rtx (mode);
+  else
+    target = force_reg (mode, target);
 
   switch (mode)
     {
@@ -3739,12 +3699,10 @@ k1_expand_builtin_acswap (rtx target, tree args, enum machine_mode mode)
 {
   rtx ptr = expand_normal (CALL_EXPR_ARG (args, 0));
 
-  rtx mem_ref;
-
   if (!REG_P(ptr))
     ptr = force_reg (Pmode, ptr);
 
-  mem_ref = gen_rtx_MEM (mode, ptr);
+  rtx mem_ref = gen_rtx_MEM (mode, ptr);
 
   rtx new_val = expand_normal (CALL_EXPR_ARG (args, 1));
   rtx expect_val = expand_normal (CALL_EXPR_ARG (args, 2));
@@ -3752,12 +3710,12 @@ k1_expand_builtin_acswap (rtx target, tree args, enum machine_mode mode)
   rtx tmp = gen_reg_rtx (TImode);
 
   if (!target)
-    target = gen_reg_rtx (TImode);
+    target = gen_reg_rtx (mode);
   else
-    target = force_reg (TImode, target);
+    target = force_reg (mode, target);
 
-  emit_move_insn (gen_lowpart (DImode, tmp), new_val);
-  emit_move_insn (gen_highpart (DImode, tmp), expect_val);
+  emit_move_insn (gen_rtx_SUBREG (mode, tmp, 0), new_val);
+  emit_move_insn (gen_rtx_SUBREG (mode, tmp, 8), expect_val);
 
   switch (mode)
     {
@@ -3771,7 +3729,8 @@ k1_expand_builtin_acswap (rtx target, tree args, enum machine_mode mode)
       gcc_unreachable ();
     }
 
-  emit_move_insn (target, tmp);
+  rtx result = gen_lowpart_SUBREG (mode, tmp);
+  emit_move_insn (target, result);
 
   return target;
 }
@@ -3779,191 +3738,141 @@ k1_expand_builtin_acswap (rtx target, tree args, enum machine_mode mode)
 static rtx
 k1_expand_builtin_ctzw (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
 
-    if (!target)
-        target = gen_reg_rtx (SImode);
-    target = force_reg (SImode, target);
-    arg1 = force_reg (SImode, arg1);
-    emit_insn (gen_ctzsi2 (target, arg1));
+  if (!target)
+    target = gen_reg_rtx (SImode);
+  target = force_reg (SImode, target);
+  arg1 = force_reg (SImode, arg1);
+  emit_insn (gen_ctzsi2 (target, arg1));
 
-    return target;
+  return target;
 }
 
 static rtx
 k1_expand_builtin_clzw (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
 
-    if (!target)
-        target = gen_reg_rtx (SImode);
-    target = force_reg (SImode, target);
-    arg1 = force_reg (SImode, arg1);
-    emit_insn (gen_clzsi2 (target, arg1));
+  if (!target)
+    target = gen_reg_rtx (SImode);
+  target = force_reg (SImode, target);
+  arg1 = force_reg (SImode, arg1);
+  emit_insn (gen_clzsi2 (target, arg1));
 
-    return target;
+  return target;
 }
 
 static rtx
 k1_expand_builtin_ctzd (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
 
-    if (!target)
-        target = gen_reg_rtx (DImode);
-    target = force_reg (DImode, target);
-    arg1 = force_reg (DImode, arg1);
-    emit_insn (gen_ctzdi2 (target, arg1));
+  if (!target)
+    target = gen_reg_rtx (DImode);
+  target = force_reg (DImode, target);
+  arg1 = force_reg (DImode, arg1);
+  emit_insn (gen_ctzdi2 (target, arg1));
 
-    return target;
+  return target;
 }
 
 static rtx
 k1_expand_builtin_clzd (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
 
-    if (!target)
-        target = gen_reg_rtx (DImode);
-    target = force_reg (DImode, target);
-    arg1 = force_reg (DImode, arg1);
-    emit_insn (gen_clzdi2(target, arg1));
+  if (!target)
+    target = gen_reg_rtx (DImode);
+  target = force_reg (DImode, target);
+  arg1 = force_reg (DImode, arg1);
+  emit_insn (gen_clzdi2(target, arg1));
 
-    return target;
+  return target;
 }
-
-#if 0
-static rtx
-k1_expand_builtin_cwmoved (rtx target, tree args)
-{
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-    rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
-    rtx cond;
-
-    if (!target)
-        target = gen_reg_rtx (SImode);
-    target = force_reg (SImode, target);
-    arg1 = force_reg (DImode, arg1);
-    arg2 = force_reg (DImode, arg2);
-    arg3 = force_reg (DImode, arg3);
-
-    cond = gen_rtx_NE (VOIDmode, arg1, GEN_INT (0));
-
-    emit_move_insn (target, arg3);
-    emit_insn (gen_cmovesi (target, cond, arg1, arg2, target));
-
-    return target;
-}
-#endif
-
-// FIXME AUTO: cmovef is not a K1 insn, not a builtin
-/* static rtx */
-/* k1_expand_builtin_cmovef (rtx target, tree args) */
-/* { */
-/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
-/*     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1)); */
-/*     rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2)); */
-/*     rtx cond; */
-
-/*     if (!target) */
-/*         target = gen_reg_rtx (SFmode); */
-/*     target = force_reg (SFmode, target); */
-/*     arg1 = force_reg (SImode, arg1); */
-/*     arg2 = force_reg (SFmode, arg2); */
-/*     arg3 = force_reg (SFmode, arg3); */
-
-/*     cond = gen_rtx_NE (VOIDmode, arg1, GEN_INT (0)); */
-
-/*     emit_move_insn (target, arg3); */
-/*     emit_insn (gen_cmovesf (target, cond, arg1, arg2, target)); */
-
-/*     return target; */
-/* } */
 
 static rtx
 k1_expand_builtin_fence (void)
 {
-    emit_insn (gen_fence (k1_sync_reg_rtx));
+  emit_insn (gen_fence (k1_sync_reg_rtx));
 
-    return NULL_RTX;
+  return NULL_RTX;
 }
 
 static rtx
 k1_expand_builtin_dinvall (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  arg1 = gen_rtx_MEM (SImode, force_reg (Pmode, arg1));
 
-    arg1 = gen_rtx_MEM (SImode, force_reg (Pmode, arg1));
-    emit_insn (gen_dinvall (arg1, k1_sync_reg_rtx));
+  emit_insn (gen_dinvall (arg1, k1_sync_reg_rtx));
 
-    return target;
+  return target;
 }
 
 static rtx
 k1_expand_builtin_dtouchl (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  arg1 = force_reg (Pmode, arg1);
 
-    arg1 = force_reg (Pmode, arg1);
-    emit_insn (gen_prefetch (arg1, const0_rtx, const0_rtx));
+  emit_insn (gen_prefetch (arg1, const0_rtx, const0_rtx));
 
-    return target;
+  return target;
 }
 
 static rtx
 k1_expand_builtin_dzerol (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  arg1 = gen_rtx_MEM (SImode, force_reg (Pmode, arg1));
 
-    arg1 = gen_rtx_MEM (SImode, force_reg (Pmode, arg1));
-    emit_insn (gen_dzerol (arg1, k1_sync_reg_rtx));
+  emit_insn (gen_dzerol (arg1, k1_sync_reg_rtx));
 
-    return target;
+  return target;
 }
 
 static rtx
 k1_expand_builtin_iinvals (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  arg1 = gen_rtx_MEM (SImode, force_reg (Pmode, arg1));
 
-    arg1 = gen_rtx_MEM (SImode, force_reg (Pmode, arg1));
-    emit_insn (gen_iinvals (arg1, k1_sync_reg_rtx));
+  emit_insn (gen_iinvals (arg1, k1_sync_reg_rtx));
 
-    return target;
+  return target;
 }
 
 static rtx
 k1_expand_builtin_alclr (rtx target, tree args, enum machine_mode mode)
 {
-    rtx ptr = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx mem_ref;
+  rtx ptr = expand_normal (CALL_EXPR_ARG (args, 0));
 
-    if (!REG_P(ptr))
-        ptr = force_reg(Pmode, ptr);
+  if (!REG_P(ptr))
+    ptr = force_reg(Pmode, ptr);
 
-    mem_ref = gen_rtx_MEM(mode, ptr);
+  rtx mem_ref = gen_rtx_MEM(mode, ptr);
 
-    if (!target)
-        target = gen_reg_rtx (mode);
-    if (!REG_P(target) || GET_MODE (target) != mode)
-        {
-            target = force_reg (mode, target);
-        }
+  if (!target)
+    target = gen_reg_rtx (mode);
+  if (!REG_P(target) || GET_MODE (target) != mode)
+    {
+      target = force_reg (mode, target);
+    }
 
-    switch (mode)
-        {
-        case DImode:
-            emit_insn (gen_alclrd (target, mem_ref));
-            break;
-        case SImode:
-            emit_insn (gen_alclrw (target, mem_ref));
-            break;
-        default:
-            gcc_unreachable ();
-        }
+  switch (mode)
+    {
+    case DImode:
+      emit_insn (gen_alclrd (target, mem_ref));
+      break;
+    case SImode:
+      emit_insn (gen_alclrw (target, mem_ref));
+      break;
+    default:
+      gcc_unreachable ();
+    }
 
-    return target;
+  return target;
 }
 
 #define K1_EXPAND_BUILTIN_2_STANDARD(name, name2, tmode, smode)                \
@@ -4164,316 +4073,303 @@ K1_EXPAND_BUILTIN_FCONVERT(fixedudp, V2DImode, V2DFmode)
 static rtx
 k1_expand_builtin_fsdivw (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  arg1 = force_reg (SFmode, arg1);
+  arg2 = force_reg (SFmode, arg2);
 
-    arg1 = force_reg (SFmode, arg1);
-    arg2 = force_reg (SFmode, arg2);
+  if (!target)
+    target = gen_reg_rtx (SFmode);
+  else
+    target = force_reg (SFmode, target);
 
-    if (!target)
-        target = gen_reg_rtx (SFmode);
-    if (!REG_P(target) || GET_MODE (target) != SFmode) {
-        target = force_reg (SFmode, target);
-    }
-    emit_insn (gen_fsdivw (target, arg1, arg2));
+  emit_insn (gen_fsdivw (target, arg1, arg2));
 
-    return target;
+  return target;
 }
 
 static rtx
 k1_expand_builtin_fsinvw (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  arg1 = force_reg (SFmode, arg1);
 
-    arg1 = force_reg (SFmode, arg1);
+  if (!target)
+    target = gen_reg_rtx (SFmode);
+  else
+    target = force_reg (SFmode, target);
 
-    if (!target)
-        target = gen_reg_rtx (SFmode);
-    if (!REG_P(target) || GET_MODE (target) != SFmode) {
-        target = force_reg (SFmode, target);
-    }
-    emit_insn (gen_fsinvw (target, arg1));
+  emit_insn (gen_fsinvw (target, arg1));
 
-    return target;
+  return target;
 }
 
 static rtx
 k1_expand_builtin_fcdivw (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  arg1 = force_reg (SFmode, arg1);
+  arg2 = force_reg (SFmode, arg2);
 
-    arg1 = force_reg (SFmode, arg1);
-    arg2 = force_reg (SFmode, arg2);
+  if (!target)
+    target = gen_reg_rtx (SFmode);
+  else
+    target = force_reg (SFmode, target);
 
-    if (!target)
-        target = gen_reg_rtx (SFmode);
-    if (!REG_P(target) || GET_MODE (target) != SFmode) {
-        target = force_reg (SFmode, target);
-    }
-    emit_insn (gen_fcdivw (target, arg1, arg2));
+  emit_insn (gen_fcdivw (target, arg1, arg2));
 
-    return target;
+  return target;
 }
 
 static rtx
 k1_expand_builtin_fsisrw (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  arg1 = force_reg (SFmode, arg1);
 
-    arg1 = force_reg (SFmode, arg1);
+  if (!target)
+    target = gen_reg_rtx (SFmode);
+  else
+    target = force_reg (SFmode, target);
 
-    if (!target)
-        target = gen_reg_rtx (SFmode);
-    if (!REG_P(target) || GET_MODE (target) != SFmode) {
-        target = force_reg (SFmode, target);
-    }
-    emit_insn (gen_fsisrw (target, arg1));
+  emit_insn (gen_fsisrw (target, arg1));
 
-    return target;
+  return target;
 }
 
 static rtx
 k1_expand_builtin_fsdivd (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  arg1 = force_reg (DFmode, arg1);
+  arg2 = force_reg (DFmode, arg2);
 
-    arg1 = force_reg (DFmode, arg1);
-    arg2 = force_reg (DFmode, arg2);
+  if (!target)
+    target = gen_reg_rtx (DFmode);
+  else
+    target = force_reg (DFmode, target);
 
-    if (!target)
-        target = gen_reg_rtx (DFmode);
-    if (!REG_P(target) || GET_MODE (target) != SFmode) {
-        target = force_reg (DFmode, target);
-    }
-    emit_insn (gen_fsdivd (target, arg1, arg2));
+  emit_insn (gen_fsdivd (target, arg1, arg2));
 
-    return target;
+  return target;
 }
 
 static rtx
 k1_expand_builtin_fsinvd (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  arg1 = force_reg (DFmode, arg1);
 
-    arg1 = force_reg (DFmode, arg1);
+  if (!target)
+    target = gen_reg_rtx (DFmode);
+  else
+    target = force_reg (DFmode, target);
 
-    if (!target)
-        target = gen_reg_rtx (DFmode);
-    if (!REG_P(target) || GET_MODE (target) != SFmode) {
-        target = force_reg (DFmode, target);
-    }
-    emit_insn (gen_fsinvd (target, arg1));
+  emit_insn (gen_fsinvd (target, arg1));
 
-    return target;
+  return target;
 }
 
 static rtx
 k1_expand_builtin_fcdivd (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  arg1 = force_reg (DFmode, arg1);
+  arg2 = force_reg (DFmode, arg2);
 
-    arg1 = force_reg (DFmode, arg1);
-    arg2 = force_reg (DFmode, arg2);
+  if (!target)
+    target = gen_reg_rtx (DFmode);
+  else
+    target = force_reg (DFmode, target);
 
-    if (!target)
-        target = gen_reg_rtx (DFmode);
-    if (!REG_P(target) || GET_MODE (target) != SFmode) {
-        target = force_reg (DFmode, target);
-    }
-    emit_insn (gen_fcdivd (target, arg1, arg2));
+  emit_insn (gen_fcdivd (target, arg1, arg2));
 
-    return target;
+  return target;
 }
 
 static rtx
 k1_expand_builtin_fsisrd (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  arg1 = force_reg (DFmode, arg1);
 
-    arg1 = force_reg (DFmode, arg1);
+  if (!target)
+    target = gen_reg_rtx (DFmode);
+  else
+    target = force_reg (DFmode, target);
 
-    if (!target)
-        target = gen_reg_rtx (DFmode);
-    if (!REG_P(target) || GET_MODE (target) != SFmode) {
-        target = force_reg (DFmode, target);
-    }
-    emit_insn (gen_fsisrd (target, arg1));
+  emit_insn (gen_fsisrd (target, arg1));
 
-    return target;
+  return target;
 }
 
 static rtx
 k1_expand_builtin_lbsu (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  arg1 = gen_rtx_MEM (QImode, force_reg (Pmode, arg1));
 
-    if (!target)
-        target = gen_reg_rtx (QImode);
-    if (!REG_P(target) || GET_MODE (target) != QImode) {
-        target = force_reg (QImode, target);
-    }
+  if (!target)
+    target = gen_reg_rtx (QImode);
+  else
+    target = force_reg (QImode, target);
 
-    arg1 = gen_rtx_MEM (QImode, force_reg (Pmode, arg1));
-    emit_insn (gen_lbsu (target, arg1));
+  emit_insn (gen_lbsu (target, arg1));
 
-    return target;
+  return target;
 }
 
 static rtx
 k1_expand_builtin_lbzu (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  arg1 = gen_rtx_MEM (QImode, force_reg (Pmode, arg1));
 
-    if (!target)
-        target = gen_reg_rtx (QImode);
-    if (!REG_P(target) || GET_MODE (target) != QImode) {
-        target = force_reg (QImode, target);
-    }
+  if (!target)
+    target = gen_reg_rtx (QImode);
+  else
+    target = force_reg (QImode, target);
 
-    arg1 = gen_rtx_MEM (QImode, force_reg (Pmode, arg1));
-    emit_insn (gen_lbzu (target, arg1));
+  emit_insn (gen_lbzu (target, arg1));
 
-    return target;
+  return target;
 }
 
 static rtx
 k1_expand_builtin_ldu (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  arg1 = gen_rtx_MEM (DImode, force_reg (Pmode, arg1));
 
-    if (!target)
-        target = gen_reg_rtx (DImode);
-    if (!REG_P(target) || GET_MODE (target) != DImode) {
-        target = force_reg (DImode, target);
-    }
+  if (!target)
+    target = gen_reg_rtx (DImode);
+  else
+    target = force_reg (DImode, target);
 
-    arg1 = gen_rtx_MEM (DImode, force_reg (Pmode, arg1));
-    emit_insn (gen_ldu (target, arg1));
+  emit_insn (gen_ldu (target, arg1));
 
-    return target;
+  return target;
 }
 
 static rtx
 k1_expand_builtin_lhsu (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  arg1 = gen_rtx_MEM (HImode, force_reg (Pmode, arg1));
 
-    if (!target)
-        target = gen_reg_rtx (HImode);
-    if (!REG_P(target) || GET_MODE (target) != HImode) {
-        target = force_reg (HImode, target);
-    }
+  if (!target)
+    target = gen_reg_rtx (HImode);
+  else
+    target = force_reg (HImode, target);
 
-    arg1 = gen_rtx_MEM (HImode, force_reg (Pmode, arg1));
-    emit_insn (gen_lhsu (target, arg1));
+  emit_insn (gen_lhsu (target, arg1));
 
-    return target;
+  return target;
 }
 
 static rtx
 k1_expand_builtin_lhzu (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  arg1 = gen_rtx_MEM (HImode, force_reg (Pmode, arg1));
 
-    if (!target)
-        target = gen_reg_rtx (HImode);
-    if (!REG_P(target) || GET_MODE (target) != HImode) {
-        target = force_reg (HImode, target);
-    }
+  if (!target)
+    target = gen_reg_rtx (HImode);
+  else
+    target = force_reg (HImode, target);
 
-    arg1 = gen_rtx_MEM (HImode, force_reg (Pmode, arg1));
-    emit_insn (gen_lhzu (target, arg1));
+  emit_insn (gen_lhzu (target, arg1));
 
-    return target;
+  return target;
 }
 
 static rtx
 k1_expand_builtin_lwzu (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  arg1 = gen_rtx_MEM (SImode, force_reg (Pmode, arg1));
 
-    if (!target)
-        target = gen_reg_rtx (SImode);
-    if (!REG_P(target) || GET_MODE (target) != SImode) {
-        target = force_reg (SImode, target);
-    }
+  if (!target)
+    target = gen_reg_rtx (SImode);
+  else
+    target = force_reg (SImode, target);
 
-    arg1 = gen_rtx_MEM (SImode, force_reg (Pmode, arg1));
+  emit_insn (gen_lwzu (target, arg1));
 
-    emit_insn (gen_lwzu (target, arg1));
-
-    return target;
+  return target;
 }
 
 static rtx
 k1_expand_builtin_extfz (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-    rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
+  arg1 = force_reg (SImode, arg1);
+  arg2 = verify_const_uint_arg (arg2, 6, "extfz", "second");
+  arg3 = verify_const_uint_arg (arg3, 6, "extfz", "third");
+  arg2 = gen_rtx_CONST_INT(SImode, INTVAL(arg2) - INTVAL(arg3) + 1);
 
-    arg2 = verify_const_uint_arg (arg2, 6, "extfz", "second");
-    arg3 = verify_const_uint_arg (arg3, 6, "extfz", "third");
+  if (!target)
+    target = gen_reg_rtx (SImode);
+  else
+    target = force_reg (SImode, target);
 
-    if (!target)
-        target = gen_reg_rtx (SImode);
-    else
-      target = force_reg (SImode, target);
-    arg1 = force_reg (SImode, arg1);
-    arg2 = gen_rtx_CONST_INT(SImode, INTVAL(arg2) - INTVAL(arg3) + 1);
+  emit_insn (gen_extzv (target, arg1, arg2, arg3));
 
-    emit_insn (gen_extzv (target, arg1, arg2, arg3));
-
-    return target;
+  return target;
 }
 
 static rtx
 k1_expand_builtin_stsuw (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  arg1 = force_reg (SImode, arg1);
+  arg2 = force_reg (SImode, arg2);
 
-    if (!target)
-        target = gen_reg_rtx (SImode);
+  if (!target)
+    target = gen_reg_rtx (SImode);
+  else
     target = force_reg (SImode, target);
-    arg1 = force_reg (SImode, arg1);
-    arg2 = force_reg (SImode, arg2);
-    emit_insn (gen_stsuw (target, arg1, arg2));
 
-    return target;
+  emit_insn (gen_stsuw (target, arg1, arg2));
+
+  return target;
 }
 
 static rtx
 k1_expand_builtin_stsud (rtx target, tree args)
 {
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  arg1 = force_reg (DImode, arg1);
+  arg2 = force_reg (DImode, arg2);
 
-    if (!target)
-        target = gen_reg_rtx (DImode);
+  if (!target)
+    target = gen_reg_rtx (DImode);
+  else
     target = force_reg (DImode, target);
-    arg1 = force_reg (DImode, arg1);
-    arg2 = force_reg (DImode, arg2);
-    emit_insn (gen_stsud (target, arg1, arg2));
 
-    return target;
+  emit_insn (gen_stsud (target, arg1, arg2));
+
+  return target;
 }
 
 static rtx
 k1_expand_builtin_fwiden (rtx target, tree args, int low_bits)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-
   arg1 = force_reg (SImode, arg1);
 
   if (!target)
     target = gen_reg_rtx (SFmode);
-  if (!REG_P(target) || GET_MODE (target) != SFmode) {
+  else
     target = force_reg (SFmode, target);
-  }
+
   if (low_bits)
     emit_insn (gen_builtin_extendhfsf2 (target, arg1));
   else
@@ -4486,14 +4382,13 @@ static rtx
 k1_expand_builtin_fnarrowwh (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-
   arg1 = force_reg (SFmode, arg1);
 
   if (!target)
     target = gen_reg_rtx (HImode);
-  if (!REG_P(target) || GET_MODE (target) != HImode) {
+  else
     target = force_reg (HImode, target);
-  }
+
   emit_insn (gen_builtin_truncsfhf2(target, arg1));
 
   return target;
@@ -4507,10 +4402,11 @@ k1_target_expand_builtin (tree exp,
                           enum machine_mode mode ATTRIBUTE_UNUSED,
                           int ignore ATTRIBUTE_UNUSED)
 {
-    tree fndecl = TREE_OPERAND (CALL_EXPR_FN (exp), 0);
-    unsigned int fcode = DECL_FUNCTION_CODE (fndecl);
+  tree fndecl = TREE_OPERAND (CALL_EXPR_FN (exp), 0);
+  unsigned int fcode = DECL_FUNCTION_CODE (fndecl);
 
-    switch (fcode) {
+  switch (fcode)
+    {
     case K1_BUILTIN_ABDW: return k1_expand_builtin_abdw (target, exp);
     case K1_BUILTIN_ABDD: return k1_expand_builtin_abdd (target, exp);
     case K1_BUILTIN_ADDSW: return k1_expand_builtin_addsw (target, exp);
@@ -4545,64 +4441,50 @@ k1_target_expand_builtin (tree exp,
     case K1_BUILTIN_FABSW: return k1_expand_builtin_fabsw (target, exp);
     case K1_BUILTIN_FABSWP: return k1_expand_builtin_fabswp (target, exp);
     case K1_BUILTIN_FABSWQ: return k1_expand_builtin_fabswq (target, exp);
-    case K1_BUILTIN_FABSD:
-      return k1_expand_builtin_fabsd (target, exp);
+    case K1_BUILTIN_FABSD: return k1_expand_builtin_fabsd (target, exp);
     case K1_BUILTIN_FABSDP: return k1_expand_builtin_fabsdp (target, exp);
     case K1_BUILTIN_FNEGW: return k1_expand_builtin_fnegw (target, exp);
     case K1_BUILTIN_FNEGWP: return k1_expand_builtin_fnegwp (target, exp);
     case K1_BUILTIN_FNEGWQ: return k1_expand_builtin_fnegwq (target, exp);
-    case K1_BUILTIN_FNEGD:
-      return k1_expand_builtin_fnegd (target, exp);
+    case K1_BUILTIN_FNEGD: return k1_expand_builtin_fnegd (target, exp);
     case K1_BUILTIN_FNEGDP: return k1_expand_builtin_fnegdp (target, exp);
     case K1_BUILTIN_FMAXW: return k1_expand_builtin_fmaxw (target, exp);
     case K1_BUILTIN_FMAXWP: return k1_expand_builtin_fmaxwp (target, exp);
     case K1_BUILTIN_FMAXWQ: return k1_expand_builtin_fmaxwq (target, exp);
-    case K1_BUILTIN_FMAXD:
-      return k1_expand_builtin_fmaxd (target, exp);
+    case K1_BUILTIN_FMAXD: return k1_expand_builtin_fmaxd (target, exp);
     case K1_BUILTIN_FMAXDP: return k1_expand_builtin_fmaxdp (target, exp);
     case K1_BUILTIN_FMINW: return k1_expand_builtin_fminw (target, exp);
     case K1_BUILTIN_FMINWP: return k1_expand_builtin_fminwp (target, exp);
     case K1_BUILTIN_FMINWQ: return k1_expand_builtin_fminwq (target, exp);
-    case K1_BUILTIN_FMIND:
-      return k1_expand_builtin_fmind (target, exp);
+    case K1_BUILTIN_FMIND: return k1_expand_builtin_fmind (target, exp);
     case K1_BUILTIN_FMINDP: return k1_expand_builtin_fmindp (target, exp);
     case K1_BUILTIN_FINVW: return k1_expand_builtin_finvw (target, exp);
     case K1_BUILTIN_FISRW: return k1_expand_builtin_fisrw (target, exp);
     case K1_BUILTIN_FADDW: return k1_expand_builtin_faddw (target, exp);
     case K1_BUILTIN_FADDWP: return k1_expand_builtin_faddwp (target, exp);
     case K1_BUILTIN_FADDWQ: return k1_expand_builtin_faddwq (target, exp);
-    case K1_BUILTIN_FADDD:
-      return k1_expand_builtin_faddd (target, exp);
+    case K1_BUILTIN_FADDD: return k1_expand_builtin_faddd (target, exp);
     case K1_BUILTIN_FADDDP: return k1_expand_builtin_fadddp (target, exp);
-    case K1_BUILTIN_FADDCWC:
-      return k1_expand_builtin_faddcwc (target, exp);
-    case K1_BUILTIN_FADDCWCP:
-      return k1_expand_builtin_faddcwcp (target, exp);
+    case K1_BUILTIN_FADDCWC: return k1_expand_builtin_faddcwc (target, exp);
+    case K1_BUILTIN_FADDCWCP: return k1_expand_builtin_faddcwcp (target, exp);
     case K1_BUILTIN_FADDCDC: return k1_expand_builtin_faddcdc (target, exp);
     case K1_BUILTIN_FSBFW: return k1_expand_builtin_fsbfw (target, exp);
     case K1_BUILTIN_FSBFWP: return k1_expand_builtin_fsbfwp (target, exp);
     case K1_BUILTIN_FSBFWQ: return k1_expand_builtin_fsbfwq (target, exp);
-    case K1_BUILTIN_FSBFD:
-      return k1_expand_builtin_fsbfd (target, exp);
+    case K1_BUILTIN_FSBFD: return k1_expand_builtin_fsbfd (target, exp);
     case K1_BUILTIN_FSBFDP: return k1_expand_builtin_fsbfdp (target, exp);
-    case K1_BUILTIN_FSBFCWC:
-      return k1_expand_builtin_fsbfcwc (target, exp);
-    case K1_BUILTIN_FSBFCWCP:
-      return k1_expand_builtin_fsbfcwcp (target, exp);
+    case K1_BUILTIN_FSBFCWC: return k1_expand_builtin_fsbfcwc (target, exp);
+    case K1_BUILTIN_FSBFCWCP: return k1_expand_builtin_fsbfcwcp (target, exp);
     case K1_BUILTIN_FSBFCDC: return k1_expand_builtin_fsbfcdc (target, exp);
     case K1_BUILTIN_FMULW: return k1_expand_builtin_fmulw (target, exp);
-    case K1_BUILTIN_FMULWP:
-      return k1_expand_builtin_fmulwp (target, exp);
-    case K1_BUILTIN_FMULWQ:
-      return k1_expand_builtin_fmulwq (target, exp);
+    case K1_BUILTIN_FMULWP: return k1_expand_builtin_fmulwp (target, exp);
+    case K1_BUILTIN_FMULWQ: return k1_expand_builtin_fmulwq (target, exp);
     case K1_BUILTIN_FMULD: return k1_expand_builtin_fmuld (target, exp);
-    case K1_BUILTIN_FMULDP:
-      return k1_expand_builtin_fmuldp (target, exp);
+    case K1_BUILTIN_FMULDP: return k1_expand_builtin_fmuldp (target, exp);
     case K1_BUILTIN_FMULWD: return k1_expand_builtin_fmulwd (target, exp);
     case K1_BUILTIN_FMULWC: return k1_expand_builtin_fmulwc (target, exp);
     case K1_BUILTIN_FMULWCP: return k1_expand_builtin_fmulwcp (target, exp);
-    case K1_BUILTIN_FMULCWC:
-      return k1_expand_builtin_fmulcwc (target, exp);
+    case K1_BUILTIN_FMULCWC: return k1_expand_builtin_fmulcwc (target, exp);
     case K1_BUILTIN_FMULCWCP: return k1_expand_builtin_fmulcwcp (target, exp);
     case K1_BUILTIN_FMULDC: return k1_expand_builtin_fmuldc (target, exp);
     case K1_BUILTIN_FMULCDC: return k1_expand_builtin_fmulcdc (target, exp);
@@ -4610,44 +4492,36 @@ k1_target_expand_builtin (tree exp,
     case K1_BUILTIN_FFMAW: return k1_expand_builtin_ffmaw (target, exp);
     case K1_BUILTIN_FFMAWP: return k1_expand_builtin_ffmawp (target, exp);
     case K1_BUILTIN_FFMAWQ: return k1_expand_builtin_ffmawq (target, exp);
-    case K1_BUILTIN_FFMAD:
-      return k1_expand_builtin_ffmad (target, exp);
+    case K1_BUILTIN_FFMAD: return k1_expand_builtin_ffmad (target, exp);
     case K1_BUILTIN_FFMADP: return k1_expand_builtin_ffmadp (target, exp);
-    case K1_BUILTIN_FFMAWD:
-      return k1_expand_builtin_ffmawd (target, exp);
+    case K1_BUILTIN_FFMAWD: return k1_expand_builtin_ffmawd (target, exp);
     case K1_BUILTIN_FMM2AWQ: return k1_expand_builtin_fmm2awq (target, exp);
     case K1_BUILTIN_FFMSW: return k1_expand_builtin_ffmsw (target, exp);
     case K1_BUILTIN_FFMSWP: return k1_expand_builtin_ffmswp (target, exp);
     case K1_BUILTIN_FFMSWQ: return k1_expand_builtin_ffmswq (target, exp);
-    case K1_BUILTIN_FFMSD:
-      return k1_expand_builtin_ffmsd (target, exp);
+    case K1_BUILTIN_FFMSD: return k1_expand_builtin_ffmsd (target, exp);
     case K1_BUILTIN_FFMSDP: return k1_expand_builtin_ffmsdp (target, exp);
-    case K1_BUILTIN_FFMSWD:
-      return k1_expand_builtin_ffmswd (target, exp);
+    case K1_BUILTIN_FFMSWD: return k1_expand_builtin_ffmswd (target, exp);
     case K1_BUILTIN_FMM2SWQ: return k1_expand_builtin_fmm2swq (target, exp);
     case K1_BUILTIN_FLOATW: return k1_expand_builtin_floatw (target, exp);
     case K1_BUILTIN_FLOATWP: return k1_expand_builtin_floatwp (target, exp);
     case K1_BUILTIN_FLOATWQ: return k1_expand_builtin_floatwq (target, exp);
-    case K1_BUILTIN_FLOATD:
-      return k1_expand_builtin_floatd (target, exp);
+    case K1_BUILTIN_FLOATD: return k1_expand_builtin_floatd (target, exp);
     case K1_BUILTIN_FLOATDP: return k1_expand_builtin_floatdp (target, exp);
     case K1_BUILTIN_FLOATUW: return k1_expand_builtin_floatuw (target, exp);
     case K1_BUILTIN_FLOATUWP: return k1_expand_builtin_floatuwp (target, exp);
     case K1_BUILTIN_FLOATUWQ: return k1_expand_builtin_floatuwq (target, exp);
-    case K1_BUILTIN_FLOATUD:
-      return k1_expand_builtin_floatud (target, exp);
+    case K1_BUILTIN_FLOATUD: return k1_expand_builtin_floatud (target, exp);
     case K1_BUILTIN_FLOATUDP: return k1_expand_builtin_floatudp (target, exp);
     case K1_BUILTIN_FIXEDW: return k1_expand_builtin_fixedw (target, exp);
     case K1_BUILTIN_FIXEDWP: return k1_expand_builtin_fixedwp (target, exp);
     case K1_BUILTIN_FIXEDWQ: return k1_expand_builtin_fixedwq (target, exp);
-    case K1_BUILTIN_FIXEDD:
-      return k1_expand_builtin_fixedd (target, exp);
+    case K1_BUILTIN_FIXEDD: return k1_expand_builtin_fixedd (target, exp);
     case K1_BUILTIN_FIXEDDP: return k1_expand_builtin_fixeddp (target, exp);
     case K1_BUILTIN_FIXEDUW: return k1_expand_builtin_fixeduw (target, exp);
     case K1_BUILTIN_FIXEDUWP: return k1_expand_builtin_fixeduwp (target, exp);
     case K1_BUILTIN_FIXEDUWQ: return k1_expand_builtin_fixeduwq (target, exp);
-    case K1_BUILTIN_FIXEDUD:
-      return k1_expand_builtin_fixedud (target, exp);
+    case K1_BUILTIN_FIXEDUD: return k1_expand_builtin_fixedud (target, exp);
     case K1_BUILTIN_FIXEDUDP: return k1_expand_builtin_fixedudp (target, exp);
 
     case K1_BUILTIN_FENCE: return k1_expand_builtin_fence ();
@@ -4661,8 +4535,6 @@ k1_target_expand_builtin (tree exp,
     case K1_BUILTIN_FCDIVW: return k1_expand_builtin_fcdivw (target, exp);
     case K1_BUILTIN_FCDIVD: return k1_expand_builtin_fcdivd (target, exp);
     case K1_BUILTIN_GET: return k1_expand_builtin_get (target, exp);
-    /* FIXME AUTO: Disabling get builtin. Ref T7705 */
-    /* case K1_BUILTIN_GET_R: return k1_expand_builtin_get_r (target, exp); */
     case K1_BUILTIN_WFXL: return k1_expand_builtin_wfxl (target, exp);
     case K1_BUILTIN_WFXM: return k1_expand_builtin_wfxm (target, exp);
     case K1_BUILTIN_IINVAL: return k1_expand_builtin_iinval ();
@@ -4677,9 +4549,7 @@ k1_target_expand_builtin (tree exp,
     case K1_BUILTIN_SATUD: return k1_expand_builtin_satud (target, exp);
     case K1_BUILTIN_SBMM8: return k1_expand_builtin_sbmm8 (target, exp);
     case K1_BUILTIN_SBMMT8: return k1_expand_builtin_sbmmt8 (target, exp);
-    case K1_BUILTIN_SET:
-    case K1_BUILTIN_SET_PS:
-      return k1_expand_builtin_set (target, exp, fcode == K1_BUILTIN_SET_PS);
+    case K1_BUILTIN_SET: return k1_expand_builtin_set (target, exp);
     case K1_BUILTIN_SLEEP: return k1_expand_builtin_sleep (target, exp);
     case K1_BUILTIN_STOP: return k1_expand_builtin_stop (target, exp);
     case K1_BUILTIN_STSUW: return k1_expand_builtin_stsuw (target, exp);
@@ -4694,8 +4564,7 @@ k1_target_expand_builtin (tree exp,
     case K1_BUILTIN_FWIDENMHW: return k1_expand_builtin_fwiden (target, exp, 0);
     case K1_BUILTIN_FNARROWWH: return k1_expand_builtin_fnarrowwh (target, exp);
     case K1_BUILTIN_WAITIT: return k1_expand_builtin_waitit (target, exp);
-    default:
-        break;
+    default: break;
     }
   internal_error ("bad builtin code");
   return NULL_RTX;
@@ -4704,39 +4573,43 @@ k1_target_expand_builtin (tree exp,
 int
 k1_mau_lsu_double_port_bypass_p (rtx_insn *producer, rtx_insn *consumer)
 {
-    rtx produced = SET_DEST (single_set (producer));
-    rtx consumed = PATTERN(consumer);
+  rtx produced = SET_DEST (single_set (producer));
+  rtx consumed = PATTERN(consumer);
 
-    if (GET_CODE (consumed) == PARALLEL)
-        consumed = XVECEXP (consumed, 0, 0);
-    consumed = SET_DEST (consumed);
+  if (GET_CODE (consumed) == PARALLEL)
+    consumed = XVECEXP (consumed, 0, 0);
+  consumed = SET_DEST (consumed);
 
-    return reg_overlap_mentioned_p (produced, consumed);
+  return reg_overlap_mentioned_p (produced, consumed);
 }
 
 static int
 k1_target_sched_adjust_cost (rtx_insn *insn, int dep_type, rtx_insn *dep_insn ATTRIBUTE_UNUSED,
 			     int cost, unsigned int)
 {
-      enum attr_class insn_class = get_attr_class (insn);
-    /* On the k1, it is possible to read then write the same register in a bundle
-     * so we set the WAR cost to 0 unless insn is a control-flow consuming reg then it is 1 */
-    if (dep_type == REG_DEP_ANTI) {
-        cost = (insn_class == CLASS_BRANCH)|
-               (insn_class == CLASS_JUMP)|
-               (insn_class == CLASS_LINK);
-    } else
-    /* Just to be sure, force the WAW cost to 1 */
-    if (dep_type == REG_DEP_OUTPUT) {
-        cost = 1;
+  enum attr_class insn_class = get_attr_class (insn);
+  /* On the k1, it is possible to read then write the same register in a bundle
+   * so we set the WAR cost to 0 unless insn is a control-flow consuming reg then it is 1 */
+  if (dep_type == REG_DEP_ANTI)
+    {
+      cost = (insn_class == CLASS_BRANCH)|
+             (insn_class == CLASS_JUMP)|
+             (insn_class == CLASS_LINK);
     }
-    return cost;
+  else
+    /* Just to be sure, force the WAW cost to 1 */
+    if (dep_type == REG_DEP_OUTPUT)
+      {
+        cost = 1;
+      }
+
+  return cost;
 }
 
 static int
 k1_target_sched_issue_rate (void)
 {
-    return 4;
+  return 4;
 }
 
 
@@ -4748,17 +4621,16 @@ k1_target_sched_dfa_new_cycle (FILE *dump ATTRIBUTE_UNUSED,
                                int clock,
                                int *sort_p ATTRIBUTE_UNUSED)
 {
-    if (clock != last_clock)
-        return 0;
-
-    if (reg_mentioned_p (k1_sync_reg_rtx, insn))
-        return 1;
-
+  if (clock != last_clock)
     return 0;
+
+  if (reg_mentioned_p (k1_sync_reg_rtx, insn))
+    return 1;
+
+  return 0;
 }
 
-/* Return TRUE if X is of the form reg[reg] or .xs reg = reg[reg] or
- * signed10bits[reg] */
+/* Test if X is of the form reg[reg] or .xs reg = reg[reg] or signed10bits[reg] */
 bool
 k1_has_10bit_imm_or_register_p (rtx x)
 {
@@ -5853,26 +5725,25 @@ k1_function_ok_for_sibcall (tree decl,
 static bool
 k1_legitimate_constant_p (enum machine_mode mode ATTRIBUTE_UNUSED, rtx x)
 {
-    if (k1_has_tls_reference (x))
-        return false;
+  if (k1_has_tls_reference (x))
+    return false;
 
-    if (k1_has_unspec_reference (x)) {
-        if (GET_CODE (x) == CONST)
-            x = XEXP (x, 0);
+  if (k1_has_unspec_reference (x)) {
+    if (GET_CODE (x) == CONST)
+      x = XEXP (x, 0);
 
-        if (GET_CODE (x) == UNSPEC)
-            return true;
-        if (GET_CODE (x) == PLUS
-            || GET_CODE (x) == MINUS)
-            return GET_CODE (XEXP (x, 0)) == UNSPEC
-                && CONST_INT_P (XEXP (x,1));
+    if (GET_CODE (x) == UNSPEC)
+      return true;
 
-        return false;
-    }
+    if (GET_CODE (x) == PLUS || GET_CODE (x) == MINUS)
+      return GET_CODE (XEXP (x, 0)) == UNSPEC
+             && CONST_INT_P (XEXP (x,1));
 
-    return true;
+    return false;
+  }
+
+  return true;
 }
-
 
 static rtx
 k1_target_legitimize_address (rtx x,
@@ -5908,14 +5779,14 @@ k1_target_legitimize_address (rtx x,
 static machine_mode
 k1_addr_space_pointer_mode (addr_space_t address_space ATTRIBUTE_UNUSED)
 {
-    return ptr_mode;
+  return ptr_mode;
 }
 
 /* Implements TARGET_ADDR_SPACE_ADDRESS_MODE */
 static machine_mode
 k1_addr_space_address_mode (addr_space_t address_space ATTRIBUTE_UNUSED)
 {
-    return Pmode;
+  return Pmode;
 }
 
 /* Implements TARGET_ADDR_SPACE_LEGITIMATE_ADDRESS_P */
