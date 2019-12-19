@@ -129,8 +129,6 @@
 
 static bool scheduling = false;
 
-#define K1C_SYNC_REG_REGNO (K1C_MDS_REGISTERS + 0)
-
 rtx k1_sync_reg_rtx;
 rtx k1_link_reg_rtx;
 
@@ -2716,8 +2714,7 @@ k1_expand_atomic_test_and_set (rtx operands[])
   emit_insn (gen_iorsi3 (newval, val, mask));
   emit_insn (gen_acswapw (tmp, memsi));
 
-  /* ACSWAP insn returns 0x0 (fail) or 0x1 (success) in the low part
-     of TMP:
+  /* ACSWAP insn returns 0x0 (fail) or 0x1 (success) in the low part of TMP:
      - if successful: MEM is updated, do not loop,
 		      lock is acquired, return false (i.e. BYTE)
      - if failing: MEM has changed, try again */
@@ -2865,7 +2862,6 @@ enum k1_builtin
   K1_BUILTIN_FSISRW,
   K1_BUILTIN_FSISRD,
   K1_BUILTIN_GET,
-  /* K1_BUILTIN_GET_R, */
   K1_BUILTIN_WFXL,
   K1_BUILTIN_WFXM,
   K1_BUILTIN_IINVAL,
@@ -2882,7 +2878,6 @@ enum k1_builtin
   K1_BUILTIN_SBMMT8,
   K1_BUILTIN_SCALL,
   K1_BUILTIN_SET,
-  K1_BUILTIN_SET_PS,
   K1_BUILTIN_SLEEP,
   K1_BUILTIN_STOP,
   K1_BUILTIN_STSUW,
@@ -2995,8 +2990,8 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (CLZD, "clzd", INT64, UINT64);
   ADD_K1_BUILTIN (CTZW, "ctzw", INT32, UINT32);
   ADD_K1_BUILTIN (CTZD, "ctzd", INT64, UINT64);
-  ADD_K1_BUILTIN (ACSWAPW, "acswapw", UINT128, VPTR, UINT64, UINT64);
-  ADD_K1_BUILTIN (ACSWAPD, "acswapd", UINT128, VPTR, UINT64, UINT64);
+  ADD_K1_BUILTIN (ACSWAPW, "acswapw", UINT32, VPTR, UINT32, UINT32);
+  ADD_K1_BUILTIN (ACSWAPD, "acswapd", UINT64, VPTR, UINT64, UINT64);
   ADD_K1_BUILTIN (AFADDD, "afaddd", UINT64, VPTR, INT64);
   ADD_K1_BUILTIN (AFADDW, "afaddw", UINT32, VPTR, INT32);
   ADD_K1_BUILTIN (ALCLRD, "alclrd", UINT64, VPTR);
@@ -3116,8 +3111,6 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (FSISRW, "fsisrw", FLOAT32, FLOAT32);
   ADD_K1_BUILTIN (FSISRD, "fsisrd", FLOAT64, FLOAT64);
   ADD_K1_BUILTIN (GET, "get", UINT64, INT32);
-  /* FIXME AUTO: Disabling get builtin. Ref T7705 */
-  /* ADD_K1_BUILTIN (GET_R,   "get_r",       UINT64,  INT32); */
   ADD_K1_BUILTIN (WFXL, "wfxl", VOID, UINT8, UINT64);
   ADD_K1_BUILTIN (WFXM, "wfxm", VOID, UINT8, UINT64);
   ADD_K1_BUILTIN (IINVAL, "iinval", VOID);
@@ -3133,7 +3126,6 @@ k1_target_init_builtins (void)
   ADD_K1_BUILTIN (SATD, "satd", INT64, INT64, UINT8);
   ADD_K1_BUILTIN (SATUD, "satud", UINT64, INT64, UINT8);
   ADD_K1_BUILTIN (SET, "set", VOID, INT32, UINT64);
-  ADD_K1_BUILTIN (SET_PS, "set_ps", VOID, INT32, UINT64);
 
   ADD_K1_BUILTIN (SLEEP, "sleep", VOID);
   ADD_K1_BUILTIN (STOP, "stop", VOID);
@@ -3253,14 +3245,22 @@ build_xrf_reg_name_arg (rtx arg)
       if (regno < 64)
 	{
 	  static const char *xrf_reg_names[] = {
-	    "a0a1a2a3",	    "NA", "NA", "NA", "a4a5a6a7",     "NA", "NA", "NA",
-	    "a8a9a10a11",   "NA", "NA", "NA", "a12a13a14a15", "NA", "NA", "NA",
-	    "a16a17a18a19", "NA", "NA", "NA", "a20a21a22a23", "NA", "NA", "NA",
-	    "a24a25a26a27", "NA", "NA", "NA", "a28a29a30a31", "NA", "NA", "NA",
-	    "a32a33a34a35", "NA", "NA", "NA", "a36a37a38a39", "NA", "NA", "NA",
-	    "a40a41a42a43", "NA", "NA", "NA", "a44a45a46a47", "NA", "NA", "NA",
-	    "a48a49a50a51", "NA", "NA", "NA", "a52a53a54a55", "NA", "NA", "NA",
-	    "a56a57a58a59", "NA", "NA", "NA", "a60a61a62a63", "NA", "NA", "NA",
+	    "a0a1a2a3",	    "ERROR", "ERROR", "ERROR",
+	    "a4a5a6a7",	    "ERROR", "ERROR", "ERROR",
+	    "a8a9a10a11",   "ERROR", "ERROR", "ERROR",
+	    "a12a13a14a15", "ERROR", "ERROR", "ERROR",
+	    "a16a17a18a19", "ERROR", "ERROR", "ERROR",
+	    "a20a21a22a23", "ERROR", "ERROR", "ERROR",
+	    "a24a25a26a27", "ERROR", "ERROR", "ERROR",
+	    "a28a29a30a31", "ERROR", "ERROR", "ERROR",
+	    "a32a33a34a35", "ERROR", "ERROR", "ERROR",
+	    "a36a37a38a39", "ERROR", "ERROR", "ERROR",
+	    "a40a41a42a43", "ERROR", "ERROR", "ERROR",
+	    "a44a45a46a47", "ERROR", "ERROR", "ERROR",
+	    "a48a49a50a51", "ERROR", "ERROR", "ERROR",
+	    "a52a53a54a55", "ERROR", "ERROR", "ERROR",
+	    "a56a57a58a59", "ERROR", "ERROR", "ERROR",
+	    "a60a61a62a63", "ERROR", "ERROR", "ERROR",
 	  };
 	  return gen_rtx_CONST_STRING (VOIDmode, xrf_reg_names[regno]);
 	}
@@ -3339,91 +3339,35 @@ k1_expand_builtin_get (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   arg1 = verify_const_uint_arg (arg1, 9, "get", "first");
-
-  const int regno = INTVAL (arg1) + K1C_SFR_FIRST_REGNO;
-  if (regno > K1C_SFR_LAST_REGNO)
-    error ("__builtin_k1_get called with illegal SFR register index %d",
-	   INTVAL (arg1));
+  int regno = INTVAL (arg1) + K1C_SFR_FIRST_REGNO;
+  rtx sys_reg = gen_rtx_REG (DImode, regno);
 
   if (!target)
     target = gen_reg_rtx (DImode);
   else
     target = force_reg (DImode, target);
 
-  rtx reg = gen_rtx_REG (DImode, regno);
-
-  if (INTVAL (arg1) == K1C_PCR_REGNO - K1C_SFR_FIRST_REGNO)
-    emit_move_insn (target, reg);
+  if (regno == K1C_PCR_REGNO)
+    emit_move_insn (target, sys_reg);
   else
-    emit_insn (gen_get_volatile (target, reg, k1_sync_reg_rtx));
+    emit_insn (gen_k1_get (target, sys_reg, k1_sync_reg_rtx));
 
   return target;
 }
 
-/* FIXME AUTO: Disabling get builtin. Ref T7705 */
-/* static rtx */
-/* k1_expand_builtin_get_r (rtx target, tree args) */
-/* { */
-/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
-
-/*     if (!target) */
-/*         target = gen_reg_rtx (DImode); */
-
-/*     target = force_reg (DImode, target); */
-/*     arg1 = force_reg (DImode, arg1); */
-/*     emit_insn (gen_getdi_r (target, arg1, k1_sync_reg_rtx)); */
-
-/*     return target; */
-/* } */
-
 static rtx
-k1_expand_builtin_set (rtx target ATTRIBUTE_UNUSED, tree args, bool ps)
+k1_expand_builtin_set (rtx target ATTRIBUTE_UNUSED, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-
   arg1 = verify_const_uint_arg (arg1, 9, "set", "first");
-
-  if (ps && INTVAL (arg1) != K1C_PS_REGNO - K1C_SFR_FIRST_REGNO)
-    {
-      error ("__builtin_k1_set_ps must be called on the $ps register.");
-    }
-  int regno = INTVAL (arg1) + K1C_SFR_FIRST_REGNO;
-
-  if (regno > K1C_SFR_LAST_REGNO)
-    {
-      error ("__builtin_k1_set called with illegal SFR register index %d",
-	     INTVAL (arg1));
-    }
-
-  if (!ps && INTVAL (arg1) == K1C_PS_REGNO - K1C_SFR_FIRST_REGNO)
-    {
-      ps = true;
-    }
-
   arg2 = force_reg (DImode, arg2);
+  int regno = INTVAL (arg1) + K1C_SFR_FIRST_REGNO;
   rtx sys_reg = gen_rtx_REG (DImode, regno);
 
-  if (ps)
-    emit_insn (gen_set_ps_volatile (sys_reg, arg2, k1_sync_reg_rtx));
-  else
-    emit_insn (gen_set_volatile (sys_reg, arg2, k1_sync_reg_rtx));
+  emit_insn (gen_k1_set (sys_reg, arg2, k1_sync_reg_rtx));
 
   return NULL_RTX;
-}
-
-static rtx
-k1_expand_builtin_waitit (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-
-  if (!target)
-    target = gen_reg_rtx (SImode);
-  target = force_reg (SImode, target);
-  arg1 = force_reg (SImode, arg1);
-  emit_insn (gen_waitit (target, arg1, k1_sync_reg_rtx));
-
-  return target;
 }
 
 static rtx
@@ -3432,17 +3376,12 @@ k1_expand_builtin_wfxl (rtx target ATTRIBUTE_UNUSED, tree args)
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
   arg1 = verify_const_uint_arg (arg1, 9, "wfxl", "first");
-  int regno = INTVAL (arg1) + K1C_SFR_FIRST_REGNO;
-  rtx arg = gen_rtx_REG (DImode, regno);
   arg2 = force_reg (DImode, arg2);
-  if (INTVAL (arg1) == K1C_PS_REGNO - K1C_SFR_FIRST_REGNO)
-    {
-      emit_insn (gen_wfxl_ps (arg, arg2, k1_sync_reg_rtx));
-    }
-  else
-    {
-      emit_insn (gen_wfxl (arg, arg2, k1_sync_reg_rtx));
-    }
+  int regno = INTVAL (arg1) + K1C_SFR_FIRST_REGNO;
+  rtx sys_reg = gen_rtx_REG (DImode, regno);
+
+  emit_insn (gen_k1_wfxl (sys_reg, arg2, k1_sync_reg_rtx));
+
   return NULL_RTX;
 }
 
@@ -3452,18 +3391,29 @@ k1_expand_builtin_wfxm (rtx target ATTRIBUTE_UNUSED, tree args)
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
   arg1 = verify_const_uint_arg (arg1, 9, "wfxm", "first");
-  int regno = INTVAL (arg1) + K1C_SFR_FIRST_REGNO;
-  rtx arg = gen_rtx_REG (DImode, regno);
   arg2 = force_reg (DImode, arg2);
-  if (INTVAL (arg1) == K1C_PS_REGNO - K1C_SFR_FIRST_REGNO)
-    {
-      emit_insn (gen_wfxm_ps (arg, arg2, k1_sync_reg_rtx));
-    }
-  else
-    {
-      emit_insn (gen_wfxm (arg, arg2, k1_sync_reg_rtx));
-    }
+  int regno = INTVAL (arg1) + K1C_SFR_FIRST_REGNO;
+  rtx sys_reg = gen_rtx_REG (DImode, regno);
+
+  emit_insn (gen_k1_wfxm (sys_reg, arg2, k1_sync_reg_rtx));
+
   return NULL_RTX;
+}
+
+static rtx
+k1_expand_builtin_waitit (rtx target, tree args)
+{
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  arg1 = force_reg (SImode, arg1);
+
+  if (!target)
+    target = gen_reg_rtx (SImode);
+  else
+    target = force_reg (SImode, target);
+
+  emit_insn (gen_waitit (target, arg1, k1_sync_reg_rtx));
+
+  return target;
 }
 
 static rtx
@@ -3471,12 +3421,14 @@ k1_expand_builtin_sbmm8 (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  arg1 = force_reg (DImode, arg1);
+  arg2 = force_reg (DImode, arg2);
 
   if (!target)
     target = gen_reg_rtx (DImode);
-  target = force_reg (DImode, target);
-  arg1 = force_reg (DImode, arg1);
-  arg2 = force_reg (DImode, arg2);
+  else
+    target = force_reg (DImode, target);
+
   emit_insn (gen_sbmm8 (target, arg1, arg2));
 
   return target;
@@ -3487,12 +3439,14 @@ k1_expand_builtin_sbmmt8 (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  arg1 = force_reg (DImode, arg1);
+  arg2 = force_reg (DImode, arg2);
 
   if (!target)
     target = gen_reg_rtx (DImode);
-  target = force_reg (DImode, target);
-  arg1 = force_reg (DImode, arg1);
-  arg2 = force_reg (DImode, arg2);
+  else
+    target = force_reg (DImode, target);
+
   emit_insn (gen_sbmmt8 (target, arg1, arg2));
 
   return target;
@@ -3536,8 +3490,8 @@ static rtx
 k1_expand_builtin_syncgroup (rtx target ATTRIBUTE_UNUSED, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-
   arg1 = force_reg (DImode, arg1);
+
   emit_insn (gen_syncgroup (arg1, k1_sync_reg_rtx));
 
   return NULL_RTX;
@@ -3555,6 +3509,7 @@ static rtx
 k1_expand_builtin_dinval (void)
 {
   emit_insn (gen_dinval (k1_sync_reg_rtx));
+
   return NULL_RTX;
 }
 
@@ -3611,12 +3566,14 @@ k1_expand_builtin_satd (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  arg1 = force_reg (DImode, arg1);
+  arg2 = force_reg (SImode, arg2);
 
   if (!target)
     target = gen_reg_rtx (DImode);
-  target = force_reg (DImode, target);
-  arg1 = force_reg (DImode, arg1);
-  arg2 = force_reg (SImode, arg2);
+  else
+    target = force_reg (DImode, target);
+
   emit_insn (gen_satd (target, arg1, arg2));
   return target;
 }
@@ -3626,12 +3583,14 @@ k1_expand_builtin_satud (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  arg1 = force_reg (DImode, arg1);
+  arg2 = force_reg (SImode, arg2);
 
   if (!target)
     target = gen_reg_rtx (DImode);
-  target = force_reg (DImode, target);
-  arg1 = force_reg (DImode, arg1);
-  arg2 = force_reg (SImode, arg2);
+  else
+    target = force_reg (DImode, target);
+
   emit_insn (gen_satud (target, arg1, arg2));
   return target;
 }
@@ -3641,11 +3600,14 @@ k1_expand_builtin_addsw (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-  if (!target)
-    target = gen_reg_rtx (SImode);
-  target = force_reg (SImode, target);
   arg1 = force_reg (SImode, arg1);
   arg2 = force_reg (SImode, arg2);
+
+  if (!target)
+    target = gen_reg_rtx (SImode);
+  else
+    target = force_reg (SImode, target);
+
   emit_insn (gen_ssaddsi3 (target, arg1, arg2));
   return target;
 }
@@ -3655,11 +3617,14 @@ k1_expand_builtin_addsd (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-  if (!target)
-    target = gen_reg_rtx (DImode);
-  target = force_reg (DImode, target);
   arg1 = force_reg (DImode, arg1);
   arg2 = force_reg (DImode, arg2);
+
+  if (!target)
+    target = gen_reg_rtx (DImode);
+  else
+    target = force_reg (DImode, target);
+
   emit_insn (gen_ssadddi3 (target, arg1, arg2));
   return target;
 }
@@ -3669,11 +3634,14 @@ k1_expand_builtin_sbfsw (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-  if (!target)
-    target = gen_reg_rtx (SImode);
-  target = force_reg (SImode, target);
   arg1 = force_reg (SImode, arg1);
   arg2 = force_reg (SImode, arg2);
+
+  if (!target)
+    target = gen_reg_rtx (SImode);
+  else
+    target = force_reg (SImode, target);
+
   emit_insn (gen_sssubsi3 (target, arg1, arg2));
   return target;
 }
@@ -3683,11 +3651,14 @@ k1_expand_builtin_sbfsd (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-  if (!target)
-    target = gen_reg_rtx (DImode);
-  target = force_reg (DImode, target);
   arg1 = force_reg (DImode, arg1);
   arg2 = force_reg (DImode, arg2);
+
+  if (!target)
+    target = gen_reg_rtx (DImode);
+  else
+    target = force_reg (DImode, target);
+
   emit_insn (gen_sssubdi3 (target, arg1, arg2));
   return target;
 }
@@ -3696,10 +3667,13 @@ static rtx
 k1_expand_builtin_cbsw (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  arg1 = force_reg (SImode, arg1);
+
   if (!target)
     target = gen_reg_rtx (SImode);
-  target = force_reg (SImode, target);
-  arg1 = force_reg (SImode, arg1);
+  else
+    target = force_reg (SImode, target);
+
   emit_insn (gen_popcountsi2 (target, arg1));
   return target;
 }
@@ -3708,30 +3682,14 @@ static rtx
 k1_expand_builtin_cbsd (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  arg1 = force_reg (DImode, arg1);
+
   if (!target)
     target = gen_reg_rtx (DImode);
-  target = force_reg (DImode, target);
-  arg1 = force_reg (DImode, arg1);
+  else
+    target = force_reg (DImode, target);
+
   emit_insn (gen_popcountdi2 (target, arg1));
-  return target;
-}
-
-/*
- * Checks the that the TARGET rtx is valid:
- * - is non null
- * - is a register
- * - has the correct mode MODE
- */
-static rtx
-k1_builtin_helper_check_reg_target (rtx target, enum machine_mode mode)
-{
-  if (!target)
-    target = gen_reg_rtx (mode);
-
-  target = force_reg (DImode, target);
-
-  gcc_assert (GET_MODE (target) == mode);
-
   return target;
 }
 
@@ -3766,7 +3724,10 @@ k1_expand_builtin_afadd (rtx target, tree args, enum machine_mode mode)
   MEMREF (0, mode, mem_target);
   GETREG (1, mode, addend_and_return);
 
-  target = k1_builtin_helper_check_reg_target (target, mode);
+  if (!target)
+    target = gen_reg_rtx (mode);
+  else
+    target = force_reg (mode, target);
 
   switch (mode)
     {
@@ -3788,12 +3749,10 @@ k1_expand_builtin_acswap (rtx target, tree args, enum machine_mode mode)
 {
   rtx ptr = expand_normal (CALL_EXPR_ARG (args, 0));
 
-  rtx mem_ref;
-
   if (!REG_P (ptr))
     ptr = force_reg (Pmode, ptr);
 
-  mem_ref = gen_rtx_MEM (mode, ptr);
+  rtx mem_ref = gen_rtx_MEM (mode, ptr);
 
   rtx new_val = expand_normal (CALL_EXPR_ARG (args, 1));
   rtx expect_val = expand_normal (CALL_EXPR_ARG (args, 2));
@@ -3801,12 +3760,12 @@ k1_expand_builtin_acswap (rtx target, tree args, enum machine_mode mode)
   rtx tmp = gen_reg_rtx (TImode);
 
   if (!target)
-    target = gen_reg_rtx (TImode);
+    target = gen_reg_rtx (mode);
   else
-    target = force_reg (TImode, target);
+    target = force_reg (mode, target);
 
-  emit_move_insn (gen_lowpart (DImode, tmp), new_val);
-  emit_move_insn (gen_highpart (DImode, tmp), expect_val);
+  emit_move_insn (gen_rtx_SUBREG (mode, tmp, 0), new_val);
+  emit_move_insn (gen_rtx_SUBREG (mode, tmp, 8), expect_val);
 
   switch (mode)
     {
@@ -3820,7 +3779,8 @@ k1_expand_builtin_acswap (rtx target, tree args, enum machine_mode mode)
       gcc_unreachable ();
     }
 
-  emit_move_insn (target, tmp);
+  rtx result = gen_lowpart_SUBREG (mode, tmp);
+  emit_move_insn (target, result);
 
   return target;
 }
@@ -3881,55 +3841,6 @@ k1_expand_builtin_clzd (rtx target, tree args)
   return target;
 }
 
-#if 0
-static rtx
-k1_expand_builtin_cwmoved (rtx target, tree args)
-{
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-    rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
-    rtx cond;
-
-    if (!target)
-        target = gen_reg_rtx (SImode);
-    target = force_reg (SImode, target);
-    arg1 = force_reg (DImode, arg1);
-    arg2 = force_reg (DImode, arg2);
-    arg3 = force_reg (DImode, arg3);
-
-    cond = gen_rtx_NE (VOIDmode, arg1, GEN_INT (0));
-
-    emit_move_insn (target, arg3);
-    emit_insn (gen_cmovesi (target, cond, arg1, arg2, target));
-
-    return target;
-}
-#endif
-
-// FIXME AUTO: cmovef is not a K1 insn, not a builtin
-/* static rtx */
-/* k1_expand_builtin_cmovef (rtx target, tree args) */
-/* { */
-/*     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0)); */
-/*     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1)); */
-/*     rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2)); */
-/*     rtx cond; */
-
-/*     if (!target) */
-/*         target = gen_reg_rtx (SFmode); */
-/*     target = force_reg (SFmode, target); */
-/*     arg1 = force_reg (SImode, arg1); */
-/*     arg2 = force_reg (SFmode, arg2); */
-/*     arg3 = force_reg (SFmode, arg3); */
-
-/*     cond = gen_rtx_NE (VOIDmode, arg1, GEN_INT (0)); */
-
-/*     emit_move_insn (target, arg3); */
-/*     emit_insn (gen_cmovesf (target, cond, arg1, arg2, target)); */
-
-/*     return target; */
-/* } */
-
 static rtx
 k1_expand_builtin_fence (void)
 {
@@ -3942,8 +3853,8 @@ static rtx
 k1_expand_builtin_dinvall (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-
   arg1 = gen_rtx_MEM (SImode, force_reg (Pmode, arg1));
+
   emit_insn (gen_dinvall (arg1, k1_sync_reg_rtx));
 
   return target;
@@ -3953,8 +3864,8 @@ static rtx
 k1_expand_builtin_dtouchl (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-
   arg1 = force_reg (Pmode, arg1);
+
   emit_insn (gen_prefetch (arg1, const0_rtx, const0_rtx));
 
   return target;
@@ -3964,8 +3875,8 @@ static rtx
 k1_expand_builtin_dzerol (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-
   arg1 = gen_rtx_MEM (SImode, force_reg (Pmode, arg1));
+
   emit_insn (gen_dzerol (arg1, k1_sync_reg_rtx));
 
   return target;
@@ -3975,8 +3886,8 @@ static rtx
 k1_expand_builtin_iinvals (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-
   arg1 = gen_rtx_MEM (SImode, force_reg (Pmode, arg1));
+
   emit_insn (gen_iinvals (arg1, k1_sync_reg_rtx));
 
   return target;
@@ -3986,12 +3897,11 @@ static rtx
 k1_expand_builtin_alclr (rtx target, tree args, enum machine_mode mode)
 {
   rtx ptr = expand_normal (CALL_EXPR_ARG (args, 0));
-  rtx mem_ref;
 
   if (!REG_P (ptr))
     ptr = force_reg (Pmode, ptr);
 
-  mem_ref = gen_rtx_MEM (mode, ptr);
+  rtx mem_ref = gen_rtx_MEM (mode, ptr);
 
   if (!target)
     target = gen_reg_rtx (mode);
@@ -4215,16 +4125,14 @@ k1_expand_builtin_fsdivw (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-
   arg1 = force_reg (SFmode, arg1);
   arg2 = force_reg (SFmode, arg2);
 
   if (!target)
     target = gen_reg_rtx (SFmode);
-  if (!REG_P (target) || GET_MODE (target) != SFmode)
-    {
-      target = force_reg (SFmode, target);
-    }
+  else
+    target = force_reg (SFmode, target);
+
   emit_insn (gen_fsdivw (target, arg1, arg2));
 
   return target;
@@ -4234,15 +4142,13 @@ static rtx
 k1_expand_builtin_fsinvw (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-
   arg1 = force_reg (SFmode, arg1);
 
   if (!target)
     target = gen_reg_rtx (SFmode);
-  if (!REG_P (target) || GET_MODE (target) != SFmode)
-    {
-      target = force_reg (SFmode, target);
-    }
+  else
+    target = force_reg (SFmode, target);
+
   emit_insn (gen_fsinvw (target, arg1));
 
   return target;
@@ -4253,16 +4159,14 @@ k1_expand_builtin_fcdivw (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-
   arg1 = force_reg (SFmode, arg1);
   arg2 = force_reg (SFmode, arg2);
 
   if (!target)
     target = gen_reg_rtx (SFmode);
-  if (!REG_P (target) || GET_MODE (target) != SFmode)
-    {
-      target = force_reg (SFmode, target);
-    }
+  else
+    target = force_reg (SFmode, target);
+
   emit_insn (gen_fcdivw (target, arg1, arg2));
 
   return target;
@@ -4272,15 +4176,13 @@ static rtx
 k1_expand_builtin_fsisrw (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-
   arg1 = force_reg (SFmode, arg1);
 
   if (!target)
     target = gen_reg_rtx (SFmode);
-  if (!REG_P (target) || GET_MODE (target) != SFmode)
-    {
-      target = force_reg (SFmode, target);
-    }
+  else
+    target = force_reg (SFmode, target);
+
   emit_insn (gen_fsisrw (target, arg1));
 
   return target;
@@ -4291,16 +4193,14 @@ k1_expand_builtin_fsdivd (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-
   arg1 = force_reg (DFmode, arg1);
   arg2 = force_reg (DFmode, arg2);
 
   if (!target)
     target = gen_reg_rtx (DFmode);
-  if (!REG_P (target) || GET_MODE (target) != SFmode)
-    {
-      target = force_reg (DFmode, target);
-    }
+  else
+    target = force_reg (DFmode, target);
+
   emit_insn (gen_fsdivd (target, arg1, arg2));
 
   return target;
@@ -4310,15 +4210,13 @@ static rtx
 k1_expand_builtin_fsinvd (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-
   arg1 = force_reg (DFmode, arg1);
 
   if (!target)
     target = gen_reg_rtx (DFmode);
-  if (!REG_P (target) || GET_MODE (target) != SFmode)
-    {
-      target = force_reg (DFmode, target);
-    }
+  else
+    target = force_reg (DFmode, target);
+
   emit_insn (gen_fsinvd (target, arg1));
 
   return target;
@@ -4329,16 +4227,14 @@ k1_expand_builtin_fcdivd (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-
   arg1 = force_reg (DFmode, arg1);
   arg2 = force_reg (DFmode, arg2);
 
   if (!target)
     target = gen_reg_rtx (DFmode);
-  if (!REG_P (target) || GET_MODE (target) != SFmode)
-    {
-      target = force_reg (DFmode, target);
-    }
+  else
+    target = force_reg (DFmode, target);
+
   emit_insn (gen_fcdivd (target, arg1, arg2));
 
   return target;
@@ -4348,15 +4244,13 @@ static rtx
 k1_expand_builtin_fsisrd (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-
   arg1 = force_reg (DFmode, arg1);
 
   if (!target)
     target = gen_reg_rtx (DFmode);
-  if (!REG_P (target) || GET_MODE (target) != SFmode)
-    {
-      target = force_reg (DFmode, target);
-    }
+  else
+    target = force_reg (DFmode, target);
+
   emit_insn (gen_fsisrd (target, arg1));
 
   return target;
@@ -4366,15 +4260,13 @@ static rtx
 k1_expand_builtin_lbsu (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  arg1 = gen_rtx_MEM (QImode, force_reg (Pmode, arg1));
 
   if (!target)
     target = gen_reg_rtx (QImode);
-  if (!REG_P (target) || GET_MODE (target) != QImode)
-    {
-      target = force_reg (QImode, target);
-    }
+  else
+    target = force_reg (QImode, target);
 
-  arg1 = gen_rtx_MEM (QImode, force_reg (Pmode, arg1));
   emit_insn (gen_lbsu (target, arg1));
 
   return target;
@@ -4384,15 +4276,13 @@ static rtx
 k1_expand_builtin_lbzu (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  arg1 = gen_rtx_MEM (QImode, force_reg (Pmode, arg1));
 
   if (!target)
     target = gen_reg_rtx (QImode);
-  if (!REG_P (target) || GET_MODE (target) != QImode)
-    {
-      target = force_reg (QImode, target);
-    }
+  else
+    target = force_reg (QImode, target);
 
-  arg1 = gen_rtx_MEM (QImode, force_reg (Pmode, arg1));
   emit_insn (gen_lbzu (target, arg1));
 
   return target;
@@ -4402,15 +4292,13 @@ static rtx
 k1_expand_builtin_ldu (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  arg1 = gen_rtx_MEM (DImode, force_reg (Pmode, arg1));
 
   if (!target)
     target = gen_reg_rtx (DImode);
-  if (!REG_P (target) || GET_MODE (target) != DImode)
-    {
-      target = force_reg (DImode, target);
-    }
+  else
+    target = force_reg (DImode, target);
 
-  arg1 = gen_rtx_MEM (DImode, force_reg (Pmode, arg1));
   emit_insn (gen_ldu (target, arg1));
 
   return target;
@@ -4420,15 +4308,13 @@ static rtx
 k1_expand_builtin_lhsu (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  arg1 = gen_rtx_MEM (HImode, force_reg (Pmode, arg1));
 
   if (!target)
     target = gen_reg_rtx (HImode);
-  if (!REG_P (target) || GET_MODE (target) != HImode)
-    {
-      target = force_reg (HImode, target);
-    }
+  else
+    target = force_reg (HImode, target);
 
-  arg1 = gen_rtx_MEM (HImode, force_reg (Pmode, arg1));
   emit_insn (gen_lhsu (target, arg1));
 
   return target;
@@ -4438,15 +4324,13 @@ static rtx
 k1_expand_builtin_lhzu (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  arg1 = gen_rtx_MEM (HImode, force_reg (Pmode, arg1));
 
   if (!target)
     target = gen_reg_rtx (HImode);
-  if (!REG_P (target) || GET_MODE (target) != HImode)
-    {
-      target = force_reg (HImode, target);
-    }
+  else
+    target = force_reg (HImode, target);
 
-  arg1 = gen_rtx_MEM (HImode, force_reg (Pmode, arg1));
   emit_insn (gen_lhzu (target, arg1));
 
   return target;
@@ -4456,15 +4340,12 @@ static rtx
 k1_expand_builtin_lwzu (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  arg1 = gen_rtx_MEM (SImode, force_reg (Pmode, arg1));
 
   if (!target)
     target = gen_reg_rtx (SImode);
-  if (!REG_P (target) || GET_MODE (target) != SImode)
-    {
-      target = force_reg (SImode, target);
-    }
-
-  arg1 = gen_rtx_MEM (SImode, force_reg (Pmode, arg1));
+  else
+    target = force_reg (SImode, target);
 
   emit_insn (gen_lwzu (target, arg1));
 
@@ -4477,16 +4358,15 @@ k1_expand_builtin_extfz (rtx target, tree args)
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
   rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
-
+  arg1 = force_reg (SImode, arg1);
   arg2 = verify_const_uint_arg (arg2, 6, "extfz", "second");
   arg3 = verify_const_uint_arg (arg3, 6, "extfz", "third");
+  arg2 = gen_rtx_CONST_INT (SImode, INTVAL (arg2) - INTVAL (arg3) + 1);
 
   if (!target)
     target = gen_reg_rtx (SImode);
   else
     target = force_reg (SImode, target);
-  arg1 = force_reg (SImode, arg1);
-  arg2 = gen_rtx_CONST_INT (SImode, INTVAL (arg2) - INTVAL (arg3) + 1);
 
   emit_insn (gen_extzv (target, arg1, arg2, arg3));
 
@@ -4498,12 +4378,14 @@ k1_expand_builtin_stsuw (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  arg1 = force_reg (SImode, arg1);
+  arg2 = force_reg (SImode, arg2);
 
   if (!target)
     target = gen_reg_rtx (SImode);
-  target = force_reg (SImode, target);
-  arg1 = force_reg (SImode, arg1);
-  arg2 = force_reg (SImode, arg2);
+  else
+    target = force_reg (SImode, target);
+
   emit_insn (gen_stsuw (target, arg1, arg2));
 
   return target;
@@ -4514,12 +4396,14 @@ k1_expand_builtin_stsud (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
+  arg1 = force_reg (DImode, arg1);
+  arg2 = force_reg (DImode, arg2);
 
   if (!target)
     target = gen_reg_rtx (DImode);
-  target = force_reg (DImode, target);
-  arg1 = force_reg (DImode, arg1);
-  arg2 = force_reg (DImode, arg2);
+  else
+    target = force_reg (DImode, target);
+
   emit_insn (gen_stsud (target, arg1, arg2));
 
   return target;
@@ -4529,15 +4413,13 @@ static rtx
 k1_expand_builtin_fwiden (rtx target, tree args, int low_bits)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-
   arg1 = force_reg (SImode, arg1);
 
   if (!target)
     target = gen_reg_rtx (SFmode);
-  if (!REG_P (target) || GET_MODE (target) != SFmode)
-    {
-      target = force_reg (SFmode, target);
-    }
+  else
+    target = force_reg (SFmode, target);
+
   if (low_bits)
     emit_insn (gen_builtin_extendhfsf2 (target, arg1));
   else
@@ -4550,15 +4432,13 @@ static rtx
 k1_expand_builtin_fnarrowwh (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-
   arg1 = force_reg (SFmode, arg1);
 
   if (!target)
     target = gen_reg_rtx (HImode);
-  if (!REG_P (target) || GET_MODE (target) != HImode)
-    {
-      target = force_reg (HImode, target);
-    }
+  else
+    target = force_reg (HImode, target);
+
   emit_insn (gen_builtin_truncsfhf2 (target, arg1));
 
   return target;
@@ -4827,8 +4707,6 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return k1_expand_builtin_fcdivd (target, exp);
     case K1_BUILTIN_GET:
       return k1_expand_builtin_get (target, exp);
-    /* FIXME AUTO: Disabling get builtin. Ref T7705 */
-    /* case K1_BUILTIN_GET_R: return k1_expand_builtin_get_r (target, exp); */
     case K1_BUILTIN_WFXL:
       return k1_expand_builtin_wfxl (target, exp);
     case K1_BUILTIN_WFXM:
@@ -4858,8 +4736,7 @@ k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case K1_BUILTIN_SBMMT8:
       return k1_expand_builtin_sbmmt8 (target, exp);
     case K1_BUILTIN_SET:
-    case K1_BUILTIN_SET_PS:
-      return k1_expand_builtin_set (target, exp, fcode == K1_BUILTIN_SET_PS);
+      return k1_expand_builtin_set (target, exp);
     case K1_BUILTIN_SLEEP:
       return k1_expand_builtin_sleep (target, exp);
     case K1_BUILTIN_STOP:
@@ -4928,6 +4805,7 @@ k1_target_sched_adjust_cost (rtx_insn *insn, int dep_type,
     {
       cost = 1;
     }
+
   return cost;
 }
 
@@ -4952,8 +4830,8 @@ k1_target_sched_dfa_new_cycle (FILE *dump ATTRIBUTE_UNUSED,
   return 0;
 }
 
-/* Return TRUE if X is of the form reg[reg] or .xs reg = reg[reg] or
- * signed10bits[reg] */
+/* Test if X is of the form reg[reg] or .xs reg = reg[reg] or signed10bits[reg]
+ */
 bool
 k1_has_10bit_imm_or_register_p (rtx x)
 {
@@ -6085,6 +5963,7 @@ k1_legitimate_constant_p (enum machine_mode mode ATTRIBUTE_UNUSED, rtx x)
 
       if (GET_CODE (x) == UNSPEC)
 	return true;
+
       if (GET_CODE (x) == PLUS || GET_CODE (x) == MINUS)
 	return GET_CODE (XEXP (x, 0)) == UNSPEC && CONST_INT_P (XEXP (x, 1));
 
