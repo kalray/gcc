@@ -26,13 +26,13 @@ enum k1_abi_type
   ((!(STRICT) && R >= FIRST_PSEUDO_REGISTER) || (R TEST VALUE)                 \
    || (reg_renumber && ((unsigned) reg_renumber[R] TEST VALUE)))
 
-/* (K1C_MDS_REGISTERS+1) is used as part of
+/* K1C_FRAME_POINTER_VIRT_REGNO is used as part of
    k1_legitimize_reload_address () because reload wants real addresses
    when it reloads MEMs. This register shouldn't be generated anywhere
    else, thus it causes no correctness issue. */
 #define IS_GENERAL_REGNO(num, strict)                                          \
   (TEST_REGNO (num, <, 64, strict)                                             \
-   || TEST_REGNO (num, ==, (K1C_MDS_REGISTERS + 1), strict))
+   || TEST_REGNO (num, ==, (K1C_FRAME_POINTER_VIRT_REGNO), strict))
 
 #define NO_IMPLICIT_EXTERN_C
 
@@ -160,12 +160,6 @@ enum k1_abi_type
 #define PTRDIFF_TYPE "long int"
 
 /* ********** Registers ********** */
-
-/* Number of hardware registers known to the compiler. They receive
-   numbers 0 through FIRST_PSEUDO_REGISTER-1; thus, the first pseudo
-   register's number really is assigned the number
-   FIRST_PSEUDO_REGISTER.  */
-#define FIRST_PSEUDO_REGISTER (K1C_MDS_REGISTERS + 2)
 
 #define FIXED_REGISTERS                                                        \
   {                                                                            \
@@ -359,8 +353,6 @@ enum k1_abi_type
 #define DWARF_FRAME_RETURN_COLUMN DBX_REGISTER_NUMBER (K1C_RETURN_POINTER_REGNO)
 
 #define STACK_POINTER_REGNUM K1C_STACK_POINTER_REGNO
-
-#define K1C_FRAME_POINTER_VIRT_REGNO (K1C_MDS_REGISTERS + 1)
 
 #define FRAME_POINTER_REGNUM K1C_FRAME_POINTER_VIRT_REGNO
 #define HARD_FRAME_POINTER_REGNUM K1C_FRAME_POINTER_REGNO
