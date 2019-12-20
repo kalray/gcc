@@ -473,9 +473,16 @@ k1_pack_load_store (rtx operands[], unsigned int nops)
 	  rtx elem = XEXP (sorted_operands[2 * i + 1], 0);
 
 	  /* Not addressing next memory word */
-	  if (GET_CODE (elem) != PLUS || !REG_P (XEXP (elem, 0))
-	      || REGNO (XEXP (elem, 0)) != base_regno
-	      || INTVAL (XEXP (elem, 1)) != next_offset)
+	  const bool is_plus_bad_offset
+	    = GET_CODE (elem) == PLUS
+	      && (!REG_P (XEXP (elem, 0))
+		  || REGNO (XEXP (elem, 0)) != base_regno
+		  || INTVAL (XEXP (elem, 1)) != next_offset);
+
+	  const bool is_reg_bad
+	    = REG_P (elem) && (REGNO (elem) != base_regno || next_offset != 0);
+
+	  if (is_reg_bad || is_plus_bad_offset)
 	    return false;
 
 	  next_offset += UNITS_PER_WORD;
@@ -5019,6 +5026,55 @@ k1_has_32x2bit_vector_const_p (rtx x)
   return false;
 }
 
+bool
+k1_expand_load_multiple (rtx operands[])
+{
+  int regno;
+  int count;
+  rtx op1;
+  int i;
+
+  count = INTVAL (operands[2]);
+  regno = REGNO (operands[0]);
+
+  /* Only supports loads of 2 or 4 registers, correctly aligned */
+  if (GET_CODE (operands[2]) != CONST_INT || GET_MODE (operands[0]) != DImode
+      || (count != 2 && !(count == 4)) || ((count == 2) && (regno & 1))
+      || ((count == 4) && (regno & 3)) || !MEM_P (operands[1])
+      || !REG_P (operands[0])
+      || (TARGET_STRICT_ALIGN
+	  && MEM_ALIGN (operands[1]) < (count * UNITS_PER_WORD))
+      || MEM_VOLATILE_P (operands[1])
+      || REGNO (operands[0]) > K1C_GPR_LAST_REGNO)
+    return false;
+
+  operands[3] = gen_rtx_PARALLEL (VOIDmode, rtvec_alloc (count));
+
+  rtx base, offset;
+  if (!k1_split_mem (XEXP (operands[1], 0), &base, &offset, false))
+    return false;
+
+  if (!REG_P (base))
+    base = force_reg (Pmode, base);
+
+  /* Add a PLUS so that we have a simpler match in load multiple patterns */
+  XEXP (operands[1], 0) = gen_rtx_PLUS (Pmode, base, offset);
+
+  for (i = 0; i < count; i++)
+    {
+      rtx addr = adjust_address_nv (operands[1], DImode, i * UNITS_PER_WORD);
+
+      /* Force a PLUS even for offset 0 so that we have a simpler
+	 match in load multiple patterns */
+      if (REG_P (XEXP (addr, 0)))
+	XEXP (addr, 0) = gen_rtx_PLUS (Pmode, XEXP (addr, 0), const0_rtx);
+
+      XVECEXP (operands[3], 0, i)
+	= gen_rtx_SET (gen_rtx_REG (DImode, regno + i), addr);
+    }
+  return true;
+}
+
 /*
  * Returns TRUE if OP is a load multiple operation and all mems are
  * cached/uncached depending on IS_UNCACHED.
@@ -5046,7 +5102,8 @@ k1_load_multiple_operation_p (rtx op, bool is_uncached)
 	return 0;
     }
 
-  if (MEM_ALIGN (SET_SRC (XVECEXP (op, 0, 0))) < (count * UNITS_PER_WORD))
+  if (TARGET_STRICT_ALIGN
+      && MEM_ALIGN (SET_SRC (XVECEXP (op, 0, 0))) < (count * UNITS_PER_WORD))
     return 0;
 
   dest_regno = REGNO (SET_DEST (XVECEXP (op, 0, 0)));
@@ -5100,7 +5157,7 @@ k1_store_multiple_operation_p (rtx op)
 
   /* Perform a quick check so we don't blow up below.  */
   if (count != 2 && count != 4)
-    return 0;
+    return false;
 
   for (i = 0; i < count; i++)
     {
@@ -5108,17 +5165,18 @@ k1_store_multiple_operation_p (rtx op)
 
       if (GET_CODE (set) != SET || !MEM_P (SET_DEST (set))
 	  || !REG_P (SET_SRC (set)) || MEM_VOLATILE_P (SET_DEST (set)))
-	return 0;
+	return false;
     }
 
-  if (MEM_ALIGN (SET_DEST (XVECEXP (op, 0, 0))) < (count * UNITS_PER_WORD))
-    return 0;
+  if (TARGET_STRICT_ALIGN
+      && MEM_ALIGN (SET_DEST (XVECEXP (op, 0, 0))) < (count * UNITS_PER_WORD))
+    return false;
 
   src_regno = REGNO (SET_SRC (XVECEXP (op, 0, 0)));
 
   /* register number must be correctly aligned */
   if (src_regno < FIRST_PSEUDO_REGISTER && (src_regno % count != 0))
-    return 0;
+    return false;
 
   HOST_WIDE_INT expected_offset = 0;
   rtx base;
@@ -5130,7 +5188,7 @@ k1_store_multiple_operation_p (rtx op)
 
       if (!k1_split_mem (XEXP (SET_DEST (elt), 0), &base_cur, &offset_cur,
 			 false))
-	return 0;
+	return false;
 
       if (i == 0)
 	{
@@ -5148,10 +5206,10 @@ k1_store_multiple_operation_p (rtx op)
 	  || !rtx_equal_p (base_cur, base)
 	  || expected_offset != INTVAL (offset_cur))
 
-	return 0;
+	return false;
     }
 
-  return 1;
+  return true;
 }
 
 /* Following funtions are used for bundling insn before ASM emission */
