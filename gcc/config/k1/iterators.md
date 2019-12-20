@@ -3,14 +3,24 @@
 
 ;; Mapping between GCC modes and suffixes used by LSU insns
 (define_mode_attr lsusize [
- (QI "b")
- (HI "h")
- (SI "w")
- (DI "d")
- (TI "q")
- (OI "o")
- (SF "w")
- (DF "d")])
+  (QI "b")
+  (HI "h")
+  (SI "w")
+  (SF "w")
+  (DI "d")
+  (DF "d")
+  (V4HI "d")
+  (V2SI "d")
+  (V2SF "d")
+  (TI "q")
+  (V8HI "q")
+  (V4SI "q")
+  (V4SF "q")
+  (V2DI "q")
+  (V2DF "q")
+  (OI "o")
+  (V4DI "o")
+])
 
 ;; Suffix for extension when applicable (for LSU narrower than a
 ;; register). Leave empty if not applicable
@@ -18,13 +28,22 @@
   (QI "z")
   (HI "z")
   (SI "z")
-  (DI "")
-  (TI "")
-  (OI "")
   (SF "z")
-  (DF "")])
+  (DI "")
+  (DF "")
+  (V4HI "")
+  (V2SI "")
+  (V2SF "")
+  (TI "")
+  (V8HI "")
+  (V4SI "")
+  (V4SF "")
+  (V2DI "")
+  (V2DF "")
+  (OI "")
+  (V4DI "")
+])
 
-(define_mode_attr hq [(HI "h") (QI "q")])
 
 ;; Code iterator for sign/zero extension
 (define_code_iterator MAX_UMAX [smax umax])
@@ -59,9 +78,6 @@
 ;; Iterator for all float modes (up to 64-bit)
 (define_mode_iterator ALLF [SF DF])
 
-;; Iterator for all float modes (up to 64-bit)
-(define_mode_iterator ALLMF [SF DF])
-
 (define_mode_attr sfx [
   (SF "w")
   (DF "d")
@@ -71,8 +87,6 @@
   (DI "d")
   (TI "q")
   (OI "o")])
-
-(define_mode_attr fmasfx [(SF "w") (DF "d")] )
 
 ;; All modes used by the mov pattern that fit in a register.
 ;; TI and OI and to be handled elsewhere.
@@ -92,30 +106,8 @@
 ;; FIXME AUTO: change name of cbvar, used elsewhere.
 (define_mode_attr cbvar [(SI "w") (DI "d") (SF "w") (DF "d")])
 
-;; FIXME AUTO: disabling vector support
-;;(define_mode_iterator SISIZE [SI SF V2HI])
-(define_mode_iterator SISIZE [SI SF])
-
-(define_mode_iterator SISIZESCALAR [SI SF])
-
-;; FIXME AUTO: disabling vector support
-;;(define_mode_iterator DISIZE [DI DF V2SI V4HI])
-(define_mode_iterator DISIZE [DI DF])
-
-(define_mode_iterator DISIZESCALAR [DI DF])
-
-;; FIXME AUTO: disabling vector support
-;;(define_mode_iterator ALLMODES [DI DF V4HI V2SI SI SF V2HI HI QI])
-
-(define_mode_iterator ALLMODES [DI DF SI SF HI QI])
-
-(define_mode_attr lite_prefix [(SI "") (DI "alud_")])
-
-;;(define_mode_attr suffix32b [(SI "w") (DI "")])
-
 (define_mode_attr suffix [(SI "w") (DI "d")])
 
-(define_mode_attr suffix_opx [(SI "") (DI "d_x")])
 (define_mode_attr suffix2 [(SI "w") (DI "d")])
 (define_mode_attr regclass [(SI "r") (DI "r")])
 (define_mode_attr size [(SI "4") (DI "8")])
@@ -126,11 +118,6 @@
 ;; Values 999 are used for modes where the alternative must always be disabled.
 (define_mode_attr symlen1 [(SI "_x") (DI "_y") (QI "") (HI "") (SF "") (DF "")])
 (define_mode_attr symlen2 [(SI "8") (DI "12") (QI "999") (HI "999") (SF "999") (DF "999")])
-
-;; Used to also select AUX WRITE
-(define_mode_attr auxw [(SI "") (DI "") (QI "") (HI "") (TI "_auxw") (OI "_auxw") (SF "") (DF "")])
-
-(define_mode_attr sbfx_resrv [(SI "tiny") (DI "alud_lite")])
 
 (define_attr "disabled" "yes,no" (const_string "no"))
 
@@ -152,12 +139,60 @@
   (and "and")
   (mult "nand")])
 
-;; Iterator for the 64-bit vector modes
-(define_mode_iterator SIMD64 [V4HI V2SI V2SF])
+;; Iterator for the 64-bit vector modes.
+(define_mode_iterator SIMD64 [
+  V4HI V2SI V2SF
+])
 
-;; Iterator for the 128-bit vector modes
-(define_mode_iterator SIMD128 [V8HI V4SI V2DI V4SF V2DF])
+;; Iterator for the 128-bit vector modes.
+(define_mode_iterator SIMD128 [
+  V8HI V4SI V2DI V4SF V2DF
+])
 
-;; Iterator for the 256-bit vector modes
-(define_mode_iterator SIMD256 [V4DI])
+;; Iterator for the 256-bit vector modes.
+(define_mode_iterator SIMD256 [
+  V4DI
+])
+
+;; Iterator for the modes that fit in a GPR.
+(define_mode_iterator FITGPR [
+  QI HI SI SF
+  DI DF V4HI V2SI V2SF
+])
+
+;; Iterator for all 64-bit modes.
+(define_mode_iterator ALL64 [
+  DI DF V4HI V2SI V2SF
+])
+
+;; Iterator for all 128-bit modes.
+(define_mode_iterator ALL128 [
+  TI V8HI V4SI V2DI V4SF V2DF
+])
+
+;; Iterator for all 256-bit modes.
+(define_mode_iterator ALL256 [
+  OI V4DI
+])
+
+;; Iterator for all modes with zero/sign extension.
+(define_mode_iterator ALLZSX [
+  QI HI SI 
+])
+
+;; Iterator for all modes without extension.
+(define_mode_iterator ALLNOX [
+  SF
+  DI DF V4HI V2SI V2SF
+  TI V8HI V4SI V2DI V4SF V2DF
+  OI V4DI
+])
+
+;; Iterator for all the modes (integer, float, vector).
+(define_mode_iterator ALLIFV [
+  QI HI SI SF
+  DI DF V4HI V2SI V2SF
+  TI V8HI V4SI V2DI V4SF V2DF
+  OI V4DI
+])
 
