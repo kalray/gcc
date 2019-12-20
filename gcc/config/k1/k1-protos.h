@@ -55,11 +55,11 @@ extern void k1_expand_stack_check (rtx addr);
 extern void k1_expand_helper_pic_call (rtx retval, rtx fnaddr, rtx callarg,
 				       int sibcall);
 
-extern void k1_target_print_operand (FILE *file, rtx x, int code);
+extern void k1_print_operand (FILE *file, rtx x, int code);
 
-extern void k1_target_print_operand_address (FILE *file, rtx x);
+extern void k1_print_operand_address (FILE *file, rtx x);
 
-extern bool k1_target_print_punct_valid_p (unsigned char code);
+extern bool k1_print_punct_valid_p (unsigned char code);
 
 extern int k1_is_uncached_mem_op_p (rtx op);
 
@@ -128,27 +128,24 @@ extern bool k1_has_43bit_vector_const_p (rtx x);
 
 extern bool k1_has_32x2bit_vector_const_p (rtx x);
 
+extern bool k1_expand_conditional_move (machine_mode mode, rtx operands[]);
+
 extern void k1_expand_vcondv2si (rtx *);
 
 extern void k1_expand_vcondv4hi (rtx *);
 
-void k1_emit_pre_barrier (rtx, bool);
+extern void k1_emit_pre_barrier (rtx, bool);
 
-void k1_emit_post_barrier (rtx, bool);
-
-void k1_expand_compare_and_swap (rtx op[]);
-
-void k1_expand_atomic_op (enum rtx_code, rtx, bool, rtx, rtx, rtx);
-
-void k1_expand_atomic_test_and_set (rtx op[]);
+extern void k1_emit_pre_barrier (rtx, bool);
+extern void k1_emit_post_barrier (rtx, bool);
+extern void k1_expand_compare_and_swap (rtx op[]);
+extern void k1_expand_atomic_op (enum rtx_code, rtx, bool, rtx, rtx, rtx);
+extern void k1_expand_atomic_test_and_set (rtx op[]);
 
 extern int k1_mau_lsu_double_port_bypass_p (rtx_insn *producer,
 					    rtx_insn *consumer);
 
-extern int k1_has_pic_reference (rtx x);
-/* This function is exported for the tirex plugin. Do not make it
-   static ! */
-extern int k1_has_tls_reference (rtx x);
+extern int  k1_has_tls_reference(rtx x);
 
 extern bool k1_float_fits_bits (const REAL_VALUE_TYPE *r, unsigned bitsz,
 				enum machine_mode mode);

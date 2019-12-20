@@ -73,23 +73,11 @@
 			   && !SYMBOL_REF_WEAK (XEXP (op, 0))));
 })
 
-(define_special_predicate "k1_branch_comparison_operator"
+(define_predicate "signed_comparison_operator"
   (match_code "eq,ne,le,lt,ge,gt"))
-
 
 (define_predicate "float_comparison_operator"
   (match_code "ne,eq,ge,lt,uneq,unge,unlt,ltgt"))
-
-(define_predicate "bitwise_operator"
-  (match_code "ior,and,xor"))
-
-(define_predicate "packed_memory_operand"
-  (match_code "mem")
-{
-        (void)op; /* Avoid warnings */
-	/* The code that generates packed accesses ensures the corrrectness. */
-	return true;
-})
 
 ;; Returns TRUE if op is a register or an immediate suitable for sign
 ;; extension from the format signed10, upper27_lower10 or
@@ -167,35 +155,6 @@
 	return	nonmemory_operand(op, mode) 
 	   && (!CONST_INT_P (op) 
                 || (INTVAL (op) >= 0 && INTVAL (op) < (1<<7)));
-})
-
-;; (define_predicate "non_modulo_memory_operand"
-;;   (match_code "mem")
-;; {
-;; 	return memory_operand(op, mode) 
-;; 	   && !k1_legitimate_modulo_addressing_p(XEXP (op, 0), reload_completed);
-;; })
-
-;; (define_predicate "non_modulo_address_operand"
-;;   (match_code "subreg,reg,plus")
-;; {
-;; 	return address_operand(op, mode) 
-;; 	   && !k1_legitimate_modulo_addressing_p(op, reload_completed);
-;; })
-
-(define_predicate "small_operand"
-  (match_code "const_int,reg,subreg")
-{
-	return	register_operand(op, mode) 
-	   || (CONST_INT_P (op) 
-                && (INTVAL (op) >= -(1<<9) && INTVAL (op) < (1<<9)));
-})
-
-(define_predicate "twobits_unsigned_operand"
-  (match_code "const_int")
-{
-	return	CONST_INT_P (op) 
-                && (INTVAL (op) >= 0 && INTVAL (op) < (1<<2));
 })
 
 (define_predicate "sixbits_unsigned_operand"

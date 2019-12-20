@@ -563,7 +563,7 @@ static bool symbolic_reference_mentioned_p (rtx op);
 
 static bool k1_output_addr_const_extra (FILE *, rtx);
 
-static bool k1_target_legitimate_address_p (enum machine_mode mode, rtx x,
+static bool k1_legitimate_address_p (enum machine_mode mode, rtx x,
 					    bool strict);
 
 bool k1_legitimate_pic_symbolic_ref_p (rtx op);
@@ -666,7 +666,7 @@ k1_legitimate_address_offset_register_p (rtx reg, bool strict)
  * - (plus (mult (reg) (constant)) (reg))
  */
 static bool
-k1_target_legitimate_address_p (machine_mode mode, rtx x, bool strict)
+k1_legitimate_address_p (machine_mode mode, rtx x, bool strict)
 {
 
   /*
@@ -725,7 +725,7 @@ k1_target_legitimate_address_p (machine_mode mode, rtx x, bool strict)
 }
 
 static void
-k1_target_conditional_register_usage (void)
+k1_conditional_register_usage (void)
 {
   k1_sync_reg_rtx = gen_rtx_REG (SImode, K1C_SYNC_REG_REGNO);
   k1_link_reg_rtx = gen_rtx_REG (Pmode, K1C_RETURN_POINTER_REGNO);
@@ -864,8 +864,8 @@ k1_function_arg_advance (cumulative_args_t cum_v, enum machine_mode mode,
 }
 
 static rtx
-k1_target_function_value (const_tree ret_type, const_tree func ATTRIBUTE_UNUSED,
-			  bool outgoing ATTRIBUTE_UNUSED)
+k1_function_value (const_tree ret_type, const_tree func ATTRIBUTE_UNUSED,
+		   bool outgoing ATTRIBUTE_UNUSED)
 {
   enum machine_mode mode = TYPE_MODE (ret_type);
 
@@ -892,14 +892,14 @@ k1_target_function_value (const_tree ret_type, const_tree func ATTRIBUTE_UNUSED,
 
 /* Implements TARGET_RETURN_IN_MSB */
 static bool
-k1_target_return_in_msb (const_tree type ATTRIBUTE_UNUSED)
+k1_return_in_msb (const_tree type ATTRIBUTE_UNUSED)
 {
   return false;
 }
 
 /* Implements TARGET_RETURN_IN_MEMORY */
 static bool
-k1_target_return_in_memory (const_tree type, const_tree fntype ATTRIBUTE_UNUSED)
+k1_return_in_memory (const_tree type, const_tree fntype ATTRIBUTE_UNUSED)
 {
   HOST_WIDE_INT sz = int_size_in_bytes (type);
 
@@ -910,18 +910,18 @@ k1_target_return_in_memory (const_tree type, const_tree fntype ATTRIBUTE_UNUSED)
 
 /* Implements TARGET_STRUCT_VALUE_RTX */
 static rtx
-k1_target_struct_value_rtx (tree fndecl ATTRIBUTE_UNUSED,
-			    int incoming ATTRIBUTE_UNUSED)
+k1_struct_value_rtx (tree fndecl ATTRIBUTE_UNUSED,
+		     int incoming ATTRIBUTE_UNUSED)
 {
   return gen_rtx_REG (Pmode, K1C_STRUCT_POINTER_REGNO);
 }
 
 static void
-k1_target_asm_output_mi_thunk (FILE *file ATTRIBUTE_UNUSED,
-			       tree thunk_fndecl ATTRIBUTE_UNUSED,
-			       HOST_WIDE_INT delta ATTRIBUTE_UNUSED,
-			       HOST_WIDE_INT vcall_offset ATTRIBUTE_UNUSED,
-			       tree function ATTRIBUTE_UNUSED)
+k1_asm_output_mi_thunk (FILE *file ATTRIBUTE_UNUSED,
+			tree thunk_fndecl ATTRIBUTE_UNUSED,
+			HOST_WIDE_INT delta ATTRIBUTE_UNUSED,
+			HOST_WIDE_INT vcall_offset ATTRIBUTE_UNUSED,
+			tree function ATTRIBUTE_UNUSED)
 {
   rtx xops[1];
   if (!TARGET_32)
@@ -956,16 +956,16 @@ k1_target_asm_output_mi_thunk (FILE *file ATTRIBUTE_UNUSED,
 }
 
 static bool
-k1_target_asm_can_output_mi_thunk (const_tree thunk_fndecl ATTRIBUTE_UNUSED,
-				   HOST_WIDE_INT delta ATTRIBUTE_UNUSED,
-				   HOST_WIDE_INT vcall_offset ATTRIBUTE_UNUSED,
-				   const_tree function ATTRIBUTE_UNUSED)
+k1_asm_can_output_mi_thunk (const_tree thunk_fndecl ATTRIBUTE_UNUSED,
+			    HOST_WIDE_INT delta ATTRIBUTE_UNUSED,
+			    HOST_WIDE_INT vcall_offset ATTRIBUTE_UNUSED,
+			    const_tree function ATTRIBUTE_UNUSED)
 {
   return true;
 }
 
 static rtx
-k1_target_expand_builtin_saveregs (void)
+k1_expand_builtin_saveregs (void)
 {
   int regno;
   int slot = 0;
@@ -1017,7 +1017,7 @@ k1_target_expand_builtin_saveregs (void)
 }
 
 static void
-k1_target_expand_va_start (tree valist, rtx nextarg ATTRIBUTE_UNUSED)
+k1_expand_va_start (tree valist, rtx nextarg ATTRIBUTE_UNUSED)
 {
   rtx va_start_addr = expand_builtin_saveregs ();
   rtx va_r = expand_expr (valist, NULL_RTX, VOIDmode, EXPAND_WRITE);
@@ -1055,19 +1055,19 @@ k1_cannot_force_const_mem (enum machine_mode mode ATTRIBUTE_UNUSED,
 }
 
 static bool
-k1_target_decimal_float_supported_p (void)
+k1_decimal_float_supported_p (void)
 {
   return true;
 }
 
 static bool
-k1_target_fixed_point_supported_p (void)
+k1_fixed_point_supported_p (void)
 {
   return false;
 }
 
 static bool
-k1_target_vector_mode_supported_p (enum machine_mode mode ATTRIBUTE_UNUSED)
+k1_vector_mode_supported_p (enum machine_mode mode ATTRIBUTE_UNUSED)
 {
   switch (mode)
     {
@@ -1088,24 +1088,24 @@ k1_target_vector_mode_supported_p (enum machine_mode mode ATTRIBUTE_UNUSED)
 }
 
 static bool
-k1_target_support_vector_misalignment (enum machine_mode mode ATTRIBUTE_UNUSED,
-				       const_tree type ATTRIBUTE_UNUSED,
-				       int misalignment ATTRIBUTE_UNUSED,
-				       bool is_packed ATTRIBUTE_UNUSED)
+k1_support_vector_misalignment (enum machine_mode mode ATTRIBUTE_UNUSED,
+				const_tree type ATTRIBUTE_UNUSED,
+				int misalignment ATTRIBUTE_UNUSED,
+				bool is_packed ATTRIBUTE_UNUSED)
 {
   return !TARGET_STRICT_ALIGN;
 }
 
 static bool
-k1_target_promote_prototypes (const_tree fndecl ATTRIBUTE_UNUSED)
+k1_promote_prototypes (const_tree fndecl ATTRIBUTE_UNUSED)
 {
   return true;
 }
 
 static bool
-k1_target_pass_by_reference (cumulative_args_t cum ATTRIBUTE_UNUSED,
-			     enum machine_mode mode, const_tree type,
-			     bool named ATTRIBUTE_UNUSED)
+k1_pass_by_reference (cumulative_args_t cum ATTRIBUTE_UNUSED,
+		      enum machine_mode mode, const_tree type,
+		      bool named ATTRIBUTE_UNUSED)
 {
   HOST_WIDE_INT size;
   machine_mode dummymode;
@@ -1129,10 +1129,10 @@ k1_target_pass_by_reference (cumulative_args_t cum ATTRIBUTE_UNUSED,
 }
 
 static reg_class_t
-k1_target_secondary_reload (bool in_p ATTRIBUTE_UNUSED, rtx x ATTRIBUTE_UNUSED,
-			    reg_class_t reload_class ATTRIBUTE_UNUSED,
-			    enum machine_mode reload_mode ATTRIBUTE_UNUSED,
-			    secondary_reload_info *sri ATTRIBUTE_UNUSED)
+k1_secondary_reload (bool in_p ATTRIBUTE_UNUSED, rtx x ATTRIBUTE_UNUSED,
+		     reg_class_t reload_class ATTRIBUTE_UNUSED,
+		     enum machine_mode reload_mode ATTRIBUTE_UNUSED,
+		     secondary_reload_info *sri ATTRIBUTE_UNUSED)
 {
   if (!flag_pic)
     return NO_REGS;
@@ -1162,7 +1162,7 @@ static const char *k1_unspec_tls_asm_op[]
   = {"@tlsgd", "@tlsld", "@tlsle", "@dtpoff", "@tlsie"};
 
 void
-k1_target_print_operand (FILE *file, rtx x, int code)
+k1_print_operand (FILE *file, rtx x, int code)
 {
   rtx operand = x;
   bool select_qreg = 0;
@@ -1359,7 +1359,7 @@ k1_target_print_operand (FILE *file, rtx x, int code)
 	{
 	  x = XEXP (x, 0);
 	  if (GET_CODE (x) == UNSPEC)
-	    k1_target_print_operand (file, x, 0);
+	    k1_print_operand (file, x, 0);
 	  else
 	    output_address (GET_MODE (XEXP (operand, 0)), XEXP (operand, 0));
 	}
@@ -1478,7 +1478,7 @@ k1_regname (rtx x)
 }
 
 void
-k1_target_print_operand_address (FILE *file, rtx x)
+k1_print_operand_address (FILE *file, rtx x)
 {
   switch (GET_CODE (x))
     {
@@ -1540,7 +1540,7 @@ k1_init_expanders (void)
 }
 
 bool
-k1_target_print_punct_valid_p (unsigned char code)
+k1_print_punct_valid_p (unsigned char code)
 {
   return code == ';';
 }
@@ -2024,8 +2024,8 @@ k1_call_tls_get_addr (rtx sym, rtx result, int unspec)
 static rtx
 k1_legitimize_tls_reference (rtx x)
 {
-  rtx reg, addr, pic_reg, eqv;
-  rtx dest, tp, tmp;
+  rtx addr, pic_reg, eqv;
+  rtx dest, tmp;
 
   if (reload_completed || reload_in_progress)
     return x;
@@ -2328,7 +2328,7 @@ k1_expand_mov_constant (rtx operands[])
   /*   } else if (flag_pic) */
   /*   { */
   /*     if (SYMBOLIC_CONST(operands[1])) */
-  /* 	operands[1] = k1_target_legitimize_pic_address (operands[1],
+  /* 	operands[1] = k1_legitimize_pic_address (operands[1],
    * operands[0]); */
   /*   } */
   return;
@@ -2337,9 +2337,9 @@ k1_expand_mov_constant (rtx operands[])
 /* FIXME AUTO: fix cost function for coolidge */
 /* See T7748 */
 static int
-k1_target_register_move_cost (machine_mode mode,
-			      reg_class_t from ATTRIBUTE_UNUSED,
-			      reg_class_t to ATTRIBUTE_UNUSED)
+k1_register_move_cost (machine_mode mode,
+		      reg_class_t from ATTRIBUTE_UNUSED,
+		      reg_class_t to ATTRIBUTE_UNUSED)
 {
   int n_copyd = (GET_MODE_SIZE (mode) + UNITS_PER_WORD - 1) / UNITS_PER_WORD;
   /* Provide a cost slightly above one of a simple instruction. This prevents
@@ -2354,6 +2354,124 @@ k1_target_register_move_cost (machine_mode mode,
 	  ;;
     */
   return (COSTS_N_INSNS (1) + 1) * n_copyd;
+}
+
+
+/* Canonicalize a comparison from one we don't have to one we do have.  */
+static void
+k1_canonicalize_comparison (int *code, rtx *op0, rtx *op1,
+			    bool op0_preserve_value)
+{
+  machine_mode mode = GET_MODE (*op0);
+  bool float_compare_p = (GET_MODE_CLASS (mode) == MODE_FLOAT);
+  static struct rtx_def rtx_; PUT_CODE (&rtx_, (enum rtx_code)*code);
+
+  if (! op0_preserve_value && float_compare_p
+      && ! float_comparison_operator (&rtx_, VOIDmode))
+    {
+      rtx temp = *op1;
+      *op1 = *op0;
+      *op0 = temp;
+      *code = (int)swap_condition ((enum rtx_code)*code);
+    }
+}
+
+/* Emit the compare insn and return the register rtx. */
+static rtx
+k1_gen_compare_reg (RTX_CODE code, rtx cmp)
+{
+  rtx x = XEXP (cmp, 0);
+  rtx y = XEXP (cmp, 1);
+  machine_mode mode = GET_MODE (x);
+  bool float_compare_p = (GET_MODE_CLASS (mode) == MODE_FLOAT);
+
+  if (float_compare_p)
+    {
+      if (! float_comparison_operator (cmp, VOIDmode))
+	{
+	  RTX_CODE swapped = swap_condition (code);
+
+	  if (swapped == code)
+	      /* CODE must be ORDERED or UNORDERED, bail out. */
+	      return NULL_RTX;
+
+	  code = swapped;
+	  rtx t = force_reg (mode, y);
+	  y = x, x = t;
+	}
+
+      mode = DImode;
+    }
+
+  if (CONSTANT_P (y))
+    y = force_reg (GET_MODE (x), y);
+
+  rtx cc_cmp = gen_rtx_fmt_ee (code, mode, x, y);
+  gcc_assert (! float_compare_p ||
+	      float_comparison_operator (cc_cmp, VOIDmode));
+
+  rtx cc_reg = gen_reg_rtx (mode);
+  emit_insn (gen_rtx_SET (cc_reg, cc_cmp));
+  return cc_reg;
+}
+
+/* Emit code to conditionally move either OPERANDS[2] or OPERANDS[3] into
+   OPERANDS[0] in MODE.  OPERANDS[1] is the operator of the condition. */
+bool
+k1_expand_conditional_move (machine_mode mode, rtx operands[])
+{
+  rtx cmp = operands[1];
+  enum rtx_code cmp_code = GET_CODE (cmp);
+  machine_mode cmp_mode = GET_MODE (XEXP (cmp, 0));
+  rtx cc_reg = NULL_RTX, src = NULL_RTX, dst = NULL_RTX;
+
+  if (! rtx_equal_p (operands[2], operands[0])
+      && ! rtx_equal_p (operands[3], operands[0]))
+    {
+      if (reg_overlap_mentioned_p (operands[0], cmp))
+	dst = gen_reg_rtx (mode);
+      else
+	dst = operands[0];
+
+      src = operands[2];
+      emit_move_insn (dst, operands[3]);
+    }
+  else if (rtx_equal_p (operands[2], operands[0]))
+    {
+      src = operands[3];
+      dst = operands[0];
+
+      if (GET_MODE_CLASS (cmp_mode) == MODE_FLOAT)
+	cmp_code = reverse_condition_maybe_unordered (cmp_code);
+      else
+	cmp_code = reverse_condition (cmp_code);
+    }
+  else
+    {
+      src = operands[2];
+      dst = operands[0];
+    }
+
+  if (XEXP (cmp, 1) == const0_rtx && (cmp_mode == DImode || cmp_mode == SImode))
+    cc_reg = force_reg (cmp_mode, XEXP (cmp, 0));
+  else
+    {
+      cc_reg = k1_gen_compare_reg (cmp_code, cmp);
+
+      if (! cc_reg)
+	return false;
+
+      cmp_code = NE;
+    }
+
+  rtx cmp0 = gen_rtx_fmt_ee (cmp_code, VOIDmode, cc_reg, const0_rtx);
+
+  emit_insn (gen_rtx_SET (dst, gen_rtx_IF_THEN_ELSE (mode, cmp0, src, dst)));
+
+  if (dst != operands[0])
+    emit_move_insn (operands[0], dst);
+
+  return true;
 }
 
 /* Expander for vector cmove with the pattern:
@@ -2951,7 +3069,7 @@ enum k1_builtin
 static tree builtin_fndecls[K1_LAST_BUILTIN];
 
 static void
-k1_target_init_builtins (void)
+k1_init_builtins (void)
 {
 
 #define VOID void_type_node
@@ -3019,169 +3137,169 @@ k1_target_init_builtins (void)
 			    K1_BUILTIN_##UC_NAME, BUILT_IN_MD, NULL,           \
 			    NULL_TREE)
 
-  ADD_K1_BUILTIN (ABDW, "abdw", INT32, INT32, INT32);
-  ADD_K1_BUILTIN (ABDD, "abdd", INT64, INT64, INT64);
-  ADD_K1_BUILTIN (ADDSW, "addsw", INT32, INT32, INT32);
-  ADD_K1_BUILTIN (ADDSD, "addsd", INT64, INT64, INT64);
-  ADD_K1_BUILTIN (SBFSW, "sbfsw", INT32, INT32, INT32);
-  ADD_K1_BUILTIN (SBFSD, "sbfsd", INT64, INT64, INT64);
-  ADD_K1_BUILTIN (AVGW, "avgw", INT32, INT32, INT32);
-  ADD_K1_BUILTIN (AVGUW, "avguw", UINT32, UINT32, UINT32);
-  ADD_K1_BUILTIN (AVGRW, "avgrw", INT32, INT32, INT32);
-  ADD_K1_BUILTIN (AVGRUW, "avgruw", UINT32, UINT32, UINT32);
-  ADD_K1_BUILTIN (AWAIT, "await", VOID);
-  ADD_K1_BUILTIN (BARRIER, "barrier", VOID);
-  ADD_K1_BUILTIN (CBSW, "cbsw", INT32, UINT32);
-  ADD_K1_BUILTIN (CBSD, "cbsd", INT64, UINT64);
-  ADD_K1_BUILTIN (CLZW, "clzw", INT32, UINT32);
-  ADD_K1_BUILTIN (CLZD, "clzd", INT64, UINT64);
-  ADD_K1_BUILTIN (CTZW, "ctzw", INT32, UINT32);
-  ADD_K1_BUILTIN (CTZD, "ctzd", INT64, UINT64);
-  ADD_K1_BUILTIN (ACSWAPW, "acswapw", UINT32, VPTR, UINT32, UINT32);
-  ADD_K1_BUILTIN (ACSWAPD, "acswapd", UINT64, VPTR, UINT64, UINT64);
-  ADD_K1_BUILTIN (AFADDD, "afaddd", UINT64, VPTR, INT64);
-  ADD_K1_BUILTIN (AFADDW, "afaddw", UINT32, VPTR, INT32);
-  ADD_K1_BUILTIN (ALCLRD, "alclrd", UINT64, VPTR);
-  ADD_K1_BUILTIN (ALCLRW, "alclrw", UINT32, VPTR);
-  ADD_K1_BUILTIN (DINVAL, "dinval", VOID);
-  ADD_K1_BUILTIN (DINVALL, "dinvall", VOID, CVPTR);
-  ADD_K1_BUILTIN (DOZE, "doze", VOID);
-  ADD_K1_BUILTIN (DTOUCHL, "dtouchl", VOID, CVPTR);
-  ADD_K1_BUILTIN (DZEROL, "dzerol", VOID, VPTR);
-  ADD_K1_BUILTIN (EXTFZ, "extfz", UINT32, UINT32, UINT32, UINT32);
+  ADD_K1_BUILTIN (ABDW, "abdw", INT32, INT32, INT32); // Scalar
+  ADD_K1_BUILTIN (ABDD, "abdd", INT64, INT64, INT64); // Scalar
+  ADD_K1_BUILTIN (ADDSW, "addsw", INT32, INT32, INT32); // Scalar
+  ADD_K1_BUILTIN (ADDSD, "addsd", INT64, INT64, INT64); // Scalar
+  ADD_K1_BUILTIN (SBFSW, "sbfsw", INT32, INT32, INT32); // Scalar
+  ADD_K1_BUILTIN (SBFSD, "sbfsd", INT64, INT64, INT64); // Scalar
+  ADD_K1_BUILTIN (AVGW, "avgw", INT32, INT32, INT32); // Scalar
+  ADD_K1_BUILTIN (AVGUW, "avguw", UINT32, UINT32, UINT32); // Scalar
+  ADD_K1_BUILTIN (AVGRW, "avgrw", INT32, INT32, INT32); // Scalar
+  ADD_K1_BUILTIN (AVGRUW, "avgruw", UINT32, UINT32, UINT32); // Scalar
+  ADD_K1_BUILTIN (AWAIT, "await", VOID); // Control
+  ADD_K1_BUILTIN (BARRIER, "barrier", VOID); // Control
+  ADD_K1_BUILTIN (CBSW, "cbsw", INT32, UINT32); // Scalar
+  ADD_K1_BUILTIN (CBSD, "cbsd", INT64, UINT64); // Scalar
+  ADD_K1_BUILTIN (CLZW, "clzw", INT32, UINT32); // Scalar
+  ADD_K1_BUILTIN (CLZD, "clzd", INT64, UINT64); // Scalar
+  ADD_K1_BUILTIN (CTZW, "ctzw", INT32, UINT32); // Scalar
+  ADD_K1_BUILTIN (CTZD, "ctzd", INT64, UINT64); // Scalar
+  ADD_K1_BUILTIN (ACSWAPW, "acswapw", UINT32, VPTR, UINT32, UINT32); // Atomic
+  ADD_K1_BUILTIN (ACSWAPD, "acswapd", UINT64, VPTR, UINT64, UINT64); // Atomic
+  ADD_K1_BUILTIN (AFADDD, "afaddd", UINT64, VPTR, INT64); // Atomic
+  ADD_K1_BUILTIN (AFADDW, "afaddw", UINT32, VPTR, INT32); // Atomic
+  ADD_K1_BUILTIN (ALCLRD, "alclrd", UINT64, VPTR); // Atomic
+  ADD_K1_BUILTIN (ALCLRW, "alclrw", UINT32, VPTR); // Atomic
+  ADD_K1_BUILTIN (DINVAL, "dinval", VOID); // Memory
+  ADD_K1_BUILTIN (DINVALL, "dinvall", VOID, CVPTR); // Memory
+  ADD_K1_BUILTIN (DOZE, "doze", VOID); // Control
+  ADD_K1_BUILTIN (DTOUCHL, "dtouchl", VOID, CVPTR); // Memory
+  ADD_K1_BUILTIN (DZEROL, "dzerol", VOID, VPTR); // Memory
+  ADD_K1_BUILTIN (EXTFZ, "extfz", UINT32, UINT32, UINT32, UINT32); // Scalar
 
-  ADD_K1_BUILTIN (FABSW, "fabsw", FLOAT32, FLOAT32);
-  ADD_K1_BUILTIN (FABSWP, "fabswp", FLOAT32X2, FLOAT32X2);
-  ADD_K1_BUILTIN (FABSWQ, "fabswq", FLOAT32X4, FLOAT32X4);
-  ADD_K1_BUILTIN (FABSD, "fabsd", FLOAT64, FLOAT64);
-  ADD_K1_BUILTIN (FABSDP, "fabsdp", FLOAT64X2, FLOAT64X2);
-  ADD_K1_BUILTIN (FNEGW, "fnegw", FLOAT32, FLOAT32);
-  ADD_K1_BUILTIN (FNEGWP, "fnegwp", FLOAT32X2, FLOAT32X2);
-  ADD_K1_BUILTIN (FNEGWQ, "fnegwq", FLOAT32X4, FLOAT32X4);
-  ADD_K1_BUILTIN (FNEGD, "fnegd", FLOAT64, FLOAT64);
-  ADD_K1_BUILTIN (FNEGDP, "fnegdp", FLOAT64X2, FLOAT64X2);
-  ADD_K1_BUILTIN (FMAXW, "fmaxw", FLOAT32, FLOAT32, FLOAT32);
-  ADD_K1_BUILTIN (FMAXWP, "fmaxwp", FLOAT32X2, FLOAT32X2, FLOAT32X2);
-  ADD_K1_BUILTIN (FMAXWQ, "fmaxwq", FLOAT32X4, FLOAT32X4, FLOAT32X4);
-  ADD_K1_BUILTIN (FMAXD, "fmaxd", FLOAT64, FLOAT64, FLOAT64);
-  ADD_K1_BUILTIN (FMAXDP, "fmaxdp", FLOAT64X2, FLOAT64X2, FLOAT64X2);
-  ADD_K1_BUILTIN (FMINW, "fminw", FLOAT32, FLOAT32, FLOAT32);
-  ADD_K1_BUILTIN (FMINWP, "fminwp", FLOAT32X2, FLOAT32X2, FLOAT32X2);
-  ADD_K1_BUILTIN (FMINWQ, "fminwq", FLOAT32X4, FLOAT32X4, FLOAT32X4);
-  ADD_K1_BUILTIN (FMIND, "fmind", FLOAT64, FLOAT64, FLOAT64);
-  ADD_K1_BUILTIN (FMINDP, "fmindp", FLOAT64X2, FLOAT64X2, FLOAT64X2);
-  ADD_K1_BUILTIN (FINVW, "finvw", FLOAT32, FLOAT32, STRING);
-  ADD_K1_BUILTIN (FISRW, "fisrw", FLOAT32, FLOAT32, STRING);
-  ADD_K1_BUILTIN (FADDW, "faddw", FLOAT32, FLOAT32, FLOAT32, STRING);
-  ADD_K1_BUILTIN (FADDWP, "faddwp", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
-  ADD_K1_BUILTIN (FADDWQ, "faddwq", FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
-  ADD_K1_BUILTIN (FADDD, "faddd", FLOAT64, FLOAT64, FLOAT64, STRING);
-  ADD_K1_BUILTIN (FADDDP, "fadddp", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
-  ADD_K1_BUILTIN (FADDCWC, "faddcwc", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
-  ADD_K1_BUILTIN (FADDCWCP, "faddcwcp", FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
-  ADD_K1_BUILTIN (FADDCDC, "faddcdc", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
-  ADD_K1_BUILTIN (FSBFW, "fsbfw", FLOAT32, FLOAT32, FLOAT32, STRING);
-  ADD_K1_BUILTIN (FSBFWP, "fsbfwp", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
-  ADD_K1_BUILTIN (FSBFWQ, "fsbfwq", FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
-  ADD_K1_BUILTIN (FSBFD, "fsbfd", FLOAT64, FLOAT64, FLOAT64, STRING);
-  ADD_K1_BUILTIN (FSBFDP, "fsbfdp", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
-  ADD_K1_BUILTIN (FSBFCWC, "fsbfcwc", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
-  ADD_K1_BUILTIN (FSBFCWCP, "fsbfcwcp", FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
-  ADD_K1_BUILTIN (FSBFCDC, "fsbfcdc", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
-  ADD_K1_BUILTIN (FMULW, "fmulw", FLOAT32, FLOAT32, FLOAT32, STRING);
-  ADD_K1_BUILTIN (FMULWP, "fmulwp", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
-  ADD_K1_BUILTIN (FMULWQ, "fmulwq", FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
-  ADD_K1_BUILTIN (FMULD, "fmuld", FLOAT64, FLOAT64, FLOAT64, STRING);
-  ADD_K1_BUILTIN (FMULDP, "fmuldp", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
-  ADD_K1_BUILTIN (FMULWD, "fmulwd", FLOAT64, FLOAT32, FLOAT32, STRING);
-  ADD_K1_BUILTIN (FMULWC, "fmulwc", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
-  ADD_K1_BUILTIN (FMULWCP, "fmulwcp", FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
-  ADD_K1_BUILTIN (FMULCWC, "fmulcwc", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
-  ADD_K1_BUILTIN (FMULCWCP, "fmulcwcp", FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
-  ADD_K1_BUILTIN (FMULDC, "fmuldc", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
-  ADD_K1_BUILTIN (FMULCDC, "fmulcdc", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
-  ADD_K1_BUILTIN (FMM2WQ, "fmm2wq", FLOAT32X4, FLOAT32X2, FLOAT32X2, STRING);
-  ADD_K1_BUILTIN (FFMAW, "ffmaw", FLOAT32, FLOAT32, FLOAT32, FLOAT32, STRING);
-  ADD_K1_BUILTIN (FFMAWP, "ffmawp", FLOAT32X2, FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
-  ADD_K1_BUILTIN (FFMAWQ, "ffmawq", FLOAT32X4, FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
-  ADD_K1_BUILTIN (FFMAD, "ffmad", FLOAT64, FLOAT64, FLOAT64, FLOAT64, STRING);
-  ADD_K1_BUILTIN (FFMADP, "ffmadp", FLOAT64X2, FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
-  ADD_K1_BUILTIN (FFMAWD, "ffmawd", FLOAT64, FLOAT32, FLOAT32, FLOAT64, STRING);
-  ADD_K1_BUILTIN (FMM2AWQ, "fmm2awq", FLOAT32X4, FLOAT32X2, FLOAT32X2, FLOAT32X4, STRING);
-  ADD_K1_BUILTIN (FFMSW, "ffmsw", FLOAT32, FLOAT32, FLOAT32, FLOAT32, STRING);
-  ADD_K1_BUILTIN (FFMSWP, "ffmswp", FLOAT32X2, FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING);
-  ADD_K1_BUILTIN (FFMSWQ, "ffmswq", FLOAT32X4, FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING);
-  ADD_K1_BUILTIN (FFMSD, "ffmsd", FLOAT64, FLOAT64, FLOAT64, FLOAT64, STRING);
-  ADD_K1_BUILTIN (FFMSDP, "ffmsdp", FLOAT64X2, FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING);
-  ADD_K1_BUILTIN (FFMSWD, "ffmswd", FLOAT64, FLOAT32, FLOAT32, FLOAT64, STRING);
-  ADD_K1_BUILTIN (FMM2SWQ, "fmm2swq", FLOAT32X4, FLOAT32X2, FLOAT32X2, FLOAT32X4, STRING);
-  ADD_K1_BUILTIN (FLOATW, "floatw", FLOAT32, INT32, UINT8, STRING);
-  ADD_K1_BUILTIN (FLOATWP, "floatwp", FLOAT32X2, INT32X2, UINT8, STRING);
-  ADD_K1_BUILTIN (FLOATWQ, "floatwq", FLOAT32X4, INT32X4, UINT8, STRING);
-  ADD_K1_BUILTIN (FLOATD, "floatd", FLOAT64, INT64, UINT8, STRING);
-  ADD_K1_BUILTIN (FLOATDP, "floatdp", FLOAT64X2, INT64X2, UINT8, STRING);
-  ADD_K1_BUILTIN (FLOATUW, "floatuw", FLOAT32, UINT32, UINT8, STRING);
-  ADD_K1_BUILTIN (FLOATUWP, "floatuwp", FLOAT32X2, UINT32X2, UINT8, STRING);
-  ADD_K1_BUILTIN (FLOATUWQ, "floatuwq", FLOAT32X4, UINT32X4, UINT8, STRING);
-  ADD_K1_BUILTIN (FLOATUD, "floatud", FLOAT64, UINT64, UINT8, STRING);
-  ADD_K1_BUILTIN (FLOATUDP, "floatudp", FLOAT64X2, UINT64X2, UINT8, STRING);
-  ADD_K1_BUILTIN (FIXEDW, "fixedw", INT32, FLOAT32, UINT8, STRING);
-  ADD_K1_BUILTIN (FIXEDWP, "fixedwp", INT32X2, FLOAT32X2, UINT8, STRING);
-  ADD_K1_BUILTIN (FIXEDWQ, "fixedwq", INT32X4, FLOAT32X4, UINT8, STRING);
-  ADD_K1_BUILTIN (FIXEDD, "fixedd", INT64, FLOAT64, UINT8, STRING);
-  ADD_K1_BUILTIN (FIXEDDP, "fixeddp", INT64X2, FLOAT64X2, UINT8, STRING);
-  ADD_K1_BUILTIN (FIXEDUW, "fixeduw", UINT32, FLOAT32, UINT8, STRING);
-  ADD_K1_BUILTIN (FIXEDUWP, "fixeduwp", UINT32X2, FLOAT32X2, UINT8, STRING);
-  ADD_K1_BUILTIN (FIXEDUWQ, "fixeduwq", UINT32X4, FLOAT32X4, UINT8, STRING);
-  ADD_K1_BUILTIN (FIXEDUD, "fixedud", UINT64, FLOAT64, UINT8, STRING);
-  ADD_K1_BUILTIN (FIXEDUDP, "fixedudp", UINT64X2, FLOAT64X2, UINT8, STRING);
+  ADD_K1_BUILTIN (FABSW, "fabsw", FLOAT32, FLOAT32); // Scalar
+  ADD_K1_BUILTIN (FABSWP, "fabswp", FLOAT32X2, FLOAT32X2); // Vector
+  ADD_K1_BUILTIN (FABSWQ, "fabswq", FLOAT32X4, FLOAT32X4); // Vector
+  ADD_K1_BUILTIN (FABSD, "fabsd", FLOAT64, FLOAT64); // Scalar
+  ADD_K1_BUILTIN (FABSDP, "fabsdp", FLOAT64X2, FLOAT64X2); // Vector
+  ADD_K1_BUILTIN (FNEGW, "fnegw", FLOAT32, FLOAT32); // Scalar
+  ADD_K1_BUILTIN (FNEGWP, "fnegwp", FLOAT32X2, FLOAT32X2); // Vector
+  ADD_K1_BUILTIN (FNEGWQ, "fnegwq", FLOAT32X4, FLOAT32X4); // Vector
+  ADD_K1_BUILTIN (FNEGD, "fnegd", FLOAT64, FLOAT64); // Scalar
+  ADD_K1_BUILTIN (FNEGDP, "fnegdp", FLOAT64X2, FLOAT64X2); // Vector
+  ADD_K1_BUILTIN (FMAXW, "fmaxw", FLOAT32, FLOAT32, FLOAT32); // Scalar
+  ADD_K1_BUILTIN (FMAXWP, "fmaxwp", FLOAT32X2, FLOAT32X2, FLOAT32X2); // Vector
+  ADD_K1_BUILTIN (FMAXWQ, "fmaxwq", FLOAT32X4, FLOAT32X4, FLOAT32X4); // Vector
+  ADD_K1_BUILTIN (FMAXD, "fmaxd", FLOAT64, FLOAT64, FLOAT64); // Scalar
+  ADD_K1_BUILTIN (FMAXDP, "fmaxdp", FLOAT64X2, FLOAT64X2, FLOAT64X2); // Vector
+  ADD_K1_BUILTIN (FMINW, "fminw", FLOAT32, FLOAT32, FLOAT32); // Scalar
+  ADD_K1_BUILTIN (FMINWP, "fminwp", FLOAT32X2, FLOAT32X2, FLOAT32X2); // Vector
+  ADD_K1_BUILTIN (FMINWQ, "fminwq", FLOAT32X4, FLOAT32X4, FLOAT32X4); // Vector
+  ADD_K1_BUILTIN (FMIND, "fmind", FLOAT64, FLOAT64, FLOAT64); // Scalar
+  ADD_K1_BUILTIN (FMINDP, "fmindp", FLOAT64X2, FLOAT64X2, FLOAT64X2); // Vector
+  ADD_K1_BUILTIN (FINVW, "finvw", FLOAT32, FLOAT32, STRING); // Scalar
+  ADD_K1_BUILTIN (FISRW, "fisrw", FLOAT32, FLOAT32, STRING); // Scalar
+  ADD_K1_BUILTIN (FADDW, "faddw", FLOAT32, FLOAT32, FLOAT32, STRING); // Scalar
+  ADD_K1_BUILTIN (FADDWP, "faddwp", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING); // Vector
+  ADD_K1_BUILTIN (FADDWQ, "faddwq", FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING); // Vector
+  ADD_K1_BUILTIN (FADDD, "faddd", FLOAT64, FLOAT64, FLOAT64, STRING); // Scalar
+  ADD_K1_BUILTIN (FADDDP, "fadddp", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING); // Vector
+  ADD_K1_BUILTIN (FADDCWC, "faddcwc", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING); // Vector
+  ADD_K1_BUILTIN (FADDCWCP, "faddcwcp", FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING); // Vector
+  ADD_K1_BUILTIN (FADDCDC, "faddcdc", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING); // Vector
+  ADD_K1_BUILTIN (FSBFW, "fsbfw", FLOAT32, FLOAT32, FLOAT32, STRING); // Scalar
+  ADD_K1_BUILTIN (FSBFWP, "fsbfwp", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING); // Vector
+  ADD_K1_BUILTIN (FSBFWQ, "fsbfwq", FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING); // Vector
+  ADD_K1_BUILTIN (FSBFD, "fsbfd", FLOAT64, FLOAT64, FLOAT64, STRING); // Scalar
+  ADD_K1_BUILTIN (FSBFDP, "fsbfdp", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING); // Vector
+  ADD_K1_BUILTIN (FSBFCWC, "fsbfcwc", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING); // Vector
+  ADD_K1_BUILTIN (FSBFCWCP, "fsbfcwcp", FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING); // Vector
+  ADD_K1_BUILTIN (FSBFCDC, "fsbfcdc", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING); // Vector
+  ADD_K1_BUILTIN (FMULW, "fmulw", FLOAT32, FLOAT32, FLOAT32, STRING); // Scalar
+  ADD_K1_BUILTIN (FMULWP, "fmulwp", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING); // Vector
+  ADD_K1_BUILTIN (FMULWQ, "fmulwq", FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING); // Vector
+  ADD_K1_BUILTIN (FMULD, "fmuld", FLOAT64, FLOAT64, FLOAT64, STRING); // Scalar
+  ADD_K1_BUILTIN (FMULDP, "fmuldp", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING); // Vector
+  ADD_K1_BUILTIN (FMULWD, "fmulwd", FLOAT64, FLOAT32, FLOAT32, STRING); // Scalar
+  ADD_K1_BUILTIN (FMULWC, "fmulwc", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING); // Vector
+  ADD_K1_BUILTIN (FMULWCP, "fmulwcp", FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING); // Vector
+  ADD_K1_BUILTIN (FMULCWC, "fmulcwc", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING); // Vector
+  ADD_K1_BUILTIN (FMULCWCP, "fmulcwcp", FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING); // Vector
+  ADD_K1_BUILTIN (FMULDC, "fmuldc", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING); // Vector
+  ADD_K1_BUILTIN (FMULCDC, "fmulcdc", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING); // Vector
+  ADD_K1_BUILTIN (FMM2WQ, "fmm2wq", FLOAT32X4, FLOAT32X2, FLOAT32X2, STRING); // Vector
+  ADD_K1_BUILTIN (FFMAW, "ffmaw", FLOAT32, FLOAT32, FLOAT32, FLOAT32, STRING); // Scalar
+  ADD_K1_BUILTIN (FFMAWP, "ffmawp", FLOAT32X2, FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING); // Vector
+  ADD_K1_BUILTIN (FFMAWQ, "ffmawq", FLOAT32X4, FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING); // Vector
+  ADD_K1_BUILTIN (FFMAD, "ffmad", FLOAT64, FLOAT64, FLOAT64, FLOAT64, STRING); // Scalar
+  ADD_K1_BUILTIN (FFMADP, "ffmadp", FLOAT64X2, FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING); // Vector
+  ADD_K1_BUILTIN (FFMAWD, "ffmawd", FLOAT64, FLOAT32, FLOAT32, FLOAT64, STRING); // Scalar
+  ADD_K1_BUILTIN (FMM2AWQ, "fmm2awq", FLOAT32X4, FLOAT32X2, FLOAT32X2, FLOAT32X4, STRING); // Vector
+  ADD_K1_BUILTIN (FFMSW, "ffmsw", FLOAT32, FLOAT32, FLOAT32, FLOAT32, STRING); // Scalar
+  ADD_K1_BUILTIN (FFMSWP, "ffmswp", FLOAT32X2, FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING); // Vector
+  ADD_K1_BUILTIN (FFMSWQ, "ffmswq", FLOAT32X4, FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING); // Vector
+  ADD_K1_BUILTIN (FFMSD, "ffmsd", FLOAT64, FLOAT64, FLOAT64, FLOAT64, STRING); // Scalar
+  ADD_K1_BUILTIN (FFMSDP, "ffmsdp", FLOAT64X2, FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING); // Vector
+  ADD_K1_BUILTIN (FFMSWD, "ffmswd", FLOAT64, FLOAT32, FLOAT32, FLOAT64, STRING); // Scalar
+  ADD_K1_BUILTIN (FMM2SWQ, "fmm2swq", FLOAT32X4, FLOAT32X2, FLOAT32X2, FLOAT32X4, STRING); // Vector
+  ADD_K1_BUILTIN (FLOATW, "floatw", FLOAT32, INT32, UINT8, STRING); // Scalar
+  ADD_K1_BUILTIN (FLOATWP, "floatwp", FLOAT32X2, INT32X2, UINT8, STRING); // Vector
+  ADD_K1_BUILTIN (FLOATWQ, "floatwq", FLOAT32X4, INT32X4, UINT8, STRING); // Vector
+  ADD_K1_BUILTIN (FLOATD, "floatd", FLOAT64, INT64, UINT8, STRING); // Scalar
+  ADD_K1_BUILTIN (FLOATDP, "floatdp", FLOAT64X2, INT64X2, UINT8, STRING); // Vector
+  ADD_K1_BUILTIN (FLOATUW, "floatuw", FLOAT32, UINT32, UINT8, STRING); // Scalar
+  ADD_K1_BUILTIN (FLOATUWP, "floatuwp", FLOAT32X2, UINT32X2, UINT8, STRING); // Vector
+  ADD_K1_BUILTIN (FLOATUWQ, "floatuwq", FLOAT32X4, UINT32X4, UINT8, STRING); // Vector
+  ADD_K1_BUILTIN (FLOATUD, "floatud", FLOAT64, UINT64, UINT8, STRING); // Scalar
+  ADD_K1_BUILTIN (FLOATUDP, "floatudp", FLOAT64X2, UINT64X2, UINT8, STRING); // Vector
+  ADD_K1_BUILTIN (FIXEDW, "fixedw", INT32, FLOAT32, UINT8, STRING); // Scalar
+  ADD_K1_BUILTIN (FIXEDWP, "fixedwp", INT32X2, FLOAT32X2, UINT8, STRING); // Vector
+  ADD_K1_BUILTIN (FIXEDWQ, "fixedwq", INT32X4, FLOAT32X4, UINT8, STRING); // Vector
+  ADD_K1_BUILTIN (FIXEDD, "fixedd", INT64, FLOAT64, UINT8, STRING); // Scalar
+  ADD_K1_BUILTIN (FIXEDDP, "fixeddp", INT64X2, FLOAT64X2, UINT8, STRING); // Vector
+  ADD_K1_BUILTIN (FIXEDUW, "fixeduw", UINT32, FLOAT32, UINT8, STRING); // Scalar
+  ADD_K1_BUILTIN (FIXEDUWP, "fixeduwp", UINT32X2, FLOAT32X2, UINT8, STRING); // Vector
+  ADD_K1_BUILTIN (FIXEDUWQ, "fixeduwq", UINT32X4, FLOAT32X4, UINT8, STRING); // Vector
+  ADD_K1_BUILTIN (FIXEDUD, "fixedud", UINT64, FLOAT64, UINT8, STRING); // Scalar
+  ADD_K1_BUILTIN (FIXEDUDP, "fixedudp", UINT64X2, FLOAT64X2, UINT8, STRING); // Vector
 
-  ADD_K1_BUILTIN (FCDIVW, "fcdivw", FLOAT32, FLOAT32, FLOAT32);
-  ADD_K1_BUILTIN (FCDIVD, "fcdivd", FLOAT64, FLOAT64, FLOAT64);
-  ADD_K1_BUILTIN (FENCE, "fence", VOID);
+  ADD_K1_BUILTIN (FCDIVW, "fcdivw", FLOAT32, FLOAT32, FLOAT32); // Scalar
+  ADD_K1_BUILTIN (FCDIVD, "fcdivd", FLOAT64, FLOAT64, FLOAT64); // Scalar
+  ADD_K1_BUILTIN (FENCE, "fence", VOID); // Control
 
-  ADD_K1_BUILTIN (FSDIVW, "fsdivw", FLOAT32, FLOAT32, FLOAT32);
-  ADD_K1_BUILTIN (FSDIVD, "fsdivd", FLOAT64, FLOAT64, FLOAT64);
-  ADD_K1_BUILTIN (FSINVW, "fsinvw", FLOAT32, FLOAT32);
-  ADD_K1_BUILTIN (FSINVD, "fsinvd", FLOAT64, FLOAT64);
-  ADD_K1_BUILTIN (FSISRW, "fsisrw", FLOAT32, FLOAT32);
-  ADD_K1_BUILTIN (FSISRD, "fsisrd", FLOAT64, FLOAT64);
-  ADD_K1_BUILTIN (GET, "get", UINT64, INT32);
-  ADD_K1_BUILTIN (WFXL, "wfxl", VOID, UINT8, UINT64);
-  ADD_K1_BUILTIN (WFXM, "wfxm", VOID, UINT8, UINT64);
-  ADD_K1_BUILTIN (IINVAL, "iinval", VOID);
-  ADD_K1_BUILTIN (IINVALS, "iinvals", VOID, CVPTR);
-  ADD_K1_BUILTIN (LBSU, "lbsu", INT8, CVPTR);
-  ADD_K1_BUILTIN (LBZU, "lbzu", UINT8, CVPTR);
-  ADD_K1_BUILTIN (LHSU, "lhsu", INT16, CVPTR);
-  ADD_K1_BUILTIN (LHZU, "lhzu", UINT16, CVPTR);
-  ADD_K1_BUILTIN (LDU, "ldu", UINT64, CVPTR);
-  ADD_K1_BUILTIN (LWZU, "lwzu", UINT32, CVPTR);
-  ADD_K1_BUILTIN (SBMM8, "sbmm8", UINT64, UINT64, UINT64);
-  ADD_K1_BUILTIN (SBMMT8, "sbmmt8", UINT64, UINT64, UINT64);
-  ADD_K1_BUILTIN (SATD, "satd", INT64, INT64, UINT8);
-  ADD_K1_BUILTIN (SATUD, "satud", UINT64, INT64, UINT8);
-  ADD_K1_BUILTIN (SET, "set", VOID, INT32, UINT64);
+  ADD_K1_BUILTIN (FSDIVW, "fsdivw", FLOAT32, FLOAT32, FLOAT32); // Scalar
+  ADD_K1_BUILTIN (FSDIVD, "fsdivd", FLOAT64, FLOAT64, FLOAT64); // Scalar
+  ADD_K1_BUILTIN (FSINVW, "fsinvw", FLOAT32, FLOAT32); // Scalar
+  ADD_K1_BUILTIN (FSINVD, "fsinvd", FLOAT64, FLOAT64); // Scalar
+  ADD_K1_BUILTIN (FSISRW, "fsisrw", FLOAT32, FLOAT32); // Scalar
+  ADD_K1_BUILTIN (FSISRD, "fsisrd", FLOAT64, FLOAT64); // Scalar
+  ADD_K1_BUILTIN (GET, "get", UINT64, INT32); // Control
+  ADD_K1_BUILTIN (WFXL, "wfxl", VOID, UINT8, UINT64); // Control
+  ADD_K1_BUILTIN (WFXM, "wfxm", VOID, UINT8, UINT64); // Control
+  ADD_K1_BUILTIN (IINVAL, "iinval", VOID); // Memory
+  ADD_K1_BUILTIN (IINVALS, "iinvals", VOID, CVPTR); // Memory
+  ADD_K1_BUILTIN (LBSU, "lbsu", INT8, CVPTR); // Memory
+  ADD_K1_BUILTIN (LBZU, "lbzu", UINT8, CVPTR); // Memory
+  ADD_K1_BUILTIN (LHSU, "lhsu", INT16, CVPTR); // Memory
+  ADD_K1_BUILTIN (LHZU, "lhzu", UINT16, CVPTR); // Memory
+  ADD_K1_BUILTIN (LDU, "ldu", UINT64, CVPTR); // Memory
+  ADD_K1_BUILTIN (LWZU, "lwzu", UINT32, CVPTR); // Memory
+  ADD_K1_BUILTIN (SBMM8, "sbmm8", UINT64, UINT64, UINT64); // Scalar
+  ADD_K1_BUILTIN (SBMMT8, "sbmmt8", UINT64, UINT64, UINT64); // Scalar
+  ADD_K1_BUILTIN (SATD, "satd", INT64, INT64, UINT8); // Scalar
+  ADD_K1_BUILTIN (SATUD, "satud", UINT64, INT64, UINT8); // Scalar
+  ADD_K1_BUILTIN (SET, "set", VOID, INT32, UINT64); // Control
 
-  ADD_K1_BUILTIN (SLEEP, "sleep", VOID);
-  ADD_K1_BUILTIN (STOP, "stop", VOID);
-  ADD_K1_BUILTIN (STSUW, "stsuw", UINT32, UINT32, UINT32);
-  ADD_K1_BUILTIN (STSUD, "stsud", UINT64, UINT64, UINT64);
-  ADD_K1_BUILTIN (SYNCGROUP, "syncgroup", VOID, UINT64);
-  ADD_K1_BUILTIN (TLBDINVAL, "tlbdinval", VOID);
-  ADD_K1_BUILTIN (TLBIINVAL, "tlbiinval", VOID);
-  ADD_K1_BUILTIN (TLBPROBE, "tlbprobe", VOID);
-  ADD_K1_BUILTIN (TLBREAD, "tlbread", VOID);
-  ADD_K1_BUILTIN (TLBWRITE, "tlbwrite", VOID);
+  ADD_K1_BUILTIN (SLEEP, "sleep", VOID); // Control
+  ADD_K1_BUILTIN (STOP, "stop", VOID); // Control
+  ADD_K1_BUILTIN (STSUW, "stsuw", UINT32, UINT32, UINT32); // Scalar
+  ADD_K1_BUILTIN (STSUD, "stsud", UINT64, UINT64, UINT64); // Scalar
+  ADD_K1_BUILTIN (SYNCGROUP, "syncgroup", VOID, UINT64); // Control
+  ADD_K1_BUILTIN (TLBDINVAL, "tlbdinval", VOID); // Memory
+  ADD_K1_BUILTIN (TLBIINVAL, "tlbiinval", VOID); // Memory
+  ADD_K1_BUILTIN (TLBPROBE, "tlbprobe", VOID); // Memory
+  ADD_K1_BUILTIN (TLBREAD, "tlbread", VOID); // Memory
+  ADD_K1_BUILTIN (TLBWRITE, "tlbwrite", VOID); // Memory
 
-  ADD_K1_BUILTIN (FWIDENLHW, "fwidenlhw", FLOAT32, UINT32);
-  ADD_K1_BUILTIN (FWIDENMHW, "fwidenmhw", FLOAT32, UINT32);
-  ADD_K1_BUILTIN (FNARROWWH, "fnarrowwh", UINT16, FLOAT32);
-  ADD_K1_BUILTIN (WAITIT, "waitit", UINT32, UINT32);
+  ADD_K1_BUILTIN (FWIDENLHW, "fwidenlhw", FLOAT32, UINT32); // Scalar
+  ADD_K1_BUILTIN (FWIDENMHW, "fwidenmhw", FLOAT32, UINT32); // Scalar
+  ADD_K1_BUILTIN (FNARROWWH, "fnarrowwh", UINT16, FLOAT32); // Scalar
+  ADD_K1_BUILTIN (WAITIT, "waitit", UINT32, UINT32); // Control
 }
 
 static tree
-k1_target_builtin_decl (unsigned code, bool initialize_p ATTRIBUTE_UNUSED)
+k1_builtin_decl (unsigned code, bool initialize_p ATTRIBUTE_UNUSED)
 {
   if (code >= ARRAY_SIZE (builtin_fndecls))
     return error_mark_node;
@@ -4481,9 +4599,9 @@ k1_expand_builtin_fnarrowwh (rtx target, tree args)
 }
 
 static rtx
-k1_target_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
-			  enum machine_mode mode ATTRIBUTE_UNUSED,
-			  int ignore ATTRIBUTE_UNUSED)
+k1_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
+		   enum machine_mode mode ATTRIBUTE_UNUSED,
+		   int ignore ATTRIBUTE_UNUSED)
 {
   tree fndecl = TREE_OPERAND (CALL_EXPR_FN (exp), 0);
   unsigned int fcode = DECL_FUNCTION_CODE (fndecl);
@@ -4822,9 +4940,9 @@ k1_mau_lsu_double_port_bypass_p (rtx_insn *producer, rtx_insn *consumer)
 }
 
 static int
-k1_target_sched_adjust_cost (rtx_insn *insn, int dep_type,
-			     rtx_insn *dep_insn ATTRIBUTE_UNUSED, int cost,
-			     unsigned int)
+k1_sched_adjust_cost (rtx_insn *insn, int dep_type,
+		      rtx_insn *dep_insn ATTRIBUTE_UNUSED, int cost,
+		      unsigned int)
 {
   enum attr_class insn_class = get_attr_class (insn);
   /* On the k1, it is possible to read then write the same register in a bundle
@@ -4846,16 +4964,16 @@ k1_target_sched_adjust_cost (rtx_insn *insn, int dep_type,
 }
 
 static int
-k1_target_sched_issue_rate (void)
+k1_sched_issue_rate (void)
 {
   return 4;
 }
 
 static int
-k1_target_sched_dfa_new_cycle (FILE *dump ATTRIBUTE_UNUSED,
-			       int verbose ATTRIBUTE_UNUSED, rtx_insn *insn,
-			       int last_clock, int clock,
-			       int *sort_p ATTRIBUTE_UNUSED)
+k1_sched_dfa_new_cycle (FILE *dump ATTRIBUTE_UNUSED,
+		        int verbose ATTRIBUTE_UNUSED, rtx_insn *insn,
+		        int last_clock, int clock,
+		        int *sort_p ATTRIBUTE_UNUSED)
 {
   if (clock != last_clock)
     return 0;
@@ -5825,9 +5943,9 @@ k1_fix_debug_for_bundles (void)
 }
 
 static void
-k1_target_asm_final_postscan_insn (FILE *file, rtx_insn *insn,
-				   rtx *opvec ATTRIBUTE_UNUSED,
-				   int noperands ATTRIBUTE_UNUSED)
+k1_asm_final_postscan_insn (FILE *file, rtx_insn *insn,
+			    rtx *opvec ATTRIBUTE_UNUSED,
+			    int noperands ATTRIBUTE_UNUSED)
 {
   if (!scheduling || !TARGET_BUNDLING || k1_insn_is_bundle_end_p (insn))
     {
@@ -5837,7 +5955,7 @@ k1_target_asm_final_postscan_insn (FILE *file, rtx_insn *insn,
 }
 
 static int
-k1_target_sched_first_cycle_multipass_dfa_lookahead (void)
+k1_sched_first_cycle_multipass_dfa_lookahead (void)
 {
   return 5;
 }
@@ -5919,9 +6037,9 @@ k1_rtx_operand_cost (rtx *x, void *arg)
 /* FIXME AUTO: fix cost function for coolidge */
 /* See T7748 */
 static bool
-k1_target_rtx_costs (rtx x, machine_mode mode ATTRIBUTE_UNUSED,
-		     int outer_code ATTRIBUTE_UNUSED, int opno ATTRIBUTE_UNUSED,
-		     int *total, bool speed ATTRIBUTE_UNUSED)
+k1_rtx_costs (rtx x, machine_mode mode ATTRIBUTE_UNUSED,
+	      int outer_code ATTRIBUTE_UNUSED, int opno ATTRIBUTE_UNUSED,
+	      int *total, bool speed ATTRIBUTE_UNUSED)
 {
   struct cost_walker cost = {0, 0};
 
@@ -5943,7 +6061,7 @@ k1_target_rtx_costs (rtx x, machine_mode mode ATTRIBUTE_UNUSED,
 	}
       else if (REG_P (SET_SRC (x)))
 	{
-	  *total = k1_target_register_move_cost (GET_MODE (SET_DEST (x)),
+	  *total = k1_register_move_cost (GET_MODE (SET_DEST (x)),
 						 NO_REGS, NO_REGS);
 	  return true;
 	}
@@ -5969,9 +6087,9 @@ k1_target_rtx_costs (rtx x, machine_mode mode ATTRIBUTE_UNUSED,
 }
 
 static int
-k1_target_address_cost (rtx x, machine_mode mode ATTRIBUTE_UNUSED,
-			addr_space_t space ATTRIBUTE_UNUSED,
-			bool speed ATTRIBUTE_UNUSED)
+k1_address_cost (rtx x, machine_mode mode ATTRIBUTE_UNUSED,
+		 addr_space_t space ATTRIBUTE_UNUSED,
+		 bool speed ATTRIBUTE_UNUSED)
 {
   int cost = COSTS_N_INSNS (1);
   gcc_assert (cost > 1);
@@ -5986,7 +6104,7 @@ k1_target_address_cost (rtx x, machine_mode mode ATTRIBUTE_UNUSED,
 }
 
 static void
-k1_target_sched_set_sched_flags (struct spec_info_def *spec ATTRIBUTE_UNUSED)
+k1_sched_set_sched_flags (struct spec_info_def *spec ATTRIBUTE_UNUSED)
 {
   /* TARGET_SCHED_SET_SCHED_FLAGS is called right before the
      scheduler calls df_analyze (). Use this hook to add the
@@ -5998,9 +6116,9 @@ k1_target_sched_set_sched_flags (struct spec_info_def *spec ATTRIBUTE_UNUSED)
 }
 
 static void
-k1_target_sched_init_global (FILE *file ATTRIBUTE_UNUSED,
-			     int verbose ATTRIBUTE_UNUSED,
-			     int max_ready ATTRIBUTE_UNUSED)
+k1_sched_init_global (FILE *file ATTRIBUTE_UNUSED,
+		      int verbose ATTRIBUTE_UNUSED,
+		      int max_ready ATTRIBUTE_UNUSED)
 {
   scheduling = true;
 }
@@ -6061,8 +6179,8 @@ k1_legitimate_constant_p (enum machine_mode mode ATTRIBUTE_UNUSED, rtx x)
 }
 
 static rtx
-k1_target_legitimize_address (rtx x, rtx oldx ATTRIBUTE_UNUSED,
-			      enum machine_mode mode)
+k1_legitimize_address (rtx x, rtx oldx ATTRIBUTE_UNUSED,
+		       enum machine_mode mode)
 {
   if (k1_has_tls_reference (x))
     return k1_legitimize_tls_reference (x);
@@ -6074,7 +6192,7 @@ k1_target_legitimize_address (rtx x, rtx oldx ATTRIBUTE_UNUSED,
       rtx cst = XEXP (x, 1);
 
       XEXP (x, 1) = reg;
-      if (k1_target_legitimate_address_p (mode, x, false))
+      if (k1_legitimate_address_p (mode, x, false))
 	{
 	  emit_move_insn (reg, cst);
 	  return copy_rtx (x);
@@ -6115,7 +6233,7 @@ k1_addr_space_legitimate_address_p (machine_mode mode, rtx exp, bool strict,
     case ADDR_SPACE_GENERIC:
     case K1_ADDR_SPACE_BYPASS:
     case K1_ADDR_SPACE_PRELOAD:
-      return k1_target_legitimate_address_p (mode, exp, strict);
+      return k1_legitimate_address_p (mode, exp, strict);
 
     case K1_ADDR_SPACE_CONVERT:
       return false;
@@ -6130,7 +6248,7 @@ k1_addr_space_legitimize_address (rtx x, rtx oldx, machine_mode mode,
   if (as == K1_ADDR_SPACE_CONVERT)
     error ("__convert should be used only in explicit pointer casting");
 
-  return k1_target_legitimize_address (x, oldx, mode);
+  return k1_legitimize_address (x, oldx, mode);
 }
 
 /* Implements TARGET_ADDR_SPACE_SUBSET_P */
@@ -6686,7 +6804,7 @@ k1_mode_dependent_address_p (const_rtx addr,
 {
   const_rtx x = addr;
 
-  // Same logic as .xs addressing mode in k1_target_print_operand
+  // Same logic as .xs addressing mode in k1_print_operand
   if (GET_CODE (x) == PLUS && GET_CODE (XEXP (x, 0)) == MULT
       && GET_CODE (XEXP (XEXP (x, 0), 1)) == CONST_INT
       && INTVAL (XEXP (XEXP (x, 0), 1)) > HOST_WIDE_INT_1)
@@ -6785,8 +6903,8 @@ k1_is_reg_subreg_p (rtx op)
   return REG_P (op) || (SUBREG_P (op) && REG_P (SUBREG_REG (op)));
 }
 
-/* Returns TRUE if OP is a pseudo REG (directly or through a
-   SUBREG) */
+/* Returns TRUE if OP is a pseudo REG (directly or through a SUBREG)
+ */
 static bool
 k1_is_pseudo_reg_subreg_p (rtx op)
 {
@@ -6910,50 +7028,50 @@ k1_ctrapsi4 (void)
 #define TARGET_OPTION_OVERRIDE k1_option_override
 
 #undef TARGET_FUNCTION_VALUE
-#define TARGET_FUNCTION_VALUE k1_target_function_value
+#define TARGET_FUNCTION_VALUE k1_function_value
 
 #undef TARGET_RETURN_IN_MSB
-#define TARGET_RETURN_IN_MSB k1_target_return_in_msb
+#define TARGET_RETURN_IN_MSB k1_return_in_msb
 
 #undef TARGET_RETURN_IN_MEMORY
-#define TARGET_RETURN_IN_MEMORY k1_target_return_in_memory
+#define TARGET_RETURN_IN_MEMORY k1_return_in_memory
 
 #undef TARGET_STRUCT_VALUE_RTX
-#define TARGET_STRUCT_VALUE_RTX k1_target_struct_value_rtx
+#define TARGET_STRUCT_VALUE_RTX k1_struct_value_rtx
 
 #undef TARGET_ASM_OUTPUT_MI_THUNK
-#define TARGET_ASM_OUTPUT_MI_THUNK k1_target_asm_output_mi_thunk
+#define TARGET_ASM_OUTPUT_MI_THUNK k1_asm_output_mi_thunk
 
 #undef TARGET_ASM_CAN_OUTPUT_MI_THUNK
-#define TARGET_ASM_CAN_OUTPUT_MI_THUNK k1_target_asm_can_output_mi_thunk
+#define TARGET_ASM_CAN_OUTPUT_MI_THUNK k1_asm_can_output_mi_thunk
 
 #undef TARGET_ASM_ALIGNED_DI_OP
 #define TARGET_ASM_ALIGNED_DI_OP "\t.8byte\t"
 
 #undef TARGET_EXPAND_BUILTIN_SAVEREGS
-#define TARGET_EXPAND_BUILTIN_SAVEREGS k1_target_expand_builtin_saveregs
+#define TARGET_EXPAND_BUILTIN_SAVEREGS k1_expand_builtin_saveregs
 
 #undef TARGET_EXPAND_BUILTIN_VA_START
-#define TARGET_EXPAND_BUILTIN_VA_START k1_target_expand_va_start
+#define TARGET_EXPAND_BUILTIN_VA_START k1_expand_va_start
 
 #undef TARGET_LEGITIMATE_ADDRESS_P
-#define TARGET_LEGITIMATE_ADDRESS_P k1_target_legitimate_address_p
+#define TARGET_LEGITIMATE_ADDRESS_P k1_legitimate_address_p
 
 #undef TARGET_DECIMAL_FLOAT_SUPPORTED_P
-#define TARGET_DECIMAL_FLOAT_SUPPORTED_P k1_target_decimal_float_supported_p
+#define TARGET_DECIMAL_FLOAT_SUPPORTED_P k1_decimal_float_supported_p
 
 #undef TARGET_FIXED_POINT_SUPPORTED_P
-#define TARGET_FIXED_POINT_SUPPORTED_P k1_target_fixed_point_supported_p
+#define TARGET_FIXED_POINT_SUPPORTED_P k1_fixed_point_supported_p
 
 #undef TARGET_VECTOR_MODE_SUPPORTED_P
-#define TARGET_VECTOR_MODE_SUPPORTED_P k1_target_vector_mode_supported_p
+#define TARGET_VECTOR_MODE_SUPPORTED_P k1_vector_mode_supported_p
 
 #undef TARGET_VECTORIZE_SUPPORT_VECTOR_MISALIGNMENT
 #define TARGET_VECTORIZE_SUPPORT_VECTOR_MISALIGNMENT                           \
-  k1_target_support_vector_misalignment
+  k1_support_vector_misalignment
 
 #undef TARGET_PROMOTE_PROTOTYPES
-#define TARGET_PROMOTE_PROTOTYPES k1_target_promote_prototypes
+#define TARGET_PROMOTE_PROTOTYPES k1_promote_prototypes
 
 #undef TARGET_ARG_PARTIAL_BYTES
 #define TARGET_ARG_PARTIAL_BYTES k1_arg_partial_bytes
@@ -6962,59 +7080,59 @@ k1_ctrapsi4 (void)
 #define TARGET_MUST_PASS_IN_STACK must_pass_in_stack_var_size
 
 #undef TARGET_PASS_BY_REFERENCE
-#define TARGET_PASS_BY_REFERENCE k1_target_pass_by_reference
+#define TARGET_PASS_BY_REFERENCE k1_pass_by_reference
 
 #undef TARGET_SECONDARY_RELOAD
-#define TARGET_SECONDARY_RELOAD k1_target_secondary_reload
+#define TARGET_SECONDARY_RELOAD k1_secondary_reload
 
 #undef TARGET_INIT_BUILTINS
-#define TARGET_INIT_BUILTINS k1_target_init_builtins
+#define TARGET_INIT_BUILTINS k1_init_builtins
 
 #undef TARGET_EXPAND_BUILTIN
-#define TARGET_EXPAND_BUILTIN k1_target_expand_builtin
+#define TARGET_EXPAND_BUILTIN k1_expand_builtin
 
 #undef TARGET_CANNOT_FORCE_CONST_MEM
 #define TARGET_CANNOT_FORCE_CONST_MEM k1_cannot_force_const_mem
 
 #undef TARGET_SCHED_ADJUST_COST
-#define TARGET_SCHED_ADJUST_COST k1_target_sched_adjust_cost
+#define TARGET_SCHED_ADJUST_COST k1_sched_adjust_cost
 
 #undef TARGET_SCHED_ISSUE_RATE
-#define TARGET_SCHED_ISSUE_RATE k1_target_sched_issue_rate
+#define TARGET_SCHED_ISSUE_RATE k1_sched_issue_rate
 
 #undef TARGET_SCHED_FIRST_CYCLE_MULTIPASS_DFA_LOOKAHEAD
 #define TARGET_SCHED_FIRST_CYCLE_MULTIPASS_DFA_LOOKAHEAD                       \
-  k1_target_sched_first_cycle_multipass_dfa_lookahead
+  k1_sched_first_cycle_multipass_dfa_lookahead
 
 #undef TARGET_SCHED_SET_SCHED_FLAGS
-#define TARGET_SCHED_SET_SCHED_FLAGS k1_target_sched_set_sched_flags
+#define TARGET_SCHED_SET_SCHED_FLAGS k1_sched_set_sched_flags
 
 #undef TARGET_SCHED_INIT_GLOBAL
-#define TARGET_SCHED_INIT_GLOBAL k1_target_sched_init_global
+#define TARGET_SCHED_INIT_GLOBAL k1_sched_init_global
 
 #undef TARGET_SCHED_DFA_NEW_CYCLE
-#define TARGET_SCHED_DFA_NEW_CYCLE k1_target_sched_dfa_new_cycle
+#define TARGET_SCHED_DFA_NEW_CYCLE k1_sched_dfa_new_cycle
 
 #undef TARGET_SCHED_REASSOCIATION_WIDTH
 #define TARGET_SCHED_REASSOCIATION_WIDTH k1_reassociation_width
 
 #undef TARGET_RTX_COSTS
-#define TARGET_RTX_COSTS k1_target_rtx_costs
+#define TARGET_RTX_COSTS k1_rtx_costs
 
 #undef TARGET_ADDRESS_COST
-#define TARGET_ADDRESS_COST k1_target_address_cost
+#define TARGET_ADDRESS_COST k1_address_cost
 
 #undef TARGET_REGISTER_MOVE_COST
-#define TARGET_REGISTER_MOVE_COST k1_target_register_move_cost
+#define TARGET_REGISTER_MOVE_COST k1_register_move_cost
 
 #undef TARGET_FUNCTION_OK_FOR_SIBCALL
 #define TARGET_FUNCTION_OK_FOR_SIBCALL k1_function_ok_for_sibcall
 
 #undef TARGET_BUILTIN_DECL
-#define TARGET_BUILTIN_DECL k1_target_builtin_decl
+#define TARGET_BUILTIN_DECL k1_builtin_decl
 
 #undef TARGET_LEGITIMIZE_ADDRESS
-#define TARGET_LEGITIMIZE_ADDRESS k1_target_legitimize_address
+#define TARGET_LEGITIMIZE_ADDRESS k1_legitimize_address
 
 #undef TARGET_CONST_ANCHOR
 #define TARGET_CONST_ANCHOR 0x200
@@ -7026,7 +7144,7 @@ k1_ctrapsi4 (void)
 #define TARGET_ASM_FUNCTION_EPILOGUE k1_function_epilogue
 
 #undef TARGET_ASM_FINAL_POSTSCAN_INSN
-#define TARGET_ASM_FINAL_POSTSCAN_INSN k1_target_asm_final_postscan_insn
+#define TARGET_ASM_FINAL_POSTSCAN_INSN k1_asm_final_postscan_insn
 
 #undef TARGET_SCHED_DEPENDENCIES_EVALUATION_HOOK
 #define TARGET_SCHED_DEPENDENCIES_EVALUATION_HOOK                              \
@@ -7052,7 +7170,10 @@ k1_ctrapsi4 (void)
 #define TARGET_LEGITIMATE_CONSTANT_P k1_legitimate_constant_p
 
 #undef TARGET_CONDITIONAL_REGISTER_USAGE
-#define TARGET_CONDITIONAL_REGISTER_USAGE k1_target_conditional_register_usage
+#define TARGET_CONDITIONAL_REGISTER_USAGE k1_conditional_register_usage
+
+#undef TARGET_CANONICALIZE_COMPARISON
+#define TARGET_CANONICALIZE_COMPARISON k1_canonicalize_comparison
 
 #undef TARGET_ASM_OUTPUT_ADDR_CONST_EXTRA
 #define TARGET_ASM_OUTPUT_ADDR_CONST_EXTRA k1_output_addr_const_extra

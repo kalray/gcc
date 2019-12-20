@@ -582,6 +582,9 @@ extern void k1_profile_hook (void);
 
 #define BRANCH_COST(speed, predictable) 4
 
+/* Set MAX_CONDITIONAL_EXECUTE to 2*BRANCH_COST */
+#define MAX_CONDITIONAL_EXECUTE 8
+
 /* ********** PIC ********** */
 
 #define GOT_SYMBOL_NAME "*_GLOBAL_OFFSET_TABLE_"
@@ -743,7 +746,7 @@ extern void k1_profile_hook (void);
    followed by a punctuation character), this macro is called with a
    null pointer for x and the punctuation character for code. */
 #undef PRINT_OPERAND
-#define PRINT_OPERAND k1_target_print_operand
+#define PRINT_OPERAND k1_print_operand
 
 /* A C compound statement to output to stdio stream stream the
    assembler syntax for an instruction operand that is a memory
@@ -754,7 +757,7 @@ extern void k1_profile_hook (void);
    hook TARGET_ENCODE_SECTION_INFO to store the information into the
    symbol_ref, and then check for it here. See Assembler Format. */
 #undef PRINT_OPERAND_ADDRESS
-#define PRINT_OPERAND_ADDRESS k1_target_print_operand_address
+#define PRINT_OPERAND_ADDRESS k1_print_operand_address
 
 /* A C expression which evaluates to true if code is a valid
    punctuation character for use in the PRINT_OPERAND macro. If
@@ -762,7 +765,7 @@ extern void k1_profile_hook (void);
    punctuation characters (except for the standard one, `%') are used
    in this way. */
 #undef PRINT_OPERAND_PUNCT_VALID_P
-#define PRINT_OPERAND_PUNCT_VALID_P k1_target_print_punct_valid_p
+#define PRINT_OPERAND_PUNCT_VALID_P k1_print_punct_valid_p
 
 #undef STORE_FLAG_VALUE
 #define STORE_FLAG_VALUE 1
