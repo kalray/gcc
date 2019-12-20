@@ -63,6 +63,8 @@ extern bool k1_target_print_punct_valid_p (unsigned char code);
 
 extern int k1_is_uncached_mem_op_p (rtx op);
 
+extern bool k1_expand_load_multiple (rtx operands[]);
+
 extern bool k1_load_multiple_operation_p (rtx op, bool is_uncached);
 
 extern bool k1_store_multiple_operation_p (rtx op);
