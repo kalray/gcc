@@ -16,6 +16,17 @@ Known KVX architecture types (for use with the -march option):
 EnumValue
 Enum(kvx_arch_type) String(kv3-1) Value(KVX_ARCH_KV3_1)
 
+EnumValue
+Enum(kvx_arch_type) String(kv3-2) Value(KVX_ARCH_KV3_2)
+
+march=kv3-1
+Target RejectNegative Report Mask(KV3_1)
+Compile for Coolidge KV3 V1 ISA
+
+march=kv3-2
+Target RejectNegative Report Mask(KV3_2)
+Compile for Coolidge KV3 V2 ISA
+
 mfarcall
 Target Report Var(KVX_FARCALL)
 Avoid all range limits on call instructions
