@@ -23,7 +23,8 @@ along with GCC; see the file COPYING3.  If not see
 
 enum kvx_arch_type
 {
-  KVX_ARCH_KV3_1
+  KVX_ARCH_KV3_1,
+  KVX_ARCH_KV3_2
 };
 
 #endif
