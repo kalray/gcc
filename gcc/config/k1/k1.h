@@ -407,14 +407,21 @@ enum k1_abi_type
 
 /* ********** Register Arguments ********** */
 
-/* Struct used for CUMULATIVE_ARGS.
-   Currently keeps track of next argument register to be used.
-   If next_arg_reg >= K1C_ARG_REG_SLOTS, then all slots are used.
-*/
+/* Struct used for CUMULATIVE_ARGS. */
+#ifdef HOST_WIDE_INT
 struct k1_args
 {
+  /* Next argument register to be used.
+     If >= K1C_ARG_REG_SLOTS, then all slots are used.
+  */
   int next_arg_reg;
+
+  /* Offset from ARG_POINTER_REGNUM to anonymous argument area, if any */
+  int anonymous_arg_offset;
+
+  bool anonymous_arg_offset_valid;
 };
+#endif
 
 #define CUMULATIVE_ARGS struct k1_args
 
