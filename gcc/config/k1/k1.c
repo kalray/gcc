@@ -195,30 +195,36 @@ struct GTY (()) machine_function
 };
 
 /*
-
-		  +---------------+
-		  | Varargs       |
-		  |               |
-		  |               |
-		  +---------------+
-      Virt. FP--->| [Static chain]|
-		  +---------------+
-		  | Local         |
-		  | Variable      |
-		  |               |
-		  +---------------+
-		  |               |
-		  | Register      |
-		  | Save          |
-		  |               |
-		  | $ra           | (if frame_pointer_needed)
-       Hard FP--->| caller FP     | (if frame_pointer_needed)
-		  +---------------+
-		  |               |
-		  | Outgoing      |
-		  | Args          |
-	    SP--->|               |
-		  +---------------+
+				~               ~
+				|  ..........   |
+				|               |    ^
+				|               |    |
+				| Incomming     |    | Caller frame
+				| Args          |    |
+				+---------------+ <--/
+				+---------------+
+				| Varargs       |
+				|               |
+				|               |
+				+---------------+
+ Argument Pointer / Virt. FP--->| [Static chain]|
+				+---------------+
+				| Local         |
+				| Variable      |
+				|               |
+				+---------------+
+				|               |
+				| Register      |
+				| Save          |
+				|               |
+				| $ra           | (if frame_pointer_needed)
+		     Hard FP--->| caller FP     | (if frame_pointer_needed)
+				+---------------+
+				|               |
+				| Outgoing      |
+				| Args          |
+			  SP--->|               |
+				+---------------+
 
 */
 
@@ -742,6 +748,8 @@ k1_init_cumulative_args (CUMULATIVE_ARGS *cum,
 			 int n_named_args ATTRIBUTE_UNUSED)
 {
   cum->next_arg_reg = 0;
+  cum->anonymous_arg_offset = 0;
+  cum->anonymous_arg_offset_valid = false;
 }
 
 /* Information about a single argument.  */
@@ -775,7 +783,8 @@ k1_get_arg_info (struct k1_arg_info *info, cumulative_args_t cum_v,
 
   info->first_reg = cum->next_arg_reg;
 
-  /* If all argument slots are used, then it must go on the stack.  */
+  /* If all register argument slots are used, then it must go on the
+     stack. */
   if (cum->next_arg_reg >= K1C_ARG_REG_SLOTS)
     {
       info->num_stack = n_words;
@@ -807,7 +816,7 @@ k1_get_arg_info (struct k1_arg_info *info, cumulative_args_t cum_v,
 
 static rtx
 k1_function_arg (cumulative_args_t cum_v, enum machine_mode mode,
-		 const_tree type, bool named ATTRIBUTE_UNUSED)
+		 const_tree type, bool named)
 {
   struct k1_arg_info info;
   return k1_get_arg_info (&info, cum_v, mode, type, named);
@@ -830,19 +839,27 @@ k1_arg_partial_bytes (cumulative_args_t cum_v, enum machine_mode mode,
   return 0;
 }
 
-/* Implements TARGET_FUNCTION_ARG_ADVANCE.
-   Update CUM to point after this argument. */
-
 static void
 k1_function_arg_advance (cumulative_args_t cum_v, enum machine_mode mode,
-			 const_tree type, bool named ATTRIBUTE_UNUSED)
+			 const_tree type, bool named)
 {
   CUMULATIVE_ARGS *cum = get_cumulative_args (cum_v);
   struct k1_arg_info info = {0};
   k1_get_arg_info (&info, cum_v, mode, type, named);
+
   if (info.num_regs > 0)
     {
       cum->next_arg_reg = info.first_reg + info.num_regs;
+    }
+  else if (named)
+    {
+      cum->anonymous_arg_offset += info.num_stack * UNITS_PER_WORD;
+    }
+  else if (!cum->anonymous_arg_offset_valid)
+    {
+      /* First !named arg is in fact the last named arg */
+      cum->anonymous_arg_offset += info.num_stack * UNITS_PER_WORD;
+      cum->anonymous_arg_offset_valid = true;
     }
 }
 
@@ -959,9 +976,9 @@ k1_target_expand_builtin_saveregs (void)
   rtx area = gen_rtx_PLUS (Pmode, frame_pointer_rtx,
 			   GEN_INT (frame->arg_pointer_fp_offset));
 
-  /* All arg register slots used for named args, nothing to push */
+  /* All argument register slots used for named args, nothing to push */
   if (crtl->args.info.next_arg_reg >= K1C_ARG_REG_SLOTS)
-    return area;
+    return const0_rtx;
 
   /* use arg_pointer since saved register slots are not known at that time */
   regno = crtl->args.info.next_arg_reg;
@@ -1002,9 +1019,32 @@ k1_target_expand_builtin_saveregs (void)
 static void
 k1_target_expand_va_start (tree valist, rtx nextarg ATTRIBUTE_UNUSED)
 {
-  rtx saveregs_area = expand_builtin_saveregs ();
+  rtx va_start_addr = expand_builtin_saveregs ();
   rtx va_r = expand_expr (valist, NULL_RTX, VOIDmode, EXPAND_WRITE);
-  emit_move_insn (va_r, saveregs_area);
+
+  struct k1_frame_info *frame;
+
+  frame = &cfun->machine->frame;
+  gcc_assert (frame->laid_out);
+
+  /* All arg registers must be used by named parameter, va_start
+     must point to caller frame for first anonymous parameter ... */
+  if (va_start_addr == const0_rtx && crtl->args.info.anonymous_arg_offset_valid)
+    {
+      /* ... and there are some more arguments. */
+      va_start_addr
+	= gen_rtx_PLUS (Pmode, frame_pointer_rtx,
+			GEN_INT (crtl->args.info.anonymous_arg_offset
+				 + frame->arg_pointer_fp_offset));
+    }
+  else
+    {
+      /* ... and there are no more argument. */
+      va_start_addr = gen_rtx_PLUS (Pmode, frame_pointer_rtx,
+				    GEN_INT (frame->arg_pointer_fp_offset));
+    }
+
+  emit_move_insn (va_r, va_start_addr);
 }
 
 static bool
