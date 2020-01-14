@@ -4,9 +4,20 @@
 #
 ################################################################################
 
+ifeq ($(BR2_kvx),y)
+STRACE_VERSION = 19f3bb2e38be375d5febfbf6e517623a3da5d703
+STRACE_SITE = $(call github,kalray,strace,$(STRACE_VERSION))
+STRACE_AUTORECONF = YES
+define STRACE_BOOTSTRAP_HOOK
+	$(SED) 's%^\(autoreconf.*\)%#\1%' $(@D)/bootstrap
+	(cd $(@D); ./bootstrap)
+endef
+STRACE_POST_PATCH_HOOKS += STRACE_BOOTSTRAP_HOOK
+else
 STRACE_VERSION = 5.12
 STRACE_SOURCE = strace-$(STRACE_VERSION).tar.xz
 STRACE_SITE = https://strace.io/files/$(STRACE_VERSION)
+endif
 STRACE_LICENSE = LGPL-2.1+
 STRACE_LICENSE_FILES = COPYING LGPL-2.1-or-later
 STRACE_CPE_ID_VENDOR = strace_project
