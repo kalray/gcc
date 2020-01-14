@@ -155,6 +155,8 @@ extern bool k1_float_fits_bits (const REAL_VALUE_TYPE *r, unsigned bitsz,
 
 extern HOST_WIDE_INT k1_initial_elimination_offset (int, int);
 
+char *k1_ctrapsi4 (void);
+
 /*
  */
 enum k1_symbol_type
