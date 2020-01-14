@@ -6882,6 +6882,25 @@ k1_profile_hook (void)
   emit_library_call (fun, LCT_NORMAL, VOIDmode, 1, ra_arg, Pmode);
 }
 
+/* Returns asm template for ctrapsi4 */
+char *
+k1_ctrapsi4 (void)
+{
+  static char asm_template[] = "cb.@%R0z %1? 1f\n\t"
+			       ";;\n\t"
+			       "get $r0 = $pc\n\t"
+			       "copyd $r1 = $r12\n\t"
+			       ";;\n\t"
+			       "call __stack_overflow_detected\n\t"
+			       ";;\n\t"
+			       "1:\n\t";
+  char *width = strchr (asm_template, '@');
+
+  if (width)
+    *width = TARGET_32 ? 'w' : 'd';
+  return asm_template;
+}
+
 /* Initialize the GCC target structure.  */
 
 #undef TARGET_CLASS_MAX_NREGS
