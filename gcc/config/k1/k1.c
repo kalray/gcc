@@ -146,7 +146,6 @@ struct post_packing_action
   struct post_packing_action *next;
 } * post_packing_action;
 
-static int k1_flag_var_tracking;
 
 /* Which arch are we scheduling for */
 enum attr_arch k1_arch_schedule;
