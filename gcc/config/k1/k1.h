@@ -874,6 +874,4 @@ extern void k1_profile_hook (void);
 extern GTY (()) rtx k1_sync_reg_rtx;
 extern GTY (()) rtx k1_link_reg_rtx;
 
-extern rtx k1_get_stack_check_block (void);
-
 #endif
