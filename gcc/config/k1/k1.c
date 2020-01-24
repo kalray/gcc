@@ -385,17 +385,25 @@ k1_split_mem (rtx x, rtx *base_out, rtx *offset_out, bool strict)
    Returns TRUE if the merge was successful, FALSE if not.
    NOPS is the number of load/store to consider in OPERANDS array.
  */
+
+/* OPERANDS contains NOPS (set ...) (2 or 4) that must be all load or
+   all store.  The sets are checked for correctness wrt packing.
+   On success, the function emits the packed instruction and returns
+   TRUE. If the packing could not be done, returns FALSE.
+ */
 bool
 k1_pack_load_store (rtx operands[], unsigned int nops)
 {
   rtx set_dests[K1_MAX_PACKED_LSU];
   rtx set_srcs[K1_MAX_PACKED_LSU];
-  bool is_load = true;
   rtx sorted_operands[2 * K1_MAX_PACKED_LSU];
 
   /* Only:
      ld + ld => lq
      ld + ld + ld + ld => lo
+
+     sd + sd => sq
+     sd + sd + sd + sd => so
   */
 
   if (nops != 2 && nops != 4)
@@ -413,95 +421,103 @@ k1_pack_load_store (rtx operands[], unsigned int nops)
     if (GET_MODE (set_dests[i]) != DImode)
       return false;
 
-  /* Only loads */
+  bool is_load = false;
+  bool is_store = false;
   for (unsigned i = 0; i < nops; i++)
-    if (!MEM_P (set_srcs[i]))
-      return false;
+    if (MEM_P (set_srcs[i]) && REG_P (set_dests[i]))
+      is_load = true;
+    else if (MEM_P (set_dests[i]) && REG_P (set_srcs[i]))
+      is_store = true;
 
-  /* Sort and check operands */
-  if (is_load)
-    {
-      unsigned int min_regno = REGNO (operands[0]);
-
-      /* Find first regno for destination */
-      for (unsigned int i = 1; i < nops; i++)
-	if (REGNO (operands[i * 2]) < min_regno)
-	  min_regno = REGNO (operands[i * 2]);
-
-      /* Sort operands based on regno */
-      for (unsigned int i = 0; i < nops; i++)
-	{
-	  const unsigned int regno = REGNO (operands[i * 2]);
-	  const unsigned int idx = 2 * (regno - min_regno);
-
-	  /* Register are not consecutive */
-	  if (idx >= (2 * nops))
-	    return false;
-
-	  /* Destination register used twice in operands */
-	  if (sorted_operands[idx] != NULL_RTX)
-	    return false;
-
-	  sorted_operands[idx] = operands[2 * i];
-	  sorted_operands[idx + 1] = operands[2 * i + 1];
-	}
-
-      /* Check mem addresses are consecutive */
-      rtx base_reg, base_offset;
-      if (!k1_split_mem (XEXP (sorted_operands[1], 0), &base_reg, &base_offset,
-			 true))
-	return false;
-
-      const unsigned int base_regno = REGNO (base_reg);
-
-      /* Base register is modified by one load */
-      if (base_regno >= REGNO (sorted_operands[0])
-	  && base_regno <= REGNO (sorted_operands[(nops - 1) * 2]))
-	{
-	  bool mod_before_last = false;
-	  /* Check the base register is modified in the last load */
-	  for (unsigned int i = 0; i < (nops - 1); i++)
-	    {
-	      if (REGNO (operands[2 * i]) == base_regno)
-		{
-		  mod_before_last = true;
-		  break;
-		}
-	    }
-	  if (mod_before_last)
-	    return false;
-	}
-
-      unsigned int next_offset = INTVAL (base_offset) + UNITS_PER_WORD;
-      for (unsigned int i = 1; i < nops; i++)
-	{
-	  rtx elem = XEXP (sorted_operands[2 * i + 1], 0);
-
-	  /* Not addressing next memory word */
-	  const bool is_plus_bad_offset
-	    = GET_CODE (elem) == PLUS
-	      && (!REG_P (XEXP (elem, 0))
-		  || REGNO (XEXP (elem, 0)) != base_regno
-		  || INTVAL (XEXP (elem, 1)) != next_offset);
-
-	  const bool is_reg_bad
-	    = REG_P (elem) && (REGNO (elem) != base_regno || next_offset != 0);
-
-	  if (is_reg_bad || is_plus_bad_offset)
-	    return false;
-
-	  next_offset += UNITS_PER_WORD;
-	}
-    }
-
-  rtx lm = gen_load_multiple (sorted_operands[0], sorted_operands[1],
-			      GEN_INT (nops));
-
-  if (lm != NULL_RTX)
-    emit_insn (lm);
-  else
+  if ((is_store && is_load) || !(is_load || is_store))
     return false;
 
+  /* Used to pick correct operands in both cases (load and store) */
+  int op_offset = is_load ? 0 : 1;
+
+  unsigned int min_regno = REGNO (operands[op_offset]);
+
+  /* Find first regno for destination (load)/source (store) */
+  for (unsigned int i = 1; i < nops; i++)
+    if (REGNO (operands[i * 2 + op_offset]) < min_regno)
+      min_regno = REGNO (operands[i * 2 + op_offset]);
+
+  /* Sort operands based on regno */
+  for (unsigned int i = 0; i < nops; i++)
+    {
+      const unsigned int regno = REGNO (operands[i * 2 + op_offset]);
+      const unsigned int idx = 2 * (regno - min_regno);
+
+      /* Registers are not consecutive */
+      if (idx >= (2 * nops))
+	return false;
+
+      /* Register used twice in operands */
+      if (sorted_operands[idx] != NULL_RTX)
+	return false;
+
+      sorted_operands[idx] = operands[2 * i];
+      sorted_operands[idx + 1] = operands[2 * i + 1];
+    }
+
+  /* Check mem addresses are consecutive */
+  rtx base_reg, base_offset;
+  if (!k1_split_mem (XEXP (sorted_operands[1 - op_offset], 0), &base_reg,
+		     &base_offset, true))
+    return false;
+
+  const unsigned int base_regno = REGNO (base_reg);
+
+  /* Base register is modified by one load */
+  if (is_load && base_regno >= REGNO (sorted_operands[op_offset])
+      && base_regno <= REGNO (sorted_operands[(nops - 1) * 2 + op_offset]))
+    {
+      bool mod_before_last = false;
+      /* Check the base register is modified in the last load */
+      for (unsigned int i = 0; i < (nops - 1); i++)
+	{
+	  if (REGNO (operands[2 * i + op_offset]) == base_regno)
+	    {
+	      mod_before_last = true;
+	      break;
+	    }
+	}
+      if (mod_before_last)
+	return false;
+    }
+
+  unsigned int next_offset = INTVAL (base_offset) + UNITS_PER_WORD;
+  for (unsigned int i = 1; i < nops; i++)
+    {
+      rtx elem = XEXP (sorted_operands[2 * i + 1 - op_offset], 0);
+
+      /* Not addressing next memory word */
+      const bool is_plus_bad_offset
+	= GET_CODE (elem) == PLUS
+	  && (!REG_P (XEXP (elem, 0)) || REGNO (XEXP (elem, 0)) != base_regno
+	      || !CONST_INT_P (XEXP (elem, 1))
+	      || INTVAL (XEXP (elem, 1)) != next_offset);
+
+      const bool is_reg_bad
+	= REG_P (elem) && (REGNO (elem) != base_regno || next_offset != 0);
+
+      if (is_reg_bad || is_plus_bad_offset)
+	return false;
+
+      next_offset += UNITS_PER_WORD;
+    }
+
+  rtx multi_insn;
+  if (is_load)
+    multi_insn = gen_load_multiple (sorted_operands[0], sorted_operands[1],
+				    GEN_INT (nops));
+  else
+    multi_insn = gen_store_multiple (sorted_operands[0], sorted_operands[1],
+				     GEN_INT (nops));
+  if (multi_insn == NULL_RTX)
+    return false;
+
+  emit_insn (multi_insn);
   return true;
 }
 
@@ -5183,61 +5199,92 @@ k1_has_32x2bit_vector_const_p (rtx x)
   return false;
 }
 
-bool
-k1_expand_load_multiple (rtx operands[])
+/* Helper function for k1_expand_load_multiple and
+   k1_expand_store_multiple */
+static bool
+k1_expand_load_store_multiple (rtx operands[], bool is_load)
 {
   int regno;
   int count;
-  rtx op1;
   int i;
 
-  count = INTVAL (operands[2]);
-  regno = REGNO (operands[0]);
+  const int reg_op_idx = is_load ? 0 : 1;
+  const int mem_op_idx = is_load ? 1 : 0;
 
-  /* Only supports loads of 2 or 4 registers, correctly aligned */
-  if (GET_CODE (operands[2]) != CONST_INT || GET_MODE (operands[0]) != DImode
-      || (count != 2 && !(count == 4)) || ((count == 2) && (regno & 1))
-      || ((count == 4) && (regno & 3)) || !MEM_P (operands[1])
-      || !REG_P (operands[0])
+  count = INTVAL (operands[2]);
+  regno = REGNO (operands[reg_op_idx]);
+
+  if (GET_CODE (operands[2]) != CONST_INT
+      || GET_MODE (operands[reg_op_idx]) != DImode || (count != 2 && count != 4)
+      || ((count == 2) && (regno & 1)) || ((count == 4) && (regno & 3))
+      || !MEM_P (operands[mem_op_idx]) || !REG_P (operands[reg_op_idx])
       || (TARGET_STRICT_ALIGN
-	  && MEM_ALIGN (operands[1]) < (count * UNITS_PER_WORD))
-      || MEM_VOLATILE_P (operands[1])
-      || REGNO (operands[0]) > K1C_GPR_LAST_REGNO)
+	  && MEM_ALIGN (operands[mem_op_idx]) < (count * UNITS_PER_WORD))
+      || MEM_VOLATILE_P (operands[mem_op_idx])
+      || REGNO (operands[reg_op_idx]) > K1C_GPR_LAST_REGNO)
     return false;
 
   operands[3] = gen_rtx_PARALLEL (VOIDmode, rtvec_alloc (count));
 
   rtx base, offset;
-  if (!k1_split_mem (XEXP (operands[1], 0), &base, &offset, false))
+  if (!k1_split_mem (XEXP (operands[mem_op_idx], 0), &base, &offset, false))
     return false;
 
   if (!REG_P (base))
     base = force_reg (Pmode, base);
 
   /* Add a PLUS so that we have a simpler match in load multiple patterns */
-  XEXP (operands[1], 0) = gen_rtx_PLUS (Pmode, base, offset);
+  XEXP (operands[mem_op_idx], 0) = gen_rtx_PLUS (Pmode, base, offset);
 
   for (i = 0; i < count; i++)
     {
-      rtx addr = adjust_address_nv (operands[1], DImode, i * UNITS_PER_WORD);
+      rtx addr
+	= adjust_address_nv (operands[mem_op_idx], DImode, i * UNITS_PER_WORD);
 
       /* Force a PLUS even for offset 0 so that we have a simpler
 	 match in load multiple patterns */
       if (REG_P (XEXP (addr, 0)))
 	XEXP (addr, 0) = gen_rtx_PLUS (Pmode, XEXP (addr, 0), const0_rtx);
 
-      XVECEXP (operands[3], 0, i)
-	= gen_rtx_SET (gen_rtx_REG (DImode, regno + i), addr);
+      if (is_load)
+	XVECEXP (operands[3], 0, i)
+	  = gen_rtx_SET (gen_rtx_REG (DImode, regno + i), addr);
+      else
+	XVECEXP (operands[3], 0, i)
+	  = gen_rtx_SET (addr, gen_rtx_REG (DImode, regno + i));
     }
+
   return true;
 }
 
-/*
- * Returns TRUE if OP is a load multiple operation and all mems are
- * cached/uncached depending on IS_UNCACHED.
- */
+/* Expands a store multiple with operand 0 being the first destination
+   address, operand 1 the first source register and operand 2 the
+   number of consecutive stores to pack. */
 bool
-k1_load_multiple_operation_p (rtx op, bool is_uncached)
+k1_expand_store_multiple (rtx operands[])
+{
+  return k1_expand_load_store_multiple (operands, false);
+}
+
+/* Expands a load multiple with operand 0 being the first destination
+   register, operand 1 the first source address and operand 2 the
+   number of consecutive loads to pack. */
+bool
+k1_expand_load_multiple (rtx operands[])
+{
+  return k1_expand_load_store_multiple (operands, true);
+}
+
+/*
+ * When IS_LOAD is TRUE, returns TRUE if OP is a load multiple
+ * operation and all mems are cached/uncached depending on
+ * IS_UNCACHED.
+ * When IS_LOAD is FALSE, returns TRUE if OP is a store multiple
+ * operation.
+ * Returns FALSE otherwise.
+ */
+static bool
+k1_load_store_multiple_operation_p (rtx op, bool is_uncached, bool is_load)
 {
   int count = XVECLEN (op, 0);
   unsigned int dest_regno;
@@ -5250,24 +5297,32 @@ k1_load_multiple_operation_p (rtx op, bool is_uncached)
   for (i = 0; i < count; i++)
     {
       rtx set = XVECEXP (op, 0, i);
+      if (GET_CODE (set) != SET)
+	return false;
 
-      if (GET_CODE (set) != SET || !REG_P (SET_DEST (set))
-	  || !MEM_P (SET_SRC (set)) || MEM_VOLATILE_P (SET_SRC (set)))
-	return 0;
+      rtx reg_part = is_load ? SET_DEST (set) : SET_SRC (set);
+      rtx mem_part = is_load ? SET_SRC (set) : SET_DEST (set);
 
-      if (is_uncached != !!k1_is_uncached_mem_op_p (SET_SRC (set)))
-	return 0;
+      if (!REG_P (reg_part) || !MEM_P (mem_part) || MEM_VOLATILE_P (mem_part))
+	return false;
+
+      if (is_load && is_uncached != !!k1_is_uncached_mem_op_p (mem_part))
+	return false;
     }
 
-  if (TARGET_STRICT_ALIGN
-      && MEM_ALIGN (SET_SRC (XVECEXP (op, 0, 0))) < (count * UNITS_PER_WORD))
-    return 0;
+  rtx first_mem
+    = is_load ? SET_SRC (XVECEXP (op, 0, 0)) : SET_DEST (XVECEXP (op, 0, 0));
+  rtx first_reg
+    = is_load ? SET_DEST (XVECEXP (op, 0, 0)) : SET_SRC (XVECEXP (op, 0, 0));
 
-  dest_regno = REGNO (SET_DEST (XVECEXP (op, 0, 0)));
+  if (TARGET_STRICT_ALIGN && MEM_ALIGN (first_mem) < (count * UNITS_PER_WORD))
+    return false;
+
+  dest_regno = REGNO (first_reg);
 
   /* register number must be correctly aligned */
   if (dest_regno < FIRST_PSEUDO_REGISTER && (dest_regno % count != 0))
-    return 0;
+    return false;
 
   HOST_WIDE_INT expected_offset = 0;
   rtx base;
@@ -5276,10 +5331,11 @@ k1_load_multiple_operation_p (rtx op, bool is_uncached)
     {
       rtx elt = XVECEXP (op, 0, i);
       rtx base_cur, offset_cur;
+      rtx mem_elt = is_load ? SET_SRC (elt) : SET_DEST (elt);
+      rtx reg_elt = is_load ? SET_DEST (elt) : SET_SRC (elt);
 
-      if (!k1_split_mem (XEXP (SET_SRC (elt), 0), &base_cur, &offset_cur,
-			 false))
-	return 0;
+      if (!k1_split_mem (XEXP (mem_elt, 0), &base_cur, &offset_cur, false))
+	return false;
 
       if (i == 0)
 	{
@@ -5291,15 +5347,24 @@ k1_load_multiple_operation_p (rtx op, bool is_uncached)
 	  expected_offset += UNITS_PER_WORD;
 	}
 
-      if (GET_MODE (SET_DEST (elt)) != DImode
-	  || REGNO (SET_DEST (elt)) != dest_regno + i
-	  || GET_MODE (SET_SRC (elt)) != DImode || !rtx_equal_p (base_cur, base)
+      if (GET_MODE (reg_elt) != DImode || REGNO (reg_elt) != dest_regno + i
+	  || GET_MODE (mem_elt) != DImode || !rtx_equal_p (base_cur, base)
 	  || expected_offset != INTVAL (offset_cur))
 
-	return 0;
+	return false;
     }
 
-  return 1;
+  return true;
+}
+
+/*
+ * Returns TRUE if OP is a load multiple operation and all mems are
+ * cached/uncached depending on IS_UNCACHED.
+ */
+bool
+k1_load_multiple_operation_p (rtx op, bool is_uncached)
+{
+  return k1_load_store_multiple_operation_p (op, is_uncached, true);
 }
 
 /*
@@ -5308,65 +5373,7 @@ k1_load_multiple_operation_p (rtx op, bool is_uncached)
 bool
 k1_store_multiple_operation_p (rtx op)
 {
-  int count = XVECLEN (op, 0);
-  unsigned int src_regno;
-  int i;
-
-  /* Perform a quick check so we don't blow up below.  */
-  if (count != 2 && count != 4)
-    return false;
-
-  for (i = 0; i < count; i++)
-    {
-      rtx set = XVECEXP (op, 0, i);
-
-      if (GET_CODE (set) != SET || !MEM_P (SET_DEST (set))
-	  || !REG_P (SET_SRC (set)) || MEM_VOLATILE_P (SET_DEST (set)))
-	return false;
-    }
-
-  if (TARGET_STRICT_ALIGN
-      && MEM_ALIGN (SET_DEST (XVECEXP (op, 0, 0))) < (count * UNITS_PER_WORD))
-    return false;
-
-  src_regno = REGNO (SET_SRC (XVECEXP (op, 0, 0)));
-
-  /* register number must be correctly aligned */
-  if (src_regno < FIRST_PSEUDO_REGISTER && (src_regno % count != 0))
-    return false;
-
-  HOST_WIDE_INT expected_offset = 0;
-  rtx base;
-
-  for (i = 0; i < count; i++)
-    {
-      rtx elt = XVECEXP (op, 0, i);
-      rtx base_cur, offset_cur;
-
-      if (!k1_split_mem (XEXP (SET_DEST (elt), 0), &base_cur, &offset_cur,
-			 false))
-	return false;
-
-      if (i == 0)
-	{
-	  expected_offset = INTVAL (offset_cur);
-	  base = base_cur;
-	}
-      else
-	{
-	  expected_offset += UNITS_PER_WORD;
-	}
-
-      if (GET_MODE (SET_SRC (elt)) != DImode
-	  || REGNO (SET_SRC (elt)) != src_regno + i
-	  || GET_MODE (SET_DEST (elt)) != DImode
-	  || !rtx_equal_p (base_cur, base)
-	  || expected_offset != INTVAL (offset_cur))
-
-	return false;
-    }
-
-  return true;
+  return k1_load_store_multiple_operation_p (op, false, false);
 }
 
 /* Following funtions are used for bundling insn before ASM emission */
