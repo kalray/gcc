@@ -38,7 +38,7 @@
  */
 #undef LIB_SPEC
 #define LIB_SPEC                                                               \
-  "--start-group -lmppacos -lmppa_rsrc -lc -lgloss --end-group "               \
+  "--start-group -lmppacos -lmppa_rsrc -lc -lgloss -lmppa_fdt --end-group "    \
   "%{!nostartfiles:%{!nodefaultlibs:%{!nostdlib:%{!T*:-Tmppacos.ld}}}}"
 
 #undef LINK_SPEC
