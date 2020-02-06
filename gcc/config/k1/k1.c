@@ -292,8 +292,8 @@ k1_compute_frame_info (void)
   /* Next are automatic variables. */
   sp_offset += get_frame_size ();
 
-  /* ABI requires 8-bytes (64-bits) alignment. */
-#define K1_STACK_ALIGN(LOC) (((LOC) + 0x7) & ~0x7)
+  /* ABI requires 32-bytes (256-bits) alignment. */
+#define K1_STACK_ALIGN(LOC) (((LOC) + 0x1F) & ~0x1F)
 
   /* Vararg area must be correctly aligned, else var args may not be correctly
    * pushed */
