@@ -3,7 +3,7 @@
     .global check_return_is_correct
     .type   check_return_is_correct, @function
 check_return_is_correct:
-    andd $r16 = $sp, 7
+    andd $r16 = $sp, 0x1f
     ;;
     cb.deqz $r16, 1f
     ;;
