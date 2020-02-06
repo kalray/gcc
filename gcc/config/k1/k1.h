@@ -110,8 +110,8 @@ enum k1_abi_type
 
 #define PARM_BOUNDARY 64
 
-#define STACK_BOUNDARY 64
-#define BIGGEST_ALIGNMENT 64
+#define STACK_BOUNDARY 256
+#define BIGGEST_ALIGNMENT 256
 
 /* Alignment required for a function entry point, in bits.  */
 #define FUNCTION_BOUNDARY 64
