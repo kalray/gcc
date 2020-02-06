@@ -3,7 +3,7 @@
     .global check_args_are_correct
     .type   check_args_are_correct, @function
 check_args_are_correct:
-    andd $r16 = $sp, 7
+    andd $r16 = $sp, 0x1f
     ;;
     cb.dnez $r16, 1f
     ;;
