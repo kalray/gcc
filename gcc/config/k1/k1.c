@@ -6380,6 +6380,14 @@ hwloop_fail (hwloop_info loop)
   emit_insn_before (gen_addsi3 (loop->iter_reg, loop->iter_reg, constm1_rtx),
 		    loop->loop_end);
 
+  /* Copy back the counter in the memory as reload has to be handled
+     by ourself */
+  if (has_reload)
+    {
+      rtx mem_dest = SET_DEST (XVECEXP (PATTERN (loop->loop_end), 0, 2));
+      emit_insn_before (gen_movsi (mem_dest, loop->iter_reg), loop->loop_end);
+    }
+
   test = gen_rtx_NE (VOIDmode, loop->iter_reg, const0_rtx);
   insn = emit_jump_insn_before (gen_cbranchsi4 (test, loop->iter_reg,
 						const0_rtx, loop->start_label),
@@ -6388,13 +6396,6 @@ hwloop_fail (hwloop_info loop)
   JUMP_LABEL (insn) = loop->start_label;
   LABEL_NUSES (loop->start_label)++;
 
-  /* Copy back the counter in the memory as reload has to be handled
-     by ourself */
-  if (has_reload)
-    {
-      rtx mem_dest = SET_DEST (XVECEXP (PATTERN (loop->loop_end), 0, 2));
-      emit_insn (gen_movsi (mem_dest, loop->iter_reg));
-    }
 
   delete_insn (loop->loop_end);
 }
