@@ -44,7 +44,7 @@ gomp_barrier_init (gomp_barrier_t *bar, unsigned count)
   bar->arrived = 0;
   bar->generation = 0;
   bar->cancellable = false;
-  __builtin_k1_fence ();
+  __builtin_kvx_fence ();
 }
 
 void
