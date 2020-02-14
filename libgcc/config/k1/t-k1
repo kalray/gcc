@@ -1,4 +1,0 @@
-## this one is a copy-pasta of libgcc divmodsi4 function adapted for 64bits int.
-## Looks like libgcc makes the assumption that these are handled by
-## the hw, which is not the case on k1.
-LIB2ADD += $(srcdir)/config/k1/udivmoddi4.c
