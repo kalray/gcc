@@ -92,7 +92,7 @@ gomp_sem_write_set (gomp_sem_t *sem, const int value)
   volatile uintptr_t *ptr = (void *) sem;
 
   *ptr = value;
-  __builtin_k1_fence ();
+  __builtin_kvx_fence ();
 }
 
 static inline void
@@ -106,7 +106,7 @@ gomp_sem_wait (gomp_sem_t *sem)
 {
   __cos_swap_t c;
 
-  __builtin_k1_fence ();
+  __builtin_kvx_fence ();
 
   while (1)
     {
@@ -123,9 +123,9 @@ gomp_sem_wait (gomp_sem_t *sem)
       else
 	{
 #if (__SIZEOF_PTRDIFF_T__ == 8)
-	  c.ret = __builtin_k1_acswapd ((void *) ptr, count - 1, count);
+	  c.ret = __builtin_kvx_acswapd ((void *) ptr, count - 1, count);
 #else
-	  c.ret = __builtin_k1_acswapw ((void *) ptr, count - 1, count);
+	  c.ret = __builtin_kvx_acswapw ((void *) ptr, count - 1, count);
 #endif
 	  if (c.test == 1)
 	    break;
@@ -137,7 +137,7 @@ gomp_sem_wait (gomp_sem_t *sem)
 static inline void
 gomp_sem_post (gomp_sem_t *sem)
 {
-  __builtin_k1_fence (); /* consistency before post */
+  __builtin_kvx_fence (); /* consistency before post */
 #if (__SIZEOF_PTRDIFF_T__ == 8)
   MPPA_COS_AFADDD ((void *) sem, 1);
 #else

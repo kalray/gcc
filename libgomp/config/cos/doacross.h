@@ -60,7 +60,7 @@ doacross_spin (unsigned long *addr, unsigned long expected, unsigned long cur)
 	{
 	  extern int MPPA_COS_ENABLE_DINVAL __attribute__ ((weak));
 	  if (&MPPA_COS_ENABLE_DINVAL)
-	    __builtin_k1_dinval ();
+	    __builtin_kvx_dinval ();
 	  return;
 	}
       pthread_yield ();

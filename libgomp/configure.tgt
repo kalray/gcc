@@ -182,10 +182,10 @@ case "${target}" in
 	XCFLAGS="$XCFLAGS -Wno-error=array-bounds"
 	;;
 
-  k1*-*-cos)
+  kvx*-*-cos)
 	config_path="cos"
 	;;
-  k1*-*-linux*)
+  kvx*-*-linux*)
 	config_path="linux posix"
 	;;
   *)

@@ -4,7 +4,7 @@
 
 # shellcheck disable=SC2006,SC2268 # see below for rationale
 
-timestamp='2021-11-29'
+timestamp='2021-11-30'
 
 # This file is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by
@@ -819,8 +819,8 @@ case $basic_machine in
 			;;
 		esac
 		;;
-	k1)
-	    cpu=k1
+	kvx)
+	    cpu=kvx
 	    vendor=kalray
 	    os=${os:-elf}
 	    ;;
@@ -1052,8 +1052,8 @@ case $cpu-$vendor in
 		cpu=powerpc
 		basic_os=${basic_os}"spe"
 		;;
-	k1-*)
-	    cpu=k1
+	kvx-*)
+	    cpu=kvx
 	    ;;
 	mips3*-*)
 		cpu=mips64
@@ -1207,7 +1207,7 @@ case $cpu-$vendor in
 			| hexagon \
 			| i370 | i*86 | i860 | i960 | ia16 | ia64 \
 			| ip2k | iq2000 \
-			| k1om | k1 \
+			| k1om | kvx \
 			| le32 | le64 \
 			| lm32 \
 			| loongarch32 | loongarch64 | loongarchx32 \
@@ -1363,8 +1363,11 @@ case $os in
 		os=cnk
 		;;
 	cos*)
-	    os=cos
-	    ;;
+		os=cos
+		;;
+	mbr*)
+		os=mbr
+		;;
 	solaris1 | solaris1.*)
 		os=`echo "$os" | sed -e 's|solaris1|sunos4|'`
 		;;
@@ -1406,44 +1409,6 @@ case $os in
 	psos*)
 		os=psos
 		;;
-<<<<<<< HEAD
-=======
-	# Now accept the basic system types.
-	# The portable systems comes first.
-	# Each alternative MUST end in a * to match a version number.
-	# sysv* is not here because it comes later, after sysvr4.
-	gnu* | bsd* | mach* | minix* | genix* | ultrix* | irix* \
-	     | *vms* | esix* | aix* | cnk* | sunos | sunos[34]*\
-	     | hpux* | unos* | osf* | luna* | dgux* | auroraux* | solaris* \
-	     | sym* | kopensolaris* | plan9* \
-	     | amigaos* | amigados* | msdos* | newsos* | unicos* | aof* \
-	     | aos* | aros* | cloudabi* | sortix* \
-	     | nindy* | vxsim* | vxworks* | ebmon* | hms* | mvs* \
-	     | clix* | riscos* | uniplus* | iris* | isc* | rtu* | xenix* \
-	     | knetbsd* | mirbsd* | netbsd* \
-	     | bitrig* | openbsd* | solidbsd* | libertybsd* | os108* \
-	     | ekkobsd* | kfreebsd* | freebsd* | riscix* | lynxos* \
-	     | bosx* | nextstep* | cxux* | aout* | elf* | oabi* \
-	     | ptx* | coff* | ecoff* | winnt* | domain* | vsta* \
-	     | udi* | eabi* | lites* | ieee* | go32* | aux* | hcos* \
-	     | chorusrdb* | cegcc* | glidix* \
-	     | cygwin* | msys* | pe* | moss* | proelf* | rtems* \
-	     | midipix* | mingw32* | mingw64* | linux-gnu* | linux-android* \
-	     | linux-newlib* | linux-musl* | linux-uclibc* \
-	     | uxpv* | beos* | mpeix* | udk* | moxiebox* \
-	     | interix* | uwin* | mks* | rhapsody* | darwin* \
-	     | openstep* | oskit* | conix* | pw32* | nonstopux* \
-	     | storm-chaos* | tops10* | tenex* | tops20* | its* \
-	     | os2* | vos* | palmos* | uclinux* | nucleus* \
-	     | morphos* | superux* | rtmk* | windiss* \
-	     | powermax* | dnix* | nx6 | nx7 | sei* | dragonfly* \
-	     | skyos* | haiku* | rdos* | toppers* | drops* | es* \
-	     | onefs* | tirtos* | phoenix* | fuchsia* | redox* | bme* \
-	     | midnightbsd* | amdhsa* | unleashed* | emscripten* | wasi* \
-	     | nsk* | powerunix | -cos* | -mbr* )
-	# Remember, each alternative MUST END IN *, to match a version number.
-		;;
->>>>>>> 5912ea12721 (  [K1] clusterOS (cos) replaces nodes and rtems toolchains)
 	qnx*)
 		os=qnx
 		;;
@@ -1601,7 +1566,7 @@ case $cpu-$vendor in
 	hexagon-*)
 		os=elf
 		;;
-	k1-*)
+	kvx-*)
 	    os=elf
 	    ;;
 	tic54x-*)
@@ -1799,6 +1764,7 @@ case $os in
 	     | powermax* | dnix* | nx6 | nx7 | sei* | dragonfly* \
 	     | skyos* | haiku* | rdos* | toppers* | drops* | es* \
 	     | onefs* | tirtos* | phoenix* | fuchsia* | redox* | bme* \
+	     | cos* | mbr* \
 	     | midnightbsd* | amdhsa* | unleashed* | emscripten* | wasi* \
 	     | nsk* | powerunix* | genode* | zvmoe* | qnx* | emx* | zephyr* \
 	     | fiwix* )
@@ -1880,7 +1846,7 @@ case $vendor in
 			*-dgux*)
 				vendor=dg
 				;;
-			k1*)
+			kvx*)
 				vendor=kalray
 				;;
 			luna*)
