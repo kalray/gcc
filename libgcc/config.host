@@ -211,8 +211,8 @@ v850*-*-*)
 tic6x-*-*)
 	cpu_type=c6x
 	;;
-k1-*-*)
-	cpu_type=k1
+kvx-*-*)
+	cpu_type=kvx
 	;;
 esac
 
@@ -919,17 +919,17 @@ iq2000*-*-elf*)
 	# Don't use default.
 	extra_parts=
         ;;
-k1-*-linux*)
+kvx-*-linux*)
         extra_parts="$extra_parts crtbegin.o crtend.o"
-	tmake_file="$tmake_file ${cpu_type}/t-k1 t-softfp-sfdf t-libgcc-pic t-softfp "
+	tmake_file="$tmake_file ${cpu_type}/t-kvx t-softfp-sfdf t-libgcc-pic t-softfp "
         ;;
-k1-*-cos)
+kvx-*-cos)
         extra_parts="$extra_parts crtbegin.o crtend.o crti.o crtn.o"
-	tmake_file="$tmake_file k1/t-k1 t-softfp-sfdf t-libgcc-pic t-softfp "
+	tmake_file="$tmake_file kvx/t-kvx t-softfp-sfdf t-libgcc-pic t-softfp "
 	;;
-k1-*-*)
+kvx-*-*)
         extra_parts="$extra_parts crtbegin.o crtend.o crti.o crtn.o"
-	tmake_file="$tmake_file k1/t-k1 t-softfp-sfdf t-softfp "
+	tmake_file="$tmake_file kvx/t-kvx t-softfp-sfdf t-softfp "
 	;;
 lm32-*-elf*)
         extra_parts="$extra_parts crti.o crtn.o"

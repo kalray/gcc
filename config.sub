@@ -2,7 +2,7 @@
 # Configuration validation subroutine script.
 #   Copyright 1992-2019 Free Software Foundation, Inc.
 
-timestamp='2021-11-29'
+timestamp='2021-11-30'
 
 # This file is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by
@@ -801,8 +801,8 @@ case $basic_machine in
 			;;
 		esac
 		;;
-	k1)
-	    cpu=k1
+	kvx)
+	    cpu=kvx
 	    vendor=kalray
 	    os=${os:-elf}
 	    ;;
@@ -1032,8 +1032,8 @@ case $cpu-$vendor in
 		cpu=powerpc
 		os=$os"spe"
 		;;
-	k1-*)
-	    cpu=k1
+	kvx-*)
+	    cpu=kvx
 	    ;;
 	mips3*-*)
 		cpu=mips64
@@ -1188,7 +1188,7 @@ case $cpu-$vendor in
 			| hexagon \
 			| i370 | i*86 | i860 | i960 | ia16 | ia64 \
 			| ip2k | iq2000 \
-			| k1om | k1 \
+			| k1om | kvx \
 			| le32 | le64 \
 			| lm32 \
 			| m32c | m32r | m32rle \
@@ -1567,7 +1567,7 @@ case $cpu-$vendor in
 	hexagon-*)
 		os=elf
 		;;
-	k1-*)
+	kvx-*)
 	    os=elf
 	    ;;
 	tic54x-*)
@@ -1753,7 +1753,7 @@ case $vendor in
 			dgux*)
 				vendor=dg
 				;;
-			k1*)
+			kvx*)
 			    vendor=kalray
 			    ;;
 			luna*)

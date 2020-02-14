@@ -171,10 +171,10 @@ case "${target}" in
 	config_path="gcn accel"
 	;;
 
-  k1*-*-cos)
+  kvx*-*-cos)
 	config_path="cos"
 	;;
-  k1*-*-linux*)
+  kvx*-*-linux*)
 	config_path="linux posix"
 	;;
   *)

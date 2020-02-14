@@ -105,6 +105,9 @@ busy_wait (void)
   __asm volatile ("hint @pause" : : : "memory");
 #elif defined __sparc__ && (defined __arch64__ || defined __sparc_v9__)
   __asm volatile ("membar #LoadLoad" : : : "memory");
+#elif defined __CLUSTER_OS__
+  __asm volatile ("" : : : "memory");
+  pthread_yield();
 #else
   __asm volatile ("" : : : "memory");
 #endif

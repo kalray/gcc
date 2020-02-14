@@ -569,7 +569,7 @@ tilegx*-*-*)
 tilepro*-*-*)
 	cpu_type=tilepro
 	;;
-k1-*-*)
+kvx-*-*)
 	need_64bit_hwint=yes
         extra_options="${extra_options}"
 	;;
@@ -2300,22 +2300,22 @@ iq2000*-*-elf*)
         out_file=iq2000/iq2000.c
         md_file=iq2000/iq2000.md
         ;;
-k1-*-elf*)
-	tm_file="${tm_file} elfos.h dbxelf.h k1/k1-elf.h newlib-stdint.h"
-	tmake_file="k1/t-k1 k1/t-elf"
+kvx-*-elf*)
+	tm_file="${tm_file} elfos.h dbxelf.h kvx/kvx-elf.h newlib-stdint.h"
+	tmake_file="kvx/t-kvx kvx/t-elf"
 	;;
-k1-*-mbr*)
-	tm_file="${tm_file} elfos.h dbxelf.h k1/k1-mbr.h newlib-stdint.h"
-	tmake_file="k1/t-k1 k1/t-mbr"
+kvx-*-mbr*)
+	tm_file="${tm_file} elfos.h dbxelf.h kvx/kvx-mbr.h newlib-stdint.h"
+	tmake_file="kvx/t-kvx kvx/t-mbr"
 	;;
-k1-*-cos*)
-	tm_file="${tm_file} elfos.h dbxelf.h k1/k1-cos.h newlib-stdint.h"
-	tmake_file="k1/t-k1 k1/t-cos"
-	extra_options="${extra_options} k1/k1-cos.opt"
+kvx-*-cos*)
+	tm_file="${tm_file} elfos.h dbxelf.h kvx/kvx-cos.h newlib-stdint.h"
+	tmake_file="kvx/t-kvx kvx/t-cos"
+	extra_options="${extra_options} kvx/kvx-cos.opt"
 	;;
-k1-*-linux*)
-	tm_file="${tm_file} dbxelf.h elfos.h gnu-user.h linux.h k1/k1-linux.h glibc-stdint.h"
-	tmake_file="${tmake_file} t-linux k1/t-linux"
+kvx-*-linux*)
+	tm_file="${tm_file} dbxelf.h elfos.h gnu-user.h linux.h kvx/kvx-linux.h glibc-stdint.h"
+	tmake_file="${tmake_file} t-linux kvx/t-linux"
 	;;
 lm32-*-elf*)
         tm_file="dbxelf.h elfos.h ${tm_file} newlib-stdint.h"
