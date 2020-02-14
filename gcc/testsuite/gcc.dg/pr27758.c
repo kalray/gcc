@@ -1,6 +1,5 @@
 /* PR target/27758 */
 /* { dg-do run { target fpic } } */
-/* { dg-skip-if "PLT not supported yet" { k1-*-* } } */
 /* { dg-options "-O0 -fpic" } */
 
 typedef int (*fn) (void);

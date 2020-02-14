@@ -164,10 +164,10 @@ case "${target}" in
 	fi
 	;;
 
-  k1*-*-cos)
+  kvx-*-cos)
 	config_path="cos"
 	;;
-  k1*-*-linux*)
+  kvx*-*-linux*)
 	config_path="linux posix"
 	;;
   *)

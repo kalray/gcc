@@ -1,4 +1,3 @@
-! { dg-do run { target { ! { k1*-*-* } } } }
 ! PR 34566 - logical matmul used to give the wrong result.
 ! We check this by running through every permutation in
 ! multiplying two 3*3 matrices, and all permutations of multiplying

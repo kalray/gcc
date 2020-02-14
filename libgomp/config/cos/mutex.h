@@ -63,16 +63,16 @@ static inline void
 gomp_mutex_init (gomp_mutex_t *mutex)
 {
   gomp_mutex_write_set (mutex, 1);
-  __builtin_k1_fence ();
+  __builtin_kvx_fence ();
 }
 
 static inline void
 gomp_mutex_lock (gomp_mutex_t *mutex)
 {
 #if (__SIZEOF_PTRDIFF_T__ == 8)
-  while (!(__builtin_k1_alclrd ((void *) mutex) == 1ULL))
+  while (!(__builtin_kvx_alclrd ((void *) mutex) == 1ULL))
 #else
-  while (!(__builtin_k1_alclrw ((void *) mutex) == 1ULL))
+  while (!(__builtin_kvx_alclrw ((void *) mutex) == 1ULL))
 #endif
     {
       if ((uintptr_t) &MPPA_COS_THREAD_PER_CORE_SHIFT
@@ -85,7 +85,7 @@ gomp_mutex_lock (gomp_mutex_t *mutex)
 static inline void
 gomp_mutex_unlock (gomp_mutex_t *mutex)
 {
-  __builtin_k1_fence (); /* consitency before unlock */
+  __builtin_kvx_fence (); /* consitency before unlock */
   gomp_mutex_write_set (mutex, 1);
   mppa_cos_doorbell_all ();
   MPPA_COS_DINVAL ();
@@ -95,7 +95,7 @@ static inline void
 gomp_mutex_destroy (gomp_mutex_t *mutex)
 {
   gomp_mutex_write_set (mutex, 0);
-  __builtin_k1_fence ();
+  __builtin_kvx_fence ();
 }
 
 #endif /* GOMP_MUTEX_H */

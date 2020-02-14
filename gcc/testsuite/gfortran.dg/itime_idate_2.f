@@ -1,4 +1,3 @@
-! { dg-do run { xfail k1-*-* } }
 ! { dg-options "-fdefault-integer-8" }
 ! Test for ITIME and IDATE intrinsics
       integer x(3)

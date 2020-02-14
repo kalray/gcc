@@ -1,4 +1,3 @@
-! { dg-do run { xfail k1-*-* } }
 ! PR 34887 - reverse tabs followed by a slash used to confuse I/O.
       program main
       character(len=2) :: b, a

@@ -1,4 +1,4 @@
-! { dg-do run { target { ! { *-*-mingw* *-*-cygwin* spu-*-* k1-*-* } } } }
+! { dg-do run { target { ! { *-*-mingw* *-*-cygwin* spu-*-* } } } }
 ! { dg-options "-std=gnu -fdefault-integer-8" }
 ! See PR38956.  Test fails on cygwin when user has Administrator rights
   implicit none

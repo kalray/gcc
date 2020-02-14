@@ -1,6 +1,6 @@
 // Causes timeout for the MMIX simulator on a 3GHz P4 and we can't
 // have "compile" for some targets and "run" for others.
-// { dg-do run { target { ! { mmix-*-* k1*-*-* } } } }
+// { dg-do run { target { ! { mmix-*-* kvx-*-* } } } }
 // { dg-options "-mstructure-size-boundary=8" { target arm*-*-* } }
 // { dg-timeout-factor 4.0 }
 

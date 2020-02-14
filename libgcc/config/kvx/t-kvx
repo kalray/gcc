@@ -1,0 +1,4 @@
+## this one is a copy-pasta of libgcc divmodsi4 function adapted for 64bits int.
+## Looks like libgcc makes the assumption that these are handled by
+## the hw, which is not the case on kvx.
+LIB2ADD += $(srcdir)/config/kvx/udivmoddi4.c

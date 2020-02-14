@@ -1,0 +1,61 @@
+HeaderInclude
+config/kvx/kvx-opts.h
+
+ffixed-reg
+Target RejectNegative Report Joined Var(kvx_deferred_options) Defer
+Set the passed register range as fixed
+
+march=
+Target RejectNegative Joined Report Enum(kvx_arch_type) Var(kvx_arch_name) Init(KVX_ARCH_KV3_1)
+-march=ARCHITECTURE  Compile for specified ARCHITECTURE
+
+Enum
+Name(kvx_arch_type) Type(enum kvx_arch_type)
+Known KVX architecture types (for use with the -march option):
+
+EnumValue
+Enum(kvx_arch_type) String(kv3-1) Value(KVX_ARCH_KV3_1)
+
+mfarcall
+Target Report Var(KVX_FARCALL)
+Avoid all range limits on call instructions
+
+m32
+Target Report Mask(32)
+Use 32 bits pointers.
+
+mlocal-sdata
+Target Report Var(TARGET_LOCAL_SDATA) Init(0)
+Enable use of small data for local objects
+
+fbundling
+Target Report Mask(BUNDLING)
+Enable bundling when optimizing (active by default)
+
+fhwloop
+Target Report Mask(HWLOOP)
+Enable hwloop generation when optimizing (active by default)
+
+fstrict-align
+Target Report Mask(STRICT_ALIGN)
+Do not generate misaligned memory accesses 
+
+fstack-check-use-tls
+Target RejectNegative Report Mask(STACK_CHECK_USE_TLS)
+Use a TLS slot named __stack_end to store the stack boundary instead of $sr1
+
+mabi=
+Target RejectNegative Joined Enum(kvx_abi) Var(kvx_abi) Init(KVX_ABI_DEFAULT)
+-mabi=ABI	Generate code that conforms to the specified ABI
+
+Enum
+Name(kvx_abi) Type(int)
+Known KVX MPPA ABIs (for use with the -mabi= option):
+
+Waddress-space-conversion
+C C++ Warning Var(KVX_WARN_ADDRESS_SPACE_CONVERSION) Init(0)
+Warn if an __uncached pointer is converted to a general one or vice versa
+
+EnumValue
+Enum(kvx_abi) String(lp64) Value(KVX_ABI_LP64)
+
