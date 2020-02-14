@@ -103,7 +103,7 @@ extern void abort (void);
 # else
 #  define PIC_REG "gr17"
 # endif
-#elif defined (__K1__)
+#elif defined (__KVX__)
 # define PIC_REG  "r14"
 #elif defined (__aarch64__)
 /* No pic register -- yet.  */
