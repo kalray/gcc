@@ -5,12 +5,12 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with GCC; see the file COPYING3.  If not see
 # <http://www.gnu.org/licenses/>.
@@ -21,6 +21,7 @@ if ![istarget k1*-*-*] then {
 }
 
 ## Force compilation in various optim levels to check there is no errors.
+## Only tests matching *-exec.* are used here
 ## dg-scan-* directives are *not* handled here
 
 load_lib c-torture.exp
@@ -36,8 +37,8 @@ global torture_with_loops
 foreach src [lsort [glob -nocomplain $srcdir/$subdir/*.\[cCS\]]] {
     if {[runtest_file_p $runtests $src]} {
 	set flags $additional_flags
-	foreach option $torture_with_loops {
-	    c-torture-compile [list $src ] "$option $flags"
+	if {[string first "-exec." $src] != -1} {
+	    c-torture-execute [list $src ] $flags
 	}
     }
 }
