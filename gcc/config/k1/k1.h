@@ -75,7 +75,9 @@ enum k1_abi_type
 
 #define LINK_SPEC_COMMON "%{shared} %{m32:-melf32k1} %{!m32:-melf64k1} "
 
-#define CC1_SPEC " %{G*}"
+#define CC1_SPEC                                                               \
+  " %{G*}"                                                                     \
+  "%{!fexceptions:%{!fno-exceptions: -fno-exceptions}} "
 
 #define ASM_SPEC "%{mcore*} --no-check-resources %{m32} "
 
