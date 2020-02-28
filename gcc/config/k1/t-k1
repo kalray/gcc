@@ -1,16 +1,1 @@
-MULTILIB_OPTIONS = mcore=k1c
-#fPIC
-
-MULTILIB_DIRNAMES = k1c/le/bare
-# pic
-
 MULTILIB_EXTRA_OPTS = fdata-sections ffunction-sections
-
-DRIVER_DEFINES = \
-  -DSTANDARD_STARTFILE_PREFIX=\"$(unlibsubdir)/\" \
-  -DSTANDARD_EXEC_PREFIX=\"$(libdir)/gcc/\" \
-  -DSTANDARD_LIBEXEC_PREFIX=\"$(libexecdir)/gcc/\" \
-  -DDEFAULT_TARGET_VERSION=\"$(version)\" \
-  -DDEFAULT_TARGET_MACHINE=\"$(target_noncanonical)\" \
-  -DSTANDARD_BINDIR_PREFIX=\"$(bindir)/\" \
-  -DTOOLDIR_BASE_PREFIX=\"$(libsubdir_to_prefix)$(prefix_to_exec_prefix)\"
