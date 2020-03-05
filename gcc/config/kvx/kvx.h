@@ -98,6 +98,9 @@ enum kvx_abi_type
 
 #define PARM_BOUNDARY 64
 
+/* We handle the alignment of automatic variables in kvx_compute_frame_info */
+#define STACK_ALIGNMENT_NEEDED 0
+
 #define STACK_BOUNDARY 256
 #define BIGGEST_ALIGNMENT 256
 
