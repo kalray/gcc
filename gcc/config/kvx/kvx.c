@@ -153,29 +153,38 @@ enum attr_arch kvx_arch_schedule;
 /* Information about a function's frame layout.  */
 struct GTY (()) kvx_frame_info
 {
-  /* The size of the frame in bytes.  */
-  HOST_WIDE_INT total_size;
-
-  /* The offset from the initial SP value to its new value */
-  HOST_WIDE_INT initial_sp_offset;
+  /* The total frame size, used for moving $sp in prologue */
+  HOST_WIDE_INT frame_size;
 
   /* Offsets of save area from frame bottom */
   HOST_WIDE_INT saved_reg_sp_offset;
 
-  /* Offset of virtual frame pointer from stack pointer/frame bottom */
-  HOST_WIDE_INT frame_pointer_offset;
+  /* Relative offsets within register save area  */
+  HOST_WIDE_INT reg_rel_offset[FIRST_PSEUDO_REGISTER];
+  /* Register save area size */
+  HOST_WIDE_INT saved_regs_size;
+  HARD_REG_SET saved_regs;
 
-  /* Offset of hard frame pointer from stack pointer/frame bottom */
+  /* Offset of virtual frame pointer from new stack pointer/frame bottom */
+  HOST_WIDE_INT virt_frame_pointer_offset;
+
+  /* Offset of hard frame pointer from new stack pointer/frame bottom */
   HOST_WIDE_INT hard_frame_pointer_offset;
 
-  /* The offset of arg_pointer_rtx from the frame pointer.  */
-  HOST_WIDE_INT arg_pointer_fp_offset;
+  /* The offset of arg_pointer_rtx from the new stack pointer/frame bottom.  */
+  HOST_WIDE_INT arg_pointer_offset;
 
   /* Offset to the static chain pointer, if needed */
-  HOST_WIDE_INT static_chain_fp_offset;
+  HOST_WIDE_INT static_chain_offset;
 
-  HOST_WIDE_INT reg_offset[FIRST_PSEUDO_REGISTER];
-  HOST_WIDE_INT saved_regs_size;
+  /* Padding size between local area and incoming/varargs */
+  HOST_WIDE_INT padding1;
+
+  /* Padding between local area and register save */
+  HOST_WIDE_INT padding2;
+
+  /* Padding size between register save and outgoing args */
+  HOST_WIDE_INT padding3;
 
   bool laid_out;
 };
@@ -199,17 +208,24 @@ struct GTY (()) machine_function
 				|               |    ^
 				|               |    |
 				| Incomming     |    | Caller frame
-				| Args          |    |
-				+---------------+ <--/
+				| Args          | <--/ <- incoming $sp [256-bits aligned]
 				+---------------+
 				| Varargs       |
 				|               |
 				|               |
 				+---------------+
- Argument Pointer / Virt. FP--->| [Static chain]|
+				|               |
+				| padding1      |
+				|               |
+				+---------------+
+ Argument Pointer / Virt. FP--->| [Static chain]| [256-bits aligned]
 				+---------------+
 				| Local         |
 				| Variable      |
+				|               |
+				+---------------+
+				|               |
+				| padding2      |
 				|               |
 				+---------------+
 				|               |
@@ -217,12 +233,16 @@ struct GTY (()) machine_function
 				| Save          |
 				|               |
 				| $ra           | (if frame_pointer_needed)
-		     Hard FP--->| caller FP     | (if frame_pointer_needed)
+		                | caller FP     | (<- $fp if frame_pointer_needed) [64-bits aligned]
+				+---------------+
+				|               |
+				| padding3      |
+				|               |
 				+---------------+
 				|               |
 				| Outgoing      |
 				| Args          |
-			  SP--->|               |
+			        |               | <- $sp [256-bits aligned]
 				+---------------+
 
 */
@@ -241,91 +261,217 @@ kvx_compute_frame_info (void)
 {
   struct kvx_frame_info *frame;
 
-  /* Offset of new SP wrt incoming SP */
-  /* Used for creating pointers from new SP values. */
-  HOST_WIDE_INT sp_offset = 0;
-
-  /* FP offset wrt new SP */
-  HOST_WIDE_INT fp_offset = 0;
+  HOST_WIDE_INT inc_sp_offset = 0;
 
   frame = &cfun->machine->frame;
   memset (frame, 0, sizeof (*frame));
+  CLEAR_HARD_REG_SET (frame->saved_regs);
 
-  /* At the bottom of the frame are any outgoing stack arguments. */
-  sp_offset += crtl->outgoing_args_size;
+  inc_sp_offset += crtl->args.pretend_args_size;
 
-  /* Saved registers area */
-  frame->saved_reg_sp_offset = sp_offset;
+  /* If any anonymous arg may be in register, push them on the stack */
+  if (cfun->stdarg && crtl->args.info.next_arg_reg < KV3_ARG_REG_SLOTS)
+    inc_sp_offset
+      += UNITS_PER_WORD * (KV3_ARG_REG_SLOTS - crtl->args.info.next_arg_reg);
 
-  frame->hard_frame_pointer_offset = sp_offset;
+  /* FIXME AUTO: trampoline are broken T6775 */
+  if (cfun->machine->static_chain_on_stack)
+    inc_sp_offset += UNITS_PER_WORD;
 
+  HOST_WIDE_INT local_vars_sz = get_frame_size ();
+  frame->padding1 = 0;
+
+  if (local_vars_sz > 0)
+    {
+      frame->padding1 = ROUND_UP (inc_sp_offset, STACK_BOUNDARY / BITS_PER_UNIT)
+			- inc_sp_offset;
+      inc_sp_offset = ROUND_UP (inc_sp_offset, STACK_BOUNDARY / BITS_PER_UNIT);
+
+      /* Next are automatic variables. */
+      inc_sp_offset += local_vars_sz;
+    }
 #define SLOT_NOT_REQUIRED (-2)
 #define SLOT_REQUIRED (-1)
+
+  frame->padding2 = ROUND_UP (inc_sp_offset, UNITS_PER_WORD) - inc_sp_offset;
+  inc_sp_offset = ROUND_UP (inc_sp_offset, UNITS_PER_WORD);
+
+  HOST_WIDE_INT reg_offset = 0;
 
   /* Mark which register should be saved... */
   for (int regno = 0; regno < FIRST_PSEUDO_REGISTER; regno++)
     if (should_be_saved_in_prologue (regno))
-      cfun->machine->frame.reg_offset[regno] = SLOT_REQUIRED;
+      {
+	SET_HARD_REG_BIT (frame->saved_regs, regno);
+	cfun->machine->frame.reg_rel_offset[regno] = SLOT_REQUIRED;
+      }
     else
-      cfun->machine->frame.reg_offset[regno] = SLOT_NOT_REQUIRED;
+      cfun->machine->frame.reg_rel_offset[regno] = SLOT_NOT_REQUIRED;
 
   if (frame_pointer_needed)
     {
-      /* Enforce ABI that requires the FP to point to previous FP value and $ra
-       */
-      cfun->machine->frame.reg_offset[HARD_FRAME_POINTER_REGNUM] = sp_offset;
-      cfun->machine->frame.reg_offset[KV3_RETURN_POINTER_REGNO]
-	= sp_offset + UNITS_PER_WORD;
-      sp_offset += 2 * UNITS_PER_WORD;
+      SET_HARD_REG_BIT (frame->saved_regs, HARD_FRAME_POINTER_REGNUM);
+      SET_HARD_REG_BIT (frame->saved_regs, KV3_RETURN_POINTER_REGNO);
+
+      cfun->machine->frame.reg_rel_offset[HARD_FRAME_POINTER_REGNUM] = 0;
+      cfun->machine->frame.reg_rel_offset[KV3_RETURN_POINTER_REGNO]
+	= UNITS_PER_WORD;
+      reg_offset = UNITS_PER_WORD * 2;
     }
 
   /* ... assign stack slots */
   for (int regno = 0; regno < FIRST_PSEUDO_REGISTER; regno++)
-    if (cfun->machine->frame.reg_offset[regno] == SLOT_REQUIRED)
+    if (cfun->machine->frame.reg_rel_offset[regno] == SLOT_REQUIRED)
       {
-	cfun->machine->frame.reg_offset[regno] = sp_offset;
-	sp_offset += UNITS_PER_WORD;
+	cfun->machine->frame.reg_rel_offset[regno] = reg_offset;
+	reg_offset += UNITS_PER_WORD;
       }
 
-  frame->saved_regs_size = sp_offset - frame->saved_reg_sp_offset;
+  frame->saved_regs_size = reg_offset;
 
-  /* Next are automatic variables. */
-  sp_offset += get_frame_size ();
+  inc_sp_offset += reg_offset;
 
-  /* ABI requires 32-bytes (256-bits) alignment. */
-#define KVX_STACK_ALIGN(LOC) (((LOC) + 0x1F) & ~0x1F)
+  /* At the bottom of the frame are any outgoing stack arguments. */
+  inc_sp_offset += crtl->outgoing_args_size;
+  frame->padding3
+    = ROUND_UP (inc_sp_offset, STACK_BOUNDARY / BITS_PER_UNIT) - inc_sp_offset;
 
-  /* Vararg area must be correctly aligned, else var args may not be correctly
-   * pushed */
-  sp_offset = KVX_STACK_ALIGN (sp_offset);
+  inc_sp_offset = ROUND_UP (inc_sp_offset, STACK_BOUNDARY / BITS_PER_UNIT);
 
-  /* Frame pointer points between automatic var & varargs */
-  fp_offset = sp_offset;
+  frame->hard_frame_pointer_offset = frame->saved_reg_sp_offset
+    = crtl->outgoing_args_size + frame->padding3;
 
-  /* FIXME AUTO: trampoline are broken T6775 */
-  if (cfun->machine->static_chain_on_stack)
+  frame->static_chain_offset = frame->virt_frame_pointer_offset
+    = frame->saved_reg_sp_offset + frame->saved_regs_size + frame->padding2
+      + get_frame_size ();
+
+  frame->arg_pointer_offset
+    = frame->virt_frame_pointer_offset + frame->padding1
+      + (cfun->machine->static_chain_on_stack ? UNITS_PER_WORD : 0);
+
+  frame->frame_size = inc_sp_offset;
+  frame->laid_out = true;
+}
+
+static void
+kvx_debug_frame_info (struct kvx_frame_info *fi)
+{
+  if (!dump_file)
+    return;
+  fprintf (dump_file, "\nKVX Frame info:\n");
+
+  fprintf (dump_file,
+	   " |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX| %d/0 (caller frame) <- $sp "
+	   "(incoming) %s \n",
+	   fi->frame_size,
+	   cfun->stdarg && crtl->args.info.next_arg_reg < KV3_ARG_REG_SLOTS
+	     ? ""
+	     : "and virt frame pointer");
+
+#define DFI_SEP fprintf (dump_file, " +------------------------------+    \n")
+
+#define DFI_FIELD(f, sz, bottom, decorate_up, decorate_down)                   \
+  fprintf (dump_file,                                                          \
+	   " |                              | %d/%d %s  \n"                    \
+	   " |%30s|                              \n"                           \
+	   " |size: %24d| %d/%d  %s\n",                                        \
+	   (bottom) + (sz) -UNITS_PER_WORD,                                    \
+	   fi->frame_size - ((bottom) + (sz) -UNITS_PER_WORD), decorate_up, f, \
+	   (sz), (bottom), fi->frame_size - (bottom), decorate_down)
+
+  DFI_SEP;
+  if (cfun->stdarg && crtl->args.info.next_arg_reg < KV3_ARG_REG_SLOTS)
     {
-      frame->static_chain_fp_offset = sp_offset - fp_offset;
-      sp_offset += UNITS_PER_WORD;
+      DFI_FIELD ("varargs", fi->frame_size - fi->arg_pointer_offset,
+		 fi->arg_pointer_offset, "", " <- arg pointer");
+      DFI_SEP;
     }
 
-  frame->arg_pointer_fp_offset = sp_offset - fp_offset;
+  if (fi->padding1 > 0)
+    {
+      DFI_FIELD (
+	"padding1", fi->padding1,
+	fi->virt_frame_pointer_offset
+	  + (cfun->machine->static_chain_on_stack ? UNITS_PER_WORD : 0),
+	"",
+	cfun->machine->static_chain_on_stack ? "" : "<- virt frame pointer");
+      DFI_SEP;
+    }
+  if (cfun->machine->static_chain_on_stack)
+    {
+      DFI_FIELD ("static chain", UNITS_PER_WORD, fi->virt_frame_pointer_offset,
+		 "", "<- virt frame pointer");
+      DFI_SEP;
+    }
 
-  /* If any anonymous arg may be in register, push them on the stack */
-  /* This can't break alignment */
-  if (cfun->stdarg && crtl->args.info.next_arg_reg < KV3_ARG_REG_SLOTS)
-    sp_offset
-      += UNITS_PER_WORD * (KV3_ARG_REG_SLOTS - crtl->args.info.next_arg_reg);
+  if (get_frame_size () > 0)
+    {
+      DFI_FIELD ("locals", get_frame_size (),
+		 fi->virt_frame_pointer_offset - get_frame_size (), "", "");
+      DFI_SEP;
+    }
+  if (fi->padding2 > 0)
+    {
+      DFI_FIELD ("padding2", fi->padding2,
+		 fi->hard_frame_pointer_offset + fi->saved_regs_size, "", "");
+      DFI_SEP;
+    }
 
-  /* Next is the callee-allocated area for pretend stack arguments.  */
-  sp_offset += crtl->args.pretend_args_size;
+  if (fi->saved_regs_size > 0)
+    {
+      unsigned regno;
+      hard_reg_set_iterator rsi;
+      /* 64 should be already oversized as there are 64 GPRS + possibly $fp and
+       * $ra */
+      unsigned stacked_regs[64] = {0};
 
-  frame->initial_sp_offset = sp_offset;
+      EXECUTE_IF_SET_IN_HARD_REG_SET (fi->saved_regs, 0, regno, rsi)
+      stacked_regs[fi->reg_rel_offset[regno] / UNITS_PER_WORD] = regno;
 
-  frame->frame_pointer_offset = fp_offset;
-  frame->total_size = sp_offset;
+      for (unsigned int i = (fi->saved_regs_size / UNITS_PER_WORD) - 1; i != 0;
+	   i--)
+	fprintf (dump_file, " |%30s| %d/-\n", reg_names[stacked_regs[i]],
+		 fi->hard_frame_pointer_offset
+		   + fi->reg_rel_offset[stacked_regs[i]]);
 
-  frame->laid_out = true;
+      fprintf (dump_file, " |%21s (%d)%4s| %d/- %s\n", "saved regs",
+	       fi->saved_regs_size, reg_names[stacked_regs[0]],
+	       fi->hard_frame_pointer_offset,
+	       frame_pointer_needed ? "<- hard frame pointer ($fp)" : "");
+
+      DFI_SEP;
+    }
+  if (fi->padding3 > 0)
+    {
+      if (crtl->outgoing_args_size > 0)
+	{
+	  DFI_FIELD ("padding3", fi->padding3,
+		     crtl->outgoing_args_size + fi->padding3, "", "");
+	  DFI_SEP;
+	}
+      else
+	{
+	  DFI_FIELD ("padding3", fi->padding3, 0, "", "<- $sp (callee)");
+	  DFI_SEP;
+	}
+    }
+  if (crtl->outgoing_args_size > 0)
+    {
+      DFI_FIELD ("outgoing", crtl->outgoing_args_size, 0, "",
+		 "<- $sp (callee)");
+      DFI_SEP;
+    }
+
+  fprintf (dump_file, "Saved regs: ");
+  unsigned regno;
+  hard_reg_set_iterator rsi;
+  EXECUTE_IF_SET_IN_HARD_REG_SET (fi->saved_regs, 0, regno, rsi)
+  fprintf (dump_file, " $%s [%d]", reg_names[regno], fi->reg_rel_offset[regno]);
+
+  fprintf (dump_file, "\n");
+
+  fprintf (dump_file, "KVX Frame info valid :%s\n",
+	   fi->laid_out ? "yes" : "no");
 }
 
 HOST_WIDE_INT
@@ -335,7 +481,7 @@ kvx_first_parm_offset (tree decl ATTRIBUTE_UNUSED)
   kvx_compute_frame_info ();
   frame = &cfun->machine->frame;
 
-  return frame->arg_pointer_fp_offset;
+  return frame->arg_pointer_offset - frame->virt_frame_pointer_offset;
 }
 
 static rtx
@@ -989,8 +1135,9 @@ kvx_expand_builtin_saveregs (void)
 
   kvx_compute_frame_info ();
   frame = &cfun->machine->frame;
-  rtx area = gen_rtx_PLUS (Pmode, frame_pointer_rtx,
-			   GEN_INT (frame->arg_pointer_fp_offset));
+  HOST_WIDE_INT arg_fp_offset
+    = frame->arg_pointer_offset - frame->virt_frame_pointer_offset;
+  rtx area = gen_rtx_PLUS (Pmode, frame_pointer_rtx, GEN_INT (arg_fp_offset));
 
   /* All argument register slots used for named args, nothing to push */
   if (crtl->args.info.next_arg_reg >= KV3_ARG_REG_SLOTS)
@@ -1016,10 +1163,9 @@ kvx_expand_builtin_saveregs (void)
   for (; regno < KV3_ARG_REG_SLOTS; regno += 2, slot += 2)
     {
       rtx addr
-	= gen_rtx_MEM (TImode,
-		       gen_rtx_PLUS (Pmode, frame_pointer_rtx,
-				     GEN_INT (slot * UNITS_PER_WORD
-					      + frame->arg_pointer_fp_offset)));
+	= gen_rtx_MEM (TImode, gen_rtx_PLUS (Pmode, frame_pointer_rtx,
+					     GEN_INT (slot * UNITS_PER_WORD
+						      + arg_fp_offset)));
       rtx src = gen_rtx_REG (TImode, KV3_ARGUMENT_POINTER_REGNO + regno);
 
       rtx insn = emit_move_insn (addr, src);
@@ -1041,6 +1187,9 @@ kvx_expand_va_start (tree valist, rtx nextarg ATTRIBUTE_UNUSED)
   struct kvx_frame_info *frame;
 
   frame = &cfun->machine->frame;
+  HOST_WIDE_INT arg_fp_offset
+    = frame->arg_pointer_offset - frame->virt_frame_pointer_offset;
+
   gcc_assert (frame->laid_out);
 
   /* All arg registers must be used by named parameter, va_start
@@ -1051,13 +1200,13 @@ kvx_expand_va_start (tree valist, rtx nextarg ATTRIBUTE_UNUSED)
       va_start_addr
 	= gen_rtx_PLUS (Pmode, frame_pointer_rtx,
 			GEN_INT (crtl->args.info.anonymous_arg_offset
-				 + frame->arg_pointer_fp_offset));
+				 + arg_fp_offset));
     }
   else
     {
       /* ... and there are no more argument. */
-      va_start_addr = gen_rtx_PLUS (Pmode, frame_pointer_rtx,
-				    GEN_INT (frame->arg_pointer_fp_offset));
+      va_start_addr
+	= gen_rtx_PLUS (Pmode, frame_pointer_rtx, GEN_INT (arg_fp_offset));
     }
 
   emit_move_insn (va_r, va_start_addr);
@@ -1611,7 +1760,7 @@ should_be_saved_in_prologue (int regno)
 static bool
 kvx_register_saved_on_entry (int regno)
 {
-  return cfun->machine->frame.reg_offset[regno] >= 0;
+  return cfun->machine->frame.reg_rel_offset[regno] >= 0;
 }
 
 /* Returns a REG rtx with the nth hard reg that is safe to use in prologue
@@ -1634,6 +1783,44 @@ kvx_get_callersaved_nonfixed_reg (machine_mode mode, unsigned int n)
   return NULL_RTX;
 }
 
+static void
+kvx_emit_single_spill (rtx mem, rtx reg, bool is_load)
+{
+  rtx set = gen_rtx_SET (is_load ? reg : mem, is_load ? mem : reg);
+  rtx insn = emit_insn (set);
+  if (!is_load)
+    {
+      RTX_FRAME_RELATED_P (insn) = 1;
+      add_reg_note (insn, REG_CFA_OFFSET, copy_rtx (set));
+    }
+}
+
+static void
+kvx_emit_multiple_spill (rtx mem, rtx reg, unsigned nr, bool is_load)
+{
+  gcc_assert (nr == 2 || nr == 4);
+
+  rtx operands[4] = {is_load ? reg : mem, is_load ? mem : reg, GEN_INT (nr)};
+
+  if (is_load)
+    kvx_expand_load_multiple (operands);
+  else
+    kvx_expand_store_multiple (operands);
+  rtx insn = emit_insn (operands[3]);
+
+  if (!is_load)
+    {
+      RTX_FRAME_RELATED_P (insn) = 1;
+      gcc_assert (XVECLEN (PATTERN (insn), 0) == nr);
+
+      for (unsigned int i = 0; i < nr; i++)
+	{
+	  add_reg_note (insn, REG_CFA_OFFSET,
+			copy_rtx (XVECEXP (PATTERN (insn), 0, i)));
+	}
+    }
+}
+
 /* Save/Restore register at offsets previously computed in frame information
  * layout.
  */
@@ -1645,109 +1832,253 @@ kvx_save_or_restore_callee_save_registers (bool restore)
   rtx base_rtx = stack_pointer_rtx;
   rtx (*gen_mem_ref) (enum machine_mode, rtx) = gen_rtx_MEM;
 
-  unsigned limit = FIRST_PSEUDO_REGISTER;
   unsigned regno;
 
-  for (regno = 0; regno < limit; regno++)
-    {
-      if (kvx_register_saved_on_entry (regno))
-	{
-	  rtx mem;
+  unsigned int pack_prev_regs[4];
+  unsigned int pack_prev_regs_idx = 0;
 
-	  mem = gen_mem_ref (DImode, plus_constant (Pmode, base_rtx,
-						    frame->reg_offset[regno]));
+  enum
+  {
+    NO_PACK_YET = 0,
+    DOUBLE_REG,
+    QUAD_REG
+  } pack_type
+    = NO_PACK_YET;
 
-	  /* regno2 = k1_register_saved_on_entry(regno+1)? regno + 1 : 0; */
-	  /* if (0 && regno2) */
-	  /*   { */
-	  /*     rtx mem2; */
-	  /*     /\* Next highest register to be saved.  *\/ */
-	  /*     mem2 = gen_mem_ref (Pmode, */
-	  /* 			  plus_constant */
-	  /* 			  (Pmode, */
-	  /* 			   base_rtx, */
-	  /* 			   start_offset + increment)); */
-	  /*     if (restore) */
-	  /* 	{ */
-	  /* 	  insn = emit_insn */
-	  /* 	    ( gen_load_multiple(mem, gen_rtx_REG(DImode, regno), */
-	  /* 				GEN_INT(2))); */
+  hard_reg_set_iterator rsi;
 
-	  /* 	  /\* insn = emit_insn *\/ */
-	  /* 	  /\*   ( gen_load_pairdi (gen_rtx_REG (DImode, regno), mem,
-	   * *\/ */
-	  /* 	  /\* 		     gen_rtx_REG (DImode, regno2), mem2)); *\/
-	   */
+  EXECUTE_IF_SET_IN_HARD_REG_SET (frame->saved_regs, 0, regno, rsi)
+  {
+    if (kvx_register_saved_on_entry (regno))
+      {
+	rtx mem
+	  = gen_mem_ref (DImode,
+			 plus_constant (Pmode, base_rtx,
+					frame->saved_reg_sp_offset
+					  + frame->reg_rel_offset[regno]));
 
-	  /* 	  /\* add_reg_note (insn, REG_CFA_RESTORE, gen_rtx_REG (DImode,
-	   * regno)); *\/ */
-	  /* 	  /\* add_reg_note (insn, REG_CFA_RESTORE, gen_rtx_REG (DImode,
-	   * regno2)); *\/ */
-	  /* 	} */
-	  /*     else */
-	  /* 	{ */
-	  /* 	  /\* insn = emit_insn *\/ */
-	  /* 	  /\*   ( gen_store_pairdi (mem, gen_rtx_REG (DImode, regno),
-	   * *\/ */
-	  /* 	  /\* 			mem2, gen_rtx_REG (DImode, regno2))); *\/
-	   */
-	  /* 	  insn = emit_insn */
-	  /* 	    ( gen_store_multiple(gen_rtx_REG(DImode, regno), */
-	  /* 				 mem, GEN_INT(2))); */
-	  /* 	} */
+	rtx saved_reg = gen_rtx_REG (DImode, regno);
+	rtx orig_save_reg = saved_reg;
 
-	  /* 	  /\* The first part of a frame-related parallel insn */
-	  /* 	     is always assumed to be relevant to the frame */
-	  /* 	     calculations; subsequent parts, are only */
-	  /* 	     frame-related if explicitly marked.  *\/ */
-	  /*     RTX_FRAME_RELATED_P (XVECEXP (PATTERN (insn), 0, */
-	  /* 				    1)) = 1; */
-	  /*     regno = regno2; */
-	  /*     start_offset += increment * 2; */
-	  /*   } */
-	  /* else */
+	if (regno == KV3_RETURN_POINTER_REGNO)
 	  {
-	    machine_mode spill_mode = DImode;
-	    rtx saved_reg = gen_rtx_REG (spill_mode, regno);
-	    rtx orig_save_reg = saved_reg;
+	    saved_reg = kvx_get_callersaved_nonfixed_reg (DImode, 0);
+	    gcc_assert (saved_reg != NULL_RTX);
 
-	    if (regno == KV3_RETURN_POINTER_REGNO)
+	    if (restore == false)
 	      {
-		/* spill_mode = Pmode; */
-		saved_reg = k1_get_callersaved_nonfixed_reg (spill_mode, 0);
-		gcc_assert (saved_reg != NULL_RTX);
+		rtx src_reg = gen_rtx_REG (DImode, regno);
+		insn = emit_move_insn (saved_reg, src_reg);
+		RTX_FRAME_RELATED_P (insn) = 1;
 
-		if (restore == false)
-		  {
-		    rtx src_reg = gen_rtx_REG (spill_mode, regno);
-		    insn = emit_move_insn (saved_reg, src_reg);
-		    RTX_FRAME_RELATED_P (insn) = 1;
-
-		    add_reg_note (insn, REG_CFA_REGISTER,
-				  gen_rtx_SET (saved_reg, src_reg));
-		  }
+		add_reg_note (insn, REG_CFA_REGISTER,
+			      gen_rtx_SET (saved_reg, src_reg));
 	      }
+	  }
 
+	if (regno == KV3_RETURN_POINTER_REGNO)
+	  {
 	    if (restore)
 	      {
 		insn = emit_move_insn (saved_reg, mem);
-		if (regno == KV3_RETURN_POINTER_REGNO)
-		  {
-		    insn = emit_move_insn (gen_rtx_REG (spill_mode, regno),
-					   saved_reg);
-		  }
+		insn = emit_move_insn (gen_rtx_REG (DImode, regno), saved_reg);
 	      }
 	    else
 	      {
 		insn = emit_move_insn (mem, saved_reg);
 		RTX_FRAME_RELATED_P (insn) = 1;
 		add_reg_note (insn, REG_CFA_OFFSET,
-			      gen_rtx_SET (mem,
-					   (regno == KV3_RETURN_POINTER_REGNO)
-					     ? orig_save_reg
-					     : saved_reg));
+			      gen_rtx_SET (mem, orig_save_reg));
 	      }
 	  }
+	else
+	  {
+	  process_current_reg:
+	    switch (pack_type)
+	      {
+	      case NO_PACK_YET:
+		if (regno & 1)
+		  {
+		    kvx_emit_single_spill (mem, saved_reg, restore);
+		  }
+		else
+		  {
+		    pack_type = (regno % 4 == 0) ? QUAD_REG : DOUBLE_REG;
+		    pack_prev_regs[0] = regno;
+		    pack_prev_regs_idx = 1;
+		  }
+		break;
+
+	      case DOUBLE_REG:
+		if (pack_prev_regs[0] == (regno - 1)
+		    && frame->reg_rel_offset[pack_prev_regs[0]]
+			 == (frame->reg_rel_offset[regno] - UNITS_PER_WORD))
+		  {
+		    kvx_emit_multiple_spill (
+		      gen_mem_ref (
+			DImode,
+			plus_constant (
+			  Pmode, base_rtx,
+			  frame->saved_reg_sp_offset
+			    + frame->reg_rel_offset[pack_prev_regs[0]])),
+		      gen_rtx_REG (DImode, pack_prev_regs[0]), 2, restore);
+		    pack_type = NO_PACK_YET;
+		    pack_prev_regs_idx = 0;
+		  }
+		else
+		  {
+		    /* Emit previous candidate */
+		    kvx_emit_single_spill (
+		      gen_mem_ref (
+			DImode,
+			plus_constant (
+			  Pmode, base_rtx,
+			  frame->saved_reg_sp_offset
+			    + frame->reg_rel_offset[pack_prev_regs[0]])),
+		      gen_rtx_REG (DImode, pack_prev_regs[0]), restore);
+
+		    pack_type = NO_PACK_YET;
+		    goto process_current_reg;
+		  }
+		break;
+
+	      case QUAD_REG:
+		if (pack_prev_regs[pack_prev_regs_idx - 1] == (regno - 1)
+		    && frame->reg_rel_offset[pack_prev_regs[pack_prev_regs_idx
+							    - 1]]
+			 == (frame->reg_rel_offset[regno] - UNITS_PER_WORD))
+		  {
+		    if (pack_prev_regs_idx == 3)
+		      {
+			/* Emit a quad register load/store */
+			kvx_emit_multiple_spill (
+			  gen_mem_ref (
+			    DImode,
+			    plus_constant (
+			      Pmode, base_rtx,
+			      frame->saved_reg_sp_offset
+				+ frame->reg_rel_offset[pack_prev_regs[0]])),
+			  gen_rtx_REG (DImode, pack_prev_regs[0]), 4, restore);
+			pack_type = NO_PACK_YET;
+			pack_prev_regs_idx = 0;
+		      }
+		    else
+		      {
+			pack_prev_regs[pack_prev_regs_idx++] = regno;
+		      }
+		  }
+		else if (pack_prev_regs_idx == 3)
+		  {
+		    /* Emit a double followed by a single register load/store */
+		    kvx_emit_multiple_spill (
+		      gen_mem_ref (
+			DImode,
+			plus_constant (
+			  Pmode, base_rtx,
+			  frame->saved_reg_sp_offset
+			    + frame->reg_rel_offset[pack_prev_regs[0]])),
+		      gen_rtx_REG (DImode, pack_prev_regs[0]), 2, restore);
+		    kvx_emit_single_spill (
+		      gen_mem_ref (
+			DImode,
+			plus_constant (
+			  Pmode, base_rtx,
+			  frame->saved_reg_sp_offset
+			    + frame->reg_rel_offset[pack_prev_regs[2]])),
+		      gen_rtx_REG (DImode, pack_prev_regs[2]), restore);
+
+		    pack_type = NO_PACK_YET;
+		    pack_prev_regs_idx = 0;
+		    goto process_current_reg;
+		  }
+		else if (pack_prev_regs_idx == 2)
+		  {
+		    /* Emit a double register load/store and try to pack the
+		       next one */
+		    kvx_emit_multiple_spill (
+		      gen_mem_ref (
+			DImode,
+			plus_constant (
+			  Pmode, base_rtx,
+			  frame->saved_reg_sp_offset
+			    + frame->reg_rel_offset[pack_prev_regs[0]])),
+		      gen_rtx_REG (DImode, pack_prev_regs[0]), 2, restore);
+
+		    pack_type = NO_PACK_YET;
+		    pack_prev_regs_idx = 0;
+		    goto process_current_reg;
+		  }
+		else
+		  {
+		    /* Emit a single single register load/store and try to pack
+		       the next one */
+		    kvx_emit_single_spill (
+		      gen_mem_ref (
+			DImode,
+			plus_constant (
+			  Pmode, base_rtx,
+			  frame->saved_reg_sp_offset
+			    + frame->reg_rel_offset[pack_prev_regs[0]])),
+		      gen_rtx_REG (DImode, pack_prev_regs[0]), restore);
+
+		    pack_type = NO_PACK_YET;
+		    pack_prev_regs_idx = 0;
+		    goto process_current_reg;
+		  }
+	      }
+	  }
+      }
+  }
+
+  /* Purge remaining register load/store that could not be packed */
+  if (pack_type == DOUBLE_REG)
+    {
+      kvx_emit_single_spill (
+	gen_mem_ref (
+	  DImode, plus_constant (Pmode, base_rtx,
+				 frame->saved_reg_sp_offset
+				   + frame->reg_rel_offset[pack_prev_regs[0]])),
+	gen_rtx_REG (DImode, pack_prev_regs[0]), restore);
+    }
+  else if (pack_type == QUAD_REG)
+    {
+      if (pack_prev_regs_idx == 1)
+	{
+	  kvx_emit_single_spill (
+	    gen_mem_ref (
+	      DImode,
+	      plus_constant (Pmode, base_rtx,
+			     frame->saved_reg_sp_offset
+			       + frame->reg_rel_offset[pack_prev_regs[0]])),
+	    gen_rtx_REG (DImode, pack_prev_regs[0]), restore);
+	}
+      else if (pack_prev_regs_idx == 2)
+	{
+	  kvx_emit_multiple_spill (
+	    gen_mem_ref (
+	      DImode,
+	      plus_constant (Pmode, base_rtx,
+			     frame->saved_reg_sp_offset
+			       + frame->reg_rel_offset[pack_prev_regs[0]])),
+	    gen_rtx_REG (DImode, pack_prev_regs[0]), 2, restore);
+	}
+      else
+	{
+	  kvx_emit_multiple_spill (
+	    gen_mem_ref (
+	      DImode,
+	      plus_constant (Pmode, base_rtx,
+			     frame->saved_reg_sp_offset
+			       + frame->reg_rel_offset[pack_prev_regs[0]])),
+	    gen_rtx_REG (DImode, pack_prev_regs[0]), 2, restore);
+
+	  kvx_emit_single_spill (
+	    gen_mem_ref (
+	      DImode,
+	      plus_constant (Pmode, base_rtx,
+			     frame->saved_reg_sp_offset
+			       + frame->reg_rel_offset[pack_prev_regs[2]])),
+	    gen_rtx_REG (DImode, pack_prev_regs[2]), restore);
 	}
     }
 }
@@ -1768,9 +2099,10 @@ kvx_initial_elimination_offset (int from, int to)
     gcc_unreachable ();
 
   if (from == FRAME_POINTER_REGNUM && to == STACK_POINTER_REGNUM)
-    return frame->frame_pointer_offset;
+    return frame->virt_frame_pointer_offset;
   else if (from == FRAME_POINTER_REGNUM && to == HARD_FRAME_POINTER_REGNUM)
-    return (frame->frame_pointer_offset - frame->hard_frame_pointer_offset);
+    return (frame->virt_frame_pointer_offset
+	    - frame->hard_frame_pointer_offset);
 
   gcc_unreachable ();
 }
@@ -1792,8 +2124,13 @@ kvx_expand_prologue (void)
 {
   kvx_compute_frame_info ();
   struct kvx_frame_info *frame = &cfun->machine->frame;
-  HOST_WIDE_INT size = frame->initial_sp_offset;
+  HOST_WIDE_INT size = frame->frame_size;
   rtx insn;
+
+  if (flag_stack_usage_info)
+    current_function_static_stack_size = size;
+
+  kvx_debug_frame_info (frame);
 
   if (size > 0)
     {
@@ -1833,7 +2170,7 @@ kvx_expand_prologue (void)
 
   if (frame_pointer_needed)
     {
-      gcc_assert (frame->reg_offset[HARD_FRAME_POINTER_REGNUM] >= 0);
+      gcc_assert (frame->reg_rel_offset[HARD_FRAME_POINTER_REGNUM] >= 0);
       insn = emit_insn (
 	gen_add3_insn (hard_frame_pointer_rtx, stack_pointer_rtx,
 		       GEN_INT (frame->hard_frame_pointer_offset)));
@@ -1850,7 +2187,7 @@ void
 kvx_expand_epilogue (void)
 {
   struct kvx_frame_info *frame = &cfun->machine->frame;
-  HOST_WIDE_INT frame_size = frame->initial_sp_offset;
+  HOST_WIDE_INT frame_size = frame->frame_size;
   rtx insn;
 
   if (frame_pointer_needed)
@@ -1863,13 +2200,13 @@ kvx_expand_epilogue (void)
       RTX_FRAME_RELATED_P (insn) = 1;
       add_reg_note (insn, REG_CFA_DEF_CFA,
 		    gen_rtx_PLUS (DImode, stack_pointer_rtx,
-				  GEN_INT (frame->initial_sp_offset)));
+				  GEN_INT (frame->frame_size)));
 
       /* Restore previous FP */
       rtx fp_mem = gen_rtx_MEM (
-	DImode, plus_constant (
-		  Pmode, stack_pointer_rtx,
-		  cfun->machine->frame.reg_offset[HARD_FRAME_POINTER_REGNUM]));
+	DImode, plus_constant (Pmode, stack_pointer_rtx,
+			       cfun->machine->frame
+				 .reg_rel_offset[HARD_FRAME_POINTER_REGNUM]));
 
       emit_move_insn (gen_rtx_REG (DImode, HARD_FRAME_POINTER_REGNUM), fp_mem);
     }
