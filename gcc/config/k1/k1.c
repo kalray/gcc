@@ -5695,7 +5695,7 @@ k1_gen_bundles (void)
 	  const int insn_jump = JUMP_P (insn) || CALL_P (insn);
 	  const int next_is_label = (next != NULL) && LABEL_P (next);
 
-	  /* Current insn can be bundled with other insn, create a new one. */
+	  /* Current insn can't be bundled with other insn, create a new one. */
 	  if (!can_issue || insn_raw || insn_waw)
 	    {
 	      gcc_assert (cur_bstate->insn != NULL);
