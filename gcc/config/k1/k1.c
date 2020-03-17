@@ -6910,6 +6910,16 @@ k1_is_reg_subreg_p (rtx op)
   return REG_P (op) || (SUBREG_P (op) && REG_P (SUBREG_REG (op)));
 }
 
+/* Returns the regno associated with the REG or SUBREG in OP */
+unsigned int
+k1_regno_subregno (rtx op)
+{
+  if (REG_P (op))
+    return REGNO (op);
+  else
+    return REGNO (SUBREG_REG (op));
+}
+
 /* Returns TRUE if OP is a pseudo REG (directly or through a SUBREG)
  */
 static bool
@@ -6966,8 +6976,23 @@ k1_split_128bits_move (rtx dst, rtx src, enum machine_mode mode)
   rtx lo_src = gen_lowpart (word_mode, src);
   rtx hi_src = gen_highpart_mode (word_mode, mode, src);
 
-  emit_insn (gen_movdi (gen_lowpart (word_mode, dst), lo_src));
-  emit_insn (gen_movdi (gen_highpart (word_mode, dst), hi_src));
+  /* Avoid overwriting source by dest in case register ranges are
+     overlapping */
+  bool low_first = true;
+
+  if (k1_is_reg_subreg_p (dst) && k1_is_reg_subreg_p (src))
+    low_first = k1_regno_subregno (dst) < k1_regno_subregno (src);
+
+  if (low_first)
+    {
+      emit_insn (gen_movdi (gen_lowpart (word_mode, dst), lo_src));
+      emit_insn (gen_movdi (gen_highpart (word_mode, dst), hi_src));
+    }
+  else
+    {
+      emit_insn (gen_movdi (gen_highpart (word_mode, dst), hi_src));
+      emit_insn (gen_movdi (gen_lowpart (word_mode, dst), lo_src));
+    }
 }
 
 /* Split a 256bit move op in mode MODE from SRC to DST in 2 smaller
@@ -6975,11 +7000,20 @@ k1_split_128bits_move (rtx dst, rtx src, enum machine_mode mode)
 void
 k1_split_256bits_move (rtx dst, rtx src, enum machine_mode mode)
 {
-  emit_insn (gen_movti (simplify_gen_subreg (TImode, dst, mode, 0),
-			simplify_gen_subreg (TImode, src, mode, 0)));
+  /* Avoid overwriting source by dest in case register ranges are
+     overlapping */
+  bool low_first = true;
 
-  emit_insn (gen_movti (simplify_gen_subreg (TImode, dst, mode, 16),
-			simplify_gen_subreg (TImode, src, mode, 16)));
+  if (k1_is_reg_subreg_p (dst) && k1_is_reg_subreg_p (src))
+    low_first = k1_regno_subregno (dst) < k1_regno_subregno (src);
+
+  emit_insn (
+    gen_movti (simplify_gen_subreg (TImode, dst, mode, low_first ? 0 : 16),
+	       simplify_gen_subreg (TImode, src, mode, low_first ? 0 : 16)));
+
+  emit_insn (
+    gen_movti (simplify_gen_subreg (TImode, dst, mode, low_first ? 16 : 0),
+	       simplify_gen_subreg (TImode, src, mode, low_first ? 16 : 0)));
 }
 
 /* Returns TRUE if OP is a symbol and has the farcall attribute or if
