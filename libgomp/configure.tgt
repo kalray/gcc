@@ -167,6 +167,9 @@ case "${target}" in
   k1*-*-cos)
 	config_path="cos"
 	;;
+  k1*-*-linux*)
+	config_path="linux posix"
+	;;
   *)
 	;;
 
