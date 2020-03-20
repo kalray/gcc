@@ -92,6 +92,7 @@ enum kvx_abi_type
       if ((MODE) == QImode || (MODE) == HImode || (MODE) == SImode)            \
 	{                                                                      \
 	  (MODE) = DImode;                                                     \
+	  (UNSIGNEDP) = 1;                                                     \
 	}                                                                      \
     }
 
