@@ -1,17 +1,18 @@
 /* { dg-do  compile } */
-/* { dg-options "-Waddress-space-conversion"  } */
+/* -O3 is needed for making sure lbz+sxbd are packed into lbs */
+/* { dg-options "-Waddress-space-conversion -O3"  } */
 
 /* Conversion warnings. */
 
 int * bc(__bypass int *a) {
     return a;
 }
-/* { dg-warning "Implicit conversion from uncached pointer to cached one" "" { target *-*-* } 7 } */
+/* { dg-warning "Implicit conversion from uncached pointer to cached one" "" { target *-*-* } 8 } */
 
 __bypass int * cb(int *a) {
     return a;
 }
-/* { dg-warning "Implicit conversion from cached pointer to uncached one" "" { target *-*-* } 12 } */
+/* { dg-warning "Implicit conversion from cached pointer to uncached one" "" { target *-*-* } 13 } */
 
 int * bca(__bypass int *a) {
     return (__convert int *) a;
@@ -24,12 +25,12 @@ __bypass int * cba(int *a) {
 int * pc(__preload int *a) {
     return a;
 }
-/* { dg-warning "Implicit conversion from uncached pointer to cached one" "" { target *-*-* } 25 } */
+/* { dg-warning "Implicit conversion from uncached pointer to cached one" "" { target *-*-* } 26 } */
 
 __preload int * cp(int *a) {
     return a;
 }
-/* { dg-warning "Implicit conversion from cached pointer to uncached one" "" { target *-*-* } 30 } */
+/* { dg-warning "Implicit conversion from cached pointer to uncached one" "" { target *-*-* } 31 } */
 
 int * pca(__preload int *a) {
     return (__convert int *) a;
