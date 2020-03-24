@@ -1112,12 +1112,6 @@ k1_support_vector_misalignment (enum machine_mode mode ATTRIBUTE_UNUSED,
 }
 
 static bool
-k1_promote_prototypes (const_tree fndecl ATTRIBUTE_UNUSED)
-{
-  return true;
-}
-
-static bool
 k1_pass_by_reference (cumulative_args_t cum ATTRIBUTE_UNUSED,
 		      enum machine_mode mode, const_tree type,
 		      bool named ATTRIBUTE_UNUSED)
@@ -7112,7 +7106,7 @@ k1_ctrapsi4 (void)
   k1_support_vector_misalignment
 
 #undef TARGET_PROMOTE_PROTOTYPES
-#define TARGET_PROMOTE_PROTOTYPES k1_promote_prototypes
+#define TARGET_PROMOTE_PROTOTYPES hook_bool_const_tree_true
 
 #undef TARGET_ARG_PARTIAL_BYTES
 #define TARGET_ARG_PARTIAL_BYTES k1_arg_partial_bytes
