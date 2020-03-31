@@ -6,7 +6,7 @@
               .align 8
 _init:	
               get   $r0 = $ra
-              ADD_PTR  $r12 = $r12, -8
+              ADD_PTR  $r12 = $r12, -32
               ;;
               STR_PTR 16[$r12] = $r0
               ;;
@@ -18,7 +18,7 @@ _init:
               .align 8
 _fini:
               get   $r0 = $ra
-              ADD_PTR   $r12 = $r12, -8
+              ADD_PTR   $r12 = $r12, -32
               ;;
               STR_PTR 16[$r12] = $r0
               ;;
