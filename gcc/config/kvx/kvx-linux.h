@@ -17,12 +17,12 @@
    along with GCC; see the file COPYING3.  If not see
    <http://www.gnu.org/licenses/>.  */
 
-#ifndef GCC_K1_MPPA_LINUX
-#define GCC_K1_MPPA_LINUX
+#ifndef GCC_KVX_MPPA_LINUX
+#define GCC_KVX_MPPA_LINUX
 
-#define GLIBC_DYNAMIC_LINKER "/lib/ld-linux-k1c.so.1"
+#define GLIBC_DYNAMIC_LINKER "/lib/ld-linux-kvx.so.1"
 #undef MUSL_DYNAMIC_LINKER
-#define MUSL_DYNAMIC_LINKER "/lib/ld-musl-k1c.so.1"
+#define MUSL_DYNAMIC_LINKER "/lib/ld-musl-kvx.so.1"
 
 #define TARGET_OS_CPP_BUILTINS()                                               \
   do                                                                           \
