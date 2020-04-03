@@ -1248,7 +1248,7 @@ k1_print_operand (FILE *file, rtx x, int code)
       return;
 
     default:
-      gcc_unreachable ();
+      output_operand_lossage ("invalid operand code '%c'", code);
     }
 
   if ((as_address || addressing_mode) && GET_CODE (x) != MEM)
