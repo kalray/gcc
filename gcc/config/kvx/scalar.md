@@ -19,7 +19,7 @@
   [(set_attr "type" "mau_fpu")]
 )
 
-(define_insn "k1_faddw"
+(define_insn "kvx_faddw"
   [(set (match_operand:SF 0 "register_operand" "=r")
         (unspec:SF [(match_operand:SF 1 "register_operand" "r")
                     (match_operand:SF 2 "register_operand" "r")
@@ -38,7 +38,7 @@
   [(set_attr "type" "mau_fpu")]
 )
 
-(define_insn "k1_fsbfw"
+(define_insn "kvx_fsbfw"
   [(set (match_operand:SF 0 "register_operand" "=r")
         (unspec:SF [(match_operand:SF 1 "register_operand" "r")
                     (match_operand:SF 2 "register_operand" "r")
@@ -57,7 +57,7 @@
   [(set_attr "type" "mau_fpu")]
 )
 
-(define_insn "k1_fmulw"
+(define_insn "kvx_fmulw"
   [(set (match_operand:SF 0 "register_operand" "=r")
         (unspec:SF [(match_operand:SF 1 "register_operand" "r")
                     (match_operand:SF 2 "register_operand" "r")
@@ -85,7 +85,7 @@
   [(set_attr "type" "mau_fpu")]
 )
 
-(define_insn "k1_fmulwd"
+(define_insn "kvx_fmulwd"
   [(set (match_operand:DF 0 "register_operand" "=r")
         (unspec:DF [(match_operand:SF 1 "register_operand" "r")
                     (match_operand:SF 2 "register_operand" "r")
@@ -105,7 +105,7 @@
   [(set_attr "type" "mau_auxr_fpu")]
 )
 
-(define_insn "k1_ffmaw"
+(define_insn "kvx_ffmaw"
   [(set (match_operand:SF 0 "register_operand" "=r")
         (unspec:SF [(match_operand:SF 1 "register_operand" "r")
                     (match_operand:SF 2 "register_operand" "r")
@@ -126,7 +126,7 @@
   [(set_attr "type" "mau_auxr_fpu")]
 )
 
-(define_insn "k1_ffmawd"
+(define_insn "kvx_ffmawd"
   [(set (match_operand:DF 0 "register_operand" "=r")
         (unspec:DF [(match_operand:SF 1 "register_operand" "r")
                     (match_operand:SF 2 "register_operand" "r")
@@ -147,7 +147,7 @@
   [(set_attr "type" "mau_auxr_fpu")]
 )
 
-(define_insn "k1_ffmsw"
+(define_insn "kvx_ffmsw"
   [(set (match_operand:SF 0 "register_operand" "=r")
         (unspec:SF [(match_operand:SF 1 "register_operand" "r")
                     (match_operand:SF 2 "register_operand" "r")
@@ -178,7 +178,7 @@
   [(set_attr "type" "mau_auxr_fpu")]
 )
 
-(define_insn "k1_ffmswd"
+(define_insn "kvx_ffmswd"
   [(set (match_operand:DF 0 "register_operand" "=r")
         (unspec:DF [(match_operand:SF 1 "register_operand" "r")
                     (match_operand:SF 2 "register_operand" "r")
@@ -198,7 +198,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "k1_fminw"
+(define_insn "kvx_fminw"
   [(set (match_operand:SF 0 "register_operand" "=r")
         (smin:SF (match_operand:SF 1 "register_operand" "r")
                  (match_operand:SF 2 "register_operand" "r")))]
@@ -216,7 +216,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "k1_fmaxw"
+(define_insn "kvx_fmaxw"
   [(set (match_operand:SF 0 "register_operand" "=r")
         (smax:SF (match_operand:SF 1 "register_operand" "r")
                  (match_operand:SF 2 "register_operand" "r")))]
@@ -233,7 +233,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "k1_fnegw"
+(define_insn "kvx_fnegw"
   [(set (match_operand:SF 0 "register_operand" "=r")
         (neg:SF (match_operand:SF 1 "register_operand" "r")))]
   ""
@@ -249,7 +249,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "k1_fabsw"
+(define_insn "kvx_fabsw"
   [(set (match_operand:SF 0 "register_operand" "=r")
         (abs:SF (match_operand:SF 1 "register_operand" "r")))]
   ""
@@ -265,7 +265,7 @@
   [(set_attr "type" "mau_fpu")]
 )
 
-(define_insn "k1_floatw"
+(define_insn "kvx_floatw"
   [(set (match_operand:SF 0 "register_operand" "=r")
         (unspec:SF [(match_operand:SI 1 "register_operand" "r")
                     (match_operand:SI 2 "sixbits_unsigned_operand" "i")
@@ -283,7 +283,7 @@
   [(set_attr "type" "mau_fpu")]
 )
 
-(define_insn "k1_floatuw"
+(define_insn "kvx_floatuw"
   [(set (match_operand:SF 0 "register_operand" "=r")
         (unspec:SF [(match_operand:SI 1 "register_operand" "r")
                     (match_operand:SI 2 "sixbits_unsigned_operand" "i")
@@ -301,7 +301,7 @@
   [(set_attr "type" "mau_fpu")]
 )
 
-(define_insn "k1_fixedw"
+(define_insn "kvx_fixedw"
   [(set (match_operand:SI 0 "register_operand" "=r")
         (unspec:SI [(match_operand:SF 1 "register_operand" "r")
                     (match_operand:SI 2 "sixbits_unsigned_operand" "i")
@@ -319,7 +319,7 @@
   [(set_attr "type" "mau_fpu")]
 )
 
-(define_insn "k1_fixeduw"
+(define_insn "kvx_fixeduw"
   [(set (match_operand:SI 0 "register_operand" "=r")
         (unspec:SI [(match_operand:SF 1 "register_operand" "r")
                     (match_operand:SI 2 "sixbits_unsigned_operand" "i")
@@ -348,7 +348,7 @@
   [(set_attr "type" "mau_fpu")]
 )
 
-(define_insn "k1_faddd"
+(define_insn "kvx_faddd"
   [(set (match_operand:DF 0 "register_operand" "=r")
         (unspec:DF [(match_operand:DF 1 "register_operand" "r")
                     (match_operand:DF 2 "register_operand" "r")
@@ -367,7 +367,7 @@
   [(set_attr "type" "mau_fpu")]
 )
 
-(define_insn "k1_fsbfd"
+(define_insn "kvx_fsbfd"
   [(set (match_operand:DF 0 "register_operand" "=r")
         (unspec:DF [(match_operand:DF 1 "register_operand" "r")
                     (match_operand:DF 2 "register_operand" "r")
@@ -386,7 +386,7 @@
   [(set_attr "type" "mau_fpu")]
 )
 
-(define_insn "k1_fmuld"
+(define_insn "kvx_fmuld"
   [(set (match_operand:DF 0 "register_operand" "=r")
         (unspec:DF [(match_operand:DF 1 "register_operand" "r")
                     (match_operand:DF 2 "register_operand" "r")
@@ -406,7 +406,7 @@
   [(set_attr "type" "mau_auxr_fpu")]
 )
 
-(define_insn "k1_ffmad"
+(define_insn "kvx_ffmad"
   [(set (match_operand:DF 0 "register_operand" "=r")
         (unspec:DF [(match_operand:DF 1 "register_operand" "r")
                     (match_operand:DF 2 "register_operand" "r")
@@ -427,7 +427,7 @@
   [(set_attr "type" "mau_auxr_fpu")]
 )
 
-(define_insn "k1_ffmsd"
+(define_insn "kvx_ffmsd"
   [(set (match_operand:DF 0 "register_operand" "=r")
         (unspec:DF [(match_operand:DF 1 "register_operand" "r")
                     (match_operand:DF 2 "register_operand" "r")
@@ -447,7 +447,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "k1_fmind"
+(define_insn "kvx_fmind"
   [(set (match_operand:DF 0 "register_operand" "=r")
         (smin:DF (match_operand:DF 1 "register_operand" "r")
                  (match_operand:DF 2 "register_operand" "r")))]
@@ -465,7 +465,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "k1_fmaxd"
+(define_insn "kvx_fmaxd"
   [(set (match_operand:DF 0 "register_operand" "=r")
         (smax:DF (match_operand:DF 1 "register_operand" "r")
                  (match_operand:DF 2 "register_operand" "r")))]
@@ -482,7 +482,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "k1_fnegd"
+(define_insn "kvx_fnegd"
   [(set (match_operand:DF 0 "register_operand" "=r")
         (neg:DF (match_operand:DF 1 "register_operand" "r")))]
   ""
@@ -498,7 +498,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "k1_fabsd"
+(define_insn "kvx_fabsd"
   [(set (match_operand:DF 0 "register_operand" "=r")
         (abs:DF (match_operand:DF 1 "register_operand" "r")))]
   ""
@@ -514,7 +514,7 @@
   [(set_attr "type" "mau_fpu")]
 )
 
-(define_insn "k1_floatd"
+(define_insn "kvx_floatd"
   [(set (match_operand:DF 0 "register_operand" "=r")
         (unspec:DF [(match_operand:DI 1 "register_operand" "r")
                     (match_operand:SI 2 "sixbits_unsigned_operand" "i")
@@ -532,7 +532,7 @@
   [(set_attr "type" "mau_fpu")]
 )
 
-(define_insn "k1_floatud"
+(define_insn "kvx_floatud"
   [(set (match_operand:DF 0 "register_operand" "=r")
         (unspec:DF [(match_operand:DI 1 "register_operand" "r")
                     (match_operand:SI 2 "sixbits_unsigned_operand" "i")
@@ -550,7 +550,7 @@
   [(set_attr "type" "mau_fpu")]
 )
 
-(define_insn "k1_fixedd"
+(define_insn "kvx_fixedd"
   [(set (match_operand:DI 0 "register_operand" "=r")
         (unspec:DI [(match_operand:DF 1 "register_operand" "r")
                     (match_operand:SI 2 "sixbits_unsigned_operand" "i")
@@ -568,7 +568,7 @@
   [(set_attr "type" "mau_fpu")]
 )
 
-(define_insn "k1_fixedud"
+(define_insn "kvx_fixedud"
   [(set (match_operand:DI 0 "register_operand" "=r")
         (unspec:DI [(match_operand:DF 1 "register_operand" "r")
                     (match_operand:SI 2 "sixbits_unsigned_operand" "i")

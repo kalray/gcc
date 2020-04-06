@@ -1,4 +1,4 @@
-(define_predicate "k1_zero"
+(define_predicate "kvx_zero"
   (and (match_code "const_int")
        (match_test "op == const0_rtx")))
 
@@ -16,7 +16,7 @@
 ;; It will split it using add_pcrel insn.
 ;; This predicates should only be used in the expander as LABELs
 ;; are not to be accepted during insn matching.
-(define_predicate "k1_mov_operand"
+(define_predicate "kvx_mov_operand"
  (ior (match_operand 0 "general_operand")
       (and (match_test "flag_pic")
            (match_code "label_ref"))))
@@ -66,7 +66,7 @@
      Reject weak symbols and 'farcall's here and handle that case
      in the call expanders to generate indirect calls for weak references. */
 
-  bool farcall = k1_is_farcall_p (op);
+  bool farcall = kvx_is_farcall_p (op);
 
   return  !farcall && (GET_CODE (XEXP (op, 0)) == LABEL_REF
 		       || (GET_CODE (XEXP (op, 0)) == SYMBOL_REF
@@ -82,28 +82,28 @@
 ;; Returns TRUE if op is a register or an immediate suitable for sign
 ;; extension from the format signed10, upper27_lower10 or
 ;; extend27_upper27_lower10
-(define_predicate "k1_r_s10_s37_s64_operand"
+(define_predicate "kvx_r_s10_s37_s64_operand"
  (ior (and (match_test "!flag_pic")
            (match_operand 0 "nonmemory_operand"))
       (match_code "const_int")
       (match_operand 0 "register_operand")
-      (match_test "k1_legitimate_pic_symbolic_ref_p(op)"))
+      (match_test "kvx_legitimate_pic_symbolic_ref_p(op)"))
 )
 
 ;; Returns TRUE for a register, a 32-bit immediate constant, a symbol
 ;; reference if 32bit mode and all PIC related symbolic ref
-(define_predicate "k1_r_any32_operand"
+(define_predicate "kvx_r_any32_operand"
   (ior (and (match_test "!flag_pic && (Pmode == SImode)")
             (match_operand 0 "nonmemory_operand"))
        (match_code "const_int")
        (match_operand 0 "register_operand")
-       (match_test "k1_legitimate_pic_symbolic_ref_p(op)"))
+       (match_test "kvx_legitimate_pic_symbolic_ref_p(op)"))
  )
 
 (define_predicate "symbolic_operand"
   (match_code "const,symbol_ref,label_ref"))
 
-(define_predicate "k1_symbol_operand"
+(define_predicate "kvx_symbol_operand"
   (match_code "symbol_ref,label_ref,const,unspec")
 {
   rtx base, offset;
@@ -210,59 +210,59 @@
 
 (define_predicate "store_multiple_operation"
   (and (match_code "parallel")
-       (match_test "k1_store_multiple_operation_p (op)")))
+       (match_test "kvx_store_multiple_operation_p (op)")))
 
 ;; Return 1 if OP is a load multiple operation, known to be a PARALLEL.
 (define_predicate "load_multiple_operation"
   (and (match_code "parallel")
-       (match_test "k1_load_multiple_operation_p (op, false)")))
+       (match_test "kvx_load_multiple_operation_p (op, false)")))
 
 (define_predicate "load_multiple_operation_uncached"
   (and (match_code "parallel")
-       (match_test "k1_load_multiple_operation_p (op, true)")))
+       (match_test "kvx_load_multiple_operation_p (op, true)")))
 
 ;; Predicates used for register pair for 128-bits.
 
 ;; Returns TRUE if OP is suitable for paired-register (pseudo reg are
 ;; accepted)
-(define_predicate "k1_register_pair_operand"
+(define_predicate "kvx_register_pair_operand"
   (and (match_code "reg,subreg")
-       (match_test "k1_ok_for_paired_reg_p (op)")))
+       (match_test "kvx_ok_for_paired_reg_p (op)")))
 
 ;; Returns TRUE if OP is a paired-register or if it is a
 ;; nonimmediate_operand and not a register
-(define_predicate "k1_nonimmediate_operand_pair"
+(define_predicate "kvx_nonimmediate_operand_pair"
  (and (match_operand 0 "nonimmediate_operand")
       (ior (not (match_code "reg,subreg"))
-           (match_operand 0 "k1_register_pair_operand"))))
+           (match_operand 0 "kvx_register_pair_operand"))))
 
 ;; Returns TRUE if OP is a paired-register or a general_operand and
 ;; not a register.
-(define_predicate "k1_general_operand_pair"
+(define_predicate "kvx_general_operand_pair"
  (and (match_operand 0 "general_operand")
       (ior (not (match_code "reg,subreg"))
-           (match_operand 0 "k1_register_pair_operand"))))
+           (match_operand 0 "kvx_register_pair_operand"))))
 
 
 ;; Predicates used for register quad for 256-bits.
 
 ;; Returns TRUE if OP is suitable for quad-register (pseudo reg are
 ;; accepted)
-(define_predicate "k1_register_quad_operand"
+(define_predicate "kvx_register_quad_operand"
   (and (match_code "reg,subreg")
-       (match_test "k1_ok_for_quad_reg_p (op)")))
+       (match_test "kvx_ok_for_quad_reg_p (op)")))
 
 ;; Returns TRUE if OP is a quad-register or if it is a
 ;; nonimmediate_operand and not a register
-(define_predicate "k1_nonimmediate_operand_quad"
+(define_predicate "kvx_nonimmediate_operand_quad"
  (and (match_operand 0 "nonimmediate_operand")
       (ior (not (match_code "reg,subreg"))
-           (match_operand 0 "k1_register_quad_operand"))))
+           (match_operand 0 "kvx_register_quad_operand"))))
 
 ;; Returns TRUE if OP is a quad-register or a general_operand and
 ;; not a register.
-(define_predicate "k1_general_operand_quad"
+(define_predicate "kvx_general_operand_quad"
  (and (match_operand 0 "general_operand")
       (ior (not (match_code "reg,subreg"))
-           (match_operand 0 "k1_register_quad_operand"))))
+           (match_operand 0 "kvx_register_quad_operand"))))
 

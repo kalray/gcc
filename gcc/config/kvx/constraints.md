@@ -7,7 +7,7 @@
 (define_constraint "S"
   "An immediate or symbol operand"
   (ior (match_code "const_double,const_int")
-       (match_test "k1_symbol_operand(op,mode)")))
+       (match_test "kvx_symbol_operand(op,mode)")))
 
 (define_constraint "T"
   "A label reference"
@@ -64,12 +64,12 @@
 (define_constraint "H16"
   "A real value that fits on 16bits"
   (and (match_code "const_double")
-       (match_test "k1_float_fits_bits(rval,16,mode)")))
+       (match_test "kvx_float_fits_bits(rval,16,mode)")))
 
 (define_constraint "H43"
   "A real value that fits on 43bits"
   (and (match_code "const_double")
-       (match_test "k1_float_fits_bits(rval,43,mode)")))
+       (match_test "kvx_float_fits_bits(rval,43,mode)")))
 
 (define_constraint "I08"
   "A signed 8-bit non symbolic constant."
@@ -93,13 +93,13 @@
 
 (define_constraint "B32"
   "A signed 32-bit constant (possibly symbolic if targeting 32bits addressing))."
-   (ior (and (match_test "k1_symbol_operand(op,mode)")
+   (ior (and (match_test "kvx_symbol_operand(op,mode)")
              (match_test "TARGET_32"))
         (match_test "satisfies_constraint_I32(op)")))
 
 (define_constraint "B37"
   "A signed 37-bit constant (possibly symbolic if targeting 32bits addressing))."
-   (ior (and (match_test "k1_symbol_operand(op,mode)")
+   (ior (and (match_test "kvx_symbol_operand(op,mode)")
              (match_test "TARGET_32"))
         (match_test "satisfies_constraint_I37(op)")))
 
@@ -111,47 +111,47 @@
 (define_constraint "v10"
   "A manifest vector constant whose value fits in signed 10 bits."
   (and (match_code "const_vector")
-       (match_test "k1_has_10bit_vector_const_p (op)")))
+       (match_test "kvx_has_10bit_vector_const_p (op)")))
 
 (define_constraint "v16"
   "A manifest vector constant whose value fits in signed 16 bits."
   (and (match_code "const_vector")
-       (match_test "k1_has_16bit_vector_const_p (op)")))
+       (match_test "kvx_has_16bit_vector_const_p (op)")))
 
 (define_constraint "v32"
   "A manifest vector constant whose value fits in signed 32 bits."
   (and (match_code "const_vector")
-       (match_test "k1_has_32bit_vector_const_p (op)")))
+       (match_test "kvx_has_32bit_vector_const_p (op)")))
 
 (define_constraint "v37"
   "A manifest vector constant whose value fits in signed 37 bits."
   (and (match_code "const_vector")
-       (match_test "k1_has_37bit_vector_const_p (op)")))
+       (match_test "kvx_has_37bit_vector_const_p (op)")))
 
 (define_constraint "v43"
   "A manifest vector constant whose value fits in signed 43 bits."
   (and (match_code "const_vector")
-       (match_test "k1_has_43bit_vector_const_p (op)")))
+       (match_test "kvx_has_43bit_vector_const_p (op)")))
 
 (define_constraint "vx2"
   "A 64-bit vector constant made of two identical 32-bit manifest values"
   (and (match_code "const_vector")
-       (match_test "k1_has_32x2bit_vector_const_p (op)")))
+       (match_test "kvx_has_32x2bit_vector_const_p (op)")))
 
 (define_memory_constraint "a"
   "Memory operands with 10-bit immediates or register"
   (and (match_code "mem")
-       (match_test "k1_has_10bit_imm_or_register_p (op)")))
+       (match_test "kvx_has_10bit_imm_or_register_p (op)")))
 
 (define_memory_constraint "b"
   "Memory operands with 37-bit immediates"
   (and (match_code "mem")
-       (match_test "k1_has_37bit_immediate_p (op)")))
+       (match_test "kvx_has_37bit_immediate_p (op)")))
 
 (define_memory_constraint "u"
   "Uncached memory operands"
   (and (match_code "mem")
-       (match_test "k1_is_uncached_mem_op_p (op)")))
+       (match_test "kvx_is_uncached_mem_op_p (op)")))
 
 ;; (define_memory_constraint "Q"
 ;;   "Packed memory operand, need not be correct."
@@ -161,45 +161,45 @@
 (define_memory_constraint "Cm"
   "Cached memory operands with 64-bit immediates"
   (and (match_code "mem")
-       (match_test "k1_has_64bit_immediate_p (op)")
-       (match_test "!k1_is_uncached_mem_op_p (op)")))
+       (match_test "kvx_has_64bit_immediate_p (op)")
+       (match_test "!kvx_is_uncached_mem_op_p (op)")))
 
 (define_memory_constraint "Cb"
   "Cached memory operands with 37-bit immediates"
   (and (match_code "mem")
-       (match_test "k1_has_37bit_immediate_p (op)")
-       (match_test "!k1_is_uncached_mem_op_p (op)")))
+       (match_test "kvx_has_37bit_immediate_p (op)")
+       (match_test "!kvx_is_uncached_mem_op_p (op)")))
 
 (define_memory_constraint "Ca"
   "Cached memory operands with 10-bit immediates or register"
   (and (match_code "mem")
-       (match_test "k1_has_10bit_imm_or_register_p (op)")
-       (match_test "!k1_is_uncached_mem_op_p (op)")))
+       (match_test "kvx_has_10bit_imm_or_register_p (op)")
+       (match_test "!kvx_is_uncached_mem_op_p (op)")))
 
 (define_memory_constraint "Zm"
   "Uncached memory operands with 64-bit immediates"
   (and (match_code "mem")
-       (match_test "k1_has_64bit_immediate_p (op)")
-       (match_test "k1_is_uncached_mem_op_p (op)")))
+       (match_test "kvx_has_64bit_immediate_p (op)")
+       (match_test "kvx_is_uncached_mem_op_p (op)")))
 
 (define_memory_constraint "Zb"
   "Uncached memory operands with 37-bit immediates"
   (and (match_code "mem")
-       (match_test "k1_has_37bit_immediate_p (op)")
-       (match_test "k1_is_uncached_mem_op_p (op)")))
+       (match_test "kvx_has_37bit_immediate_p (op)")
+       (match_test "kvx_is_uncached_mem_op_p (op)")))
 
 (define_memory_constraint "Za"
   "Uncached memory operands with 10-bit immediates or register"
   (and (match_code "mem")
-       (match_test "k1_has_10bit_imm_or_register_p (op)")
-       (match_test "k1_is_uncached_mem_op_p (op)")))
+       (match_test "kvx_has_10bit_imm_or_register_p (op)")
+       (match_test "kvx_is_uncached_mem_op_p (op)")))
 
 (define_address_constraint "Aa"
   "Memory address with 10-bit immediates or register"
   (and (match_test "address_operand (op, mode)")
-       (match_test "k1_has_10bit_imm_or_register_p (op)")))
+       (match_test "kvx_has_10bit_imm_or_register_p (op)")))
 
 (define_address_constraint "Ab"
   "Memory address with 37-bit immediates"
   (and (match_test "address_operand (op, mode)")
-       (match_test "k1_has_37bit_immediate_p (op)")))
+       (match_test "kvx_has_37bit_immediate_p (op)")))

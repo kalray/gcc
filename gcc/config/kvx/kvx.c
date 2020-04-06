@@ -1,4 +1,4 @@
-/* Definitions of target machine for GNU compiler, for K1 MPPA.
+/* Definitions of target machine for GNU compiler, for KVX MPPA.
    Copyright (C) 1991-2014 Free Software Foundation, Inc.
    Copyright (C) 2017 Kalray
 
@@ -129,8 +129,8 @@
 
 static bool scheduling = false;
 
-rtx k1_sync_reg_rtx;
-rtx k1_link_reg_rtx;
+rtx kvx_sync_reg_rtx;
+rtx kvx_link_reg_rtx;
 
 typedef enum
 {
@@ -148,10 +148,10 @@ struct post_packing_action
 
 
 /* Which arch are we scheduling for */
-enum attr_arch k1_arch_schedule;
+enum attr_arch kvx_arch_schedule;
 
 /* Information about a function's frame layout.  */
-struct GTY (()) k1_frame_info
+struct GTY (()) kvx_frame_info
 {
   /* The size of the frame in bytes.  */
   HOST_WIDE_INT total_size;
@@ -184,7 +184,7 @@ struct GTY (()) machine_function
 {
   char save_reg[FIRST_PSEUDO_REGISTER];
 
-  k1_frame_info frame;
+  kvx_frame_info frame;
 
   /* If true, the current function has a STATIC_CHAIN.  */
   int static_chain_on_stack;
@@ -237,9 +237,9 @@ enum spill_action
 static bool should_be_saved_in_prologue (int regno);
 
 static void
-k1_compute_frame_info (void)
+kvx_compute_frame_info (void)
 {
-  struct k1_frame_info *frame;
+  struct kvx_frame_info *frame;
 
   /* Offset of new SP wrt incoming SP */
   /* Used for creating pointers from new SP values. */
@@ -329,17 +329,17 @@ k1_compute_frame_info (void)
 }
 
 HOST_WIDE_INT
-k1_first_parm_offset (tree decl ATTRIBUTE_UNUSED)
+kvx_first_parm_offset (tree decl ATTRIBUTE_UNUSED)
 {
-  struct k1_frame_info *frame;
-  k1_compute_frame_info ();
+  struct kvx_frame_info *frame;
+  kvx_compute_frame_info ();
   frame = &cfun->machine->frame;
 
   return frame->arg_pointer_fp_offset;
 }
 
 static rtx
-k1_static_chain (const_tree fndecl, bool incoming_p ATTRIBUTE_UNUSED)
+kvx_static_chain (const_tree fndecl, bool incoming_p ATTRIBUTE_UNUSED)
 {
   if (!DECL_STATIC_CHAIN (fndecl))
     return NULL;
@@ -357,7 +357,7 @@ static const char *qrf_reg_names[] = {KV3_QGR_REGISTER_NAMES};
    split. If STRICT is false, base is not always a register.
  */
 bool
-k1_split_mem (rtx x, rtx *base_out, rtx *offset_out, bool strict)
+kvx_split_mem (rtx x, rtx *base_out, rtx *offset_out, bool strict)
 {
   if (GET_CODE (x) != PLUS && !REG_P (x))
     return false;
@@ -392,7 +392,7 @@ k1_split_mem (rtx x, rtx *base_out, rtx *offset_out, bool strict)
    TRUE. If the packing could not be done, returns FALSE.
  */
 bool
-k1_pack_load_store (rtx operands[], unsigned int nops)
+kvx_pack_load_store (rtx operands[], unsigned int nops)
 {
   rtx set_dests[KVX_MAX_PACKED_LSU];
   rtx set_srcs[KVX_MAX_PACKED_LSU];
@@ -462,8 +462,8 @@ k1_pack_load_store (rtx operands[], unsigned int nops)
 
   /* Check mem addresses are consecutive */
   rtx base_reg, base_offset;
-  if (!k1_split_mem (XEXP (sorted_operands[1 - op_offset], 0), &base_reg,
-		     &base_offset, true))
+  if (!kvx_split_mem (XEXP (sorted_operands[1 - op_offset], 0), &base_reg,
+		      &base_offset, true))
     return false;
 
   const unsigned int base_regno = REGNO (base_reg);
@@ -523,7 +523,7 @@ k1_pack_load_store (rtx operands[], unsigned int nops)
 
 /* Implement HARD_REGNO_RENAME_OK.  */
 int
-k1_hard_regno_rename_ok (unsigned int from, unsigned int to)
+kvx_hard_regno_rename_ok (unsigned int from, unsigned int to)
 {
   if (IN_RANGE (from, KV3_GPR_FIRST_REGNO, KV3_GPR_LAST_REGNO)
       && IN_RANGE (to, KV3_GPR_FIRST_REGNO, KV3_GPR_LAST_REGNO))
@@ -542,7 +542,7 @@ k1_hard_regno_rename_ok (unsigned int from, unsigned int to)
 
 /* Implement HARD_REGNO_MODE_OK.  */
 int
-k1_hard_regno_mode_ok (unsigned regno, enum machine_mode mode)
+kvx_hard_regno_mode_ok (unsigned regno, enum machine_mode mode)
 {
   // SI/DI -> KV3_GPR_FIRST_REGNO - KV3_GPR_LAST_REGNO => OK
   // SI/DI -> KV3_SFR_FIRST_REGNO - KV3_SFR_LAST_REGNO => OK
@@ -561,37 +561,38 @@ k1_hard_regno_mode_ok (unsigned regno, enum machine_mode mode)
 }
 
 static unsigned char
-k1_class_max_nregs (reg_class_t regclass ATTRIBUTE_UNUSED,
-		    enum machine_mode mode)
+kvx_class_max_nregs (reg_class_t regclass ATTRIBUTE_UNUSED,
+		     enum machine_mode mode)
 {
   return HARD_REGNO_NREGS (0, mode);
 }
 
-static tree k1_handle_fndecl_attribute (tree *node, tree name,
-					tree args ATTRIBUTE_UNUSED,
-					int flags ATTRIBUTE_UNUSED,
-					bool *no_add_attrs);
+static tree kvx_handle_fndecl_attribute (tree *node, tree name,
+					 tree args ATTRIBUTE_UNUSED,
+					 int flags ATTRIBUTE_UNUSED,
+					 bool *no_add_attrs);
 
 static bool function_symbol_referenced_p (rtx x);
 
 static bool symbolic_reference_mentioned_p (rtx op);
 
-static bool k1_output_addr_const_extra (FILE *, rtx);
+static bool kvx_output_addr_const_extra (FILE *, rtx);
 
-static bool k1_legitimate_address_p (enum machine_mode mode, rtx x,
-					    bool strict);
+static bool kvx_legitimate_address_p (enum machine_mode mode, rtx x,
+				      bool strict);
 
-bool k1_legitimate_pic_symbolic_ref_p (rtx op);
+bool kvx_legitimate_pic_symbolic_ref_p (rtx op);
 
-static bool k1_legitimate_constant_p (enum machine_mode mode ATTRIBUTE_UNUSED,
-				      rtx x);
+static bool kvx_legitimate_constant_p (enum machine_mode mode ATTRIBUTE_UNUSED,
+				       rtx x);
 
 /* Table of machine attributes.  */
-static const struct attribute_spec k1_attribute_table[] = {
+static const struct attribute_spec kvx_attribute_table[] = {
   /* { name, min_len, max_len, decl_req, type_req, fn_type_req, handler,
      affects_type } */
-  {"no_save_regs", 0, 0, true, false, false, k1_handle_fndecl_attribute, false},
-  {"farcall", 0, 0, true, false, false, k1_handle_fndecl_attribute, false},
+  {"no_save_regs", 0, 0, true, false, false, kvx_handle_fndecl_attribute,
+   false},
+  {"farcall", 0, 0, true, false, false, kvx_handle_fndecl_attribute, false},
   {NULL, 0, 0, false, false, false, NULL, false}};
 
 /* Returns 0 if there is no TLS ref, != 0 if there is.
@@ -600,7 +601,7 @@ static const struct attribute_spec k1_attribute_table[] = {
   TLS.
  */
 int
-k1_has_tls_reference (rtx x)
+kvx_has_tls_reference (rtx x)
 {
   if (!TARGET_HAVE_TLS)
     return false;
@@ -623,7 +624,7 @@ k1_has_tls_reference (rtx x)
 }
 
 static int
-k1_has_unspec_reference_1 (rtx *x)
+kvx_has_unspec_reference_1 (rtx *x)
 {
   return (GET_CODE (*x) == UNSPEC
 	  && (XINT (*x, 1) == UNSPEC_GOT || XINT (*x, 1) == UNSPEC_GOTOFF
@@ -633,13 +634,13 @@ k1_has_unspec_reference_1 (rtx *x)
 }
 
 static int
-k1_has_unspec_reference (rtx x)
+kvx_has_unspec_reference (rtx x)
 {
   subrtx_ptr_iterator::array_type array;
   FOR_EACH_SUBRTX_PTR (iter, array, &x, ALL)
     {
       rtx *x = *iter;
-      switch (k1_has_unspec_reference_1 (x))
+      switch (kvx_has_unspec_reference_1 (x))
 	{
 	case -1:
 	  iter.skip_subrtxes ();
@@ -651,18 +652,18 @@ k1_has_unspec_reference (rtx x)
 	}
     }
   return 0;
-  //   return for_each_rtx (&x, &k1_has_unspec_reference_1, NULL);
+  //   return for_each_rtx (&x, &kvx_has_unspec_reference_1, NULL);
 }
 
 static bool
-k1_legitimate_address_register_p (rtx reg, bool strict)
+kvx_legitimate_address_register_p (rtx reg, bool strict)
 {
   return (REG_P (reg) && IS_GENERAL_REGNO (REGNO (reg), strict)
 	  && GET_MODE (reg) == Pmode);
 }
 
 static bool
-k1_legitimate_address_offset_register_p (rtx reg, bool strict)
+kvx_legitimate_address_offset_register_p (rtx reg, bool strict)
 {
   machine_mode mode = GET_MODE (reg);
 
@@ -681,13 +682,13 @@ k1_legitimate_address_offset_register_p (rtx reg, bool strict)
  * - (plus (mult (reg) (constant)) (reg))
  */
 static bool
-k1_legitimate_address_p (machine_mode mode, rtx x, bool strict)
+kvx_legitimate_address_p (machine_mode mode, rtx x, bool strict)
 {
 
   /*
    * ld reg = 0[reg]
    */
-  if (k1_legitimate_address_register_p (x, strict))
+  if (kvx_legitimate_address_register_p (x, strict))
     return true;
 
   /*
@@ -695,7 +696,7 @@ k1_legitimate_address_p (machine_mode mode, rtx x, bool strict)
    * ld reg = @gotoff[reg]
    */
   if (GET_CODE (x) == PLUS
-      && k1_legitimate_address_register_p (XEXP (x, 0), strict)
+      && kvx_legitimate_address_register_p (XEXP (x, 0), strict)
       && (GET_CODE (XEXP (x, 1)) == UNSPEC
 	  && (XINT (XEXP (x, 1), 1) == UNSPEC_GOT
 	      || XINT (XEXP (x, 1), 1) == UNSPEC_GOTOFF)))
@@ -707,9 +708,9 @@ k1_legitimate_address_p (machine_mode mode, rtx x, bool strict)
    * ld reg = @pcrel(symbol)[reg]
    */
   if (GET_CODE (x) == PLUS
-      && k1_legitimate_address_register_p (XEXP (x, 0), strict)
+      && kvx_legitimate_address_register_p (XEXP (x, 0), strict)
       && ((CONSTANT_P (XEXP (x, 1))
-	   && k1_legitimate_constant_p (VOIDmode, XEXP (x, 1)))
+	   && kvx_legitimate_constant_p (VOIDmode, XEXP (x, 1)))
 	  || GET_CODE (XEXP (x, 1)) == CONST_INT)
       && immediate_operand (XEXP (x, 1), DImode)
       && (!current_pass || current_pass->tv_id != TV_CPROP))
@@ -719,20 +720,20 @@ k1_legitimate_address_p (machine_mode mode, rtx x, bool strict)
    * ld reg = reg[reg]
    */
   if (GET_CODE (x) == PLUS
-      && k1_legitimate_address_register_p (XEXP (x, 0), strict)
-      && k1_legitimate_address_offset_register_p (XEXP (x, 1), strict))
+      && kvx_legitimate_address_register_p (XEXP (x, 0), strict)
+      && kvx_legitimate_address_offset_register_p (XEXP (x, 1), strict))
     return true;
 
   /*
    * ld.xs reg = reg[reg]
    */
   if (GET_CODE (x) == PLUS
-      && k1_legitimate_address_register_p (XEXP (x, 1), strict)
+      && kvx_legitimate_address_register_p (XEXP (x, 1), strict)
       && GET_CODE (XEXP (x, 0)) == MULT
       && GET_CODE (XEXP (XEXP (x, 0), 1)) == CONST_INT
       && (INTVAL (XEXP (XEXP (x, 0), 1)) == GET_MODE_SIZE (mode))
-      && k1_legitimate_address_offset_register_p (XEXP (XEXP (x, 0), 0),
-						  strict))
+      && kvx_legitimate_address_offset_register_p (XEXP (XEXP (x, 0), 0),
+						   strict))
     // The .xs addressing mode applies to object sizes 2, 4, 8, 16, 32.
     return GET_MODE_SIZE (mode) > 1 && GET_MODE_SIZE (mode) <= 32;
 
@@ -740,27 +741,27 @@ k1_legitimate_address_p (machine_mode mode, rtx x, bool strict)
 }
 
 static void
-k1_conditional_register_usage (void)
+kvx_conditional_register_usage (void)
 {
-  k1_sync_reg_rtx = gen_rtx_REG (SImode, KV3_SYNC_REG_REGNO);
-  k1_link_reg_rtx = gen_rtx_REG (Pmode, KV3_RETURN_POINTER_REGNO);
+  kvx_sync_reg_rtx = gen_rtx_REG (SImode, KV3_SYNC_REG_REGNO);
+  kvx_link_reg_rtx = gen_rtx_REG (Pmode, KV3_RETURN_POINTER_REGNO);
 }
 
 rtx
-k1_return_addr_rtx (int count, rtx frameaddr ATTRIBUTE_UNUSED)
+kvx_return_addr_rtx (int count, rtx frameaddr ATTRIBUTE_UNUSED)
 {
   return count == 0 ? get_hard_reg_initial_val (Pmode, KV3_RETURN_POINTER_REGNO)
 		    : NULL_RTX;
 }
 
-/* Implements the macro INIT_CUMULATIVE_ARGS defined in k1.h. */
+/* Implements the macro INIT_CUMULATIVE_ARGS defined in kvx.h. */
 
 void
-k1_init_cumulative_args (CUMULATIVE_ARGS *cum,
-			 const_tree fntype ATTRIBUTE_UNUSED,
-			 rtx libname ATTRIBUTE_UNUSED,
-			 tree fndecl ATTRIBUTE_UNUSED,
-			 int n_named_args ATTRIBUTE_UNUSED)
+kvx_init_cumulative_args (CUMULATIVE_ARGS *cum,
+			  const_tree fntype ATTRIBUTE_UNUSED,
+			  rtx libname ATTRIBUTE_UNUSED,
+			  tree fndecl ATTRIBUTE_UNUSED,
+			  int n_named_args ATTRIBUTE_UNUSED)
 {
   cum->next_arg_reg = 0;
   cum->anonymous_arg_offset = 0;
@@ -768,7 +769,7 @@ k1_init_cumulative_args (CUMULATIVE_ARGS *cum,
 }
 
 /* Information about a single argument.  */
-struct k1_arg_info
+struct kvx_arg_info
 {
   /* first register to be used for this arg */
   unsigned int first_reg;
@@ -787,9 +788,9 @@ struct k1_arg_info
    aligned. */
 
 static rtx
-k1_get_arg_info (struct k1_arg_info *info, cumulative_args_t cum_v,
-		 enum machine_mode mode, const_tree type,
-		 bool named ATTRIBUTE_UNUSED)
+kvx_get_arg_info (struct kvx_arg_info *info, cumulative_args_t cum_v,
+		  enum machine_mode mode, const_tree type,
+		  bool named ATTRIBUTE_UNUSED)
 {
   CUMULATIVE_ARGS *cum = get_cumulative_args (cum_v);
   HOST_WIDE_INT n_bytes
@@ -830,11 +831,11 @@ k1_get_arg_info (struct k1_arg_info *info, cumulative_args_t cum_v,
    because there is no argument slot in registers free. */
 
 static rtx
-k1_function_arg (cumulative_args_t cum_v, enum machine_mode mode,
-		 const_tree type, bool named)
+kvx_function_arg (cumulative_args_t cum_v, enum machine_mode mode,
+		  const_tree type, bool named)
 {
-  struct k1_arg_info info;
-  return k1_get_arg_info (&info, cum_v, mode, type, named);
+  struct kvx_arg_info info;
+  return kvx_get_arg_info (&info, cum_v, mode, type, named);
 }
 
 /* Implements TARGET_ARG_PARTIAL_BYTES.
@@ -842,11 +843,11 @@ k1_function_arg (cumulative_args_t cum_v, enum machine_mode mode,
    that must be put in registers */
 
 static int
-k1_arg_partial_bytes (cumulative_args_t cum_v, enum machine_mode mode,
-		      tree type, bool named ATTRIBUTE_UNUSED)
+kvx_arg_partial_bytes (cumulative_args_t cum_v, enum machine_mode mode,
+		       tree type, bool named ATTRIBUTE_UNUSED)
 {
-  struct k1_arg_info info = {0};
-  rtx reg = k1_get_arg_info (&info, cum_v, mode, type, named);
+  struct kvx_arg_info info = {0};
+  rtx reg = kvx_get_arg_info (&info, cum_v, mode, type, named);
   if (reg != NULL_RTX && info.num_regs > 0 && info.num_stack > 0)
     {
       return info.num_regs * UNITS_PER_WORD;
@@ -855,12 +856,12 @@ k1_arg_partial_bytes (cumulative_args_t cum_v, enum machine_mode mode,
 }
 
 static void
-k1_function_arg_advance (cumulative_args_t cum_v, enum machine_mode mode,
-			 const_tree type, bool named)
+kvx_function_arg_advance (cumulative_args_t cum_v, enum machine_mode mode,
+			  const_tree type, bool named)
 {
   CUMULATIVE_ARGS *cum = get_cumulative_args (cum_v);
-  struct k1_arg_info info = {0};
-  k1_get_arg_info (&info, cum_v, mode, type, named);
+  struct kvx_arg_info info = {0};
+  kvx_get_arg_info (&info, cum_v, mode, type, named);
 
   if (info.num_regs > 0)
     {
@@ -879,8 +880,8 @@ k1_function_arg_advance (cumulative_args_t cum_v, enum machine_mode mode,
 }
 
 static rtx
-k1_function_value (const_tree ret_type, const_tree func ATTRIBUTE_UNUSED,
-		   bool outgoing ATTRIBUTE_UNUSED)
+kvx_function_value (const_tree ret_type, const_tree func ATTRIBUTE_UNUSED,
+		    bool outgoing ATTRIBUTE_UNUSED)
 {
   enum machine_mode mode = TYPE_MODE (ret_type);
 
@@ -907,14 +908,14 @@ k1_function_value (const_tree ret_type, const_tree func ATTRIBUTE_UNUSED,
 
 /* Implements TARGET_RETURN_IN_MSB */
 static bool
-k1_return_in_msb (const_tree type ATTRIBUTE_UNUSED)
+kvx_return_in_msb (const_tree type ATTRIBUTE_UNUSED)
 {
   return false;
 }
 
 /* Implements TARGET_RETURN_IN_MEMORY */
 static bool
-k1_return_in_memory (const_tree type, const_tree fntype ATTRIBUTE_UNUSED)
+kvx_return_in_memory (const_tree type, const_tree fntype ATTRIBUTE_UNUSED)
 {
   HOST_WIDE_INT sz = int_size_in_bytes (type);
 
@@ -925,18 +926,18 @@ k1_return_in_memory (const_tree type, const_tree fntype ATTRIBUTE_UNUSED)
 
 /* Implements TARGET_STRUCT_VALUE_RTX */
 static rtx
-k1_struct_value_rtx (tree fndecl ATTRIBUTE_UNUSED,
-		     int incoming ATTRIBUTE_UNUSED)
+kvx_struct_value_rtx (tree fndecl ATTRIBUTE_UNUSED,
+		      int incoming ATTRIBUTE_UNUSED)
 {
   return gen_rtx_REG (Pmode, KV3_STRUCT_POINTER_REGNO);
 }
 
 static void
-k1_asm_output_mi_thunk (FILE *file ATTRIBUTE_UNUSED,
-			tree thunk_fndecl ATTRIBUTE_UNUSED,
-			HOST_WIDE_INT delta ATTRIBUTE_UNUSED,
-			HOST_WIDE_INT vcall_offset ATTRIBUTE_UNUSED,
-			tree function ATTRIBUTE_UNUSED)
+kvx_asm_output_mi_thunk (FILE *file ATTRIBUTE_UNUSED,
+			 tree thunk_fndecl ATTRIBUTE_UNUSED,
+			 HOST_WIDE_INT delta ATTRIBUTE_UNUSED,
+			 HOST_WIDE_INT vcall_offset ATTRIBUTE_UNUSED,
+			 tree function ATTRIBUTE_UNUSED)
 {
   rtx xops[1];
   if (!TARGET_32)
@@ -971,22 +972,22 @@ k1_asm_output_mi_thunk (FILE *file ATTRIBUTE_UNUSED,
 }
 
 static bool
-k1_asm_can_output_mi_thunk (const_tree thunk_fndecl ATTRIBUTE_UNUSED,
-			    HOST_WIDE_INT delta ATTRIBUTE_UNUSED,
-			    HOST_WIDE_INT vcall_offset ATTRIBUTE_UNUSED,
-			    const_tree function ATTRIBUTE_UNUSED)
+kvx_asm_can_output_mi_thunk (const_tree thunk_fndecl ATTRIBUTE_UNUSED,
+			     HOST_WIDE_INT delta ATTRIBUTE_UNUSED,
+			     HOST_WIDE_INT vcall_offset ATTRIBUTE_UNUSED,
+			     const_tree function ATTRIBUTE_UNUSED)
 {
   return true;
 }
 
 static rtx
-k1_expand_builtin_saveregs (void)
+kvx_expand_builtin_saveregs (void)
 {
   int regno;
   int slot = 0;
-  struct k1_frame_info *frame;
+  struct kvx_frame_info *frame;
 
-  k1_compute_frame_info ();
+  kvx_compute_frame_info ();
   frame = &cfun->machine->frame;
   rtx area = gen_rtx_PLUS (Pmode, frame_pointer_rtx,
 			   GEN_INT (frame->arg_pointer_fp_offset));
@@ -1005,7 +1006,7 @@ k1_expand_builtin_saveregs (void)
 							+ regno));
       RTX_FRAME_RELATED_P (insn) = 1;
       /* Do not attach a NOTE here as the frame has not been laid out yet.
-       Let the k1_fix_debug_for_bundles function during reorg pass handle these
+       Let the kvx_fix_debug_for_bundles function during reorg pass handle these
      */
 
       regno++;
@@ -1024,7 +1025,7 @@ k1_expand_builtin_saveregs (void)
       rtx insn = emit_move_insn (addr, src);
       RTX_FRAME_RELATED_P (insn) = 1;
       /* Do not attach a NOTE here as the frame has not been laid out yet.
-       Let the k1_fix_debug_for_bundles function during reorg pass handle these
+       Let the kvx_fix_debug_for_bundles function during reorg pass handle these
      */
     }
 
@@ -1032,12 +1033,12 @@ k1_expand_builtin_saveregs (void)
 }
 
 static void
-k1_expand_va_start (tree valist, rtx nextarg ATTRIBUTE_UNUSED)
+kvx_expand_va_start (tree valist, rtx nextarg ATTRIBUTE_UNUSED)
 {
   rtx va_start_addr = expand_builtin_saveregs ();
   rtx va_r = expand_expr (valist, NULL_RTX, VOIDmode, EXPAND_WRITE);
 
-  struct k1_frame_info *frame;
+  struct kvx_frame_info *frame;
 
   frame = &cfun->machine->frame;
   gcc_assert (frame->laid_out);
@@ -1063,26 +1064,26 @@ k1_expand_va_start (tree valist, rtx nextarg ATTRIBUTE_UNUSED)
 }
 
 static bool
-k1_cannot_force_const_mem (enum machine_mode mode ATTRIBUTE_UNUSED,
-			   rtx x ATTRIBUTE_UNUSED)
+kvx_cannot_force_const_mem (enum machine_mode mode ATTRIBUTE_UNUSED,
+			    rtx x ATTRIBUTE_UNUSED)
 {
   return true;
 }
 
 static bool
-k1_decimal_float_supported_p (void)
+kvx_decimal_float_supported_p (void)
 {
   return true;
 }
 
 static bool
-k1_fixed_point_supported_p (void)
+kvx_fixed_point_supported_p (void)
 {
   return false;
 }
 
 static bool
-k1_vector_mode_supported_p (enum machine_mode mode ATTRIBUTE_UNUSED)
+kvx_vector_mode_supported_p (enum machine_mode mode ATTRIBUTE_UNUSED)
 {
   switch (mode)
     {
@@ -1103,18 +1104,18 @@ k1_vector_mode_supported_p (enum machine_mode mode ATTRIBUTE_UNUSED)
 }
 
 static bool
-k1_support_vector_misalignment (enum machine_mode mode ATTRIBUTE_UNUSED,
-				const_tree type ATTRIBUTE_UNUSED,
-				int misalignment ATTRIBUTE_UNUSED,
-				bool is_packed ATTRIBUTE_UNUSED)
+kvx_support_vector_misalignment (enum machine_mode mode ATTRIBUTE_UNUSED,
+				 const_tree type ATTRIBUTE_UNUSED,
+				 int misalignment ATTRIBUTE_UNUSED,
+				 bool is_packed ATTRIBUTE_UNUSED)
 {
   return !TARGET_STRICT_ALIGN;
 }
 
 static bool
-k1_pass_by_reference (cumulative_args_t cum ATTRIBUTE_UNUSED,
-		      enum machine_mode mode, const_tree type,
-		      bool named ATTRIBUTE_UNUSED)
+kvx_pass_by_reference (cumulative_args_t cum ATTRIBUTE_UNUSED,
+		       enum machine_mode mode, const_tree type,
+		       bool named ATTRIBUTE_UNUSED)
 {
   HOST_WIDE_INT size;
   machine_mode dummymode;
@@ -1138,10 +1139,10 @@ k1_pass_by_reference (cumulative_args_t cum ATTRIBUTE_UNUSED,
 }
 
 static reg_class_t
-k1_secondary_reload (bool in_p ATTRIBUTE_UNUSED, rtx x ATTRIBUTE_UNUSED,
-		     reg_class_t reload_class ATTRIBUTE_UNUSED,
-		     enum machine_mode reload_mode ATTRIBUTE_UNUSED,
-		     secondary_reload_info *sri ATTRIBUTE_UNUSED)
+kvx_secondary_reload (bool in_p ATTRIBUTE_UNUSED, rtx x ATTRIBUTE_UNUSED,
+		      reg_class_t reload_class ATTRIBUTE_UNUSED,
+		      enum machine_mode reload_mode ATTRIBUTE_UNUSED,
+		      secondary_reload_info *sri ATTRIBUTE_UNUSED)
 {
   if (!flag_pic)
     return NO_REGS;
@@ -1160,18 +1161,18 @@ k1_secondary_reload (bool in_p ATTRIBUTE_UNUSED, rtx x ATTRIBUTE_UNUSED,
 	  return NO_REGS;
 	}
     }
-  else if (SYMBOLIC_CONST (x) && !k1_legitimate_constant_p (VOIDmode, x))
+  else if (SYMBOLIC_CONST (x) && !kvx_legitimate_constant_p (VOIDmode, x))
     {
       gcc_unreachable ();
     }
   return NO_REGS;
 }
 
-static const char *k1_unspec_tls_asm_op[]
+static const char *kvx_unspec_tls_asm_op[]
   = {"@tlsgd", "@tlsld", "@tlsle", "@dtpoff", "@tlsie"};
 
 void
-k1_print_operand (FILE *file, rtx x, int code)
+kvx_print_operand (FILE *file, rtx x, int code)
 {
   rtx operand = x;
   bool select_qreg = 0;
@@ -1240,7 +1241,7 @@ k1_print_operand (FILE *file, rtx x, int code)
 
     case 'C': /* Print an additional '.u' or '.us' in the case of uncached load
 	       */
-      addr_space = k1_is_uncached_mem_op_p (x);
+      addr_space = kvx_is_uncached_mem_op_p (x);
       if (addr_space == KVX_ADDR_SPACE_BYPASS)
 	fprintf (file, ".u");
       if (addr_space == KVX_ADDR_SPACE_PRELOAD)
@@ -1368,7 +1369,7 @@ k1_print_operand (FILE *file, rtx x, int code)
 	{
 	  x = XEXP (x, 0);
 	  if (GET_CODE (x) == UNSPEC)
-	    k1_print_operand (file, x, 0);
+	    kvx_print_operand (file, x, 0);
 	  else
 	    output_address (GET_MODE (XEXP (operand, 0)), XEXP (operand, 0));
 	}
@@ -1404,7 +1405,7 @@ k1_print_operand (FILE *file, rtx x, int code)
       case CONST_VECTOR: {
 	int slice = 1 * select_yreg + 2 * select_zreg + 3 * select_treg;
 	fprintf (file, HOST_WIDE_INT_PRINT_HEX,
-		 k1_const_vector_value (x, slice));
+		 kvx_const_vector_value (x, slice));
       }
       return;
 
@@ -1435,7 +1436,7 @@ k1_print_operand (FILE *file, rtx x, int code)
 	      case UNSPEC_TLS_DTPOFF:
 	      case UNSPEC_TLS_LE:
 	      case UNSPEC_TLS_IE:
-		fputs (k1_unspec_tls_asm_op[unspec - UNSPEC_TLS_GD], (file));
+		fputs (kvx_unspec_tls_asm_op[unspec - UNSPEC_TLS_GD], (file));
 		fputs ("(", (file));
 		break;
 	      case UNSPEC_GOT:
@@ -1462,7 +1463,7 @@ k1_print_operand (FILE *file, rtx x, int code)
 }
 
 static const char *
-k1_regname (rtx x)
+kvx_regname (rtx x)
 {
   machine_mode mode = GET_MODE (x);
 
@@ -1480,20 +1481,20 @@ k1_regname (rtx x)
       // Addressing mode with register offset
       gcc_assert (TARGET_32);
       gcc_assert (SUBREG_BYTE (x) == 0);
-      return k1_regname (SUBREG_REG (x));
+      return kvx_regname (SUBREG_REG (x));
     default:
       gcc_unreachable ();
     }
 }
 
 void
-k1_print_operand_address (FILE *file, rtx x)
+kvx_print_operand_address (FILE *file, rtx x)
 {
   switch (GET_CODE (x))
     {
     case REG:
     case SUBREG:
-      fprintf (file, "0[$%s]", k1_regname (x));
+      fprintf (file, "0[$%s]", kvx_regname (x));
       break;
 
     case PLUS:
@@ -1511,17 +1512,17 @@ k1_print_operand_address (FILE *file, rtx x)
 	case REG:
 	case SUBREG:
 	  if (GET_CODE (XEXP (x, 0)) == MULT)
-	    fprintf (file, "$%s", k1_regname (XEXP (XEXP (x, 0), 0)));
+	    fprintf (file, "$%s", kvx_regname (XEXP (XEXP (x, 0), 0)));
 	  else
-	    fprintf (file, "$%s", k1_regname (XEXP (x, 1)));
+	    fprintf (file, "$%s", kvx_regname (XEXP (x, 1)));
 	  break;
 	default:
 	  abort ();
 	}
       if (GET_CODE (XEXP (x, 0)) == MULT)
-	fprintf (file, "[$%s]", k1_regname (XEXP (x, 1)));
+	fprintf (file, "[$%s]", kvx_regname (XEXP (x, 1)));
       else
-	fprintf (file, "[$%s]", k1_regname (XEXP (x, 0)));
+	fprintf (file, "[$%s]", kvx_regname (XEXP (x, 0)));
       return;
 
     default:
@@ -1532,7 +1533,7 @@ k1_print_operand_address (FILE *file, rtx x)
 
 /* Functions to save and restore machine-specific function data.  */
 static struct machine_function *
-k1_init_machine_status (void)
+kvx_init_machine_status (void)
 {
   struct machine_function *machine;
   machine = ggc_cleared_alloc<machine_function> ();
@@ -1542,14 +1543,14 @@ k1_init_machine_status (void)
 
 /* Do anything needed before RTL is emitted for each function.  */
 void
-k1_init_expanders (void)
+kvx_init_expanders (void)
 {
   /* Arrange to initialize and mark the machine per-function status.  */
-  init_machine_status = k1_init_machine_status;
+  init_machine_status = kvx_init_machine_status;
 }
 
 bool
-k1_print_punct_valid_p (unsigned char code)
+kvx_print_punct_valid_p (unsigned char code)
 {
   return code == ';';
 }
@@ -1557,8 +1558,8 @@ k1_print_punct_valid_p (unsigned char code)
 /* Handle an attribute requiring a FUNCTION_DECL;
    arguments as in struct attribute_spec.handler.  */
 static tree
-k1_handle_fndecl_attribute (tree *node, tree name, tree args ATTRIBUTE_UNUSED,
-			    int flags ATTRIBUTE_UNUSED, bool *no_add_attrs)
+kvx_handle_fndecl_attribute (tree *node, tree name, tree args ATTRIBUTE_UNUSED,
+			     int flags ATTRIBUTE_UNUSED, bool *no_add_attrs)
 {
   if (TREE_CODE (*node) != FUNCTION_DECL)
     {
@@ -1571,7 +1572,7 @@ k1_handle_fndecl_attribute (tree *node, tree name, tree args ATTRIBUTE_UNUSED,
 }
 
 void
-k1_expand_tablejump (rtx op0, rtx op1)
+kvx_expand_tablejump (rtx op0, rtx op1)
 {
   if (flag_pic)
     {
@@ -1608,7 +1609,7 @@ should_be_saved_in_prologue (int regno)
 }
 
 static bool
-k1_register_saved_on_entry (int regno)
+kvx_register_saved_on_entry (int regno)
 {
   return cfun->machine->frame.reg_offset[regno] >= 0;
 }
@@ -1617,7 +1618,7 @@ k1_register_saved_on_entry (int regno)
    (caller-saved and non fixed reg). Returns NULL_RTX and emits an
    error if no such register can be found. */
 static rtx
-k1_get_callersaved_nonfixed_reg (machine_mode mode, unsigned int n)
+kvx_get_callersaved_nonfixed_reg (machine_mode mode, unsigned int n)
 {
   int regno;
   unsigned int i;
@@ -1637,9 +1638,9 @@ k1_get_callersaved_nonfixed_reg (machine_mode mode, unsigned int n)
  * layout.
  */
 static void
-k1_save_or_restore_callee_save_registers (bool restore)
+kvx_save_or_restore_callee_save_registers (bool restore)
 {
-  struct k1_frame_info *frame = &cfun->machine->frame;
+  struct kvx_frame_info *frame = &cfun->machine->frame;
   rtx insn;
   rtx base_rtx = stack_pointer_rtx;
   rtx (*gen_mem_ref) (enum machine_mode, rtx) = gen_rtx_MEM;
@@ -1649,7 +1650,7 @@ k1_save_or_restore_callee_save_registers (bool restore)
 
   for (regno = 0; regno < limit; regno++)
     {
-      if (k1_register_saved_on_entry (regno))
+      if (kvx_register_saved_on_entry (regno))
 	{
 	  rtx mem;
 
@@ -1756,10 +1757,10 @@ k1_save_or_restore_callee_save_registers (bool restore)
    pointer.  */
 
 HOST_WIDE_INT
-k1_initial_elimination_offset (int from, int to)
+kvx_initial_elimination_offset (int from, int to)
 {
-  k1_compute_frame_info ();
-  struct k1_frame_info *frame = &cfun->machine->frame;
+  kvx_compute_frame_info ();
+  struct kvx_frame_info *frame = &cfun->machine->frame;
 
   /* Should never have anything else FRAME_POINTER_REGNUM -> HFP/SP */
   if (from != FRAME_POINTER_REGNUM
@@ -1777,7 +1778,7 @@ k1_initial_elimination_offset (int from, int to)
 /* Return TRUE if target supports -fstack-limit-register */
 
 bool
-k1_have_stack_checking (void)
+kvx_have_stack_checking (void)
 {
 #if defined(GCC_KVX_MPPA_COS)
   return true;
@@ -1787,10 +1788,10 @@ k1_have_stack_checking (void)
 }
 
 void
-k1_expand_prologue (void)
+kvx_expand_prologue (void)
 {
-  k1_compute_frame_info ();
-  struct k1_frame_info *frame = &cfun->machine->frame;
+  kvx_compute_frame_info ();
+  struct kvx_frame_info *frame = &cfun->machine->frame;
   HOST_WIDE_INT size = frame->initial_sp_offset;
   rtx insn;
 
@@ -1799,11 +1800,11 @@ k1_expand_prologue (void)
 
       if (crtl->limit_stack)
 	{
-	  if (k1_have_stack_checking ())
+	  if (kvx_have_stack_checking ())
 	    {
 	      rtx new_stack_pointer_rtx
-		= k1_get_callersaved_nonfixed_reg (Pmode, 0);
-	      rtx stack_limit_reg = k1_get_callersaved_nonfixed_reg (Pmode, 1);
+		= kvx_get_callersaved_nonfixed_reg (Pmode, 0);
+	      rtx stack_limit_reg = kvx_get_callersaved_nonfixed_reg (Pmode, 1);
 
 	      emit_move_insn (stack_limit_reg, stack_limit_rtx);
 	      emit_insn (gen_add3_insn (new_stack_pointer_rtx,
@@ -1828,7 +1829,7 @@ k1_expand_prologue (void)
     }
 
   /* Save registers */
-  k1_save_or_restore_callee_save_registers (0);
+  kvx_save_or_restore_callee_save_registers (0);
 
   if (frame_pointer_needed)
     {
@@ -1846,9 +1847,9 @@ k1_expand_prologue (void)
 }
 
 void
-k1_expand_epilogue (void)
+kvx_expand_epilogue (void)
 {
-  struct k1_frame_info *frame = &cfun->machine->frame;
+  struct kvx_frame_info *frame = &cfun->machine->frame;
   HOST_WIDE_INT frame_size = frame->initial_sp_offset;
   rtx insn;
 
@@ -1873,7 +1874,7 @@ k1_expand_epilogue (void)
       emit_move_insn (gen_rtx_REG (DImode, HARD_FRAME_POINTER_REGNUM), fp_mem);
     }
 
-  k1_save_or_restore_callee_save_registers (1);
+  kvx_save_or_restore_callee_save_registers (1);
 
   if (frame_size != 0)
     {
@@ -1912,7 +1913,7 @@ tls_symbolic_operand_type (rtx addr)
 
 /* Return true if SYMBOL_REF X is thread local */
 static bool
-k1_tls_symbol_p (rtx x)
+kvx_tls_symbol_p (rtx x)
 {
   if (!TARGET_HAVE_TLS)
     return false;
@@ -1932,8 +1933,8 @@ gen_set_gotp_insn (rtx target)
     return gen_set_gotp_di (target);
 }
 
-static enum k1_symbol_type
-k1_classify_tls_symbol (rtx x)
+static enum kvx_symbol_type
+kvx_classify_tls_symbol (rtx x)
 {
   enum tls_model tls_kind = tls_symbolic_operand_type (x);
   switch (tls_kind)
@@ -1967,11 +1968,11 @@ k1_classify_tls_symbol (rtx x)
     }
 }
 
-static enum k1_symbol_type
-k1_classify_symbol (rtx x)
+static enum kvx_symbol_type
+kvx_classify_symbol (rtx x)
 {
-  if (k1_tls_symbol_p (x))
-    return k1_classify_tls_symbol (x);
+  if (kvx_tls_symbol_p (x))
+    return kvx_classify_tls_symbol (x);
 
   /* We keep both way of materializing the absolute address of a label
      because the use of pcrel insn has greater constraints on bundling
@@ -1992,7 +1993,7 @@ k1_classify_symbol (rtx x)
   return SYMBOL_ABSOLUTE;
 }
 
-static GTY (()) rtx k1_tls_symbol;
+static GTY (()) rtx kvx_tls_symbol;
 
 /* Return an instruction sequence that calls __tls_get_addr.  SYM is
    the TLS symbol we are referencing and TYPE is the symbol type to use
@@ -2000,14 +2001,14 @@ static GTY (()) rtx k1_tls_symbol;
    return value location.  */
 
 static rtx_insn *
-k1_call_tls_get_addr (rtx sym, rtx result, int unspec)
+kvx_call_tls_get_addr (rtx sym, rtx result, int unspec)
 {
   rtx a0 = gen_rtx_REG (Pmode, KV3_ARGUMENT_POINTER_REGNO), func;
   rtx_insn *insn;
 
-  if (!k1_tls_symbol)
-    k1_tls_symbol = init_one_libfunc ("__tls_get_addr");
-  func = gen_rtx_MEM (FUNCTION_MODE, k1_tls_symbol);
+  if (!kvx_tls_symbol)
+    kvx_tls_symbol = init_one_libfunc ("__tls_get_addr");
+  func = gen_rtx_MEM (FUNCTION_MODE, kvx_tls_symbol);
 
   start_sequence ();
 
@@ -2031,7 +2032,7 @@ k1_call_tls_get_addr (rtx sym, rtx result, int unspec)
 }
 
 static rtx
-k1_legitimize_tls_reference (rtx x)
+kvx_legitimize_tls_reference (rtx x)
 {
   rtx addr, pic_reg, eqv;
   rtx dest, tmp;
@@ -2039,7 +2040,7 @@ k1_legitimize_tls_reference (rtx x)
   if (reload_completed || reload_in_progress)
     return x;
 
-  enum k1_symbol_type sty = k1_classify_symbol (x);
+  enum kvx_symbol_type sty = kvx_classify_symbol (x);
 
   switch (sty)
     {
@@ -2060,7 +2061,7 @@ k1_legitimize_tls_reference (rtx x)
        */
       tmp = gen_rtx_REG (Pmode, KV3_ARGUMENT_POINTER_REGNO);
       dest = gen_reg_rtx (Pmode);
-      emit_libcall_block (k1_call_tls_get_addr (x, tmp, UNSPEC_TLS_GD),
+      emit_libcall_block (kvx_call_tls_get_addr (x, tmp, UNSPEC_TLS_GD),
 			  dest /* target */, tmp /* result */, x /* equiv */);
       return dest;
 
@@ -2089,7 +2090,7 @@ k1_legitimize_tls_reference (rtx x)
       eqv
 	= gen_rtx_UNSPEC (Pmode, gen_rtvec (1, const0_rtx), UNSPEC_TLS_LD_CALL);
 
-      emit_libcall_block (k1_call_tls_get_addr (x, tmp, UNSPEC_TLS_LD),
+      emit_libcall_block (kvx_call_tls_get_addr (x, tmp, UNSPEC_TLS_LD),
 			  dest /* target */, tmp /* result */, eqv /* equiv */);
 
       addr
@@ -2190,7 +2191,7 @@ symbolic_reference_mentioned_p (rtx op)
    code
 */
 bool
-k1_legitimate_pic_symbolic_ref_p (rtx op)
+kvx_legitimate_pic_symbolic_ref_p (rtx op)
 {
   /* Unwrap CONST */
   if (GET_CODE (op) == CONST)
@@ -2212,7 +2213,7 @@ k1_legitimate_pic_symbolic_ref_p (rtx op)
  */
 
 bool
-k1_legitimate_pic_operand_p (rtx x)
+kvx_legitimate_pic_operand_p (rtx x)
 {
   if (GET_CODE (x) == SYMBOL_REF || GET_CODE (x) == LABEL_REF
       || (GET_CODE (x) == CONST && GET_CODE (XEXP (x, 0)) == PLUS
@@ -2234,7 +2235,7 @@ gen_add2_pcrel_insn (rtx dest, rtx pcrel_offset)
 
 /* Expands a mov which second operand is a constant. */
 void
-k1_expand_mov_constant (rtx operands[])
+kvx_expand_mov_constant (rtx operands[])
 {
   rtx dest = operands[0];
   rtx src = operands[1];
@@ -2244,14 +2245,14 @@ k1_expand_mov_constant (rtx operands[])
       || GET_CODE (src) == CONST)
     {
       rtx base, offset;
-      enum k1_symbol_type sty;
+      enum kvx_symbol_type sty;
       rtx pic_reg;
 
       /* If we have (const (plus symbol offset)), separate out the offset
 	 before we start classifying the symbol.  */
       split_const (src, &base, &offset);
 
-      sty = k1_classify_symbol (base);
+      sty = kvx_classify_symbol (base);
       switch (sty)
 	{
 	case SYMBOL_ABSOLUTE:
@@ -2311,7 +2312,7 @@ k1_expand_mov_constant (rtx operands[])
 	case SYMBOL_TLSLD:
 	case SYMBOL_TLSGD:
 	case SYMBOL_TLSLE:
-	  operands[1] = k1_legitimize_tls_reference (base);
+	  operands[1] = kvx_legitimize_tls_reference (base);
 	  gcc_assert (operands[1] != src);
 
 	  emit_insn (gen_rtx_SET (dest, operands[1]));
@@ -2329,15 +2330,15 @@ k1_expand_mov_constant (rtx operands[])
 
   emit_insn (gen_rtx_SET (dest, src));
 
-  /* if (k1_has_tls_reference (operands[1])) */
+  /* if (kvx_has_tls_reference (operands[1])) */
   /*   { */
   /*     rtx src = operands[1]; */
-  /*     operands[1] = k1_legitimize_tls_reference (src); */
+  /*     operands[1] = kvx_legitimize_tls_reference (src); */
   /*     gcc_assert (operands[1] != src); */
   /*   } else if (flag_pic) */
   /*   { */
   /*     if (SYMBOLIC_CONST(operands[1])) */
-  /* 	operands[1] = k1_legitimize_pic_address (operands[1],
+  /* 	operands[1] = kvx_legitimize_pic_address (operands[1],
    * operands[0]); */
   /*   } */
   return;
@@ -2346,9 +2347,8 @@ k1_expand_mov_constant (rtx operands[])
 /* FIXME AUTO: fix cost function for coolidge */
 /* See T7748 */
 static int
-k1_register_move_cost (machine_mode mode,
-		      reg_class_t from ATTRIBUTE_UNUSED,
-		      reg_class_t to ATTRIBUTE_UNUSED)
+kvx_register_move_cost (machine_mode mode, reg_class_t from ATTRIBUTE_UNUSED,
+			reg_class_t to ATTRIBUTE_UNUSED)
 {
   int n_copyd = (GET_MODE_SIZE (mode) + UNITS_PER_WORD - 1) / UNITS_PER_WORD;
   /* Provide a cost slightly above one of a simple instruction. This prevents
@@ -2368,8 +2368,8 @@ k1_register_move_cost (machine_mode mode,
 
 /* Canonicalize a comparison from one we don't have to one we do have.  */
 static void
-k1_canonicalize_comparison (int *code, rtx *op0, rtx *op1,
-			    bool op0_preserve_value)
+kvx_canonicalize_comparison (int *code, rtx *op0, rtx *op1,
+			     bool op0_preserve_value)
 {
   machine_mode mode = GET_MODE (*op0);
   bool float_compare_p = (GET_MODE_CLASS (mode) == MODE_FLOAT);
@@ -2387,7 +2387,7 @@ k1_canonicalize_comparison (int *code, rtx *op0, rtx *op1,
 
 /* Emit the compare insn and return the register rtx. */
 static rtx
-k1_gen_compare_reg (RTX_CODE code, rtx cmp)
+kvx_gen_compare_reg (RTX_CODE code, rtx cmp)
 {
   rtx x = XEXP (cmp, 0);
   rtx y = XEXP (cmp, 1);
@@ -2427,7 +2427,7 @@ k1_gen_compare_reg (RTX_CODE code, rtx cmp)
 /* Emit code to conditionally move either OPERANDS[2] or OPERANDS[3] into
    OPERANDS[0] in MODE.  OPERANDS[1] is the operator of the condition. */
 bool
-k1_expand_conditional_move (machine_mode mode, rtx operands[])
+kvx_expand_conditional_move (machine_mode mode, rtx operands[])
 {
   rtx cmp = operands[1];
   enum rtx_code cmp_code = GET_CODE (cmp);
@@ -2465,7 +2465,7 @@ k1_expand_conditional_move (machine_mode mode, rtx operands[])
     cc_reg = force_reg (cmp_mode, XEXP (cmp, 0));
   else
     {
-      cc_reg = k1_gen_compare_reg (cmp_code, cmp);
+      cc_reg = kvx_gen_compare_reg (cmp_code, cmp);
 
       if (! cc_reg)
 	return false;
@@ -2495,7 +2495,7 @@ k1_expand_conditional_move (machine_mode mode, rtx operands[])
 
 /* FIXME AUTO: disabling vector support */
 /* void */
-/* k1_expand_vcondv2si (rtx *operands) */
+/* kvx_expand_vcondv2si (rtx *operands) */
 /* { */
 /*     bool invert = false; */
 
@@ -2553,7 +2553,7 @@ k1_expand_conditional_move (machine_mode mode, rtx operands[])
 
 /* FIXME AUTO: disabling vector support */
 /* void */
-/* k1_expand_vcondv4hi (rtx *operands) */
+/* kvx_expand_vcondv4hi (rtx *operands) */
 /* { */
 /*     bool invert = false; */
 
@@ -2608,7 +2608,7 @@ k1_expand_conditional_move (machine_mode mode, rtx operands[])
    MOVE is true). */
 
 void
-k1_emit_pre_barrier (rtx model, bool move)
+kvx_emit_pre_barrier (rtx model, bool move)
 {
   const enum memmodel mm = memmodel_from_int (INTVAL (model));
   switch (mm & MEMMODEL_BASE_MASK) // treat sync operations as atomic ones
@@ -2633,10 +2633,10 @@ k1_emit_pre_barrier (rtx model, bool move)
 
 /* Emit a barrier, that is appropriate for memory model MODEL, at the
    end of a sequence implementing an atomic operation. See
-   k1_emit_pre_barrier () for MOVE. */
+   kvx_emit_pre_barrier () for MOVE. */
 
 void
-k1_emit_post_barrier (rtx model, bool move)
+kvx_emit_post_barrier (rtx model, bool move)
 {
   const enum memmodel mm = memmodel_from_int (INTVAL (model));
   switch (mm & MEMMODEL_BASE_MASK) // treat sync operations as atomic ones
@@ -2663,7 +2663,7 @@ k1_emit_post_barrier (rtx model, bool move)
    (operands[5], operands[6] and operands[7] can be ignored).  */
 
 void
-k1_expand_compare_and_swap (rtx operands[])
+kvx_expand_compare_and_swap (rtx operands[])
 {
   rtx mem, oldval, newval, currval;
   rtx cas_retry = gen_label_rtx ();
@@ -2733,8 +2733,8 @@ k1_expand_compare_and_swap (rtx operands[])
    store the result to TARGET. */
 
 void
-k1_expand_atomic_op (enum rtx_code code, rtx target, bool after, rtx mem,
-		     rtx val, rtx model)
+kvx_expand_atomic_op (enum rtx_code code, rtx target, bool after, rtx mem,
+		      rtx val, rtx model)
 {
   machine_mode mode = GET_MODE (mem);
   rtx csloop = gen_label_rtx ();
@@ -2750,7 +2750,7 @@ k1_expand_atomic_op (enum rtx_code code, rtx target, bool after, rtx mem,
 
   gcc_assert ((mode == SImode || mode == DImode));
 
-  k1_emit_pre_barrier (model, false);
+  kvx_emit_pre_barrier (model, false);
 
   emit_label (csloop); /* cas loop entry point */
   /* copy memory content to perform op on it (atomic uncached load) */
@@ -2817,14 +2817,14 @@ k1_expand_atomic_op (enum rtx_code code, rtx target, bool after, rtx mem,
       emit_move_insn (target, ret);
     }
 
-  k1_emit_post_barrier (model, false);
+  kvx_emit_post_barrier (model, false);
 }
 
 /* Expand the atomic test-and-set on byte atomic operation using the
    acswapw insn. */
 
 void
-k1_expand_atomic_test_and_set (rtx operands[])
+kvx_expand_atomic_test_and_set (rtx operands[])
 {
   rtx mem = operands[1];   /* memory to be modified */
   rtx model = operands[2]; /* memory model */
@@ -2842,7 +2842,7 @@ k1_expand_atomic_test_and_set (rtx operands[])
   rtx (*gen3) (rtx, rtx, rtx);
   rtx (*gen2) (rtx, rtx);
 
-  k1_emit_pre_barrier (model, false);
+  kvx_emit_pre_barrier (model, false);
 
   emit_move_insn (pos, XEXP (mem, 0)); /* copy MEM pointer */
   /* find the place of the byte to test-and-set within the memory
@@ -2898,10 +2898,10 @@ k1_expand_atomic_test_and_set (rtx operands[])
   emit_label (fini);
   emit_move_insn (operands[0], gen_lowpart (QImode, byte));
 
-  k1_emit_post_barrier (model, false);
+  kvx_emit_post_barrier (model, false);
 }
 
-enum k1_builtin
+enum kvx_builtin
 {
   KVX_BUILTIN_ABDW,
   KVX_BUILTIN_ABDD,
@@ -3078,7 +3078,7 @@ enum k1_builtin
 static tree builtin_fndecls[KVX_LAST_BUILTIN];
 
 static void
-k1_init_builtins (void)
+kvx_init_builtins (void)
 {
 
 #define VOID void_type_node
@@ -3361,7 +3361,7 @@ k1_init_builtins (void)
 }
 
 static tree
-k1_builtin_decl (unsigned code, bool initialize_p ATTRIBUTE_UNUSED)
+kvx_builtin_decl (unsigned code, bool initialize_p ATTRIBUTE_UNUSED)
 {
   if (code >= ARRAY_SIZE (builtin_fndecls))
     return error_mark_node;
@@ -3551,7 +3551,7 @@ verify_const_field_arg (rtx arg, int bits, const char *name, const char *where)
 }
 
 static rtx
-k1_expand_builtin_get (rtx target, tree args)
+kvx_expand_builtin_get (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   arg1 = verify_const_uint_arg (arg1, 9, "get", "first");
@@ -3566,13 +3566,13 @@ k1_expand_builtin_get (rtx target, tree args)
   if (regno == KV3_PCR_REGNO)
     emit_move_insn (target, sys_reg);
   else
-    emit_insn (gen_k1_get (target, sys_reg, k1_sync_reg_rtx));
+    emit_insn (gen_kvx_get (target, sys_reg, kvx_sync_reg_rtx));
 
   return target;
 }
 
 static rtx
-k1_expand_builtin_set (rtx target ATTRIBUTE_UNUSED, tree args)
+kvx_expand_builtin_set (rtx target ATTRIBUTE_UNUSED, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
@@ -3581,13 +3581,13 @@ k1_expand_builtin_set (rtx target ATTRIBUTE_UNUSED, tree args)
   int regno = INTVAL (arg1) + KV3_SFR_FIRST_REGNO;
   rtx sys_reg = gen_rtx_REG (DImode, regno);
 
-  emit_insn (gen_k1_set (sys_reg, arg2, k1_sync_reg_rtx));
+  emit_insn (gen_kvx_set (sys_reg, arg2, kvx_sync_reg_rtx));
 
   return NULL_RTX;
 }
 
 static rtx
-k1_expand_builtin_wfxl (rtx target ATTRIBUTE_UNUSED, tree args)
+kvx_expand_builtin_wfxl (rtx target ATTRIBUTE_UNUSED, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
@@ -3596,13 +3596,13 @@ k1_expand_builtin_wfxl (rtx target ATTRIBUTE_UNUSED, tree args)
   int regno = INTVAL (arg1) + KV3_SFR_FIRST_REGNO;
   rtx sys_reg = gen_rtx_REG (DImode, regno);
 
-  emit_insn (gen_k1_wfxl (sys_reg, arg2, k1_sync_reg_rtx));
+  emit_insn (gen_kvx_wfxl (sys_reg, arg2, kvx_sync_reg_rtx));
 
   return NULL_RTX;
 }
 
 static rtx
-k1_expand_builtin_wfxm (rtx target ATTRIBUTE_UNUSED, tree args)
+kvx_expand_builtin_wfxm (rtx target ATTRIBUTE_UNUSED, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
@@ -3611,13 +3611,13 @@ k1_expand_builtin_wfxm (rtx target ATTRIBUTE_UNUSED, tree args)
   int regno = INTVAL (arg1) + KV3_SFR_FIRST_REGNO;
   rtx sys_reg = gen_rtx_REG (DImode, regno);
 
-  emit_insn (gen_k1_wfxm (sys_reg, arg2, k1_sync_reg_rtx));
+  emit_insn (gen_kvx_wfxm (sys_reg, arg2, kvx_sync_reg_rtx));
 
   return NULL_RTX;
 }
 
 static rtx
-k1_expand_builtin_waitit (rtx target, tree args)
+kvx_expand_builtin_waitit (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   arg1 = force_reg (SImode, arg1);
@@ -3627,13 +3627,13 @@ k1_expand_builtin_waitit (rtx target, tree args)
   else
     target = force_reg (SImode, target);
 
-  emit_insn (gen_waitit (target, arg1, k1_sync_reg_rtx));
+  emit_insn (gen_waitit (target, arg1, kvx_sync_reg_rtx));
 
   return target;
 }
 
 static rtx
-k1_expand_builtin_sbmm8 (rtx target, tree args)
+kvx_expand_builtin_sbmm8 (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
@@ -3651,7 +3651,7 @@ k1_expand_builtin_sbmm8 (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_sbmmt8 (rtx target, tree args)
+kvx_expand_builtin_sbmmt8 (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
@@ -3669,116 +3669,118 @@ k1_expand_builtin_sbmmt8 (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_await (rtx target ATTRIBUTE_UNUSED,
+kvx_expand_builtin_await (rtx target ATTRIBUTE_UNUSED,
+			  tree args ATTRIBUTE_UNUSED)
+{
+  emit_insn (gen_await (kvx_sync_reg_rtx));
+
+  return NULL_RTX;
+}
+
+static rtx
+kvx_expand_builtin_doze (rtx target ATTRIBUTE_UNUSED,
 			 tree args ATTRIBUTE_UNUSED)
 {
-  emit_insn (gen_await (k1_sync_reg_rtx));
+  emit_insn (gen_doze (kvx_sync_reg_rtx));
 
   return NULL_RTX;
 }
 
 static rtx
-k1_expand_builtin_doze (rtx target ATTRIBUTE_UNUSED, tree args ATTRIBUTE_UNUSED)
+kvx_expand_builtin_sleep (rtx target ATTRIBUTE_UNUSED,
+			  tree args ATTRIBUTE_UNUSED)
 {
-  emit_insn (gen_doze (k1_sync_reg_rtx));
+  emit_insn (gen_sleep (kvx_sync_reg_rtx));
 
   return NULL_RTX;
 }
 
 static rtx
-k1_expand_builtin_sleep (rtx target ATTRIBUTE_UNUSED,
+kvx_expand_builtin_stop (rtx target ATTRIBUTE_UNUSED,
 			 tree args ATTRIBUTE_UNUSED)
 {
-  emit_insn (gen_sleep (k1_sync_reg_rtx));
+  emit_insn (gen_stop (kvx_sync_reg_rtx));
 
   return NULL_RTX;
 }
 
 static rtx
-k1_expand_builtin_stop (rtx target ATTRIBUTE_UNUSED, tree args ATTRIBUTE_UNUSED)
-{
-  emit_insn (gen_stop (k1_sync_reg_rtx));
-
-  return NULL_RTX;
-}
-
-static rtx
-k1_expand_builtin_syncgroup (rtx target ATTRIBUTE_UNUSED, tree args)
+kvx_expand_builtin_syncgroup (rtx target ATTRIBUTE_UNUSED, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   arg1 = force_reg (DImode, arg1);
 
-  emit_insn (gen_syncgroup (arg1, k1_sync_reg_rtx));
+  emit_insn (gen_syncgroup (arg1, kvx_sync_reg_rtx));
 
   return NULL_RTX;
 }
 
 static rtx
-k1_expand_builtin_barrier (void)
+kvx_expand_builtin_barrier (void)
 {
-  emit_insn (gen_barrier (k1_sync_reg_rtx));
+  emit_insn (gen_barrier (kvx_sync_reg_rtx));
 
   return NULL_RTX;
 }
 
 static rtx
-k1_expand_builtin_dinval (void)
+kvx_expand_builtin_dinval (void)
 {
-  emit_insn (gen_dinval (k1_sync_reg_rtx));
+  emit_insn (gen_dinval (kvx_sync_reg_rtx));
 
   return NULL_RTX;
 }
 
 static rtx
-k1_expand_builtin_iinval (void)
+kvx_expand_builtin_iinval (void)
 {
-  emit_insn (gen_iinval (k1_sync_reg_rtx));
+  emit_insn (gen_iinval (kvx_sync_reg_rtx));
 
   return NULL_RTX;
 }
 
 static rtx
-k1_expand_builtin_tlbdinval (void)
+kvx_expand_builtin_tlbdinval (void)
 {
-  emit_insn (gen_tlbdinval (k1_sync_reg_rtx));
+  emit_insn (gen_tlbdinval (kvx_sync_reg_rtx));
 
   return NULL_RTX;
 }
 
 static rtx
-k1_expand_builtin_tlbiinval (void)
+kvx_expand_builtin_tlbiinval (void)
 {
-  emit_insn (gen_tlbiinval (k1_sync_reg_rtx));
+  emit_insn (gen_tlbiinval (kvx_sync_reg_rtx));
 
   return NULL_RTX;
 }
 
 static rtx
-k1_expand_builtin_tlbprobe (void)
+kvx_expand_builtin_tlbprobe (void)
 {
-  emit_insn (gen_tlbprobe (k1_sync_reg_rtx));
+  emit_insn (gen_tlbprobe (kvx_sync_reg_rtx));
 
   return NULL_RTX;
 }
 
 static rtx
-k1_expand_builtin_tlbread (void)
+kvx_expand_builtin_tlbread (void)
 {
-  emit_insn (gen_tlbread (k1_sync_reg_rtx));
+  emit_insn (gen_tlbread (kvx_sync_reg_rtx));
 
   return NULL_RTX;
 }
 
 static rtx
-k1_expand_builtin_tlbwrite (void)
+kvx_expand_builtin_tlbwrite (void)
 {
-  emit_insn (gen_tlbwrite (k1_sync_reg_rtx));
+  emit_insn (gen_tlbwrite (kvx_sync_reg_rtx));
 
   return NULL_RTX;
 }
 
 static rtx
-k1_expand_builtin_satd (rtx target, tree args)
+kvx_expand_builtin_satd (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
@@ -3795,7 +3797,7 @@ k1_expand_builtin_satd (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_satud (rtx target, tree args)
+kvx_expand_builtin_satud (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
@@ -3812,7 +3814,7 @@ k1_expand_builtin_satud (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_addsw (rtx target, tree args)
+kvx_expand_builtin_addsw (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
@@ -3829,7 +3831,7 @@ k1_expand_builtin_addsw (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_addsd (rtx target, tree args)
+kvx_expand_builtin_addsd (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
@@ -3846,7 +3848,7 @@ k1_expand_builtin_addsd (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_sbfsw (rtx target, tree args)
+kvx_expand_builtin_sbfsw (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
@@ -3863,7 +3865,7 @@ k1_expand_builtin_sbfsw (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_sbfsd (rtx target, tree args)
+kvx_expand_builtin_sbfsd (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
@@ -3880,7 +3882,7 @@ k1_expand_builtin_sbfsd (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_cbsw (rtx target, tree args)
+kvx_expand_builtin_cbsw (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   arg1 = force_reg (SImode, arg1);
@@ -3895,7 +3897,7 @@ k1_expand_builtin_cbsw (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_cbsd (rtx target, tree args)
+kvx_expand_builtin_cbsd (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   arg1 = force_reg (DImode, arg1);
@@ -3910,7 +3912,7 @@ k1_expand_builtin_cbsd (rtx target, tree args)
 }
 
 static rtx
-k1_builtin_helper_memref_ptr (rtx ptr, enum machine_mode mode)
+kvx_builtin_helper_memref_ptr (rtx ptr, enum machine_mode mode)
 {
   ptr = force_reg (Pmode, ptr);
   rtx mem_target = gen_rtx_MEM (mode, ptr);
@@ -3926,7 +3928,7 @@ k1_builtin_helper_memref_ptr (rtx ptr, enum machine_mode mode)
   rtx varname;                                                                 \
   {                                                                            \
     rtx _tmp = expand_normal (CALL_EXPR_ARG (args, argnum));                   \
-    rtx _mem_target = k1_builtin_helper_memref_ptr (_tmp, mode);               \
+    rtx _mem_target = kvx_builtin_helper_memref_ptr (_tmp, mode);              \
     varname = _mem_target;                                                     \
   }
 
@@ -3935,7 +3937,7 @@ k1_builtin_helper_memref_ptr (rtx ptr, enum machine_mode mode)
   varname = force_reg (mode, varname);
 
 static rtx
-k1_expand_builtin_afadd (rtx target, tree args, enum machine_mode mode)
+kvx_expand_builtin_afadd (rtx target, tree args, enum machine_mode mode)
 {
   MEMREF (0, mode, mem_target);
   GETREG (1, mode, addend_and_return);
@@ -3961,7 +3963,7 @@ k1_expand_builtin_afadd (rtx target, tree args, enum machine_mode mode)
 }
 
 static rtx
-k1_expand_builtin_acswap (rtx target, tree args, enum machine_mode mode)
+kvx_expand_builtin_acswap (rtx target, tree args, enum machine_mode mode)
 {
   rtx ptr = expand_normal (CALL_EXPR_ARG (args, 0));
 
@@ -4002,7 +4004,7 @@ k1_expand_builtin_acswap (rtx target, tree args, enum machine_mode mode)
 }
 
 static rtx
-k1_expand_builtin_ctzw (rtx target, tree args)
+kvx_expand_builtin_ctzw (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
 
@@ -4016,7 +4018,7 @@ k1_expand_builtin_ctzw (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_clzw (rtx target, tree args)
+kvx_expand_builtin_clzw (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
 
@@ -4030,7 +4032,7 @@ k1_expand_builtin_clzw (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_ctzd (rtx target, tree args)
+kvx_expand_builtin_ctzd (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
 
@@ -4044,7 +4046,7 @@ k1_expand_builtin_ctzd (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_clzd (rtx target, tree args)
+kvx_expand_builtin_clzd (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
 
@@ -4058,26 +4060,26 @@ k1_expand_builtin_clzd (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_fence (void)
+kvx_expand_builtin_fence (void)
 {
-  emit_insn (gen_fence (k1_sync_reg_rtx));
+  emit_insn (gen_fence (kvx_sync_reg_rtx));
 
   return NULL_RTX;
 }
 
 static rtx
-k1_expand_builtin_dinvall (rtx target, tree args)
+kvx_expand_builtin_dinvall (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   arg1 = gen_rtx_MEM (SImode, force_reg (Pmode, arg1));
 
-  emit_insn (gen_dinvall (arg1, k1_sync_reg_rtx));
+  emit_insn (gen_dinvall (arg1, kvx_sync_reg_rtx));
 
   return target;
 }
 
 static rtx
-k1_expand_builtin_dtouchl (rtx target, tree args)
+kvx_expand_builtin_dtouchl (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   arg1 = force_reg (Pmode, arg1);
@@ -4088,29 +4090,29 @@ k1_expand_builtin_dtouchl (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_dzerol (rtx target, tree args)
+kvx_expand_builtin_dzerol (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   arg1 = gen_rtx_MEM (SImode, force_reg (Pmode, arg1));
 
-  emit_insn (gen_dzerol (arg1, k1_sync_reg_rtx));
+  emit_insn (gen_dzerol (arg1, kvx_sync_reg_rtx));
 
   return target;
 }
 
 static rtx
-k1_expand_builtin_iinvals (rtx target, tree args)
+kvx_expand_builtin_iinvals (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   arg1 = gen_rtx_MEM (SImode, force_reg (Pmode, arg1));
 
-  emit_insn (gen_iinvals (arg1, k1_sync_reg_rtx));
+  emit_insn (gen_iinvals (arg1, kvx_sync_reg_rtx));
 
   return target;
 }
 
 static rtx
-k1_expand_builtin_alclr (rtx target, tree args, enum machine_mode mode)
+kvx_expand_builtin_alclr (rtx target, tree args, enum machine_mode mode)
 {
   rtx ptr = expand_normal (CALL_EXPR_ARG (args, 0));
 
@@ -4142,7 +4144,7 @@ k1_expand_builtin_alclr (rtx target, tree args, enum machine_mode mode)
 }
 
 #define KVX_EXPAND_BUILTIN_2_STANDARD(name, name2, tmode, smode)               \
-  static rtx k1_expand_builtin_##name (rtx target, tree args)                  \
+  static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     arg1 = force_reg (smode, arg1);                                            \
@@ -4167,7 +4169,7 @@ KVX_EXPAND_BUILTIN_2_STANDARD (fnegd, negdf2, DFmode, DFmode)
 KVX_EXPAND_BUILTIN_2_STANDARD (fnegdp, negv2df2, V2DFmode, V2DFmode)
 
 #define KVX_EXPAND_BUILTIN_3_STANDARD(name, name2, tmode, smode)               \
-  static rtx k1_expand_builtin_##name (rtx target, tree args)                  \
+  static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
@@ -4181,12 +4183,12 @@ KVX_EXPAND_BUILTIN_2_STANDARD (fnegdp, negv2df2, V2DFmode, V2DFmode)
     return target;                                                             \
   }
 
-KVX_EXPAND_BUILTIN_3_STANDARD (abdw, k1_abdw, SImode, SImode)
-KVX_EXPAND_BUILTIN_3_STANDARD (abdd, k1_abdd, DImode, DImode)
-KVX_EXPAND_BUILTIN_3_STANDARD (avgw, k1_avgw, SImode, SImode)
-KVX_EXPAND_BUILTIN_3_STANDARD (avguw, k1_avguw, SImode, SImode)
-KVX_EXPAND_BUILTIN_3_STANDARD (avgrw, k1_avgrw, SImode, SImode)
-KVX_EXPAND_BUILTIN_3_STANDARD (avgruw, k1_avgruw, SImode, SImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (abdw, kvx_abdw, SImode, SImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (abdd, kvx_abdd, DImode, DImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (avgw, kvx_avgw, SImode, SImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (avguw, kvx_avguw, SImode, SImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (avgrw, kvx_avgrw, SImode, SImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (avgruw, kvx_avgruw, SImode, SImode)
 
 KVX_EXPAND_BUILTIN_3_STANDARD (fmaxw, fmaxsf3, SFmode, SFmode)
 KVX_EXPAND_BUILTIN_3_STANDARD (fmaxwp, fmaxv2sf3, V2SFmode, V2SFmode)
@@ -4201,7 +4203,7 @@ KVX_EXPAND_BUILTIN_3_STANDARD (fmind, fmindf3, DFmode, DFmode)
 KVX_EXPAND_BUILTIN_3_STANDARD (fmindp, fminv2df3, V2DFmode, V2DFmode)
 
 #define KVX_EXPAND_BUILTIN_2_MODIFIERS(name, tmode, smode)                     \
-  static rtx k1_expand_builtin_##name (rtx target, tree args)                  \
+  static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = build_rounding_silent_arg (CALL_EXPR_ARG (args, 1), #name);     \
@@ -4210,7 +4212,7 @@ KVX_EXPAND_BUILTIN_3_STANDARD (fmindp, fminv2df3, V2DFmode, V2DFmode)
       target = gen_reg_rtx (tmode);                                            \
     else                                                                       \
       target = force_reg (tmode, target);                                      \
-    emit_insn (gen_k1_##name (target, arg1, arg2));                            \
+    emit_insn (gen_kvx_##name (target, arg1, arg2));                           \
     return target;                                                             \
   }
 
@@ -4218,7 +4220,7 @@ KVX_EXPAND_BUILTIN_2_MODIFIERS (finvw, SFmode, SFmode)
 KVX_EXPAND_BUILTIN_2_MODIFIERS (fisrw, SFmode, SFmode)
 
 #define KVX_EXPAND_BUILTIN_3_MODIFIERS(name, tmode, smode)                     \
-  static rtx k1_expand_builtin_##name (rtx target, tree args)                  \
+  static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
@@ -4229,7 +4231,7 @@ KVX_EXPAND_BUILTIN_2_MODIFIERS (fisrw, SFmode, SFmode)
       target = gen_reg_rtx (tmode);                                            \
     else                                                                       \
       target = force_reg (tmode, target);                                      \
-    emit_insn (gen_k1_##name (target, arg1, arg2, arg3));                      \
+    emit_insn (gen_kvx_##name (target, arg1, arg2, arg3));                     \
     return target;                                                             \
   }
 
@@ -4266,7 +4268,7 @@ KVX_EXPAND_BUILTIN_3_MODIFIERS (fmulcdc, V2DFmode, V2DFmode)
 KVX_EXPAND_BUILTIN_3_MODIFIERS (fmm2wq, V4SFmode, V2SFmode)
 
 #define KVX_EXPAND_BUILTIN_4_MODIFIERS(name, tmode, smode)                     \
-  static rtx k1_expand_builtin_##name (rtx target, tree args)                  \
+  static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
@@ -4279,7 +4281,7 @@ KVX_EXPAND_BUILTIN_3_MODIFIERS (fmm2wq, V4SFmode, V2SFmode)
       target = gen_reg_rtx (tmode);                                            \
     else                                                                       \
       target = force_reg (tmode, target);                                      \
-    emit_insn (gen_k1_##name (target, arg1, arg2, arg3, arg4));                \
+    emit_insn (gen_kvx_##name (target, arg1, arg2, arg3, arg4));               \
     return target;                                                             \
   }
 
@@ -4300,7 +4302,7 @@ KVX_EXPAND_BUILTIN_4_MODIFIERS (ffmswd, DFmode, SFmode)
 KVX_EXPAND_BUILTIN_4_MODIFIERS (fmm2swq, V4SFmode, V2SFmode)
 
 #define KVX_EXPAND_BUILTIN_FCONVERT(name, tmode, smode)                        \
-  static rtx k1_expand_builtin_##name (rtx target, tree args)                  \
+  static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
@@ -4311,7 +4313,7 @@ KVX_EXPAND_BUILTIN_4_MODIFIERS (fmm2swq, V4SFmode, V2SFmode)
     else                                                                       \
       target = force_reg (tmode, target);                                      \
     arg1 = force_reg (smode, arg1);                                            \
-    emit_insn (gen_k1_##name (target, arg1, arg2, arg3));                      \
+    emit_insn (gen_kvx_##name (target, arg1, arg2, arg3));                     \
     return target;                                                             \
   }
 
@@ -4337,7 +4339,7 @@ KVX_EXPAND_BUILTIN_FCONVERT (fixedud, DImode, DFmode)
 KVX_EXPAND_BUILTIN_FCONVERT (fixedudp, V2DImode, V2DFmode)
 
 static rtx
-k1_expand_builtin_fsdivw (rtx target, tree args)
+kvx_expand_builtin_fsdivw (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
@@ -4355,7 +4357,7 @@ k1_expand_builtin_fsdivw (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_fsinvw (rtx target, tree args)
+kvx_expand_builtin_fsinvw (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   arg1 = force_reg (SFmode, arg1);
@@ -4371,7 +4373,7 @@ k1_expand_builtin_fsinvw (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_fcdivw (rtx target, tree args)
+kvx_expand_builtin_fcdivw (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
@@ -4389,7 +4391,7 @@ k1_expand_builtin_fcdivw (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_fsisrw (rtx target, tree args)
+kvx_expand_builtin_fsisrw (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   arg1 = force_reg (SFmode, arg1);
@@ -4405,7 +4407,7 @@ k1_expand_builtin_fsisrw (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_fsdivd (rtx target, tree args)
+kvx_expand_builtin_fsdivd (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
@@ -4423,7 +4425,7 @@ k1_expand_builtin_fsdivd (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_fsinvd (rtx target, tree args)
+kvx_expand_builtin_fsinvd (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   arg1 = force_reg (DFmode, arg1);
@@ -4439,7 +4441,7 @@ k1_expand_builtin_fsinvd (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_fcdivd (rtx target, tree args)
+kvx_expand_builtin_fcdivd (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
@@ -4457,7 +4459,7 @@ k1_expand_builtin_fcdivd (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_fsisrd (rtx target, tree args)
+kvx_expand_builtin_fsisrd (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   arg1 = force_reg (DFmode, arg1);
@@ -4473,7 +4475,7 @@ k1_expand_builtin_fsisrd (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_lbsu (rtx target, tree args)
+kvx_expand_builtin_lbsu (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   arg1 = gen_rtx_MEM (QImode, force_reg (Pmode, arg1));
@@ -4489,7 +4491,7 @@ k1_expand_builtin_lbsu (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_lbzu (rtx target, tree args)
+kvx_expand_builtin_lbzu (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   arg1 = gen_rtx_MEM (QImode, force_reg (Pmode, arg1));
@@ -4505,7 +4507,7 @@ k1_expand_builtin_lbzu (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_ldu (rtx target, tree args)
+kvx_expand_builtin_ldu (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   arg1 = gen_rtx_MEM (DImode, force_reg (Pmode, arg1));
@@ -4521,7 +4523,7 @@ k1_expand_builtin_ldu (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_lhsu (rtx target, tree args)
+kvx_expand_builtin_lhsu (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   arg1 = gen_rtx_MEM (HImode, force_reg (Pmode, arg1));
@@ -4537,7 +4539,7 @@ k1_expand_builtin_lhsu (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_lhzu (rtx target, tree args)
+kvx_expand_builtin_lhzu (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   arg1 = gen_rtx_MEM (HImode, force_reg (Pmode, arg1));
@@ -4553,7 +4555,7 @@ k1_expand_builtin_lhzu (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_lwzu (rtx target, tree args)
+kvx_expand_builtin_lwzu (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   arg1 = gen_rtx_MEM (SImode, force_reg (Pmode, arg1));
@@ -4569,7 +4571,7 @@ k1_expand_builtin_lwzu (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_extfz (rtx target, tree args)
+kvx_expand_builtin_extfz (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
@@ -4590,7 +4592,7 @@ k1_expand_builtin_extfz (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_stsuw (rtx target, tree args)
+kvx_expand_builtin_stsuw (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
@@ -4608,7 +4610,7 @@ k1_expand_builtin_stsuw (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_stsud (rtx target, tree args)
+kvx_expand_builtin_stsud (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
@@ -4626,7 +4628,7 @@ k1_expand_builtin_stsud (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin_fwiden (rtx target, tree args, int low_bits)
+kvx_expand_builtin_fwiden (rtx target, tree args, int low_bits)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   arg1 = force_reg (SImode, arg1);
@@ -4645,7 +4647,7 @@ k1_expand_builtin_fwiden (rtx target, tree args, int low_bits)
 }
 
 static rtx
-k1_expand_builtin_fnarrowwh (rtx target, tree args)
+kvx_expand_builtin_fnarrowwh (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   arg1 = force_reg (SFmode, arg1);
@@ -4661,9 +4663,9 @@ k1_expand_builtin_fnarrowwh (rtx target, tree args)
 }
 
 static rtx
-k1_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
-		   enum machine_mode mode ATTRIBUTE_UNUSED,
-		   int ignore ATTRIBUTE_UNUSED)
+kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
+		    enum machine_mode mode ATTRIBUTE_UNUSED,
+		    int ignore ATTRIBUTE_UNUSED)
 {
   tree fndecl = TREE_OPERAND (CALL_EXPR_FN (exp), 0);
   unsigned int fcode = DECL_FUNCTION_CODE (fndecl);
@@ -4671,316 +4673,316 @@ k1_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
   switch (fcode)
     {
     case KVX_BUILTIN_ABDW:
-      return k1_expand_builtin_abdw (target, exp);
+      return kvx_expand_builtin_abdw (target, exp);
     case KVX_BUILTIN_ABDD:
-      return k1_expand_builtin_abdd (target, exp);
+      return kvx_expand_builtin_abdd (target, exp);
     case KVX_BUILTIN_ADDSW:
-      return k1_expand_builtin_addsw (target, exp);
+      return kvx_expand_builtin_addsw (target, exp);
     case KVX_BUILTIN_ADDSD:
-      return k1_expand_builtin_addsd (target, exp);
+      return kvx_expand_builtin_addsd (target, exp);
     case KVX_BUILTIN_SBFSW:
-      return k1_expand_builtin_sbfsw (target, exp);
+      return kvx_expand_builtin_sbfsw (target, exp);
     case KVX_BUILTIN_SBFSD:
-      return k1_expand_builtin_sbfsd (target, exp);
+      return kvx_expand_builtin_sbfsd (target, exp);
     case KVX_BUILTIN_AVGW:
-      return k1_expand_builtin_avgw (target, exp);
+      return kvx_expand_builtin_avgw (target, exp);
     case KVX_BUILTIN_AVGUW:
-      return k1_expand_builtin_avguw (target, exp);
+      return kvx_expand_builtin_avguw (target, exp);
     case KVX_BUILTIN_AVGRW:
-      return k1_expand_builtin_avgrw (target, exp);
+      return kvx_expand_builtin_avgrw (target, exp);
     case KVX_BUILTIN_AVGRUW:
-      return k1_expand_builtin_avgruw (target, exp);
+      return kvx_expand_builtin_avgruw (target, exp);
     case KVX_BUILTIN_AWAIT:
-      return k1_expand_builtin_await (target, exp);
+      return kvx_expand_builtin_await (target, exp);
     case KVX_BUILTIN_BARRIER:
-      return k1_expand_builtin_barrier ();
+      return kvx_expand_builtin_barrier ();
     case KVX_BUILTIN_ACSWAPW:
-      return k1_expand_builtin_acswap (target, exp, SImode);
+      return kvx_expand_builtin_acswap (target, exp, SImode);
     case KVX_BUILTIN_ACSWAPD:
-      return k1_expand_builtin_acswap (target, exp, DImode);
+      return kvx_expand_builtin_acswap (target, exp, DImode);
     case KVX_BUILTIN_AFADDD:
-      return k1_expand_builtin_afadd (target, exp, DImode);
+      return kvx_expand_builtin_afadd (target, exp, DImode);
     case KVX_BUILTIN_AFADDW:
-      return k1_expand_builtin_afadd (target, exp, SImode);
+      return kvx_expand_builtin_afadd (target, exp, SImode);
     case KVX_BUILTIN_ALCLRD:
-      return k1_expand_builtin_alclr (target, exp, DImode);
+      return kvx_expand_builtin_alclr (target, exp, DImode);
     case KVX_BUILTIN_ALCLRW:
-      return k1_expand_builtin_alclr (target, exp, SImode);
+      return kvx_expand_builtin_alclr (target, exp, SImode);
     case KVX_BUILTIN_CBSW:
-      return k1_expand_builtin_cbsw (target, exp);
+      return kvx_expand_builtin_cbsw (target, exp);
     case KVX_BUILTIN_CBSD:
-      return k1_expand_builtin_cbsd (target, exp);
+      return kvx_expand_builtin_cbsd (target, exp);
     case KVX_BUILTIN_CLZW:
-      return k1_expand_builtin_clzw (target, exp);
+      return kvx_expand_builtin_clzw (target, exp);
     case KVX_BUILTIN_CLZD:
-      return k1_expand_builtin_clzd (target, exp);
+      return kvx_expand_builtin_clzd (target, exp);
     case KVX_BUILTIN_CTZW:
-      return k1_expand_builtin_ctzw (target, exp);
+      return kvx_expand_builtin_ctzw (target, exp);
     case KVX_BUILTIN_CTZD:
-      return k1_expand_builtin_ctzd (target, exp);
+      return kvx_expand_builtin_ctzd (target, exp);
     case KVX_BUILTIN_DINVAL:
-      return k1_expand_builtin_dinval ();
+      return kvx_expand_builtin_dinval ();
     case KVX_BUILTIN_DINVALL:
-      return k1_expand_builtin_dinvall (target, exp);
+      return kvx_expand_builtin_dinvall (target, exp);
     case KVX_BUILTIN_DOZE:
-      return k1_expand_builtin_doze (target, exp);
+      return kvx_expand_builtin_doze (target, exp);
     case KVX_BUILTIN_DTOUCHL:
-      return k1_expand_builtin_dtouchl (target, exp);
+      return kvx_expand_builtin_dtouchl (target, exp);
     case KVX_BUILTIN_DZEROL:
-      return k1_expand_builtin_dzerol (target, exp);
+      return kvx_expand_builtin_dzerol (target, exp);
     case KVX_BUILTIN_EXTFZ:
-      return k1_expand_builtin_extfz (target, exp);
+      return kvx_expand_builtin_extfz (target, exp);
 
     case KVX_BUILTIN_FABSW:
-      return k1_expand_builtin_fabsw (target, exp);
+      return kvx_expand_builtin_fabsw (target, exp);
     case KVX_BUILTIN_FABSWP:
-      return k1_expand_builtin_fabswp (target, exp);
+      return kvx_expand_builtin_fabswp (target, exp);
     case KVX_BUILTIN_FABSWQ:
-      return k1_expand_builtin_fabswq (target, exp);
+      return kvx_expand_builtin_fabswq (target, exp);
     case KVX_BUILTIN_FABSD:
-      return k1_expand_builtin_fabsd (target, exp);
+      return kvx_expand_builtin_fabsd (target, exp);
     case KVX_BUILTIN_FABSDP:
-      return k1_expand_builtin_fabsdp (target, exp);
+      return kvx_expand_builtin_fabsdp (target, exp);
     case KVX_BUILTIN_FNEGW:
-      return k1_expand_builtin_fnegw (target, exp);
+      return kvx_expand_builtin_fnegw (target, exp);
     case KVX_BUILTIN_FNEGWP:
-      return k1_expand_builtin_fnegwp (target, exp);
+      return kvx_expand_builtin_fnegwp (target, exp);
     case KVX_BUILTIN_FNEGWQ:
-      return k1_expand_builtin_fnegwq (target, exp);
+      return kvx_expand_builtin_fnegwq (target, exp);
     case KVX_BUILTIN_FNEGD:
-      return k1_expand_builtin_fnegd (target, exp);
+      return kvx_expand_builtin_fnegd (target, exp);
     case KVX_BUILTIN_FNEGDP:
-      return k1_expand_builtin_fnegdp (target, exp);
+      return kvx_expand_builtin_fnegdp (target, exp);
     case KVX_BUILTIN_FMAXW:
-      return k1_expand_builtin_fmaxw (target, exp);
+      return kvx_expand_builtin_fmaxw (target, exp);
     case KVX_BUILTIN_FMAXWP:
-      return k1_expand_builtin_fmaxwp (target, exp);
+      return kvx_expand_builtin_fmaxwp (target, exp);
     case KVX_BUILTIN_FMAXWQ:
-      return k1_expand_builtin_fmaxwq (target, exp);
+      return kvx_expand_builtin_fmaxwq (target, exp);
     case KVX_BUILTIN_FMAXD:
-      return k1_expand_builtin_fmaxd (target, exp);
+      return kvx_expand_builtin_fmaxd (target, exp);
     case KVX_BUILTIN_FMAXDP:
-      return k1_expand_builtin_fmaxdp (target, exp);
+      return kvx_expand_builtin_fmaxdp (target, exp);
     case KVX_BUILTIN_FMINW:
-      return k1_expand_builtin_fminw (target, exp);
+      return kvx_expand_builtin_fminw (target, exp);
     case KVX_BUILTIN_FMINWP:
-      return k1_expand_builtin_fminwp (target, exp);
+      return kvx_expand_builtin_fminwp (target, exp);
     case KVX_BUILTIN_FMINWQ:
-      return k1_expand_builtin_fminwq (target, exp);
+      return kvx_expand_builtin_fminwq (target, exp);
     case KVX_BUILTIN_FMIND:
-      return k1_expand_builtin_fmind (target, exp);
+      return kvx_expand_builtin_fmind (target, exp);
     case KVX_BUILTIN_FMINDP:
-      return k1_expand_builtin_fmindp (target, exp);
+      return kvx_expand_builtin_fmindp (target, exp);
     case KVX_BUILTIN_FINVW:
-      return k1_expand_builtin_finvw (target, exp);
+      return kvx_expand_builtin_finvw (target, exp);
     case KVX_BUILTIN_FISRW:
-      return k1_expand_builtin_fisrw (target, exp);
+      return kvx_expand_builtin_fisrw (target, exp);
     case KVX_BUILTIN_FADDW:
-      return k1_expand_builtin_faddw (target, exp);
+      return kvx_expand_builtin_faddw (target, exp);
     case KVX_BUILTIN_FADDWP:
-      return k1_expand_builtin_faddwp (target, exp);
+      return kvx_expand_builtin_faddwp (target, exp);
     case KVX_BUILTIN_FADDWQ:
-      return k1_expand_builtin_faddwq (target, exp);
+      return kvx_expand_builtin_faddwq (target, exp);
     case KVX_BUILTIN_FADDD:
-      return k1_expand_builtin_faddd (target, exp);
+      return kvx_expand_builtin_faddd (target, exp);
     case KVX_BUILTIN_FADDDP:
-      return k1_expand_builtin_fadddp (target, exp);
+      return kvx_expand_builtin_fadddp (target, exp);
     case KVX_BUILTIN_FADDCWC:
-      return k1_expand_builtin_faddcwc (target, exp);
+      return kvx_expand_builtin_faddcwc (target, exp);
     case KVX_BUILTIN_FADDCWCP:
-      return k1_expand_builtin_faddcwcp (target, exp);
+      return kvx_expand_builtin_faddcwcp (target, exp);
     case KVX_BUILTIN_FADDCDC:
-      return k1_expand_builtin_faddcdc (target, exp);
+      return kvx_expand_builtin_faddcdc (target, exp);
     case KVX_BUILTIN_FSBFW:
-      return k1_expand_builtin_fsbfw (target, exp);
+      return kvx_expand_builtin_fsbfw (target, exp);
     case KVX_BUILTIN_FSBFWP:
-      return k1_expand_builtin_fsbfwp (target, exp);
+      return kvx_expand_builtin_fsbfwp (target, exp);
     case KVX_BUILTIN_FSBFWQ:
-      return k1_expand_builtin_fsbfwq (target, exp);
+      return kvx_expand_builtin_fsbfwq (target, exp);
     case KVX_BUILTIN_FSBFD:
-      return k1_expand_builtin_fsbfd (target, exp);
+      return kvx_expand_builtin_fsbfd (target, exp);
     case KVX_BUILTIN_FSBFDP:
-      return k1_expand_builtin_fsbfdp (target, exp);
+      return kvx_expand_builtin_fsbfdp (target, exp);
     case KVX_BUILTIN_FSBFCWC:
-      return k1_expand_builtin_fsbfcwc (target, exp);
+      return kvx_expand_builtin_fsbfcwc (target, exp);
     case KVX_BUILTIN_FSBFCWCP:
-      return k1_expand_builtin_fsbfcwcp (target, exp);
+      return kvx_expand_builtin_fsbfcwcp (target, exp);
     case KVX_BUILTIN_FSBFCDC:
-      return k1_expand_builtin_fsbfcdc (target, exp);
+      return kvx_expand_builtin_fsbfcdc (target, exp);
     case KVX_BUILTIN_FMULW:
-      return k1_expand_builtin_fmulw (target, exp);
+      return kvx_expand_builtin_fmulw (target, exp);
     case KVX_BUILTIN_FMULWP:
-      return k1_expand_builtin_fmulwp (target, exp);
+      return kvx_expand_builtin_fmulwp (target, exp);
     case KVX_BUILTIN_FMULWQ:
-      return k1_expand_builtin_fmulwq (target, exp);
+      return kvx_expand_builtin_fmulwq (target, exp);
     case KVX_BUILTIN_FMULD:
-      return k1_expand_builtin_fmuld (target, exp);
+      return kvx_expand_builtin_fmuld (target, exp);
     case KVX_BUILTIN_FMULDP:
-      return k1_expand_builtin_fmuldp (target, exp);
+      return kvx_expand_builtin_fmuldp (target, exp);
     case KVX_BUILTIN_FMULWD:
-      return k1_expand_builtin_fmulwd (target, exp);
+      return kvx_expand_builtin_fmulwd (target, exp);
     case KVX_BUILTIN_FMULWC:
-      return k1_expand_builtin_fmulwc (target, exp);
+      return kvx_expand_builtin_fmulwc (target, exp);
     case KVX_BUILTIN_FMULWCP:
-      return k1_expand_builtin_fmulwcp (target, exp);
+      return kvx_expand_builtin_fmulwcp (target, exp);
     case KVX_BUILTIN_FMULCWC:
-      return k1_expand_builtin_fmulcwc (target, exp);
+      return kvx_expand_builtin_fmulcwc (target, exp);
     case KVX_BUILTIN_FMULCWCP:
-      return k1_expand_builtin_fmulcwcp (target, exp);
+      return kvx_expand_builtin_fmulcwcp (target, exp);
     case KVX_BUILTIN_FMULDC:
-      return k1_expand_builtin_fmuldc (target, exp);
+      return kvx_expand_builtin_fmuldc (target, exp);
     case KVX_BUILTIN_FMULCDC:
-      return k1_expand_builtin_fmulcdc (target, exp);
+      return kvx_expand_builtin_fmulcdc (target, exp);
     case KVX_BUILTIN_FMM2WQ:
-      return k1_expand_builtin_fmm2wq (target, exp);
+      return kvx_expand_builtin_fmm2wq (target, exp);
     case KVX_BUILTIN_FFMAW:
-      return k1_expand_builtin_ffmaw (target, exp);
+      return kvx_expand_builtin_ffmaw (target, exp);
     case KVX_BUILTIN_FFMAWP:
-      return k1_expand_builtin_ffmawp (target, exp);
+      return kvx_expand_builtin_ffmawp (target, exp);
     case KVX_BUILTIN_FFMAWQ:
-      return k1_expand_builtin_ffmawq (target, exp);
+      return kvx_expand_builtin_ffmawq (target, exp);
     case KVX_BUILTIN_FFMAD:
-      return k1_expand_builtin_ffmad (target, exp);
+      return kvx_expand_builtin_ffmad (target, exp);
     case KVX_BUILTIN_FFMADP:
-      return k1_expand_builtin_ffmadp (target, exp);
+      return kvx_expand_builtin_ffmadp (target, exp);
     case KVX_BUILTIN_FFMAWD:
-      return k1_expand_builtin_ffmawd (target, exp);
+      return kvx_expand_builtin_ffmawd (target, exp);
     case KVX_BUILTIN_FMM2AWQ:
-      return k1_expand_builtin_fmm2awq (target, exp);
+      return kvx_expand_builtin_fmm2awq (target, exp);
     case KVX_BUILTIN_FFMSW:
-      return k1_expand_builtin_ffmsw (target, exp);
+      return kvx_expand_builtin_ffmsw (target, exp);
     case KVX_BUILTIN_FFMSWP:
-      return k1_expand_builtin_ffmswp (target, exp);
+      return kvx_expand_builtin_ffmswp (target, exp);
     case KVX_BUILTIN_FFMSWQ:
-      return k1_expand_builtin_ffmswq (target, exp);
+      return kvx_expand_builtin_ffmswq (target, exp);
     case KVX_BUILTIN_FFMSD:
-      return k1_expand_builtin_ffmsd (target, exp);
+      return kvx_expand_builtin_ffmsd (target, exp);
     case KVX_BUILTIN_FFMSDP:
-      return k1_expand_builtin_ffmsdp (target, exp);
+      return kvx_expand_builtin_ffmsdp (target, exp);
     case KVX_BUILTIN_FFMSWD:
-      return k1_expand_builtin_ffmswd (target, exp);
+      return kvx_expand_builtin_ffmswd (target, exp);
     case KVX_BUILTIN_FMM2SWQ:
-      return k1_expand_builtin_fmm2swq (target, exp);
+      return kvx_expand_builtin_fmm2swq (target, exp);
     case KVX_BUILTIN_FLOATW:
-      return k1_expand_builtin_floatw (target, exp);
+      return kvx_expand_builtin_floatw (target, exp);
     case KVX_BUILTIN_FLOATWP:
-      return k1_expand_builtin_floatwp (target, exp);
+      return kvx_expand_builtin_floatwp (target, exp);
     case KVX_BUILTIN_FLOATWQ:
-      return k1_expand_builtin_floatwq (target, exp);
+      return kvx_expand_builtin_floatwq (target, exp);
     case KVX_BUILTIN_FLOATD:
-      return k1_expand_builtin_floatd (target, exp);
+      return kvx_expand_builtin_floatd (target, exp);
     case KVX_BUILTIN_FLOATDP:
-      return k1_expand_builtin_floatdp (target, exp);
+      return kvx_expand_builtin_floatdp (target, exp);
     case KVX_BUILTIN_FLOATUW:
-      return k1_expand_builtin_floatuw (target, exp);
+      return kvx_expand_builtin_floatuw (target, exp);
     case KVX_BUILTIN_FLOATUWP:
-      return k1_expand_builtin_floatuwp (target, exp);
+      return kvx_expand_builtin_floatuwp (target, exp);
     case KVX_BUILTIN_FLOATUWQ:
-      return k1_expand_builtin_floatuwq (target, exp);
+      return kvx_expand_builtin_floatuwq (target, exp);
     case KVX_BUILTIN_FLOATUD:
-      return k1_expand_builtin_floatud (target, exp);
+      return kvx_expand_builtin_floatud (target, exp);
     case KVX_BUILTIN_FLOATUDP:
-      return k1_expand_builtin_floatudp (target, exp);
+      return kvx_expand_builtin_floatudp (target, exp);
     case KVX_BUILTIN_FIXEDW:
-      return k1_expand_builtin_fixedw (target, exp);
+      return kvx_expand_builtin_fixedw (target, exp);
     case KVX_BUILTIN_FIXEDWP:
-      return k1_expand_builtin_fixedwp (target, exp);
+      return kvx_expand_builtin_fixedwp (target, exp);
     case KVX_BUILTIN_FIXEDWQ:
-      return k1_expand_builtin_fixedwq (target, exp);
+      return kvx_expand_builtin_fixedwq (target, exp);
     case KVX_BUILTIN_FIXEDD:
-      return k1_expand_builtin_fixedd (target, exp);
+      return kvx_expand_builtin_fixedd (target, exp);
     case KVX_BUILTIN_FIXEDDP:
-      return k1_expand_builtin_fixeddp (target, exp);
+      return kvx_expand_builtin_fixeddp (target, exp);
     case KVX_BUILTIN_FIXEDUW:
-      return k1_expand_builtin_fixeduw (target, exp);
+      return kvx_expand_builtin_fixeduw (target, exp);
     case KVX_BUILTIN_FIXEDUWP:
-      return k1_expand_builtin_fixeduwp (target, exp);
+      return kvx_expand_builtin_fixeduwp (target, exp);
     case KVX_BUILTIN_FIXEDUWQ:
-      return k1_expand_builtin_fixeduwq (target, exp);
+      return kvx_expand_builtin_fixeduwq (target, exp);
     case KVX_BUILTIN_FIXEDUD:
-      return k1_expand_builtin_fixedud (target, exp);
+      return kvx_expand_builtin_fixedud (target, exp);
     case KVX_BUILTIN_FIXEDUDP:
-      return k1_expand_builtin_fixedudp (target, exp);
+      return kvx_expand_builtin_fixedudp (target, exp);
 
     case KVX_BUILTIN_FENCE:
-      return k1_expand_builtin_fence ();
+      return kvx_expand_builtin_fence ();
 
     case KVX_BUILTIN_FSDIVW:
-      return k1_expand_builtin_fsdivw (target, exp);
+      return kvx_expand_builtin_fsdivw (target, exp);
     case KVX_BUILTIN_FSDIVD:
-      return k1_expand_builtin_fsdivd (target, exp);
+      return kvx_expand_builtin_fsdivd (target, exp);
     case KVX_BUILTIN_FSINVW:
-      return k1_expand_builtin_fsinvw (target, exp);
+      return kvx_expand_builtin_fsinvw (target, exp);
     case KVX_BUILTIN_FSINVD:
-      return k1_expand_builtin_fsinvd (target, exp);
+      return kvx_expand_builtin_fsinvd (target, exp);
     case KVX_BUILTIN_FSISRW:
-      return k1_expand_builtin_fsisrw (target, exp);
+      return kvx_expand_builtin_fsisrw (target, exp);
     case KVX_BUILTIN_FSISRD:
-      return k1_expand_builtin_fsisrd (target, exp);
+      return kvx_expand_builtin_fsisrd (target, exp);
     case KVX_BUILTIN_FCDIVW:
-      return k1_expand_builtin_fcdivw (target, exp);
+      return kvx_expand_builtin_fcdivw (target, exp);
     case KVX_BUILTIN_FCDIVD:
-      return k1_expand_builtin_fcdivd (target, exp);
+      return kvx_expand_builtin_fcdivd (target, exp);
     case KVX_BUILTIN_GET:
-      return k1_expand_builtin_get (target, exp);
+      return kvx_expand_builtin_get (target, exp);
     case KVX_BUILTIN_WFXL:
-      return k1_expand_builtin_wfxl (target, exp);
+      return kvx_expand_builtin_wfxl (target, exp);
     case KVX_BUILTIN_WFXM:
-      return k1_expand_builtin_wfxm (target, exp);
+      return kvx_expand_builtin_wfxm (target, exp);
     case KVX_BUILTIN_IINVAL:
-      return k1_expand_builtin_iinval ();
+      return kvx_expand_builtin_iinval ();
     case KVX_BUILTIN_IINVALS:
-      return k1_expand_builtin_iinvals (target, exp);
+      return kvx_expand_builtin_iinvals (target, exp);
     case KVX_BUILTIN_LBSU:
-      return k1_expand_builtin_lbsu (target, exp);
+      return kvx_expand_builtin_lbsu (target, exp);
     case KVX_BUILTIN_LBZU:
-      return k1_expand_builtin_lbzu (target, exp);
+      return kvx_expand_builtin_lbzu (target, exp);
     case KVX_BUILTIN_LDU:
-      return k1_expand_builtin_ldu (target, exp);
+      return kvx_expand_builtin_ldu (target, exp);
     case KVX_BUILTIN_LHSU:
-      return k1_expand_builtin_lhsu (target, exp);
+      return kvx_expand_builtin_lhsu (target, exp);
     case KVX_BUILTIN_LHZU:
-      return k1_expand_builtin_lhzu (target, exp);
+      return kvx_expand_builtin_lhzu (target, exp);
     case KVX_BUILTIN_LWZU:
-      return k1_expand_builtin_lwzu (target, exp);
+      return kvx_expand_builtin_lwzu (target, exp);
     case KVX_BUILTIN_SATD:
-      return k1_expand_builtin_satd (target, exp);
+      return kvx_expand_builtin_satd (target, exp);
     case KVX_BUILTIN_SATUD:
-      return k1_expand_builtin_satud (target, exp);
+      return kvx_expand_builtin_satud (target, exp);
     case KVX_BUILTIN_SBMM8:
-      return k1_expand_builtin_sbmm8 (target, exp);
+      return kvx_expand_builtin_sbmm8 (target, exp);
     case KVX_BUILTIN_SBMMT8:
-      return k1_expand_builtin_sbmmt8 (target, exp);
+      return kvx_expand_builtin_sbmmt8 (target, exp);
     case KVX_BUILTIN_SET:
-      return k1_expand_builtin_set (target, exp);
+      return kvx_expand_builtin_set (target, exp);
     case KVX_BUILTIN_SLEEP:
-      return k1_expand_builtin_sleep (target, exp);
+      return kvx_expand_builtin_sleep (target, exp);
     case KVX_BUILTIN_STOP:
-      return k1_expand_builtin_stop (target, exp);
+      return kvx_expand_builtin_stop (target, exp);
     case KVX_BUILTIN_STSUW:
-      return k1_expand_builtin_stsuw (target, exp);
+      return kvx_expand_builtin_stsuw (target, exp);
     case KVX_BUILTIN_STSUD:
-      return k1_expand_builtin_stsud (target, exp);
+      return kvx_expand_builtin_stsud (target, exp);
     case KVX_BUILTIN_SYNCGROUP:
-      return k1_expand_builtin_syncgroup (target, exp);
+      return kvx_expand_builtin_syncgroup (target, exp);
     case KVX_BUILTIN_TLBDINVAL:
-      return k1_expand_builtin_tlbdinval ();
+      return kvx_expand_builtin_tlbdinval ();
     case KVX_BUILTIN_TLBIINVAL:
-      return k1_expand_builtin_tlbiinval ();
+      return kvx_expand_builtin_tlbiinval ();
     case KVX_BUILTIN_TLBPROBE:
-      return k1_expand_builtin_tlbprobe ();
+      return kvx_expand_builtin_tlbprobe ();
     case KVX_BUILTIN_TLBREAD:
-      return k1_expand_builtin_tlbread ();
+      return kvx_expand_builtin_tlbread ();
     case KVX_BUILTIN_TLBWRITE:
-      return k1_expand_builtin_tlbwrite ();
+      return kvx_expand_builtin_tlbwrite ();
     case KVX_BUILTIN_FWIDENLHW:
-      return k1_expand_builtin_fwiden (target, exp, 1);
+      return kvx_expand_builtin_fwiden (target, exp, 1);
     case KVX_BUILTIN_FWIDENMHW:
-      return k1_expand_builtin_fwiden (target, exp, 0);
+      return kvx_expand_builtin_fwiden (target, exp, 0);
     case KVX_BUILTIN_FNARROWWH:
-      return k1_expand_builtin_fnarrowwh (target, exp);
+      return kvx_expand_builtin_fnarrowwh (target, exp);
     case KVX_BUILTIN_WAITIT:
-      return k1_expand_builtin_waitit (target, exp);
+      return kvx_expand_builtin_waitit (target, exp);
     default:
       break;
     }
@@ -4989,7 +4991,7 @@ k1_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
 }
 
 int
-k1_mau_lsu_double_port_bypass_p (rtx_insn *producer, rtx_insn *consumer)
+kv3_mau_lsu_double_port_bypass_p (rtx_insn *producer, rtx_insn *consumer)
 {
   rtx produced = SET_DEST (single_set (producer));
   rtx consumed = PATTERN (consumer);
@@ -5002,14 +5004,14 @@ k1_mau_lsu_double_port_bypass_p (rtx_insn *producer, rtx_insn *consumer)
 }
 
 static int
-k1_sched_adjust_cost (rtx_insn *insn, int dep_type,
-		      rtx_insn *dep_insn ATTRIBUTE_UNUSED, int cost,
-		      unsigned int)
+kvx_sched_adjust_cost (rtx_insn *insn, int dep_type,
+		       rtx_insn *dep_insn ATTRIBUTE_UNUSED, int cost,
+		       unsigned int)
 {
   enum attr_class insn_class = get_attr_class (insn);
-  /* On the k1, it is possible to read then write the same register in a bundle
-   * so we set the WAR cost to 0 unless insn is a control-flow consuming reg
-   * then it is 1 */
+  /* On the MPPA, it is possible to read then write the same register in a
+   * bundle so we set the WAR cost to 0 unless insn is a control-flow consuming
+   * reg then it is 1 */
   if (dep_type == REG_DEP_ANTI)
     {
       cost = (insn_class == CLASS_BRANCH) | (insn_class == CLASS_JUMP)
@@ -5026,21 +5028,21 @@ k1_sched_adjust_cost (rtx_insn *insn, int dep_type,
 }
 
 static int
-k1_sched_issue_rate (void)
+kvx_sched_issue_rate (void)
 {
   return 4;
 }
 
 static int
-k1_sched_dfa_new_cycle (FILE *dump ATTRIBUTE_UNUSED,
-		        int verbose ATTRIBUTE_UNUSED, rtx_insn *insn,
-		        int last_clock, int clock,
-		        int *sort_p ATTRIBUTE_UNUSED)
+kvx_sched_dfa_new_cycle (FILE *dump ATTRIBUTE_UNUSED,
+			 int verbose ATTRIBUTE_UNUSED, rtx_insn *insn,
+			 int last_clock, int clock,
+			 int *sort_p ATTRIBUTE_UNUSED)
 {
   if (clock != last_clock)
     return 0;
 
-  if (reg_mentioned_p (k1_sync_reg_rtx, insn))
+  if (reg_mentioned_p (kvx_sync_reg_rtx, insn))
     return 1;
 
   return 0;
@@ -5049,7 +5051,7 @@ k1_sched_dfa_new_cycle (FILE *dump ATTRIBUTE_UNUSED,
 /* Test if X is of the form reg[reg] or .xs reg = reg[reg] or signed10bits[reg]
  */
 bool
-k1_has_10bit_imm_or_register_p (rtx x)
+kvx_has_10bit_imm_or_register_p (rtx x)
 {
   if (MEM_P (x))
     x = XEXP (x, 0);
@@ -5071,11 +5073,11 @@ k1_has_10bit_imm_or_register_p (rtx x)
       && INTVAL (XEXP (XEXP (x, 0), 1)) > HOST_WIDE_INT_1)
     return true;
 
-  return k1_has_10bit_immediate_p (x);
+  return kvx_has_10bit_immediate_p (x);
 }
 
 bool
-k1_has_10bit_immediate_p (rtx x)
+kvx_has_10bit_immediate_p (rtx x)
 {
   if (MEM_P (x))
     x = XEXP (x, 0);
@@ -5087,7 +5089,7 @@ k1_has_10bit_immediate_p (rtx x)
 }
 
 bool
-k1_has_37bit_immediate_p (rtx x)
+kvx_has_37bit_immediate_p (rtx x)
 {
   if (MEM_P (x))
     x = XEXP (x, 0);
@@ -5100,7 +5102,7 @@ k1_has_37bit_immediate_p (rtx x)
 }
 
 bool
-k1_has_64bit_immediate_p (rtx x)
+kvx_has_64bit_immediate_p (rtx x)
 {
   if (MEM_P (x))
     x = XEXP (x, 0);
@@ -5118,7 +5120,7 @@ k1_has_64bit_immediate_p (rtx x)
    uncached (bypass or preload) regarding it's name address space.
    If non-zero, the return value is the MEM_ADDR_SPACE. */
 int
-k1_is_uncached_mem_op_p (rtx x)
+kvx_is_uncached_mem_op_p (rtx x)
 {
   gcc_assert (MEM_P (x));
   if (!MEM_P (x))
@@ -5131,7 +5133,7 @@ k1_is_uncached_mem_op_p (rtx x)
 }
 
 HOST_WIDE_INT
-k1_const_vector_value (rtx x, int slice)
+kvx_const_vector_value (rtx x, int slice)
 {
   HOST_WIDE_INT value = 0;
   if (GET_CODE (x) == CONST_VECTOR)
@@ -5203,53 +5205,53 @@ k1_const_vector_value (rtx x, int slice)
 }
 
 bool
-k1_has_10bit_vector_const_p (rtx x)
+kvx_has_10bit_vector_const_p (rtx x)
 {
-  HOST_WIDE_INT value = k1_const_vector_value (x, 0);
+  HOST_WIDE_INT value = kvx_const_vector_value (x, 0);
   return SIGNED_INT_FITS_N_BITS (value, 10);
 }
 
 bool
-k1_has_16bit_vector_const_p (rtx x)
+kvx_has_16bit_vector_const_p (rtx x)
 {
-  HOST_WIDE_INT value = k1_const_vector_value (x, 0);
+  HOST_WIDE_INT value = kvx_const_vector_value (x, 0);
   return SIGNED_INT_FITS_N_BITS (value, 16);
 }
 
 bool
-k1_has_32bit_vector_const_p (rtx x)
+kvx_has_32bit_vector_const_p (rtx x)
 {
-  HOST_WIDE_INT value = k1_const_vector_value (x, 0);
+  HOST_WIDE_INT value = kvx_const_vector_value (x, 0);
   return SIGNED_INT_FITS_N_BITS (value, 32);
 }
 
 bool
-k1_has_37bit_vector_const_p (rtx x)
+kvx_has_37bit_vector_const_p (rtx x)
 {
-  HOST_WIDE_INT value = k1_const_vector_value (x, 0);
+  HOST_WIDE_INT value = kvx_const_vector_value (x, 0);
   return SIGNED_INT_FITS_N_BITS (value, 37);
 }
 
 bool
-k1_has_43bit_vector_const_p (rtx x)
+kvx_has_43bit_vector_const_p (rtx x)
 {
-  HOST_WIDE_INT value = k1_const_vector_value (x, 0);
+  HOST_WIDE_INT value = kvx_const_vector_value (x, 0);
   return SIGNED_INT_FITS_N_BITS (value, 43);
 }
 
 bool
-k1_has_32x2bit_vector_const_p (rtx x)
+kvx_has_32x2bit_vector_const_p (rtx x)
 {
-  HOST_WIDE_INT value = k1_const_vector_value (x, 0);
+  HOST_WIDE_INT value = kvx_const_vector_value (x, 0);
   // Need the dual immediate syntax to be fixed in assembler.
   // return (value&0xFFFFFFFF) == ((value>>32)&0xFFFFFFFF);
   return false;
 }
 
-/* Helper function for k1_expand_load_multiple and
-   k1_expand_store_multiple */
+/* Helper function for kvx_expand_load_multiple and
+   kvx_expand_store_multiple */
 static bool
-k1_expand_load_store_multiple (rtx operands[], bool is_load)
+kvx_expand_load_store_multiple (rtx operands[], bool is_load)
 {
   int regno;
   int count;
@@ -5274,7 +5276,7 @@ k1_expand_load_store_multiple (rtx operands[], bool is_load)
   operands[3] = gen_rtx_PARALLEL (VOIDmode, rtvec_alloc (count));
 
   rtx base, offset;
-  if (!k1_split_mem (XEXP (operands[mem_op_idx], 0), &base, &offset, false))
+  if (!kvx_split_mem (XEXP (operands[mem_op_idx], 0), &base, &offset, false))
     return false;
 
   if (!REG_P (base))
@@ -5308,18 +5310,18 @@ k1_expand_load_store_multiple (rtx operands[], bool is_load)
    address, operand 1 the first source register and operand 2 the
    number of consecutive stores to pack. */
 bool
-k1_expand_store_multiple (rtx operands[])
+kvx_expand_store_multiple (rtx operands[])
 {
-  return k1_expand_load_store_multiple (operands, false);
+  return kvx_expand_load_store_multiple (operands, false);
 }
 
 /* Expands a load multiple with operand 0 being the first destination
    register, operand 1 the first source address and operand 2 the
    number of consecutive loads to pack. */
 bool
-k1_expand_load_multiple (rtx operands[])
+kvx_expand_load_multiple (rtx operands[])
 {
-  return k1_expand_load_store_multiple (operands, true);
+  return kvx_expand_load_store_multiple (operands, true);
 }
 
 /*
@@ -5331,7 +5333,7 @@ k1_expand_load_multiple (rtx operands[])
  * Returns FALSE otherwise.
  */
 static bool
-k1_load_store_multiple_operation_p (rtx op, bool is_uncached, bool is_load)
+kvx_load_store_multiple_operation_p (rtx op, bool is_uncached, bool is_load)
 {
   int count = XVECLEN (op, 0);
   unsigned int dest_regno;
@@ -5353,7 +5355,7 @@ k1_load_store_multiple_operation_p (rtx op, bool is_uncached, bool is_load)
       if (!REG_P (reg_part) || !MEM_P (mem_part) || MEM_VOLATILE_P (mem_part))
 	return false;
 
-      if (is_load && is_uncached != !!k1_is_uncached_mem_op_p (mem_part))
+      if (is_load && is_uncached != !!kvx_is_uncached_mem_op_p (mem_part))
 	return false;
     }
 
@@ -5381,7 +5383,7 @@ k1_load_store_multiple_operation_p (rtx op, bool is_uncached, bool is_load)
       rtx mem_elt = is_load ? SET_SRC (elt) : SET_DEST (elt);
       rtx reg_elt = is_load ? SET_DEST (elt) : SET_SRC (elt);
 
-      if (!k1_split_mem (XEXP (mem_elt, 0), &base_cur, &offset_cur, false))
+      if (!kvx_split_mem (XEXP (mem_elt, 0), &base_cur, &offset_cur, false))
 	return false;
 
       if (i == 0)
@@ -5409,18 +5411,18 @@ k1_load_store_multiple_operation_p (rtx op, bool is_uncached, bool is_load)
  * cached/uncached depending on IS_UNCACHED.
  */
 bool
-k1_load_multiple_operation_p (rtx op, bool is_uncached)
+kvx_load_multiple_operation_p (rtx op, bool is_uncached)
 {
-  return k1_load_store_multiple_operation_p (op, is_uncached, true);
+  return kvx_load_store_multiple_operation_p (op, is_uncached, true);
 }
 
 /*
  * Returns TRUE if OP is a store multiple operation.
  */
 bool
-k1_store_multiple_operation_p (rtx op)
+kvx_store_multiple_operation_p (rtx op)
 {
-  return k1_load_store_multiple_operation_p (op, false, false);
+  return kvx_load_store_multiple_operation_p (op, false, false);
 }
 
 /* Following funtions are used for bundling insn before ASM emission */
@@ -5471,10 +5473,10 @@ struct bundle_regs
   HARD_REG_SET defs;
 };
 
-static void k1_scan_insn_registers_wrap (rtx *x, void *data);
+static void kvx_scan_insn_registers_wrap (rtx *x, void *data);
 
 static int
-k1_scan_insn_registers_1 (rtx *x, void *data)
+kvx_scan_insn_registers_1 (rtx *x, void *data)
 {
   struct bundle_regs *regs = (struct bundle_regs *) data;
 
@@ -5487,19 +5489,19 @@ k1_scan_insn_registers_1 (rtx *x, void *data)
   if (GET_CODE (*x) == SET)
     {
       regs->set_dest = 1;
-      /* for_each_rtx (&SET_DEST (*x), k1_scan_insn_registers_1, regs); */
-      k1_scan_insn_registers_wrap (&SET_DEST (*x), regs);
+      /* for_each_rtx (&SET_DEST (*x), kvx_scan_insn_registers_1, regs); */
+      kvx_scan_insn_registers_wrap (&SET_DEST (*x), regs);
       regs->set_dest = 0;
-      /* for_each_rtx (&SET_SRC (*x), k1_scan_insn_registers_1, regs); */
-      k1_scan_insn_registers_wrap (&SET_SRC (*x), regs);
+      /* for_each_rtx (&SET_SRC (*x), kvx_scan_insn_registers_1, regs); */
+      kvx_scan_insn_registers_wrap (&SET_SRC (*x), regs);
       return -1;
     }
 
   if (MEM_P (*x))
     {
       regs->set_dest = 0;
-      /* for_each_rtx (&XEXP (*x, 0), k1_scan_insn_registers_1, regs); */
-      k1_scan_insn_registers_wrap (&XEXP (*x, 0), regs);
+      /* for_each_rtx (&XEXP (*x, 0), kvx_scan_insn_registers_1, regs); */
+      kvx_scan_insn_registers_wrap (&XEXP (*x, 0), regs);
       return -1;
     }
 
@@ -5554,13 +5556,13 @@ k1_scan_insn_registers_1 (rtx *x, void *data)
 }
 
 static void
-k1_scan_insn_registers_wrap (rtx *x, void *data)
+kvx_scan_insn_registers_wrap (rtx *x, void *data)
 {
   subrtx_ptr_iterator::array_type array;
   FOR_EACH_SUBRTX_PTR (iter, array, x, ALL)
     {
       rtx *x = *iter;
-      if (k1_scan_insn_registers_1 (x, data) == -1)
+      if (kvx_scan_insn_registers_1 (x, data) == -1)
 	{
 	  iter.skip_subrtxes ();
 	}
@@ -5568,7 +5570,7 @@ k1_scan_insn_registers_wrap (rtx *x, void *data)
 }
 
 static void
-k1_scan_insn_registers (rtx insn, struct bundle_regs *regs)
+kvx_scan_insn_registers (rtx insn, struct bundle_regs *regs)
 {
   if (GET_CODE (insn) == CLOBBER || GET_CODE (insn) == USE || !INSN_P (insn))
     return;
@@ -5577,8 +5579,8 @@ k1_scan_insn_registers (rtx insn, struct bundle_regs *regs)
   regs->scanned_insn = insn;
   CLEAR_HARD_REG_SET (regs->uses);
   CLEAR_HARD_REG_SET (regs->defs);
-  /* for_each_rtx (&insn, k1_scan_insn_registers_1, regs); */
-  k1_scan_insn_registers_wrap (&insn, regs);
+  /* for_each_rtx (&insn, kvx_scan_insn_registers_1, regs); */
+  kvx_scan_insn_registers_wrap (&insn, regs);
 }
 
 /* Skip over irrelevant NOTEs and such and look for the next insn we
@@ -5668,7 +5670,7 @@ free_bundle_state (struct bundle_state *state)
 }
 
 static int
-k1_insn_is_bundle_end_p (rtx insn)
+kvx_insn_is_bundle_end_p (rtx insn)
 {
   bundle_state *i;
   for (i = cur_bundle_list; i; i = i->next)
@@ -5681,10 +5683,10 @@ k1_insn_is_bundle_end_p (rtx insn)
   return 0;
 }
 
-static void k1_dump_bundles (void);
+static void kvx_dump_bundles (void);
 
 static void
-k1_gen_bundles (void)
+kvx_gen_bundles (void)
 {
   bundle_state *cur_bstate = NULL;
 
@@ -5733,7 +5735,7 @@ k1_gen_bundles (void)
 	  int can_issue = state_transition (cur_bstate->dfa_state, insn) < 0;
 
 	  /* Scan insn for registers definitions and usage. */
-	  k1_scan_insn_registers (insn, &cur_insn_regs);
+	  kvx_scan_insn_registers (insn, &cur_insn_regs);
 
 	  const int insn_raw = hard_reg_set_intersect_p (cur_insn_regs.uses,
 							 cur_bstate->reg_defs);
@@ -5784,10 +5786,10 @@ k1_gen_bundles (void)
   dfa_finish ();
 }
 
-static void k1_dump_bundles (void) ATTRIBUTE_UNUSED;
+static void kvx_dump_bundles (void) ATTRIBUTE_UNUSED;
 
 static void
-k1_dump_bundles (void)
+kvx_dump_bundles (void)
 {
   bundle_state *i;
   for (i = cur_bundle_list; i; i = i->next)
@@ -5820,7 +5822,7 @@ k1_dump_bundles (void)
    accordingly to use correct register instead of OLD_BASE.
 */
 static void
-k1_swap_fp_sp_in_note (rtx note, rtx old_base)
+kvx_swap_fp_sp_in_note (rtx note, rtx old_base)
 {
   XEXP (note, 0) = copy_rtx (XEXP (note, 0));
   rtx note_pat = XEXP (note, 0);
@@ -5829,7 +5831,7 @@ k1_swap_fp_sp_in_note (rtx note, rtx old_base)
 		       ? stack_pointer_rtx
 		       : hard_frame_pointer_rtx;
   rtx mem_dest = SET_DEST (note_pat);
-  struct k1_frame_info *frame = &cfun->machine->frame;
+  struct kvx_frame_info *frame = &cfun->machine->frame;
 
   if (frame->hard_frame_pointer_offset == 0)
     {
@@ -5857,7 +5859,7 @@ k1_swap_fp_sp_in_note (rtx note, rtx old_base)
 /* Visit all bundles and force all debug insns after the last insn in
    the bundle. */
 static void
-k1_fix_debug_for_bundles (void)
+kvx_fix_debug_for_bundles (void)
 {
   bundle_state *i;
   unsigned int cur_cfa_reg = REGNO (stack_pointer_rtx);
@@ -5979,7 +5981,7 @@ k1_fix_debug_for_bundles (void)
 			       We need to rebuild an offset based on
 			       current CFA.
 			    */
-			    k1_swap_fp_sp_in_note (note, base_reg);
+			    kvx_swap_fp_sp_in_note (note, base_reg);
 			  }
 		      }
 		      break;
@@ -5996,11 +5998,11 @@ k1_fix_debug_for_bundles (void)
 }
 
 static void
-k1_asm_final_postscan_insn (FILE *file, rtx_insn *insn,
-			    rtx *opvec ATTRIBUTE_UNUSED,
-			    int noperands ATTRIBUTE_UNUSED)
+kvx_asm_final_postscan_insn (FILE *file, rtx_insn *insn,
+			     rtx *opvec ATTRIBUTE_UNUSED,
+			     int noperands ATTRIBUTE_UNUSED)
 {
-  if (!scheduling || !TARGET_BUNDLING || k1_insn_is_bundle_end_p (insn))
+  if (!scheduling || !TARGET_BUNDLING || kvx_insn_is_bundle_end_p (insn))
     {
       fprintf (file, "\t;;\n");
       return;
@@ -6008,7 +6010,7 @@ k1_asm_final_postscan_insn (FILE *file, rtx_insn *insn,
 }
 
 static int
-k1_sched_first_cycle_multipass_dfa_lookahead (void)
+kvx_sched_first_cycle_multipass_dfa_lookahead (void)
 {
   return 5;
 }
@@ -6022,7 +6024,7 @@ struct cost_walker
 /* FIXME AUTO: fix cost function for coolidge */
 /* See T7748 */
 static int
-k1_rtx_operand_cost (rtx *x, void *arg)
+kvx_rtx_operand_cost (rtx *x, void *arg)
 {
   struct cost_walker *cost = (struct cost_walker *) arg;
   enum rtx_code code;
@@ -6090,9 +6092,9 @@ k1_rtx_operand_cost (rtx *x, void *arg)
 /* FIXME AUTO: fix cost function for coolidge */
 /* See T7748 */
 static bool
-k1_rtx_costs (rtx x, machine_mode mode ATTRIBUTE_UNUSED,
-	      int outer_code ATTRIBUTE_UNUSED, int opno ATTRIBUTE_UNUSED,
-	      int *total, bool speed ATTRIBUTE_UNUSED)
+kvx_rtx_costs (rtx x, machine_mode mode ATTRIBUTE_UNUSED,
+	       int outer_code ATTRIBUTE_UNUSED, int opno ATTRIBUTE_UNUSED,
+	       int *total, bool speed ATTRIBUTE_UNUSED)
 {
   struct cost_walker cost = {0, 0};
 
@@ -6114,8 +6116,8 @@ k1_rtx_costs (rtx x, machine_mode mode ATTRIBUTE_UNUSED,
 	}
       else if (REG_P (SET_SRC (x)))
 	{
-	  *total = k1_register_move_cost (GET_MODE (SET_DEST (x)),
-						 NO_REGS, NO_REGS);
+	  *total = kvx_register_move_cost (GET_MODE (SET_DEST (x)), NO_REGS,
+					   NO_REGS);
 	  return true;
 	}
       x = SET_SRC (x);
@@ -6132,7 +6134,7 @@ k1_rtx_costs (rtx x, machine_mode mode ATTRIBUTE_UNUSED,
   FOR_EACH_SUBRTX_PTR (iter, array, cost.toplevel, ALL)
     {
       rtx *x = *iter;
-      k1_rtx_operand_cost (x, &cost);
+      kvx_rtx_operand_cost (x, &cost);
     }
 
   *total = cost.total;
@@ -6140,9 +6142,9 @@ k1_rtx_costs (rtx x, machine_mode mode ATTRIBUTE_UNUSED,
 }
 
 static int
-k1_address_cost (rtx x, machine_mode mode ATTRIBUTE_UNUSED,
-		 addr_space_t space ATTRIBUTE_UNUSED,
-		 bool speed ATTRIBUTE_UNUSED)
+kvx_address_cost (rtx x, machine_mode mode ATTRIBUTE_UNUSED,
+		  addr_space_t space ATTRIBUTE_UNUSED,
+		  bool speed ATTRIBUTE_UNUSED)
 {
   int cost = COSTS_N_INSNS (1);
   gcc_assert (cost > 1);
@@ -6157,7 +6159,7 @@ k1_address_cost (rtx x, machine_mode mode ATTRIBUTE_UNUSED,
 }
 
 static void
-k1_sched_set_sched_flags (struct spec_info_def *spec ATTRIBUTE_UNUSED)
+kvx_sched_set_sched_flags (struct spec_info_def *spec ATTRIBUTE_UNUSED)
 {
   /* TARGET_SCHED_SET_SCHED_FLAGS is called right before the
      scheduler calls df_analyze (). Use this hook to add the
@@ -6169,15 +6171,15 @@ k1_sched_set_sched_flags (struct spec_info_def *spec ATTRIBUTE_UNUSED)
 }
 
 static void
-k1_sched_init_global (FILE *file ATTRIBUTE_UNUSED,
-		      int verbose ATTRIBUTE_UNUSED,
-		      int max_ready ATTRIBUTE_UNUSED)
+kvx_sched_init_global (FILE *file ATTRIBUTE_UNUSED,
+		       int verbose ATTRIBUTE_UNUSED,
+		       int max_ready ATTRIBUTE_UNUSED)
 {
   scheduling = true;
 }
 
 static bool
-k1_function_ok_for_sibcall (tree decl, tree exp ATTRIBUTE_UNUSED)
+kvx_function_ok_for_sibcall (tree decl, tree exp ATTRIBUTE_UNUSED)
 {
   /* Sometimes GCC allocates a call_used_register to hold the sibcall
      destination... This of course  won't work because we can't restore that
@@ -6209,12 +6211,12 @@ k1_function_ok_for_sibcall (tree decl, tree exp ATTRIBUTE_UNUSED)
 }
 
 static bool
-k1_legitimate_constant_p (enum machine_mode mode ATTRIBUTE_UNUSED, rtx x)
+kvx_legitimate_constant_p (enum machine_mode mode ATTRIBUTE_UNUSED, rtx x)
 {
-  if (k1_has_tls_reference (x))
+  if (kvx_has_tls_reference (x))
     return false;
 
-  if (k1_has_unspec_reference (x))
+  if (kvx_has_unspec_reference (x))
     {
       if (GET_CODE (x) == CONST)
 	x = XEXP (x, 0);
@@ -6232,11 +6234,11 @@ k1_legitimate_constant_p (enum machine_mode mode ATTRIBUTE_UNUSED, rtx x)
 }
 
 static rtx
-k1_legitimize_address (rtx x, rtx oldx ATTRIBUTE_UNUSED,
-		       enum machine_mode mode)
+kvx_legitimize_address (rtx x, rtx oldx ATTRIBUTE_UNUSED,
+			enum machine_mode mode)
 {
-  if (k1_has_tls_reference (x))
-    return k1_legitimize_tls_reference (x);
+  if (kvx_has_tls_reference (x))
+    return kvx_legitimize_tls_reference (x);
   else if (GET_CODE (x) == PLUS
 	   && (GET_CODE (XEXP (x, 0)) == MULT
 	       || GET_CODE (XEXP (x, 0)) == ZERO_EXTEND))
@@ -6245,7 +6247,7 @@ k1_legitimize_address (rtx x, rtx oldx ATTRIBUTE_UNUSED,
       rtx cst = XEXP (x, 1);
 
       XEXP (x, 1) = reg;
-      if (k1_legitimate_address_p (mode, x, false))
+      if (kvx_legitimate_address_p (mode, x, false))
 	{
 	  emit_move_insn (reg, cst);
 	  return copy_rtx (x);
@@ -6261,22 +6263,22 @@ k1_legitimize_address (rtx x, rtx oldx ATTRIBUTE_UNUSED,
 
 /* Implements TARGET_ADDR_SPACE_POINTER_MODE */
 static machine_mode
-k1_addr_space_pointer_mode (addr_space_t address_space ATTRIBUTE_UNUSED)
+kvx_addr_space_pointer_mode (addr_space_t address_space ATTRIBUTE_UNUSED)
 {
   return ptr_mode;
 }
 
 /* Implements TARGET_ADDR_SPACE_ADDRESS_MODE */
 static machine_mode
-k1_addr_space_address_mode (addr_space_t address_space ATTRIBUTE_UNUSED)
+kvx_addr_space_address_mode (addr_space_t address_space ATTRIBUTE_UNUSED)
 {
   return Pmode;
 }
 
 /* Implements TARGET_ADDR_SPACE_LEGITIMATE_ADDRESS_P */
 static bool
-k1_addr_space_legitimate_address_p (machine_mode mode, rtx exp, bool strict,
-				    addr_space_t as ATTRIBUTE_UNUSED)
+kvx_addr_space_legitimate_address_p (machine_mode mode, rtx exp, bool strict,
+				     addr_space_t as ATTRIBUTE_UNUSED)
 {
   switch (as)
     {
@@ -6286,7 +6288,7 @@ k1_addr_space_legitimate_address_p (machine_mode mode, rtx exp, bool strict,
     case ADDR_SPACE_GENERIC:
     case KVX_ADDR_SPACE_BYPASS:
     case KVX_ADDR_SPACE_PRELOAD:
-      return k1_legitimate_address_p (mode, exp, strict);
+      return kvx_legitimate_address_p (mode, exp, strict);
 
     case KVX_ADDR_SPACE_CONVERT:
       return false;
@@ -6295,19 +6297,19 @@ k1_addr_space_legitimate_address_p (machine_mode mode, rtx exp, bool strict,
 
 /* Implements TARGET_ADDR_SPACE_LEGITIMIZE_ADDRESS */
 static rtx
-k1_addr_space_legitimize_address (rtx x, rtx oldx, machine_mode mode,
-				  addr_space_t as)
+kvx_addr_space_legitimize_address (rtx x, rtx oldx, machine_mode mode,
+				   addr_space_t as)
 {
   if (as == KVX_ADDR_SPACE_CONVERT)
     error ("__convert should be used only in explicit pointer casting");
 
-  return k1_legitimize_address (x, oldx, mode);
+  return kvx_legitimize_address (x, oldx, mode);
 }
 
 /* Implements TARGET_ADDR_SPACE_SUBSET_P */
 static bool
-k1_addr_space_subset_p (addr_space_t subset ATTRIBUTE_UNUSED,
-			addr_space_t superset ATTRIBUTE_UNUSED)
+kvx_addr_space_subset_p (addr_space_t subset ATTRIBUTE_UNUSED,
+			 addr_space_t superset ATTRIBUTE_UNUSED)
 {
   // Address spaces (GENERIC or __UNCACHED) refer to the same space
   return true;
@@ -6315,7 +6317,7 @@ k1_addr_space_subset_p (addr_space_t subset ATTRIBUTE_UNUSED,
 
 /* Implements TARGET_ADDR_SPACE_CONVERT */
 static rtx
-k1_addr_space_convert (rtx op, tree from_type, tree to_type ATTRIBUTE_UNUSED)
+kvx_addr_space_convert (rtx op, tree from_type, tree to_type ATTRIBUTE_UNUSED)
 {
   if (KVX_WARN_ADDRESS_SPACE_CONVERSION
       && TYPE_ADDR_SPACE (TREE_TYPE (from_type)) != KVX_ADDR_SPACE_CONVERT
@@ -6333,21 +6335,21 @@ k1_addr_space_convert (rtx op, tree from_type, tree to_type ATTRIBUTE_UNUSED)
 }
 
 static void
-k1_function_prologue (FILE *file ATTRIBUTE_UNUSED,
-		      HOST_WIDE_INT size ATTRIBUTE_UNUSED)
+kvx_function_prologue (FILE *file ATTRIBUTE_UNUSED,
+		       HOST_WIDE_INT size ATTRIBUTE_UNUSED)
 {
   dfa_start ();
 }
 
 static void
-k1_function_epilogue (FILE *file ATTRIBUTE_UNUSED,
-		      HOST_WIDE_INT size ATTRIBUTE_UNUSED)
+kvx_function_epilogue (FILE *file ATTRIBUTE_UNUSED,
+		       HOST_WIDE_INT size ATTRIBUTE_UNUSED)
 {
   dfa_finish ();
 }
 
 static void
-k1_dependencies_evaluation_hook (rtx_insn *head, rtx_insn *tail)
+kvx_dependencies_evaluation_hook (rtx_insn *head, rtx_insn *tail)
 {
   rtx_insn *insn, *insn2, *next_tail, *last_sync = head;
 
@@ -6356,7 +6358,7 @@ k1_dependencies_evaluation_hook (rtx_insn *head, rtx_insn *tail)
   for (insn = head; insn != next_tail; insn = NEXT_INSN (insn))
     if (INSN_P (insn))
       {
-	int sync = reg_mentioned_p (k1_sync_reg_rtx, insn);
+	int sync = reg_mentioned_p (kvx_sync_reg_rtx, insn);
 
 	if (sync)
 	  {
@@ -6376,7 +6378,7 @@ k1_dependencies_evaluation_hook (rtx_insn *head, rtx_insn *tail)
 }
 
 static const char *
-k1_invalid_within_doloop (const rtx_insn *insn)
+kvx_invalid_within_doloop (const rtx_insn *insn)
 {
   rtx asm_ops, body;
 
@@ -6634,20 +6636,20 @@ hwloop_optimize (hwloop_info loop)
   return true;
 }
 
-static struct hw_doloop_hooks k1_doloop_hooks
+static struct hw_doloop_hooks kvx_doloop_hooks
   = {hwloop_pattern_reg, hwloop_optimize, hwloop_fail};
 
 static void
-k1_reorg_loops (void)
+kvx_reorg_loops (void)
 {
   if (optimize)
-    reorg_loops (false, &k1_doloop_hooks);
+    reorg_loops (false, &kvx_doloop_hooks);
 }
 
 /* Implement the TARGET_MACHINE_DEPENDENT_REORG pass.  */
 
 static void
-k1_reorg (void)
+kvx_reorg (void)
 {
   compute_bb_for_insn ();
 
@@ -6658,7 +6660,7 @@ k1_reorg (void)
   df_analyze ();
 
   /* Doloop optimization. */
-  k1_reorg_loops ();
+  kvx_reorg_loops ();
 
   /* Do it even if ! TARGET_BUNDLING because it also takes care of
    cleaning previous data */
@@ -6666,8 +6668,8 @@ k1_reorg (void)
 
   if (scheduling && TARGET_BUNDLING)
     {
-      k1_gen_bundles ();
-      k1_fix_debug_for_bundles ();
+      kvx_gen_bundles ();
+      kvx_fix_debug_for_bundles ();
     }
 
   /* This is needed. Else final pass will crash on debug_insn-s */
@@ -6684,7 +6686,7 @@ k1_reorg (void)
 }
 
 static bool
-k1_handle_fixed_reg_option (const char *arg)
+kvx_handle_fixed_reg_option (const char *arg)
 {
   const char *dash;
   int first_reg = -1, last_reg = -1, i;
@@ -6743,7 +6745,7 @@ k1_handle_fixed_reg_option (const char *arg)
 /* Implement TARGET_OPTION_OVERRIDE.  */
 
 static void
-k1_option_override (void)
+kvx_option_override (void)
 {
   unsigned int i;
   cl_deferred_option *opt;
@@ -6755,21 +6757,21 @@ k1_option_override (void)
 	switch (opt->opt_index)
 	  {
 	  case OPT_ffixed_reg:
-	    k1_handle_fixed_reg_option (opt->arg);
+	    kvx_handle_fixed_reg_option (opt->arg);
 	    break;
 	  default:
 	    gcc_unreachable ();
 	  }
       }
 
-  k1_arch_schedule = ARCH_COOLIDGE;
+  kvx_arch_schedule = ARCH_COOLIDGE;
 }
 
 /* Recognize machine-specific patterns that may appear within
    constants.  Used for PIC-specific UNSPECs.
    Previously a macro. */
 static bool
-k1_output_addr_const_extra (FILE *fp, rtx x)
+kvx_output_addr_const_extra (FILE *fp, rtx x)
 {
   if (GET_CODE (x) == UNSPEC)
     {
@@ -6806,7 +6808,7 @@ k1_output_addr_const_extra (FILE *fp, rtx x)
 	case UNSPEC_TLS_DTPOFF:
 	case UNSPEC_TLS_LE:
 	case UNSPEC_TLS_IE:
-	  fputs (k1_unspec_tls_asm_op[unspec_code - UNSPEC_TLS_GD], (fp));
+	  fputs (kvx_unspec_tls_asm_op[unspec_code - UNSPEC_TLS_GD], (fp));
 	  fputs ("(", (fp));
 	  output_addr_const ((fp), XVECEXP ((x), 0, 0));
 	  fputs (")", (fp));
@@ -6822,7 +6824,7 @@ k1_output_addr_const_extra (FILE *fp, rtx x)
 /* FIXME AUTO: This must be fixed for coolidge */
 /* See T7749 */
 static int
-k1_reassociation_width (unsigned int opc, enum machine_mode mode)
+kvx_reassociation_width (unsigned int opc, enum machine_mode mode)
 {
   int res = 1;
 
@@ -6853,12 +6855,12 @@ k1_reassociation_width (unsigned int opc, enum machine_mode mode)
 
 /* Return true for the .xs addressing modes, else false. */
 static bool
-k1_mode_dependent_address_p (const_rtx addr,
-			     addr_space_t space ATTRIBUTE_UNUSED)
+kvx_mode_dependent_address_p (const_rtx addr,
+			      addr_space_t space ATTRIBUTE_UNUSED)
 {
   const_rtx x = addr;
 
-  // Same logic as .xs addressing mode in k1_print_operand
+  // Same logic as .xs addressing mode in kvx_print_operand
   if (GET_CODE (x) == PLUS && GET_CODE (XEXP (x, 0)) == MULT
       && GET_CODE (XEXP (XEXP (x, 0), 1)) == CONST_INT
       && INTVAL (XEXP (XEXP (x, 0), 1)) > HOST_WIDE_INT_1)
@@ -6872,7 +6874,7 @@ k1_mode_dependent_address_p (const_rtx addr,
    and square-root instructions. (Like in aarch64.c) */
 
 static bool
-k1_sched_can_speculate_insn (rtx_insn *insn)
+kvx_sched_can_speculate_insn (rtx_insn *insn)
 {
   switch (get_attr_type (insn))
     {
@@ -6884,8 +6886,8 @@ k1_sched_can_speculate_insn (rtx_insn *insn)
 }
 
 bool
-k1_float_fits_bits (const REAL_VALUE_TYPE *r, unsigned bitsz,
-		    enum machine_mode mode)
+kvx_float_fits_bits (const REAL_VALUE_TYPE *r, unsigned bitsz,
+		     enum machine_mode mode)
 {
   long l[2];
   gcc_assert (mode == DFmode || mode == SFmode);
@@ -6926,7 +6928,7 @@ k1_float_fits_bits (const REAL_VALUE_TYPE *r, unsigned bitsz,
    insns at the cost of an extra instruction.
  */
 const char *
-k1_asm_pat_copyq (rtx srcreg)
+kvx_asm_pat_copyq (rtx srcreg)
 {
   static char templ[128];
 
@@ -6943,7 +6945,7 @@ k1_asm_pat_copyq (rtx srcreg)
    forces a split by returning #
  */
 const char *
-k1_asm_pat_copyo (void)
+kvx_asm_pat_copyo (void)
 {
   if (!optimize_size)
     return "#";
@@ -6952,14 +6954,14 @@ k1_asm_pat_copyo (void)
 
 /* Returns TRUE if OP is a REG (directly or through a SUBREG) */
 bool
-k1_is_reg_subreg_p (rtx op)
+kvx_is_reg_subreg_p (rtx op)
 {
   return REG_P (op) || (SUBREG_P (op) && REG_P (SUBREG_REG (op)));
 }
 
 /* Returns the regno associated with the REG or SUBREG in OP */
 unsigned int
-k1_regno_subregno (rtx op)
+kvx_regno_subregno (rtx op)
 {
   if (REG_P (op))
     return REGNO (op);
@@ -6970,7 +6972,7 @@ k1_regno_subregno (rtx op)
 /* Returns TRUE if OP is a pseudo REG (directly or through a SUBREG)
  */
 static bool
-k1_is_pseudo_reg_subreg_p (rtx op)
+kvx_is_pseudo_reg_subreg_p (rtx op)
 {
   return ((REG_P (op) && !HARD_REGISTER_P (op))
 	  || (SUBREG_P (op) && REG_P (SUBREG_REG (op))
@@ -6980,11 +6982,11 @@ k1_is_pseudo_reg_subreg_p (rtx op)
 /* Returns TRUE if OP is a hard (sub)register aligned on ALIGN or a
  * pseudo (sub)register, FALSE for all other cases. */
 static bool
-k1_check_align_reg (rtx op, int align)
+kvx_check_align_reg (rtx op, int align)
 {
-  if (!k1_is_reg_subreg_p (op))
+  if (!kvx_is_reg_subreg_p (op))
     return false;
-  if (k1_is_pseudo_reg_subreg_p (op))
+  if (kvx_is_pseudo_reg_subreg_p (op))
     return true;
 
   const bool aligned_reg = REG_P (op) && REGNO (op) % align == 0;
@@ -7001,24 +7003,24 @@ k1_check_align_reg (rtx op, int align)
  * (sub)register, FALSE for all other cases. It is used to check
  * correct alignement for some SIMD insn or 128bits load/store */
 bool
-k1_ok_for_paired_reg_p (rtx op)
+kvx_ok_for_paired_reg_p (rtx op)
 {
-  return k1_check_align_reg (op, 2);
+  return kvx_check_align_reg (op, 2);
 }
 
 /* Returns TRUE if OP is a hard (sub)register quad aligned or a pseudo
  * (sub)register, FALSE for all other cases. It is used to check
  * correct alignement for some SIMD insn or 256bits load/store */
 bool
-k1_ok_for_quad_reg_p (rtx op)
+kvx_ok_for_quad_reg_p (rtx op)
 {
-  return k1_check_align_reg (op, 4);
+  return kvx_check_align_reg (op, 4);
 }
 
 /* Split a 128bit move op in mode MODE from SRC to DST in 2 smaller
    64bit moves */
 void
-k1_split_128bits_move (rtx dst, rtx src, enum machine_mode mode)
+kvx_split_128bits_move (rtx dst, rtx src, enum machine_mode mode)
 {
   rtx lo_src = gen_lowpart (word_mode, src);
   rtx hi_src = gen_highpart_mode (word_mode, mode, src);
@@ -7027,8 +7029,8 @@ k1_split_128bits_move (rtx dst, rtx src, enum machine_mode mode)
      overlapping */
   bool low_first = true;
 
-  if (k1_is_reg_subreg_p (dst) && k1_is_reg_subreg_p (src))
-    low_first = k1_regno_subregno (dst) < k1_regno_subregno (src);
+  if (kvx_is_reg_subreg_p (dst) && kvx_is_reg_subreg_p (src))
+    low_first = kvx_regno_subregno (dst) < kvx_regno_subregno (src);
 
   if (low_first)
     {
@@ -7045,14 +7047,14 @@ k1_split_128bits_move (rtx dst, rtx src, enum machine_mode mode)
 /* Split a 256bit move op in mode MODE from SRC to DST in 2 smaller
    128bit moves */
 void
-k1_split_256bits_move (rtx dst, rtx src, enum machine_mode mode)
+kvx_split_256bits_move (rtx dst, rtx src, enum machine_mode mode)
 {
   /* Avoid overwriting source by dest in case register ranges are
      overlapping */
   bool low_first = true;
 
-  if (k1_is_reg_subreg_p (dst) && k1_is_reg_subreg_p (src))
-    low_first = k1_regno_subregno (dst) < k1_regno_subregno (src);
+  if (kvx_is_reg_subreg_p (dst) && kvx_is_reg_subreg_p (src))
+    low_first = kvx_regno_subregno (dst) < kvx_regno_subregno (src);
 
   emit_insn (
     gen_movti (simplify_gen_subreg (TImode, dst, mode, low_first ? 0 : 16),
@@ -7066,7 +7068,7 @@ k1_split_256bits_move (rtx dst, rtx src, enum machine_mode mode)
 /* Returns TRUE if OP is a symbol and has the farcall attribute or if
    -mfarcall is in use. */
 bool
-k1_is_farcall_p (rtx op)
+kvx_is_farcall_p (rtx op)
 {
   bool farcall = KVX_FARCALL;
   if (!farcall
@@ -7081,7 +7083,7 @@ k1_is_farcall_p (rtx op)
 }
 
 void
-k1_profile_hook (void)
+kvx_profile_hook (void)
 {
   rtx ra_arg = get_hard_reg_initial_val (Pmode, KV3_RETURN_POINTER_REGNO);
   rtx fun = gen_rtx_SYMBOL_REF (Pmode, "__mcount");
@@ -7090,7 +7092,7 @@ k1_profile_hook (void)
 
 /* Returns asm template for ctrapsi4 */
 char *
-k1_ctrapsi4 (void)
+kvx_ctrapsi4 (void)
 {
   static char asm_template[] = "cb.@%R0z %1? 1f\n\t"
 			       ";;\n\t"
@@ -7110,195 +7112,195 @@ k1_ctrapsi4 (void)
 /* Initialize the GCC target structure.  */
 
 #undef TARGET_CLASS_MAX_NREGS
-#define TARGET_CLASS_MAX_NREGS k1_class_max_nregs
+#define TARGET_CLASS_MAX_NREGS kvx_class_max_nregs
 
 #undef TARGET_OPTION_OVERRIDE
-#define TARGET_OPTION_OVERRIDE k1_option_override
+#define TARGET_OPTION_OVERRIDE kvx_option_override
 
 #undef TARGET_FUNCTION_VALUE
-#define TARGET_FUNCTION_VALUE k1_function_value
+#define TARGET_FUNCTION_VALUE kvx_function_value
 
 #undef TARGET_RETURN_IN_MSB
-#define TARGET_RETURN_IN_MSB k1_return_in_msb
+#define TARGET_RETURN_IN_MSB kvx_return_in_msb
 
 #undef TARGET_RETURN_IN_MEMORY
-#define TARGET_RETURN_IN_MEMORY k1_return_in_memory
+#define TARGET_RETURN_IN_MEMORY kvx_return_in_memory
 
 #undef TARGET_STRUCT_VALUE_RTX
-#define TARGET_STRUCT_VALUE_RTX k1_struct_value_rtx
+#define TARGET_STRUCT_VALUE_RTX kvx_struct_value_rtx
 
 #undef TARGET_ASM_OUTPUT_MI_THUNK
-#define TARGET_ASM_OUTPUT_MI_THUNK k1_asm_output_mi_thunk
+#define TARGET_ASM_OUTPUT_MI_THUNK kvx_asm_output_mi_thunk
 
 #undef TARGET_ASM_CAN_OUTPUT_MI_THUNK
-#define TARGET_ASM_CAN_OUTPUT_MI_THUNK k1_asm_can_output_mi_thunk
+#define TARGET_ASM_CAN_OUTPUT_MI_THUNK kvx_asm_can_output_mi_thunk
 
 #undef TARGET_ASM_ALIGNED_DI_OP
 #define TARGET_ASM_ALIGNED_DI_OP "\t.8byte\t"
 
 #undef TARGET_EXPAND_BUILTIN_SAVEREGS
-#define TARGET_EXPAND_BUILTIN_SAVEREGS k1_expand_builtin_saveregs
+#define TARGET_EXPAND_BUILTIN_SAVEREGS kvx_expand_builtin_saveregs
 
 #undef TARGET_EXPAND_BUILTIN_VA_START
-#define TARGET_EXPAND_BUILTIN_VA_START k1_expand_va_start
+#define TARGET_EXPAND_BUILTIN_VA_START kvx_expand_va_start
 
 #undef TARGET_LEGITIMATE_ADDRESS_P
-#define TARGET_LEGITIMATE_ADDRESS_P k1_legitimate_address_p
+#define TARGET_LEGITIMATE_ADDRESS_P kvx_legitimate_address_p
 
 #undef TARGET_DECIMAL_FLOAT_SUPPORTED_P
-#define TARGET_DECIMAL_FLOAT_SUPPORTED_P k1_decimal_float_supported_p
+#define TARGET_DECIMAL_FLOAT_SUPPORTED_P kvx_decimal_float_supported_p
 
 #undef TARGET_FIXED_POINT_SUPPORTED_P
-#define TARGET_FIXED_POINT_SUPPORTED_P k1_fixed_point_supported_p
+#define TARGET_FIXED_POINT_SUPPORTED_P kvx_fixed_point_supported_p
 
 #undef TARGET_VECTOR_MODE_SUPPORTED_P
-#define TARGET_VECTOR_MODE_SUPPORTED_P k1_vector_mode_supported_p
+#define TARGET_VECTOR_MODE_SUPPORTED_P kvx_vector_mode_supported_p
 
 #undef TARGET_VECTORIZE_SUPPORT_VECTOR_MISALIGNMENT
 #define TARGET_VECTORIZE_SUPPORT_VECTOR_MISALIGNMENT                           \
-  k1_support_vector_misalignment
+  kvx_support_vector_misalignment
 
 #undef TARGET_PROMOTE_PROTOTYPES
 #define TARGET_PROMOTE_PROTOTYPES hook_bool_const_tree_true
 
 #undef TARGET_ARG_PARTIAL_BYTES
-#define TARGET_ARG_PARTIAL_BYTES k1_arg_partial_bytes
+#define TARGET_ARG_PARTIAL_BYTES kvx_arg_partial_bytes
 
 #undef TARGET_MUST_PASS_IN_STACK
 #define TARGET_MUST_PASS_IN_STACK must_pass_in_stack_var_size
 
 #undef TARGET_PASS_BY_REFERENCE
-#define TARGET_PASS_BY_REFERENCE k1_pass_by_reference
+#define TARGET_PASS_BY_REFERENCE kvx_pass_by_reference
 
 #undef TARGET_SECONDARY_RELOAD
-#define TARGET_SECONDARY_RELOAD k1_secondary_reload
+#define TARGET_SECONDARY_RELOAD kvx_secondary_reload
 
 #undef TARGET_INIT_BUILTINS
-#define TARGET_INIT_BUILTINS k1_init_builtins
+#define TARGET_INIT_BUILTINS kvx_init_builtins
 
 #undef TARGET_EXPAND_BUILTIN
-#define TARGET_EXPAND_BUILTIN k1_expand_builtin
+#define TARGET_EXPAND_BUILTIN kvx_expand_builtin
 
 #undef TARGET_CANNOT_FORCE_CONST_MEM
-#define TARGET_CANNOT_FORCE_CONST_MEM k1_cannot_force_const_mem
+#define TARGET_CANNOT_FORCE_CONST_MEM kvx_cannot_force_const_mem
 
 #undef TARGET_SCHED_ADJUST_COST
-#define TARGET_SCHED_ADJUST_COST k1_sched_adjust_cost
+#define TARGET_SCHED_ADJUST_COST kvx_sched_adjust_cost
 
 #undef TARGET_SCHED_ISSUE_RATE
-#define TARGET_SCHED_ISSUE_RATE k1_sched_issue_rate
+#define TARGET_SCHED_ISSUE_RATE kvx_sched_issue_rate
 
 #undef TARGET_SCHED_FIRST_CYCLE_MULTIPASS_DFA_LOOKAHEAD
 #define TARGET_SCHED_FIRST_CYCLE_MULTIPASS_DFA_LOOKAHEAD                       \
-  k1_sched_first_cycle_multipass_dfa_lookahead
+  kvx_sched_first_cycle_multipass_dfa_lookahead
 
 #undef TARGET_SCHED_SET_SCHED_FLAGS
-#define TARGET_SCHED_SET_SCHED_FLAGS k1_sched_set_sched_flags
+#define TARGET_SCHED_SET_SCHED_FLAGS kvx_sched_set_sched_flags
 
 #undef TARGET_SCHED_INIT_GLOBAL
-#define TARGET_SCHED_INIT_GLOBAL k1_sched_init_global
+#define TARGET_SCHED_INIT_GLOBAL kvx_sched_init_global
 
 #undef TARGET_SCHED_DFA_NEW_CYCLE
-#define TARGET_SCHED_DFA_NEW_CYCLE k1_sched_dfa_new_cycle
+#define TARGET_SCHED_DFA_NEW_CYCLE kvx_sched_dfa_new_cycle
 
 #undef TARGET_SCHED_REASSOCIATION_WIDTH
-#define TARGET_SCHED_REASSOCIATION_WIDTH k1_reassociation_width
+#define TARGET_SCHED_REASSOCIATION_WIDTH kvx_reassociation_width
 
 #undef TARGET_RTX_COSTS
-#define TARGET_RTX_COSTS k1_rtx_costs
+#define TARGET_RTX_COSTS kvx_rtx_costs
 
 #undef TARGET_ADDRESS_COST
-#define TARGET_ADDRESS_COST k1_address_cost
+#define TARGET_ADDRESS_COST kvx_address_cost
 
 #undef TARGET_REGISTER_MOVE_COST
-#define TARGET_REGISTER_MOVE_COST k1_register_move_cost
+#define TARGET_REGISTER_MOVE_COST kvx_register_move_cost
 
 #undef TARGET_FUNCTION_OK_FOR_SIBCALL
-#define TARGET_FUNCTION_OK_FOR_SIBCALL k1_function_ok_for_sibcall
+#define TARGET_FUNCTION_OK_FOR_SIBCALL kvx_function_ok_for_sibcall
 
 #undef TARGET_BUILTIN_DECL
-#define TARGET_BUILTIN_DECL k1_builtin_decl
+#define TARGET_BUILTIN_DECL kvx_builtin_decl
 
 #undef TARGET_LEGITIMIZE_ADDRESS
-#define TARGET_LEGITIMIZE_ADDRESS k1_legitimize_address
+#define TARGET_LEGITIMIZE_ADDRESS kvx_legitimize_address
 
 #undef TARGET_CONST_ANCHOR
 #define TARGET_CONST_ANCHOR 0x200
 
 #undef TARGET_ASM_FUNCTION_PROLOGUE
-#define TARGET_ASM_FUNCTION_PROLOGUE k1_function_prologue
+#define TARGET_ASM_FUNCTION_PROLOGUE kvx_function_prologue
 
 #undef TARGET_ASM_FUNCTION_EPILOGUE
-#define TARGET_ASM_FUNCTION_EPILOGUE k1_function_epilogue
+#define TARGET_ASM_FUNCTION_EPILOGUE kvx_function_epilogue
 
 #undef TARGET_ASM_FINAL_POSTSCAN_INSN
-#define TARGET_ASM_FINAL_POSTSCAN_INSN k1_asm_final_postscan_insn
+#define TARGET_ASM_FINAL_POSTSCAN_INSN kvx_asm_final_postscan_insn
 
 #undef TARGET_SCHED_DEPENDENCIES_EVALUATION_HOOK
 #define TARGET_SCHED_DEPENDENCIES_EVALUATION_HOOK                              \
-  k1_dependencies_evaluation_hook
+  kvx_dependencies_evaluation_hook
 
 #undef TARGET_MACHINE_DEPENDENT_REORG
-#define TARGET_MACHINE_DEPENDENT_REORG k1_reorg
+#define TARGET_MACHINE_DEPENDENT_REORG kvx_reorg
 
 #undef TARGET_ATTRIBUTE_TABLE
-#define TARGET_ATTRIBUTE_TABLE k1_attribute_table
+#define TARGET_ATTRIBUTE_TABLE kvx_attribute_table
 
 /* FIXME AUTO: disabling vector support */
 /* #undef TARGET_VECTORIZE_PREFERRED_SIMD_MODE */
-/* #define TARGET_VECTORIZE_PREFERRED_SIMD_MODE k1_units_preffered_simd_mode */
+/* #define TARGET_VECTORIZE_PREFERRED_SIMD_MODE kvx_units_preffered_simd_mode */
 
 #undef TARGET_FUNCTION_ARG
-#define TARGET_FUNCTION_ARG k1_function_arg
+#define TARGET_FUNCTION_ARG kvx_function_arg
 
 #undef TARGET_FUNCTION_ARG_ADVANCE
-#define TARGET_FUNCTION_ARG_ADVANCE k1_function_arg_advance
+#define TARGET_FUNCTION_ARG_ADVANCE kvx_function_arg_advance
 
 #undef TARGET_LEGITIMATE_CONSTANT_P
-#define TARGET_LEGITIMATE_CONSTANT_P k1_legitimate_constant_p
+#define TARGET_LEGITIMATE_CONSTANT_P kvx_legitimate_constant_p
 
 #undef TARGET_CONDITIONAL_REGISTER_USAGE
-#define TARGET_CONDITIONAL_REGISTER_USAGE k1_conditional_register_usage
+#define TARGET_CONDITIONAL_REGISTER_USAGE kvx_conditional_register_usage
 
 #undef TARGET_CANONICALIZE_COMPARISON
-#define TARGET_CANONICALIZE_COMPARISON k1_canonicalize_comparison
+#define TARGET_CANONICALIZE_COMPARISON kvx_canonicalize_comparison
 
 #undef TARGET_ASM_OUTPUT_ADDR_CONST_EXTRA
-#define TARGET_ASM_OUTPUT_ADDR_CONST_EXTRA k1_output_addr_const_extra
+#define TARGET_ASM_OUTPUT_ADDR_CONST_EXTRA kvx_output_addr_const_extra
 
 #undef TARGET_INVALID_WITHIN_DOLOOP
-#define TARGET_INVALID_WITHIN_DOLOOP k1_invalid_within_doloop
+#define TARGET_INVALID_WITHIN_DOLOOP kvx_invalid_within_doloop
 
 #undef TARGET_MODE_DEPENDENT_ADDRESS_P
-#define TARGET_MODE_DEPENDENT_ADDRESS_P k1_mode_dependent_address_p
+#define TARGET_MODE_DEPENDENT_ADDRESS_P kvx_mode_dependent_address_p
 
 #undef TARGET_SCHED_CAN_SPECULATE_INSN
-#define TARGET_SCHED_CAN_SPECULATE_INSN k1_sched_can_speculate_insn
+#define TARGET_SCHED_CAN_SPECULATE_INSN kvx_sched_can_speculate_insn
 
 #undef TARGET_CAN_USE_DOLOOP_P
 #define TARGET_CAN_USE_DOLOOP_P can_use_doloop_if_innermost
 
 #undef TARGET_ADDR_SPACE_POINTER_MODE
-#define TARGET_ADDR_SPACE_POINTER_MODE k1_addr_space_pointer_mode
+#define TARGET_ADDR_SPACE_POINTER_MODE kvx_addr_space_pointer_mode
 
 #undef TARGET_ADDR_SPACE_ADDRESS_MODE
-#define TARGET_ADDR_SPACE_ADDRESS_MODE k1_addr_space_address_mode
+#define TARGET_ADDR_SPACE_ADDRESS_MODE kvx_addr_space_address_mode
 #undef TARGET_ADDR_SPACE_LEGITIMATE_ADDRESS_P
 #define TARGET_ADDR_SPACE_LEGITIMATE_ADDRESS_P                                 \
-  k1_addr_space_legitimate_address_p
+  kvx_addr_space_legitimate_address_p
 
 #undef TARGET_ADDR_SPACE_LEGITIMIZE_ADDRESS
-#define TARGET_ADDR_SPACE_LEGITIMIZE_ADDRESS k1_addr_space_legitimize_address
+#define TARGET_ADDR_SPACE_LEGITIMIZE_ADDRESS kvx_addr_space_legitimize_address
 
 #undef TARGET_ADDR_SPACE_SUBSET_P
-#define TARGET_ADDR_SPACE_SUBSET_P k1_addr_space_subset_p
+#define TARGET_ADDR_SPACE_SUBSET_P kvx_addr_space_subset_p
 
 #undef TARGET_ADDR_SPACE_CONVERT
-#define TARGET_ADDR_SPACE_CONVERT k1_addr_space_convert
+#define TARGET_ADDR_SPACE_CONVERT kvx_addr_space_convert
 
 /* FIXME AUTO: trampoline are broken T6775 */
 #undef TARGET_STATIC_CHAIN
-#define TARGET_STATIC_CHAIN k1_static_chain
+#define TARGET_STATIC_CHAIN kvx_static_chain
 
 struct gcc_target targetm = TARGET_INITIALIZER;
 

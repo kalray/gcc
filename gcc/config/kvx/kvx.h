@@ -24,7 +24,7 @@ enum kvx_abi_type
    || (reg_renumber && ((unsigned) reg_renumber[R] TEST VALUE)))
 
 /* KVX_FRAME_POINTER_VIRT_REGNO is used as part of
-   k1_legitimize_reload_address () because reload wants real addresses
+   kvx_legitimize_reload_address () because reload wants real addresses
    when it reloads MEMs. This register shouldn't be generated anywhere
    else, thus it causes no correctness issue. */
 #define IS_GENERAL_REGNO(num, strict)                                          \
@@ -73,7 +73,7 @@ enum kvx_abi_type
 
 /* ********** Per-Function Data ********** */
 
-#define INIT_EXPANDERS k1_init_expanders ()
+#define INIT_EXPANDERS kvx_init_expanders ()
 
 /* ********** Storage Layout ********** */
 
@@ -180,9 +180,9 @@ enum kvx_abi_type
 /* A C expression that is nonzero if it is permissible to store a
    value of mode mode in hard register number regno (or in several
    registers starting with that one). */
-#define HARD_REGNO_MODE_OK(REGNO, MODE) k1_hard_regno_mode_ok (REGNO, MODE)
+#define HARD_REGNO_MODE_OK(REGNO, MODE) kvx_hard_regno_mode_ok (REGNO, MODE)
 
-#define HARD_REGNO_RENAME_OK(FROM, TO) k1_hard_regno_rename_ok (FROM, TO)
+#define HARD_REGNO_RENAME_OK(FROM, TO) kvx_hard_regno_rename_ok (FROM, TO)
 
 /* A C expression that is nonzero if a value of mode mode1 is
    accessible in mode mode2 without copying.
@@ -230,7 +230,7 @@ enum kvx_abi_type
   (GET_CODE (X) == SYMBOL_REF || GET_CODE (X) == LABEL_REF                     \
    || (GET_CODE (X) == CONST && symbolic_reference_mentioned_p (X)))
 
-#define LEGITIMATE_PIC_OPERAND_P(X) k1_legitimate_pic_operand_p (X)
+#define LEGITIMATE_PIC_OPERAND_P(X) kvx_legitimate_pic_operand_p (X)
 
 /* A C expression which is nonzero if register number num is suitable
    for use as a base register in operand addresses. Like
@@ -329,9 +329,9 @@ enum kvx_abi_type
 
 #define STARTING_FRAME_OFFSET (0)
 
-#define FIRST_PARM_OFFSET(funcdecl) k1_first_parm_offset (funcdecl)
+#define FIRST_PARM_OFFSET(funcdecl) kvx_first_parm_offset (funcdecl)
 
-#define RETURN_ADDR_RTX(COUNT, FRAMEADDR) k1_return_addr_rtx (COUNT, FRAMEADDR)
+#define RETURN_ADDR_RTX(COUNT, FRAMEADDR) kvx_return_addr_rtx (COUNT, FRAMEADDR)
 
 #define DWARF2_UNWIND_INFO 1
 #define DWARF2_ASM_LINE_DEBUG_INFO 1
@@ -360,7 +360,7 @@ enum kvx_abi_type
 // {ARG_POINTER_REGNUM, FRAME_POINTER_REGNUM},
 
 #define INITIAL_ELIMINATION_OFFSET(FROM, TO, OFFSET)                           \
-  (OFFSET) = k1_initial_elimination_offset (FROM, TO)
+  (OFFSET) = kvx_initial_elimination_offset (FROM, TO)
 
 /* ********** Stack Arguments ********** */
 
@@ -385,7 +385,7 @@ enum kvx_abi_type
 
 /* Struct used for CUMULATIVE_ARGS. */
 #ifdef HOST_WIDE_INT
-struct k1_args
+struct kvx_args
 {
   /* Next argument register to be used.
      If >= KVX_ARG_REG_SLOTS, then all slots are used.
@@ -399,10 +399,10 @@ struct k1_args
 };
 #endif
 
-#define CUMULATIVE_ARGS struct k1_args
+#define CUMULATIVE_ARGS struct kvx_args
 
 #define INIT_CUMULATIVE_ARGS(CUM, FNTYPE, LIBNAME, FNDECL, N_NAMED_ARGS)       \
-  k1_init_cumulative_args (&CUM, FNTYPE, LIBNAME, FNDECL, N_NAMED_ARGS)
+  kvx_init_cumulative_args (&CUM, FNTYPE, LIBNAME, FNDECL, N_NAMED_ARGS)
 
 /* A C expression that is nonzero if regno is the number of a hard
    register in which function arguments are sometimes passed. This
@@ -478,8 +478,8 @@ struct k1_args
 /* ********** Profiling ********** */
 
 /* Emit rtl for profiling to call "_mcount" for profiling a function entry. */
-extern void k1_profile_hook (void);
-#define PROFILE_HOOK(LABEL) k1_profile_hook ()
+extern void kvx_profile_hook (void);
+#define PROFILE_HOOK(LABEL) kvx_profile_hook ()
 
 /* A C statement or compound statement to output to file some
    assembler code to call the profiling subroutine mcount.
@@ -722,7 +722,7 @@ extern void k1_profile_hook (void);
    followed by a punctuation character), this macro is called with a
    null pointer for x and the punctuation character for code. */
 #undef PRINT_OPERAND
-#define PRINT_OPERAND k1_print_operand
+#define PRINT_OPERAND kvx_print_operand
 
 /* A C compound statement to output to stdio stream stream the
    assembler syntax for an instruction operand that is a memory
@@ -733,7 +733,7 @@ extern void k1_profile_hook (void);
    hook TARGET_ENCODE_SECTION_INFO to store the information into the
    symbol_ref, and then check for it here. See Assembler Format. */
 #undef PRINT_OPERAND_ADDRESS
-#define PRINT_OPERAND_ADDRESS k1_print_operand_address
+#define PRINT_OPERAND_ADDRESS kvx_print_operand_address
 
 /* A C expression which evaluates to true if code is a valid
    punctuation character for use in the PRINT_OPERAND macro. If
@@ -741,7 +741,7 @@ extern void k1_profile_hook (void);
    punctuation characters (except for the standard one, `%') are used
    in this way. */
 #undef PRINT_OPERAND_PUNCT_VALID_P
-#define PRINT_OPERAND_PUNCT_VALID_P k1_print_punct_valid_p
+#define PRINT_OPERAND_PUNCT_VALID_P kvx_print_punct_valid_p
 
 #undef STORE_FLAG_VALUE
 #define STORE_FLAG_VALUE 1
@@ -785,7 +785,7 @@ extern void k1_profile_hook (void);
 #define UNSIGNED_INT_FITS_N_BITS(imm, N)                                       \
   (((imm) < ((HOST_WIDE_INT) 1 << (N)) && (imm) >= (HOST_WIDE_INT) 0) ? 1 : 0)
 
-#define k1_strict_to_nonstrict_comparison_operator(code)                       \
+#define kvx_strict_to_nonstrict_comparison_operator(code)                      \
   __extension__({                                                              \
     enum rtx_code comp;                                                        \
                                                                                \
@@ -847,7 +847,7 @@ extern void k1_profile_hook (void);
 
 #ifndef IN_LIBGCC2
 
-extern GTY (()) rtx k1_sync_reg_rtx;
-extern GTY (()) rtx k1_link_reg_rtx;
+extern GTY (()) rtx kvx_sync_reg_rtx;
+extern GTY (()) rtx kvx_link_reg_rtx;
 
 #endif
