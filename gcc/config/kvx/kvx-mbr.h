@@ -1,4 +1,4 @@
-/* Machine description for K1 MPPA architecture.
+/* Machine description for KVX MPPA architecture.
    Copyright (C) 2009-2017 Free Software Foundation, Inc.
    Contributed by Kalray.
 
@@ -18,8 +18,8 @@
    along with GCC; see the file COPYING3.  If not see
    <http://www.gnu.org/licenses/>.  */
 
-#ifndef GCC_K1_MPPA_MBR
-#define GCC_K1_MPPA_MBR
+#ifndef GCC_KVX_MPPA_MBR
+#define GCC_KVX_MPPA_MBR
 
 #define STARTFILE_SPEC " crti%O%s crtbegin%O%s crt0%O%s"
 #define ENDFILE_SPEC " crtend%O%s crtn%O%s"
@@ -46,4 +46,4 @@
 #undef LINK_SPEC
 #define LINK_SPEC LINK_SPEC_COMMON
 
-#endif /* GCC_K1_MPPA_MBR */
+#endif /* GCC_KVX_MPPA_MBR */
