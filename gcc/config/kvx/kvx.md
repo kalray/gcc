@@ -4,7 +4,7 @@
 ;; Only support Coolidge, but keep flexibility as long as it does not
 ;; cost too much
 
-(define_attr "arch" "coolidge" (const (symbol_ref "k1_arch_schedule")))
+(define_attr "arch" "coolidge" (const (symbol_ref "kvx_arch_schedule")))
 
 (define_attr "only_64b" "yes,no" (const_string "no"))
 
@@ -39,7 +39,7 @@
   ""
   "
 {
-  if (! k1_expand_store_multiple (operands))
+  if (! kvx_expand_store_multiple (operands))
     FAIL;
 }")
 
@@ -58,7 +58,7 @@
  ""
  [(const_int 0)]
  {
-   if (k1_pack_load_store (operands, 4))
+   if (kvx_pack_load_store (operands, 4))
      DONE;
    else
      FAIL;
@@ -73,7 +73,7 @@
  ""
  [(const_int 0)]
  {
-   if (k1_pack_load_store (operands, 2))
+   if (kvx_pack_load_store (operands, 2))
      DONE;
    else
      FAIL;
@@ -86,7 +86,7 @@
   ""
   "
 {
-  if (! k1_expand_load_multiple (operands))
+  if (! kvx_expand_load_multiple (operands))
     FAIL;
 }")
 
@@ -105,7 +105,7 @@
  ""
  [(const_int 0)]
  {
-   if (k1_pack_load_store (operands, 4))
+   if (kvx_pack_load_store (operands, 4))
      DONE;
    else
      FAIL;
@@ -120,7 +120,7 @@
  ""
  [(const_int 0)]
  {
-   if (k1_pack_load_store (operands, 2))
+   if (kvx_pack_load_store (operands, 2))
      DONE;
    else
      FAIL;
@@ -223,7 +223,7 @@
 
 (define_expand "mov<mode>"
    [(set (match_operand:ALLIF 0 "nonimmediate_operand" "")
-         (match_operand:ALLIF 1 "k1_mov_operand"      ""))]
+         (match_operand:ALLIF 1 "kvx_mov_operand"      ""))]
    ""
    "
     if (MEM_P (operands[0]))
@@ -231,7 +231,7 @@
 
     if (CONSTANT_P (operands[1]))
       {
-        k1_expand_mov_constant (operands);
+        kvx_expand_mov_constant (operands);
         DONE;
       }
    "
@@ -256,7 +256,7 @@
   [(const_int 0)]
   {
    /* We can't have 128bits immediate values, split it */
-   k1_split_128bits_move (operands[0], operands[1], TImode);
+   kvx_split_128bits_move (operands[0], operands[1], TImode);
    DONE;
   }
 )
@@ -270,7 +270,7 @@
   "!optimize_size && reload_completed"
   [(const_int 0)]
   {
-    k1_split_128bits_move (operands[0], operands[1], TImode);
+    kvx_split_128bits_move (operands[0], operands[1], TImode);
     DONE;
   }
 )
@@ -281,27 +281,27 @@
 (define_insn_and_split "*mov_quad_oddreg"
     [(set (match_operand:TI 0 "nonimmediate_operand" "")
           (match_operand:TI 1 "general_operand" "" ))]
- "(k1_is_reg_subreg_p (operands[0]) && !k1_ok_for_paired_reg_p (operands[0]))
-   || (k1_is_reg_subreg_p (operands[1]) && !k1_ok_for_paired_reg_p (operands[1]))"
+ "(kvx_is_reg_subreg_p (operands[0]) && !kvx_ok_for_paired_reg_p (operands[0]))
+   || (kvx_is_reg_subreg_p (operands[1]) && !kvx_ok_for_paired_reg_p (operands[1]))"
   "#"
   "&& reload_completed"
   [(const_int 0)]
   {
    /* This should only happen during function argument preparation */
-   k1_split_128bits_move (operands[0], operands[1], TImode);
+   kvx_split_128bits_move (operands[0], operands[1], TImode);
    DONE;
   }
 )
 
 (define_insn "*mov_quad"
-    [(set (match_operand:TI 0 "k1_nonimmediate_operand_pair" "=r, r,   r,  r,  r,  r,  r, a, b, m")
-          (match_operand:TI 1 "k1_nonimmediate_operand_pair" " r, Ca, Cb, Cm, Za, Zb, Zm, r, r, r" ))]
-  "k1_is_reg_subreg_p (operands[0]) || k1_is_reg_subreg_p (operands[1])"
+    [(set (match_operand:TI 0 "kvx_nonimmediate_operand_pair" "=r, r,   r,  r,  r,  r,  r, a, b, m")
+          (match_operand:TI 1 "kvx_nonimmediate_operand_pair" " r, Ca, Cb, Cm, Za, Zb, Zm, r, r, r" ))]
+  "kvx_is_reg_subreg_p (operands[0]) || kvx_is_reg_subreg_p (operands[1])"
 {
   switch (which_alternative)
     {
     case 0:
-      return k1_asm_pat_copyq (operands[1]);
+      return kvx_asm_pat_copyq (operands[1]);
     case 1: case 2: case 3: case 4: case 5: case 6:
       return "lq%C1%m1 %0 = %1";
     case 7: case 8: case 9:
@@ -314,14 +314,14 @@
  (set_attr "length"  "4,   4,             8,               12,              4,                      8,                        12,                       4,              8,                12")])
 
 (define_insn "*mov_octuple"
-    [(set (match_operand:OI 0 "k1_nonimmediate_operand_quad" "=r, r,   r,  r,  r,  r,  r, a, b, m")
-          (match_operand:OI 1 "k1_nonimmediate_operand_quad" " r, Ca, Cb, Cm, Za, Zb, Zm, r, r, r"))]
-  "k1_is_reg_subreg_p (operands[0]) || k1_is_reg_subreg_p (operands[1])"
+    [(set (match_operand:OI 0 "kvx_nonimmediate_operand_quad" "=r, r,   r,  r,  r,  r,  r, a, b, m")
+          (match_operand:OI 1 "kvx_nonimmediate_operand_quad" " r, Ca, Cb, Cm, Za, Zb, Zm, r, r, r"))]
+  "kvx_is_reg_subreg_p (operands[0]) || kvx_is_reg_subreg_p (operands[1])"
 {
   switch (which_alternative)
     {
     case 0:
-      return k1_asm_pat_copyo ();
+      return kvx_asm_pat_copyo ();
     case 1: case 2: case 3: case 4: case 5: case 6:
       return "lo%C1%m1 %0 = %1";
     case 7: case 8: case 9:
@@ -342,7 +342,7 @@
   "!optimize_size && reload_completed"
   [(const_int 0)]
   {
-    k1_split_256bits_move (operands[0], operands[1], OImode);
+    kvx_split_256bits_move (operands[0], operands[1], OImode);
     DONE;
   }
 )
@@ -423,7 +423,7 @@
    (use (label_ref (match_operand 1 "")))]
   "can_create_pseudo_p ()"
 {
-  k1_expand_tablejump (operands[0], operands[1]);
+  kvx_expand_tablejump (operands[0], operands[1]);
   DONE;
 })
 
@@ -448,7 +448,7 @@
 (define_insn "addsi3"
   [(set (match_operand:SI 0 "register_operand" "=r,r,r")
         (plus:SI (match_operand:SI 1 "register_operand" "r,r,r")
-                 (match_operand:SI 2 "k1_r_s10_s37_s64_operand" "r,I10,i")))]
+                 (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i")))]
   ""
   "addw %0 = %1, %2"
 [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x")
@@ -460,7 +460,7 @@
   [(set (match_operand:DI 0 "register_operand" "=r,r,r")
         (zero_extend:DI
              (plus:SI (match_operand:SI 1 "register_operand" "r,r,r")
-	              (match_operand:SI 2 "k1_r_s10_s37_s64_operand" "r,I10,i"))))]
+	              (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i"))))]
   ""
   "addw %0 = %1, %2"
 [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x")
@@ -496,7 +496,7 @@
 (define_insn "adddi3"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
 	(plus:DI (match_operand:DI 1 "register_operand" "r,r,r,r")
-		 (match_operand:DI 2 "k1_r_s10_s37_s64_operand" "r,I10,B37,i")))]
+		 (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")))]
 ""
 "addd %0 = %1, %2"
 [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
@@ -584,7 +584,7 @@
 
 (define_insn "subsi3"
   [(set (match_operand:SI 0 "register_operand" "=r,r,r")
-	(minus:SI (match_operand:SI 1 "k1_r_s10_s37_s64_operand" "r,I10,i")
+	(minus:SI (match_operand:SI 1 "kvx_r_s10_s37_s64_operand" "r,I10,i")
 	          (match_operand:SI 2 "register_operand" "r,r,r")))]
   ""
   "sbfw %0 = %2, %1"
@@ -595,7 +595,7 @@
 (define_insn "*subsi3_zext"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r")
         (zero_extend:DI
-             (minus:SI (match_operand:SI 1 "k1_r_s10_s37_s64_operand" "r,I10,i")
+             (minus:SI (match_operand:SI 1 "kvx_r_s10_s37_s64_operand" "r,I10,i")
                        (match_operand:SI 2 "register_operand" "r,r,r"))))]
   ""
   "sbfw %0 = %2, %1"
@@ -604,7 +604,7 @@
 
 (define_insn "subdi3"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
-	(minus:DI (match_operand:DI 1 "k1_r_s10_s37_s64_operand" "r,I10,B37,i")
+	(minus:DI (match_operand:DI 1 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")
  		  (match_operand:DI 2 "register_operand" "r,r,r,r")))]
   ""
   "sbfd %0 = %2, %1"
@@ -616,7 +616,7 @@
 (define_insn "mulsi3"
   [(set (match_operand:SI 0 "register_operand" "=r,r")
         (mult:SI (match_operand:SI 1 "register_operand" "r,r")
-                 (match_operand:SI 2 "k1_r_any32_operand" "r,i")))]
+                 (match_operand:SI 2 "kvx_r_any32_operand" "r,i")))]
  ""
  "mulw %0 = %1, %2"
 [(set_attr "type" "mau, mau_x")
@@ -625,7 +625,7 @@
 (define_insn "muldi3"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
         (mult:DI (match_operand:DI 1 "register_operand" "r,r,r,r")
-                 (match_operand:DI 2 "k1_r_s10_s37_s64_operand" "r,I10,B37,i")))]
+                 (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")))]
  ""
  "muld %0 = %1, %2"
 [(set_attr "type" "mau, mau, mau_x, mau_y")
@@ -722,7 +722,7 @@
 (define_insn "<spfx>min<mode>3"
   [(set (match_operand:SIDI 0 "register_operand" "=r,r,r,r")
 	(MIN_UMIN:SIDI (match_operand:SIDI 1 "register_operand" "r,r,r,r")
-                       (match_operand:SIDI 2 "k1_r_s10_s37_s64_operand" "r,I10,B37,i")))]
+                       (match_operand:SIDI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")))]
   ""
   "min<ssfx><sfx> %0 = %1, %2"
 [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
@@ -731,7 +731,7 @@
 (define_insn "<spfx>max<mode>3"
   [(set (match_operand:SIDI 0 "register_operand" "=r,r,r,r")
 	(MAX_UMAX:SIDI (match_operand:SIDI 1 "register_operand" "r,r,r,r")
-                       (match_operand:SIDI 2 "k1_r_s10_s37_s64_operand" "r,I10,B37,i")))]
+                       (match_operand:SIDI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")))]
   ""
   "max<ssfx><sfx> %0 = %1, %2"
 [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
@@ -749,7 +749,7 @@
 (define_insn "andsi3"
   [(set (match_operand:SI 0 "register_operand" "=r,r,r")
         (and:SI (match_operand:SI 1 "register_operand" "r,r,r")
-                (match_operand:SI 2 "k1_r_s10_s37_s64_operand" "r,I10,i")))]
+                (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i")))]
   ""
   "andw %0 = %1, %2"
 [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x")
@@ -759,7 +759,7 @@
 (define_insn "*nandw"
   [(set (match_operand:SI 0 "register_operand" "=r,r,r")
         (ior:SI (not:SI (match_operand:SI 1 "register_operand" "r,r,r"))
-                (not:SI (match_operand:SI 2 "k1_r_s10_s37_s64_operand" "r,I10,i"))))]
+                (not:SI (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i"))))]
   ""
   "nandw %0 = %1, %2"
 [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x")
@@ -769,7 +769,7 @@
 (define_insn "*andnw"
   [(set (match_operand:SI 0 "register_operand" "=r,r,r")
         (and:SI (not:SI (match_operand:SI 1 "register_operand" "r,r,r"))
-                (match_operand:SI 2 "k1_r_s10_s37_s64_operand" "r,I10,i")))]
+                (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i")))]
   ""
   "andnw %0 = %1, %2"
 [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x")
@@ -779,7 +779,7 @@
 (define_insn "anddi3"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
         (and:DI (match_operand:DI 1 "register_operand" "r,r,r,r")
-                (match_operand:DI 2 "k1_r_s10_s37_s64_operand" "r,I10,B37,i")))]
+                (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")))]
   ""
   "andd %0 = %1, %2"
 [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
@@ -789,7 +789,7 @@
 (define_insn "*nandd"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
         (ior:DI (not:DI (match_operand:DI 1 "register_operand" "r,r,r,r"))
-                (not:DI (match_operand:DI 2 "k1_r_s10_s37_s64_operand" "r,I10,B37,i"))))]
+                (not:DI (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i"))))]
   ""
   "nandd %0 = %1, %2"
 [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
@@ -799,7 +799,7 @@
 (define_insn "*andnd"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
         (and:DI (not:DI (match_operand:DI 1 "register_operand" "r,r,r,r"))
-                (match_operand:DI 2 "k1_r_s10_s37_s64_operand" "r,I10,B37,i")))]
+                (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")))]
   ""
   "andnd %0 = %1, %2"
 [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
@@ -809,7 +809,7 @@
 (define_insn "iorsi3"
   [(set (match_operand:SI 0 "register_operand" "=r,r,r")
         (ior:SI (match_operand:SI 1 "register_operand" "r,r,r")
-                (match_operand:SI 2 "k1_r_s10_s37_s64_operand" "r,I10,i")))]
+                (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i")))]
   ""
   "orw %0 = %1, %2"
 [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x")
@@ -819,7 +819,7 @@
 (define_insn "*norw"
   [(set (match_operand:SI 0 "register_operand" "=r,r,r")
         (and:SI (not:SI (match_operand:SI 1 "register_operand" "r,r,r"))
-                (not:SI (match_operand:SI 2 "k1_r_s10_s37_s64_operand" "r,I10,i"))))]
+                (not:SI (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i"))))]
   ""
   "norw %0 = %1, %2"
 [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x")
@@ -829,7 +829,7 @@
 (define_insn "*ornw"
   [(set (match_operand:SI 0 "register_operand" "=r,r,r")
         (ior:SI (not:SI (match_operand:SI 1 "register_operand" "r,r,r"))
-                (match_operand:SI 2 "k1_r_s10_s37_s64_operand" "r,I10,i")))]
+                (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i")))]
   ""
   "ornw %0 = %1, %2"
 [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x")
@@ -839,7 +839,7 @@
 (define_insn "iordi3"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
         (ior:DI (match_operand:DI 1 "register_operand" "r,r,r,r")
-                (match_operand:DI 2 "k1_r_s10_s37_s64_operand" "r,I10,B37,i")))]
+                (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")))]
   ""
   "ord %0 = %1, %2"
 [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
@@ -849,7 +849,7 @@
 (define_insn "*nord"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
         (and:DI (not:DI (match_operand:DI 1 "register_operand" "r,r,r,r"))
-                (not:DI (match_operand:DI 2 "k1_r_s10_s37_s64_operand" "r,I10,B37,i"))))]
+                (not:DI (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i"))))]
   ""
   "nord %0 = %1, %2"
 [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
@@ -859,7 +859,7 @@
 (define_insn "*ornd"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
         (ior:DI (not:DI (match_operand:DI 1 "register_operand" "r,r,r,r"))
-                (match_operand:DI 2 "k1_r_s10_s37_s64_operand" "r,I10,B37,i")))]
+                (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")))]
   ""
   "ornd %0 = %1, %2"
 [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
@@ -869,7 +869,7 @@
 (define_insn "xorsi3"
   [(set (match_operand:SI 0 "register_operand" "=r,r,r")
         (xor:SI (match_operand:SI 1 "register_operand" "r,r,r")
-                (match_operand:SI 2 "k1_r_s10_s37_s64_operand" "r,I10,i")))]
+                (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i")))]
   ""
   "xorw %0 = %1, %2"
 [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x")
@@ -879,7 +879,7 @@
 (define_insn "*nxorw"
   [(set (match_operand:SI 0 "register_operand" "=r,r,r")
         (not:SI (xor:SI (match_operand:SI 1 "register_operand" "r,r,r")
-                        (match_operand:SI 2 "k1_r_s10_s37_s64_operand" "r,I10,i"))))]
+                        (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i"))))]
   ""
   "nxorw %0 = %1, %2"
 [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x")
@@ -889,7 +889,7 @@
 (define_insn "xordi3"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
         (xor:DI (match_operand:DI 1 "register_operand" "r,r,r,r")
-                (match_operand:DI 2 "k1_r_s10_s37_s64_operand" "r,I10,B37,i")))]
+                (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")))]
   ""
   "xord %0 = %1, %2"
 [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
@@ -899,7 +899,7 @@
 (define_insn "*nxord"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
         (not:DI (xor:DI (match_operand:DI 1 "register_operand" "r,r,r,r")
-                        (match_operand:DI 2 "k1_r_s10_s37_s64_operand" "r,I10,B37,i"))))]
+                        (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i"))))]
   ""
   "nxord %0 = %1, %2"
 [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
@@ -1230,7 +1230,7 @@
   [(set_attr "type" "all,bcu")]
 )
 
-(define_insn "k1_set"
+(define_insn "kvx_set"
    [(set (match_operand:DI 0 "system_register_operand" "=RYY,RXX")
          (unspec_volatile:DI [(match_operand:DI 1 "register_operand" "r,r")] UNSPEC_SET))
     (set (match_operand:SI 2 "" "") 
@@ -1261,7 +1261,7 @@
   [(set_attr "type" "bcu_get")]
 )
 
-(define_insn "k1_get"
+(define_insn "kvx_get"
    [(set (match_operand:DI 0 "register_operand" "=r")
          (unspec_volatile:DI [(match_operand:DI 1 "system_register_operand" "RXX")] UNSPEC_GET))
     (set (match_operand:SI 2 "" "") 
@@ -1271,7 +1271,7 @@
 [(set_attr "type" "bcu_get")]
 )
 
-(define_insn "k1_wfxl"
+(define_insn "kvx_wfxl"
    [(set (match_operand:DI 0 "system_register_operand" "=RYY,RXX")
          (unspec_volatile:DI [(match_operand:DI 1 "register_operand" "r,r")] UNSPEC_WFXL))
     (set (match_operand:DI 2 "" "") 
@@ -1281,7 +1281,7 @@
   [(set_attr "type" "all,bcu")]
 )
 
-(define_insn "k1_wfxm"
+(define_insn "kvx_wfxm"
    [(set (match_operand:DI 0 "system_register_operand" "=RYY,RXX")
          (unspec_volatile:DI [(match_operand:DI 1 "register_operand" "r,r")] UNSPEC_WFXM))
     (set (match_operand:DI 2 "" "") 
@@ -1359,7 +1359,7 @@
 
 (define_insn "trap"
 [(trap_if (const_int 1) (const_int 0))]
-"k1_have_stack_checking()"
+"kvx_have_stack_checking()"
 "errop"
 [(set_attr "type" "all")]
 )
@@ -1369,9 +1369,9 @@
                 [(match_operand 1 "register_operand")
                  (match_operand 2 "immediate_operand")])
                 (match_operand 3 "const_int_operand" "i"))]
-  "k1_have_stack_checking()"
+  "kvx_have_stack_checking()"
   {
-    return k1_ctrapsi4();
+    return kvx_ctrapsi4();
   }
 [(set_attr "type" "bcu")
  (set_attr "class" "branch")]
@@ -1587,8 +1587,8 @@
   [(clobber (mem:BLK (scratch)))]
   ""
   {
-  	emit_insn (gen_dinval (k1_sync_reg_rtx));
-	emit_insn (gen_fence (k1_sync_reg_rtx));
+  	emit_insn (gen_dinval (kvx_sync_reg_rtx));
+	emit_insn (gen_fence (kvx_sync_reg_rtx));
   }
 )
 
@@ -1742,7 +1742,7 @@
 
 (define_expand "bswapdi2"
   [(set (match_operand:DI 0 "register_operand")
-        (bswap:DI (match_operand:DI 1 "k1_r_s10_s37_s64_operand")))]
+        (bswap:DI (match_operand:DI 1 "kvx_r_s10_s37_s64_operand")))]
   ""
 {
 	/* multiply by transposed identity */
@@ -1754,7 +1754,7 @@
 (define_insn "sbmm8"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
 	(unspec:DI [(match_operand:DI 1 "register_operand" "r,r,r,r")
-		    (match_operand:DI 2 "k1_r_s10_s37_s64_operand" "r,I10,B37,i")] UNSPEC_SBMM8))]
+		    (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")] UNSPEC_SBMM8))]
 ""
 "sbmm8 %0 = %1, %2"
 [(set_attr "type" "alu_lite,alu_lite,alu_lite_x,alu_lite_y")
@@ -1763,7 +1763,7 @@
 (define_insn "sbmmt8"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
 	(unspec:DI [(match_operand:DI 1 "register_operand" "r,r,r,r")
-		    (match_operand:DI 2 "k1_r_s10_s37_s64_operand" "r,I10,I37,i")] UNSPEC_SBMMT8))]
+		    (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,I37,i")] UNSPEC_SBMMT8))]
 ""
 "sbmmt8 %0 = %1, %2"
 [(set_attr "type" "alu_lite,alu_lite,alu_lite_x,alu_lite_y")
@@ -1876,7 +1876,6 @@
 ;; 	  (call (mem:P (match_operand:P 1 "register_operand" "Cs"))
 ;; 	  	(match_operand 2 "" "")))
 ;;      (return)]
-;;   "<MODE>mode != DImode || (k1_architecture() >= K1B && (!TARGET_32))"
 ;;   "igoto<P:suffix> %1"
 ;; [(set_attr "type" "bcu")
 ;; (set_attr "class" "jump")]
@@ -1886,7 +1885,6 @@
 ;;     [(call (mem:P (match_operand:P 0 "register_operand" "Cs"))
 ;; 	   (match_operand 1 "" ""))
 ;;      (return)]
-;;   "<MODE>mode != DImode || (k1_architecture() >= K1B && (!TARGET_32))"
 ;;   "igoto<P:suffix> %0"
 ;; [(set_attr "type" "bcu")
 ;; (set_attr "class" "jump")]
@@ -2014,7 +2012,7 @@
 [(set (match_dup 0) (match_op_dup:SI 4 [(match_dup 1) (match_dup 2)]))
  (set (match_dup 3) (plus:SI (match_dup 1) (const_int 1)))]
 {
-     operands[4] = gen_rtx_fmt_ee(k1_strict_to_nonstrict_comparison_operator (<CODE>),
+     operands[4] = gen_rtx_fmt_ee(kvx_strict_to_nonstrict_comparison_operator (<CODE>),
                                   SImode, operands[1], operands[2]);
 }
 )
@@ -2033,7 +2031,7 @@
 [(set (match_dup 0) (match_op_dup:SI 4 [(match_dup 1) (match_dup 2)]))
  (set (match_dup 3) (plus:SI (match_dup 1) (const_int -1)))]
 {
-     operands[4] = gen_rtx_fmt_ee(k1_strict_to_nonstrict_comparison_operator (<CODE>),
+     operands[4] = gen_rtx_fmt_ee(kvx_strict_to_nonstrict_comparison_operator (<CODE>),
                                   SImode, operands[1], operands[2]);
 }
 )
@@ -2052,7 +2050,7 @@
 [(set (match_dup 0) (match_op_dup:SI 4 [(match_dup 1) (match_dup 2)]))
  (set (match_dup 3) (plus:SI (match_dup 1) (const_int -1)))]
 {
-     operands[4] = gen_rtx_fmt_ee(k1_strict_to_nonstrict_comparison_operator (<CODE>),
+     operands[4] = gen_rtx_fmt_ee(kvx_strict_to_nonstrict_comparison_operator (<CODE>),
                                   SImode, operands[1], operands[2]);
 }
 )
@@ -2071,7 +2069,7 @@
 [(set (match_dup 0) (match_op_dup:SI 4 [(match_dup 1) (match_dup 2)]))
  (set (match_dup 3) (plus:SI (match_dup 1) (const_int 1)))]
 {
-     operands[4] = gen_rtx_fmt_ee(k1_strict_to_nonstrict_comparison_operator (<CODE>),
+     operands[4] = gen_rtx_fmt_ee(kvx_strict_to_nonstrict_comparison_operator (<CODE>),
                                   SImode, operands[1], operands[2]);
 }
 )
@@ -2109,7 +2107,7 @@
   ""
   "
 {
-  k1_expand_prologue ();
+  kvx_expand_prologue ();
   DONE;
 }")
 
@@ -2119,7 +2117,7 @@
   ""
   "
 {
-	k1_expand_epilogue ();
+	kvx_expand_epilogue ();
 }")
 
 (define_expand "sibcall_epilogue"
@@ -2129,7 +2127,7 @@
   "
 {
   emit_use (gen_rtx_REG (DImode, KV3_RA_REGNO));
-  k1_expand_epilogue ();
+  kvx_expand_epilogue ();
   DONE; /* DO NOT generate the ret in this case! */
 }")
 
@@ -2266,7 +2264,7 @@
 (define_insn "ssadddi3"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
         (ss_plus:DI (match_operand:DI 1 "register_operand" "r,r,r,r")
-                    (match_operand:DI 2 "k1_r_s10_s37_s64_operand" "r,I10,B37,i")))]
+                    (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")))]
   ""
   "addsd %0 = %1, %2"
   [(set_attr "type" "alu_lite,alu_lite,alu_lite_x,alu_lite_y")
@@ -2294,7 +2292,7 @@
 
 (define_insn "sssubdi3"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
-        (ss_minus:DI (match_operand:DI 1 "k1_r_s10_s37_s64_operand" "r,I10,B37,i")
+        (ss_minus:DI (match_operand:DI 1 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")
                      (match_operand:DI 2 "register_operand" "r,r,r,r")))]
   ""
   "sbfsd %0 = %2, %1"
@@ -2505,7 +2503,7 @@
   [(set_attr "type" "alu_full_copro")]
 )
 
-(define_insn "k1_finvw"
+(define_insn "kvx_finvw"
   [(set (match_operand:SF 0 "register_operand" "=r")
         (unspec:SF [(match_operand:SF 1 "register_operand" "r")
                     (match_operand 2 "" "")] UNSPEC_FINVW))]
@@ -2534,7 +2532,7 @@
   [(set_attr "type" "alu_full_copro")]
 )
 
-(define_insn "k1_fisrw"
+(define_insn "kvx_fisrw"
   [(set (match_operand:SF 0 "register_operand" "=r")
         (unspec:SF [(match_operand:SF 1 "register_operand" "r")
                     (match_operand 2 "" "")] UNSPEC_FISRW))]
@@ -2614,7 +2612,7 @@
 
 /******* ALU instructions **********/
 
-(define_insn "k1_abdw"
+(define_insn "kvx_abdw"
   [(set (match_operand:SI 0 "register_operand" "=r,r,r")
         (abs:SI (minus:SI  (match_operand:SI 2 "register_s32_operand" "r,I10,I32")
                            (match_operand:SI 1 "register_operand" "r,r,r"))))]
@@ -2624,7 +2622,7 @@
    (set_attr "length" "4,4,8")]
 )
 
-(define_insn "k1_abdd"
+(define_insn "kvx_abdd"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
         (abs:DI (minus:DI  (match_operand:DI 2 "register_s64_operand" "r,I10,I37,i")
                            (match_operand:DI 1 "register_operand" "r,r,r,r"))))]
@@ -2642,12 +2640,12 @@
    (clobber (match_scratch:SI 3 ""))]
   ""
   {
-    emit_insn (gen_k1_avgw (operands[3], operands[1], operands[2]));
+    emit_insn (gen_kvx_avgw (operands[3], operands[1], operands[2]));
     operands[0] = gen_rtx_SIGN_EXTEND (SImode, operands[3]);
   }
 )
 
-(define_insn "k1_avgw"
+(define_insn "kvx_avgw"
   [(set (match_operand:SI 0 "register_operand" "=r,r,r")
         (unspec:SI [(match_operand:SI 1 "register_operand" "r,r,r")
                     (match_operand:SI 2 "register_s32_operand" "r,I10,I32")] UNSPEC_AVGW))]
@@ -2665,12 +2663,12 @@
    (clobber (match_scratch:SI 3 ""))]
   ""
   {
-    emit_insn (gen_k1_avguw (operands[3], operands[1], operands[2]));
+    emit_insn (gen_kvx_avguw (operands[3], operands[1], operands[2]));
     operands[0] = gen_rtx_ZERO_EXTEND (SImode, operands[3]);
   }
 )
 
-(define_insn "k1_avguw"
+(define_insn "kvx_avguw"
   [(set (match_operand:SI 0 "register_operand" "=r,r,r")
         (unspec:SI [(match_operand:SI 1 "register_operand" "r,r,r")
                     (match_operand:SI 2 "register_s32_operand" "r,I10,I32")] UNSPEC_AVGUW))]
@@ -2689,12 +2687,12 @@
    (clobber (match_scratch:SI 3 ""))]
   ""
   {
-    emit_insn (gen_k1_avgrw (operands[3], operands[1], operands[2]));
+    emit_insn (gen_kvx_avgrw (operands[3], operands[1], operands[2]));
     operands[0] = gen_rtx_SIGN_EXTEND (SImode, operands[3]);
   }
 )
 
-(define_insn "k1_avgrw"
+(define_insn "kvx_avgrw"
   [(set (match_operand:SI 0 "register_operand" "=r,r,r")
         (unspec:SI [(match_operand:SI 1 "register_operand" "r,r,r")
                     (match_operand:SI 2 "register_s32_operand" "r,I10,I32")] UNSPEC_AVGRW))]
@@ -2713,12 +2711,12 @@
    (clobber (match_scratch:SI 3 ""))]
   ""
   {
-    emit_insn (gen_k1_avgruw (operands[3], operands[1], operands[2]));
+    emit_insn (gen_kvx_avgruw (operands[3], operands[1], operands[2]));
     operands[0] = gen_rtx_ZERO_EXTEND (SImode, operands[3]);
   }
 )
 
-(define_insn "k1_avgruw"
+(define_insn "kvx_avgruw"
   [(set (match_operand:SI 0 "register_operand" "=r,r,r")
         (unspec:SI [(match_operand:SI 1 "register_operand" "r,r,r")
                     (match_operand:SI 2 "register_s32_operand" "r,I10,I32")] UNSPEC_AVGRUW))]

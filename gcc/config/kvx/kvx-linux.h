@@ -1,4 +1,4 @@
-/* Machine description for K1 architecture.
+/* Machine description for KVX MPPA architecture.
    Copyright (C) 2018 Free Software Foundation, Inc.
 
    This file is part of GCC.

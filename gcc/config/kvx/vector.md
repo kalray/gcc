@@ -50,26 +50,26 @@
 (define_insn_and_split "*mov<mode>_oddreg"
   [(set (match_operand:SIMD128 0 "nonimmediate_operand" "")
         (match_operand:SIMD128 1 "general_operand"      ""))]
-  "(k1_is_reg_subreg_p (operands[0]) && !k1_ok_for_paired_reg_p (operands[0]))
-    || (k1_is_reg_subreg_p (operands[1]) && !k1_ok_for_paired_reg_p (operands[1]))"
+  "(kvx_is_reg_subreg_p (operands[0]) && !kvx_ok_for_paired_reg_p (operands[0]))
+    || (kvx_is_reg_subreg_p (operands[1]) && !kvx_ok_for_paired_reg_p (operands[1]))"
   "#"
   "&& reload_completed"
   [(const_int 0)]
   {
     /* This should only happen during function argument preparation */
-    k1_split_128bits_move (operands[0], operands[1], <MODE>mode);
+    kvx_split_128bits_move (operands[0], operands[1], <MODE>mode);
     DONE;
   }
 )
 
 (define_insn "*mov<mode>_real"
-  [(set (match_operand:SIMD128 0 "k1_nonimmediate_operand_pair" "=r, r, r, r, r, r, r,a,m")
-        (match_operand:SIMD128 1 "k1_nonimmediate_operand_pair" " r,Ca,Cb,Cm,Za,Zb,Zm,r,r"))]
+  [(set (match_operand:SIMD128 0 "kvx_nonimmediate_operand_pair" "=r, r, r, r, r, r, r,a,m")
+        (match_operand:SIMD128 1 "kvx_nonimmediate_operand_pair" " r,Ca,Cb,Cm,Za,Zb,Zm,r,r"))]
   "(!immediate_operand(operands[1], <MODE>mode) || !memory_operand(operands[0], <MODE>mode))"
   {
     switch (which_alternative) {
     case 0:
-      return k1_asm_pat_copyq (operands[1]);
+      return kvx_asm_pat_copyq (operands[1]);
     case 1: case 2: case 3: case 4: case 5: case 6:
       return "lq%C1%m1 %0 = %1";
     case 7: case 8:
@@ -91,7 +91,7 @@
   "!optimize_size && reload_completed"
   [(const_int 0)]
   {
-    k1_split_128bits_move (operands[0], operands[1], <MODE>mode);
+    kvx_split_128bits_move (operands[0], operands[1], <MODE>mode);
     DONE;
   }
 )
@@ -104,7 +104,7 @@
   "&& reload_completed"
   [(const_int 0)]
   {
-   k1_split_128bits_move (operands[0], operands[1], <MODE>mode);
+   kvx_split_128bits_move (operands[0], operands[1], <MODE>mode);
    DONE;
   }
 )
@@ -126,26 +126,26 @@
 (define_insn_and_split "*mov<mode>_misalign_reg"
   [(set (match_operand:SIMD256 0 "nonimmediate_operand" "")
         (match_operand:SIMD256 1 "general_operand"      ""))]
-  "(k1_is_reg_subreg_p (operands[0]) && !k1_ok_for_quad_reg_p (operands[0]))
-    || (k1_is_reg_subreg_p (operands[1]) && !k1_ok_for_quad_reg_p (operands[1]))"
+  "(kvx_is_reg_subreg_p (operands[0]) && !kvx_ok_for_quad_reg_p (operands[0]))
+    || (kvx_is_reg_subreg_p (operands[1]) && !kvx_ok_for_quad_reg_p (operands[1]))"
   "#"
   "&& reload_completed"
   [(const_int 0)]
   {
     /* This should only happen during function argument preparation */
-    k1_split_256bits_move (operands[0], operands[1], <MODE>mode);
+    kvx_split_256bits_move (operands[0], operands[1], <MODE>mode);
     DONE;
   }
 )
 
 (define_insn "*mov<mode>_real"
-  [(set (match_operand:SIMD256 0 "k1_nonimmediate_operand_quad" "=r, r, r, r, r, r, r,a,b,m")
-        (match_operand:SIMD256 1 "k1_nonimmediate_operand_quad"  "r,Ca,Cb,Cm,Za,Zb,Zm,r,r,r"))]
+  [(set (match_operand:SIMD256 0 "kvx_nonimmediate_operand_quad" "=r, r, r, r, r, r, r,a,b,m")
+        (match_operand:SIMD256 1 "kvx_nonimmediate_operand_quad"  "r,Ca,Cb,Cm,Za,Zb,Zm,r,r,r"))]
   "(!immediate_operand(operands[1], <MODE>mode) || !memory_operand(operands[0], <MODE>mode))"
   {
     switch (which_alternative) {
     case 0:
-        return k1_asm_pat_copyo ();
+        return kvx_asm_pat_copyo ();
     case 1: case 2: case 3: case 4: case 5: case 6:
       return "lo%C1%m1 %0 = %1";
     case 7: case 8: case 9:
@@ -167,7 +167,7 @@
   "!optimize_size && reload_completed"
   [(const_int 0)]
   {
-    k1_split_256bits_move (operands[0], operands[1], <MODE>mode);
+    kvx_split_256bits_move (operands[0], operands[1], <MODE>mode);
     DONE;
   }
 )
@@ -180,7 +180,7 @@
   "&& reload_completed"
   [(const_int 0)]
   {
-   k1_split_256bits_move (operands[0], operands[1], <MODE>mode);
+   kvx_split_256bits_move (operands[0], operands[1], <MODE>mode);
    DONE;
   }
 )
@@ -2112,7 +2112,7 @@
   [(set_attr "type" "mau_fpu")]
 )
 
-(define_insn "k1_faddwp"
+(define_insn "kvx_faddwp"
   [(set (match_operand:V2SF 0 "register_operand" "=r")
         (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")
                       (match_operand:V2SF 2 "register_operand" "r")
@@ -2122,7 +2122,7 @@
   [(set_attr "type" "mau_fpu")]
 )
 
-(define_insn "k1_faddcwc"
+(define_insn "kvx_faddcwc"
   [(set (match_operand:V2SF 0 "register_operand" "=r")
         (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")
                       (match_operand:V2SF 2 "register_operand" "r")
@@ -2141,7 +2141,7 @@
   [(set_attr "type" "mau_fpu")]
 )
 
-(define_insn "k1_fsbfwp"
+(define_insn "kvx_fsbfwp"
   [(set (match_operand:V2SF 0 "register_operand" "=r")
         (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")
                       (match_operand:V2SF 2 "register_operand" "r")
@@ -2151,7 +2151,7 @@
   [(set_attr "type" "mau_fpu")]
 )
 
-(define_insn "k1_fsbfcwc"
+(define_insn "kvx_fsbfcwc"
   [(set (match_operand:V2SF 0 "register_operand" "=r")
         (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")
                       (match_operand:V2SF 2 "register_operand" "r")
@@ -2170,7 +2170,7 @@
   [(set_attr "type" "mau_fpu")]
 )
 
-(define_insn "k1_fmulwp"
+(define_insn "kvx_fmulwp"
   [(set (match_operand:V2SF 0 "register_operand" "=r")
         (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")
                       (match_operand:V2SF 2 "register_operand" "r")
@@ -2180,7 +2180,7 @@
   [(set_attr "type" "mau_fpu")]
 )
 
-(define_insn "k1_fmulwc"
+(define_insn "kvx_fmulwc"
   [(set (match_operand:V2SF 0 "register_operand" "=r")
         (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")
                       (match_operand:V2SF 2 "register_operand" "r")
@@ -2190,7 +2190,7 @@
   [(set_attr "type" "mau_fpu")]
 )
 
-(define_insn "k1_fmulcwc"
+(define_insn "kvx_fmulcwc"
   [(set (match_operand:V2SF 0 "register_operand" "=r")
         (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")
                       (match_operand:V2SF 2 "register_operand" "r")
@@ -2210,7 +2210,7 @@
   [(set_attr "type" "mau_auxr_fpu")]
 )
 
-(define_insn "k1_ffmawp"
+(define_insn "kvx_ffmawp"
   [(set (match_operand:V2SF 0 "register_operand" "=r")
         (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")
                       (match_operand:V2SF 2 "register_operand" "r")
@@ -2231,7 +2231,7 @@
   [(set_attr "type" "mau_auxr_fpu")]
 )
 
-(define_insn "k1_ffmswp"
+(define_insn "kvx_ffmswp"
   [(set (match_operand:V2SF 0 "register_operand" "=r")
         (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")
                       (match_operand:V2SF 2 "register_operand" "r")
@@ -2251,7 +2251,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "k1_fminwp"
+(define_insn "kvx_fminwp"
   [(set (match_operand:V2SF 0 "register_operand" "=r")
         (smin:V2SF (match_operand:V2SF 1 "register_operand" "r")
                    (match_operand:V2SF 2 "register_operand" "r")))]
@@ -2269,7 +2269,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "k1_fmaxwp"
+(define_insn "kvx_fmaxwp"
   [(set (match_operand:V2SF 0 "register_operand" "=r")
         (smax:V2SF (match_operand:V2SF 1 "register_operand" "r")
                    (match_operand:V2SF 2 "register_operand" "r")))]
@@ -2286,7 +2286,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "k1_fnegwp"
+(define_insn "kvx_fnegwp"
   [(set (match_operand:V2SF 0 "register_operand" "=r")
         (neg:V2SF (match_operand:V2SF 1 "register_operand" "r")))]
   ""
@@ -2302,7 +2302,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "k1_fabswp"
+(define_insn "kvx_fabswp"
   [(set (match_operand:V2SF 0 "register_operand" "=r")
         (abs:V2SF (match_operand:V2SF 1 "register_operand" "r")))]
   ""
@@ -2318,7 +2318,7 @@
   [(set_attr "type" "mau_fpu")]
 )
 
-(define_insn "k1_floatwp"
+(define_insn "kvx_floatwp"
   [(set (match_operand:V2SF 0 "register_operand" "=r")
         (unspec:V2SF [(match_operand:V2SI 1 "register_operand" "r")
                       (match_operand:SI 2 "sixbits_unsigned_operand" "i")
@@ -2336,7 +2336,7 @@
   [(set_attr "type" "mau_fpu")]
 )
 
-(define_insn "k1_floatuwp"
+(define_insn "kvx_floatuwp"
   [(set (match_operand:V2SF 0 "register_operand" "=r")
         (unspec:V2SF [(match_operand:V2SI 1 "register_operand" "r")
                       (match_operand:SI 2 "sixbits_unsigned_operand" "i")
@@ -2354,7 +2354,7 @@
   [(set_attr "type" "mau_fpu")]
 )
 
-(define_insn "k1_fixedwp"
+(define_insn "kvx_fixedwp"
   [(set (match_operand:V2SI 0 "register_operand" "=r")
         (unspec:V2SI [(match_operand:V2SF 1 "register_operand" "r")
                       (match_operand:SI 2 "sixbits_unsigned_operand" "i")
@@ -2372,7 +2372,7 @@
   [(set_attr "type" "mau_fpu")]
 )
 
-(define_insn "k1_fixeduwp"
+(define_insn "kvx_fixeduwp"
   [(set (match_operand:V2SI 0 "register_operand" "=r")
         (unspec:V2SI [(match_operand:V2SF 1 "register_operand" "r")
                       (match_operand:SI 2 "sixbits_unsigned_operand" "i")
@@ -2382,7 +2382,7 @@
   [(set_attr "type" "mau_fpu")]
 )
 
-(define_insn "k1_fmm2wq"
+(define_insn "kvx_fmm2wq"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (unspec:V4SF [(match_operand:V2SF 1 "register_operand" "r")
                       (match_operand:V2SF 2 "register_operand" "r")
@@ -2392,7 +2392,7 @@
   [(set_attr "type" "mau_fpu")]
 )
 
-(define_insn "k1_fmm2awq"
+(define_insn "kvx_fmm2awq"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (unspec:V4SF [(match_operand:V2SF 1 "register_operand" "r")
                       (match_operand:V2SF 2 "register_operand" "r")
@@ -2403,7 +2403,7 @@
   [(set_attr "type" "mau_auxr_fpu")]
 )
 
-(define_insn "k1_fmm2swq"
+(define_insn "kvx_fmm2swq"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (unspec:V4SF [(match_operand:V2SF 1 "register_operand" "r")
                       (match_operand:V2SF 2 "register_operand" "r")
@@ -2426,7 +2426,7 @@
   [(set_attr "type" "mau_auxr_fpu")]
 )
 
-(define_insn "k1_faddwq"
+(define_insn "kvx_faddwq"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
                       (match_operand:V4SF 2 "register_operand" "r")
@@ -2436,7 +2436,7 @@
   [(set_attr "type" "mau_auxr_fpu")]
 )
 
-(define_insn "k1_faddcwcp"
+(define_insn "kvx_faddcwcp"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
                       (match_operand:V4SF 2 "register_operand" "r")
@@ -2455,7 +2455,7 @@
   [(set_attr "type" "mau_auxr_fpu")]
 )
 
-(define_insn "k1_fsbfwq"
+(define_insn "kvx_fsbfwq"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
                       (match_operand:V4SF 2 "register_operand" "r")
@@ -2465,7 +2465,7 @@
   [(set_attr "type" "mau_auxr_fpu")]
 )
 
-(define_insn "k1_fsbfcwcp"
+(define_insn "kvx_fsbfcwcp"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
                       (match_operand:V4SF 2 "register_operand" "r")
@@ -2484,7 +2484,7 @@
   [(set_attr "type" "mau_auxr_fpu")]
 )
 
-(define_insn "k1_fmulwq"
+(define_insn "kvx_fmulwq"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
                       (match_operand:V4SF 2 "register_operand" "r")
@@ -2494,7 +2494,7 @@
   [(set_attr "type" "mau_auxr_fpu")]
 )
 
-(define_insn "k1_fmulwcp"
+(define_insn "kvx_fmulwcp"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
                       (match_operand:V4SF 2 "register_operand" "r")
@@ -2505,7 +2505,7 @@
    (set_attr "length"          "8")]
 )
 
-(define_insn "k1_fmulcwcp"
+(define_insn "kvx_fmulcwcp"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
                       (match_operand:V4SF 2 "register_operand" "r")
@@ -2527,7 +2527,7 @@
    (set_attr "length"          "8")]
 )
 
-(define_insn "k1_ffmawq"
+(define_insn "kvx_ffmawq"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
                       (match_operand:V4SF 2 "register_operand" "r")
@@ -2550,7 +2550,7 @@
    (set_attr "length"          "8")]
 )
 
-(define_insn "k1_ffmswq"
+(define_insn "kvx_ffmswq"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
                       (match_operand:V4SF 2 "register_operand" "r")
@@ -2568,12 +2568,12 @@
                  (match_operand:V4SF 2 "register_operand" "")))]
   ""
   {
-    emit_insn (gen_k1_fminwq (operands[0], operands[1], operands[2]));
+    emit_insn (gen_kvx_fminwq (operands[0], operands[1], operands[2]));
     DONE;
   }
 )
 
-(define_insn "k1_fminwq"
+(define_insn "kvx_fminwq"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (smin:V4SF (match_operand:V4SF 1 "register_operand" "r")
                    (match_operand:V4SF 2 "register_operand" "r")))]
@@ -2589,12 +2589,12 @@
                    (match_operand:V4SF 2 "register_operand" "")))]
   ""
   {
-    emit_insn (gen_k1_fmaxwq (operands[0], operands[1], operands[2]));
+    emit_insn (gen_kvx_fmaxwq (operands[0], operands[1], operands[2]));
     DONE;
   }
 )
 
-(define_insn "k1_fmaxwq"
+(define_insn "kvx_fmaxwq"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (smax:V4SF (match_operand:V4SF 1 "register_operand" "r")
                    (match_operand:V4SF 2 "register_operand" "r")))]
@@ -2609,12 +2609,12 @@
         (neg:V4SF (match_operand:V4SF 1 "register_operand" "")))]
   ""
   {
-    emit_insn (gen_k1_fnegwq (operands[0], operands[1]));
+    emit_insn (gen_kvx_fnegwq (operands[0], operands[1]));
     DONE;
   }
 )
 
-(define_insn "k1_fnegwq"
+(define_insn "kvx_fnegwq"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (neg:V4SF (match_operand:V4SF 1 "register_operand" "r")))]
   ""
@@ -2628,12 +2628,12 @@
         (abs:V4SF (match_operand:V4SF 1 "register_operand" "")))]
   ""
   {
-    emit_insn (gen_k1_fabswq (operands[0], operands[1]));
+    emit_insn (gen_kvx_fabswq (operands[0], operands[1]));
     DONE;
   }
 )
 
-(define_insn "k1_fabswq"
+(define_insn "kvx_fabswq"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (abs:V4SF (match_operand:V4SF 1 "register_operand" "r")))]
   ""
@@ -2651,7 +2651,7 @@
    (set_attr "length"     "8")]
 )
 
-(define_insn "k1_floatwq"
+(define_insn "kvx_floatwq"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (unspec:V4SF [(match_operand:V4SI 1 "register_operand" "r")
                       (match_operand:SI 2 "sixbits_unsigned_operand" "i")
@@ -2671,7 +2671,7 @@
    (set_attr "length"     "8")]
 )
 
-(define_insn "k1_floatuwq"
+(define_insn "kvx_floatuwq"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (unspec:V4SF [(match_operand:V4SI 1 "register_operand" "r")
                       (match_operand:SI 2 "sixbits_unsigned_operand" "i")
@@ -2691,7 +2691,7 @@
    (set_attr "length"     "8")]
 )
 
-(define_insn "k1_fixedwq"
+(define_insn "kvx_fixedwq"
   [(set (match_operand:V4SI 0 "register_operand" "=r")
         (unspec:V4SI [(match_operand:V4SF 1 "register_operand" "r")
                       (match_operand:SI 2 "sixbits_unsigned_operand" "i")
@@ -2711,7 +2711,7 @@
    (set_attr "length"     "8")]
 )
 
-(define_insn "k1_fixeduwq"
+(define_insn "kvx_fixeduwq"
   [(set (match_operand:V4SI 0 "register_operand" "=r")
         (unspec:V4SI [(match_operand:V4SF 1 "register_operand" "r")
                       (match_operand:SI 2 "sixbits_unsigned_operand" "i")
@@ -2734,7 +2734,7 @@
   [(set_attr "type" "mau_auxr_fpu")]
 )
 
-(define_insn "k1_fadddp"
+(define_insn "kvx_fadddp"
   [(set (match_operand:V2DF 0 "register_operand" "=r")
         (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")
                       (match_operand:V2DF 2 "register_operand" "r")
@@ -2744,7 +2744,7 @@
   [(set_attr "type" "mau_auxr_fpu")]
 )
 
-(define_insn "k1_faddcdc"
+(define_insn "kvx_faddcdc"
   [(set (match_operand:V2DF 0 "register_operand" "=r")
         (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")
                       (match_operand:V2DF 2 "register_operand" "r")
@@ -2763,7 +2763,7 @@
   [(set_attr "type" "mau_auxr_fpu")]
 )
 
-(define_insn "k1_fsbfdp"
+(define_insn "kvx_fsbfdp"
   [(set (match_operand:V2DF 0 "register_operand" "=r")
         (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")
                       (match_operand:V2DF 2 "register_operand" "r")
@@ -2773,7 +2773,7 @@
   [(set_attr "type" "mau_auxr_fpu")]
 )
 
-(define_insn "k1_fsbfcdc"
+(define_insn "kvx_fsbfcdc"
   [(set (match_operand:V2DF 0 "register_operand" "=r")
         (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")
                       (match_operand:V2DF 2 "register_operand" "r")
@@ -2802,7 +2802,7 @@
    (set_attr "length"          "8")]
 )
 
-(define_insn "k1_fmuldp"
+(define_insn "kvx_fmuldp"
   [(set (match_operand:V2DF 0 "register_operand" "=r")
         (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")
                       (match_operand:V2DF 2 "register_operand" "r")
@@ -2813,7 +2813,7 @@
    (set_attr "length"          "8")]
 )
 
-(define_expand "k1_fmuldc"
+(define_expand "kvx_fmuldc"
   [(set (match_operand:V2DF 0 "register_operand" "")
         (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "")
                       (match_operand:V2DF 2 "register_operand" "")
@@ -2827,15 +2827,15 @@
     rtx real_2 = gen_rtx_SUBREG (DFmode, operands[2], 0);
     rtx imag_2 = gen_rtx_SUBREG (DFmode, operands[2], 8);
     rtx real_t = gen_reg_rtx (DFmode), imag_t = gen_reg_rtx (DFmode);
-    emit_insn (gen_k1_fmuld (real_t, real_1, real_2, operands[3]));
-    emit_insn (gen_k1_ffmsd (real_0, imag_1, imag_2, real_t, operands[3]));
-    emit_insn (gen_k1_fmuld (imag_t, real_1, imag_2, operands[3]));
-    emit_insn (gen_k1_ffmad (imag_0, real_2, imag_1, imag_t, operands[3]));
+    emit_insn (gen_kvx_fmuld (real_t, real_1, real_2, operands[3]));
+    emit_insn (gen_kvx_ffmsd (real_0, imag_1, imag_2, real_t, operands[3]));
+    emit_insn (gen_kvx_fmuld (imag_t, real_1, imag_2, operands[3]));
+    emit_insn (gen_kvx_ffmad (imag_0, real_2, imag_1, imag_t, operands[3]));
     DONE;
   }
 )
 
-(define_expand "k1_fmulcdc"
+(define_expand "kvx_fmulcdc"
   [(set (match_operand:V2DF 0 "register_operand" "")
         (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "")
                       (match_operand:V2DF 2 "register_operand" "")
@@ -2849,10 +2849,10 @@
     rtx real_2 = gen_rtx_SUBREG (DFmode, operands[2], 0);
     rtx imag_2 = gen_rtx_SUBREG (DFmode, operands[2], 8);
     rtx real_t = gen_reg_rtx (DFmode), imag_t = gen_reg_rtx (DFmode);
-    emit_insn (gen_k1_fmuld (real_t, real_1, real_2, operands[3]));
-    emit_insn (gen_k1_ffmad (real_0, real_t, imag_1, imag_2, operands[3]));
-    emit_insn (gen_k1_fmuld (imag_t, real_2, imag_1, operands[3]));
-    emit_insn (gen_k1_ffmsd (imag_0, imag_t, real_1, imag_2, operands[3]));
+    emit_insn (gen_kvx_fmuld (real_t, real_1, real_2, operands[3]));
+    emit_insn (gen_kvx_ffmad (real_0, real_t, imag_1, imag_2, operands[3]));
+    emit_insn (gen_kvx_fmuld (imag_t, real_2, imag_1, operands[3]));
+    emit_insn (gen_kvx_ffmsd (imag_0, imag_t, real_1, imag_2, operands[3]));
     DONE;
   }
 )
@@ -2868,7 +2868,7 @@
    (set_attr "length"          "8")]
 )
 
-(define_insn "k1_ffmadp"
+(define_insn "kvx_ffmadp"
   [(set (match_operand:V2DF 0 "register_operand" "=r")
         (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")
                       (match_operand:V2DF 2 "register_operand" "r")
@@ -2891,7 +2891,7 @@
    (set_attr "length"          "8")]
 )
 
-(define_insn "k1_ffmsdp"
+(define_insn "kvx_ffmsdp"
   [(set (match_operand:V2DF 0 "register_operand" "=r")
         (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")
                       (match_operand:V2DF 2 "register_operand" "r")
@@ -2909,12 +2909,12 @@
                    (match_operand:V2DF 2 "register_operand" "")))]
   ""
   {
-    emit_insn (gen_k1_fmindp (operands[0], operands[1], operands[2]));
+    emit_insn (gen_kvx_fmindp (operands[0], operands[1], operands[2]));
     DONE;
   }
 )
 
-(define_insn "k1_fmindp"
+(define_insn "kvx_fmindp"
   [(set (match_operand:V2DF 0 "register_operand" "=r")
         (smin:V2DF (match_operand:V2DF 1 "register_operand" "r")
                    (match_operand:V2DF 2 "register_operand" "r")))]
@@ -2930,12 +2930,12 @@
                    (match_operand:V2DF 2 "register_operand" "")))]
   ""
   {
-    emit_insn (gen_k1_fmaxdp (operands[0], operands[1], operands[2]));
+    emit_insn (gen_kvx_fmaxdp (operands[0], operands[1], operands[2]));
     DONE;
   }
 )
 
-(define_insn "k1_fmaxdp"
+(define_insn "kvx_fmaxdp"
   [(set (match_operand:V2DF 0 "register_operand" "=r")
         (smax:V2DF (match_operand:V2DF 1 "register_operand" "r")
                    (match_operand:V2DF 2 "register_operand" "r")))]
@@ -2950,12 +2950,12 @@
         (neg:V2DF (match_operand:V2DF 1 "register_operand" "")))]
   ""
   {
-    emit_insn (gen_k1_fnegdp (operands[0], operands[1]));
+    emit_insn (gen_kvx_fnegdp (operands[0], operands[1]));
     DONE;
   }
 )
 
-(define_insn "k1_fnegdp"
+(define_insn "kvx_fnegdp"
   [(set (match_operand:V2DF 0 "register_operand" "=r")
         (neg:V2DF (match_operand:V2DF 1 "register_operand" "r")))]
   ""
@@ -2969,12 +2969,12 @@
         (abs:V2DF (match_operand:V2DF 1 "register_operand" "")))]
   ""
   {
-    emit_insn (gen_k1_fabsdp (operands[0], operands[1]));
+    emit_insn (gen_kvx_fabsdp (operands[0], operands[1]));
     DONE;
   }
 )
 
-(define_insn "k1_fabsdp"
+(define_insn "kvx_fabsdp"
   [(set (match_operand:V2DF 0 "register_operand" "=r")
         (abs:V2DF (match_operand:V2DF 1 "register_operand" "r")))]
   ""
@@ -2992,7 +2992,7 @@
    (set_attr "length"     "8")]
 )
 
-(define_insn "k1_floatdp"
+(define_insn "kvx_floatdp"
   [(set (match_operand:V2DF 0 "register_operand" "=r")
         (unspec:V2DF [(match_operand:V2DI 1 "register_operand" "r")
                       (match_operand:SI 2 "sixbits_unsigned_operand" "i")
@@ -3012,7 +3012,7 @@
    (set_attr "length"     "8")]
 )
 
-(define_insn "k1_floatudp"
+(define_insn "kvx_floatudp"
   [(set (match_operand:V2DF 0 "register_operand" "=r")
         (unspec:V2DF [(match_operand:V2DI 1 "register_operand" "r")
                       (match_operand:SI 2 "sixbits_unsigned_operand" "i")
@@ -3032,7 +3032,7 @@
    (set_attr "length"     "8")]
 )
 
-(define_insn "k1_fixeddp"
+(define_insn "kvx_fixeddp"
   [(set (match_operand:V2DI 0 "register_operand" "=r")
         (unspec:V2DI [(match_operand:V2DF 1 "register_operand" "r")
                       (match_operand:SI 2 "sixbits_unsigned_operand" "i")
@@ -3052,7 +3052,7 @@
    (set_attr "length"     "8")]
 )
 
-(define_insn "k1_fixedudp"
+(define_insn "kvx_fixedudp"
   [(set (match_operand:V2DI 0 "register_operand" "=r")
         (unspec:V2DI [(match_operand:V2DF 1 "register_operand" "r")
                       (match_operand:SI 2 "sixbits_unsigned_operand" "i")

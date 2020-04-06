@@ -149,7 +149,7 @@
         UNSPEC_GOTOFF
         UNSPEC_TLS_LD_CALL
 
-	;; Keep this part in sync with k1_unspec_tls_asm_op in k1.c
+	;; Keep this part in sync with kvx_unspec_tls_asm_op in kvx.c
 	;; The order must match
         UNSPEC_TLS_GD
         UNSPEC_TLS_LD
