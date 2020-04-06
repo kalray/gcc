@@ -47,7 +47,7 @@
         (if_then_else:FITGPR (match_operator 2 "signed_comparison_operator"
                                                [(match_operand:SIDI 3 "register_operand" "r,r,r,r")
                                                 (const_int 0)])
-                             (match_operand:FITGPR 1 "k1_r_s10_s37_s64_operand" "r,I10,B37,i")
+                             (match_operand:FITGPR 1 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")
                              (match_operand:FITGPR 4 "register_operand" "0,0,0,0")))]
   ""
   "cmoved.<SIDI:cbvar>%2z %3? %0 = %1"
@@ -60,7 +60,7 @@
         (if_then_else:FITGPR (ne (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r,r,r,r")
                                                     (const_int 1) (const_int 0))
                                  (const_int 0))
-                             (match_operand:FITGPR 1 "k1_r_s10_s37_s64_operand" "r,I10,B37,i")
+                             (match_operand:FITGPR 1 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")
                              (match_operand:FITGPR 3 "register_operand" "0,0,0,0")))]
   ""
   "cmoved.odd %2? %0 = %1"
@@ -73,7 +73,7 @@
         (if_then_else:FITGPR (eq (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r,r,r,r")
                                                     (const_int 1) (const_int 0))
                                  (const_int 0))
-                             (match_operand:FITGPR 1 "k1_r_s10_s37_s64_operand" "r,I10,B37,i")
+                             (match_operand:FITGPR 1 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")
                              (match_operand:FITGPR 3 "register_operand" "0,0,0,0")))]
   ""
   "cmoved.even %2? %0 = %1"
@@ -204,7 +204,7 @@
                              (match_operand:ALLIFV 3 "nonmemory_operand" "")))]
   ""
   {
-    if (!k1_expand_conditional_move (<MODE>mode, operands))
+    if (!kvx_expand_conditional_move (<MODE>mode, operands))
       FAIL;
     DONE;
   }

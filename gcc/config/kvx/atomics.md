@@ -1,4 +1,4 @@
-;; Machine description for K1C processor synchronization primitives.
+;; Machine description for MPPA KVX processor synchronization primitives.
 ;; Copyright (C) 2019 Kalray Inc.
 ;;
 ;; This file is part of GCC.
@@ -33,7 +33,7 @@
    (match_operand:SI 7 "const_int_operand")]    ;; model failure
   ""
 {
-  k1_expand_compare_and_swap (operands);
+  kvx_expand_compare_and_swap (operands);
   DONE;
 })
 
@@ -44,7 +44,7 @@
    (match_operand:SI 2 "const_int_operand" "")] ;; model
   ""
 {
-  k1_emit_pre_barrier(operands[2], true);
+  kvx_emit_pre_barrier(operands[2], true);
 
   switch (<MODE>mode) {
     case TImode: emit_insn (gen_lqu (operands[0], operands[1]));  break;
@@ -55,7 +55,7 @@
     default: gcc_unreachable ();
     }
 
-  k1_emit_post_barrier(operands[2], true);
+  kvx_emit_post_barrier(operands[2], true);
   DONE;
 })
 
@@ -66,9 +66,9 @@
    (match_operand:SI 2 "const_int_operand" "")] ;; model
   ""
 {
-  k1_emit_pre_barrier(operands[2], true);
+  kvx_emit_pre_barrier(operands[2], true);
   emit_move_insn (operands[0], operands[1]);
-  k1_emit_post_barrier(operands[2], true);
+  kvx_emit_post_barrier(operands[2], true);
   DONE;
 })
 
@@ -80,7 +80,7 @@
    (match_operand:SI 3 "const_int_operand" "")] ;; model
   ""
 {
-  k1_expand_atomic_op (SET, operands[0], false, operands[1], operands[2], operands[3]);
+  kvx_expand_atomic_op (SET, operands[0], false, operands[1], operands[2], operands[3]);
   DONE;
 })
 
@@ -93,7 +93,7 @@
        (match_operand:SI 2 "const_int_operand")] UNSPEC_ATOMIC_OP))]              ;; model
   ""
 {
-  k1_expand_atomic_op (<CODE>, NULL_RTX, false, operands[0], operands[1], operands[2]);
+  kvx_expand_atomic_op (<CODE>, NULL_RTX, false, operands[0], operands[1], operands[2]);
   DONE;
 })
 
@@ -107,7 +107,7 @@
   (match_operand:SI 3 "const_int_operand")]      ;; model
   ""
 {
-  k1_expand_atomic_op (<CODE>, operands[0], false, operands[1], operands[2], operands[3]);
+  kvx_expand_atomic_op (<CODE>, operands[0], false, operands[1], operands[2], operands[3]);
   DONE;
 })
 
@@ -121,14 +121,14 @@
   (match_operand:SI 3 "const_int_operand")]      ;; model
   ""
 {
-  k1_expand_atomic_op (<CODE>, operands[0], true, operands[1], operands[2], operands[3]);
+  kvx_expand_atomic_op (<CODE>, operands[0], true, operands[1], operands[2], operands[3]);
   DONE;
 })
 
 ;; TO GO FURTHER: atomic_exchange<mode> and
 ;; atomic_*<atomic_optab>*<mode> patterns above can also be
 ;; implemented for QI HI and TI modes by using a compare-and-swap loop
-;; (with k1_expand_atomic_op for example).
+;; (with kvx_expand_atomic_op for example).
 
 ;; Atomic test-and-set operation on memory byte with memory model
 ;; semantics.
@@ -138,7 +138,7 @@
   (match_operand:SI 2 "const_int_operand" "")] ;; model
   ""
 {
-  k1_expand_atomic_test_and_set (operands);
+  kvx_expand_atomic_test_and_set (operands);
   DONE;
 })
 
@@ -151,7 +151,7 @@
 ;; will be used instead.
 
 ;; TO GO FURTHER: atomic_*test_and_* patterns above can be implemented
-;; by using a compare-and-swap loop (with k1_expand_atomic_op for
+;; by using a compare-and-swap loop (with kvx_expand_atomic_op for
 ;; example).
 
 ;; Thread fence with memory model semantics.
@@ -159,7 +159,7 @@
   [(match_operand:SI 0 "const_int_operand" "")] ;; model
   ""
 {
-  emit_insn (gen_fence (k1_sync_reg_rtx));
+  emit_insn (gen_fence (kvx_sync_reg_rtx));
   DONE;
 })
 
@@ -168,13 +168,13 @@
   [(match_operand:SI 0 "const_int_operand" "")] ;; model
   ""
 {
-  /* K1C memory model is strong enough not to require any
+  /* KVX memory model is strong enough not to require any
      barrier in order to synchronize a thread with itself. */
   DONE;
 })
 
 
-;; K1C's builtins
+;; KVX's builtins
 
 ;; Compare and Swap
 (define_insn "acswap<lsusize>"
