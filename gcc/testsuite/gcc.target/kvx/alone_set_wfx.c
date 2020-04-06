@@ -221,6 +221,6 @@ alone_wfxm (long long value)
   __builtin_kvx_wfxm (KVX_SFR_SPS, value);
 }
 
-/* { dg-final { scan-assembler-times "k1_set/1" 2 } } */
-/* { dg-final { scan-assembler-times "k1_wfxl/1" 2 } } */
-/* { dg-final { scan-assembler-times "k1_wfxm/1" 2 } } */
+/* { dg-final { scan-assembler-times "kvx_set/1" 2 } } */
+/* { dg-final { scan-assembler-times "kvx_wfxl/1" 2 } } */
+/* { dg-final { scan-assembler-times "kvx_wfxm/1" 2 } } */
