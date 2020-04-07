@@ -1794,6 +1794,9 @@ k1_expand_prologue (void)
   HOST_WIDE_INT size = frame->initial_sp_offset;
   rtx insn;
 
+  if (flag_stack_usage_info)
+    current_function_static_stack_size = size;
+
   if (size > 0)
     {
 
