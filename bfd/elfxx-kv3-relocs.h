@@ -95,7 +95,7 @@ static reloc_howto_type elf_kvx_howto_table[] =
 	 0x7ffffff,			/* dst_mask */
 	 TRUE),			/* pc_offset */
   HOWTO (R_KVX_32_PCREL,			/* type */
-	 2,				/* rightshift */
+	 0,				/* rightshift */
 	 2,				/* size (0 = byte, 1 = short, 2 = long, 3 = invalid, 4 = 64bits, 8 = 128bits) */
 	 32,				/* bitsize */
 	 TRUE,				/* pc_relative */
@@ -212,7 +212,7 @@ static reloc_howto_type elf_kvx_howto_table[] =
 	 0x7ffffff,			/* dst_mask */
 	 TRUE),			/* pc_offset */
   HOWTO (R_KVX_64_PCREL,			/* type */
-	 2,				/* rightshift */
+	 0,				/* rightshift */
 	 4,				/* size (0 = byte, 1 = short, 2 = long, 3 = invalid, 4 = 64bits, 8 = 128bits) */
 	 64,				/* bitsize */
 	 TRUE,				/* pc_relative */
