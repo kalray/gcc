@@ -143,6 +143,7 @@ gomp_sem_post (gomp_sem_t *sem)
 #else
   MPPA_COS_AFADDW ((void *) sem, 1);
 #endif
+  __builtin_kvx_fence (); /* consistency before doorbell */
   mppa_cos_doorbell_all ();
   MPPA_COS_DINVAL ();
 }
