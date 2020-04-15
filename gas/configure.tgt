@@ -66,6 +66,7 @@ case ${cpu} in
   ia64)			cpu_type=ia64 ;;
   ip2k)			cpu_type=ip2k endian=big ;;
   iq2000)		cpu_type=iq2000 endian=big ;;
+  kvx)			cpu_type=kvx endian=little ;;
   lm32)			cpu_type=lm32 ;;
   m32c)			cpu_type=m32c endian=little ;;
   m32r)			cpu_type=m32r endian=big ;;
@@ -269,6 +270,9 @@ case ${generic_target} in
 
   iq2000-*-elf)				fmt=elf ;;
 
+  kvx-*-*)				fmt=elf ;;
+  kvx-*-linux*)				fmt=elf em=linux ;;
+
   lm32-*-*)				fmt=elf ;;
 
   m32c-*-elf)				fmt=elf ;;
@@ -433,7 +437,7 @@ case ${generic_target} in
 esac
 
 case ${cpu_type} in
-  aarch64 | alpha | arm | csky | i386 | ia64 | microblaze | mips | ns32k | \
+  aarch64 | alpha | arm | csky | i386 | ia64 | kvx | microblaze | mips | ns32k | \
   or1k | or1knd | pdp11 | ppc | riscv | sh | sparc | z80 | z8k)
     bfd_gas=yes
     ;;

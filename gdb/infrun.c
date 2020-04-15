@@ -8351,6 +8351,9 @@ print_stop_event (struct ui_out *uiout, bool displays)
       do_displays ();
   }
 
+  if (ptid_equal (inferior_ptid, null_ptid))
+    return;
+
   tp = inferior_thread ();
   if (tp->thread_fsm != NULL
       && tp->thread_fsm->finished_p ())

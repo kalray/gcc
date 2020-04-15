@@ -24,6 +24,12 @@ if [gdb_debug_enabled] {
 
 standard_testfile
 
+# KVX: different output for disassemble
+if [istarget kvx-*-*] then {
+  unsupported "breakpoint-in-ro-region.exp"
+  return 1
+}
+
 if { [prepare_for_testing "failed to prepare" $testfile $srcfile] } {
     return -1
 }

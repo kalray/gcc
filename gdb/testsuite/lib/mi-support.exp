@@ -45,6 +45,11 @@ set gdbindex_warning_re "&\"warning: Skipping \[^\r\n\]+ \.gdb_index section in 
 set library_loaded_re "=library-loaded\[^\n\]+\"\r\n(?:$gdbindex_warning_re)?"
 set breakpoint_re "=(?:breakpoint-created|breakpoint-deleted)\[^\n\]+\"\r\n"
 
+# KVX: ISS needs a greater timeout
+if [istarget kvx-*-*] then {
+  set timeout 20
+}
+
 #
 # mi_gdb_exit -- exit the GDB, killing the target program if necessary
 #
@@ -423,11 +428,23 @@ proc mi_gdb_reinitialize_dir { subdir } {
 # config/monitor.exp:gdb_target_command.
 proc mi_gdb_target_cmd { targetname serialport } {
     global mi_gdb_prompt
+    global is_k1_server
 
     set serialport_re [string_to_regexp $serialport]
     for {set i 1} {$i <= 3} {incr i} {
-	send_gdb "47-target-select $targetname $serialport\n"
+
+    #kalray
+    if {[info exists is_k1_server] && $is_k1_server == 1} {
+    	send_gdb "attach-mppa $serialport\n"
+    } else {
+    	send_gdb "47-target-select $targetname $serialport\n"
+    }
+
 	gdb_expect 60 {
+        #kalray
+        -re ".stopped,.*" {
+            return 0
+        }
 	    -re "47\\^connected.*$mi_gdb_prompt" {
 		verbose "Set target to $targetname"
 		return 0
@@ -1066,6 +1083,11 @@ proc mi_runto_helper {func run_or_continue} {
       }
   } else {
       mi_send_resuming_command "exec-continue" "$test"
+  }
+
+  # KVX ISS: wait for breakpoint message
+  if {[istarget kvx-*-*] && [target_info gdb_protocol] != "remote"} {
+    after 1000
   }
 
   mi_expect_stop "breakpoint-hit" $func ".*" ".*" "\[0-9\]+" { "" "disp=\"del\"" } $test

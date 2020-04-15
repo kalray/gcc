@@ -20,6 +20,12 @@ load_lib gdbserver-support.exp
 load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
+# KVX: file transfer not implemented by our gdbserver
+if [istarget kvx-*-*] then {
+  unsupported "mi-file-transfer.exp"
+  return 1
+}
+
 if { [skip_gdbserver_tests] } {
     return 0
 }
