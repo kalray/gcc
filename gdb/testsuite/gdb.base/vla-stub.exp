@@ -19,7 +19,7 @@ if { [prepare_for_testing "failed to prepare for vla-stub.exp" \
     return -1
 }
 
-gdb_test "p *local_struct.ptr" { = {dynamic_field = 0x0}}
+gdb_test "p *local_struct.ptr" { = {dynamic_field = 0x0( <.*>)?}}
 
 gdb_test "whatis local_struct.here" "type = static_struct_t"
 gdb_test "whatis *local_struct.ptr" "type = dynamic_struct_t"

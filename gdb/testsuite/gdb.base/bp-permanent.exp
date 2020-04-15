@@ -19,6 +19,12 @@
 
 standard_testfile
 
+# KVX: incompatible dissamble output format
+if [istarget kvx-*-*] then {
+  unsupported "bp-permanent.exp"
+  return 1
+}
+
 set options { debug }
 if { ![target_info exists gdb,nosignals] } {
     lappend options "additional_flags=-DSIGNALS"

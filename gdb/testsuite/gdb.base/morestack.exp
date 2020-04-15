@@ -23,6 +23,12 @@ if {$gcc_compiled == 0} {
 
 standard_testfile
 
+# KVX: does not compile (-fsplit-stack not supported)
+if [istarget kvx-*-*] then {
+  unsupported "more-stack.exp"
+  return 1
+}
+
 set opts "additional_flags=-fsplit-stack"
 if { [prepare_for_testing "failed to prepare" ${testfile} $srcfile \
 	  [list $opts]] } {

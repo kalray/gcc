@@ -2,7 +2,7 @@
 # Configuration validation subroutine script.
 #   Copyright 1992-2021 Free Software Foundation, Inc.
 
-timestamp='2021-04-30'
+timestamp='2021-11-19'
 
 # This file is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by
@@ -1183,6 +1183,7 @@ case $cpu-$vendor in
 			| i370 | i*86 | i860 | i960 | ia16 | ia64 \
 			| ip2k | iq2000 \
 			| k1om \
+	    | kvx \
 			| le32 | le64 \
 			| lm32 \
 			| loongarch32 | loongarch64 | loongarchx32 \

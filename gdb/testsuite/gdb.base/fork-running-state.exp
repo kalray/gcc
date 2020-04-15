@@ -19,6 +19,12 @@
 
 standard_testfile
 
+# KVX: does not compile (getppid, alarm)
+if [istarget kvx-*-*] then {
+  unsupported "fork-running-state.exp"
+  return 1
+}
+
 # The test proper.
 
 proc do_test { detach_on_fork follow_fork non_stop schedule_multiple } {

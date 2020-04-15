@@ -1,0 +1,60 @@
+
+if $tracelevel then {
+    strace $tracelevel
+}
+
+
+set testfile "displaced"
+set binfile ${objdir}/outputs/${subdir}/${testfile}
+set srcfile1 ${testfile}.S
+set srcfile2 ${testfile}_pl1.S
+set ldscript ${testfile}.ld
+file mkdir ${objdir}/outputs/${subdir}
+
+if  { [gdb_compile "-nostdlib ${srcdir}/${subdir}/${srcfile1} ${srcdir}/${subdir}/${srcfile2} -T${srcdir}/${subdir}/${ldscript}" ${binfile} executable {debug}] != ""} {
+    set_board_info compiler "kvx-elf-gcc"
+     untested asm-source.exp
+     return -1
+}
+
+global is_kvx_server
+
+gdb_start
+gdb_reinitialize_dir $srcdir/$subdir
+gdb_load ${binfile}
+gdb_test "set kalray debug_agent_options \"--init-value=0\" \"--no-segment-load\"" "" "init memory"
+
+gdb_test "set displaced-stepping on" "" "Force displaced stepping"
+gdb_test "rbreak test_displaced.*" ".*Breakpoint 9 at.*" "Set breakpoints"
+
+if  {[info exists is_kvx_server] && $is_kvx_server == 1}  {
+   gdb_reload
+   gdb_test "c" ".*Breakpoint 1.*in test_displaced1.*" "Run"
+} else {
+   gdb_test "r" ".*Breakpoint 1.*in test_displaced1.*" "continue to displaced1"
+}
+gdb_test "display /i \$pc" ".*"
+gdb_test "si" ".*Breakpoint 2.*in test_displaced2.*" "stepi 1"
+gdb_test "si" ".*Breakpoint 3.*in test_displaced3.*" "stepi over loopdo"
+gdb_test "si" ".*Breakpoint 3.*in test_displaced3.*" "stepi in loopdo 1"
+gdb_test "si" ".*Breakpoint 3.*in test_displaced3.*" "stepi in loopdo 2"
+gdb_test "si" ".*Breakpoint 3.*in test_displaced3.*" "stepi in loopdo 3"
+gdb_test "si" ".*Breakpoint 3.*in test_displaced3.*" "stepi in loopdo 4" 
+gdb_test "si" ".*Breakpoint 4.*in test_displaced4.*" "stepi out of loopdo"
+gdb_test "p \$r1" ".*\\\$. = 5.*" "Check that the loop was really executed"
+gdb_test "si" ".*Breakpoint 5.*in test_displaced5.*" "step to scall"
+gdb_test "si" ".*in ev_scall .*" "stepi into scall"
+gdb_test "si" ".*Breakpoint 6.*in test_displaced6 .*" "rfe 1"
+gdb_test "si" ".*Breakpoint 7.*in test_displaced7 .*" "stepi over make"
+gdb_test "si" ".*in ev_trap .*" "stepi to trap handler"
+gdb_test "si" ".*in ev_trap .*" "stepi in trap handler"
+gdb_test "si" ".*Breakpoint 8.*in test_displaced8 .*" "rfe 2"
+gdb_test "si" ".*Breakpoint 9.*in test_displaced9 .*" "step over get pc"
+gdb_test "si" ".*Breakpoint 10.*in test_displaced10 .*" "step over get pc 2"
+gdb_test "si" ".*Breakpoint 11.*in test_displaced11 .*" "step over get pc 3"
+gdb_test "si" ".*Breakpoint 12.*in test_displaced12 .*" "step over get indirect pc"
+gdb_test "si" ".*Breakpoint 13.*in test_displaced13 .*" "step over get indirect pc 2"
+gdb_test "si" ".*Breakpoint 14.*in test_displaced .*" "step over get indirect pc 3"
+gdb_test "si" "" "stepi over copy"
+gdb_test "si" ".*exited with code 07.*" "stepi to scall"
+

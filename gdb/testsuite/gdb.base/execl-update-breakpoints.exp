@@ -18,6 +18,12 @@
 
 standard_testfile
 
+# KVX: does not commpile (execl)
+if [istarget kvx-*-*] then {
+  unsupported "execl-update-breakpoints.exp"
+  return 1
+}
+
 # Build two copies of the program, each linked at a different address.
 # The address of "main" in the first binary should end up being an
 # unmapped address in the second binary.

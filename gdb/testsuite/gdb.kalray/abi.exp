@@ -1,0 +1,77 @@
+set testfile "abi"
+
+global is_kvx_server
+
+set tests_dir "$srcdir/$subdir/abi"
+
+set check_str "return !check_(args_are|return_is)_correct"
+set sh_cmd "awk '/$check_str/,/;/'"
+set sh_cmd "$sh_cmd|tr '\t\n;' ' '|sed 's% \\+% %g'|sed 's%^ *return%%g'"
+set sh_cmd "$sh_cmd|sed 's%/\\\*\[^(\\\*/)]*\\\*/%%g'"
+send_log "INFO: shell command to execute to get the gdb command: $sh_cmd\n"
+set sh_bp_cmd "awk '/$check_str/ {print NR}'"
+send_log "INFO: shell command to execute to get breakpoint line: $sh_bp_cmd\n"
+
+foreach subdir_path [lsort [glob -nocomplain $tests_dir/*]] {
+  set subdir_name "[file tail $subdir_path]"
+  set output_subdir "$objdir/outputs/$subdir/abi/$subdir_name"
+  #puts "CREATE $output_subdir"
+  file mkdir $output_subdir
+
+  foreach src [lsort [glob -nocomplain $subdir_path/*.c]] {
+    set test_base_path "[file rootname $src]"
+    set src_asm "${test_base_path}_asm.S"
+    set test_name "[file tail $test_base_path]"
+    set binfile "$output_subdir/$test_name"
+    set test "$subdir_name/$test_name"
+
+    if {![file exists $src_asm]} {
+      set src_asm ""
+    }
+
+    # search in the .c file the command to execute
+    set gdb_cmd [exec sh -c "cat $src|$sh_cmd"]
+    send_log "INFO: gdb command to execute: $gdb_cmd\n"
+    if {$gdb_cmd == ""} {
+      fail $test
+    }
+
+    set bp_line [exec sh -c "cat $src|$sh_bp_cmd"]
+    send_log "INFO: breakpoint line: $bp_line\n"
+    if {$bp_line == ""} {
+      fail $test
+    }
+
+    if {[gdb_compile "$src $src_asm" "$binfile" executable {debug}] != ""} {
+     fail $test
+     continue
+    }
+
+    gdb_start
+    gdb_reinitialize_dir $output_subdir
+    gdb_load $binfile
+
+    if {![runto_main]} {
+      fail $test
+      gdb_exit
+      continue
+    }
+
+    gdb_test_multiple "break $bp_line" "$test insert breakpoint" {
+      -re "Note: breakpoint 1 also set at pc.*${gdb_prompt} $" {
+        pass "$test insert breakpoint"
+      }
+      -re "Breakpoint 2.*${gdb_prompt} $" {
+        pass "$test insert breakpoint"
+        gdb_test "c" ".*hit Breakpoint.*" "$test hit breakpoint"
+      }
+      -re ".*${gdb_prompt} $" {
+        fail "$test insert breakpoint"
+      }
+    }
+
+    gdb_test "p $gdb_cmd" ".* = 0.*" "$test"
+
+    gdb_exit
+  }
+}

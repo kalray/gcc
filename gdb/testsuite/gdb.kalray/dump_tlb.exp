@@ -1,0 +1,56 @@
+set testfile "dump_tlb"
+set binfile ${objdir}/outputs/${subdir}/${testfile}
+set srcfile1 ${testfile}.c
+file mkdir ${objdir}/outputs/${subdir}
+
+if  { [gdb_compile "${srcdir}/${subdir}/${srcfile1}" "${binfile}" executable {debug}] != "" } {
+     untested dump_tlb.exp
+     return -1
+}
+
+global is_kvx_server
+
+gdb_start
+gdb_reinitialize_dir $srcdir/$subdir
+gdb_load ${binfile}
+
+if ![runto_main] {
+  untested "could not run to main"
+  return -1
+}
+
+gdb_test "n" ".*" "step over init mmu"
+
+gdb_test "mppa-dump-tlb" "JTLB\\\[s:00 w:00\\\].*JTLB\\\[s:63 w:03\\\].*LTLB\\\[s:00 w:00\\\].*LTLB\\\[s:00 w:15\\\].*" "dump all tlb entries"
+
+set valid_jtlb "JTLB.s:00 w:02.: PN:0000c0000 \\| FN:000080000"
+set valid_ltlb "LTLB.s:00 w:04.: PN:000080000 \\| FN:000080000"
+
+# mppa-dump-tlb tests
+set end_entry_dump "\[^\r\n\]+"
+set jtlb_dump "$valid_jtlb$end_entry_dump"
+set ltlb_dump "$valid_ltlb$end_entry_dump"
+
+gdb_test "mppa-dump-tlb --valid-only" "${jtlb_dump}\[\r\n\]+${ltlb_dump}" "dump all valid entries"
+
+gdb_test "mppa-dump-tlb --valid-only --jtlb" "${jtlb_dump}" "dump all jtlb valid entries"
+gdb_test "mppa-dump-tlb --valid-only --ltlb" "${ltlb_dump}" "dump all ltlb valid entries"
+
+gdb_test "mppa-dump-tlb --valid-only --asn=33" "${jtlb_dump}" "dump asn entries test 1"
+gdb_test "mppa-dump-tlb --valid-only --asn=44" "${ltlb_dump}" "dump asn entries test 2"
+
+gdb_test "mppa-dump-tlb --global" "${ltlb_dump}" "dump asn entries"
+
+# mppa-lookup-addr tests
+set end_entry_lookup "\[^\r\n\]+\[\r\n\]+\[^\r\n\]+\[\r\n\]+"
+set jtlb_lookup "$valid_jtlb$end_entry_lookup"
+set ltlb_lookup "$valid_ltlb$end_entry_lookup"
+
+gdb_test "mppa-lookup-addr --virt=0xc0000000" "${jtlb_lookup}" "lookup addr virt jtlb"
+gdb_test "mppa-lookup-addr --virt=0x80000000" "${ltlb_lookup}" "lookup addr virt ltlb"
+
+gdb_test "mppa-lookup-addr --phys=0x80000000" "${jtlb_lookup}${ltlb_lookup}" "lookup-addr phys"
+
+gdb_test "mppa-lookup-addr --phys=0x80000000 --asn=33" "${jtlb_lookup}${ltlb_lookup}" "lookup addr phys asn jtlb"
+gdb_test "mppa-lookup-addr --phys=0x80000000 --asn=44" "${ltlb_lookup}" "lookup addr phys asn ltlb"
+

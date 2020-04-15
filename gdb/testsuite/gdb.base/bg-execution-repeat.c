@@ -27,7 +27,11 @@ int
 main (void)
 {
   foo ();
+  #ifdef KVX_ISS
+  usleep (3000);
+  #else
   sleep (5);
+  #endif
   foo ();
   return 0;
 }

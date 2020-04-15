@@ -25,6 +25,12 @@ if { [use_gdb_stub] } then {
     return 0
 }
 
+# KVX: getpid
+if [istarget kvx-*-*] then {
+  unsupported "dprintf-detach.exp"
+  return 0
+}
+
 standard_testfile
 set escapedbinfile [string_to_regexp ${binfile}]
 

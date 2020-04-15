@@ -18,6 +18,12 @@
 load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
+# KVX: our gdbserver does not implement detach
+if [istarget kvx-*-*] then {
+  unsupported "mi-detach.exp"
+  return 1
+}
+
 standard_testfile basics.c
 
 if {[build_executable $testfile.exp $testfile $srcfile {debug}] == -1} {

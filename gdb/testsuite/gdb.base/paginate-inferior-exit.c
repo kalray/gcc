@@ -26,7 +26,11 @@ after_sleep (void)
 int
 main (void)
 {
+  #ifdef KVX_ISS
+  usleep (3000);
+  #else
   sleep (3);
+  #endif
   after_sleep ();
   return 0;
 }

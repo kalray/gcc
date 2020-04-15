@@ -61,7 +61,7 @@ proc hook_stop_before_frame {} {
 
 	set test "run hook-stop"
 	gdb_test_multiple "continue" "$test" {
-	    -re "\"Hello\\.\"\r\nBreakpo.*func.*set breakpoint here.*${gdb_prompt} $" {
+	    -re "\"Hello\\.\"\r\n.*Breakpo.*func.*set breakpoint here.*${gdb_prompt} $" {
 		pass $test
 	    }
 

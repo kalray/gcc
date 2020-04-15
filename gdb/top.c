@@ -1401,9 +1401,11 @@ print_gdb_version (struct ui_file *stream, bool interactive)
      program to parse, and is just canonical program name and version
      number, which starts after last space.  */
 
-  std::string v_str = string_printf ("GNU gdb %s%s", PKGVERSION, version);
-  fprintf_filtered (stream, "%ps\n",
-		    styled_string (version_style.style (), v_str.c_str ()));
+   std::string v_str = string_printf ("GNU gdb %s%s", PKGVERSION, version);
+   std::string kalray_v_str = string_printf ("Kalray gdb %s", KALRAY_VERSION);
+   fprintf_filtered (stream, "%ps\n%ps\n",
+		     styled_string (version_style.style (), v_str.c_str ()),
+		     styled_string (version_style.style (), kalray_v_str.c_str ()));
 
   /* Second line is a copyright notice.  */
 

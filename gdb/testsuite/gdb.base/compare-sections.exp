@@ -35,13 +35,19 @@ proc compare_sections { {options ""} } {
     }
     set test $command
     gdb_test_multiple $command $test {
+	-re {bsp_config[^\n]*MIS-MATCHED} {
+	    exp_continue
+	}
+	-re {bare_runtime_dsu[^\n]*MIS-MATCHED} {
+		exp_continue
+	}
 	-re "MIS-MATCHED.*$gdb_prompt $" {
 	    fail $test
 	}
-	-re "warning.*One or more sections.*does not match.*loaded file.*$gdb_prompt $" {
-	    fail $test
-	}
 	-re "Section.*matched.*$gdb_prompt $" {
+	    pass $test
+	}
+	-re ".*$gdb_prompt $" {
 	    pass $test
 	}
     }

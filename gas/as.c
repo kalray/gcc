@@ -45,6 +45,10 @@
 #include "bfdver.h"
 #include "write.h"
 
+#ifndef KALRAY_VERSION
+#define KALRAY_VERSION "Unknown"
+#endif
+
 #ifdef HAVE_ITBL_CPU
 #include "itbl-ops.h"
 #else
@@ -235,6 +239,7 @@ print_version_id (void)
 
   fprintf (stderr, _("GNU assembler version %s (%s) using BFD version %s\n"),
 	   VERSION, TARGET_ALIAS, BFD_VERSION_STRING);
+  fprintf (stderr, "Kalray assembler version %s\n", KALRAY_VERSION);
 }
 
 #ifdef DEFAULT_FLAG_COMPRESS_DEBUG
