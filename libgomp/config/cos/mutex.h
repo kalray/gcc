@@ -87,6 +87,7 @@ gomp_mutex_unlock (gomp_mutex_t *mutex)
 {
   __builtin_kvx_fence (); /* consitency before unlock */
   gomp_mutex_write_set (mutex, 1);
+  __builtin_kvx_fence (); /* consitency before doorbell */
   mppa_cos_doorbell_all ();
   MPPA_COS_DINVAL ();
 }
