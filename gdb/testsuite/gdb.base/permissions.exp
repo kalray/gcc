@@ -82,6 +82,7 @@ gdb_test "set observer off" "Observer mode is now off." "disable observer mode"
 # Go back to all-stop mode.
 
 gdb_test_no_output "set non-stop off"
+gdb_test_no_output "set target-async off"
 
 gdb_load ${binfile}
 

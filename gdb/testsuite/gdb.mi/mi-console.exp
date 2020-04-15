@@ -85,7 +85,7 @@ set output "($semihosted_output|$native_output)"
 
 # Next over the hello() call which will produce lots of output
 mi_gdb_test "220-exec-next" \
-	    "220\\^running(\r\n\\*running,thread-id=\"all\")?" \
+	    "220\\^running(\r\n\\*running,thread-id=\"(all|1)\")?" \
 	    "Testing console output" \
 	    $output
 

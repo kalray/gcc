@@ -4517,6 +4517,11 @@ fi
 
 
 
+
+cat >>confdefs.h <<_ACEOF
+#define KALRAY_VERSION "$KALRAY_VERSION"
+_ACEOF
+
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'

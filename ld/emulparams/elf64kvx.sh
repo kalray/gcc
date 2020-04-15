@@ -1,0 +1,22 @@
+ARCH=kvx
+MACHINE=kv3-1:64
+
+# bundle with 1 nop insn
+NOP=0x00f0037f
+
+SCRIPT_NAME=elf
+ELFSIZE=64
+OUTPUT_FORMAT="elf64-kvx"
+NO_REL_RELOCS=yes
+
+TEMPLATE_NAME=elf32
+EXTRA_EM_FILE=kvxelf
+EMBEDDED=yes
+TEXT_START_ADDR=0x0
+
+# No support for .s* sections.
+NO_SMALL_DATA=yes
+
+MAXPAGESIZE="CONSTANT (MAXPAGESIZE)"
+
+GENERATE_SHLIB_SCRIPT=yes

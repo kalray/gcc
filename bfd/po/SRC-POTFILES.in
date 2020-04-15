@@ -70,6 +70,7 @@ cpu-iamcu.c
 cpu-ip2k.c
 cpu-iq2000.c
 cpu-k1om.c
+cpu-kvx.c
 cpu-l1om.c
 cpu-lm32.c
 cpu-m10200.c
@@ -261,6 +262,7 @@ elfxx-aarch64.c
 elfxx-aarch64.h
 elfxx-ia64.c
 elfxx-ia64.h
+elfxx-kvx.c
 elfxx-mips.c
 elfxx-mips.h
 elfxx-riscv.c

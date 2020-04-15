@@ -426,6 +426,7 @@ main (int argc, char **argv)
 	case 'v':
 	  /* This output is intended to follow the GNU standards document.  */
 	  printf (_("GNU gprof %s\n"), BFD_VERSION_STRING);
+	  printf (_("Kalray gprof version %s\n"), KALRAY_VERSION);
 	  printf (_("Based on BSD gprof, copyright 1983 Regents of the University of California.\n"));
 	  printf (_("\
 This program is free software.  This program has absolutely no warranty.\n"));

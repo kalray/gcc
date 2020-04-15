@@ -200,6 +200,9 @@
 /* Using i386 COFF? */
 #undef I386COFF
 
+/* The Kalray tools version. */
+#undef KALRAY_VERSION
+
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
 #undef LT_OBJDIR

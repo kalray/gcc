@@ -493,9 +493,13 @@ enum symbol_needs_kind
   /* The symbol needs registers.  */
   SYMBOL_NEEDS_REGISTERS,
 
+<<<<<<< HEAD
   /* The symbol needs a frame.  */
   SYMBOL_NEEDS_FRAME
 };
+=======
+enum { MAX_REGISTER_SIZE = 128 };
+>>>>>>> 3fa06bf7865... BIG SQUASH
 
 /* In findvar.c.  */
 

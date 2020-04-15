@@ -36,6 +36,7 @@ ldversion (int noisy)
 {
   /* Output for noisy == 2 is intended to follow the GNU standards.  */
   fprintf (stdout, _("GNU ld %s\n"), BFD_VERSION_STRING);
+  fprintf (stdout, _("Kalray ld version %s\n"), KALRAY_VERSION);
 
   if (noisy & 2)
     {

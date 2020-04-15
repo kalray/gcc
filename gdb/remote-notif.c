@@ -133,7 +133,18 @@ handle_notification (struct remote_notif_state *state, const char *buf)
   /* We ignore notifications we don't recognize, for compatibility
      with newer stubs.  */
   if (i == ARRAY_SIZE (notifs))
-    return;
+    {
+      // KVX: custom notif
+      if (startswith (buf, "custom:"))
+        {
+          extern void custom_notification_cb (char *) __attribute__ ((weak));
+          if (&custom_notification_cb)
+            custom_notification_cb (buf + 7);
+        }
+
+       return;
+    }
+
 
   nc =  notifs[i];
 

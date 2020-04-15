@@ -893,6 +893,13 @@ memory_xfer_check_region (gdb_byte *readbuf, const gdb_byte *writebuf,
       return 0;
     }
 
+  if (region->attrib.width != MEM_WIDTH_UNSPECIFIED)
+    {
+      int max_access_size = 1 << (region->attrib.width - 1);
+      if (len > max_access_size)
+        len = max_access_size;
+    }
+
   /* region->hi == 0 means there's no upper bound.  */
   if (memaddr + len < region->hi || region->hi == 0)
     *reg_len = len;

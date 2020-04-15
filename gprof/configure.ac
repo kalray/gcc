@@ -25,6 +25,8 @@ AC_ISC_POSIX
 
 AM_INIT_AUTOMAKE
 
+AC_DEFINE_UNQUOTED(KALRAY_VERSION, "$KALRAY_VERSION", [The Kalray tools version.])
+
 dnl For simplicity, we use the BFD configuration file for most
 dnl things.  However, we also need our own configuration file for
 dnl the automake PACKAGE and VERSION macros.  We don't name it

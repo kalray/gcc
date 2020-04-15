@@ -100,6 +100,8 @@ iq2000-dis.c
 iq2000-ibld.c
 iq2000-opc.c
 iq2000-opc.h
+k1c-dis.c
+k1c-opc.c
 lm32-asm.c
 lm32-desc.c
 lm32-desc.h

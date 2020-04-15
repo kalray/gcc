@@ -20,6 +20,12 @@
 
 standard_testfile
 
+# KVX: does not compile (include sys/man.h)
+if [istarget kvx-*-*] then {
+  unsupported "break-main-file-remove-fail.exp"
+  return 1
+}
+
 if {[build_executable "failed to prepare" $testfile $srcfile debug]} {
     return -1
 }

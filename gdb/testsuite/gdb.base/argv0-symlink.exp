@@ -70,7 +70,7 @@ if { $has_argv0 } {
 set full_filelink [standard_output_file $filelink]
 set lastdir [file tail [file dirname $full_filelink]]
 
-gdb_test "info inferiors" "/$lastdir/$filelink *" "$test for info inferiors"
+gdb_test "info inferiors" "/$lastdir/$filelink.*" "$test for info inferiors"
 
 
 set test "kept directory symbolic link name"
@@ -107,4 +107,4 @@ if { $has_argv0 } {
     unsupported $test
 }
 
-gdb_test "info inferiors" "/$lastdir/$filelink *" "$test for info inferiors"
+gdb_test "info inferiors" "/$lastdir/$filelink.*" "$test for info inferiors"

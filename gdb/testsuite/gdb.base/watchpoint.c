@@ -40,7 +40,19 @@ struct foo struct1, struct2, *ptr1, *ptr2;
 int doread = 0;
 
 char *global_ptr;
+#ifdef __kvx__
+// KVX specific - avoid interpreting the opcode at 0 as an address.
+// The test adds a watchpoint (watch **global_ptr_ptr) before initializing
+// this variable (global_ptr_ptr = &global_ptr;). When the initial value of
+// the watched address is requested, the opcode at address 0 is used as an
+// address and it is deferenced. The problem is that reading at this address
+// can block completely the CPU. On other archictures, this access returns
+// error, but it does not block the processor.
+
+char **global_ptr_ptr = (char **) (void *) &global_ptr_ptr;
+#else
 char **global_ptr_ptr;
+#endif
 
 struct foo2
 {

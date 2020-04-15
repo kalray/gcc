@@ -433,6 +433,45 @@ tdesc_start_field (struct gdb_xml_parser *parser,
 
       tdesc_add_field (data->current_type, field_name, field_type);
     }
+<<<<<<< HEAD
+=======
+  else if (start != -1 && end != -1)
+    {
+      struct tdesc_type *t = data->current_type;
+
+      if (data->current_type_is_flags)
+	tdesc_add_flag (t, start, field_name);
+      else
+	{
+	  if (data->current_type_size == 0)
+	    gdb_xml_error (parser,
+			   _("Implicitly sized type can "
+			     "not contain bitfield \"%s\""), 
+			   field_name);
+
+	  if (end >= 64)
+	    gdb_xml_error (parser,
+			   _("Bitfield \"%s\" goes past "
+			     "64 bits (unsupported)"),
+			   field_name);
+
+	  /* Assume that the bit numbering in XML is "lsb-zero".  Most
+	     architectures other than PowerPC use this ordering.  In
+	     the future, we can add an XML tag to indicate "msb-zero"
+	     numbering.  */
+	  if (start > end)
+	    gdb_xml_error (parser, _("Bitfield \"%s\" has start after end"),
+			   field_name);
+
+	  if (end >= data->current_type_size * TARGET_CHAR_BIT)
+	    gdb_xml_error (parser,
+			   _("Bitfield \"%s\" does not fit in struct"),
+			   field_name);
+
+	  tdesc_add_bitfield (t, field_name, start, end);
+	}
+    }
+>>>>>>> 3fa06bf7865... BIG SQUASH
   else
     gdb_xml_error (parser, _("Field \"%s\" has neither type nor bit position"),
 		   field_name);

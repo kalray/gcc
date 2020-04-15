@@ -21,6 +21,13 @@ if [target_info exists gdb,nointerrupts] {
 load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
+# KVX: does not compile (pthread_barrier_t)
+if [istarget kvx-*-*] then {
+  unsupported "mi-threads-interrupt.exp"
+  return 1
+}
+
+
 standard_testfile
 
 if {[gdb_compile_pthreads "$srcdir/$subdir/$srcfile" $binfile executable {debug}] != "" } {

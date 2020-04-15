@@ -48,7 +48,7 @@ mi_runto main
 mi_continue_to_line $line_invalid_pointer_value "continue to invalid pointer value"
 
 # Create variable object
-mi_gdb_test "-var-create var1 * p_outer" "\\^done,name=\"var1\",numchild=\"1\",value=\"0x0\",type=\"struct outer \\*\",thread-id=\"1\",has_more=\"0\"" "create variable object"
+mi_gdb_test "-var-create var1 * p_outer" "\\^done,name=\"var1\",numchild=\"1\",value=\"0x0( <.*>)?\",type=\"struct outer \\*\",thread-id=\"1\",has_more=\"0\"" "create variable object"
 
 # List children while the pointer is uninitialized.
 # Note: if you remove this -var-list-children, the second one will work.
