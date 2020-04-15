@@ -443,6 +443,9 @@
 
 /* See the above comment before you add a new EM_* value here.  */
 
+/* Kalray VLIW core */
+#define EM_KVX                   0x1337
+
 /* Values for e_version.  */
 
 #define EV_NONE		0		/* Invalid ELF version */

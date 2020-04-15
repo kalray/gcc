@@ -1,0 +1,102 @@
+<?xml version="1.0"?>
+<!-- Copyright (C) 2010-2016 Free Software Foundation, Inc.
+
+     Copying and distribution of this file, with or without modification,
+     are permitted in any medium without royalty provided the copyright
+     notice and this notice are preserved.  -->
+
+<!DOCTYPE feature SYSTEM "gdb-target.dtd">
+<feature name="eu.kalray.core.kv3-1">
+  <flags id="cs_type" size="8">
+    <field name="ic" start="0" end="0" />
+    <field name="io" start="1" end="1" />
+    <field name="dz" start="2" end="2" />
+    <field name="ov" start="3" end="3" />
+    <field name="un" start="4" end="4" />
+    <field name="in" start="5" end="5" />
+    <field name="xio" start="9" end="9" />
+    <field name="xdz" start="10" end="10" />
+    <field name="xov" start="11" end="11" />
+    <field name="xun" start="12" end="12" />
+    <field name="xin" start="13" end="13" />
+    <field name="rm" start="16" end="17" />
+    <field name="xrm" start="20" end="21" />
+    <field name="xmf" start="24" end="24" />
+    <field name="cc" start="32" end="47" />
+    <field name="xdrop" start="48" end="53" />
+    <field name="xpow2" start="54" end="59" />
+  </flags>
+
+  <reg name="r0" bitsize="64" type="int64"/>
+  <reg name="r1" bitsize="64" type="int64"/>
+  <reg name="r2" bitsize="64" type="int64"/>
+  <reg name="r3" bitsize="64" type="int64"/>
+  <reg name="r4" bitsize="64" type="int64"/>
+  <reg name="r5" bitsize="64" type="int64"/>
+  <reg name="r6" bitsize="64" type="int64"/>
+  <reg name="r7" bitsize="64" type="int64"/>
+  <reg name="r8" bitsize="64" type="int64"/>
+  <reg name="r9" bitsize="64" type="int64"/>
+  <reg name="r10" bitsize="64" type="int64"/>
+  <reg name="r11" bitsize="64" type="int64"/>
+  <reg name="r12" bitsize="64" type="int64"/>
+  <reg name="r13" bitsize="64" type="int64"/>
+  <reg name="r14" bitsize="64" type="int64"/>
+  <reg name="r15" bitsize="64" type="int64"/>
+  <reg name="r16" bitsize="64" type="int64"/>
+  <reg name="r17" bitsize="64" type="int64"/>
+  <reg name="r18" bitsize="64" type="int64"/>
+  <reg name="r19" bitsize="64" type="int64"/>
+  <reg name="r20" bitsize="64" type="int64"/>
+  <reg name="r21" bitsize="64" type="int64"/>
+  <reg name="r22" bitsize="64" type="int64"/>
+  <reg name="r23" bitsize="64" type="int64"/>
+  <reg name="r24" bitsize="64" type="int64"/>
+  <reg name="r25" bitsize="64" type="int64"/>
+  <reg name="r26" bitsize="64" type="int64"/>
+  <reg name="r27" bitsize="64" type="int64"/>
+  <reg name="r28" bitsize="64" type="int64"/>
+  <reg name="r29" bitsize="64" type="int64"/>
+  <reg name="r30" bitsize="64" type="int64"/>
+  <reg name="r31" bitsize="64" type="int64"/>
+  <reg name="r32" bitsize="64" type="int64"/>
+  <reg name="r33" bitsize="64" type="int64"/>
+  <reg name="r34" bitsize="64" type="int64"/>
+  <reg name="r35" bitsize="64" type="int64"/>
+  <reg name="r36" bitsize="64" type="int64"/>
+  <reg name="r37" bitsize="64" type="int64"/>
+  <reg name="r38" bitsize="64" type="int64"/>
+  <reg name="r39" bitsize="64" type="int64"/>
+  <reg name="r40" bitsize="64" type="int64"/>
+  <reg name="r41" bitsize="64" type="int64"/>
+  <reg name="r42" bitsize="64" type="int64"/>
+  <reg name="r43" bitsize="64" type="int64"/>
+  <reg name="r44" bitsize="64" type="int64"/>
+  <reg name="r45" bitsize="64" type="int64"/>
+  <reg name="r46" bitsize="64" type="int64"/>
+  <reg name="r47" bitsize="64" type="int64"/>
+  <reg name="r48" bitsize="64" type="int64"/>
+  <reg name="r49" bitsize="64" type="int64"/>
+  <reg name="r50" bitsize="64" type="int64"/>
+  <reg name="r51" bitsize="64" type="int64"/>
+  <reg name="r52" bitsize="64" type="int64"/>
+  <reg name="r53" bitsize="64" type="int64"/>
+  <reg name="r54" bitsize="64" type="int64"/>
+  <reg name="r55" bitsize="64" type="int64"/>
+  <reg name="r56" bitsize="64" type="int64"/>
+  <reg name="r57" bitsize="64" type="int64"/>
+  <reg name="r58" bitsize="64" type="int64"/>
+  <reg name="r59" bitsize="64" type="int64"/>
+  <reg name="r60" bitsize="64" type="int64"/>
+  <reg name="r61" bitsize="64" type="int64"/>
+  <reg name="r62" bitsize="64" type="int64"/>
+  <reg name="r63" bitsize="64" type="int64"/>
+
+  <reg name="lc" bitsize="64" type="int64"/>
+  <reg name="le" bitsize="64" type="code_ptr"/>
+  <reg name="ls" bitsize="64" type="code_ptr"/>
+  <reg name="ra" bitsize="64" type="code_ptr"/>
+  <reg name="cs" bitsize="64" type="cs_type"/>
+  <reg name="pc" bitsize="64" type="code_ptr"/>
+
+</feature>

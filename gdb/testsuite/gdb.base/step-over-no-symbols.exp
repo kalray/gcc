@@ -18,6 +18,12 @@
 
 standard_testfile start.c
 
+# KVX: set displaced-stepping off not supported
+if [istarget kvx-*-*] then {
+  unsupported "step-over-no-symbols.exp"
+  return 1
+}
+
 if { [build_executable "failed to build" ${testfile} $srcfile] } {
     return -1
 }

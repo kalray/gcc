@@ -237,6 +237,7 @@ ALL_EMULATION_SOURCES = \
 	eelf32ip2k.c \
 	eelf32iq10.c \
 	eelf32iq2000.c \
+	eelf32kvx.c \
 	eelf32lm32.c \
 	eelf32lm32fd.c \
 	eelf32lppc.c \
@@ -438,6 +439,8 @@ ALL_64_EMULATION_SOURCES = \
 	eelf64lriscv_lp64.c \
 	eelf64ltsmip.c \
 	eelf64ltsmip_fbsd.c \
+	eelf64kvx.c \
+	eelf64kvx_linux.c \
 	eelf64mmix.c \
 	eelf64ppc.c \
 	eelf64ppc_fbsd.c \
