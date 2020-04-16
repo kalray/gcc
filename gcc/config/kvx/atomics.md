@@ -191,14 +191,14 @@
 ;; register_operand as operand 1. It is not implemented yet.
 
 ;; Fetch and Add
-(define_insn "afadd<lsusize>"
+(define_insn "aladd<lsusize>"
   [(set (match_operand:SIDI 0 "register_operand" "=r,r,r")
-    (unspec_volatile:SIDI [(match_operand:SIDI 1 "memory_operand" "+a,b,m")] UNSPEC_AFADD))
+    (unspec_volatile:SIDI [(match_operand:SIDI 1 "memory_operand" "+a,b,m")] UNSPEC_ALADD))
    (set (match_dup 1)
     (plus:SIDI (match_dup 1)
                (match_operand:SIDI 2 "nonmemory_operand" "0,0,0")))]
    ""
-   "afadd<lsusize>%m1 %1 = %0"
+   "aladd<lsusize>%m1 %1 = %0"
   [(set_attr "length" "4,8,12")
    (set_attr "type" "lsu_auxr_auxw_atomic,lsu_auxr_auxw_atomic_x,lsu_auxr_auxw_atomic_y")])
 
@@ -211,5 +211,5 @@
   [(set_attr "length" "4,8,12")
    (set_attr "type" "lsu_auxw_atomic,lsu_auxw_atomic_x,lsu_auxw_atomic_y")])
 
-;; TODO: acswap, afadd, and alclr insns have 'lsucond' variants which
+;; TODO: acswap, aladd, and alclr insns have 'lsucond' variants which
 ;; are not supported here yet.
