@@ -129,11 +129,11 @@ extern bool kvx_has_43bit_vector_const_p (rtx x);
 
 extern bool kvx_has_32x2bit_vector_const_p (rtx x);
 
-extern bool kvx_expand_conditional_move (machine_mode mode, rtx operands[]);
+extern rtx kvx_lower_comparison (rtx pred, enum rtx_code cmp_code, rtx left,
+				 rtx right);
 
-extern void kvx_expand_vcondv2si (rtx *);
-
-extern void kvx_expand_vcondv4hi (rtx *);
+extern void kvx_expand_conditional_move (rtx operands[],
+					 enum machine_mode mode);
 
 extern void kvx_emit_pre_barrier (rtx, bool);
 

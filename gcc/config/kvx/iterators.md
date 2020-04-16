@@ -97,20 +97,16 @@
 (define_mode_iterator P [(SI "Pmode == SImode") (DI "Pmode == DImode")])
 
 (define_code_iterator cb_cond [eq ne gt ge lt le])
+
 (define_mode_iterator SIDI [SI DI])
 
 ;; Used for conditional LSU with .odd/.even
 (define_code_iterator COND_ODD_EVEN [eq ne])
 (define_code_attr lsu_odd_even [(eq "even") (ne "odd")])
 
-;; FIXME AUTO: change name of cbvar, used elsewhere.
-(define_mode_attr cbvar [(SI "w") (DI "d") (SF "w") (DF "d")])
-
-(define_mode_attr suffix [(SI "w") (DI "d")])
+(define_mode_attr suffix [(SI "w") (DI "d") (SF "w") (DF "d")])
 
 (define_mode_attr suffix2 [(SI "w") (DI "d")])
-(define_mode_attr regclass [(SI "r") (DI "r")])
-(define_mode_attr size [(SI "4") (DI "8")])
 
 ;; insns length for materializing a symbol depending on pointer size,
 ;; using make insn. Alternatives using these should only be enabled
@@ -138,6 +134,11 @@
   (minus "sub")
   (and "and")
   (mult "nand")])
+
+;; Iterator for the modes tested by cbranch<m>4
+(define_mode_iterator CBRANCH [
+  SI SF DI DF
+])
 
 ;; Iterator for the 64-bit vector modes.
 (define_mode_iterator SIMD64 [
