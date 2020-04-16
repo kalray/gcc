@@ -2716,54 +2716,123 @@ kvx_canonicalize_comparison (int *code, rtx *op0, rtx *op1,
     }
 }
 
-/* Emit the compare insn and return the register rtx. */
-static rtx
-kvx_gen_compare_reg (RTX_CODE code, rtx cmp)
+/* Return the mode of a predicate resulting from comparing MODE. */
+static enum machine_mode
+kvx_get_predicate_mode (enum machine_mode mode)
 {
-  rtx x = XEXP (cmp, 0);
-  rtx y = XEXP (cmp, 1);
-  machine_mode mode = GET_MODE (x);
-  bool float_compare_p = (GET_MODE_CLASS (mode) == MODE_FLOAT);
+  switch (mode)
+    {
+    case V2SFmode:
+      return V2SImode;
+    case V4SFmode:
+      return V4SImode;
+    // case V8SFmode:
+    //   return V8SImode;
+    case V2DFmode:
+      return V2DImode;
+    // case V4DFmode:
+    //   return V4DImode;
+    case SFmode:
+    case DFmode:
+      return DImode;
+    default:
+      break;
+    }
+  return mode;
+}
+
+/* Emit the compare insn and return the predicate register if lowering occurred.
+ * The predicate register is created if NULL_RTX is passed. This function can
+ * be called if !can_create_pseudo_p only when lowering is not needed. */
+rtx
+kvx_lower_comparison (rtx pred, enum rtx_code cmp_code, rtx left, rtx right)
+{
+  machine_mode cmp_mode = GET_MODE (left);
+  enum mode_class cmp_class = GET_MODE_CLASS (cmp_mode);
+  bool float_compare_p
+    = (cmp_class == MODE_FLOAT || cmp_class == MODE_VECTOR_FLOAT);
+  bool int_compare_p = (cmp_class == MODE_INT || cmp_class == MODE_VECTOR_INT);
+
+  if (int_compare_p && const_zero_operand (right, cmp_mode))
+    {
+      if (pred != NULL_RTX)
+	emit_move_insn (pred, left);
+
+      return NULL_RTX;
+    }
+
+  if (pred == NULL_RTX)
+    pred = gen_reg_rtx (kvx_get_predicate_mode (cmp_mode));
+
+  machine_mode pred_mode = GET_MODE (pred);
+  rtx cmp = gen_rtx_fmt_ee (cmp_code, pred_mode, left, right);
 
   if (float_compare_p)
     {
       if (! float_comparison_operator (cmp, VOIDmode))
 	{
-	  RTX_CODE swapped = swap_condition (code);
+	  enum rtx_code swapped = swap_condition (cmp_code);
 
-	  if (swapped == code)
-	      /* CODE must be ORDERED or UNORDERED, bail out. */
-	      return NULL_RTX;
+	  if (swapped == cmp_code)
+	    {
+	      rtx tmp = gen_reg_rtx (pred_mode);
+	      rtx tmp2 = gen_reg_rtx (pred_mode);
+	      rtx cmp2 = copy_rtx (cmp);
+	      enum rtx_code cond_code;
 
-	  code = swapped;
-	  rtx t = force_reg (mode, y);
-	  y = x, x = t;
+	      if (cmp_code == UNORDERED)
+		{
+		  PUT_CODE (cmp, UNGE);
+		  PUT_CODE (cmp2, UNLT);
+		  cond_code = AND;
+		}
+	      else if (cmp_code == ORDERED)
+		{
+		  PUT_CODE (cmp, GE);
+		  PUT_CODE (cmp2, LT);
+		  cond_code = IOR;
+		}
+	      else
+		{
+		  gcc_unreachable ();
+		}
+
+	      emit_insn (gen_rtx_SET (tmp, cmp));
+	      emit_insn (gen_rtx_SET (tmp2, cmp2));
+	      cmp = gen_rtx_fmt_ee (cond_code, pred_mode, tmp, tmp2);
+	    }
+	  else
+	    {
+	      PUT_CODE (cmp, swapped);
+	      XEXP (cmp, 0) = right;
+	      XEXP (cmp, 1) = left;
+	    }
+	  gcc_assert (swapped == cmp_code
+		      || float_comparison_operator (cmp, VOIDmode));
 	}
 
-      mode = DImode;
+      XEXP (cmp, 0) = force_reg (cmp_mode, XEXP (cmp, 0));
+      XEXP (cmp, 1) = force_reg (cmp_mode, XEXP (cmp, 1));
     }
 
-  if (CONSTANT_P (y))
-    y = force_reg (GET_MODE (x), y);
-
-  rtx cc_cmp = gen_rtx_fmt_ee (code, mode, x, y);
-  gcc_assert (! float_compare_p ||
-	      float_comparison_operator (cc_cmp, VOIDmode));
-
-  rtx cc_reg = gen_reg_rtx (mode);
-  emit_insn (gen_rtx_SET (cc_reg, cc_cmp));
-  return cc_reg;
+  emit_insn (gen_rtx_SET (pred, cmp));
+  return pred;
 }
 
-/* Emit code to conditionally move either OPERANDS[2] or OPERANDS[3] into
+/* Emit insns to conditionally move either OPERANDS[2] or OPERANDS[3] into
    OPERANDS[0] in MODE.  OPERANDS[1] is the operator of the condition. */
-bool
-kvx_expand_conditional_move (machine_mode mode, rtx operands[])
+void
+kvx_expand_conditional_move (rtx operands[], enum machine_mode mode)
 {
   rtx cmp = operands[1];
+  rtx left = XEXP (cmp, 0);
+  rtx right = XEXP (cmp, 1);
   enum rtx_code cmp_code = GET_CODE (cmp);
-  machine_mode cmp_mode = GET_MODE (XEXP (cmp, 0));
-  rtx cc_reg = NULL_RTX, src = NULL_RTX, dst = NULL_RTX;
+  machine_mode cmp_mode = GET_MODE (left);
+  enum mode_class cmp_class = GET_MODE_CLASS (cmp_mode);
+  bool float_compare_p
+    = (cmp_class == MODE_FLOAT || cmp_class == MODE_VECTOR_FLOAT);
+  rtx src = NULL_RTX, dst = NULL_RTX;
 
   if (! rtx_equal_p (operands[2], operands[0])
       && ! rtx_equal_p (operands[3], operands[0]))
@@ -2781,7 +2850,7 @@ kvx_expand_conditional_move (machine_mode mode, rtx operands[])
       src = operands[3];
       dst = operands[0];
 
-      if (GET_MODE_CLASS (cmp_mode) == MODE_FLOAT)
+      if (float_compare_p)
 	cmp_code = reverse_condition_maybe_unordered (cmp_code);
       else
 	cmp_code = reverse_condition (cmp_code);
@@ -2792,143 +2861,19 @@ kvx_expand_conditional_move (machine_mode mode, rtx operands[])
       dst = operands[0];
     }
 
-  if (XEXP (cmp, 1) == const0_rtx && (cmp_mode == DImode || cmp_mode == SImode))
-    cc_reg = force_reg (cmp_mode, XEXP (cmp, 0));
-  else
-    {
-      cc_reg = kvx_gen_compare_reg (cmp_code, cmp);
+  machine_mode pred_mode = kvx_get_predicate_mode (cmp_mode);
+  rtx const0_rtx_pred_mode = CONST0_RTX (pred_mode);
+  rtx pred = gen_reg_rtx (pred_mode);
 
-      if (! cc_reg)
-	return false;
+  if (kvx_lower_comparison (pred, cmp_code, left, right))
+    cmp_code = NE;
 
-      cmp_code = NE;
-    }
-
-  rtx cmp0 = gen_rtx_fmt_ee (cmp_code, VOIDmode, cc_reg, const0_rtx);
-
+  rtx cmp0 = gen_rtx_fmt_ee (cmp_code, VOIDmode, pred, const0_rtx_pred_mode);
   emit_insn (gen_rtx_SET (dst, gen_rtx_IF_THEN_ELSE (mode, cmp0, src, dst)));
 
   if (dst != operands[0])
     emit_move_insn (operands[0], dst);
-
-  return true;
 }
-
-/* Expander for vector cmove with the pattern:
-
-   [(set (match_operand:V2SI 0 "register_operand" "")
-   (if_then_else:V2SI
-   (match_operator 3 ""
-   [(match_operand:V2SI 4 "nonimmediate_operand" "")
-   (match_operand:V2SI 5 "nonimmediate_operand" "")])
-   (match_operand:V2SI 1 "general_operand" "")
-   (match_operand:V2SI 2 "general_operand" "")))] */
-
-/* FIXME AUTO: disabling vector support */
-/* void */
-/* kvx_expand_vcondv2si (rtx *operands) */
-/* { */
-/*     bool invert = false; */
-
-/*     if (operands[2] != operands[0]) { */
-/*         if (operands[1] != operands[0]) { */
-/*             emit_move_insn (operands[0], operands[2]); */
-/*             operands[2] = operands[0]; */
-/*         } else { */
-/*             invert = true; */
-/*         } */
-/*     } */
-
-/*     if (operands[5] != CONST0_RTX (V2SImode)) { */
-/*         rtx reg = gen_reg_rtx (V2SImode); */
-/*         emit_insn (gen_cstorev2si4 (reg, operands[3], operands[4],
- * operands[5])); */
-
-/*         PUT_CODE (operands[3], NE); */
-/*         operands[4] = reg; */
-/*         operands[5] = CONST0_RTX (V2SImode); */
-/*     } */
-
-/*     if (invert) { */
-/*         rtx tmp; */
-
-/*         PUT_CODE (operands[3], reverse_condition (GET_CODE (operands[3])));
- */
-/*         tmp = operands[1]; */
-/*         operands[1] = operands[2]; */
-/*         operands[2] = tmp; */
-/*     } */
-
-/*     PUT_MODE (operands[3], SImode); */
-/*     emit_insn (gen_cmovesi (gen_lowpart (SImode, operands[0]), */
-/*                             operands[3], */
-/*                             gen_lowpart (SImode, operands[4]), */
-/*                             gen_lowpart (SImode, operands[1]), */
-/*                             gen_lowpart (SImode, operands[2]))); */
-/*     emit_insn (gen_cmovesi (gen_highpart (SImode, operands[0]), */
-/*                             operands[3], */
-/*                             gen_highpart (SImode, operands[4]), */
-/*                             gen_highpart (SImode, operands[1]), */
-/*                             gen_highpart (SImode, operands[2]))); */
-/* } */
-
-/* Expander for vector cmove with the pattern:
-
-   [(set (match_operand:V4HI 0 "register_operand" "")
-   (if_then_else:V4HI
-   (match_operator 3 ""
-   [(match_operand:V4HI 4 "nonimmediate_operand" "")
-   (match_operand:V4HI 5 "nonimmediate_operand" "")])
-   (match_operand:V4HI 1 "general_operand" "")
-   (match_operand:V4HI 2 "general_operand" "")))] */
-
-/* FIXME AUTO: disabling vector support */
-/* void */
-/* kvx_expand_vcondv4hi (rtx *operands) */
-/* { */
-/*     bool invert = false; */
-
-/*     if (operands[2] != operands[0]) { */
-/*         if (operands[1] != operands[0]) { */
-/*             emit_move_insn (operands[0], operands[2]); */
-/*             operands[2] = operands[0]; */
-/*         } else { */
-/*             invert = true; */
-/*         } */
-/*     } */
-
-/*     if (operands[5] != CONST0_RTX (V4HImode)) { */
-/*         rtx reg = gen_reg_rtx (V4HImode); */
-/*         emit_insn (gen_cstorev4hi4 (reg, operands[3], operands[4],
- * operands[5])); */
-
-/*         PUT_CODE (operands[3], NE); */
-/*         operands[4] = reg; */
-/*         operands[5] = CONST0_RTX (V4HImode); */
-/*     } */
-
-/*     if (invert) { */
-/*         rtx tmp; */
-
-/*         PUT_CODE (operands[3], reverse_condition (GET_CODE (operands[3])));
- */
-/*         tmp = operands[1]; */
-/*         operands[1] = operands[2]; */
-/*         operands[2] = tmp; */
-/*     } */
-
-/*     PUT_MODE (operands[3], V2HImode); */
-/*     emit_insn (gen_cmovev2hi (gen_lowpart (V2HImode, operands[0]), */
-/*                               operands[3], */
-/*                               gen_lowpart (V2HImode, operands[4]), */
-/*                               gen_lowpart (V2HImode, operands[1]), */
-/*                               gen_lowpart (V2HImode, operands[2]))); */
-/*     emit_insn (gen_cmovev2hi (gen_highpart (V2HImode, operands[0]), */
-/*                               operands[3], */
-/*                               gen_highpart (V2HImode, operands[4]), */
-/*                               gen_highpart (V2HImode, operands[1]), */
-/*                               gen_highpart (V2HImode, operands[2]))); */
-/* } */
 
 /* Emit a barrier, that is appropriate for memory model MODEL, at the
    start of a sequence implementing an atomic operation. We always use
@@ -3054,7 +2999,7 @@ kvx_expand_compare_and_swap (rtx operands[])
 }
 
 /* Expand an atomic operation pattern (CODE). Only for SImode and
-   DImode (cas loop is too difficult to handle for HI, QI, and TI
+   DImode (CAS loop is too difficult to handle for HI, QI, and TI
    modes). Others modes will be expanded by libatomic if enabled
    anyway. MEM is the memory location where to perform the atomic
    operation with value in VAL. If AFTER is true then store the value
@@ -3254,8 +3199,8 @@ enum kvx_builtin
   KVX_BUILTIN_CTZD,
   KVX_BUILTIN_ACSWAPW,
   KVX_BUILTIN_ACSWAPD,
-  KVX_BUILTIN_AFADDD,
-  KVX_BUILTIN_AFADDW,
+  KVX_BUILTIN_ALADDD,
+  KVX_BUILTIN_ALADDW,
   KVX_BUILTIN_ALCLRD,
   KVX_BUILTIN_ALCLRW,
   KVX_BUILTIN_DFLUSH,
@@ -3267,7 +3212,6 @@ enum kvx_builtin
   KVX_BUILTIN_DPURGEL,
   KVX_BUILTIN_DTOUCHL,
   KVX_BUILTIN_DZEROL,
-  KVX_BUILTIN_EXTFZ,
 
   KVX_BUILTIN_FABSW,
   KVX_BUILTIN_FABSWP,
@@ -3477,218 +3421,166 @@ kvx_init_builtins (void)
 			    KVX_BUILTIN_##UC_NAME, BUILT_IN_MD, NULL,          \
 			    NULL_TREE)
 
-  ADD_KVX_BUILTIN (ABDW, "abdw", INT32, INT32, INT32);		      // Scalar
-  ADD_KVX_BUILTIN (ABDD, "abdd", INT64, INT64, INT64);		      // Scalar
-  ADD_KVX_BUILTIN (ADDSW, "addsw", INT32, INT32, INT32);	      // Scalar
-  ADD_KVX_BUILTIN (ADDSD, "addsd", INT64, INT64, INT64);	      // Scalar
-  ADD_KVX_BUILTIN (SBFSW, "sbfsw", INT32, INT32, INT32);	      // Scalar
-  ADD_KVX_BUILTIN (SBFSD, "sbfsd", INT64, INT64, INT64);	      // Scalar
-  ADD_KVX_BUILTIN (AVGW, "avgw", INT32, INT32, INT32);		      // Scalar
-  ADD_KVX_BUILTIN (AVGUW, "avguw", UINT32, UINT32, UINT32);	      // Scalar
-  ADD_KVX_BUILTIN (AVGRW, "avgrw", INT32, INT32, INT32);	      // Scalar
-  ADD_KVX_BUILTIN (AVGRUW, "avgruw", UINT32, UINT32, UINT32);	      // Scalar
-  ADD_KVX_BUILTIN (AWAIT, "await", VOID);			      // Control
-  ADD_KVX_BUILTIN (BARRIER, "barrier", VOID);			      // Control
-  ADD_KVX_BUILTIN (CBSW, "cbsw", INT32, UINT32);		      // Scalar
-  ADD_KVX_BUILTIN (CBSD, "cbsd", INT64, UINT64);		      // Scalar
-  ADD_KVX_BUILTIN (CLZW, "clzw", INT32, UINT32);		      // Scalar
-  ADD_KVX_BUILTIN (CLZD, "clzd", INT64, UINT64);		      // Scalar
-  ADD_KVX_BUILTIN (CTZW, "ctzw", INT32, UINT32);		      // Scalar
-  ADD_KVX_BUILTIN (CTZD, "ctzd", INT64, UINT64);		      // Scalar
+  ADD_KVX_BUILTIN (ABDW, "abdw", INT32, INT32, INT32); // Scalar
+  ADD_KVX_BUILTIN (ABDD, "abdd", INT64, INT64, INT64); // Scalar
+  ADD_KVX_BUILTIN (ADDSW, "addsw", INT32, INT32, INT32); // Scalar
+  ADD_KVX_BUILTIN (ADDSD, "addsd", INT64, INT64, INT64); // Scalar
+  ADD_KVX_BUILTIN (SBFSW, "sbfsw", INT32, INT32, INT32); // Scalar
+  ADD_KVX_BUILTIN (SBFSD, "sbfsd", INT64, INT64, INT64); // Scalar
+  ADD_KVX_BUILTIN (AVGW, "avgw", INT32, INT32, INT32); // Scalar
+  ADD_KVX_BUILTIN (AVGUW, "avguw", UINT32, UINT32, UINT32); // Scalar
+  ADD_KVX_BUILTIN (AVGRW, "avgrw", INT32, INT32, INT32); // Scalar
+  ADD_KVX_BUILTIN (AVGRUW, "avgruw", UINT32, UINT32, UINT32); // Scalar
+  ADD_KVX_BUILTIN (AWAIT, "await", VOID); // Control
+  ADD_KVX_BUILTIN (BARRIER, "barrier", VOID); // Control
+  ADD_KVX_BUILTIN (CBSW, "cbsw", INT32, UINT32); // Scalar
+  ADD_KVX_BUILTIN (CBSD, "cbsd", INT64, UINT64); // Scalar
+  ADD_KVX_BUILTIN (CLZW, "clzw", INT32, UINT32); // Scalar
+  ADD_KVX_BUILTIN (CLZD, "clzd", INT64, UINT64); // Scalar
+  ADD_KVX_BUILTIN (CTZW, "ctzw", INT32, UINT32); // Scalar
+  ADD_KVX_BUILTIN (CTZD, "ctzd", INT64, UINT64); // Scalar
   ADD_KVX_BUILTIN (ACSWAPW, "acswapw", UINT32, VPTR, UINT32, UINT32); // Atomic
   ADD_KVX_BUILTIN (ACSWAPD, "acswapd", UINT64, VPTR, UINT64, UINT64); // Atomic
-  ADD_KVX_BUILTIN (AFADDD, "afaddd", UINT64, VPTR, INT64);	      // Atomic
-  ADD_KVX_BUILTIN (AFADDW, "afaddw", UINT32, VPTR, INT32);	      // Atomic
-  ADD_KVX_BUILTIN (ALCLRD, "alclrd", UINT64, VPTR);		      // Atomic
-  ADD_KVX_BUILTIN (ALCLRW, "alclrw", UINT32, VPTR);		      // Atomic
-  ADD_KVX_BUILTIN (DINVAL, "dinval", VOID);			      // Memory
-  ADD_KVX_BUILTIN (DINVALL, "dinvall", VOID, CVPTR);		      // Memory
-  ADD_KVX_BUILTIN (DOZE, "doze", VOID);				      // Control
-  ADD_KVX_BUILTIN (DTOUCHL, "dtouchl", VOID, CVPTR);		      // Memory
-  ADD_KVX_BUILTIN (DZEROL, "dzerol", VOID, VPTR);		      // Memory
-  ADD_KVX_BUILTIN (EXTFZ, "extfz", UINT32, UINT32, UINT32, UINT32);   // Scalar
+  ADD_KVX_BUILTIN (ALADDD, "aladdd", UINT64, VPTR, INT64); // Atomic
+  ADD_KVX_BUILTIN (ALADDW, "aladdw", UINT32, VPTR, INT32); // Atomic
+  ADD_KVX_BUILTIN (ALADDD, "afaddd", UINT64, VPTR, INT64); // Deprecated
+  ADD_KVX_BUILTIN (ALADDW, "afaddw", UINT32, VPTR, INT32); // Deprecated
+  ADD_KVX_BUILTIN (ALCLRD, "alclrd", UINT64, VPTR); // Atomic
+  ADD_KVX_BUILTIN (ALCLRW, "alclrw", UINT32, VPTR); // Atomic
+  ADD_KVX_BUILTIN (DINVAL, "dinval", VOID); // Memory
+  ADD_KVX_BUILTIN (DINVALL, "dinvall", VOID, CVPTR); // Memory
+  ADD_KVX_BUILTIN (DOZE, "doze", VOID); // Control
+  ADD_KVX_BUILTIN (DTOUCHL, "dtouchl", VOID, CVPTR); // Memory
+  ADD_KVX_BUILTIN (DZEROL, "dzerol", VOID, VPTR); // Memory
 
-  ADD_KVX_BUILTIN (FABSW, "fabsw", FLOAT32, FLOAT32);		       // Scalar
-  ADD_KVX_BUILTIN (FABSWP, "fabswp", FLOAT32X2, FLOAT32X2);	       // Vector
-  ADD_KVX_BUILTIN (FABSWQ, "fabswq", FLOAT32X4, FLOAT32X4);	       // Vector
-  ADD_KVX_BUILTIN (FABSD, "fabsd", FLOAT64, FLOAT64);		       // Scalar
-  ADD_KVX_BUILTIN (FABSDP, "fabsdp", FLOAT64X2, FLOAT64X2);	       // Vector
-  ADD_KVX_BUILTIN (FNEGW, "fnegw", FLOAT32, FLOAT32);		       // Scalar
-  ADD_KVX_BUILTIN (FNEGWP, "fnegwp", FLOAT32X2, FLOAT32X2);	       // Vector
-  ADD_KVX_BUILTIN (FNEGWQ, "fnegwq", FLOAT32X4, FLOAT32X4);	       // Vector
-  ADD_KVX_BUILTIN (FNEGD, "fnegd", FLOAT64, FLOAT64);		       // Scalar
-  ADD_KVX_BUILTIN (FNEGDP, "fnegdp", FLOAT64X2, FLOAT64X2);	       // Vector
-  ADD_KVX_BUILTIN (FMAXW, "fmaxw", FLOAT32, FLOAT32, FLOAT32);	       // Scalar
+  ADD_KVX_BUILTIN (FABSW, "fabsw", FLOAT32, FLOAT32); // Scalar
+  ADD_KVX_BUILTIN (FABSWP, "fabswp", FLOAT32X2, FLOAT32X2); // Vector
+  ADD_KVX_BUILTIN (FABSWQ, "fabswq", FLOAT32X4, FLOAT32X4); // Vector
+  ADD_KVX_BUILTIN (FABSD, "fabsd", FLOAT64, FLOAT64); // Scalar
+  ADD_KVX_BUILTIN (FABSDP, "fabsdp", FLOAT64X2, FLOAT64X2); // Vector
+  ADD_KVX_BUILTIN (FNEGW, "fnegw", FLOAT32, FLOAT32); // Scalar
+  ADD_KVX_BUILTIN (FNEGWP, "fnegwp", FLOAT32X2, FLOAT32X2); // Vector
+  ADD_KVX_BUILTIN (FNEGWQ, "fnegwq", FLOAT32X4, FLOAT32X4); // Vector
+  ADD_KVX_BUILTIN (FNEGD, "fnegd", FLOAT64, FLOAT64); // Scalar
+  ADD_KVX_BUILTIN (FNEGDP, "fnegdp", FLOAT64X2, FLOAT64X2); // Vector
+  ADD_KVX_BUILTIN (FMAXW, "fmaxw", FLOAT32, FLOAT32, FLOAT32); // Scalar
   ADD_KVX_BUILTIN (FMAXWP, "fmaxwp", FLOAT32X2, FLOAT32X2, FLOAT32X2); // Vector
   ADD_KVX_BUILTIN (FMAXWQ, "fmaxwq", FLOAT32X4, FLOAT32X4, FLOAT32X4); // Vector
-  ADD_KVX_BUILTIN (FMAXD, "fmaxd", FLOAT64, FLOAT64, FLOAT64);	       // Scalar
+  ADD_KVX_BUILTIN (FMAXD, "fmaxd", FLOAT64, FLOAT64, FLOAT64); // Scalar
   ADD_KVX_BUILTIN (FMAXDP, "fmaxdp", FLOAT64X2, FLOAT64X2, FLOAT64X2); // Vector
-  ADD_KVX_BUILTIN (FMINW, "fminw", FLOAT32, FLOAT32, FLOAT32);	       // Scalar
+  ADD_KVX_BUILTIN (FMINW, "fminw", FLOAT32, FLOAT32, FLOAT32); // Scalar
   ADD_KVX_BUILTIN (FMINWP, "fminwp", FLOAT32X2, FLOAT32X2, FLOAT32X2); // Vector
   ADD_KVX_BUILTIN (FMINWQ, "fminwq", FLOAT32X4, FLOAT32X4, FLOAT32X4); // Vector
-  ADD_KVX_BUILTIN (FMIND, "fmind", FLOAT64, FLOAT64, FLOAT64);	       // Scalar
+  ADD_KVX_BUILTIN (FMIND, "fmind", FLOAT64, FLOAT64, FLOAT64); // Scalar
   ADD_KVX_BUILTIN (FMINDP, "fmindp", FLOAT64X2, FLOAT64X2, FLOAT64X2); // Vector
-  ADD_KVX_BUILTIN (FINVW, "finvw", FLOAT32, FLOAT32, STRING);	       // Scalar
-  ADD_KVX_BUILTIN (FISRW, "fisrw", FLOAT32, FLOAT32, STRING);	       // Scalar
+  ADD_KVX_BUILTIN (FINVW, "finvw", FLOAT32, FLOAT32, STRING); // Scalar
+  ADD_KVX_BUILTIN (FISRW, "fisrw", FLOAT32, FLOAT32, STRING); // Scalar
   ADD_KVX_BUILTIN (FADDW, "faddw", FLOAT32, FLOAT32, FLOAT32, STRING); // Scalar
-  ADD_KVX_BUILTIN (FADDWP, "faddwp", FLOAT32X2, FLOAT32X2, FLOAT32X2,
-		   STRING); // Vector
-  ADD_KVX_BUILTIN (FADDWQ, "faddwq", FLOAT32X4, FLOAT32X4, FLOAT32X4,
-		   STRING);					       // Vector
+  ADD_KVX_BUILTIN (FADDWP, "faddwp", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING); // Vector
+  ADD_KVX_BUILTIN (FADDWQ, "faddwq", FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING); // Vector
   ADD_KVX_BUILTIN (FADDD, "faddd", FLOAT64, FLOAT64, FLOAT64, STRING); // Scalar
-  ADD_KVX_BUILTIN (FADDDP, "fadddp", FLOAT64X2, FLOAT64X2, FLOAT64X2,
-		   STRING); // Vector
-  ADD_KVX_BUILTIN (FADDCWC, "faddcwc", FLOAT32X2, FLOAT32X2, FLOAT32X2,
-		   STRING); // Vector
-  ADD_KVX_BUILTIN (FADDCWCP, "faddcwcp", FLOAT32X4, FLOAT32X4, FLOAT32X4,
-		   STRING); // Vector
-  ADD_KVX_BUILTIN (FADDCDC, "faddcdc", FLOAT64X2, FLOAT64X2, FLOAT64X2,
-		   STRING);					       // Vector
+  ADD_KVX_BUILTIN (FADDDP, "fadddp", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING); // Vector
+  ADD_KVX_BUILTIN (FADDCWC, "faddcwc", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING); // Vector
+  ADD_KVX_BUILTIN (FADDCWCP, "faddcwcp", FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING); // Vector
+  ADD_KVX_BUILTIN (FADDCDC, "faddcdc", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING); // Vector
   ADD_KVX_BUILTIN (FSBFW, "fsbfw", FLOAT32, FLOAT32, FLOAT32, STRING); // Scalar
-  ADD_KVX_BUILTIN (FSBFWP, "fsbfwp", FLOAT32X2, FLOAT32X2, FLOAT32X2,
-		   STRING); // Vector
-  ADD_KVX_BUILTIN (FSBFWQ, "fsbfwq", FLOAT32X4, FLOAT32X4, FLOAT32X4,
-		   STRING);					       // Vector
+  ADD_KVX_BUILTIN (FSBFWP, "fsbfwp", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING); // Vector
+  ADD_KVX_BUILTIN (FSBFWQ, "fsbfwq", FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING); // Vector
   ADD_KVX_BUILTIN (FSBFD, "fsbfd", FLOAT64, FLOAT64, FLOAT64, STRING); // Scalar
-  ADD_KVX_BUILTIN (FSBFDP, "fsbfdp", FLOAT64X2, FLOAT64X2, FLOAT64X2,
-		   STRING); // Vector
-  ADD_KVX_BUILTIN (FSBFCWC, "fsbfcwc", FLOAT32X2, FLOAT32X2, FLOAT32X2,
-		   STRING); // Vector
-  ADD_KVX_BUILTIN (FSBFCWCP, "fsbfcwcp", FLOAT32X4, FLOAT32X4, FLOAT32X4,
-		   STRING); // Vector
-  ADD_KVX_BUILTIN (FSBFCDC, "fsbfcdc", FLOAT64X2, FLOAT64X2, FLOAT64X2,
-		   STRING);					       // Vector
+  ADD_KVX_BUILTIN (FSBFDP, "fsbfdp", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING); // Vector
+  ADD_KVX_BUILTIN (FSBFCWC, "fsbfcwc", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING); // Vector
+  ADD_KVX_BUILTIN (FSBFCWCP, "fsbfcwcp", FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING); // Vector
+  ADD_KVX_BUILTIN (FSBFCDC, "fsbfcdc", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING); // Vector
   ADD_KVX_BUILTIN (FMULW, "fmulw", FLOAT32, FLOAT32, FLOAT32, STRING); // Scalar
-  ADD_KVX_BUILTIN (FMULWP, "fmulwp", FLOAT32X2, FLOAT32X2, FLOAT32X2,
-		   STRING); // Vector
-  ADD_KVX_BUILTIN (FMULWQ, "fmulwq", FLOAT32X4, FLOAT32X4, FLOAT32X4,
-		   STRING);					       // Vector
+  ADD_KVX_BUILTIN (FMULWP, "fmulwp", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING); // Vector
+  ADD_KVX_BUILTIN (FMULWQ, "fmulwq", FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING); // Vector
   ADD_KVX_BUILTIN (FMULD, "fmuld", FLOAT64, FLOAT64, FLOAT64, STRING); // Scalar
-  ADD_KVX_BUILTIN (FMULDP, "fmuldp", FLOAT64X2, FLOAT64X2, FLOAT64X2,
-		   STRING); // Vector
-  ADD_KVX_BUILTIN (FMULWD, "fmulwd", FLOAT64, FLOAT32, FLOAT32,
-		   STRING); // Scalar
-  ADD_KVX_BUILTIN (FMULWC, "fmulwc", FLOAT32X2, FLOAT32X2, FLOAT32X2,
-		   STRING); // Vector
-  ADD_KVX_BUILTIN (FMULWCP, "fmulwcp", FLOAT32X4, FLOAT32X4, FLOAT32X4,
-		   STRING); // Vector
-  ADD_KVX_BUILTIN (FMULCWC, "fmulcwc", FLOAT32X2, FLOAT32X2, FLOAT32X2,
-		   STRING); // Vector
-  ADD_KVX_BUILTIN (FMULCWCP, "fmulcwcp", FLOAT32X4, FLOAT32X4, FLOAT32X4,
-		   STRING); // Vector
-  ADD_KVX_BUILTIN (FMULDC, "fmuldc", FLOAT64X2, FLOAT64X2, FLOAT64X2,
-		   STRING); // Vector
-  ADD_KVX_BUILTIN (FMULCDC, "fmulcdc", FLOAT64X2, FLOAT64X2, FLOAT64X2,
-		   STRING); // Vector
-  ADD_KVX_BUILTIN (FMM2WQ, "fmm2wq", FLOAT32X4, FLOAT32X2, FLOAT32X2,
-		   STRING); // Vector
-  ADD_KVX_BUILTIN (FFMAW, "ffmaw", FLOAT32, FLOAT32, FLOAT32, FLOAT32,
-		   STRING); // Scalar
-  ADD_KVX_BUILTIN (FFMAWP, "ffmawp", FLOAT32X2, FLOAT32X2, FLOAT32X2, FLOAT32X2,
-		   STRING); // Vector
-  ADD_KVX_BUILTIN (FFMAWQ, "ffmawq", FLOAT32X4, FLOAT32X4, FLOAT32X4, FLOAT32X4,
-		   STRING); // Vector
-  ADD_KVX_BUILTIN (FFMAD, "ffmad", FLOAT64, FLOAT64, FLOAT64, FLOAT64,
-		   STRING); // Scalar
-  ADD_KVX_BUILTIN (FFMADP, "ffmadp", FLOAT64X2, FLOAT64X2, FLOAT64X2, FLOAT64X2,
-		   STRING); // Vector
-  ADD_KVX_BUILTIN (FFMAWD, "ffmawd", FLOAT64, FLOAT32, FLOAT32, FLOAT64,
-		   STRING); // Scalar
-  ADD_KVX_BUILTIN (FMM2AWQ, "fmm2awq", FLOAT32X4, FLOAT32X2, FLOAT32X2,
-		   FLOAT32X4, STRING); // Vector
-  ADD_KVX_BUILTIN (FFMSW, "ffmsw", FLOAT32, FLOAT32, FLOAT32, FLOAT32,
-		   STRING); // Scalar
-  ADD_KVX_BUILTIN (FFMSWP, "ffmswp", FLOAT32X2, FLOAT32X2, FLOAT32X2, FLOAT32X2,
-		   STRING); // Vector
-  ADD_KVX_BUILTIN (FFMSWQ, "ffmswq", FLOAT32X4, FLOAT32X4, FLOAT32X4, FLOAT32X4,
-		   STRING); // Vector
-  ADD_KVX_BUILTIN (FFMSD, "ffmsd", FLOAT64, FLOAT64, FLOAT64, FLOAT64,
-		   STRING); // Scalar
-  ADD_KVX_BUILTIN (FFMSDP, "ffmsdp", FLOAT64X2, FLOAT64X2, FLOAT64X2, FLOAT64X2,
-		   STRING); // Vector
-  ADD_KVX_BUILTIN (FFMSWD, "ffmswd", FLOAT64, FLOAT32, FLOAT32, FLOAT64,
-		   STRING); // Scalar
-  ADD_KVX_BUILTIN (FMM2SWQ, "fmm2swq", FLOAT32X4, FLOAT32X2, FLOAT32X2,
-		   FLOAT32X4, STRING);				     // Vector
+  ADD_KVX_BUILTIN (FMULDP, "fmuldp", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING); // Vector
+  ADD_KVX_BUILTIN (FMULWD, "fmulwd", FLOAT64, FLOAT32, FLOAT32, STRING); // Scalar
+  ADD_KVX_BUILTIN (FMULWC, "fmulwc", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING); // Vector
+  ADD_KVX_BUILTIN (FMULWCP, "fmulwcp", FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING); // Vector
+  ADD_KVX_BUILTIN (FMULCWC, "fmulcwc", FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING); // Vector
+  ADD_KVX_BUILTIN (FMULCWCP, "fmulcwcp", FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING); // Vector
+  ADD_KVX_BUILTIN (FMULDC, "fmuldc", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING); // Vector
+  ADD_KVX_BUILTIN (FMULCDC, "fmulcdc", FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING); // Vector
+  ADD_KVX_BUILTIN (FMM2WQ, "fmm2wq", FLOAT32X4, FLOAT32X2, FLOAT32X2, STRING); // Vector
+  ADD_KVX_BUILTIN (FFMAW, "ffmaw", FLOAT32, FLOAT32, FLOAT32, FLOAT32, STRING); // Scalar
+  ADD_KVX_BUILTIN (FFMAWP, "ffmawp", FLOAT32X2, FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING); // Vector
+  ADD_KVX_BUILTIN (FFMAWQ, "ffmawq", FLOAT32X4, FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING); // Vector
+  ADD_KVX_BUILTIN (FFMAD, "ffmad", FLOAT64, FLOAT64, FLOAT64, FLOAT64, STRING); // Scalar
+  ADD_KVX_BUILTIN (FFMADP, "ffmadp", FLOAT64X2, FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING); // Vector
+  ADD_KVX_BUILTIN (FFMAWD, "ffmawd", FLOAT64, FLOAT32, FLOAT32, FLOAT64, STRING); // Scalar
+  ADD_KVX_BUILTIN (FMM2AWQ, "fmm2awq", FLOAT32X4, FLOAT32X2, FLOAT32X2, FLOAT32X4, STRING); // Vector
+  ADD_KVX_BUILTIN (FFMSW, "ffmsw", FLOAT32, FLOAT32, FLOAT32, FLOAT32, STRING); // Scalar
+  ADD_KVX_BUILTIN (FFMSWP, "ffmswp", FLOAT32X2, FLOAT32X2, FLOAT32X2, FLOAT32X2, STRING); // Vector
+  ADD_KVX_BUILTIN (FFMSWQ, "ffmswq", FLOAT32X4, FLOAT32X4, FLOAT32X4, FLOAT32X4, STRING); // Vector
+  ADD_KVX_BUILTIN (FFMSD, "ffmsd", FLOAT64, FLOAT64, FLOAT64, FLOAT64, STRING); // Scalar
+  ADD_KVX_BUILTIN (FFMSDP, "ffmsdp", FLOAT64X2, FLOAT64X2, FLOAT64X2, FLOAT64X2, STRING); // Vector
+  ADD_KVX_BUILTIN (FFMSWD, "ffmswd", FLOAT64, FLOAT32, FLOAT32, FLOAT64, STRING); // Scalar
+  ADD_KVX_BUILTIN (FMM2SWQ, "fmm2swq", FLOAT32X4, FLOAT32X2, FLOAT32X2, FLOAT32X4, STRING); // Vector
   ADD_KVX_BUILTIN (FLOATW, "floatw", FLOAT32, INT32, UINT8, STRING); // Scalar
-  ADD_KVX_BUILTIN (FLOATWP, "floatwp", FLOAT32X2, INT32X2, UINT8,
-		   STRING); // Vector
-  ADD_KVX_BUILTIN (FLOATWQ, "floatwq", FLOAT32X4, INT32X4, UINT8,
-		   STRING);					     // Vector
+  ADD_KVX_BUILTIN (FLOATWP, "floatwp", FLOAT32X2, INT32X2, UINT8, STRING); // Vector
+  ADD_KVX_BUILTIN (FLOATWQ, "floatwq", FLOAT32X4, INT32X4, UINT8, STRING); // Vector
   ADD_KVX_BUILTIN (FLOATD, "floatd", FLOAT64, INT64, UINT8, STRING); // Scalar
-  ADD_KVX_BUILTIN (FLOATDP, "floatdp", FLOAT64X2, INT64X2, UINT8,
-		   STRING); // Vector
-  ADD_KVX_BUILTIN (FLOATUW, "floatuw", FLOAT32, UINT32, UINT8,
-		   STRING); // Scalar
-  ADD_KVX_BUILTIN (FLOATUWP, "floatuwp", FLOAT32X2, UINT32X2, UINT8,
-		   STRING); // Vector
-  ADD_KVX_BUILTIN (FLOATUWQ, "floatuwq", FLOAT32X4, UINT32X4, UINT8,
-		   STRING); // Vector
-  ADD_KVX_BUILTIN (FLOATUD, "floatud", FLOAT64, UINT64, UINT8,
-		   STRING); // Scalar
-  ADD_KVX_BUILTIN (FLOATUDP, "floatudp", FLOAT64X2, UINT64X2, UINT8,
-		   STRING);					     // Vector
+  ADD_KVX_BUILTIN (FLOATDP, "floatdp", FLOAT64X2, INT64X2, UINT8, STRING); // Vector
+  ADD_KVX_BUILTIN (FLOATUW, "floatuw", FLOAT32, UINT32, UINT8, STRING); // Scalar
+  ADD_KVX_BUILTIN (FLOATUWP, "floatuwp", FLOAT32X2, UINT32X2, UINT8, STRING); // Vector
+  ADD_KVX_BUILTIN (FLOATUWQ, "floatuwq", FLOAT32X4, UINT32X4, UINT8, STRING); // Vector
+  ADD_KVX_BUILTIN (FLOATUD, "floatud", FLOAT64, UINT64, UINT8, STRING); // Scalar
+  ADD_KVX_BUILTIN (FLOATUDP, "floatudp", FLOAT64X2, UINT64X2, UINT8, STRING); // Vector
   ADD_KVX_BUILTIN (FIXEDW, "fixedw", INT32, FLOAT32, UINT8, STRING); // Scalar
-  ADD_KVX_BUILTIN (FIXEDWP, "fixedwp", INT32X2, FLOAT32X2, UINT8,
-		   STRING); // Vector
-  ADD_KVX_BUILTIN (FIXEDWQ, "fixedwq", INT32X4, FLOAT32X4, UINT8,
-		   STRING);					     // Vector
+  ADD_KVX_BUILTIN (FIXEDWP, "fixedwp", INT32X2, FLOAT32X2, UINT8, STRING); // Vector
+  ADD_KVX_BUILTIN (FIXEDWQ, "fixedwq", INT32X4, FLOAT32X4, UINT8, STRING); // Vector
   ADD_KVX_BUILTIN (FIXEDD, "fixedd", INT64, FLOAT64, UINT8, STRING); // Scalar
-  ADD_KVX_BUILTIN (FIXEDDP, "fixeddp", INT64X2, FLOAT64X2, UINT8,
-		   STRING); // Vector
-  ADD_KVX_BUILTIN (FIXEDUW, "fixeduw", UINT32, FLOAT32, UINT8,
-		   STRING); // Scalar
-  ADD_KVX_BUILTIN (FIXEDUWP, "fixeduwp", UINT32X2, FLOAT32X2, UINT8,
-		   STRING); // Vector
-  ADD_KVX_BUILTIN (FIXEDUWQ, "fixeduwq", UINT32X4, FLOAT32X4, UINT8,
-		   STRING); // Vector
-  ADD_KVX_BUILTIN (FIXEDUD, "fixedud", UINT64, FLOAT64, UINT8,
-		   STRING); // Scalar
-  ADD_KVX_BUILTIN (FIXEDUDP, "fixedudp", UINT64X2, FLOAT64X2, UINT8,
-		   STRING); // Vector
+  ADD_KVX_BUILTIN (FIXEDDP, "fixeddp", INT64X2, FLOAT64X2, UINT8, STRING); // Vector
+  ADD_KVX_BUILTIN (FIXEDUW, "fixeduw", UINT32, FLOAT32, UINT8, STRING); // Scalar
+  ADD_KVX_BUILTIN (FIXEDUWP, "fixeduwp", UINT32X2, FLOAT32X2, UINT8, STRING); // Vector
+  ADD_KVX_BUILTIN (FIXEDUWQ, "fixeduwq", UINT32X4, FLOAT32X4, UINT8, STRING); // Vector
+  ADD_KVX_BUILTIN (FIXEDUD, "fixedud", UINT64, FLOAT64, UINT8, STRING); // Scalar
+  ADD_KVX_BUILTIN (FIXEDUDP, "fixedudp", UINT64X2, FLOAT64X2, UINT8, STRING); // Vector
 
   ADD_KVX_BUILTIN (FCDIVW, "fcdivw", FLOAT32, FLOAT32, FLOAT32); // Scalar
   ADD_KVX_BUILTIN (FCDIVD, "fcdivd", FLOAT64, FLOAT64, FLOAT64); // Scalar
-  ADD_KVX_BUILTIN (FENCE, "fence", VOID);			 // Control
+  ADD_KVX_BUILTIN (FENCE, "fence", VOID); // Memory
 
   ADD_KVX_BUILTIN (FSDIVW, "fsdivw", FLOAT32, FLOAT32, FLOAT32); // Scalar
   ADD_KVX_BUILTIN (FSDIVD, "fsdivd", FLOAT64, FLOAT64, FLOAT64); // Scalar
-  ADD_KVX_BUILTIN (FSINVW, "fsinvw", FLOAT32, FLOAT32);		 // Scalar
-  ADD_KVX_BUILTIN (FSINVD, "fsinvd", FLOAT64, FLOAT64);		 // Scalar
-  ADD_KVX_BUILTIN (FSISRW, "fsisrw", FLOAT32, FLOAT32);		 // Scalar
-  ADD_KVX_BUILTIN (FSISRD, "fsisrd", FLOAT64, FLOAT64);		 // Scalar
-  ADD_KVX_BUILTIN (GET, "get", UINT64, INT32);			 // Control
-  ADD_KVX_BUILTIN (WFXL, "wfxl", VOID, UINT8, UINT64);		 // Control
-  ADD_KVX_BUILTIN (WFXM, "wfxm", VOID, UINT8, UINT64);		 // Control
-  ADD_KVX_BUILTIN (IINVAL, "iinval", VOID);			 // Memory
-  ADD_KVX_BUILTIN (IINVALS, "iinvals", VOID, CVPTR);		 // Memory
-  ADD_KVX_BUILTIN (LBSU, "lbsu", INT8, CVPTR);			 // Memory
-  ADD_KVX_BUILTIN (LBZU, "lbzu", UINT8, CVPTR);			 // Memory
-  ADD_KVX_BUILTIN (LHSU, "lhsu", INT16, CVPTR);			 // Memory
-  ADD_KVX_BUILTIN (LHZU, "lhzu", UINT16, CVPTR);		 // Memory
-  ADD_KVX_BUILTIN (LDU, "ldu", UINT64, CVPTR);			 // Memory
-  ADD_KVX_BUILTIN (LWZU, "lwzu", UINT32, CVPTR);		 // Memory
-  ADD_KVX_BUILTIN (SBMM8, "sbmm8", UINT64, UINT64, UINT64);	 // Scalar
-  ADD_KVX_BUILTIN (SBMMT8, "sbmmt8", UINT64, UINT64, UINT64);	 // Scalar
-  ADD_KVX_BUILTIN (SATD, "satd", INT64, INT64, UINT8);		 // Scalar
-  ADD_KVX_BUILTIN (SATUD, "satud", UINT64, INT64, UINT8);	 // Scalar
-  ADD_KVX_BUILTIN (SET, "set", VOID, INT32, UINT64);		 // Control
+  ADD_KVX_BUILTIN (FSINVW, "fsinvw", FLOAT32, FLOAT32); // Scalar
+  ADD_KVX_BUILTIN (FSINVD, "fsinvd", FLOAT64, FLOAT64); // Scalar
+  ADD_KVX_BUILTIN (FSISRW, "fsisrw", FLOAT32, FLOAT32); // Scalar
+  ADD_KVX_BUILTIN (FSISRD, "fsisrd", FLOAT64, FLOAT64); // Scalar
+  ADD_KVX_BUILTIN (GET, "get", UINT64, INT32); // Control
+  ADD_KVX_BUILTIN (WFXL, "wfxl", VOID, UINT8, UINT64); // Control
+  ADD_KVX_BUILTIN (WFXM, "wfxm", VOID, UINT8, UINT64); // Control
+  ADD_KVX_BUILTIN (IINVAL, "iinval", VOID); // Memory
+  ADD_KVX_BUILTIN (IINVALS, "iinvals", VOID, CVPTR); // Memory
+  ADD_KVX_BUILTIN (LBSU, "lbsu", INT8, CVPTR); // Deprecated
+  ADD_KVX_BUILTIN (LBZU, "lbzu", UINT8, CVPTR); // Deprecated
+  ADD_KVX_BUILTIN (LHSU, "lhsu", INT16, CVPTR); // Deprecated
+  ADD_KVX_BUILTIN (LHZU, "lhzu", UINT16, CVPTR); // Deprecated
+  ADD_KVX_BUILTIN (LDU, "ldu", UINT64, CVPTR); // Deprecated
+  ADD_KVX_BUILTIN (LWZU, "lwzu", UINT32, CVPTR); // Deprecated
+  ADD_KVX_BUILTIN (SBMM8, "sbmm8", UINT64, UINT64, UINT64); // Scalar
+  ADD_KVX_BUILTIN (SBMMT8, "sbmmt8", UINT64, UINT64, UINT64); // Scalar
+  ADD_KVX_BUILTIN (SATD, "satd", INT64, INT64, UINT8); // Scalar
+  ADD_KVX_BUILTIN (SATUD, "satud", UINT64, INT64, UINT8); // Scalar
+  ADD_KVX_BUILTIN (SET, "set", VOID, INT32, UINT64); // Control
 
-  ADD_KVX_BUILTIN (SLEEP, "sleep", VOID);		    // Control
-  ADD_KVX_BUILTIN (STOP, "stop", VOID);			    // Control
+  ADD_KVX_BUILTIN (SLEEP, "sleep", VOID); // Control
+  ADD_KVX_BUILTIN (STOP, "stop", VOID); // Control
   ADD_KVX_BUILTIN (STSUW, "stsuw", UINT32, UINT32, UINT32); // Scalar
   ADD_KVX_BUILTIN (STSUD, "stsud", UINT64, UINT64, UINT64); // Scalar
-  ADD_KVX_BUILTIN (SYNCGROUP, "syncgroup", VOID, UINT64);   // Control
-  ADD_KVX_BUILTIN (TLBDINVAL, "tlbdinval", VOID);	    // Memory
-  ADD_KVX_BUILTIN (TLBIINVAL, "tlbiinval", VOID);	    // Memory
-  ADD_KVX_BUILTIN (TLBPROBE, "tlbprobe", VOID);		    // Memory
-  ADD_KVX_BUILTIN (TLBREAD, "tlbread", VOID);		    // Memory
-  ADD_KVX_BUILTIN (TLBWRITE, "tlbwrite", VOID);		    // Memory
+  ADD_KVX_BUILTIN (SYNCGROUP, "syncgroup", VOID, UINT64); // Control
+  ADD_KVX_BUILTIN (TLBDINVAL, "tlbdinval", VOID); // Memory
+  ADD_KVX_BUILTIN (TLBIINVAL, "tlbiinval", VOID); // Memory
+  ADD_KVX_BUILTIN (TLBPROBE, "tlbprobe", VOID); // Memory
+  ADD_KVX_BUILTIN (TLBREAD, "tlbread", VOID); // Memory
+  ADD_KVX_BUILTIN (TLBWRITE, "tlbwrite", VOID); // Memory
 
   ADD_KVX_BUILTIN (FWIDENLHW, "fwidenlhw", FLOAT32, UINT32); // Scalar
   ADD_KVX_BUILTIN (FWIDENMHW, "fwidenmhw", FLOAT32, UINT32); // Scalar
   ADD_KVX_BUILTIN (FNARROWWH, "fnarrowwh", UINT16, FLOAT32); // Scalar
-  ADD_KVX_BUILTIN (WAITIT, "waitit", UINT32, UINT32);	     // Control
+  ADD_KVX_BUILTIN (WAITIT, "waitit", UINT32, UINT32); // Control
 }
 
 static tree
@@ -4268,7 +4160,7 @@ kvx_builtin_helper_memref_ptr (rtx ptr, enum machine_mode mode)
   varname = force_reg (mode, varname);
 
 static rtx
-kvx_expand_builtin_afadd (rtx target, tree args, enum machine_mode mode)
+kvx_expand_builtin_aladd (rtx target, tree args, enum machine_mode mode)
 {
   MEMREF (0, mode, mem_target);
   GETREG (1, mode, addend_and_return);
@@ -4281,10 +4173,10 @@ kvx_expand_builtin_afadd (rtx target, tree args, enum machine_mode mode)
   switch (mode)
     {
     case DImode:
-      emit_insn (gen_afaddd (target, mem_target, addend_and_return));
+      emit_insn (gen_aladdd (target, mem_target, addend_and_return));
       break;
     case SImode:
-      emit_insn (gen_afaddw (target, mem_target, addend_and_return));
+      emit_insn (gen_aladdw (target, mem_target, addend_and_return));
       break;
     default:
       gcc_unreachable ();
@@ -4902,27 +4794,6 @@ kvx_expand_builtin_lwzu (rtx target, tree args)
 }
 
 static rtx
-kvx_expand_builtin_extfz (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-  rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
-  arg1 = force_reg (SImode, arg1);
-  arg2 = verify_const_uint_arg (arg2, 6, "extfz", "second");
-  arg3 = verify_const_uint_arg (arg3, 6, "extfz", "third");
-  arg2 = gen_rtx_CONST_INT (SImode, INTVAL (arg2) - INTVAL (arg3) + 1);
-
-  if (!target)
-    target = gen_reg_rtx (SImode);
-  else
-    target = force_reg (SImode, target);
-
-  emit_insn (gen_extzv (target, arg1, arg2, arg3));
-
-  return target;
-}
-
-static rtx
 kvx_expand_builtin_stsuw (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
@@ -5031,10 +4902,10 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return kvx_expand_builtin_acswap (target, exp, SImode);
     case KVX_BUILTIN_ACSWAPD:
       return kvx_expand_builtin_acswap (target, exp, DImode);
-    case KVX_BUILTIN_AFADDD:
-      return kvx_expand_builtin_afadd (target, exp, DImode);
-    case KVX_BUILTIN_AFADDW:
-      return kvx_expand_builtin_afadd (target, exp, SImode);
+    case KVX_BUILTIN_ALADDD:
+      return kvx_expand_builtin_aladd (target, exp, DImode);
+    case KVX_BUILTIN_ALADDW:
+      return kvx_expand_builtin_aladd (target, exp, SImode);
     case KVX_BUILTIN_ALCLRD:
       return kvx_expand_builtin_alclr (target, exp, DImode);
     case KVX_BUILTIN_ALCLRW:
@@ -5061,8 +4932,6 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return kvx_expand_builtin_dtouchl (target, exp);
     case KVX_BUILTIN_DZEROL:
       return kvx_expand_builtin_dzerol (target, exp);
-    case KVX_BUILTIN_EXTFZ:
-      return kvx_expand_builtin_extfz (target, exp);
 
     case KVX_BUILTIN_FABSW:
       return kvx_expand_builtin_fabsw (target, exp);
@@ -5340,7 +5209,7 @@ kvx_sched_adjust_cost (rtx_insn *insn, int dep_type,
 		       unsigned int)
 {
   enum attr_class insn_class = get_attr_class (insn);
-  /* On the MPPA, it is possible to read then write the same register in a
+  /* On the kvx, it is possible to read then write the same register in a
    * bundle so we set the WAR cost to 0 unless insn is a control-flow consuming
    * reg then it is 1 */
   if (dep_type == REG_DEP_ANTI)
