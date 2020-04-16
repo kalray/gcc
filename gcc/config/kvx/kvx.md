@@ -949,7 +949,7 @@
 (define_insn "ashldi3"
   [(set (match_operand:DI 0 "register_operand" "=r,r")
         (ashift:DI (match_operand:DI 1 "register_operand" "r,r")
-                   (match_operand:SI 2 "shiftd_operand" "r,U06")))]
+                   (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
   ""
   "slld %0 = %1, %2"
   [(set_attr "type" "alu_tiny,alu_tiny")
@@ -959,7 +959,7 @@
 (define_insn "ssashldi3"
   [(set (match_operand:DI 0 "register_operand" "=r,r")
         (ss_ashift:DI (match_operand:DI 1 "register_operand" "r,r")
-                      (match_operand:SI 2 "shiftd_operand" "r,U06")))]
+                      (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
   ""
   "slsd %0 = %1, %2"
   [(set_attr "type" "alu_tiny,alu_tiny")
@@ -969,7 +969,7 @@
 (define_insn "ashrdi3"
   [(set (match_operand:DI 0 "register_operand" "=r,r")
         (ashiftrt:DI (match_operand:DI 1 "register_operand" "r,r")
-                     (match_operand:SI 2 "shiftd_operand" "r,U06")))]
+                     (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
   ""
   "srad %0 = %1, %2"
   [(set_attr "type" "alu_tiny,alu_tiny")
@@ -979,7 +979,7 @@
 (define_insn "lshrdi3"
   [(set (match_operand:DI 0 "register_operand" "=r,r")
         (lshiftrt:DI (match_operand:DI 1 "register_operand" "r,r")
-                     (match_operand:SI 2 "shiftd_operand" "r,U06")))]
+                     (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
   ""
   "srld %0 = %1, %2"
   [(set_attr "type" "alu_tiny,alu_tiny")
@@ -1021,7 +1021,7 @@
   [(set (match_operand:SIDI           0 "register_operand" "=r")
         (abs:SIDI (match_operand:SIDI 1 "register_operand" "r")))]
   ""
-  "abs<SIDI:cbvar> %0 = %1"
+  "abs<SIDI:suffix> %0 = %1"
   [(set_attr "type" "alu_lite")
    (set_attr "length" "4")]
 )
@@ -1086,45 +1086,35 @@
   [(set_attr "type" "alu_tiny")]
 )
 
-(define_insn "extv"
-  [(set (match_operand:SI 0 "register_operand" "=r")
-	(sign_extract:SI (match_operand:SI 1 "register_operand" "r")
-                         (match_operand:SI 2 "sixbits_unsigned_operand" "i")
-                         (match_operand:SI 3 "sixbits_unsigned_operand" "i")))]
+(define_insn "extv<mode>"
+  [(set (match_operand:SIDI 0 "register_operand" "=r")
+	(sign_extract:SIDI (match_operand:SIDI 1 "register_operand" "r")
+                           (match_operand:SIDI 2 "sixbits_unsigned_operand" "i")
+                           (match_operand:SIDI 3 "sixbits_unsigned_operand" "i")))]
   ""
-  "extfs %0 = %1, %3+%2-1, %3"
-[(set_attr "type" "alu_lite")
+  "extfs %0 = %1, %2+%3-1, %3"
+  [(set_attr "type" "alu_lite")
 ])
 
-(define_insn "extzv"
-  [(set (match_operand:SI 0 "register_operand" "=r")
-	(zero_extract:SI (match_operand:SI 1 "register_operand" "r")
-                         (match_operand:SI 2 "sixbits_unsigned_operand" "i")
-                         (match_operand:SI 3 "sixbits_unsigned_operand" "i")))]
+(define_insn "extzv<mode>"
+  [(set (match_operand:SIDI 0 "register_operand" "=r")
+	(zero_extract:SIDI (match_operand:SIDI 1 "register_operand" "r")
+                           (match_operand:SIDI 2 "sixbits_unsigned_operand" "i")
+                           (match_operand:SIDI 3 "sixbits_unsigned_operand" "i")))]
   ""
-  "extfz %0 = %1, %3+%2-1, %3"
-[(set_attr "type" "alu_lite")]
+  "extfz %0 = %1, %2+%3-1, %3"
+  [(set_attr "type" "alu_lite")]
 )
 
-(define_expand "insv"
-  [(set (zero_extract:SI (match_operand:SI 0 "register_operand" "+r")
-                         (match_operand:SI 1 "sixbits_unsigned_operand" "i")
-                         (match_operand:SI 2 "sixbits_unsigned_operand" "i"))
-        (match_operand:SI 3 "register_operand" "r"))]
+(define_insn "insv<mode>"
+  [(set (zero_extract:SIDI (match_operand:SIDI 0 "register_operand" "+r")
+                           (match_operand:SIDI 1 "sixbits_unsigned_operand" "i")
+                           (match_operand:SIDI 2 "sixbits_unsigned_operand" "i"))
+        (match_operand:SIDI 3 "register_operand" "r"))]
   ""
-  {}
+  "insf %0 = %3, %1+%2-1, %2"
+  [(set_attr "type" "alu_lite")]
 )
-
-(define_insn "*insf"
-  [(set (zero_extract:SI (match_operand:SI 0 "register_operand" "+r")
-                         (match_operand:SI 2 "sixbits_unsigned_operand" "i")
-                         (match_operand:SI 3 "sixbits_unsigned_operand" "i"))
-        (match_operand:SI 1 "register_operand" "r"))]
-  ""
-  "insf %0 = %1, %3+%2-1, %3"
-[(set_attr "type" "alu_lite")]
-)
-
 
 ;; FIXME AUTO: Add immediate variants. Current ISA only supports 32bit imm.
 (define_insn "*addx2<lsusize>"
@@ -1909,7 +1899,7 @@
 		(match_operand:ALLI 2 "register_operand" "r")
 		(mem:ALLI (match_dup 1))))]
   ""
-  "s<ALLI:lsusize>.<SIDI:cbvar><code>z %0 ? [%1] = %2"
+  "s<ALLI:lsusize>.<SIDI:suffix><code>z %0 ? [%1] = %2"
   [(set_attr "type" "lsu_auxr_store")])
 
 (define_insn "*s<ALLI:lsusize>_<lsu_odd_even>"
@@ -1934,7 +1924,7 @@
  		(mem:ALLI (match_operand:P 2 "register_operand" "r"))
                (match_dup 1)))]
   ""
-  "l<ALLI:lsusize><ALLI:lsusext>.<SIDI:cbvar><cb_cond:code>z %0 ? %1 = [%2]"
+  "l<ALLI:lsusize><ALLI:lsusext>.<SIDI:suffix><cb_cond:code>z %0 ? %1 = [%2]"
   [(set_attr "type" "lsu_auxw_load")])
 
 (define_insn "*l<ALLI:lsusize>_<lsu_odd_even>"
@@ -1958,7 +1948,7 @@
 		(ANY_EXTEND:DI (mem:SHORT (match_operand:P 2 "register_operand" "r")))
 		(match_dup 1)))]
   ""
-  "l<SHORT:lsusize><ANY_EXTEND:lsext>.<SIDI:cbvar><cb_cond:code>z %0 ? %1 = [%2]"
+  "l<SHORT:lsusize><ANY_EXTEND:lsext>.<SIDI:suffix><cb_cond:code>z %0 ? %1 = [%2]"
   [(set_attr "type" "lsu_auxw_load")])
 
 (define_insn "*l<SHORT:lsusize><ANY_EXTEND:lsext>_<lsu_odd_even>"
@@ -1972,26 +1962,6 @@
   ""
   "l<SHORT:lsusize><ANY_EXTEND:lsext>.<lsu_odd_even> %0 ? %1 = [%2]"
   [(set_attr "type" "lsu_auxw_load")])
-
-(define_insn "cstoresi4"
-  [(set (match_operand:SI 0 "register_operand" "=r,r")
-        (match_operator:SI   1 "comparison_operator"
-	        [(match_operand:SI 2 "register_operand" "r,r")
-	         (match_operand:SI 3 "reg_or_s32_operand" "r,I32")]))]
-  ""
-  "compw.%1 %0 = %2, %3"
-[(set_attr "type" "alu_tiny,alu_tiny_x")
- (set_attr "length" "4,8")])
-
-(define_insn "cstoredi4"
-  [(set (match_operand:DI 0 "register_operand" "=r,r,r")
-        (match_operator:DI 1 "comparison_operator"
-	        [(match_operand:DI 2 "register_operand" "r,r,r")
-	         (match_operand:DI 3 "register_s37_operand" "r,I10,I37")]))]
-""
-"compd.%1 %0 = %2, %3"
-[(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x")
- (set_attr "length" "4,4,8")])
 
 (define_code_iterator gt_comp [gt gtu])
 (define_code_iterator lt_comp [lt ltu])
@@ -2074,34 +2044,6 @@
 }
 )
 
-(define_expand "cbranch<mode>4"
-  [(set (pc)
-	(if_then_else (match_operator       0 "comparison_operator"
-		       [(match_operand:SIDI 1 "register_operand")
-		        (match_operand:SIDI 2 "nonmemory_operand")])
-                      (label_ref (match_operand 3 ""))
-		      (pc)))]
-  ""
-{
-
-	// cb only compares to 0
-	if ( (!(CONST_INT_P(operands[2]) && (INTVAL(operands[2]) == 0)))){
-	   rtx reg = gen_reg_rtx (<MODE>mode);
-
-	   /* cmoved.w does not take immediate yet */
-	   /* FIXME AUTO: condw. workaround for lack of imx */
-	   /* cdb only takes up to 37 signed immediate. */
-	   if (<MODE>mode == SImode
-	       || ( !satisfies_constraint_I10(operands[2]) && !satisfies_constraint_I37(operands[2])))
-	      operands[2] = force_reg(<MODE>mode, operands[2]);
-
-	   emit_insn (gen_cstore<mode>4(reg, operands[0], operands[1], operands[2]));
-	   operands[2] = const0_rtx;
-	   operands[1] = reg;
-	   operands[0] = gen_rtx_fmt_ee(NE, VOIDmode, reg, operands[2]);
-	}
-})
-
 (define_expand "prologue"
   [(const_int 1)]
   ""
@@ -2170,8 +2112,8 @@
 ;; 	       (match_operand   2 "poweroftwo_6bits_immediate_operand" )))])
 
 (define_insn "div_srs<SIDI:suffix>"
-  [(set (match_operand:SIDI 0 "register_operand" "=<SIDI:regclass>")
-	(div:SIDI (match_operand:SIDI 1 "register_operand" "<SIDI:regclass>")
+  [(set (match_operand:SIDI 0 "register_operand" "=r")
+	(div:SIDI (match_operand:SIDI 1 "register_operand" "r")
 	          (match_operand 2 "poweroftwo_6bits_immediate_operand" "n")))]
   ""
   {
@@ -2185,38 +2127,38 @@
 [(set_attr "type" "alu_lite")
 ])
 
-(define_insn "*land<SIDI:suffix2>"
+(define_insn "*land<SIDI:suffix>"
   [(set (match_operand:SI 0 "register_operand" "=r")
         (and:SI (ne:SI (match_operand:SIDI 1 "register_operand" "%r") (const_int 0))
 	        (ne:SI (match_operand:SIDI 2 "register_operand" "r") (const_int 0))))]
   ""
-  "land<SIDI:suffix2> %0 = %1, %2"
+  "land<SIDI:suffix> %0 = %1, %2"
 [(set_attr "type" "alu_lite")])
 
-(define_insn "*lnand<SIDI:suffix2>"
+(define_insn "*lnand<SIDI:suffix>"
   [(set (match_operand:SI 0 "register_operand" "=r")
         (ior:SI (eq:SI (match_operand:SIDI 1 "register_operand" "%r") (const_int 0))
 	        (eq:SI (match_operand:SIDI 2 "register_operand" "r") (const_int 0))))]
   ""
-  "lnand<SIDI:suffix2> %0 = %1, %2"
+  "lnand<SIDI:suffix> %0 = %1, %2"
 [(set_attr "type" "alu_lite")])
 
-(define_insn "*lor<SIDI:suffix2>"
+(define_insn "*lor<SIDI:suffix>"
   [(set (match_operand:SI 0 "register_operand" "=r")
         (ne:SI (ior:SIDI (match_operand:SIDI 1 "register_operand" "%r")
 	              (match_operand:SIDI 2 "register_operand" "r"))
                (const_int 0)))]
   ""
-  "lor<SIDI:suffix2> %0 = %1, %2"
+  "lor<SIDI:suffix> %0 = %1, %2"
 [(set_attr "type" "alu_lite")])
 
-(define_insn "*lnor<SIDI:suffix2>"
+(define_insn "*lnor<SIDI:suffix>"
   [(set (match_operand:SI 0 "register_operand" "=r")
         (eq:SI (ior:SIDI (match_operand:SIDI 1 "register_operand" "%r")
 	              (match_operand:SIDI 2 "register_operand" "r"))
                (const_int 0)))]
   ""
-  "lnor<SIDI:suffix2> %0 = %1, %2"
+  "lnor<SIDI:suffix> %0 = %1, %2"
 [(set_attr "type" "alu_lite")])
 
 
@@ -2301,93 +2243,6 @@
 )
 
 /*************** FLOATING POINT **************/
-
-(define_insn "fcomp<sfx>"
-  [(set (match_operand:DI 0 "register_operand" "=r")
-        (match_operator:DI 1 "float_comparison_operator"
-	        [(match_operand:ALLF 2 "register_operand" "r")
-	         (match_operand:ALLF 3 "register_operand" "r")]))]
-  ""
-  "fcomp<sfx>.%f1 %0 = %2, %3"
-[(set_attr "type" "alu_lite")])
-
-(define_expand "cstore<mode>4" 
-  [(set (match_operand:DI 0 "register_operand" "")
-        (match_operator:DI 1 "comparison_operator"
-	        [(match_operand:ALLF 2 "register_operand" "")
-	         (match_operand:ALLF 3 "register_operand" "")]))]
-  ""
-{
-	int swap = 0;
-
-	if (GET_CODE (operands[1]) == GT) {
-	   PUT_CODE (operands[1], LT);
-	   swap = 1;
-	} else if (GET_CODE (operands[1]) == LE) {
-	   PUT_CODE (operands[1], GE);
-	   swap = 1;
-	} else if (GET_CODE (operands[1]) == UNLE) {
-	   PUT_CODE (operands[1], UNGE);
-	   swap = 1;
-	} else if (GET_CODE (operands[1]) == UNGT) {
-	   PUT_CODE (operands[1], UNLT);
-	   swap = 1;
-	} 
-
-	if (swap) {
-	   emit_insn (gen_fcomp<ALLF:sfx> (operands[0], operands[1],
-	   	     			       operands[3], operands[2]));
-	   DONE;
-	}
-
-	if (GET_CODE (operands[1]) == UNORDERED) {
-	   rtx tmp = gen_reg_rtx (DImode);
-	   rtx comp2 = copy_rtx (operands[1]);
-	   PUT_CODE (operands[1], UNGE);
-	   emit_insn (gen_fcomp<ALLF:sfx> (operands[0], operands[1],
-	   	     			       operands[2], operands[3]));
-	   PUT_CODE (comp2, UNLT);
-	   emit_insn (gen_fcomp<ALLF:sfx> (tmp, comp2,
-	   	     			       operands[2], operands[3]));
-	   emit_insn (gen_anddi3 (operands[0], operands[0], tmp));
-	   DONE;
-	} else if (GET_CODE (operands[1]) == ORDERED) {
-	   rtx tmp = gen_reg_rtx (DImode);
-	   rtx comp2 = copy_rtx (operands[1]);
-	   PUT_CODE (operands[1], GE);
-	   emit_insn (gen_fcomp<ALLF:sfx> (operands[0], operands[1],
-	   	     			       operands[2], operands[3]));
-	   PUT_CODE (comp2, LT);
-	   emit_insn (gen_fcomp<ALLF:sfx> (tmp, comp2,
-	   	     			       operands[2], operands[3]));
-	   emit_insn (gen_iordi3 (operands[0], operands[0], tmp));
-	   DONE;
-	} 
-
-	if (!float_comparison_operator (operands[1], VOIDmode)) {
-	   print_rtl_single (stdout, operands[1]);
-	   FAIL;
-	}
-}
-)
-
-(define_expand "cbranch<mode>4"
-  [(set (pc)
-	(if_then_else (match_operator 0 "comparison_operator"
-		       [(match_operand:ALLF 1 "register_operand")
-		        (match_operand:ALLF 2 "nonmemory_operand")])
-		      (label_ref (match_operand 3 ""))
-		      (pc)))]
-  ""
-{
-	rtx cond = gen_reg_rtx (DImode);
-	emit_insn (gen_cstore<mode>4 (cond, operands[0], 
-		  		      force_reg (<MODE>mode, operands[1]),
-				      force_reg (<MODE>mode, operands[2])));
-	PUT_CODE (operands[0], NE);
-	operands[1] = cond;
-	operands[2] = const0_rtx;
-})
 
 (define_insn "builtin_extendhfsf2"
   [(set (match_operand:SF 0 "register_operand" "=r")
