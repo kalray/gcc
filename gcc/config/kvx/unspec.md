@@ -56,7 +56,7 @@
         UNSPEC_LOOPDO
         UNSPEC_LOOPDO_END
         UNSPEC_ACSWAP
-        UNSPEC_AFADD
+        UNSPEC_ALADD
         UNSPEC_ABDW
         UNSPEC_ABDD
         UNSPEC_AVGW

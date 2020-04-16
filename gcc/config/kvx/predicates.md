@@ -1,6 +1,7 @@
-(define_predicate "kvx_zero"
-  (and (match_code "const_int")
-       (match_test "op == const0_rtx")))
+;; Return true if OP is the zero constant for MODE.
+(define_predicate "const_zero_operand"
+  (and (match_code "const_int,const_wide_int,const_double,const_vector")
+       (match_test "op == CONST0_RTX (mode)")))
 
 (define_predicate "const_float_1_operand"
   (match_code "const_double")
@@ -21,35 +22,47 @@
       (and (match_test "flag_pic")
            (match_code "label_ref"))))
 
-;; used for some 32bits ALU
+(define_predicate "rotate_operand"
+ (and (match_code "reg,subreg,const_int")
+      (ior (match_operand 0 "register_operand")
+           (match_test "satisfies_constraint_U05(op)"))))
+
+(define_predicate "sat_shift_operand"
+ (and (match_code "reg,subreg,const_int")
+      (ior (match_operand 0 "register_operand")
+           (match_test "satisfies_constraint_U06(op)"))))
+
+(define_predicate "sixbits_unsigned_operand"
+  (match_code "const_int")
+{
+  return (INTVAL (op) >= 0 && INTVAL (op) < (1<<6));
+})
+
+(define_predicate "poweroftwo_6bits_immediate_operand"
+  (match_code "const_int")
+{
+  return (__builtin_popcount (INTVAL (op)) == 1)
+          && (INTVAL(op) <= 64);
+})
+
 ;; register or immediate up to signed 32
 (define_predicate "register_s32_operand"
  (and (match_code "reg,subreg,const,const_int")
       (ior (match_operand 0 "register_operand")
            (match_test "satisfies_constraint_I32(op)"))))
 
-;; immediate up to signed 32
-(define_predicate "s32_operand"
-  (and (match_code "const,const_int")
-       (match_test "satisfies_constraint_I32(op)")))
-
-
-;; immediate up to signed 37
-(define_predicate "s37_operand"
-  (and (match_code "const,const_int")
-       (match_test "satisfies_constraint_I37(op)")))
-
-;; register or immediate up to signed 37
-(define_predicate "register_s37_operand"
- (ior (match_operand 0 "register_operand")
-      (match_operand 0 "s37_operand")))
-
 ;; register or immediate up to signed 64
 ;; Does not really check value fits on 64bits as HOST_WIDE_INT
 ;; is at most 64bits.
 (define_predicate "register_s64_operand"
- (ior (match_operand 0 "register_operand")
+ (ior (match_code "reg,subreg")
       (match_code "const,const_int")))
+
+;; register or immediate up to float 32
+(define_predicate "register_f32_operand"
+ (and (match_code "reg,subreg,const_double")
+      (ior (match_operand 0 "register_operand")
+           (match_test "satisfies_constraint_H32(op)"))))
 
 (define_predicate "jump_operand"
   (match_code "mem")
@@ -135,52 +148,6 @@
   return false;
 })
 
-(define_predicate "sat_shift_operand"
-  (ior (match_code "const_int")
-       (match_operand 0 "register_operand"))
-{
-	return (!CONST_INT_P (op)
-          || (INTVAL (op) >= 0 && INTVAL (op) < (1<<6)));
-})
-
-(define_predicate "shiftd_operand"
-  (ior (match_code "const_int")
-       (match_operand 0 "register_operand"))
-{
-	return (!CONST_INT_P (op) 
-          || (INTVAL (op) >= 0 && INTVAL (op) < (1<<7)));
-})
-
-(define_predicate "sixbits_unsigned_operand"
-  (match_code "const_int")
-{
-	return (INTVAL (op) >= 0 && INTVAL (op) < (1<<6));
-})
-
-(define_predicate "reg_or_s32_operand"
- ( ior (match_operand 0 "register_operand")
-       (and (match_code "const_int")
-            (match_test "satisfies_constraint_I32(op)"))))
-
-(define_predicate "poweroftwo_6bits_immediate_operand"
-  (match_code "const_int")
-{
-        return (__builtin_popcount (INTVAL (op)) == 1) &&
-	       (INTVAL(op) <= 64);
-})
-
-(define_predicate "rotate_operand"
- (ior (match_operand 0 "register_operand")
-      (match_code "const_int"))
-{
-	return (!CONST_INT_P (op) 
-          || (INTVAL (op) >= 0 && INTVAL (op) < (1<<5)));
-})
-
-(define_predicate "unsigned_mul_immediate_37"
- (ior (match_test "satisfies_constraint_J10(op)")
-      (match_test "satisfies_constraint_U37(op)")))
-
 ;; Used for hw loop pattern where we have an output reload in a jump insn.
 ;; This is not supported by reload so the insn must handle them.
 ;; This hack comes from the arc backend.
@@ -190,10 +157,6 @@
   return ((reload_in_progress || reload_completed)
 	  ? general_operand : register_operand) (op, mode);
 })
-
-(define_predicate "register_or_u32immediate"
-  (ior (match_operand 0 "register_operand")
-       (match_test "satisfies_constraint_U32(op)")))
 
 (define_predicate "system_register_operand"
   (match_code "reg")
