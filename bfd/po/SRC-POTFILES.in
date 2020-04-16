@@ -263,6 +263,7 @@ elfxx-aarch64.h
 elfxx-ia64.c
 elfxx-ia64.h
 elfxx-kvx.c
+elfxx-kvx.h
 elfxx-mips.c
 elfxx-mips.h
 elfxx-riscv.c

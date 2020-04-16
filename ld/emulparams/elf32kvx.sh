@@ -5,7 +5,7 @@ SCRIPT_NAME=elf
 # bundle with 1 nop insn
 NOP=0x00f0037f
 
-TEMPLATE_NAME=elf32
+TEMPLATE_NAME=elf
 EXTRA_EM_FILE=kvxelf
 
 OUTPUT_FORMAT="elf32-kvx"

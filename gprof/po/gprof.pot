@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: bug-binutils@gnu.org\n"
-"POT-Creation-Date: 2020-07-24 10:23+0100\n"
+"POT-Creation-Date: 2020-08-31 17:07+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -393,38 +393,43 @@ msgstr ""
 
 #: gprof.c:429
 #, c-format
-msgid ""
-"Based on BSD gprof, copyright 1983 Regents of the University of California.\n"
+msgid "Kalray gprof version %s\n"
 msgstr ""
 
 #: gprof.c:430
 #, c-format
 msgid ""
+"Based on BSD gprof, copyright 1983 Regents of the University of California.\n"
+msgstr ""
+
+#: gprof.c:431
+#, c-format
+msgid ""
 "This program is free software.  This program has absolutely no warranty.\n"
 msgstr ""
 
-#: gprof.c:471
+#: gprof.c:472
 #, c-format
 msgid "%s: unknown demangling style `%s'\n"
 msgstr ""
 
-#: gprof.c:494
+#: gprof.c:495
 #, c-format
 msgid ""
 "%s: Only one of --function-ordering and --file-ordering may be specified.\n"
 msgstr ""
 
-#: gprof.c:546
+#: gprof.c:547
 #, c-format
 msgid "%s: sorry, file format `prof' is not yet supported\n"
 msgstr ""
 
-#: gprof.c:600
+#: gprof.c:601
 #, c-format
 msgid "%s: gmon.out file is missing histogram\n"
 msgstr ""
 
-#: gprof.c:607
+#: gprof.c:608
 #, c-format
 msgid "%s: gmon.out file is missing call-graph data\n"
 msgstr ""

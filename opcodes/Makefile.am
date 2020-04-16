@@ -156,8 +156,8 @@ TARGET_LIBOPCODES_CFILES = \
 	iq2000-dis.c \
 	iq2000-ibld.c \
 	iq2000-opc.c \
-	k1c-opc.c \
-	k1c-dis.c \
+	kv3-opc.c \
+	kv3-dis.c \
 	lm32-asm.c \
 	lm32-desc.c \
 	lm32-dis.c \

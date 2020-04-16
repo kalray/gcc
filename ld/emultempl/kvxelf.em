@@ -27,6 +27,7 @@ fragment <<EOF
 
 #include "ldctor.h"
 #include "elf/kv3.h"
+#include "elfxx-kvx.h"
 
 /* Fake input file for stubs.  */
 static lang_input_statement_type *stub_file;
@@ -37,7 +38,7 @@ static int need_laying_out = 0;
 /* Maximum size of a group of input sections that can be handled by
    one stub section.  A value of +/-1 indicates the bfd back-end
    should use a suitable default size.  */
-static bfd_signed_vma group_size = 1;
+static bfd_signed_vma group_size = -1;
 
 struct hook_stub_info
 {
@@ -48,8 +49,7 @@ struct hook_stub_info
 /* Traverse the linker tree to find the spot where the stub goes.  */
 
 static bfd_boolean
-hook_in_stub (struct hook_stub_info *info, lang_statement_union_type **lp,
-	      bfd_boolean afterp)
+hook_in_stub (struct hook_stub_info *info, lang_statement_union_type **lp)
 {
   lang_statement_union_type *l;
   bfd_boolean ret;
@@ -59,49 +59,41 @@ hook_in_stub (struct hook_stub_info *info, lang_statement_union_type **lp,
       switch (l->header.type)
 	{
 	case lang_constructors_statement_enum:
-	  ret = hook_in_stub (info, &constructor_list.head, afterp);
+	  ret = hook_in_stub (info, &constructor_list.head);
 	  if (ret)
 	    return ret;
 	  break;
 
 	case lang_output_section_statement_enum:
 	  ret = hook_in_stub (info,
-			      &l->output_section_statement.children.head,
-			      afterp);
+                  &l->output_section_statement.children.head);
+
 	  if (ret)
 	    return ret;
 	  break;
 
 	case lang_wild_statement_enum:
-	  ret = hook_in_stub (info, &l->wild_statement.children.head, afterp);
+	  ret = hook_in_stub (info, &l->wild_statement.children.head);
 	  if (ret)
 	    return ret;
 	  break;
 
 	case lang_group_statement_enum:
-	  ret = hook_in_stub (info, &l->group_statement.children.head, afterp);
+	  ret = hook_in_stub (info, &l->group_statement.children.head);
 	  if (ret)
 	    return ret;
 	  break;
 
 	case lang_input_section_enum:
 	  if (l->input_section.section == info->input_section)
-	    {
+            {
 	      /* We've found our section.  Insert the stub immediately
-		 before or after its associated input section.  */
-
-	      if (afterp)
-		{
-		  *(info->add.tail) = l->header.next;
-		  l->header.next = info->add.head;
-		}
-	      else
-		{
-		  *lp = info->add.head;
-		  *(info->add.tail) = l;
-		}
+		 after its associated input section.  */
+	      *(info->add.tail) = l->header.next;
+	      l->header.next = info->add.head;
 	      return TRUE;
 	    }
+
 	  break;
 
 	case lang_data_statement_enum:
@@ -132,8 +124,7 @@ hook_in_stub (struct hook_stub_info *info, lang_statement_union_type **lp,
 
 static asection *
 elf${ELFSIZE}_kvx_add_stub_section (const char *stub_sec_name,
-				   asection *input_section,
-				   bfd_boolean afterp)
+                                    asection *input_section)
 {
   asection *stub_sec;
   flagword flags;
@@ -148,7 +139,7 @@ elf${ELFSIZE}_kvx_add_stub_section (const char *stub_sec_name,
   if (stub_sec == NULL)
     goto err_ret;
 
-  bfd_set_section_alignment (stub_file->the_bfd, stub_sec, 2);
+  bfd_set_section_alignment (stub_sec, 2);
 
   output_section = input_section->output_section;
   os = lang_output_section_get (output_section);
@@ -160,7 +151,7 @@ elf${ELFSIZE}_kvx_add_stub_section (const char *stub_sec_name,
   if (info.add.head == NULL)
     goto err_ret;
 
-  if (hook_in_stub (&info, &os->children.head, afterp))
+  if (hook_in_stub (&info, &os->children.head))
     return stub_sec;
 
  err_ret:
@@ -176,7 +167,7 @@ gldkvx_layout_sections_again (void)
   /* If we have changed sizes of the stub sections, then we need
      to recalculate all the section offsets.  This may mean we need to
      add even more stubs.  */
-  gld${EMULATION_NAME}_map_segments (TRUE);
+  ldelf_map_segments (TRUE);
   need_laying_out = -1;
 }
 
@@ -244,7 +235,7 @@ gld${EMULATION_NAME}_after_allocation (void)
     }
 
   if (need_laying_out != -1)
-    gld${EMULATION_NAME}_map_segments (need_laying_out);
+    ldelf_map_segments (need_laying_out);
 }
 
 static void
@@ -293,23 +284,6 @@ kvx_elf_create_output_section_statements (void)
     einfo ("%F%P: can not init BFD: %E\n");
 }
 
-/* Avoid processing the fake stub_file in vercheck, stat_needed and
-   check_needed routines.  */
-
-static void (*real_func) (lang_input_statement_type *);
-
-static void kvx_for_each_input_file_wrapper (lang_input_statement_type *l)
-{
-  if (l != stub_file)
-    (*real_func) (l);
-}
-
-static void
-kvx_lang_for_each_input_file (void (*func) (lang_input_statement_type *))
-{
-  real_func = func;
-  lang_for_each_input_file (&kvx_for_each_input_file_wrapper);
-}
 
 #define lang_for_each_input_file kvx_lang_for_each_input_file
 

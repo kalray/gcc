@@ -1181,7 +1181,7 @@ case $cpu-$vendor in
 			| i370 | i*86 | i860 | i960 | ia16 | ia64 \
 			| ip2k | iq2000 \
 			| k1om \
-	    | kvx \
+			| kvx \
 			| le32 | le64 \
 			| lm32 \
 			| m32c | m32r | m32rle \
@@ -1367,7 +1367,8 @@ case $os in
 	     | skyos* | haiku* | rdos* | toppers* | drops* | es* \
 	     | onefs* | tirtos* | phoenix* | fuchsia* | redox* | bme* \
 	     | midnightbsd* | amdhsa* | unleashed* | emscripten* | wasi* \
-	     | nsk* | powerunix)
+	     | nsk* | powerunix \
+       | cos | mbr )
 	# Remember, each alternative MUST END IN *, to match a version number.
 		;;
 	qnx*)
