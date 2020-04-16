@@ -43,18 +43,18 @@ kvx_compatible (const bfd_arch_info_type *a, const bfd_arch_info_type *b)
   return NULL;
 }
 
-static bfd_boolean
+static bool
 scan (const struct bfd_arch_info *info, const char *string)
 {
   /* First test for an exact match.  */
   if (strcasecmp (string, info->printable_name) == 0)
-    return TRUE;
+    return true;
 
   /* Finally check for the default architecture.  */
   if (strcasecmp (string, "kvx") == 0)
     return info->the_default;
 
-  return FALSE;
+  return false;
 }
 
 #define N(addr_bits, machine, print, default, next)            \
@@ -71,23 +71,24 @@ scan (const struct bfd_arch_info *info, const char *string)
   kvx_compatible,					       \
   scan,                                                        \
   bfd_arch_default_fill,                                       \
-  next                                                         \
+  next,                                                \
+          0                                            \
 }
 
 const bfd_arch_info_type bfd_kv3_2_usr_arch =
-  N (64, bfd_mach_kv3_2_usr,  "kvx:kv3-2:usr", FALSE, NULL);
+  N (64, bfd_mach_kv3_2_usr,  "kvx:kv3-2:usr", false, NULL);
 
 const bfd_arch_info_type bfd_kv3_1_usr_arch =
-  N (64, bfd_mach_kv3_1_usr,  "kvx:kv3-1:usr", FALSE, & bfd_kv3_2_usr_arch);
+  N (64, bfd_mach_kv3_1_usr,  "kvx:kv3-1:usr", false, & bfd_kv3_2_usr_arch);
 
 const bfd_arch_info_type bfd_kv3_2_64_arch =
-  N (64, bfd_mach_kv3_2_64,   "kvx:kv3-2:64",  FALSE, & bfd_kv3_1_usr_arch);
+  N (64, bfd_mach_kv3_2_64,   "kvx:kv3-2:64",  false, & bfd_kv3_1_usr_arch);
 
 const bfd_arch_info_type bfd_kv3_1_64_arch =
-  N (64, bfd_mach_kv3_1_64,   "kvx:kv3-1:64",  FALSE, & bfd_kv3_2_64_arch);
+  N (64, bfd_mach_kv3_1_64,   "kvx:kv3-1:64",  false, & bfd_kv3_2_64_arch);
 
 const bfd_arch_info_type bfd_kv3_2_arch =
-  N (32, bfd_mach_kv3_2,      "kvx:kv3-2",     FALSE, & bfd_kv3_1_64_arch);
+  N (32, bfd_mach_kv3_2,      "kvx:kv3-2",     false, & bfd_kv3_1_64_arch);
 
 const bfd_arch_info_type bfd_kvx_arch =
-  N (32, bfd_mach_kv3_1,      "kvx:kv3-1",     TRUE, & bfd_kv3_2_arch);
+  N (32, bfd_mach_kv3_1,      "kvx:kv3-1",     true, & bfd_kv3_2_arch);

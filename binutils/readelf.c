@@ -2565,7 +2565,6 @@ get_machine_name (unsigned e_machine)
     case EM_PJ:			return "picoJava";
     case EM_OR1K:		return "OpenRISC 1000";
     case EM_ARC_COMPACT:	return "ARCompact";
-    case EM_KVX:                return "Kalray VLIW Processor";
     case EM_XTENSA_OLD:
     case EM_XTENSA:		return "Tensilica Xtensa Processor";
     case EM_VIDEOCORE:		return "Alphamosaic VideoCore processor";

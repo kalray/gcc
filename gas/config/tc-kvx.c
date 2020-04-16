@@ -87,10 +87,6 @@ int kvx_core_set = 0;
 int kvx_abi_set = 0;
 int kvx_osabi_set = 0;
 
-/* ST2xx NOP instruction encodings for alignment in code sections */
-static char const kvx_noop[4] = { 0x00, 0x00, 0x00, 0x80 };
-static char const kvx_noop_stop_bit[4] = { 0x00, 0x00, 0x00, 0x00 };
-
 static flagword kvx_pic_flags = 0;
 
 /***********************************************/
@@ -167,7 +163,7 @@ int get_byte_counter(asection *sec)
 static int is_code_section(asection *sec);
 int is_code_section(asection *sec)
 {
-    return ((bfd_get_section_flags(NULL, sec) & (SEC_CODE))) ;
+    return ((bfd_section_flags(sec) & (SEC_CODE))) ;
 }
 
 /* Either 32 or 64.  */
@@ -184,7 +180,7 @@ kvx_target_format (void)
 /*             Local Variables                      */
 /****************************************************/
 
-static struct hash_control *kvx_opcode_hash;
+static htab_t *kvx_opcode_hash;
 
 /****************************************************/
 /*  ASSEMBLER Pseudo-ops.  Some of this just        */
@@ -770,7 +766,7 @@ struct option md_longopts[] =
 
 size_t md_longopts_size = sizeof (md_longopts);
 
-int md_parse_option(int c, char *arg ATTRIBUTE_UNUSED) {
+int md_parse_option(int c, const char *arg ATTRIBUTE_UNUSED) {
   int i;
   int find_core = 0;
 
@@ -911,7 +907,7 @@ kvx_get_pseudo_func2(symbolS *sym, kvxbfield *opnd) {
       int relidx;
       for(relidx=0; relidx < opnd->reloc_nb; relidx++) {
 	if(opnd->relocs[relidx] == pseudo_func[i].pseudo_relocs.kreloc
-	   && (kvx_arch_size == pseudo_func[i].pseudo_relocs.avail_modes
+           && (kvx_arch_size == (int) pseudo_func[i].pseudo_relocs.avail_modes
 	       || pseudo_func[i].pseudo_relocs.avail_modes == PSEUDO_ALL)) {
 	  return &pseudo_func[i];
 	}
@@ -1096,6 +1092,7 @@ has_relocation_of_size(const kvxbfield *opnd) {
     case KVX_REL_GP:
     case KVX_REL_TP:
     case KVX_REL_GOT:
+    case KVX_REL_BASE:
       break;
     }
   }
@@ -1208,6 +1205,7 @@ match_operands(const kv3opc_t * op, const expressionS * tok,
 		      /* If option all-sfr not set, doest not match systemReg for SET/GET/WFX: used only for HW validation. */
 		      return MATCH_NOT_FOUND;
 		 }
+                 /* fallthrough */
             case RegClass_kv3_aloneReg:
             case RegClass_kv3_onlyraReg:
             case RegClass_kv3_onlyfxReg:
@@ -1288,10 +1286,10 @@ match_operands(const kv3opc_t * op, const expressionS * tok,
                     }
 
                     max = (1LL << (opdef->width - 1)) - 1;
-                    min = (-1LL << (opdef->width - 1));
-                    mask = ~(-1LL << opdef->width);
+                    min = (~0ULL << (opdef->width - 1));
+                    mask = ~(~0ULL << opdef->width);
                     if(opdef->width == 64) {
-                      mask = -1LL;
+                      mask = ~0ULL;
                     }
 
                     if(opdef->bias != 0) {
@@ -1377,7 +1375,10 @@ insert_operand(kvxinsn_t * insn,
 
     /* try to resolve the value */
 
-    switch (arg->X_op)
+    /* The cast is used to silence GCC about the abuse done with the enum.
+     O_pseudo_fixup is not part of the enum, so enum checks raise an error.
+    */
+    switch ((int)arg->X_op)
       {
       case O_register:
         op = kvx_registers[arg->X_add_number].id;
@@ -1461,7 +1462,7 @@ insert_operand(kvxinsn_t * insn,
             }
             break;
           }
-        /* else falls through to fixup */
+        /* fallthrough */
       default:
         {
           if (insn->nfixups == 0)
@@ -1744,21 +1745,21 @@ emit_insn (kvxinsn_t *insn, int insn_pos, int stopflag)
 /* Determines if the expression is constant absolute */
 int is_constant_expression(expressionS* exp)
 {
-    int retval=FALSE;
+    int retval=false;
 
     if ( exp!=NULL )
     {
         if ( exp->X_op==O_constant )
         {
-            retval=TRUE;
+            retval=true;
         }
         else if ( !(exp->X_add_symbol) )
         {
-            retval=TRUE;
+            retval=true;
         }
         else if ( ! symbol_resolved_p(exp->X_add_symbol) )
         {
-            retval=FALSE;
+            retval=false;
         }
         else
         {
@@ -1766,18 +1767,18 @@ int is_constant_expression(expressionS* exp)
             {
                 if ( bfd_is_abs_section(S_GET_SEGMENT(exp->X_add_symbol)) )
                 {
-                    retval=TRUE;
+                    retval=true;
                 }
                 /* FIXME (lc) rather bad to test if we need another symbol */
                 if ( exp->X_op>=O_logical_not )
                 {
                     if ( bfd_is_abs_section(S_GET_SEGMENT(exp->X_op_symbol)) )
                     {
-                        retval=TRUE;
+                        retval=true;
                     }
                     else
                     {
-                        retval=FALSE;
+                        retval=false;
                     }
                 } /* if (exp->X_op_symbol) */
             } /* if ( exp->X_add_symbol && ...sy_resolved) */
@@ -1981,7 +1982,7 @@ assemble_tokens(const char *opname,
   insn = insbuf + insncnt;
 
   /* find the instruction in the opcode table */
-  opcode = (kv3opc_t *) hash_find(kvx_opcode_hash, opname);
+  opcode = (kv3opc_t *) str_hash_find(kvx_opcode_hash, opname);
   if (opcode) {
     if (!(opcode = find_format(opcode, tok, ntok))) {
       as_bad("[assemble_tokens] : couldn't find format %s \n", opname);
@@ -2111,15 +2112,15 @@ insn_syntax(kv3opc_t *op, char *buf, int buf_size)
   return chars;
 }
 
-
+#pragma GCC diagnostic ignored "-Wstack-usage="
 static void
 kv3_print_insn(kv3opc_t *op) {
   int asm_chars = 48;
   char asm_str[asm_chars];
   int chars = insn_syntax(op, asm_str, asm_chars);
   int i;
-  char *insn_type = "UNKNOWN";
-  char *insn_mode = "";
+  const char *insn_type = "UNKNOWN";
+  const char *insn_mode = "";
   
   for(i=chars-1; i<asm_chars-1; i++) {
     asm_str[i] = '-';
@@ -2322,6 +2323,8 @@ kv3_reorder_bundle(kvxinsn_t *bundle_insn[], int bundle_insncnt)
   if (i != bundle_insncnt)
     as_fatal("Mismatch between bundle and issued instructions\n");
 }
+
+#pragma GCC diagnostic ignored "-Wstack-usage="
 
 /*
  * Called by core to assemble a single line
@@ -2575,7 +2578,7 @@ md_begin()
     /* Create the opcode hash table      */
     /* Each name should appear only once */
 
-    kvx_opcode_hash = hash_new();
+    kvx_opcode_hash = str_htab_create();
     {
         kv3opc_t *op;
         const char *name = 0;
@@ -2585,7 +2588,7 @@ md_begin()
 
             if (!(STREQ(name, op->as_op))) {
                 name = op->as_op;
-                retval = hash_insert(kvx_opcode_hash, name, (PTR) op);
+                retval = str_hash_insert(kvx_opcode_hash, name, (PTR) op, 0);
                 if (retval)
                     as_fatal("internal error: can't hash opcode `%s': %s",
                             name, retval);
@@ -2594,7 +2597,7 @@ md_begin()
     }
 
     if(dump_table) {
-      hash_traverse(kvx_opcode_hash, print_hash);
+      htab_traverse(kvx_opcode_hash, print_hash, NULL);
       exit(0);
     }
 
@@ -2612,9 +2615,9 @@ md_begin()
      * because of the odd/even constraint on immediate extensions
      */
 
-    bfd_set_section_alignment(stdoutput, text_section, 3);        /* -- 8 bytes */
-    bfd_set_section_alignment(stdoutput, data_section, 2);        /* -- 4 bytes */
-    bfd_set_section_alignment(stdoutput, bss_section, 2);        /* -- 4 bytes */
+    bfd_set_section_alignment(text_section, 3);        /* -- 8 bytes */
+    bfd_set_section_alignment(data_section, 2);        /* -- 4 bytes */
+    bfd_set_section_alignment(bss_section, 2);        /* -- 4 bytes */
     subseg_set(text_section, 0);
 
     symbolS *gotoff_sym = symbol_create (".<gotoff>", undefined_section, 0,
@@ -2623,8 +2626,8 @@ md_begin()
                                       &zero_address_frag);
     symbolS *plt_sym = symbol_create (".<plt>", undefined_section, 0,
                                       &zero_address_frag);
-    symbolS *tprel_sym = symbol_create (".<tprel>", undefined_section, 0,
-                                        &zero_address_frag);
+    /* symbolS *tprel_sym = symbol_create (".<tprel>", undefined_section, 0, */
+    /*                                     &zero_address_frag); */
     symbolS *tlsgd_sym = symbol_create (".<tlsgd>", undefined_section, 0,
                                         &zero_address_frag);
     symbolS *tlsie_sym = symbol_create (".<tlsie>", undefined_section, 0,
@@ -2922,43 +2925,44 @@ kvx_validate_sub_fix(fixS *fixP)
 void
 kvx_cons_fix_new(fragS *f, int where, int nbytes, expressionS *exp, bfd_reloc_code_real_type code)
 {
-    if (exp->X_op == O_pseudo_fixup)
+  if (exp->X_op == O_pseudo_fixup)
     {
-        exp->X_op = O_symbol;
-        /* real_kvx_reloc_type(exp->X_op_symbol, 0, 0, 0, &code); */
-        struct pseudo_func_s *pf = kvx_get_pseudo_func_data_scn(exp->X_op_symbol);
-        assert(pf != NULL);
-        code = pf->pseudo_relocs.single;
+      exp->X_op = O_symbol;
+      /* real_kvx_reloc_type(exp->X_op_symbol, 0, 0, 0, &code); */
+      struct pseudo_func_s *pf = kvx_get_pseudo_func_data_scn(exp->X_op_symbol);
+      assert(pf != NULL);
+      code = pf->pseudo_relocs.single;
 
-        if (code == BFD_RELOC_UNUSED)
-            as_bad("Unsupported relocation");
+      if (code == BFD_RELOC_UNUSED)
+        as_bad("Unsupported relocation");
     }
-    else
-        switch (nbytes)
+  else
+    {
+      switch (nbytes)
         {
-            /* [SC] We have no relocation for BFD_RELOC_8, but accept it
-             * here in case we can later eliminate the fixup (in md_apply_fix).
-             * This is required to pass the gas test forward.s.
-             */
-            case 1:
-                code = BFD_RELOC_8;
-                break;
-            case 2:
-                code = BFD_RELOC_16;
-                break;
-            case 4:
-                code = BFD_RELOC_32;
-                break;
-            case 8:
-                code = BFD_RELOC_64;
-                break;
-            default:
-                as_bad("unsupported BFD relocation size %u", nbytes);
-                code = BFD_RELOC_32;
-                break;
+          /* [SC] We have no relocation for BFD_RELOC_8, but accept it
+           * here in case we can later eliminate the fixup (in md_apply_fix).
+           * This is required to pass the gas test forward.s.
+           */
+        case 1:
+          code = BFD_RELOC_8;
+          break;
+        case 2:
+          code = BFD_RELOC_16;
+          break;
+        case 4:
+          code = BFD_RELOC_32;
+          break;
+        case 8:
+          code = BFD_RELOC_64;
+          break;
+        default:
+          as_bad("unsupported BFD relocation size %u", nbytes);
+          code = BFD_RELOC_32;
+          break;
         }
-
-        fix_new_exp(f, where, nbytes, exp, 0, code);
+    }
+  fix_new_exp(f, where, nbytes, exp, 0, code);
 }
 
 /*
@@ -3108,7 +3112,7 @@ md_undefined_symbol(char *name ATTRIBUTE_UNUSED)
     return 0;
 }
 
-char *
+const char *
 md_atof(int type ATTRIBUTE_UNUSED,
         char *litp ATTRIBUTE_UNUSED,
         int *sizep ATTRIBUTE_UNUSED)
@@ -3176,7 +3180,7 @@ kvx_md_start_line_hook(void) {
      */
     if (t && (t[0] == ';') && (t[1] == ';')) {
         char *tmp_t;
-        bfd_boolean newline_seen = FALSE;
+        bool newline_seen = false;
 
         if (t[2] == ';') {
             as_fatal("Syntax error: Illegal ;;; token");
@@ -3188,7 +3192,7 @@ kvx_md_start_line_hook(void) {
             while (tmp_t && tmp_t[0] &&
                     ((tmp_t[0] == ' ') || (tmp_t[0] == '\n'))) {
                 if (tmp_t[0] == '\n') {
-                    newline_seen = TRUE;
+                    newline_seen = true;
                 }
                 tmp_t++;
             }
@@ -3204,7 +3208,7 @@ kvx_md_start_line_hook(void) {
                 if (!newline_seen) {
                     as_fatal("Syntax error: More than one bundle stop on a line");
                 }
-                newline_seen = FALSE; /* reset */
+                newline_seen = false; /* reset */
 
                 /* For cores st231 and onward, empty bundles don't need to cause the
                  * generation of a NOP instruction. Just ignore them...
@@ -3253,10 +3257,10 @@ static int is_assume_param(char** input, const char* param)
     if ( (input!=NULL) && (strncmp(*input, param, strlen(param))==0) )
     {
         *input=*input+strlen(param);
-        return TRUE;
+        return true;
     }
     else
-        return FALSE;
+        return false;
 }
 
 static void set_assume_param(int* param, int param_value, int* param_set);
@@ -3348,7 +3352,7 @@ kvx_set_assume_flags(int ignore ATTRIBUTE_UNUSED)
     while ( (input_line_pointer!=NULL)
             && ! is_end_of_line [(unsigned char) *input_line_pointer])
     {
-        int found = FALSE;
+        int found = false;
         int i, j;
         SKIP_WHITESPACE();
 
@@ -3361,7 +3365,7 @@ kvx_set_assume_flags(int ignore ATTRIBUTE_UNUSED)
                 if (kvx_core_info != kvx_core_info_table[i])
                     as_fatal("assume machine '%s' is inconsistent with current machine '%s'",
                             kvx_core_info_table[i]->names[j], target_name);
-                found = TRUE;
+                found = true;
                 break;
             }
             j++;
@@ -3388,7 +3392,7 @@ kvx_set_assume_flags(int ignore ATTRIBUTE_UNUSED)
                                    assume_params[i].value,
                                    assume_params[i].set_variable);
                   
-                  found = TRUE;
+                  found = true;
                   break;
                 }
             }
@@ -3960,13 +3964,6 @@ kvx_get_constant(const expressionS arg)
     }
 }
 
-static int
-kvx_default(char *s, int i)
-{
-    as_warn(s);
-    return i;
-}
-
 static void
 kvx_emit_uleb128(int i)
 {
@@ -4000,7 +3997,7 @@ kvx_unwind(int r)
 
 #define KVXGETCONST(i) (((i)<ntok) ? \
 		       kvx_get_constant(tok[(i)]) :  \
-		       kvx_default("too few operands", 0))
+                        (as_warn("too few operands"), 0))
 
     switch ((enum unwrecord) r)
     {

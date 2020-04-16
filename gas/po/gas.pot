@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: bug-binutils@gnu.org\n"
-"POT-Creation-Date: 2021-07-18 17:37+0100\n"
+"POT-Creation-Date: 2021-11-19 14:05+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -56,26 +56,26 @@ msgstr ""
 msgid "end of file in comment; newline inserted"
 msgstr ""
 
-#: as.c:174
+#: as.c:178
 msgid "missing emulation mode name"
 msgstr ""
 
-#: as.c:189
+#: as.c:193
 #, c-format
 msgid "unrecognized emulation name `%s'"
 msgstr ""
 
-#: as.c:236
+#: as.c:240
 #, c-format
 msgid "GNU assembler version %s (%s) using BFD version %s\n"
 msgstr ""
 
-#: as.c:248
+#: as.c:253
 #, c-format
 msgid "Usage: %s [option...] [asmfile...]\n"
 msgstr ""
 
-#: as.c:250
+#: as.c:255
 #, c-format
 msgid ""
 "Options:\n"
@@ -92,12 +92,12 @@ msgid ""
 "                      \t  =FILE  list to FILE (must be last sub-option)\n"
 msgstr ""
 
-#: as.c:264
+#: as.c:269
 #, c-format
 msgid "  --alternate             initially turn on alternate macro syntax\n"
 msgstr ""
 
-#: as.c:267
+#: as.c:272
 #, c-format
 msgid ""
 "  --compress-debug-sections[={none|zlib|zlib-gnu|zlib-gabi}]\n"
@@ -105,242 +105,242 @@ msgid ""
 "[default]\n"
 msgstr ""
 
-#: as.c:270
+#: as.c:275
 #, c-format
 msgid ""
 "  --nocompress-debug-sections\n"
 "                          don't compress DWARF debug sections\n"
 msgstr ""
 
-#: as.c:274
+#: as.c:279
 #, c-format
 msgid ""
 "  --compress-debug-sections[={none|zlib|zlib-gnu|zlib-gabi}]\n"
 "                          compress DWARF debug sections using zlib\n"
 msgstr ""
 
-#: as.c:277
+#: as.c:282
 #, c-format
 msgid ""
 "  --nocompress-debug-sections\n"
 "                          don't compress DWARF debug sections [default]\n"
 msgstr ""
 
-#: as.c:281
+#: as.c:286
 #, c-format
 msgid "  -D                      produce assembler debugging messages\n"
 msgstr ""
 
-#: as.c:283
+#: as.c:288
 #, c-format
 msgid ""
 "  --debug-prefix-map OLD=NEW\n"
 "                          map OLD to NEW in debug information\n"
 msgstr ""
 
-#: as.c:286
+#: as.c:291
 #, c-format
 msgid "  --defsym SYM=VAL        define symbol SYM to given value\n"
 msgstr ""
 
-#: as.c:302
+#: as.c:307
 #, c-format
 msgid "                          emulate output (default %s)\n"
 msgstr ""
 
-#: as.c:307
+#: as.c:312
 #, c-format
 msgid "  --execstack             require executable stack for this object\n"
 msgstr ""
 
-#: as.c:309
+#: as.c:314
 #, c-format
 msgid ""
 "  --noexecstack           don't require executable stack for this object\n"
 msgstr ""
 
-#: as.c:311
+#: as.c:316
 #, c-format
 msgid ""
 "  --size-check=[error|warning]\n"
 "\t\t\t  ELF .size directive check (default --size-check=error)\n"
 msgstr ""
 
-#: as.c:314
+#: as.c:319
 #, c-format
 msgid "  --elf-stt-common=[no|yes] "
 msgstr ""
 
-#: as.c:317 as.c:328 config/tc-i386.c:13799 config/tc-i386.c:13819
+#: as.c:322 as.c:333 config/tc-i386.c:13799 config/tc-i386.c:13819
 #, c-format
 msgid "(default: yes)\n"
 msgstr ""
 
-#: as.c:319 as.c:330 config/tc-i386.c:13801 config/tc-i386.c:13821
+#: as.c:324 as.c:335 config/tc-i386.c:13801 config/tc-i386.c:13821
 #, c-format
 msgid "(default: no)\n"
 msgstr ""
 
-#: as.c:320
+#: as.c:325
 #, c-format
 msgid ""
 "                          generate ELF common symbols with STT_COMMON type\n"
 msgstr ""
 
-#: as.c:322
+#: as.c:327
 #, c-format
 msgid "  --sectname-subst        enable section name substitution sequences\n"
 msgstr ""
 
-#: as.c:325
+#: as.c:330
 #, c-format
 msgid "  --generate-missing-build-notes=[no|yes] "
 msgstr ""
 
-#: as.c:332
+#: as.c:337
 #, c-format
 msgid ""
 "                          generate GNU Build notes if none are present in "
 "the input\n"
 msgstr ""
 
-#: as.c:336
+#: as.c:341
 #, c-format
 msgid "  -f                      skip whitespace and comment preprocessing\n"
 msgstr ""
 
-#: as.c:338
+#: as.c:343
 #, c-format
 msgid "  -g --gen-debug          generate debugging information\n"
 msgstr ""
 
-#: as.c:340
+#: as.c:345
 #, c-format
 msgid "  --gstabs                generate STABS debugging information\n"
 msgstr ""
 
-#: as.c:342
+#: as.c:347
 #, c-format
 msgid ""
 "  --gstabs+               generate STABS debug info with GNU extensions\n"
 msgstr ""
 
-#: as.c:344
+#: as.c:349
 #, c-format
 msgid ""
 "  --gdwarf-<N>            generate DWARF<N> debugging information. 2 <= <N> "
 "<= 5\n"
 msgstr ""
 
-#: as.c:346
+#: as.c:351
 #, c-format
 msgid ""
 "  --gdwarf-sections       generate per-function section names for DWARF line "
 "information\n"
 msgstr ""
 
-#: as.c:348
+#: as.c:353
 #, c-format
 msgid "  --target-help           show target specific options\n"
 msgstr ""
 
-#: as.c:350
+#: as.c:355
 #, c-format
 msgid ""
 "  -I DIR                  add DIR to search list for .include directives\n"
 msgstr ""
 
-#: as.c:352
+#: as.c:357
 #, c-format
 msgid "  -J                      don't warn about signed overflow\n"
 msgstr ""
 
-#: as.c:354
+#: as.c:359
 #, c-format
 msgid ""
 "  -K                      warn when differences altered for long "
 "displacements\n"
 msgstr ""
 
-#: as.c:356
+#: as.c:361
 #, c-format
 msgid "  -L,--keep-locals        keep local symbols (e.g. starting with `L')\n"
 msgstr ""
 
-#: as.c:358
+#: as.c:363
 #, c-format
 msgid "  -M,--mri                assemble in MRI compatibility mode\n"
 msgstr ""
 
-#: as.c:360
+#: as.c:365
 #, c-format
 msgid ""
 "  --MD FILE               write dependency information in FILE (default "
 "none)\n"
 msgstr ""
 
-#: as.c:362
+#: as.c:367
 #, c-format
 msgid "  -nocpp                  ignored\n"
 msgstr ""
 
-#: as.c:364
+#: as.c:369
 #, c-format
 msgid ""
 "  -no-pad-sections        do not pad the end of sections to alignment "
 "boundaries\n"
 msgstr ""
 
-#: as.c:366
+#: as.c:371
 #, c-format
 msgid ""
 "  -o OBJFILE              name the object-file output OBJFILE (default a."
 "out)\n"
 msgstr ""
 
-#: as.c:368
+#: as.c:373
 #, c-format
 msgid "  -R                      fold data section into text section\n"
 msgstr ""
 
-#: as.c:370
+#: as.c:375
 #, c-format
 msgid ""
 "  --statistics            print various measured statistics from execution\n"
 msgstr ""
 
-#: as.c:372
+#: as.c:377
 #, c-format
 msgid "  --strip-local-absolute  strip local absolute symbols\n"
 msgstr ""
 
-#: as.c:374
+#: as.c:379
 #, c-format
 msgid ""
 "  --traditional-format    Use same format as native assembler when possible\n"
 msgstr ""
 
-#: as.c:376
+#: as.c:381
 #, c-format
 msgid "  --version               print assembler version number and exit\n"
 msgstr ""
 
-#: as.c:378
+#: as.c:383
 #, c-format
 msgid "  -W  --no-warn           suppress warnings\n"
 msgstr ""
 
-#: as.c:380
+#: as.c:385
 #, c-format
 msgid "  --warn                  don't suppress warnings\n"
 msgstr ""
 
-#: as.c:382
+#: as.c:387
 #, c-format
 msgid "  --fatal-warnings        treat warnings as errors\n"
 msgstr ""
 
-#: as.c:385
+#: as.c:390
 #, c-format
 msgid ""
 "  --itbl INSTTBL          extend instruction set to include instructions\n"
@@ -348,22 +348,22 @@ msgid ""
 "INSTTBL\n"
 msgstr ""
 
-#: as.c:389
+#: as.c:394
 #, c-format
 msgid "  -w                      ignored\n"
 msgstr ""
 
-#: as.c:391
+#: as.c:396
 #, c-format
 msgid "  -X                      ignored\n"
 msgstr ""
 
-#: as.c:393
+#: as.c:398
 #, c-format
 msgid "  -Z                      generate object file even after errors\n"
 msgstr ""
 
-#: as.c:395
+#: as.c:400
 #, c-format
 msgid ""
 "  --listing-lhs-width     set the width in words of the output data column "
@@ -371,7 +371,7 @@ msgid ""
 "                          the listing\n"
 msgstr ""
 
-#: as.c:398
+#: as.c:403
 #, c-format
 msgid ""
 "  --listing-lhs-width2    set the width in words of the continuation lines\n"
@@ -380,47 +380,47 @@ msgid ""
 "                          the width of the first line\n"
 msgstr ""
 
-#: as.c:402
+#: as.c:407
 #, c-format
 msgid ""
 "  --listing-rhs-width     set the max width in characters of the lines from\n"
 "                          the source file\n"
 msgstr ""
 
-#: as.c:405
+#: as.c:410
 #, c-format
 msgid ""
 "  --listing-cont-lines    set the maximum number of continuation lines used\n"
 "                          for the output data column of the listing\n"
 msgstr ""
 
-#: as.c:408
+#: as.c:413
 #, c-format
 msgid "  @FILE                   read options from FILE\n"
 msgstr ""
 
-#: as.c:416
+#: as.c:421
 #, c-format
 msgid "Report bugs to %s\n"
 msgstr ""
 
-#: as.c:646
+#: as.c:651
 #, c-format
 msgid "unrecognized option -%c%s"
 msgstr ""
 
 #. This output is intended to follow the GNU standards document.
-#: as.c:688
+#: as.c:693
 #, c-format
 msgid "GNU assembler %s\n"
 msgstr ""
 
-#: as.c:689
+#: as.c:694
 #, c-format
 msgid "Copyright (C) 2021 Free Software Foundation, Inc.\n"
 msgstr ""
 
-#: as.c:690
+#: as.c:695
 #, c-format
 msgid ""
 "This program is free software; you may redistribute it under the terms of\n"
@@ -428,138 +428,138 @@ msgid ""
 "This program has absolutely no warranty.\n"
 msgstr ""
 
-#: as.c:695
+#: as.c:700
 #, c-format
 msgid ""
 "This assembler was configured for a target of `%s' and default,\n"
 "cpu type `%s'.\n"
 msgstr ""
 
-#: as.c:699
+#: as.c:704
 #, c-format
 msgid "This assembler was configured for a target of `%s'.\n"
 msgstr ""
 
-#: as.c:707
+#: as.c:712
 msgid "multiple emulation names specified"
 msgstr ""
 
-#: as.c:709
+#: as.c:714
 msgid "emulations not handled in this configuration"
 msgstr ""
 
-#: as.c:714
+#: as.c:719
 #, c-format
 msgid "alias = %s\n"
 msgstr ""
 
-#: as.c:715
+#: as.c:720
 #, c-format
 msgid "canonical = %s\n"
 msgstr ""
 
-#: as.c:716
+#: as.c:721
 #, c-format
 msgid "cpu-type = %s\n"
 msgstr ""
 
-#: as.c:718
+#: as.c:723
 #, c-format
 msgid "format = %s\n"
 msgstr ""
 
-#: as.c:721
+#: as.c:726
 #, c-format
 msgid "bfd-target = %s\n"
 msgstr ""
 
-#: as.c:738
+#: as.c:743
 #, c-format
 msgid "Invalid --compress-debug-sections option: `%s'"
 msgstr ""
 
-#: as.c:741
+#: as.c:746
 #, c-format
 msgid "--compress-debug-sections=%s is unsupported"
 msgstr ""
 
-#: as.c:766
+#: as.c:771
 msgid "bad defsym; format is --defsym name=value"
 msgstr ""
 
-#: as.c:786
+#: as.c:791
 msgid "no file name following -t option"
 msgstr ""
 
-#: as.c:801
+#: as.c:806
 #, c-format
 msgid "failed to read instruction table %s\n"
 msgstr ""
 
-#: as.c:823
+#: as.c:828
 #, c-format
 msgid "unknown DWARF option %s\n"
 msgstr ""
 
-#: as.c:874
+#: as.c:879
 #, c-format
 msgid "Invalid --gdwarf-cie-version `%s'"
 msgstr ""
 
-#: as.c:967
+#: as.c:972
 #, c-format
 msgid "Invalid --size-check= option: `%s'"
 msgstr ""
 
-#: as.c:976
+#: as.c:981
 #, c-format
 msgid "Invalid --elf-stt-common= option: `%s'"
 msgstr ""
 
-#: as.c:990
+#: as.c:995
 #, c-format
 msgid "Invalid --generate-missing-build-notes option: `%s'"
 msgstr ""
 
-#: as.c:1061
+#: as.c:1066
 #, c-format
 msgid "invalid listing option `%c'"
 msgstr ""
 
-#: as.c:1124
+#: as.c:1129
 #, c-format
 msgid "%s: total time in assembly: %ld.%06ld\n"
 msgstr ""
 
-#: as.c:1288
+#: as.c:1293
 msgid "libbfd ABI mismatch"
 msgstr ""
 
-#: as.c:1333
+#: as.c:1338
 #, c-format
 msgid "The input '%s' and output '%s' files are the same"
 msgstr ""
 
-#: as.c:1443
+#: as.c:1448
 #, c-format
 msgid "%d warning"
 msgid_plural "%d warnings"
 msgstr[0] ""
 msgstr[1] ""
 
-#: as.c:1445
+#: as.c:1450
 #, c-format
 msgid "%d error"
 msgid_plural "%d errors"
 msgstr[0] ""
 msgstr[1] ""
 
-#: as.c:1449
+#: as.c:1454
 #, c-format
 msgid "%s, treating warnings as errors"
 msgstr ""
 
-#: as.c:1460
+#: as.c:1465
 #, c-format
 msgid "%s, %s, generating bad object file\n"
 msgstr ""
@@ -1088,7 +1088,7 @@ msgstr ""
 msgid "symbol type \"%s\" is supported only by GNU targets"
 msgstr ""
 
-#: config/obj-elf.c:2418
+#: config/obj-elf.c:2418 config/tc-kvx.c:3665
 #, c-format
 msgid "unrecognized symbol type \"%s\""
 msgstr ""
@@ -2832,11 +2832,12 @@ msgstr ""
 #: config/tc-h8300.c:87 config/tc-h8300.c:97 config/tc-h8300.c:107
 #: config/tc-h8300.c:117 config/tc-h8300.c:128 config/tc-h8300.c:242
 #: config/tc-hppa.c:6820 config/tc-hppa.c:6826 config/tc-hppa.c:6832
-#: config/tc-hppa.c:6838 config/tc-hppa.c:8225 config/tc-lm32.c:197
-#: config/tc-mips.c:3690 config/tc-mips.c:4187 config/tc-mn10300.c:935
-#: config/tc-mn10300.c:940 config/tc-mn10300.c:2440 config/tc-riscv.c:1221
-#: config/tc-riscv.c:3878 config/tc-xc16x.c:79 config/tc-xc16x.c:86
-#: config/tc-xc16x.c:93
+#: config/tc-hppa.c:6838 config/tc-hppa.c:8225 config/tc-kvx.c:2498
+#: config/tc-kvx.c:2514 config/tc-kvx.c:2517 config/tc-kvx.c:2524
+#: config/tc-kvx.c:2527 config/tc-lm32.c:197 config/tc-mips.c:3690
+#: config/tc-mips.c:4187 config/tc-mn10300.c:935 config/tc-mn10300.c:940
+#: config/tc-mn10300.c:2440 config/tc-riscv.c:1221 config/tc-riscv.c:3878
+#: config/tc-xc16x.c:79 config/tc-xc16x.c:86 config/tc-xc16x.c:93
 msgid "could not set architecture and machine"
 msgstr ""
 
@@ -10022,6 +10023,11 @@ msgstr ""
 
 #: config/tc-iq2000.c:933
 msgid "missing `.end'"
+msgstr ""
+
+#. we'll need this for reading floating point constants
+#: config/tc-kvx.c:3121
+msgid "floating-point literals are not supported"
 msgstr ""
 
 #: config/tc-m32c.c:141

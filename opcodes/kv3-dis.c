@@ -21,6 +21,7 @@
 #define STATIC_TABLE
 #define DEFINE_TABLE
 
+#include "disassemble.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -134,7 +135,8 @@ kv3_reassemble_bundle(int wordcount, int *_insncount) {
   int mau_taken = 0;
   int lsu_taken = 0;
 
-  unsigned int i, j;
+  int i;
+  unsigned int j;
 
   struct instr_s instr[KVXMAXBUNDLEISSUE];
   assert(KVXMAXBUNDLEISSUE >= BundleIssue__);
@@ -329,6 +331,7 @@ int print_insn_kvx (bfd_vma memaddr, struct disassemble_info *info){
 
     case bfd_mach_kv3_1_64:
       kvx_arch_size = 64;
+      /* fallthrough */
     case bfd_mach_kv3_1_usr:
     case bfd_mach_kv3_1:
       opc_table = kv3_v1_optab;

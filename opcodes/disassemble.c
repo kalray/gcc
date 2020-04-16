@@ -578,6 +578,7 @@ disassembler_usage (FILE *stream ATTRIBUTE_UNUSED)
 #endif
 #ifdef ARCH_kvx
   print_kvx_disassembler_options (stream);
+#endif
 #ifdef ARCH_mips
   print_mips_disassembler_options (stream);
 #endif

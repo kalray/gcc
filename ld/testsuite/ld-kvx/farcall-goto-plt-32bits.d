@@ -4,13 +4,13 @@ tmpdir/dump:     file format elf32-kvx
 
 Disassembly of section .plt:
 
-.* <foo@plt-0x20>:
+.* <.plt>:
 	...
 
 .* <foo@plt>:
 .*:	10 00 c4 0f                                     	get \$r16 = \$pc;;
 
-.*:	.. .. 40 .. .. .. .. ..                         	lwz \$r16 = [0-9]* \(0x[0-9a-b]*\)\[\$r16\];;
+.*:	.. .. 40 .. .. .. .. ..                         	l[wzd]* \$r16 = [0-9]* \(0x[0-9a-b]*\)\[\$r16\];;
 
 .*:	10 00 d8 0f                                     	igoto \$r16;;
 

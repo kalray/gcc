@@ -8,6 +8,26 @@
 
 Disassembly of section .text:
 
+.* <_start>:
+    .*:	.. .. .. ..                                     	call .* <__bar1_veneer>;;
+
+    .*:	.. .. .. ..                                     	goto .* <__bar1_veneer>;;
+
+    .*:	.. .. .. ..                                     	call .* <__bar2_veneer>;;
+
+    .*:	.. .. .. ..                                     	goto .* <__bar2_veneer>;;
+
+    .*:	.. .. .. ..                                     	call .* <__bar3_veneer>;;
+
+    .*:	.. .. .. ..                                     	goto .* <__bar3_veneer>;;
+
+    .*:	00 00 d0 0f                                     	ret ;;
+
+	...
+
+.* <_back>:
+    .*:	00 00 d0 0f                                     	ret ;;
+
 .* <__bar2_veneer>:
     .*:	00 .. 40 e0 08 00 20 00                         	make \$r16 = .* \(0x.*\);;
 
@@ -24,29 +44,28 @@ Disassembly of section .text:
 
     .*:	10 00 d8 0f                                     	igoto \$r16;;
 
-    .*:	00 f0 03 7f                                     	nop ;;
 
-.* <_start>:
-    .*:	.. ff ff 1f                                     	call .* <__bar1_veneer>;;
+Disassembly of section .foo:
 
-    .*:	.. ff ff 17                                     	goto .* <__bar1_veneer>;;
+.* <bar1>:
+.*:	00 00 d0 0f                                     	ret ;;
 
-    .*:	.. ff ff 1f                                     	call .* <__bar2_veneer>;;
-
-    .*:	.. ff ff 17                                     	goto .* <__bar2_veneer>;;
-
-    .*:	.. ff ff 1f                                     	call .* <__bar3_veneer>;;
-
-    .*:	.. ff ff 17                                     	goto .* <__bar3_veneer>;;
-
-    .*:	00 00 d0 0f                                     	ret ;;
+.*:	.. .. .. ..                                     	goto .* <___start_veneer>;;
 
 	...
 
-.* <_back>:
-    .*:	00 00 d0 0f                                     	ret ;;
+.* <bar2>:
+.*:	00 00 d0 0f                                     	ret ;;
 
-Disassembly of section .foo:
+.*:	.. .. .. ..                                     	goto .* <___start_veneer>;;
+
+	...
+
+.* <bar3>:
+.*:	00 00 d0 0f                                     	ret ;;
+
+.*:	.. .. .. ..                                     	goto .* <___back_veneer>;;
+
 
 .* <___start_veneer>:
 .*:	00 .. 40 e0 04 00 00 00                         	make \$r16 = .* \(0x.*\);;
@@ -58,22 +77,4 @@ Disassembly of section .foo:
 
 .*:	10 00 d8 0f                                     	igoto \$r16;;
 
-.* <bar1>:
-.*:	00 00 d0 0f                                     	ret ;;
-
-.*:	.. ff ff 17                                     	goto .* <___start_veneer>;;
-
-	...
-
-.* <bar2>:
-.*:	00 00 d0 0f                                     	ret ;;
-
-.*:	.. fb ff 17                                     	goto .* <___start_veneer>;;
-
-	...
-
-.* <bar3>:
-.*:	00 00 d0 0f                                     	ret ;;
-
-.*:	.. f7 ff 17                                     	goto .* <___back_veneer>;;
 
