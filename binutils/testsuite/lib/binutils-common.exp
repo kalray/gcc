@@ -41,6 +41,7 @@ proc is_elf_format {} {
 	 && ![istarget *-*-irix5*]
 	 && ![istarget *-*-irix6*]
 	 && ![istarget *-*-kaos*]
+   && ![istarget kvx-*-*]
 	 && ![istarget *-*-*linux*]
 	 && ![istarget *-*-lynxos*]
 	 && ![istarget *-*-nacl*]

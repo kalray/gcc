@@ -59,8 +59,8 @@ run_dump_test "farcall-back" $extra_32bits
 run_dump_test "farcall-goto-defsym" $extra_32bits
 run_dump_test "farcall-call-defsym" $extra_32bits
 run_dump_test "farcall-goto-gsym" $extra_32bits
-run_dump_test "farcall-goto-plt" [list [list as -m32] [list ld -melf32kvx] [list dump farcall-goto-plt-32bits.d]]
-run_dump_test "farcall-call-plt" [list [list as -m32] [list ld -melf32kvx] [list dump farcall-call-plt-32bits.d]]
+run_dump_test "farcall-goto-plt" $extra_32bits
+run_dump_test "farcall-call-plt" $extra_32bits
 run_dump_test "farcall-call" $extra_32bits
 run_dump_test "farcall-goto" $extra_32bits
 run_dump_test "farcall-goto-none-function" $extra_32bits

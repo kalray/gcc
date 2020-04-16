@@ -576,6 +576,7 @@ unsigned int bfd_init (void);
 
 
 /* Value returned by bfd_init.  */
+
 #define BFD_INIT_MAGIC (sizeof (struct bfd_section))
 /* Extracted from opncls.c.  */
 /* Set to N to open the next N BFDs using an alternate id space.  */
