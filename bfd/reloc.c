@@ -6950,6 +6950,7 @@ ENUMDOC
   This is a 64 bit reloc that stores the 32 bit offset
   value in two words (with an imm instruction).  The relocation is
   relative offset from start of TEXT.
+ENUM
   BFD_RELOC_KVX_RELOC_START
 ENUMDOC
   KVX pseudo relocation code to mark the start of the KVX

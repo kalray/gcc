@@ -1105,7 +1105,7 @@ msgstr ""
 msgid "symbol type \"%s\" is supported only by GNU targets"
 msgstr ""
 
-#: config/obj-elf.c:2284
+#: config/obj-elf.c:2284 config/tc-kvx.c:3720
 #, c-format
 msgid "unrecognized symbol type \"%s\""
 msgstr ""
@@ -2822,10 +2822,12 @@ msgstr ""
 #: config/tc-h8300.c:87 config/tc-h8300.c:97 config/tc-h8300.c:107
 #: config/tc-h8300.c:117 config/tc-h8300.c:128 config/tc-h8300.c:243
 #: config/tc-hppa.c:6821 config/tc-hppa.c:6827 config/tc-hppa.c:6833
-#: config/tc-hppa.c:6839 config/tc-hppa.c:8227 config/tc-lm32.c:197
-#: config/tc-mips.c:3694 config/tc-mips.c:4202 config/tc-mn10300.c:935
-#: config/tc-mn10300.c:940 config/tc-mn10300.c:2440 config/tc-xc16x.c:79
-#: config/tc-xc16x.c:86 config/tc-xc16x.c:93
+#: config/tc-hppa.c:6839 config/tc-hppa.c:8227 config/tc-kvx.c:2545
+#: config/tc-kvx.c:2561 config/tc-kvx.c:2564 config/tc-kvx.c:2571
+#: config/tc-kvx.c:2574 config/tc-lm32.c:197 config/tc-mips.c:3694
+#: config/tc-mips.c:4202 config/tc-mn10300.c:935 config/tc-mn10300.c:940
+#: config/tc-mn10300.c:2440 config/tc-xc16x.c:79 config/tc-xc16x.c:86
+#: config/tc-xc16x.c:93
 msgid "could not set architecture and machine"
 msgstr ""
 
@@ -10063,6 +10065,11 @@ msgstr ""
 
 #: config/tc-iq2000.c:928
 msgid "missing `.end'"
+msgstr ""
+
+#. we'll need this for reading floating point constants
+#: config/tc-kvx.c:3168
+msgid "floating-point literals are not supported"
 msgstr ""
 
 #: config/tc-m32c.c:141

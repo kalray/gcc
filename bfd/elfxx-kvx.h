@@ -25,14 +25,33 @@
 #include "stdint.h"
 
 
+/* KVX stub generation support for ELF64.  Called from the linker.  */
+extern int elf64_kvx_setup_section_lists
+  (bfd *, struct bfd_link_info *);
+extern void elf64_kvx_next_input_section
+  (struct bfd_link_info *, struct bfd_section *);
+extern bfd_boolean elf64_kvx_size_stubs
+  (bfd *, bfd *, struct bfd_link_info *, bfd_signed_vma,
+   struct bfd_section * (*) (const char *, struct bfd_section *),
+   void (*) (void));
+extern bfd_boolean elf64_kvx_build_stubs
+  (struct bfd_link_info *);
+/* Kvx stub generation support for ELF32.  Called from the linker.  */
+extern int elf32_kvx_setup_section_lists
+  (bfd *, struct bfd_link_info *);
+extern void elf32_kvx_next_input_section
+  (struct bfd_link_info *, struct bfd_section *);
+extern bfd_boolean elf32_kvx_size_stubs
+  (bfd *, bfd *, struct bfd_link_info *, bfd_signed_vma,
+   struct bfd_section * (*) (const char *, struct bfd_section *),
+   void (*) (void));
+extern bfd_boolean elf32_kvx_build_stubs
+  (struct bfd_link_info *);
+
+
 extern bfd_reloc_status_type
 _bfd_kvx_elf_put_addend (bfd *, bfd_byte *, bfd_reloc_code_real_type,
 			     reloc_howto_type *, bfd_signed_vma);
-
-extern bfd_boolean
-_bfd_kvx_elf_add_symbol_hook (bfd *, struct bfd_link_info *,
-				  Elf_Internal_Sym *, const char **,
-				  flagword *, asection **, bfd_vma *);
 
 bfd_vma
 _bfd_kvx_elf_resolve_relocation (bfd_reloc_code_real_type r_type,
@@ -45,6 +64,3 @@ kvx_elf32_init_stub_bfd (struct bfd_link_info *info,
 bfd_boolean
 kvx_elf64_init_stub_bfd (struct bfd_link_info *info,
 			bfd *stub_bfd);
-
-
-#define elf_backend_add_symbol_hook	_bfd_kvx_elf_add_symbol_hook

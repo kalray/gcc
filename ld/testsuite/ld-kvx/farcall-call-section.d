@@ -7,29 +7,27 @@
 
 Disassembly of section .text:
 
-.* <___veneer>:
-    .*:	.. 01 40 e0 .. .. .. ..                         	make \$r16 = .* \(0x.*\);;
-
-    .*:	10 00 d8 0f                                     	igoto \$r16;;
-
-.* <___veneer>:
-    .*:	.. 00 40 e0 .. .. .. ..                         	make \$r16 = .* \(0x.*\);;
-
-    .*:	10 00 d8 0f                                     	igoto \$r16;;
-
 .* <_start>:
-    .*:	.. ff ff 1f                                     	call .* <___veneer>;;
+.*:	.. .. .. ..                                     	call .* <___veneer>;;
 
-    .*:	.. ff ff 1f                                     	call .* <___veneer>;;
+.*:	.. .. .. ..                                     	call .* <___veneer>;;
 
-    .*:	00 00 d0 0f                                     	ret ;;
+.*:	00 00 d0 0f                                     	ret ;;
 
+.* <___veneer>:
+.*:	.. 01 40 e0 .. .. .. ..                         	make \$r16 = .* \(0x.*\);;
+
+.*:	10 00 d8 0f                                     	igoto \$r16;;
+
+.* <___veneer>:
+.*:	.. 00 40 e0 .. .. .. ..                         	make \$r16 = .* \(0x.*\);;
+
+.*:	10 00 d8 0f                                     	igoto \$r16;;
 
 Disassembly of section .foo:
 
 .* <bar>:
 .*:	00 00 d0 0f                                     	ret ;;
-
 
 .* <bar2>:
 .*:	00 00 d0 0f                                     	ret ;;

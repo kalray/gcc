@@ -71,7 +71,8 @@ scan (const struct bfd_arch_info *info, const char *string)
   kvx_compatible,					       \
   scan,                                                        \
   bfd_arch_default_fill,                                       \
-  next                                                         \
+  next,                                                \
+          0                                            \
 }
 
 const bfd_arch_info_type bfd_kv3_2_usr_arch =
