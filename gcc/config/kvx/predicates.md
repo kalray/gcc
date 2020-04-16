@@ -24,8 +24,8 @@
 ;; used for some 32bits ALU
 ;; register or immediate up to signed 32
 (define_predicate "register_s32_operand"
- (ior (match_code "reg,subreg")
-      (and (match_code "const,const_int")
+ (and (match_code "reg,subreg,const,const_int")
+      (ior (match_operand 0 "register_operand")
            (match_test "satisfies_constraint_I32(op)"))))
 
 ;; immediate up to signed 32
@@ -41,21 +41,15 @@
 
 ;; register or immediate up to signed 37
 (define_predicate "register_s37_operand"
- (ior (match_code "reg,subreg")
+ (ior (match_operand 0 "register_operand")
       (match_operand 0 "s37_operand")))
 
 ;; register or immediate up to signed 64
 ;; Does not really check value fits on 64bits as HOST_WIDE_INT
 ;; is at most 64bits.
 (define_predicate "register_s64_operand"
- (ior (match_code "reg,subreg")
+ (ior (match_operand 0 "register_operand")
       (match_code "const,const_int")))
-
-(define_predicate "nonmemory64_register32_w_operand"
-   (match_code "const,const_int,reg,subreg,mem,symbol_ref,label_ref")
-{
-	return register_operand (op,mode);
-})
 
 (define_predicate "jump_operand"
   (match_code "mem")
@@ -142,26 +136,25 @@
 })
 
 (define_predicate "sat_shift_operand"
-  (match_code "const_int,reg,subreg")
+  (ior (match_code "const_int")
+       (match_operand 0 "register_operand"))
 {
-	return	nonmemory_operand(op, mode)
-	   && (!CONST_INT_P (op)
-                || (INTVAL (op) >= 0 && INTVAL (op) < (1<<6)));
+	return (!CONST_INT_P (op)
+          || (INTVAL (op) >= 0 && INTVAL (op) < (1<<6)));
 })
 
 (define_predicate "shiftd_operand"
-  (match_code "const_int,reg,subreg")
+  (ior (match_code "const_int")
+       (match_operand 0 "register_operand"))
 {
-	return	nonmemory_operand(op, mode) 
-	   && (!CONST_INT_P (op) 
-                || (INTVAL (op) >= 0 && INTVAL (op) < (1<<7)));
+	return (!CONST_INT_P (op) 
+          || (INTVAL (op) >= 0 && INTVAL (op) < (1<<7)));
 })
 
 (define_predicate "sixbits_unsigned_operand"
   (match_code "const_int")
 {
-	return	CONST_INT_P (op) 
-                && (INTVAL (op) >= 0 && INTVAL (op) < (1<<6));
+	return (INTVAL (op) >= 0 && INTVAL (op) < (1<<6));
 })
 
 (define_predicate "reg_or_s32_operand"
@@ -177,11 +170,11 @@
 })
 
 (define_predicate "rotate_operand"
-  (match_code "const_int,reg,subreg")
+ (ior (match_operand 0 "register_operand")
+      (match_code "const_int"))
 {
-	return	register_operand (op, mode)
-		|| (CONST_INT_P (op) 
-                    && (INTVAL (op) >= 0 && INTVAL (op) < (1<<5)));
+	return (!CONST_INT_P (op) 
+          || (INTVAL (op) >= 0 && INTVAL (op) < (1<<5)));
 })
 
 (define_predicate "unsigned_mul_immediate_37"
@@ -226,43 +219,42 @@
 ;; Returns TRUE if OP is suitable for paired-register (pseudo reg are
 ;; accepted)
 (define_predicate "kvx_register_pair_operand"
-  (and (match_code "reg,subreg")
+  (and (match_operand 0 "register_operand")
        (match_test "kvx_ok_for_paired_reg_p (op)")))
 
 ;; Returns TRUE if OP is a paired-register or if it is a
 ;; nonimmediate_operand and not a register
 (define_predicate "kvx_nonimmediate_operand_pair"
  (and (match_operand 0 "nonimmediate_operand")
-      (ior (not (match_code "reg,subreg"))
+      (ior (not (match_operand 0 "register_operand"))
            (match_operand 0 "kvx_register_pair_operand"))))
 
 ;; Returns TRUE if OP is a paired-register or a general_operand and
 ;; not a register.
 (define_predicate "kvx_general_operand_pair"
  (and (match_operand 0 "general_operand")
-      (ior (not (match_code "reg,subreg"))
+      (ior (not (match_operand 0 "register_operand"))
            (match_operand 0 "kvx_register_pair_operand"))))
-
 
 ;; Predicates used for register quad for 256-bits.
 
 ;; Returns TRUE if OP is suitable for quad-register (pseudo reg are
 ;; accepted)
 (define_predicate "kvx_register_quad_operand"
-  (and (match_code "reg,subreg")
+  (and (match_operand 0 "register_operand")
        (match_test "kvx_ok_for_quad_reg_p (op)")))
 
 ;; Returns TRUE if OP is a quad-register or if it is a
 ;; nonimmediate_operand and not a register
 (define_predicate "kvx_nonimmediate_operand_quad"
  (and (match_operand 0 "nonimmediate_operand")
-      (ior (not (match_code "reg,subreg"))
+      (ior (not (match_operand 0 "register_operand"))
            (match_operand 0 "kvx_register_quad_operand"))))
 
 ;; Returns TRUE if OP is a quad-register or a general_operand and
 ;; not a register.
 (define_predicate "kvx_general_operand_quad"
  (and (match_operand 0 "general_operand")
-      (ior (not (match_code "reg,subreg"))
+      (ior (not (match_operand 0 "register_operand"))
            (match_operand 0 "kvx_register_quad_operand"))))
 
