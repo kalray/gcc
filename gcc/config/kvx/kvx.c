@@ -1822,14 +1822,14 @@ kvx_emit_multiple_spill (rtx mem, rtx reg, unsigned nr, bool is_load)
 }
 
 /* Save/Restore register at offsets previously computed in frame information
- * layout.
+ * layout. The routine uses $sp as base register, so it must be set to its
+ * initial value in case of dynamic stack allocation.
  */
 static void
 kvx_save_or_restore_callee_save_registers (bool restore)
 {
   struct kvx_frame_info *frame = &cfun->machine->frame;
   rtx insn;
-  rtx base_rtx = stack_pointer_rtx;
   rtx (*gen_mem_ref) (enum machine_mode, rtx) = gen_rtx_MEM;
 
   unsigned regno;
@@ -1853,7 +1853,7 @@ kvx_save_or_restore_callee_save_registers (bool restore)
       {
 	rtx mem
 	  = gen_mem_ref (DImode,
-			 plus_constant (Pmode, base_rtx,
+			 plus_constant (Pmode, stack_pointer_rtx,
 					frame->saved_reg_sp_offset
 					  + frame->reg_rel_offset[regno]));
 
@@ -1918,7 +1918,7 @@ kvx_save_or_restore_callee_save_registers (bool restore)
 		      gen_mem_ref (
 			DImode,
 			plus_constant (
-			  Pmode, base_rtx,
+			  Pmode, stack_pointer_rtx,
 			  frame->saved_reg_sp_offset
 			    + frame->reg_rel_offset[pack_prev_regs[0]])),
 		      gen_rtx_REG (DImode, pack_prev_regs[0]), 2, restore);
@@ -1932,7 +1932,7 @@ kvx_save_or_restore_callee_save_registers (bool restore)
 		      gen_mem_ref (
 			DImode,
 			plus_constant (
-			  Pmode, base_rtx,
+			  Pmode, stack_pointer_rtx,
 			  frame->saved_reg_sp_offset
 			    + frame->reg_rel_offset[pack_prev_regs[0]])),
 		      gen_rtx_REG (DImode, pack_prev_regs[0]), restore);
@@ -1955,7 +1955,7 @@ kvx_save_or_restore_callee_save_registers (bool restore)
 			  gen_mem_ref (
 			    DImode,
 			    plus_constant (
-			      Pmode, base_rtx,
+			      Pmode, stack_pointer_rtx,
 			      frame->saved_reg_sp_offset
 				+ frame->reg_rel_offset[pack_prev_regs[0]])),
 			  gen_rtx_REG (DImode, pack_prev_regs[0]), 4, restore);
@@ -1974,7 +1974,7 @@ kvx_save_or_restore_callee_save_registers (bool restore)
 		      gen_mem_ref (
 			DImode,
 			plus_constant (
-			  Pmode, base_rtx,
+			  Pmode, stack_pointer_rtx,
 			  frame->saved_reg_sp_offset
 			    + frame->reg_rel_offset[pack_prev_regs[0]])),
 		      gen_rtx_REG (DImode, pack_prev_regs[0]), 2, restore);
@@ -1982,7 +1982,7 @@ kvx_save_or_restore_callee_save_registers (bool restore)
 		      gen_mem_ref (
 			DImode,
 			plus_constant (
-			  Pmode, base_rtx,
+			  Pmode, stack_pointer_rtx,
 			  frame->saved_reg_sp_offset
 			    + frame->reg_rel_offset[pack_prev_regs[2]])),
 		      gen_rtx_REG (DImode, pack_prev_regs[2]), restore);
@@ -1999,7 +1999,7 @@ kvx_save_or_restore_callee_save_registers (bool restore)
 		      gen_mem_ref (
 			DImode,
 			plus_constant (
-			  Pmode, base_rtx,
+			  Pmode, stack_pointer_rtx,
 			  frame->saved_reg_sp_offset
 			    + frame->reg_rel_offset[pack_prev_regs[0]])),
 		      gen_rtx_REG (DImode, pack_prev_regs[0]), 2, restore);
@@ -2016,7 +2016,7 @@ kvx_save_or_restore_callee_save_registers (bool restore)
 		      gen_mem_ref (
 			DImode,
 			plus_constant (
-			  Pmode, base_rtx,
+			  Pmode, stack_pointer_rtx,
 			  frame->saved_reg_sp_offset
 			    + frame->reg_rel_offset[pack_prev_regs[0]])),
 		      gen_rtx_REG (DImode, pack_prev_regs[0]), restore);
@@ -2035,7 +2035,7 @@ kvx_save_or_restore_callee_save_registers (bool restore)
     {
       kvx_emit_single_spill (
 	gen_mem_ref (
-	  DImode, plus_constant (Pmode, base_rtx,
+	  DImode, plus_constant (Pmode, stack_pointer_rtx,
 				 frame->saved_reg_sp_offset
 				   + frame->reg_rel_offset[pack_prev_regs[0]])),
 	gen_rtx_REG (DImode, pack_prev_regs[0]), restore);
@@ -2047,7 +2047,7 @@ kvx_save_or_restore_callee_save_registers (bool restore)
 	  kvx_emit_single_spill (
 	    gen_mem_ref (
 	      DImode,
-	      plus_constant (Pmode, base_rtx,
+	      plus_constant (Pmode, stack_pointer_rtx,
 			     frame->saved_reg_sp_offset
 			       + frame->reg_rel_offset[pack_prev_regs[0]])),
 	    gen_rtx_REG (DImode, pack_prev_regs[0]), restore);
@@ -2057,7 +2057,7 @@ kvx_save_or_restore_callee_save_registers (bool restore)
 	  kvx_emit_multiple_spill (
 	    gen_mem_ref (
 	      DImode,
-	      plus_constant (Pmode, base_rtx,
+	      plus_constant (Pmode, stack_pointer_rtx,
 			     frame->saved_reg_sp_offset
 			       + frame->reg_rel_offset[pack_prev_regs[0]])),
 	    gen_rtx_REG (DImode, pack_prev_regs[0]), 2, restore);
@@ -2067,7 +2067,7 @@ kvx_save_or_restore_callee_save_registers (bool restore)
 	  kvx_emit_multiple_spill (
 	    gen_mem_ref (
 	      DImode,
-	      plus_constant (Pmode, base_rtx,
+	      plus_constant (Pmode, stack_pointer_rtx,
 			     frame->saved_reg_sp_offset
 			       + frame->reg_rel_offset[pack_prev_regs[0]])),
 	    gen_rtx_REG (DImode, pack_prev_regs[0]), 2, restore);
@@ -2075,7 +2075,7 @@ kvx_save_or_restore_callee_save_registers (bool restore)
 	  kvx_emit_single_spill (
 	    gen_mem_ref (
 	      DImode,
-	      plus_constant (Pmode, base_rtx,
+	      plus_constant (Pmode, stack_pointer_rtx,
 			     frame->saved_reg_sp_offset
 			       + frame->reg_rel_offset[pack_prev_regs[2]])),
 	    gen_rtx_REG (DImode, pack_prev_regs[2]), restore);
@@ -2170,7 +2170,7 @@ kvx_expand_prologue (void)
 
   if (frame_pointer_needed)
     {
-      gcc_assert (frame->reg_rel_offset[HARD_FRAME_POINTER_REGNUM] >= 0);
+      gcc_assert (frame->reg_rel_offset[HARD_FRAME_POINTER_REGNUM] == 0);
       insn = emit_insn (
 	gen_add3_insn (hard_frame_pointer_rtx, stack_pointer_rtx,
 		       GEN_INT (frame->hard_frame_pointer_offset)));
@@ -2192,6 +2192,7 @@ kvx_expand_epilogue (void)
 
   if (frame_pointer_needed)
     {
+      /* Restore $sp from $fp */
       insn = emit_insn (
 	gen_add3_insn (stack_pointer_rtx, hard_frame_pointer_rtx,
 		       GEN_INT (-frame->hard_frame_pointer_offset)));
@@ -2201,16 +2202,9 @@ kvx_expand_epilogue (void)
       add_reg_note (insn, REG_CFA_DEF_CFA,
 		    gen_rtx_PLUS (DImode, stack_pointer_rtx,
 				  GEN_INT (frame->frame_size)));
-
-      /* Restore previous FP */
-      rtx fp_mem = gen_rtx_MEM (
-	DImode, plus_constant (Pmode, stack_pointer_rtx,
-			       cfun->machine->frame
-				 .reg_rel_offset[HARD_FRAME_POINTER_REGNUM]));
-
-      emit_move_insn (gen_rtx_REG (DImode, HARD_FRAME_POINTER_REGNUM), fp_mem);
     }
 
+  /* $sp is now correct and can be used by save_or_restore */
   kvx_save_or_restore_callee_save_registers (1);
 
   if (frame_size != 0)
