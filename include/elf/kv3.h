@@ -109,50 +109,6 @@ START_RELOC_NUMBERS (elf_kvx_reloc_type)
     RELOC_NUMBER (R_KVX_S43_TLS_LE_EX6,                       81)
 END_RELOC_NUMBERS (R_KVX_end)
 
-/* 	 16.15 	  8.7  4.3  0 */
-/* +----------------------------+ */
-/* |      CUT | CORE  |PIC |ABI | */
-/* +----------------------------+ */
-
-
-#define KVX_CUT_MASK 0x00ff0000
-#define KVX_CORE_MASK 0x0000ff00
-#define KVX_ABI_MASK 0x000000ff
-#define KVX_MACH_MASK (KVX_CUT_MASK | KVX_CORE_MASK | KVX_ABI_MASK)
-
-/*
- * Machine private data :
- * - byte 0 = ABI specific (PIC, OS, ...)
- *   - bit 0..3 = ABI ident
- *   - bit 4    = 32/64 bits addressing
- *   - bit 5    = PIC
- * - byte 1 = Core info :
- *   - bits 0..3 = Core Major Version
- *   - bit  4..7 = Core Minor Version
- */
-
-/* Core */
-#define ELF_KVX_CORE_BIT_SHIFT  (8)
-#define ELF_KVX_CORE_MASK       (0x7f<<ELF_KVX_CORE_BIT_SHIFT)
-
-#define ELF_KVX_CORE_MAJOR_MASK (0x0F << ELF_KVX_CORE_BIT_SHIFT)
-#define ELF_KVX_CORE_MINOR_MASK (0xF0 << ELF_KVX_CORE_BIT_SHIFT)
-#define ELF_KVX_CORE_MINOR_SHIFT (4 + ELF_KVX_CORE_BIT_SHIFT)
-
-#define ELF_KVX_CORE_KV3         (0x03 << ELF_KVX_CORE_BIT_SHIFT)
-
-#define ELF_KVX_CORE_KV3_1      (ELF_KVX_CORE_KV3 | (1 << (ELF_KVX_CORE_MINOR_SHIFT)))
-
-#define ELF_KVX_IS_KV3(flags)   (((flags) & ELF_KVX_CORE_MAJOR_MASK) == (ELF_KVX_CORE_KV3))
-
-#define ELF_KVX_ABI_MASK         (0xFF)
-
-#define ELF_KVX_ABI_IDENT_MASK   (0x7)
-#define ELF_KVX_ABI_REGULAR      (0x1)
-#define ELF_KVX_ABI_UNDEF        (0x0)
-
-#define ELF_KVX_ABI_64B_ADDR_BIT (0x08)
-
-#define ELF_KVX_ABI_PIC_BIT      (0x10)
+#include "kv3_elfids.h"
 
 #endif
