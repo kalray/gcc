@@ -1,5 +1,5 @@
 /* { dg-do  compile } */
-/* { dg-options "-O3 -std=c99" } */
+/* { dg-options "-O3 -fno-tree-vectorize -std=c99" } */
 
 struct test {
   unsigned long long ull1;

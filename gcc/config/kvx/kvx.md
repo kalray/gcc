@@ -237,16 +237,6 @@
    "
 )
 
-(define_expand "movti"
-  [(set (match_operand:TI 0 "nonimmediate_operand" "")
-        (match_operand:TI 1 "general_operand" ""))]
-  ""
-  {
-    if (MEM_P(operands[0]))
-      operands[1] = force_reg (TImode, operands[1]);
-  }
-)
-
 (define_insn_and_split "*mov_quad_immediate"
     [(set (match_operand:TI 0 "register_operand" "=r")
           (match_operand:TI 1 "immediate_operand" "i" ))]
@@ -266,7 +256,7 @@
 ;; at the cost of an extra word in .text.
 (define_split
   [(set (match_operand:TI 0 "register_operand" "")
-         (match_operand:TI 1 "register_operand" ""))]
+        (match_operand:TI 1 "register_operand" ""))]
   "!optimize_size && reload_completed"
   [(const_int 0)]
   {
@@ -292,46 +282,6 @@
    DONE;
   }
 )
-
-(define_insn "*mov_quad"
-    [(set (match_operand:TI 0 "kvx_nonimmediate_operand_pair" "=r, r,   r,  r,  r,  r,  r, a, b, m")
-          (match_operand:TI 1 "kvx_nonimmediate_operand_pair" " r, Ca, Cb, Cm, Za, Zb, Zm, r, r, r" ))]
-  "kvx_is_reg_subreg_p (operands[0]) || kvx_is_reg_subreg_p (operands[1])"
-{
-  switch (which_alternative)
-    {
-    case 0:
-      return kvx_asm_pat_copyq (operands[1]);
-    case 1: case 2: case 3: case 4: case 5: case 6:
-      return "lq%C1%m1 %0 = %1";
-    case 7: case 8: case 9:
-      return "sq%m0 %0 = %1";
-    default:
-      gcc_unreachable ();
-    }
-}
-[(set_attr "type"    "mau, lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_y, lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y, lsu_auxr_store, lsu_auxr_store_x, lsu_auxr_store_y")
- (set_attr "length"  "4,   4,             8,               12,              4,                      8,                        12,                       4,              8,                12")])
-
-(define_insn "*mov_octuple"
-    [(set (match_operand:OI 0 "kvx_nonimmediate_operand_quad" "=r, r,   r,  r,  r,  r,  r, a, b, m")
-          (match_operand:OI 1 "kvx_nonimmediate_operand_quad" " r, Ca, Cb, Cm, Za, Zb, Zm, r, r, r"))]
-  "kvx_is_reg_subreg_p (operands[0]) || kvx_is_reg_subreg_p (operands[1])"
-{
-  switch (which_alternative)
-    {
-    case 0:
-      return kvx_asm_pat_copyo ();
-    case 1: case 2: case 3: case 4: case 5: case 6:
-      return "lo%C1%m1 %0 = %1";
-    case 7: case 8: case 9:
-      return "so%m0 %0 = %1";
-    default:
-      gcc_unreachable ();
-    }
-}
-[(set_attr "type"    "lsu_auxr_auxw, lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_y, lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y, lsu_auxr_store, lsu_auxr_store_x, lsu_auxr_store_y")
- (set_attr "length"  "            4,             4,               8,              12,                      4,                        8,                       12,              4,                8,               12")])
 
 ;; Split what would end-up in a single copyo insn in 2 copyq (that
 ;; will end up as 4 copyd). All copyd use 1 TINY each instead of the
@@ -465,33 +415,6 @@
   "addw %0 = %1, %2"
 [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x")
  (set_attr "length" "4,4,8")])
-
-(define_insn "addcd"
-  [(set (match_operand:DI 0 "register_operand" "=r")
-	(plus:DI (plus:DI (match_operand:DI 1 "register_operand" "r")
-		          (match_operand:DI 2 "register_operand" "r"))
-                 (unspec:DI [(reg:SI KV3_CS_REGNO)] UNSPEC_GETCARRY)))
-   (set (reg:SI KV3_CS_REGNO) (unspec:SI [(reg:SI KV3_CS_REGNO)
-                                          (match_dup 1)
-                                          (match_dup 2)] UNSPEC_SETCARRY))
-  ]
-  ""
-  "addcd %0 = %1, %2"
-[(set_attr "type" "alu_full")
- (set_attr "length" "4")]
-)
-
-(define_insn "addcid"
-  [(set (match_operand:DI 0 "register_operand" "=r")
-	(plus:DI (match_operand:DI 1 "register_operand" "r")
-		 (match_operand:DI 2 "register_operand" "r")))
-   (set (reg:SI KV3_CS_REGNO) (unspec:SI [(match_dup 1)
-                                      (match_dup 2)] UNSPEC_SETCARRY))
-  ]
-  ""
-  "addcid %0 = %1, %2"
-[(set_attr "type" "alu_full")
- (set_attr "length" "4")])
 
 (define_insn "adddi3"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
@@ -1027,11 +950,11 @@
 )
 
 ;; ctzw/ctzd clzw/clzd
-(define_insn "c<c_tl>z<mode>2"
+(define_insn "<code><mode>2"
   [(set (match_operand:SIDI 0 "register_operand" "=r")
-        (ANY_ZERO_COUNT:SIDI (match_operand:SIDI 1 "register_operand" "r")))]
+        (CXZ:SIDI (match_operand:SIDI 1 "register_operand" "r")))]
   ""
-  "c<c_tl>z<sfx> %0 = %1"
+  "<code><sfx> %0 = %1"
   [(set_attr "type" "alu_lite")
    (set_attr "length" "4")]
 )
@@ -1639,10 +1562,10 @@
 
 ;; FIXME AUTO: add size info for 'reg[reg]' addressing (currently falling back to lsu.x)
 (define_insn "*l<mode><ANY_EXTEND:lsext>"
-   [(set (match_operand:DI 0 "register_operand"                       "=r,  r,  r,  r,  r,  r")
-         (ANY_EXTEND:DI (match_operand:ALL_SMALL_I 1 "memory_operand" "Ca, Cb, Cm, Za, Zb, Zm")))]
+   [(set (match_operand:DI 0 "register_operand"                 "=r,  r,  r,  r,  r,  r")
+         (ANY_EXTEND:DI (match_operand:SHORT 1 "memory_operand" "Ca, Cb, Cm, Za, Zb, Zm")))]
    ""
-   "l<ALL_SMALL_I:lsusize><ANY_EXTEND:lsext>%C1%m1 %0 = %1"
+   "l<SHORT:lsusize><ANY_EXTEND:lsext>%C1%m1 %0 = %1"
 [(set_attr "length" "            4,               8,              12,                      4,                        8,                       12")
  (set_attr "type"   "lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_y, lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y")]
 )
@@ -1671,8 +1594,8 @@
 
 ;; FIXME AUTO: add size info for 'reg[reg]' addressing (currently falling back to lsu.x)
 (define_insn "extend<mode>di2"
-  [(set (match_operand:DI 0 "register_operand"                              "=r,  r,  r,  r,  r,  r,  r")
-	(sign_extend:DI (match_operand:ALL_SMALL_I 1 "nonimmediate_operand" " r, Ca, Cb, Cm, Za, Zb, Zm")))]
+  [(set (match_operand:DI 0 "register_operand"                        "=r,  r,  r,  r,  r,  r,  r")
+	(sign_extend:DI (match_operand:SHORT 1 "nonimmediate_operand" " r, Ca, Cb, Cm, Za, Zb, Zm")))]
   ""
 {
  switch (which_alternative)
@@ -1692,7 +1615,7 @@
 
 (define_insn "zero_extend<mode>di2"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r,r,r,r,r")
-	(zero_extend:DI (match_operand:ALL_SMALL_I 1 "nonimmediate_operand" "r,Ca,Cb,Cm,Za,Zb,Zm")))]
+	(zero_extend:DI (match_operand:SHORT 1 "nonimmediate_operand" "r,Ca,Cb,Cm,Za,Zb,Zm")))]
   ""
 {
  switch (which_alternative)
@@ -2487,19 +2410,6 @@
    (set_attr "length" "4,4,8,12")]
 )
 
-(define_expand "avgsi3_floor"
-  [(set (match_operand:SI 0 "register_operand" "")
-        (ashiftrt:SI (plus:SI (match_operand:SI 1 "register_operand" "")
-                              (match_operand:SI 2 "register_s32_operand" ""))
-                     (const_int 1)))
-   (clobber (match_scratch:SI 3 ""))]
-  ""
-  {
-    emit_insn (gen_kvx_avgw (operands[3], operands[1], operands[2]));
-    operands[0] = gen_rtx_SIGN_EXTEND (SImode, operands[3]);
-  }
-)
-
 (define_insn "kvx_avgw"
   [(set (match_operand:SI 0 "register_operand" "=r,r,r")
         (unspec:SI [(match_operand:SI 1 "register_operand" "r,r,r")
@@ -2508,19 +2418,6 @@
   "avgw %0 = %1, %2"
   [(set_attr "type" "alu_lite,alu_lite,alu_lite_x")
    (set_attr "length" "4,4,8")]
-)
-
-(define_expand "uavgsi3_floor"
-  [(set (match_operand:SI 0 "register_operand" "")
-        (lshiftrt:SI (plus:SI (match_operand:SI 1 "register_operand" "")
-                              (match_operand:SI 2 "register_s32_operand" ""))
-                     (const_int 1)))
-   (clobber (match_scratch:SI 3 ""))]
-  ""
-  {
-    emit_insn (gen_kvx_avguw (operands[3], operands[1], operands[2]));
-    operands[0] = gen_rtx_ZERO_EXTEND (SImode, operands[3]);
-  }
 )
 
 (define_insn "kvx_avguw"
@@ -2533,20 +2430,6 @@
    (set_attr "length" "4,4,8")]
 )
 
-(define_expand "avgsi3_ceil"
-  [(set (match_operand:SI 0 "register_operand" "")
-        (ashiftrt:SI (plus:SI (plus:SI (match_operand:SI 1 "register_operand" "")
-                                       (match_operand:SI 2 "register_s32_operand" ""))
-                              (const_int 1))
-                     (const_int 1)))
-   (clobber (match_scratch:SI 3 ""))]
-  ""
-  {
-    emit_insn (gen_kvx_avgrw (operands[3], operands[1], operands[2]));
-    operands[0] = gen_rtx_SIGN_EXTEND (SImode, operands[3]);
-  }
-)
-
 (define_insn "kvx_avgrw"
   [(set (match_operand:SI 0 "register_operand" "=r,r,r")
         (unspec:SI [(match_operand:SI 1 "register_operand" "r,r,r")
@@ -2555,20 +2438,6 @@
   "avgrw %0 = %1, %2"
   [(set_attr "type" "alu_lite,alu_lite,alu_lite_x")
    (set_attr "length" "4,4,8")]
-)
-
-(define_expand "uavgsi3_ceil"
-  [(set (match_operand:SI 0 "register_operand" "")
-        (lshiftrt:SI (plus:SI (plus:SI (match_operand:SI 1 "register_operand" "")
-                                       (match_operand:SI 2 "register_s32_operand" ""))
-                              (const_int 1))
-                     (const_int 1)))
-   (clobber (match_scratch:SI 3 ""))]
-  ""
-  {
-    emit_insn (gen_kvx_avgruw (operands[3], operands[1], operands[2]));
-    operands[0] = gen_rtx_ZERO_EXTEND (SImode, operands[3]);
-  }
 )
 
 (define_insn "kvx_avgruw"

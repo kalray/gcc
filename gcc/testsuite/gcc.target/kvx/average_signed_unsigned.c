@@ -17,7 +17,7 @@ signed int k1_avgw_builtin(signed int a, signed int b) {
 signed int k1_avgw_builtin_cst(signed int a) {
     return __builtin_kvx_avgw(a, 0xdeadbeef);
 }
-/* { dg-final { scan-assembler-times "avgw \\\$r0 = \\\$r0, -559038737" 1 } } */
+/* { dg-final { scan-assembler-times "avgw \\\$r0 = \\\$r0, 0xffffffffdeadbeef" 1 } } */
 
 
 signed int k1_avgrw(signed int a, signed int b) {
@@ -46,7 +46,7 @@ unsigned int k1_avguw_builtin(unsigned int a, unsigned int b) {
 unsigned int k1_avguw_builtin_cst(unsigned int a) {
     return __builtin_kvx_avguw(a, 0xdeadbeef);
 }
-/* { dg-final { scan-assembler-times "avguw \\\$r0 = \\\$r0, -559038737" 1 } } */
+/* { dg-final { scan-assembler-times "avguw \\\$r0 = \\\$r0, 0xffffffffdeadbeef" 1 } } */
 
 
 unsigned int k1_avgruw(unsigned int a, unsigned int b) {
