@@ -7,6 +7,29 @@
 
 ;; DI
 
+(define_insn "kvx_addd"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (unspec_volatile:DI [(match_operand:DI 1 "register_operand" "r")
+                             (match_operand:DI 2 "register_operand" "r")
+                             (match_operand 3 "" "")] UNSPEC_ADDD))]
+  ""
+  "addd%3 %0 = %1, %2"
+  [(set_attr "type" "alu_full")]
+)
+
+(define_insn "kvx_sbfd"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (unspec_volatile:DI [(match_operand:DI 1 "register_operand" "r")
+                             (match_operand:DI 2 "register_operand" "r")
+                             (match_operand 3 "" "")] UNSPEC_SBFD))]
+  ""
+  "sbfd%3 %0 = %1, %2"
+  [(set_attr "type" "alu_full")]
+)
+
+
+;; TI
+
 
 ;; SF
 
@@ -576,5 +599,110 @@
   ""
   "fixedud%3 %0 = %1, %2"
   [(set_attr "type" "mau_fpu")]
+)
+
+
+;; KVX_LBX, KVX_LHX, KVX_LWX
+
+(define_insn "kvx_lbz"
+ [(set (match_operand:DI 0 "register_operand" "=r,r,r")
+       (unspec:DI [(match_operand:QI 1 "memory_operand" "a,b,m")
+                   (match_operand 2 "" "")] UNSPEC_LBZ))
+   (use (match_dup 1))]
+  ""
+  "lbz%2%m1 %0 = %1"
+  [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
+   (set_attr "length"                    "4,                       8,                      12")]
+)
+
+(define_insn "kvx_lbs"
+ [(set (match_operand:DI 0 "register_operand" "=r,r,r")
+       (unspec:DI [(match_operand:QI 1 "memory_operand" "a,b,m")
+                   (match_operand 2 "" "")] UNSPEC_LBS))
+   (use (match_dup 1))]
+  ""
+  "lbs%2%m1 %0 = %1"
+  [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
+   (set_attr "length"                    "4,                       8,                      12")]
+)
+
+(define_insn "kvx_lhz"
+ [(set (match_operand:DI 0 "register_operand" "=r,r,r")
+       (unspec:DI [(match_operand:HI 1 "memory_operand" "a,b,m")
+                   (match_operand 2 "" "")] UNSPEC_LHZ))
+   (use (match_dup 1))]
+  ""
+  "lhz%2%m1 %0 = %1"
+  [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
+   (set_attr "length"                    "4,                       8,                      12")]
+)
+
+(define_insn "kvx_lhs"
+ [(set (match_operand:DI 0 "register_operand" "=r,r,r")
+       (unspec:DI [(match_operand:HI 1 "memory_operand" "a,b,m")
+                   (match_operand 2 "" "")] UNSPEC_LHS))
+   (use (match_dup 1))]
+  ""
+  "lhs%2%m1 %0 = %1"
+  [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
+   (set_attr "length"                    "4,                       8,                      12")]
+)
+
+(define_insn "kvx_lwz"
+ [(set (match_operand:DI 0 "register_operand" "=r,r,r")
+       (unspec:DI [(match_operand:SI 1 "memory_operand" "a,b,m")
+                   (match_operand 2 "" "")] UNSPEC_LWZ))
+   (use (match_dup 1))]
+  ""
+  "lwz%2%m1 %0 = %1"
+  [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
+   (set_attr "length"                    "4,                       8,                      12")]
+)
+
+(define_insn "kvx_lws"
+ [(set (match_operand:DI 0 "register_operand" "=r,r,r")
+       (unspec:DI [(match_operand:SI 1 "memory_operand" "a,b,m")
+                   (match_operand 2 "" "")] UNSPEC_LWS))
+   (use (match_dup 1))]
+  ""
+  "lws%2%m1 %0 = %1"
+  [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
+   (set_attr "length"                    "4,                       8,                      12")]
+)
+
+(define_insn "kvx_lwf"
+ [(set (match_operand:DI 0 "register_operand" "=r,r,r")
+       (unspec:DI [(match_operand:SF 1 "memory_operand" "a,b,m")
+                   (match_operand 2 "" "")] UNSPEC_LWF))
+   (use (match_dup 1))]
+  ""
+  "lwz%2%m1 %0 = %1"
+  [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
+   (set_attr "length"                    "4,                       8,                      12")]
+)
+
+
+;; KVX_LD, KVX_LDF
+
+(define_insn "kvx_ld"
+ [(set (match_operand:DI 0 "register_operand" "=r,r,r")
+       (unspec:DI [(match_operand:DI 1 "memory_operand" "a,b,m")
+                   (match_operand 2 "" "")] UNSPEC_LD))
+   (use (match_dup 1))]
+  ""
+  "ld%2%m1 %0 = %1"
+  [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
+   (set_attr "length"                    "4,                       8,                      12")]
+)
+
+(define_insn "kvx_ldf"
+ [(set (match_operand:DI 0 "register_operand" "=r,r,r")
+       (unspec:DI [(match_operand:DF 1 "memory_operand" "a,b,m")
+                   (match_operand 2 "" "")] UNSPEC_LDF))
+   (use (match_dup 1))]
+  ""
+  "ld%2%m1 %0 = %1"
+  [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
+   (set_attr "length"                    "4,                       8,                      12")]
 )
 

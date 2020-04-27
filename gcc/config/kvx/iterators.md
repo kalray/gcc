@@ -1,6 +1,3 @@
-;; Iterator for SI, QI and HI modes
-(define_mode_iterator SHORT [QI HI SI])
-
 ;; Mapping between GCC modes and suffixes used by LSU insns
 (define_mode_attr lsusize [
   (QI "b")
@@ -9,21 +6,27 @@
   (SF "w")
   (DI "d")
   (DF "d")
+  (TI "q")
+  (OI "o")
+  (V8QI "d")
   (V4HI "d")
   (V2SI "d")
   (V2SF "d")
-  (TI "q")
+  (V16QI "q")
   (V8HI "q")
   (V4SI "q")
-  (V4SF "q")
   (V2DI "q")
+  (V4SF "q")
   (V2DF "q")
-  (OI "o")
+  (V32QI "o")
+  (V16HI "o")
+  (V8SI "o")
   (V4DI "o")
+  (V8SF "o")
+  (V4DF "o")
 ])
 
-;; Suffix for extension when applicable (for LSU narrower than a
-;; register). Leave empty if not applicable
+;; Extension for LSU when applicable (mode narrower than a register).
 (define_mode_attr lsusext [
   (QI "z")
   (HI "z")
@@ -31,49 +34,64 @@
   (SF "z")
   (DI "")
   (DF "")
+  (TI "")
+  (OI "")
+  (V8QI "")
   (V4HI "")
   (V2SI "")
   (V2SF "")
-  (TI "")
+  (V16QI "")
   (V8HI "")
   (V4SI "")
-  (V4SF "")
   (V2DI "")
+  (V4SF "")
   (V2DF "")
-  (OI "")
+  (V32QI "")
+  (V16HI"")
+  (V8SI "")
   (V4DI "")
+  (V8SF "")
+  (V4DF "")
 ])
-
 
 ;; Code iterator for sign/zero extension
 (define_code_iterator MAX_UMAX [smax umax])
 (define_code_iterator MIN_UMIN [smin umin])
 
-(define_code_attr spfx [(smax "s") (umax "u")
-     (smin "s") (umin "u")
+(define_code_attr spfx [
+  (smax "s")
+  (umax "u")
+  (smin "s")
+  (umin "u")
 ])
 
 ;; Code iterator for sign/zero extension
 (define_code_iterator ANY_EXTEND [sign_extend zero_extend])
 
 ;; Sign- or zero-extending data-op
-(define_code_attr lsext [(sign_extend "s") (zero_extend "z")])
+(define_code_attr lsext [
+  (sign_extend "s")
+  (zero_extend "z")
+])
 
 ;; Count lead/trailing zero
-(define_code_iterator ANY_ZERO_COUNT [ctz clz])
-(define_code_attr c_tl  [(ctz "t") (clz "l")])
+(define_code_iterator CXZ [ctz clz])
 
 ;; Sign- or zero-extending mapping to unsigned mnemonics
-(define_code_attr ssfx [(sign_extend "") (zero_extend "u")
-     (smax "") (smin "")
-     (umax "u") (umin "u")
+(define_code_attr ssfx [
+  (sign_extend "")
+  (zero_extend "u")
+  (smax "")
+  (smin "")
+  (umax "u")
+  (umin "u")
 ])
 
 ;; Iterator for all integer modes (up to 64-bit)
 (define_mode_iterator ALLI [QI HI SI DI])
 
-;; Iterator for all integer modes smaller than 64bits
-(define_mode_iterator ALL_SMALL_I [QI HI SI])
+;; Iterator for SI, QI and HI modes
+(define_mode_iterator SHORT [QI HI SI])
 
 ;; Iterator for all float modes (up to 64-bit)
 (define_mode_iterator ALLF [SF DF])
@@ -88,7 +106,7 @@
   (TI "q")
   (OI "o")])
 
-;; All modes used by the mov pattern that fit in a register.
+;; Scalar modes used by the mov pattern that fit in a register.
 ;; TI and OI and to be handled elsewhere.
 (define_mode_iterator ALLIF [QI HI SI DI SF DF])
 
@@ -105,8 +123,6 @@
 (define_code_attr lsu_odd_even [(eq "even") (ne "odd")])
 
 (define_mode_attr suffix [(SI "w") (DI "d") (SF "w") (DF "d")])
-
-(define_mode_attr suffix2 [(SI "w") (DI "d")])
 
 ;; insns length for materializing a symbol depending on pointer size,
 ;; using make insn. Alternatives using these should only be enabled
@@ -140,60 +156,174 @@
   SI SF DI DF
 ])
 
-;; Iterator for the 64-bit vector modes.
-(define_mode_iterator SIMD64 [
-  V4HI V2SI V2SF
-])
-
-;; Iterator for the 128-bit vector modes.
-(define_mode_iterator SIMD128 [
-  V8HI V4SI V2DI V4SF V2DF
-])
-
-;; Iterator for the 256-bit vector modes.
-(define_mode_iterator SIMD256 [
-  V4DI
+;; Iterator for the scalar modes that fit in a GPR.
+(define_mode_iterator SCALAR [
+  QI HI SI SF DI DF
 ])
 
 ;; Iterator for the modes that fit in a GPR.
 (define_mode_iterator FITGPR [
-  QI HI SI SF
-  DI DF V4HI V2SI V2SF
+  QI HI SI SF DI DF
+  V8QI V4HI V2SI V2SF
 ])
 
 ;; Iterator for all 64-bit modes.
 (define_mode_iterator ALL64 [
-  DI DF V4HI V2SI V2SF
+  DI DF
+  V8QI V4HI V2SI V2SF
+])
+
+;; Iterator for the 8-bit x8 vector modes.
+(define_mode_iterator SIMD8X8 [
+  V8QI
+])
+
+;; Iterator for the 16-bit x4 vector modes.
+(define_mode_iterator SIMD16X4 [
+  V4HI
+])
+
+;; Iterator for the 32-bit x2 vector modes.
+(define_mode_iterator SIMD32X2 [
+  V2SI V2SF
+])
+
+;; Iterator for the 64-bit vector modes.
+(define_mode_iterator SIMD64 [
+  V8QI V4HI V2SI V2SF
 ])
 
 ;; Iterator for all 128-bit modes.
 (define_mode_iterator ALL128 [
-  TI V8HI V4SI V2DI V4SF V2DF
+  TI
+  V16QI V8HI V4SI V2DI V4SF V2DF
+])
+
+;; Iterator for the 128-bit vector modes.
+(define_mode_iterator SIMD128 [
+  V16QI V8HI V4SI V2DI V4SF V2DF
 ])
 
 ;; Iterator for all 256-bit modes.
 (define_mode_iterator ALL256 [
-  OI V4DI
+  OI
+  V32QI V16HI V8SI V4DI V8SF V4DF
 ])
 
-;; Iterator for all modes with zero/sign extension.
-(define_mode_iterator ALLZSX [
-  QI HI SI 
+;; Iterator for the 256-bit vector modes.
+(define_mode_iterator SIMD256 [
+  V32QI V16HI V8SI V4DI V8SF V4DF
 ])
 
-;; Iterator for all modes without extension.
-(define_mode_iterator ALLNOX [
-  SF
-  DI DF V4HI V2SI V2SF
-  TI V8HI V4SI V2DI V4SF V2DF
-  OI V4DI
+;; Iterator for all SIMD modes that have a compare (no V*QI).
+(define_mode_iterator SIMDCMP [
+  V4HI V2SI V2SF
+  V8HI V4SI V2DI V4SF V2DF
+  V16HI V8SI V4DI V8SF V4DF
 ])
 
-;; Iterator for all the modes (integer, float, vector).
+;; Duplicate of SIMDCMP for double iteration in vcond and vcondu SPNs.
+(define_mode_iterator SIMDCMP2 [
+  V4HI V2SI V2SF
+  V8HI V4SI V2DI V4SF V2DF
+  V16HI V8SI V4DI V8SF V4DF
+])
+
+;; Iterator for all the SIMD modes.
+(define_mode_iterator SIMDALL [
+  V8QI V4HI V2SI V2SF
+  V16QI V8HI V4SI V2DI V4SF V2DF
+  V32QI V16HI V8SI V4DI V8SF V4DF
+])
+
+;; Iterator for all modes (integer, float, vector).
 (define_mode_iterator ALLIFV [
-  QI HI SI SF
-  DI DF V4HI V2SI V2SF
-  TI V8HI V4SI V2DI V4SF V2DF
-  OI V4DI
+  QI HI SI SF DI DF TI OI
+  V8QI V4HI V2SI V2SF
+  V16QI V8HI V4SI V2DI V4SF V2DF
+  V32QI V16HI V8SI V4DI V8SF V4DF
+])
+
+;; Attribute for LSU and TCA builtin vector suffixes.
+(define_mode_attr lsvs [
+   (V8QI    "bo")
+   (V4HI    "hq")
+   (V2SI    "wp")
+   (V2SF    "fwp")
+   (V16QI   "bx")
+   (V8HI    "ho")
+   (V4SI    "wq")
+   (V4SF    "fwq")
+   (V2DI    "dp")
+   (V2DF    "fdp")
+   (V32QI   "bv")
+   (V16HI   "hx")
+   (V8SI    "wo")
+   (V8SF    "fwo")
+   (V4DI    "dq")
+   (V4DF    "fdq")
+])
+
+;; Attribute to get the inner MODE of a vector mode.
+(define_mode_attr INNER [
+   (QI      "QI")
+   (HI      "HI")
+   (SI      "SI")
+   (SF      "SF")
+   (DI      "DI")
+   (DF      "DF")
+   (V8QI    "QI")
+   (V4HI    "HI")
+   (V2SI    "SI")
+   (V2SF    "SF")
+   (V16QI   "QI")
+   (V8HI    "HI")
+   (V4SI    "SI")
+   (V4SF    "SF")
+   (V2DI    "DI")
+   (V2DF    "DF")
+   (V32QI   "QI")
+   (V16HI   "HI")
+   (V8SI    "SI")
+   (V8SF    "SF")
+   (V4DI    "DI")
+   (V4DF    "DF")
+])
+
+;; Attribute to get the mask MODE of a vector mode.
+(define_mode_attr PRED [
+   (V8QI    "V8QI")
+   (V4HI    "V4HI")
+   (V2SI    "V2SI")
+   (V2SF    "V2SI")
+   (V16QI   "V16QI")
+   (V8HI    "V8HI")
+   (V4SI    "V4SI")
+   (V4SF    "V4SI")
+   (V2DI    "V2DI")
+   (V2DF    "V2DI")
+   (V32QI   "V32QI")
+   (V16HI   "V16HI")
+   (V8SI    "V8SI")
+   (V8SF    "V8SI")
+   (V4DI    "V4DI")
+   (V4DF    "V4DI")
+])
+
+;; Attribute to get the mask mode of a vector mode.
+(define_mode_attr pred [
+   (V4HI    "v4hi")
+   (V2SI    "v2si")
+   (V2SF    "v2si")
+   (V8HI    "v8hi")
+   (V4SI    "v4si")
+   (V4SF    "v4si")
+   (V2DI    "v2di")
+   (V2DF    "v2di")
+   (V16HI   "v16hi")
+   (V8SI    "v8si")
+   (V8SF    "v8si")
+   (V4DI    "v4di")
+   (V4DF    "v4di")
 ])
 
