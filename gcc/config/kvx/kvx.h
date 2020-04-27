@@ -749,6 +749,9 @@ extern void kvx_profile_hook (void);
 #undef STORE_FLAG_VALUE
 #define STORE_FLAG_VALUE 1
 
+#undef VECTOR_STORE_FLAG_VALUE
+#define VECTOR_STORE_FLAG_VALUE(MODE) constm1_rtx
+
 /* A C expression that indicates whether the architecture defines a
    value for clz or ctz with a zero operand. A result of 0 indicates
    the value is undefined. If the value is defined for only the RTL
