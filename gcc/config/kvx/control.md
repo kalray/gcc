@@ -66,7 +66,7 @@
         operands[1] = pred;
         operands[2] = const0_rtx;
       }
-    else if (GET_MODE_CLASS (<MODE>mode) == MODE_VECTOR_FLOAT)
+    else if (GET_MODE_CLASS (<MODE>mode) == MODE_FLOAT)
      {
         gcc_unreachable ();
      }
@@ -280,7 +280,13 @@
                              (match_operand:ALLIFV 3 "nonmemory_operand" "")))]
   ""
   {
-    kvx_expand_conditional_move (operands, <MODE>mode);
+    rtx target = operands[0];
+    rtx select1 = operands[2];
+    rtx select2 = operands[3];
+    rtx cmp = operands[1];
+    rtx left = XEXP (cmp, 0);
+    rtx right = XEXP (cmp, 1);
+    kvx_expand_conditional_move (target, select1, select2, cmp, left, right);
     DONE;
   }
 )
