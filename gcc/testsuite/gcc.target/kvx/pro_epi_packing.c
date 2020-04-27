@@ -2,7 +2,7 @@
    some save/restore in pro/epilogue */
 
 /* { dg-do  compile } */
-/* { dg-options "-O3 -fdump-rtl-pro_and_epilogue" } */
+/* { dg-options "-O3 -fno-tree-vectorize -fdump-rtl-pro_and_epilogue" } */
 
 /* We have 4 load/store */
 

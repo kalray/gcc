@@ -90,8 +90,6 @@ extern bool kvx_legitimate_pic_operand_p (rtx x);
 
 extern bool kvx_legitimate_pic_symbolic_ref_p (rtx op);
 
-extern bool kvx_legitimate_modulo_addressing_p (rtx x, bool strict);
-
 extern bool kvx_split_mem (rtx x, rtx *base_out, rtx *offset_out, bool strict);
 
 extern bool kvx_pack_load_store (rtx operands[], unsigned int nops);
@@ -132,10 +130,19 @@ extern bool kvx_has_32x2bit_vector_const_p (rtx x);
 extern rtx kvx_lower_comparison (rtx pred, enum rtx_code cmp_code, rtx left,
 				 rtx right);
 
-extern void kvx_expand_conditional_move (rtx operands[],
-					 enum machine_mode mode);
+extern void kvx_expand_conditional_move (rtx target, rtx select1, rtx select2,
+					 rtx cmp, rtx left, rtx right);
 
-extern void kvx_emit_pre_barrier (rtx, bool);
+extern void kvx_expand_masked_move (rtx target, rtx select1, rtx select2,
+				    rtx mask);
+
+extern void kvx_expand_vector_insert (rtx target, rtx source, rtx where);
+
+extern void kvx_expand_vector_extract (rtx target, rtx source, rtx where);
+
+extern void kvx_expand_vector_init (rtx target, rtx source);
+
+extern void kvx_expand_vec_perm_const (rtx target, rtx source1, rtx source2, rtx selector);
 
 extern void kvx_emit_pre_barrier (rtx, bool);
 extern void kvx_emit_post_barrier (rtx, bool);

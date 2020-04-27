@@ -3,15 +3,14 @@
   (and (match_code "const_int,const_wide_int,const_double,const_vector")
        (match_test "op == CONST0_RTX (mode)")))
 
+;; Return true if OP an all ones operand (int/vector).
+(define_predicate "const_mone_operand"
+  (and (match_code "const_int, const_wide_int, const_vector")
+       (match_test "op == CONSTM1_RTX (mode)")))
+
 (define_predicate "const_float_1_operand"
-  (match_code "const_double")
-{
-  if (GET_CODE (op) != CONST_DOUBLE
-      || mode != GET_MODE (op)
-      || (mode != DFmode && mode != SFmode))
-    return 0;
-  return op == CONST1_RTX(mode);
-})
+  (and (match_code "const_double")
+       (match_test "op == CONST1_RTX (mode)")))
 
 ;; Allow for LABELs to be used in the mov expander
 ;; It will split it using add_pcrel insn.
