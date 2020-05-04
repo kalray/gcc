@@ -41,7 +41,7 @@ extern void abort (void);
 #include <hal/cos_cache.h>
 #include <pthread.h>
 
-extern int MPPA_COS_THREAD_PER_CORE_SHIFT;
+extern int MPPA_COS_THREAD_PER_CORE_LOG2;
 
 #ifdef HAVE_ATTRIBUTE_VISIBILITY
 #pragma GCC visibility pop
@@ -75,7 +75,7 @@ gomp_mutex_lock (gomp_mutex_t *mutex)
   while (!(__builtin_kvx_alclrw ((void *) mutex) == 1ULL))
 #endif
     {
-      if ((uintptr_t) &MPPA_COS_THREAD_PER_CORE_SHIFT
+      if ((uintptr_t) &MPPA_COS_THREAD_PER_CORE_LOG2
 	  != 0) /* yield if more than one thread per core */
 	mppa_cos_synchronization_wait (NULL);
     }
