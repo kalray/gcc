@@ -78,7 +78,7 @@ extern void gomp_sem_destroy (gomp_sem_t *sem);
 
 extern void abort (void);
 
-extern int MPPA_COS_THREAD_PER_CORE_SHIFT;
+extern int MPPA_COS_THREAD_PER_CORE_LOG2;
 
 #ifdef HAVE_ATTRIBUTE_VISIBILITY
 #pragma GCC visibility pop
@@ -116,7 +116,7 @@ gomp_sem_wait (gomp_sem_t *sem)
 
       if (count == 0)
 	{
-	  if ((uintptr_t) &MPPA_COS_THREAD_PER_CORE_SHIFT
+	  if ((uintptr_t) &MPPA_COS_THREAD_PER_CORE_LOG2
 	      != 0) /* yield if more than one thread per core */
 	    mppa_cos_synchronization_wait (NULL);
 	}
