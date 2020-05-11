@@ -343,6 +343,9 @@
 #define EM_NFP		250	/* Netronome Flow Processor.  */
 #define EM_CSKY		252	/* C-SKY processor family.  */
 
+/* The number has been attributed officially but we are still waiting for publication */
+#define EM_KVX          256     /* Kalray VLIW core of the MPPA processor family */
+
 /* If it is necessary to assign new unofficial EM_* values, please pick large
    random numbers (0x8523, 0xa7f2, etc.) to minimize the chances of collision
    with official or non-GNU unofficial values.
@@ -442,9 +445,6 @@
 #define EM_CSKY_OLD		EM_MCORE
 
 /* See the above comment before you add a new EM_* value here.  */
-
-/* Kalray VLIW core */
-#define EM_KVX                   0x1337
 
 /* Values for e_version.  */
 
