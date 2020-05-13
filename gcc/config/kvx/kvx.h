@@ -66,7 +66,7 @@ enum kvx_abi_type
   " %{G*}"                                                                     \
   "%{!fexceptions:%{!fno-exceptions: -fno-exceptions}} "
 
-#define ASM_SPEC "%{mcore*} --check-resources %{m32} "
+#define ASM_SPEC "%{march*} --check-resources %{m32} "
 
 #define CRT_CALL_STATIC_FUNCTION(SECTION_OP, FUNC)                             \
   asm(SECTION_OP "\ncall " #FUNC "\n;;\n.previous\n");
