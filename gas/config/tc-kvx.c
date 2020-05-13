@@ -61,8 +61,8 @@ static int generate_illegal_code = 0;
 static int dump_table = 0;
 /* Dump instructions: for documentation */
 static int dump_insn = 0;
-/* Core string passed as argument with -mcore option */
-char *mcore= NULL;
+/* arch string passed as argument with -march option */
+char *march= NULL;
 
 /* Used for HW validation: allow all SFR on GET/SET/WFX */
 int allow_all_sfr = 0;
@@ -786,7 +786,7 @@ const char *md_shortopts = "hV";	/* catted to std short options */
 
 #define OPTION_HEXFILE	(OPTION_MD_BASE + 0)
 #define OPTION_EMITALLRELOCS (OPTION_MD_BASE + 3)
-#define OPTION_MCORE (OPTION_MD_BASE + 4)
+#define OPTION_MARCH (OPTION_MD_BASE + 4)
 #define OPTION_CHECK_RESOURCES (OPTION_MD_BASE + 5)
 #define OPTION_NO_CHECK_RESOURCES (OPTION_MD_BASE + 6)
 #define OPTION_GENERATE_ILLEGAL_CODE (OPTION_MD_BASE + 7)
@@ -801,7 +801,7 @@ const char *md_shortopts = "hV";	/* catted to std short options */
 struct option md_longopts[] =
 {
      {"emit-all-relocs", no_argument, NULL, OPTION_EMITALLRELOCS},
-     {"mcore", required_argument, NULL, OPTION_MCORE},
+     {"march", required_argument, NULL, OPTION_MARCH},
      {"check-resources", no_argument, NULL, OPTION_CHECK_RESOURCES},
      {"no-check-resources", no_argument, NULL, OPTION_NO_CHECK_RESOURCES},
      {"generate-illegal-code", no_argument, NULL, OPTION_GENERATE_ILLEGAL_CODE},
@@ -834,13 +834,13 @@ int md_parse_option(int c, char *arg ATTRIBUTE_UNUSED) {
   case OPTION_EMITALLRELOCS:
     emit_all_relocs = 1;
     break;
-  case OPTION_MCORE:
-    mcore = strdup(arg);
+  case OPTION_MARCH:
+    march = strdup(arg);
     i = 0;
     while(i < KVXNUMCORES && ! find_core) {
       subcore_id = 0;
       while(kvx_core_info_table[i]->elf_cores[subcore_id] != -1 && ! find_core) {
-        if (strcasecmp(mcore, kvx_core_info_table[i]->names[subcore_id]) == 0
+        if (strcasecmp(march, kvx_core_info_table[i]->names[subcore_id]) == 0
             && kvx_core_info_table[i]->supported){
 
           kvx_core_info = kvx_core_info_table[i];
@@ -906,7 +906,7 @@ void md_show_usage(FILE * stream){
     fprintf(stream, " are not supported in this assembler.\n");
     fprintf(stream, "--emit-all-relocs \t emit all relocs\n");
     fprintf(stream, "--check-resources \t perform minimal resource checking\n");
-    fprintf(stream, "--mcore [%s] \t select encoding table and ELF flags\n", buf);
+    fprintf(stream, "--march [%s] \t select encoding table and ELF flags\n", buf);
     fprintf(stream, "-V \t\t\t print assembler version number\n");
 }
 
