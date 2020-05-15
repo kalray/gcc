@@ -279,8 +279,8 @@
 ;; where no register alignement is enforced (eg. a TI can be moved in
 ;; r3 and r4)
 (define_insn_and_split "*mov_quad_oddreg"
-    [(set (match_operand:TI 0 "nonimmediate_operand" "")
-          (match_operand:TI 1 "general_operand" "" ))]
+    [(set (match_operand:TI 0 "nonimmediate_operand" "=r,   m")
+          (match_operand:TI 1 "general_operand"      " imr, r" ))]
  "(kvx_is_reg_subreg_p (operands[0]) && !kvx_ok_for_paired_reg_p (operands[0]))
    || (kvx_is_reg_subreg_p (operands[1]) && !kvx_ok_for_paired_reg_p (operands[1]))"
   "#"
