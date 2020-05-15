@@ -48,8 +48,8 @@
 )
 
 (define_insn_and_split "*mov<mode>_oddreg"
-  [(set (match_operand:SIMD128 0 "nonimmediate_operand" "")
-        (match_operand:SIMD128 1 "general_operand"      ""))]
+  [(set (match_operand:SIMD128 0 "nonimmediate_operand" "=r  , m")
+        (match_operand:SIMD128 1 "general_operand"      " irm, r"))]
   "(kvx_is_reg_subreg_p (operands[0]) && !kvx_ok_for_paired_reg_p (operands[0]))
     || (kvx_is_reg_subreg_p (operands[1]) && !kvx_ok_for_paired_reg_p (operands[1]))"
   "#"
@@ -97,8 +97,8 @@
 )
 
 (define_insn_and_split "*mov<mode>_immediate"
-    [(set (match_operand:SIMD128 0 "register_operand" "")
-          (match_operand:SIMD128 1 "immediate_operand" "" ))]
+    [(set (match_operand:SIMD128 0 "register_operand" "=r")
+          (match_operand:SIMD128 1 "immediate_operand" "i" ))]
   ""
   "#"
   "&& reload_completed"
@@ -124,8 +124,8 @@
 )
 
 (define_insn_and_split "*mov<mode>_misalign_reg"
-  [(set (match_operand:SIMD256 0 "nonimmediate_operand" "")
-        (match_operand:SIMD256 1 "general_operand"      ""))]
+  [(set (match_operand:SIMD256 0 "nonimmediate_operand" "=r,   m")
+        (match_operand:SIMD256 1 "general_operand"      " irm, r"))]
   "(kvx_is_reg_subreg_p (operands[0]) && !kvx_ok_for_quad_reg_p (operands[0]))
     || (kvx_is_reg_subreg_p (operands[1]) && !kvx_ok_for_quad_reg_p (operands[1]))"
   "#"
@@ -173,8 +173,8 @@
 )
 
 (define_insn_and_split "*mov<mode>_immediate"
-    [(set (match_operand:SIMD256 0 "register_operand" "")
-          (match_operand:SIMD256 1 "immediate_operand" "" ))]
+    [(set (match_operand:SIMD256 0 "register_operand" "=r")
+          (match_operand:SIMD256 1 "immediate_operand" "i" ))]
   ""
   "#"
   "&& reload_completed"
