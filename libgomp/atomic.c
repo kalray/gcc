@@ -34,6 +34,7 @@
    spec.  Which makes sense, since that's how several other compilers
    handle this situation as well.  */
 
+GLOBAL_DATA_SECTION
 static gomp_mutex_t atomic_lock;
 
 void

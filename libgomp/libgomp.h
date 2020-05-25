@@ -745,6 +745,17 @@ enum gomp_cancel_kind
   GOMP_CANCEL_TASKGROUP = 8
 };
 
+#if defined __CLUSTER_OS__
+/*
+ * We place globals in first local memory of a
+ * multi-cluster ClusterOS instance for both
+ * coherency support and performance.
+ */
+#define GLOBAL_DATA_SECTION __COS_DATA_LOCALMEM_0__
+#else
+#define GLOBAL_DATA_SECTION
+#endif
+
 /* ... and here is that TLS data.  */
 
 #if defined __nvptx__
