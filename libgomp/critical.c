@@ -28,7 +28,7 @@
 #include "libgomp.h"
 #include <stdlib.h>
 
-
+GLOBAL_DATA_SECTION
 static gomp_mutex_t default_lock;
 
 void
