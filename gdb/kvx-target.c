@@ -393,6 +393,7 @@ kvx_target_create_inferior (struct target_ops *ops, char *exec_file, char *args,
       waitpid (server_pid, NULL, 0);
     }
 
+  opt_cont_os_init_done = 0;
   pipe (pipefds);
   server_pid = fork ();
 
