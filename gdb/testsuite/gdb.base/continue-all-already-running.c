@@ -20,14 +20,6 @@
 int
 main (void)
 {
-  #ifdef KVX_ISS
-  #ifndef __CLUSTER_OS__
-  usleep (70000);
-  #else
-  sleep(1);
-  #endif
-  #else
   sleep (10);
-  #endif
   return 0; /* set break here */
 }

@@ -17,7 +17,7 @@ set_board_info gdb,nofileio 1
 set_board_info gdb,nosignals 1
 set_board_info gdb,skip_huge_test 1
 
-set_board_info gdb_init_command "set kalray debug_agent_options \"--init-value=0\""
+set_board_info gdb_init_command "set kalray debug_agent_options --init-value=0 --host-time"
 
 proc mystacktrace {} {
     set stack "Stack trace:\n"

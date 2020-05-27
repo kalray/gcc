@@ -18,7 +18,7 @@ set_board_info gdb,nosignals 1
 set_board_info gdb,skip_huge_test 1
 set_board_info gdb,timeout 100
 
-set_board_info gdb_init_command "set kalray debug_agent_options \"--init-value=0\""
+set_board_info gdb_init_command "set kalray debug_agent_options --init-value=0 --host-time"
 
 # function copied from gdb/testsuite/lib/gdb.exp with a few changes
 #
