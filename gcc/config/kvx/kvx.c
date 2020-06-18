@@ -8101,13 +8101,14 @@ kvx_dependencies_evaluation_hook (rtx_insn *head, rtx_insn *tail)
 	add_dependence (insn2, last_sync, REG_DEP_TRUE);
 }
 
+/* NULL if INSN insn is valid within a low-overhead loop.
+   Otherwise return why doloop cannot be applied.  */
+
 static const char *
 kvx_invalid_within_doloop (const rtx_insn *insn)
 {
-  rtx asm_ops, body;
-
   if (CALL_P (insn))
-    return "Function call in loop.";
+    return "Function call in the loop.";
 
   if (JUMP_TABLE_DATA_P (insn))
     return "Computed branch in the loop.";
@@ -8115,19 +8116,16 @@ kvx_invalid_within_doloop (const rtx_insn *insn)
   if (!INSN_P (insn))
     return NULL;
 
-  body = PATTERN (insn);
-  if (volatile_insn_p (body))
-    return "unspec or asm volatile in the loop.";
+  rtx body = PATTERN (insn);
+  rtx asm_ops = extract_asm_operands (body);
 
-  asm_ops = extract_asm_operands (body);
   if (asm_ops && GET_CODE (body) == PARALLEL)
     {
-      int i, regno, nparallel = XVECLEN (body, 0); /* Includes CLOBBERs.  */
+      int i, regno, nparallel = XVECLEN (body, 0);
 
       for (i = 0; i < nparallel; i++)
 	{
 	  rtx clobber = XVECEXP (body, 0, i);
-
 	  if (GET_CODE (clobber) == CLOBBER && REG_P (XEXP (clobber, 0))
 	      && (regno = REGNO (XEXP (clobber, 0)))
 	      && (regno == KV3_LC_REGNO || regno == KV3_LS_REGNO
