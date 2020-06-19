@@ -125,6 +125,9 @@ scan_loop (hwloop_info loop)
 		  || asm_noperands (PATTERN (insn)) >= 0))
 	    loop->has_asm = true;
 
+	  if (CALL_P (insn))
+	    loop->has_call = true;
+
 	  CLEAR_HARD_REG_SET (set_this_insn);
 	  FOR_EACH_INSN_DEF (def, insn)
 	    {
