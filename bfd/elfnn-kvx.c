@@ -3511,7 +3511,7 @@ kvx_elf_create_got_section (bfd *abfd, struct bfd_link_info *info)
     }
 
   /* The first bit of the global offset table is the header.  */
-  htab->sgot->size += bed->got_header_size;
+  s->size += bed->got_header_size;
 
   /* we still need to handle got content when doing static link with PIC */
   if (bfd_link_executable (info) && !bfd_link_pic (info)) {
