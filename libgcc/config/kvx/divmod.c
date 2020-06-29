@@ -60,7 +60,7 @@ typedef long long int64_t;
 
 typedef uint64_t uint64x2_t __attribute ((vector_size (2 * sizeof (uint64_t))));
 
-#define ERROR __asm__("errop")
+#define ERROR __asm__("errop\n\t;;\n")
 
 static inline uint64x2_t
 uint64_divmod (uint64_t a, uint64_t b)
