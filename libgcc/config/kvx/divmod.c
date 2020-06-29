@@ -55,7 +55,8 @@
  * -- Benoit Dupont de Dinechin (benoit.dinechin@kalray.eu)
  */
 
-#include <stdint.h>
+typedef unsigned long long uint64_t;
+typedef long long int64_t;
 
 typedef uint64_t uint64x2_t __attribute ((vector_size (2 * sizeof (uint64_t))));
 
