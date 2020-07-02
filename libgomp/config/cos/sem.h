@@ -78,8 +78,6 @@ extern void gomp_sem_destroy (gomp_sem_t *sem);
 
 extern void abort (void);
 
-extern int MPPA_COS_THREAD_PER_CORE_LOG2;
-
 #ifdef HAVE_ATTRIBUTE_VISIBILITY
 #pragma GCC visibility pop
 #endif
