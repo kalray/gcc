@@ -41,8 +41,6 @@ extern void abort (void);
 #include <hal/cos_cache.h>
 #include <pthread.h>
 
-extern int MPPA_COS_THREAD_PER_CORE_LOG2;
-
 #ifdef HAVE_ATTRIBUTE_VISIBILITY
 #pragma GCC visibility pop
 #endif

@@ -42,6 +42,8 @@ extern void pthread_yield ();
 #pragma GCC visibility pop
 #endif
 
+#include <hal/cos_cache.h>
+
 static inline void
 cpu_relax (void)
 {
@@ -58,7 +60,6 @@ doacross_spin (unsigned long *addr, unsigned long expected, unsigned long cur)
       cur = __atomic_load_n (addr, MEMMODEL_RELAXED);
       if (expected < cur)
 	{
-	  extern int MPPA_COS_ENABLE_DINVAL __attribute__ ((weak));
 	  if (&MPPA_COS_ENABLE_DINVAL)
 	    __builtin_kvx_dinval ();
 	  return;
