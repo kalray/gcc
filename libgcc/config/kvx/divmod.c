@@ -62,6 +62,18 @@ typedef uint64_t uint64x2_t __attribute ((vector_size (2 * sizeof (uint64_t))));
 
 #define ERROR __asm__("errop\n\t;;\n")
 
+#ifndef __linux__
+/*
+ * This weak symbol makes it possible to return
+ * zeros for divmod when the denominator is 0.
+ * The default behavior makes the application crashes.
+ * One usage of this feature would be the OpenCL-C division
+ * where the result should be undefined instead of crashing
+ * the user application.
+ */
+extern char *_KVX_DIVMOD_ZERO_RETURN_ZERO __attribute__ ((weak));
+#endif
+
 static inline uint64x2_t
 uint64_divmod (uint64_t a, uint64_t b)
 {
@@ -91,8 +103,19 @@ uint64_divmod (uint64_t a, uint64_t b)
 end:
   return (uint64x2_t){q, r};
 div0:
-  ERROR;
-  __builtin_unreachable ();
+#ifndef __linux__
+  if (&_KVX_DIVMOD_ZERO_RETURN_ZERO)
+    {
+      return (uint64x2_t){0, 0};
+    }
+  else
+    {
+#endif
+      ERROR;
+      __builtin_unreachable ();
+#ifndef __linux__
+    }
+#endif
 }
 
 uint64_t
