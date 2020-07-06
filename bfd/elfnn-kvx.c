@@ -1132,13 +1132,13 @@ kvx_build_one_stub (struct bfd_hash_entry *gen_entry,
 	     BFD_RELOC_KVX_S43_EX6
       */
       if (kvx_relocate (R_KVX_S43_LO10, stub_bfd, stub_sec,
-		       stub_entry->stub_offset , sym_value))
-      	BFD_FAIL ();
+                        stub_entry->stub_offset , sym_value) != bfd_reloc_ok)
+        BFD_FAIL ();
       if (kvx_relocate (R_KVX_S43_EX6, stub_bfd, stub_sec,
-		       stub_entry->stub_offset , sym_value))
-      	BFD_FAIL ();
+                        stub_entry->stub_offset , sym_value) != bfd_reloc_ok)
+        BFD_FAIL ();
       if (kvx_relocate (R_KVX_S43_UP27, stub_bfd, stub_sec,
-		       stub_entry->stub_offset  + 4, sym_value))
+                        stub_entry->stub_offset  + 4, sym_value) != bfd_reloc_ok)
       	BFD_FAIL ();
       break;
     default:
