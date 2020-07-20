@@ -5255,10 +5255,6 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LITE, ((int)0 << 8) | (int)Reservation_kv3_ALU_LITE, {&kv3_registerw_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s"}, /* A_Opcode-v1-SATDH_registerW_registerZ_simple */
 	{"satdw", {{ 0x7e022800, 0x7f03ffc0, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LITE, ((int)0 << 8) | (int)Reservation_kv3_ALU_LITE, {&kv3_registerw_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s"}, /* A_Opcode-v1-SATDW_registerW_registerZ_simple */
-	{"satudh", {{ 0x7f022400, 0x7f03ffc0, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LITE, ((int)0 << 8) | (int)Reservation_kv3_ALU_LITE, {&kv3_registerw_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s"}, /* A_Opcode-v1-SATUDH_registerW_registerZ_simple */
-	{"satudw", {{ 0x7f022800, 0x7f03ffc0, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LITE, ((int)0 << 8) | (int)Reservation_kv3_ALU_LITE, {&kv3_registerw_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s"}, /* A_Opcode-v1-SATUDW_registerW_registerZ_simple */
 	{"sxbd", {{ 0x68037000, 0x7f03ffc0, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LITE, ((int)0 << 8) | (int)Reservation_kv3_ALU_LITE, {&kv3_registerw_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s"}, /* A_Opcode-v1-SXBD_registerW_registerZ_simple */
 	{"sxhd", {{ 0x6803f000, 0x7f03ffc0, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
@@ -5389,6 +5385,8 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ACSWAPD_scaling_registerY_registerZ_registerU_simple */
 	{"acswapd.xs", {{ 0x3f03f000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ACSWAPD_scaling_registerY_registerZ_registerU_simple */
+	{"acswapd", {{ 0xbf010000, 0xff070000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x80000000, 0xe0000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX1|kvxOPCODE_FLAG_LSU }, }, 3, 96,
+((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW_Y, {&kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ACSWAPD_w064_registerZ_registerU_triple */
 	{"acswapw.deqz", {{ 0x3e031000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s? [%s] = %s"}, /* Opcode-v1-ACSWAPW_lsucond_registerY_registerZ_registerU_simple */
 	{"acws.deqz", {{ 0x3e031000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
@@ -5573,6 +5571,10 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ACSWAPW_scaling_registerY_registerZ_registerU_simple */
 	{"acws.xs", {{ 0x3e03f000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ACSWAPW_scaling_registerY_registerZ_registerU_simple */
+	{"acswapw", {{ 0xbe010000, 0xff070000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x80000000, 0xe0000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX1|kvxOPCODE_FLAG_LSU }, }, 3, 96,
+((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW_Y, {&kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ACSWAPW_w064_registerZ_registerU_triple */
+	{"acws", {{ 0xbe010000, 0xff070000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x80000000, 0xe0000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX1|kvxOPCODE_FLAG_LSU }, }, 3, 96,
+((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW_Y, {&kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ACSWAPW_w064_registerZ_registerU_triple */
 	{"addchcp", {{ 0x7c013000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LITE, ((int)0 << 8) | (int)Reservation_kv3_ALU_LITE, {&kv3_registerw_opnd, &kv3_registerz_opnd, &kv3_registery_opnd, 0}, "", "%s = %s, %s"}, /* Opcode-v1-ADDCHCP_registerW_registerZ_registerY_simple */
 	{"addchcp", {{ 0xfc013000, 0xff03f800, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_ALU }, }, 2, 64,
@@ -15477,10 +15479,6 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LITE, ((int)0 << 8) | (int)Reservation_kv3_ALU_LITE, {&kv3_registerw_opnd, &kv3_registerz_opnd, &kv3_registery_opnd, 0}, "", "%s = %s, %s"}, /* Opcode-v1-SATD_registerW_registerZ_registerY_simple */
 	{"satd", {{ 0x7e022000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LITE, ((int)0 << 8) | (int)Reservation_kv3_ALU_LITE, {&kv3_registerw_opnd, &kv3_registerz_opnd, &kv3_unsigned6_opnd, 0}, "", "%s = %s, %s"}, /* Opcode-v1-SATD_registerW_registerZ_u006_simple */
-	{"satud", {{ 0x7f026000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LITE, ((int)0 << 8) | (int)Reservation_kv3_ALU_LITE, {&kv3_registerw_opnd, &kv3_registerz_opnd, &kv3_registery_opnd, 0}, "", "%s = %s, %s"}, /* Opcode-v1-SATUD_registerW_registerZ_registerY_simple */
-	{"satud", {{ 0x7f022000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LITE, ((int)0 << 8) | (int)Reservation_kv3_ALU_LITE, {&kv3_registerw_opnd, &kv3_registerz_opnd, &kv3_unsigned6_opnd, 0}, "", "%s = %s, %s"}, /* Opcode-v1-SATUD_registerW_registerZ_u006_simple */
 	{"sbfchcp", {{ 0x7d013000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LITE, ((int)0 << 8) | (int)Reservation_kv3_ALU_LITE, {&kv3_registerw_opnd, &kv3_registerz_opnd, &kv3_registery_opnd, 0}, "", "%s = %s, %s"}, /* Opcode-v1-SBFCHCP_registerW_registerZ_registerY_simple */
 	{"sbfchcp", {{ 0xfd013000, 0xff03f800, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_ALU }, }, 2, 64,
@@ -16497,7 +16495,7 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_TINY, ((int)0 << 8) | (int)Reservation_kv3_ALU_TINY, {&kv3_registerw_opnd, &kv3_registerz_opnd, &kv3_signed10_opnd, 0}, "", "%s = %s, %s"}, /* Opcode-v1-XORW_registerW_registerZ_s010_simple */
 	{"xorw", {{ 0xfc000000, 0xff030000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_ALU }, }, 2, 64,
 ((int)0 << 8) | (int)Bundling_kv3_TINY_X, ((int)0 << 8) | (int)Reservation_kv3_ALU_TINY_X, {&kv3_registerw_opnd, &kv3_registerz_opnd, &kv3_upper27_lower10_opnd, 0}, "", "%s = %s, %s"}, /* Opcode-v1-XORW_registerW_registerZ_s037_double */
-/* Number of instructions : 5373 */
+/* Number of instructions : 5371 */
 	{"", { }, 0, 0, 0, 0, { }, "", ""}};
 
 const Kvx_Core_Info kvx_kv3_v1_core_info = { kv3_v1_optab, { "kv3-1", "\0" }, kv3_v1_resources, TRUE, { ELF_KVX_CORE_KV3_1, -1 }  };
