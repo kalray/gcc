@@ -32,12 +32,6 @@
 load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
-# KVX: does not compile (pthread_barrier_t)
-if [istarget kvx-*-*] then {
-  unsupported "mi-condbreak-call-thr-state.exp"
-  return 1
-}
-
 # Run either the multi-threaded or the single-threaded variant of the
 # test, as determined by VARIANT.
 proc test { variant } {
@@ -97,7 +91,7 @@ proc test { variant } {
 	    -re "\\*running.*\\*running.*\\*stopped" {
 		fail $msg
 	    }
-	    -re "\\^running\r\n\\*running,thread-id=\"(all|1)\"\r\n${mi_gdb_prompt}.*\\*stopped" {
+	    -re "\\^running\r\n\\*running,thread-id=\"all\"\r\n${mi_gdb_prompt}.*\\*stopped" {
 		pass $msg
 	    }
 	    timeout {

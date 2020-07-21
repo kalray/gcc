@@ -15,12 +15,6 @@
 
 standard_testfile
 
-# KVX: does not compile (include sys/sdt.h)
-if [istarget kvx-*-*] then {
-  unsupported "stap-probe.exp"
-  return 1
-}
-
 # Run the tests.  We run the tests two different ways: once with a
 # plain probe, and once with a probe that has an associated semaphore.
 # This returns -1 on failure to compile or start, 0 otherwise.

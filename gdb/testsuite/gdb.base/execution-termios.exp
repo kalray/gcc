@@ -15,12 +15,6 @@
 
 standard_testfile
 
-# KVX: does not compile (include sys/termios.h)
-if [istarget kvx-*-*] then {
-  unsupported "execution-termios.exp"
-  return 1
-}
-
 if {[prepare_for_testing "failed to prepare" $testfile $srcfile debug]} {
     return -1
 }

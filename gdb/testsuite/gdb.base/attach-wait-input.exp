@@ -35,12 +35,6 @@ if [use_gdb_stub] {
 
 standard_testfile
 
-# KVX: getpid returns -1
-if [istarget kvx-*-*] then {
-  unsupported "attach-wait-input.exp"
-  return 1
-}
-
 if {[build_executable "failed to build" $testfile $srcfile debug]} {
     return -1
 }

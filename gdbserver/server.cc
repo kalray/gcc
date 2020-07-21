@@ -2019,8 +2019,6 @@ handle_qxfer (char *own_buf, int packet_len, int *new_packet_len_p)
 		  return 1;
 		}
 
-	      len = 250; /* KVX: workaround TTY bug T2265 */
-
 	      /* Read one extra byte, as an indicator of whether there is
 		 more.  */
 	      if (len > PBUFSIZ - 2)
@@ -4044,13 +4042,6 @@ process_serial_event (void)
   int packet_len;
   int new_packet_len = -1;
 
-  /* Used to decide when gdbserver should exit in
-     multi-mode/remote.  */
-  static int have_ran = 0;
-
-  if (!have_ran)
-    have_ran = target_running ();
-
   disable_async_io ();
 
   response_needed = false;
@@ -4392,21 +4383,6 @@ process_serial_event (void)
     putpkt (cs.own_buf);
 
   response_needed = false;
-
-  if (!extended_protocol && have_ran && !target_running ())
-    {
-      /* In non-stop, defer exiting until GDB had a chance to query
-	 the whole vStopped list (until it gets an OK).  */
-      if (QUEUE_is_empty (notif_event_p, notif_stop.queue))
-	{
-	  /* Be transparent when GDB is connected through stdio -- no
-	     need to spam GDB's console.  */
-	  if (!remote_connection_is_stdio ())
-	    fprintf (stderr, "GDBserver exiting\n");
-	  remote_close ();
-	  exit (0);
-	}
-    }
 
   if (exit_requested)
     return -1;

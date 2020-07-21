@@ -586,9 +586,6 @@
 /* Define as const if the declaration of iconv() needs const. */
 #undef ICONV_CONST
 
-/* The Kalray tools version. */
-#undef KALRAY_VERSION
-
 /* directory to load the JIT readers from */
 #undef JIT_READER_DIR
 

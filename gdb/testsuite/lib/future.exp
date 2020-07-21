@@ -531,13 +531,6 @@ proc gdb_default_target_compile_1 {source destfile type options} {
 	}
     }
 
-    foreach i $options {
-	if {[regexp "^additional_flags=" $i]} {
-	    regsub "^additional_flags=" $i "" tmp
-	    append add_flags " $tmp"
-	}
-    }
-
     if {[board_info $dest exists multilib_flags]} {
 	append add_flags " [board_info $dest multilib_flags]"
     }

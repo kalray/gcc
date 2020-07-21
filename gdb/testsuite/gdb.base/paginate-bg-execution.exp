@@ -40,7 +40,6 @@ proc test_bg_execution_pagination_return {} {
 	gdb_test "b after_sleep"
 
 	gdb_test_no_output "set height 2"
-	gdb_test_no_output "set pagination on"
 
 	gdb_test "continue&" "Continuing\."
 
@@ -84,7 +83,6 @@ proc test_bg_execution_pagination_cancel { how } {
 	gdb_test "b after_sleep"
 
 	gdb_test_no_output "set height 2"
-	gdb_test_no_output "set pagination on"
 
 	gdb_test "continue&" "Continuing\."
 

@@ -60,10 +60,12 @@ gdb_test_no_output "set calc = decr" "set calc to decr"
 gdb_test "continue" \
     "Breakpoint $decimal, decr \\(i=0\\)\[ \r\n\]+at .*${srcfile}:$decimal\[\r\n\]+.*" \
     "continue to decr"
+
+
 # Go back up, check if we stop in sentinel instead.
 
 gdb_test "finish" \
-    "Run till exit from #0 +decr \\(i=0\\)\[ \r\n\]+at .*${srcfile}:$decimal\[\r\n\]+.*Breakpoint $decimal, sentinel \\(\\)\[ \r\n\]+at .*${srcfile}:$decimal\[\r\n\]+.*" \
+    "Run till exit from #0 +decr \\(i=0\\)\[ \r\n\]+at .*${srcfile}:$decimal\[\r\n\]+Breakpoint $decimal, sentinel \\(\\)\[ \r\n\]+at .*${srcfile}:$decimal\[\r\n\]+.*" \
     "stop in sentinel"
 
 

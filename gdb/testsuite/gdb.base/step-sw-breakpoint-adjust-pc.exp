@@ -73,14 +73,6 @@ proc test {non_stop displaced always_inserted} {
     }
 }
 
-# KVX: only non-stop and displaced-stepping mode supported
-if [istarget kvx-*-*] then {
-	foreach_with_prefix always_inserted { "off" "on" } {
-	    test "on" "on" $always_inserted
-	}
-  return 1
-}
-
 foreach_with_prefix non_stop { "off" "on" } {
     foreach_with_prefix displaced_step { "off" "on" } {
 	foreach_with_prefix always_inserted { "off" "on" } {

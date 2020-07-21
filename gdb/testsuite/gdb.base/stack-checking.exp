@@ -16,12 +16,6 @@
 
 standard_testfile .c
 
-# KVX: does not compile (undefined __stack_overflow_detected)
-if [istarget kvx-*-*] then {
-  unsupported "stack-checking.exp"
-  return 1
-}
-
 if  { [gdb_compile "${srcdir}/${subdir}/${srcfile}" "${binfile}" executable [concat debug additional_flags=-fstack-check nowarnings]] != "" } {
      untested "failed to compile"
      return -1

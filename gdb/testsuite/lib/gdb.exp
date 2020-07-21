@@ -2061,10 +2061,6 @@ proc skip_cplus_tests {} {
 	return 1
     }
 
-    if { [istarget "kvx-*-*"] } {
-	return 1
-    }
-
     # The C++ IO streams are too large for HC11/HC12 and are thus not
     # available.  The gdb C++ tests use them and don't compile.
     if { [istarget "m6811-*-*"] } {
@@ -2864,7 +2860,6 @@ proc support_displaced_stepping {} {
 
     if { [istarget "x86_64-*-linux*"] || [istarget "i\[34567\]86-*-linux*"]
 	 || [istarget "arm*-*-linux*"] || [istarget "powerpc-*-linux*"]
-         || [istarget "kvx-*-*"]
 	 || [istarget "powerpc64-*-linux*"] || [istarget "s390*-*-*"]
 	 || [istarget "aarch64*-*-linux*"] } {
 	return 1
@@ -3657,12 +3652,7 @@ proc get_compiler_info {{arg ""}} {
     }
 
     # Set the legacy symbols.
-<<<<<<< HEAD
     set gcc_compiled 0
-=======
-    set gcc_compiled     0
-
->>>>>>> 3fa06bf7865... BIG SQUASH
     regexp "^gcc-(\[0-9\]+)-" "$compiler_info" matchall gcc_compiled
 
     # Log what happened.

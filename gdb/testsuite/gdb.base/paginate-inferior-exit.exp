@@ -39,7 +39,6 @@ proc test_paginate_inferior_exited {} {
 
 	# Force pagination.
 	gdb_test_no_output "set height 2"
-	gdb_test_no_output "set pagination on"
 
 	set test "continue to pagination"
 

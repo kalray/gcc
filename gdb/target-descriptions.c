@@ -973,8 +973,6 @@ tdesc_register_type (struct gdbarch *gdbarch, int regno)
 	  else if (reg->bitsize == gdbarch_ptr_bit (gdbarch))
 	  /* A bit desperate by this point...  */
 	    arch_reg->type = builtin_type (gdbarch)->builtin_data_ptr;
-	  else if (reg->bitsize == 128)
-	    arch_reg->type = builtin_type (gdbarch)->builtin_int128;
 	  else
 	    {
 	      warning (_("Register \"%s\" has an unsupported size (%d bits)"),

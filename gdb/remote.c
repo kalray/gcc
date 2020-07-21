@@ -714,15 +714,8 @@ public: /* Remote specific methods.  */
 			  int *remote_errno);
   int remote_hostio_close (int fd, int *remote_errno);
 
-<<<<<<< HEAD
   int remote_hostio_unlink (inferior *inf, const char *filename,
 			    int *remote_errno);
-=======
-/* KVX specific : need this function in kvx-target.c */
-void set_general_thread (struct ptid ptid);
-
-static void set_continue_thread (struct ptid ptid);
->>>>>>> 3fa06bf7865... BIG SQUASH
 
   struct remote_state *get_remote_state ();
 
@@ -2791,11 +2784,7 @@ remote_target::set_thread (ptid_t ptid, int gen)
 }
 
 void
-<<<<<<< HEAD
 remote_target::set_general_thread (ptid_t ptid)
-=======
-set_general_thread (struct ptid ptid)
->>>>>>> 3fa06bf7865... BIG SQUASH
 {
   set_thread (ptid, 1);
 }
@@ -4412,7 +4401,6 @@ print_one_stopped_thread (struct thread_info *thread)
   gdb::observers::normal_stop.notify (NULL, 1);
 }
 
-int print_stopped_thread = 1; // allows to not print the initial stopped threads
 /* Process all initial stop replies the remote side sent in response
    to the ? packet.  These indicate threads that were already stopped
    on initial connection.  We mark these threads as stopped and print
@@ -4542,7 +4530,7 @@ remote_target::process_initial_stop_replies (int from_tty)
 	  || thread->per_inf_num < lowest_stopped->per_inf_num)
 	lowest_stopped = thread;
 
-      if (non_stop && print_stopped_thread)
+      if (non_stop)
 	print_one_stopped_thread (thread);
     }
 

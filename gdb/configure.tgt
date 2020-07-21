@@ -330,16 +330,6 @@ iq2000-*-*)
 	gdb_sim=../sim/iq2000/libsim.a
 	;;
 
-kvx*-*-linux*)
-	gdb_target_obs="kvx-linux-tdep.o kvx-common-tdep.o kv3-mds-tdep.o\
-		solib-svr4.o symfile-mem.o linux-tdep.o"
-	build_gdbserver=yes
-	;;
-
-kvx-*-*)
-	gdb_target_obs="kv3-mds-tdep.o kvx-common-tdep.o kvx-tdep.o kvx-exception-info.o kvx-dump-tlb.o kvx-target.o solib-kvx-bare.o"
-	;;
-
 lm32-*-*)		
 	gdb_target_obs="lm32-tdep.o" 
 	gdb_sim=../sim/lm32/libsim.a

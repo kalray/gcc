@@ -17,12 +17,6 @@
 
 standard_testfile
 
-# KVX: does not compile (include sys/mman.h)
-if [istarget kvx-*-*] then {
-  unsupported "dcache-line-read-error.exp"
-  return 1
-}
-
 if { [prepare_for_testing "failed to prepare" ${testfile}] } {
     return -1
 }

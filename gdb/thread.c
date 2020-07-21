@@ -949,8 +949,6 @@ pc_in_thread_step_range (CORE_ADDR pc, struct thread_info *thread)
 	  && pc < thread->control.step_range_end);
 }
 
-int (*p_kalray_hide_thread) (struct thread_info *tp, ptid_t crt_ptid) = 0;
-
 /* Helper for print_thread_info.  Returns true if THR should be
    printed.  If REQUESTED_THREADS, a list of GDB ids/ranges, is not
    NULL, only print THR if its ID is included in the list.  GLOBAL_IDS
@@ -1082,7 +1080,6 @@ print_thread_info_1 (struct ui_out *uiout, const char *requested_threads,
 	    return;
 	  }
 
-<<<<<<< HEAD
 	table_emitter.emplace (uiout, show_global_ids ? 5 : 4,
 			       n_threads, "threads");
 
@@ -1095,12 +1092,6 @@ print_thread_info_1 (struct ui_out *uiout, const char *requested_threads,
 	uiout->table_header (1, ui_left, "frame", "Frame");
 	uiout->table_body ();
       }
-=======
-      if (p_kalray_hide_thread && p_kalray_hide_thread (tp, current_ptid))
-        continue;
-
-      chain2 = make_cleanup_ui_out_tuple_begin_end (uiout, NULL);
->>>>>>> 3fa06bf7865... BIG SQUASH
 
     for (inferior *inf : all_inferiors ())
       for (thread_info *tp : inf->threads ())
