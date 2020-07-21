@@ -18,12 +18,6 @@
 
 standard_testfile
 
-# KVX: does not compile (execlp)
-if [istarget kvx-*-*] then {
-  unsupported "infcall-exec.exp"
-  return 1
-}
-
 set testfile2 "infcall-exec2"
 set srcfile2 "${testfile2}.c"
 set binfile2 [standard_output_file $testfile2]

@@ -18,12 +18,6 @@
 
 standard_testfile
 
-# KVX: getpid returns -1
-if [istarget kvx-*-*] then {
-  unsupported "killed-outside.exp"
-  return 1
-}
-
 # Get the value of variable VAR in the inferior.  MSG is used as the
 # test message.
 

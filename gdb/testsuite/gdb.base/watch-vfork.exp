@@ -17,12 +17,6 @@
 
 standard_testfile .c
 
-# KVX: does not compile (vfork)
-if [istarget kvx-*-*] then {
-  unsupported "watch-vfork.exp"
-  return 1
-}
-
 if { [build_executable ${testfile}.exp ${testfile} $srcfile {debug}] } {
     untested "failed to compile"
     return -1

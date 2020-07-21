@@ -19,17 +19,7 @@
 
 standard_testfile
 
-<<<<<<< HEAD
 if {[prepare_for_testing "failed to prepare" $testfile $srcfile {debug additional_flags=-fpie "ldflags=-pie -Wl,-z,relro"}]} {
-=======
-# KVX: Elf Type not supported 3
-if [istarget kvx-*-*] then {
-  unsupported "gcore-relro-pie.exp"
-  return 1
-}
-
-if {[prepare_for_testing $testfile.exp $testfile $srcfile {debug additional_flags=-fpie "ldflags=-pie -Wl,-z,relro"}]} {
->>>>>>> 3fa06bf7865... BIG SQUASH
     return -1
 }
 

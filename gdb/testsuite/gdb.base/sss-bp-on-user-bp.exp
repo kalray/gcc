@@ -36,8 +36,8 @@ gdb_continue_to_breakpoint "first breakpoint" ".* set foo break here .*"
 set next_insn_addr ""
 set test "disassemble main"
 gdb_test_multiple $test $test {
-    -re ".*=> $hex <\\+$decimal>:\[^\r\n\]+\r\n(\r\n)?   ($hex) .*$gdb_prompt $" {
-	set next_insn_addr $expect_out(2,string)
+    -re ".*=> $hex <\\+$decimal>:\[^\r\n\]+\r\n   ($hex) .*$gdb_prompt $" {
+	set next_insn_addr $expect_out(1,string)
 	pass $test
     }
 }
@@ -46,7 +46,7 @@ if { $next_insn_addr == "" } {
     return -1
 }
 
-gdb_test "b *$next_insn_addr" "Breakpoint .*" "b *next_insn_addr"
+gdb_test "b *$next_insn_addr" "Breakpoint .*"
 
 # So that GDB doesn't try to remove the regular breakpoint when the
 # step finishes.

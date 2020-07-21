@@ -23,17 +23,11 @@ if [use_gdb_stub] {
     return
 }
 
-# KVX: cannot step breakpoint (no step pad area for nostdlib)
-if [istarget kvx-*-*] then {
-  unsupported "nostdlib.exp"
-  return 0
-}
-
 # default_target_compile would otherwise add "-lm" making the testcase
 # dependent on whether the system libraries are already prelinked.
 # prelink: Could not set /lib64/libm-2.11.1.so owner or mode: Operation not permitted
 set compile {
-    gdb_compile "${srcdir}/${subdir}/${srcfile}" "${binfile}" executable {debug additional_flags=-nostdlib additional_flags=-z\ max-page-size=0x8}
+    gdb_compile "${srcdir}/${subdir}/${srcfile}" "${binfile}" executable {debug additional_flags=-nostdlib}
 }
 set board [target_info name]
 if [board_info $board exists mathlib] {
