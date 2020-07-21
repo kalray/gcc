@@ -1279,18 +1279,7 @@ call_function_by_hand_dummy (struct value *function,
 
     gdb::observers::inferior_call_post.notify (call_thread_ptid, funaddr);
 
-<<<<<<< HEAD
     if (call_thread->state != THREAD_EXITED)
-=======
-    tp = find_thread_ptid (call_thread_ptid);
-    if (tp && tp->state == THREAD_EXITED) //(gdb) call exit(0) does not delete the thread because refcount > 0
-    {
-      if (!tp->refcount)
-        delete_thread (tp->ptid);
-      tp = NULL;
-    }
-    if (tp != NULL)
->>>>>>> 3fa06bf7865... BIG SQUASH
       {
 	/* The FSM should still be the same.  */
 	gdb_assert (call_thread->thread_fsm == sm);

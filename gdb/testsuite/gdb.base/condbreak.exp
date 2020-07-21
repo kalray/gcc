@@ -183,30 +183,30 @@ gdb_test_multiple "continue" "run until breakpoint at marker2" {
 
 # Test combinations of conditional and thread-specific breakpoints.
 gdb_test "break main if (1==1) thread 999" \
-    "Unknown thread .*999\\."
+    "Unknown thread 999\\."
 gdb_test "break main thread 999 if (1==1)" \
-    "Unknown thread .*999\\."
+    "Unknown thread 999\\."
 
 # Verify that both if and thread can be distinguished from a breakpoint
 # address expression.
 gdb_test "break *main if (1==1) thread 999" \
-    "Unknown thread .*999\\."
+    "Unknown thread 999\\."
 gdb_test "break *main thread 999 if (1==1)" \
-    "Unknown thread .*999\\."
+    "Unknown thread 999\\."
 
 # Similarly for task.
 gdb_test "break *main if (1==1) task 999" \
-    "Unknown task .*999\\."
+    "Unknown task 999\\."
 gdb_test "break *main task 999 if (1==1)" \
-    "Unknown task .*999\\."
+    "Unknown task 999\\."
 
 # GDB accepts abbreviations for "thread" and "task".
 gdb_test "break *main if (1==1) t 999" \
-    "Unknown thread .*999\\."
+    "Unknown thread 999\\."
 gdb_test "break *main if (1==1) th 999" \
-    "Unknown thread .*999\\."
+    "Unknown thread 999\\."
 gdb_test "break *main if (1==1) ta 999" \
-    "Unknown task .*999\\."
+    "Unknown task 999\\."
 
 set test "run until breakpoint at marker3"
 gdb_test_multiple "continue" $test {

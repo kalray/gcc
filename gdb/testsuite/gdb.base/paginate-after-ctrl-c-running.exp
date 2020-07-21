@@ -46,7 +46,6 @@ proc test_ctrlc_while_target_running_paginates {} {
 	    "set breakpoint"
 
 	gdb_test_no_output "set height 2"
-	gdb_test_no_output "set pagination on"
 
 	# Wait for the "Continuing" line, indicating the program is
 	# running.

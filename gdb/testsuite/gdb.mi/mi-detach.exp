@@ -18,12 +18,6 @@
 load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
-# KVX: our gdbserver does not implement detach
-if [istarget kvx-*-*] then {
-  unsupported "mi-detach.exp"
-  return 1
-}
-
 gdb_exit
 if [mi_gdb_start] {
     continue

@@ -41,8 +41,7 @@ static struct serial *scb_base;
 static char *serial_logfile = NULL;
 static struct ui_file *serial_logfp = NULL;
 
-/* KVX specific: used in kvx-linux-tdep.c */
-/*static*/ const struct serial_ops *serial_interface_lookup (const char *);
+static const struct serial_ops *serial_interface_lookup (const char *);
 static void serial_logchar (struct ui_file *stream,
 			    int ch_type, int ch, int timeout);
 static const char logbase_hex[] = "hex";
@@ -141,8 +140,7 @@ serial_log_command (struct target_ops *self, const char *cmd)
 }
 
 
-/* KVX specific: used in kvx-linux-tdep.c */
-/*static*/ const struct serial_ops *
+static const struct serial_ops *
 serial_interface_lookup (const char *name)
 {
   for (const serial_ops *ops : serial_ops_list)
