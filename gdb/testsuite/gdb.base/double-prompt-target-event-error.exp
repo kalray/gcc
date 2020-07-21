@@ -50,7 +50,6 @@ proc cancel_pagination_in_target_event { command } {
 	    "set breakpoint"
 
 	gdb_test_no_output "set height 2"
-	gdb_test_no_output "set pagination on"
 
 	if { $command == "wrapcont" } {
 	    gdb_test_multiple "define wrapcont" "define user command: wrapcont" {

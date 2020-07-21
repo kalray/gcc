@@ -2872,21 +2872,12 @@ find_frame_for_function (const char *function_name)
 
   gdb_assert (function_name != NULL);
 
-<<<<<<< HEAD
   frame = get_current_frame ();
   std::vector<symtab_and_line> sals
     = decode_line_with_current_source (function_name,
 				       DECODE_LINE_FUNFIRSTLINE);
   gdb::def_vector<function_bounds> func_bounds (sals.size ());
   for (size_t i = 0; i < sals.size (); i++)
-=======
-  sals = decode_line_with_current_source (arg, DECODE_LINE_FUNFIRSTLINE);
-  frame = get_current_frame (); /* possible upstream bug "frame destroyed by decode_line_with_current_source" */
-  cleanups = make_cleanup (xfree, sals.sals);
-  func_bounds = XNEWVEC (struct function_bounds, sals.nelts);
-  make_cleanup (xfree, func_bounds);
-  for (i = 0; (i < sals.nelts && !found); i++)
->>>>>>> 3fa06bf7865... BIG SQUASH
     {
       if (sals[i].pspace != current_program_space)
 	func_bounds[i].low = func_bounds[i].high = 0;

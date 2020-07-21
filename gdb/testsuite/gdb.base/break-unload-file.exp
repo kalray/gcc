@@ -114,7 +114,7 @@ proc test_break { initial_load always_inserted break_command } {
 	# the program was first loaded through "file PROGRAM" or "gdb
 	# PROGRAM".
 	set ws "\[ \t\]"
-	gdb_test "info break" "breakpoint${ws}+keep${ws}+n${ws}+$hex${ws}*(inf${ws}*\[0-9\]${ws}*)?" \
+	gdb_test "info break" "breakpoint${ws}+keep${ws}+n${ws}+$hex${ws}*" \
 	    "breakpoint is disabled"
 
 	# Now delete the breakpoint from GDB's tables, to make sure

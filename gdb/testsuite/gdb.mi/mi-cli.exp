@@ -84,7 +84,7 @@ mi_gdb_test "-interpreter-exec console \"break callee4\"" \
     "-interpreter-exec console \"break callee4\""
 
 mi_gdb_test "-interpreter-exec console \"info break\"" \
-  {\~"Num[ \t]*Type[ \t]*Disp[ \t]*Enb[ \t]*Address[ \t]*What\\n".*~"2[ \t]*breakpoint[ \t]*keep[ \t]*y[ \t]*0x[0-9A-Fa-f]+[ \t]*in callee4 at .*basics.c:[0-9]+( inf [0-9]+)?\\n".*\^done} \
+  {\~"Num[ \t]*Type[ \t]*Disp[ \t]*Enb[ \t]*Address[ \t]*What\\n".*~"2[ \t]*breakpoint[ \t]*keep[ \t]*y[ \t]*0x[0-9A-Fa-f]+[ \t]*in callee4 at .*basics.c:[0-9]+\\n".*\^done} \
   "-interpreter-exec console \"info break\""
 
 mi_gdb_test "-interpreter-exec console \"set listsize 1\"" \
@@ -184,7 +184,7 @@ mi_send_resuming_command "exec-continue" "-exec-continue to line \$line_main_hel
 
 set output [mi_gdb_expect_cli_output "\\*stopped" "collect CLI output for breakpoint hit"]
 set test "breakpoint hit produces CLI output"
-set pattern "Temporary breakpoint 3, main \\(\\) at \[^\n\]*basics.c:$line_main_hello\\\\n\[^\n\]+Hello"
+set pattern "\\\\nTemporary breakpoint 3, main \\(\\) at \[^\n\]*basics.c:$line_main_hello\\\\n\[^\n\]+Hello"
 
 if {[regexp $pattern $output]} {
     pass $test
@@ -199,7 +199,7 @@ mi_expect_stop "breakpoint-hit" "main" "" ".*basics.c" \
 # Test that the token is output even for CLI commands
 # Also test that *stopped includes frame information.
 mi_gdb_test "34 next" \
-    ".*34\\\^running.*\\*running,thread-id=\"(all|1)\"" \
+    ".*34\\\^running.*\\*running,thread-id=\"all\"" \
     "34 next: run"
 
 # Test that the new current source line is output to the console

@@ -198,7 +198,7 @@ mi_gdb_test "-var-show-format foo" \
 	"show format variable foo after eval in decimal"
 
 mi_gdb_test "-var-evaluate-expression -f nat foo" \
-	"\\^done,value=\"0x3( <.*>)?\"" \
+	"\\^done,value=\"0x3\"" \
 	"eval variable -f nat foo"
 
 mi_gdb_test "-var-show-format foo" \

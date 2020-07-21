@@ -138,9 +138,6 @@ gdb_test_multiple "next" "step out of main" {
     -re ".*in.*start.*$gdb_prompt $" { 
 	pass "step out of main"
     }
-    -re ".*in.*main_wrapper.*$gdb_prompt $" {
-	pass "step out of main"
-    }
     -re ".*in.*bsp_trap.*$gdb_prompt $" { 
 	pass "step out of main"
     }
@@ -241,7 +238,7 @@ if {!$use_gdb_stub
 		pass "step to end of run"
 		set program_exited_normally 1
 	    }
-	    -re ".*Single.*in exit.*$gdb_prompt $" {
+	    -re ".*Single.*in exit.*from.*dld.sl.*$gdb_prompt $" {
 		pass "step to end of run" 
 		set program_in_exit 1
 	    }
