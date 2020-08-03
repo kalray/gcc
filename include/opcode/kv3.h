@@ -108,6 +108,7 @@ extern int kvx_kv3_v1_dec_registers[];
 #define kv3_cachelev_fld(x) (int)(((unsigned int)(x) >> 24) & 0x3)
 #define kv3_column_fld(x) (int)(((unsigned int)(x) >> 18) & 0x3)
 #define kv3_comparison_fld(x) (int)(((unsigned int)(x) >> 24) & 0xf)
+#define kv3_doscale_fld(x) (int)(((unsigned int)(x) >> 12) & 0x1)
 #define kv3_extend27_fld(x) (int)((unsigned int)(x) & 0x7ffffff)
 #define kv3_extend6_fld(x) (int)((unsigned int)(x) & 0x3f)
 #define kv3_exubit0_fld(x) (int)((unsigned int)(x) & 0x1)
@@ -187,7 +188,6 @@ extern int kvx_kv3_v1_dec_registers[];
 #define kv3_roundint_fld(x) (int)(((unsigned int)(x) >> 8) & 0x7)
 #define kv3_saturate_fld(x) (int)(((unsigned int)(x) >> 7) & 0x1)
 #define kv3_scalarcond_fld(x) (int)(((unsigned int)(x) >> 24) & 0xf)
-#define kv3_scaling_fld(x) (int)(((unsigned int)(x) >> 12) & 0x1)
 #define kv3_signed10_fld(x) (int)(((unsigned int)(x) >> 6) & 0x3ff)
 #define kv3_signed16_fld(x) (int)((unsigned int)(x) & 0xffff)
 #define kv3_silent_fld(x) (int)(((unsigned int)(x) >> 15) & 0x1)
@@ -329,7 +329,7 @@ extern int kvx_kv3_v1_dec_registers[];
 #define kv3_lsucond_opd(w) (((unsigned int)(w) >> 12) & 0xf)
 #define kv3_offset27_opd(w) ((unsigned int)(w) & 0x7ffffff)
 #define kv3_extend27_offset27_opd(w0,w1) ((((unsigned int)(w1) & 0x7ffffff) << 27) | ((unsigned int)(w0) & 0x7ffffff))
-#define kv3_scaling_opd(w) (((unsigned int)(w) >> 12) & 0x1)
+#define kv3_doscale_opd(w) (((unsigned int)(w) >> 12) & 0x1)
 #define kv3_signed16_opd(w) ((unsigned int)(w) & 0xffff)
 #define kv3_extend6_upper27_lower10_opd(w0,w1,w2) ((((((unsigned int)(w2) & 0x3f) << 27) | ((unsigned int)(w1) & 0x7ffffff)) << 10) | (((unsigned int)(w0) >> 6) & 0x3ff))
 #define kv3_comparison_opd(w) (((unsigned int)(w) >> 24) & 0xf)
@@ -12728,6 +12728,7 @@ enum Method_kv3_enum {
   Immediate_kv3_wrapped64,
   Modifier_kv3_column,
   Modifier_kv3_comparison,
+  Modifier_kv3_doscale,
   Modifier_kv3_exunum,
   Modifier_kv3_floatcomp,
   Modifier_kv3_rectify,
@@ -12735,7 +12736,6 @@ enum Method_kv3_enum {
   Modifier_kv3_roundint,
   Modifier_kv3_saturate,
   Modifier_kv3_scalarcond,
-  Modifier_kv3_scaling,
   Modifier_kv3_silent,
   Modifier_kv3_simplecond,
   Modifier_kv3_speculate,
@@ -12904,9 +12904,9 @@ enum Modifier_kv3_column_enum {
   Modifier_kv3_column_C3=3,
 };
 
-enum Modifier_kv3_scaling_enum {
-  Modifier_kv3_scaling_=0,
-  Modifier_kv3_scaling_XS=1,
+enum Modifier_kv3_doscale_enum {
+  Modifier_kv3_doscale_=0,
+  Modifier_kv3_doscale_XS=1,
 };
 
 enum Modifier_kv3_splat32_enum {
