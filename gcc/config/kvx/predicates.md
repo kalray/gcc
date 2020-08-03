@@ -92,6 +92,7 @@
  (ior (and (match_test "!flag_pic")
            (match_operand 0 "nonmemory_operand"))
       (match_code "const_int")
+      (match_code "const_double")
       (match_operand 0 "register_operand")
       (match_test "kvx_legitimate_pic_symbolic_ref_p(op)"))
 )
