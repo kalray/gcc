@@ -3259,6 +3259,8 @@ static kvx_reloc_t *kv3_column_opnd_relocs[] __attribute__((unused)) = {0 };
 static kvxbfield kv3_column_opnd  __attribute__((unused)) = {"kv3_column_opnd", Modifier_kv3_column, 2, 0, 0, 0, 0, 0, 0, kv3_column_opnd_relocs, 1, { { 2, 0, 18 }, } };
 static kvx_reloc_t *kv3_comparison_opnd_relocs[] __attribute__((unused)) = {0 };
 static kvxbfield kv3_comparison_opnd  __attribute__((unused)) = {"kv3_comparison_opnd", Modifier_kv3_comparison, 4, 0, 0, 0, 0, 0, 0, kv3_comparison_opnd_relocs, 1, { { 4, 0, 24 }, } };
+static kvx_reloc_t *kv3_doscale_opnd_relocs[] __attribute__((unused)) = {0 };
+static kvxbfield kv3_doscale_opnd  __attribute__((unused)) = {"kv3_doscale_opnd", Modifier_kv3_doscale, 1, 0, 0, 0, 0, 0, 0, kv3_doscale_opnd_relocs, 1, { { 1, 0, 12 }, } };
 static kvx_reloc_t *kv3_extend27_offset27_opnd_relocs[] __attribute__((unused)) = {0 };
 static kvxbfield kv3_extend27_offset27_opnd  __attribute__((unused)) = {"kv3_extend27_offset27_opnd", Immediate_kv3_signed54, 54, 0, 0, kvxSIGNED, 0, 0, 0, kv3_extend27_offset27_opnd_relocs, 2, { { 27, 27, 64 }, { 27, 0, 32 }, } };
 static kvx_reloc_t *kv3_extend27_upper27_lower10_opnd_relocs[] __attribute__((unused)) = {&kv3_pcrel_signed64_reloc, &kv3_signed64_reloc, &kv3_gotaddr_signed64_reloc, 0 };
@@ -4174,8 +4176,6 @@ static kvx_reloc_t *kv3_saturate_opnd_relocs[] __attribute__((unused)) = {0 };
 static kvxbfield kv3_saturate_opnd  __attribute__((unused)) = {"kv3_saturate_opnd", Modifier_kv3_saturate, 1, 0, 0, 0, 0, 0, 0, kv3_saturate_opnd_relocs, 1, { { 1, 0, 7 }, } };
 static kvx_reloc_t *kv3_scalarcond_opnd_relocs[] __attribute__((unused)) = {0 };
 static kvxbfield kv3_scalarcond_opnd  __attribute__((unused)) = {"kv3_scalarcond_opnd", Modifier_kv3_scalarcond, 4, 0, 0, 0, 0, 0, 0, kv3_scalarcond_opnd_relocs, 1, { { 4, 0, 24 }, } };
-static kvx_reloc_t *kv3_scaling_opnd_relocs[] __attribute__((unused)) = {0 };
-static kvxbfield kv3_scaling_opnd  __attribute__((unused)) = {"kv3_scaling_opnd", Modifier_kv3_scaling, 1, 0, 0, 0, 0, 0, 0, kv3_scaling_opnd_relocs, 1, { { 1, 0, 12 }, } };
 static kvx_reloc_t *kv3_signed10_opnd_relocs[] __attribute__((unused)) = {0 };
 static kvxbfield kv3_signed10_opnd  __attribute__((unused)) = {"kv3_signed10_opnd", Immediate_kv3_signed10, 10, 0, 0, kvxSIGNED, 0, 0, 0, kv3_signed10_opnd_relocs, 1, { { 10, 0, 6 }, } };
 static kvx_reloc_t *kv3_signed16_opnd_relocs[] __attribute__((unused)) = {&kv3_pcrel_signed16_reloc, &kv3_signed16_reloc, 0 };
@@ -5293,6 +5293,10 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LITE, ((int)0 << 8) | (int)Reservation_kv3_ALU_LITE, {&kv3_registerw_opnd, &kv3_registerz_opnd, &kv3_signed10_opnd, 0}, "", "%s = %s, %s"}, /* Opcode-v1-ABDW_registerW_registerZ_s010_simple */
 	{"abdw", {{ 0xf4000000, 0xff030000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_ALU }, }, 2, 64,
 ((int)0 << 8) | (int)Bundling_kv3_LITE_X, ((int)0 << 8) | (int)Reservation_kv3_ALU_LITE_X, {&kv3_registerw_opnd, &kv3_registerz_opnd, &kv3_upper27_lower10_opnd, 0}, "", "%s = %s, %s"}, /* Opcode-v1-ABDW_registerW_registerZ_s037_double */
+	{"acswapd", {{ 0x3f03e000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ACSWAPD_doscale_registerY_registerZ_registerU_simple */
+	{"acswapd.xs", {{ 0x3f03f000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ACSWAPD_doscale_registerY_registerZ_registerU_simple */
 	{"acswapd.deqz", {{ 0x3f031000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s? [%s] = %s"}, /* Opcode-v1-ACSWAPD_lsucond_registerY_registerZ_registerU_simple */
 	{"acswapd.dgez", {{ 0x3f033000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
@@ -5381,12 +5385,16 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_signed10_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ACSWAPD_s010_registerZ_registerU_simple */
 	{"acswapd", {{ 0xbf010000, 0xff070000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, }, 2, 64,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_X, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW_X, {&kv3_upper27_lower10_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ACSWAPD_s037_registerZ_registerU_double */
-	{"acswapd", {{ 0x3f03e000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ACSWAPD_scaling_registerY_registerZ_registerU_simple */
-	{"acswapd.xs", {{ 0x3f03f000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ACSWAPD_scaling_registerY_registerZ_registerU_simple */
 	{"acswapd", {{ 0xbf010000, 0xff070000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x80000000, 0xe0000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX1|kvxOPCODE_FLAG_LSU }, }, 3, 96,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW_Y, {&kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ACSWAPD_w064_registerZ_registerU_triple */
+	{"acswapw", {{ 0x3e03e000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ACSWAPW_doscale_registerY_registerZ_registerU_simple */
+	{"acws", {{ 0x3e03e000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ACSWAPW_doscale_registerY_registerZ_registerU_simple */
+	{"acswapw.xs", {{ 0x3e03f000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ACSWAPW_doscale_registerY_registerZ_registerU_simple */
+	{"acws.xs", {{ 0x3e03f000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ACSWAPW_doscale_registerY_registerZ_registerU_simple */
 	{"acswapw.deqz", {{ 0x3e031000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s? [%s] = %s"}, /* Opcode-v1-ACSWAPW_lsucond_registerY_registerZ_registerU_simple */
 	{"acws.deqz", {{ 0x3e031000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
@@ -5563,14 +5571,6 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LSU_X, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW_X, {&kv3_upper27_lower10_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ACSWAPW_s037_registerZ_registerU_double */
 	{"acws", {{ 0xbe010000, 0xff070000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, }, 2, 64,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_X, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW_X, {&kv3_upper27_lower10_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ACSWAPW_s037_registerZ_registerU_double */
-	{"acswapw", {{ 0x3e03e000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ACSWAPW_scaling_registerY_registerZ_registerU_simple */
-	{"acws", {{ 0x3e03e000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ACSWAPW_scaling_registerY_registerZ_registerU_simple */
-	{"acswapw.xs", {{ 0x3e03f000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ACSWAPW_scaling_registerY_registerZ_registerU_simple */
-	{"acws.xs", {{ 0x3e03f000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ACSWAPW_scaling_registerY_registerZ_registerU_simple */
 	{"acswapw", {{ 0xbe010000, 0xff070000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x80000000, 0xe0000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX1|kvxOPCODE_FLAG_LSU }, }, 3, 96,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW_Y, {&kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ACSWAPW_w064_registerZ_registerU_triple */
 	{"acws", {{ 0xbe010000, 0xff070000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x80000000, 0xe0000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX1|kvxOPCODE_FLAG_LSU }, }, 3, 96,
@@ -5765,6 +5765,14 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LITE, ((int)0 << 8) | (int)Reservation_kv3_ALU_LITE, {&kv3_registerw_opnd, &kv3_registerz_opnd, &kv3_registery_opnd, 0}, "", "%s = %s, %s"}, /* Opcode-v1-ADDX8W_registerW_registerZ_registerY_simple */
 	{"addx8w", {{ 0xf4015000, 0xff03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_ALU }, }, 2, 64,
 ((int)0 << 8) | (int)Bundling_kv3_LITE_X, ((int)0 << 8) | (int)Reservation_kv3_ALU_LITE_X, {&kv3_registerw_opnd, &kv3_registerz_opnd, &kv3_upper27_lower5_opnd, 0}, "", "%s = %s, %s"}, /* Opcode-v1-ADDX8W_registerW_registerZ_w032_double */
+	{"aladdd", {{ 0x2f03e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ALADDD_doscale_registerY_registerZ_registerT_simple */
+	{"afaddd", {{ 0x2f03e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ALADDD_doscale_registerY_registerZ_registerT_simple */
+	{"aladdd.xs", {{ 0x2f03f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ALADDD_doscale_registerY_registerZ_registerT_simple */
+	{"afaddd.xs", {{ 0x2f03f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ALADDD_doscale_registerY_registerZ_registerT_simple */
 	{"aladdd.deqz", {{ 0x2f031000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s? [%s] = %s"}, /* Opcode-v1-ALADDD_lsucond_registerY_registerZ_registerT_simple */
 	{"afaddd.deqz", {{ 0x2f031000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
@@ -5941,18 +5949,18 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LSU_X, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW_X, {&kv3_upper27_lower10_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ALADDD_s037_registerZ_registerT_double */
 	{"afaddd", {{ 0xaf010000, 0xff030000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, }, 2, 64,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_X, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW_X, {&kv3_upper27_lower10_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ALADDD_s037_registerZ_registerT_double */
-	{"aladdd", {{ 0x2f03e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ALADDD_scaling_registerY_registerZ_registerT_simple */
-	{"afaddd", {{ 0x2f03e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ALADDD_scaling_registerY_registerZ_registerT_simple */
-	{"aladdd.xs", {{ 0x2f03f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ALADDD_scaling_registerY_registerZ_registerT_simple */
-	{"afaddd.xs", {{ 0x2f03f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ALADDD_scaling_registerY_registerZ_registerT_simple */
 	{"aladdd", {{ 0xaf010000, 0xff030000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x80000000, 0xe0000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX1|kvxOPCODE_FLAG_LSU }, }, 3, 96,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW_Y, {&kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ALADDD_w064_registerZ_registerT_triple */
 	{"afaddd", {{ 0xaf010000, 0xff030000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x80000000, 0xe0000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX1|kvxOPCODE_FLAG_LSU }, }, 3, 96,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW_Y, {&kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ALADDD_w064_registerZ_registerT_triple */
+	{"aladdw", {{ 0x2e03e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ALADDW_doscale_registerY_registerZ_registerT_simple */
+	{"afaddw", {{ 0x2e03e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ALADDW_doscale_registerY_registerZ_registerT_simple */
+	{"aladdw.xs", {{ 0x2e03f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ALADDW_doscale_registerY_registerZ_registerT_simple */
+	{"afaddw.xs", {{ 0x2e03f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ALADDW_doscale_registerY_registerZ_registerT_simple */
 	{"aladdw.deqz", {{ 0x2e031000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s? [%s] = %s"}, /* Opcode-v1-ALADDW_lsucond_registerY_registerZ_registerT_simple */
 	{"afaddw.deqz", {{ 0x2e031000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
@@ -6129,18 +6137,18 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LSU_X, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW_X, {&kv3_upper27_lower10_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ALADDW_s037_registerZ_registerT_double */
 	{"afaddw", {{ 0xae010000, 0xff030000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, }, 2, 64,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_X, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW_X, {&kv3_upper27_lower10_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ALADDW_s037_registerZ_registerT_double */
-	{"aladdw", {{ 0x2e03e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ALADDW_scaling_registerY_registerZ_registerT_simple */
-	{"afaddw", {{ 0x2e03e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ALADDW_scaling_registerY_registerZ_registerT_simple */
-	{"aladdw.xs", {{ 0x2e03f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ALADDW_scaling_registerY_registerZ_registerT_simple */
-	{"afaddw.xs", {{ 0x2e03f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ALADDW_scaling_registerY_registerZ_registerT_simple */
 	{"aladdw", {{ 0xae010000, 0xff030000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x80000000, 0xe0000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX1|kvxOPCODE_FLAG_LSU }, }, 3, 96,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW_Y, {&kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ALADDW_w064_registerZ_registerT_triple */
 	{"afaddw", {{ 0xae010000, 0xff030000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x80000000, 0xe0000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX1|kvxOPCODE_FLAG_LSU }, }, 3, 96,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_AUXW_Y, {&kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-ALADDW_w064_registerZ_registerT_triple */
+	{"alclrd", {{ 0x2b03e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-ALCLRD_doscale_registerW_registerY_registerZ_simple */
+	{"aldc", {{ 0x2b03e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-ALCLRD_doscale_registerW_registerY_registerZ_simple */
+	{"alclrd.xs", {{ 0x2b03f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-ALCLRD_doscale_registerW_registerY_registerZ_simple */
+	{"aldc.xs", {{ 0x2b03f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-ALCLRD_doscale_registerW_registerY_registerZ_simple */
 	{"alclrd.deqz", {{ 0x2b031000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registery_opnd, &kv3_registerw_opnd, &kv3_registerz_opnd, 0}, "", "%s? %s = [%s]"}, /* Opcode-v1-ALCLRD_lsucond_registerY_registerW_registerZ_simple */
 	{"aldc.deqz", {{ 0x2b031000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
@@ -6321,14 +6329,10 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW_Y, {&kv3_registerw_opnd, &kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-ALCLRD_registerW_w064_registerZ_triple */
 	{"aldc", {{ 0xab010000, 0xff030000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x80000000, 0xe0000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX1|kvxOPCODE_FLAG_LSU }, }, 3, 96,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW_Y, {&kv3_registerw_opnd, &kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-ALCLRD_registerW_w064_registerZ_triple */
-	{"alclrd", {{ 0x2b03e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-ALCLRD_scaling_registerW_registerY_registerZ_simple */
-	{"aldc", {{ 0x2b03e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-ALCLRD_scaling_registerW_registerY_registerZ_simple */
-	{"alclrd.xs", {{ 0x2b03f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-ALCLRD_scaling_registerW_registerY_registerZ_simple */
-	{"aldc.xs", {{ 0x2b03f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-ALCLRD_scaling_registerW_registerY_registerZ_simple */
+	{"alclrw", {{ 0x2a03e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-ALCLRW_doscale_registerW_registerY_registerZ_simple */
+	{"alclrw.xs", {{ 0x2a03f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-ALCLRW_doscale_registerW_registerY_registerZ_simple */
 	{"alclrw.deqz", {{ 0x2a031000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registery_opnd, &kv3_registerw_opnd, &kv3_registerz_opnd, 0}, "", "%s? %s = [%s]"}, /* Opcode-v1-ALCLRW_lsucond_registerY_registerW_registerZ_simple */
 	{"alclrw.dgez", {{ 0x2a033000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
@@ -6419,10 +6423,6 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LSU_X, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW_X, {&kv3_registerw_opnd, &kv3_upper27_lower10_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-ALCLRW_registerW_s037_registerZ_double */
 	{"alclrw", {{ 0xaa010000, 0xff030000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x80000000, 0xe0000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX1|kvxOPCODE_FLAG_LSU }, }, 3, 96,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW_Y, {&kv3_registerw_opnd, &kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-ALCLRW_registerW_w064_registerZ_triple */
-	{"alclrw", {{ 0x2a03e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-ALCLRW_scaling_registerW_registerY_registerZ_simple */
-	{"alclrw.xs", {{ 0x2a03f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-ALCLRW_scaling_registerW_registerY_registerZ_simple */
 	{"aligno", {{ 0x00081040, 0x7f0c1040, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_BCU, ((int)0 << 8) | (int)Reservation_kv3_BCU_TINY_AUXW_CRRP, {&kv3_registern_opnd, &kv3_registerbe_opnd, &kv3_registerco_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s, %s, %s"}, /* Opcode-v1-ALIGNO_registerN_registerBe_registerCo_registerZ_simple */
 	{"aligno", {{ 0x00081000, 0x7f0c1040, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
@@ -10573,6 +10573,22 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LITE, ((int)0 << 8) | (int)Reservation_kv3_ALU_LITE, {&kv3_registerw_opnd, &kv3_registerz_opnd, &kv3_registery_opnd, 0}, "", "%s = %s, %s"}, /* Opcode-v1-LANDW_registerW_registerZ_registerY_simple */
 	{"landw", {{ 0xfc015000, 0xff03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_ALU }, }, 2, 64,
 ((int)0 << 8) | (int)Bundling_kv3_LITE_X, ((int)0 << 8) | (int)Reservation_kv3_ALU_LITE_X, {&kv3_registerw_opnd, &kv3_registerz_opnd, &kv3_upper27_lower5_opnd, 0}, "", "%s = %s, %s"}, /* Opcode-v1-LANDW_registerW_registerZ_w032_double */
+	{"lbs.s", {{ 0x2502e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBS_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lbs.s.xs", {{ 0x2502f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBS_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lbs.us", {{ 0x2702e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBS_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lbs.us.xs", {{ 0x2702f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBS_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lbs.u", {{ 0x2602e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBS_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lbs.u.xs", {{ 0x2602f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBS_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lbs", {{ 0x2402e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBS_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lbs.xs", {{ 0x2402f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBS_variant_doscale_registerW_registerY_registerZ_simple */
 	{"lbs.s.deqz", {{ 0x25021000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registery_opnd, &kv3_registerw_opnd, &kv3_registerz_opnd, 0}, "", "%s? %s = [%s]"}, /* Opcode-v1-LBS_variant_lsucond_registerY_registerW_registerZ_simple */
 	{"lbs.s.dgez", {{ 0x25023000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
@@ -10933,22 +10949,22 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW_Y, {&kv3_registerw_opnd, &kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBS_variant_registerW_w064_registerZ_triple */
 	{"lbs.us", {{ 0xa7000000, 0xff030000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x80000000, 0xe0000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX1|kvxOPCODE_FLAG_LSU }, }, 3, 96,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW_Y, {&kv3_registerw_opnd, &kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBS_variant_registerW_w064_registerZ_triple */
-	{"lbs.s", {{ 0x2502e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBS_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lbs.s.xs", {{ 0x2502f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBS_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lbs.us", {{ 0x2702e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBS_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lbs.us.xs", {{ 0x2702f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBS_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lbs.u", {{ 0x2602e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBS_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lbs.u.xs", {{ 0x2602f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBS_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lbs", {{ 0x2402e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBS_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lbs.xs", {{ 0x2402f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBS_variant_scaling_registerW_registerY_registerZ_simple */
+	{"lbz.s", {{ 0x2102e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBZ_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lbz.s.xs", {{ 0x2102f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBZ_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lbz.us", {{ 0x2302e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBZ_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lbz.us.xs", {{ 0x2302f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBZ_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lbz.u", {{ 0x2202e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBZ_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lbz.u.xs", {{ 0x2202f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBZ_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lbz", {{ 0x2002e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBZ_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lbz.xs", {{ 0x2002f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBZ_variant_doscale_registerW_registerY_registerZ_simple */
 	{"lbz.s.deqz", {{ 0x21021000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registery_opnd, &kv3_registerw_opnd, &kv3_registerz_opnd, 0}, "", "%s? %s = [%s]"}, /* Opcode-v1-LBZ_variant_lsucond_registerY_registerW_registerZ_simple */
 	{"lbz.s.dgez", {{ 0x21023000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
@@ -11309,22 +11325,22 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW_Y, {&kv3_registerw_opnd, &kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBZ_variant_registerW_w064_registerZ_triple */
 	{"lbz.us", {{ 0xa3000000, 0xff030000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x80000000, 0xe0000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX1|kvxOPCODE_FLAG_LSU }, }, 3, 96,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW_Y, {&kv3_registerw_opnd, &kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBZ_variant_registerW_w064_registerZ_triple */
-	{"lbz.s", {{ 0x2102e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBZ_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lbz.s.xs", {{ 0x2102f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBZ_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lbz.us", {{ 0x2302e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBZ_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lbz.us.xs", {{ 0x2302f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBZ_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lbz.u", {{ 0x2202e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBZ_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lbz.u.xs", {{ 0x2202f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBZ_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lbz", {{ 0x2002e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBZ_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lbz.xs", {{ 0x2002f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LBZ_variant_scaling_registerW_registerY_registerZ_simple */
+	{"ld.s", {{ 0x3902e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LD_variant_doscale_registerW_registerY_registerZ_simple */
+	{"ld.s.xs", {{ 0x3902f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LD_variant_doscale_registerW_registerY_registerZ_simple */
+	{"ld.us", {{ 0x3b02e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LD_variant_doscale_registerW_registerY_registerZ_simple */
+	{"ld.us.xs", {{ 0x3b02f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LD_variant_doscale_registerW_registerY_registerZ_simple */
+	{"ld.u", {{ 0x3a02e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LD_variant_doscale_registerW_registerY_registerZ_simple */
+	{"ld.u.xs", {{ 0x3a02f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LD_variant_doscale_registerW_registerY_registerZ_simple */
+	{"ld", {{ 0x3802e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LD_variant_doscale_registerW_registerY_registerZ_simple */
+	{"ld.xs", {{ 0x3802f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LD_variant_doscale_registerW_registerY_registerZ_simple */
 	{"ld.s.deqz", {{ 0x39021000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registery_opnd, &kv3_registerw_opnd, &kv3_registerz_opnd, 0}, "", "%s? %s = [%s]"}, /* Opcode-v1-LD_variant_lsucond_registerY_registerW_registerZ_simple */
 	{"ld.s.dgez", {{ 0x39023000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
@@ -11685,22 +11701,22 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW_Y, {&kv3_registerw_opnd, &kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LD_variant_registerW_w064_registerZ_triple */
 	{"ld.us", {{ 0xbb000000, 0xff030000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x80000000, 0xe0000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX1|kvxOPCODE_FLAG_LSU }, }, 3, 96,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW_Y, {&kv3_registerw_opnd, &kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LD_variant_registerW_w064_registerZ_triple */
-	{"ld.s", {{ 0x3902e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LD_variant_scaling_registerW_registerY_registerZ_simple */
-	{"ld.s.xs", {{ 0x3902f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LD_variant_scaling_registerW_registerY_registerZ_simple */
-	{"ld.us", {{ 0x3b02e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LD_variant_scaling_registerW_registerY_registerZ_simple */
-	{"ld.us.xs", {{ 0x3b02f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LD_variant_scaling_registerW_registerY_registerZ_simple */
-	{"ld.u", {{ 0x3a02e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LD_variant_scaling_registerW_registerY_registerZ_simple */
-	{"ld.u.xs", {{ 0x3a02f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LD_variant_scaling_registerW_registerY_registerZ_simple */
-	{"ld", {{ 0x3802e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LD_variant_scaling_registerW_registerY_registerZ_simple */
-	{"ld.xs", {{ 0x3802f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LD_variant_scaling_registerW_registerY_registerZ_simple */
+	{"lhs.s", {{ 0x2d02e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHS_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lhs.s.xs", {{ 0x2d02f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHS_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lhs.us", {{ 0x2f02e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHS_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lhs.us.xs", {{ 0x2f02f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHS_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lhs.u", {{ 0x2e02e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHS_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lhs.u.xs", {{ 0x2e02f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHS_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lhs", {{ 0x2c02e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHS_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lhs.xs", {{ 0x2c02f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHS_variant_doscale_registerW_registerY_registerZ_simple */
 	{"lhs.s.deqz", {{ 0x2d021000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registery_opnd, &kv3_registerw_opnd, &kv3_registerz_opnd, 0}, "", "%s? %s = [%s]"}, /* Opcode-v1-LHS_variant_lsucond_registerY_registerW_registerZ_simple */
 	{"lhs.s.dgez", {{ 0x2d023000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
@@ -12061,22 +12077,22 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW_Y, {&kv3_registerw_opnd, &kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHS_variant_registerW_w064_registerZ_triple */
 	{"lhs.us", {{ 0xaf000000, 0xff030000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x80000000, 0xe0000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX1|kvxOPCODE_FLAG_LSU }, }, 3, 96,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW_Y, {&kv3_registerw_opnd, &kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHS_variant_registerW_w064_registerZ_triple */
-	{"lhs.s", {{ 0x2d02e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHS_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lhs.s.xs", {{ 0x2d02f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHS_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lhs.us", {{ 0x2f02e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHS_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lhs.us.xs", {{ 0x2f02f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHS_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lhs.u", {{ 0x2e02e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHS_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lhs.u.xs", {{ 0x2e02f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHS_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lhs", {{ 0x2c02e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHS_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lhs.xs", {{ 0x2c02f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHS_variant_scaling_registerW_registerY_registerZ_simple */
+	{"lhz.s", {{ 0x2902e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHZ_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lhz.s.xs", {{ 0x2902f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHZ_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lhz.us", {{ 0x2b02e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHZ_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lhz.us.xs", {{ 0x2b02f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHZ_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lhz.u", {{ 0x2a02e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHZ_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lhz.u.xs", {{ 0x2a02f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHZ_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lhz", {{ 0x2802e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHZ_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lhz.xs", {{ 0x2802f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHZ_variant_doscale_registerW_registerY_registerZ_simple */
 	{"lhz.s.deqz", {{ 0x29021000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registery_opnd, &kv3_registerw_opnd, &kv3_registerz_opnd, 0}, "", "%s? %s = [%s]"}, /* Opcode-v1-LHZ_variant_lsucond_registerY_registerW_registerZ_simple */
 	{"lhz.s.dgez", {{ 0x29023000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
@@ -12437,22 +12453,6 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW_Y, {&kv3_registerw_opnd, &kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHZ_variant_registerW_w064_registerZ_triple */
 	{"lhz.us", {{ 0xab000000, 0xff030000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x80000000, 0xe0000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX1|kvxOPCODE_FLAG_LSU }, }, 3, 96,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW_Y, {&kv3_registerw_opnd, &kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHZ_variant_registerW_w064_registerZ_triple */
-	{"lhz.s", {{ 0x2902e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHZ_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lhz.s.xs", {{ 0x2902f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHZ_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lhz.us", {{ 0x2b02e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHZ_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lhz.us.xs", {{ 0x2b02f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHZ_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lhz.u", {{ 0x2a02e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHZ_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lhz.u.xs", {{ 0x2a02f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHZ_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lhz", {{ 0x2802e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHZ_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lhz.xs", {{ 0x2802f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LHZ_variant_scaling_registerW_registerY_registerZ_simple */
 	{"lnandd", {{ 0x7d014000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LITE, ((int)0 << 8) | (int)Reservation_kv3_ALU_LITE, {&kv3_registerw_opnd, &kv3_registerz_opnd, &kv3_registery_opnd, 0}, "", "%s = %s, %s"}, /* Opcode-v1-LNANDD_registerW_registerZ_registerY_simple */
 	{"lnandd", {{ 0xfd014000, 0xff03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_ALU }, }, 2, 64,
@@ -12515,6 +12515,22 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LITE, ((int)0 << 8) | (int)Reservation_kv3_ALU_LITE, {&kv3_registerw_opnd, &kv3_registerz_opnd, &kv3_registery_opnd, 0}, "", "%s = %s, %s"}, /* Opcode-v1-LORW_registerW_registerZ_registerY_simple */
 	{"lorw", {{ 0xfe015000, 0xff03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_ALU }, }, 2, 64,
 ((int)0 << 8) | (int)Bundling_kv3_LITE_X, ((int)0 << 8) | (int)Reservation_kv3_ALU_LITE_X, {&kv3_registerw_opnd, &kv3_registerz_opnd, &kv3_upper27_lower5_opnd, 0}, "", "%s = %s, %s"}, /* Opcode-v1-LORW_registerW_registerZ_w032_double */
+	{"lo.s", {{ 0x3d06e000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registern_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LO_variant_doscale_registerN_registerY_registerZ_simple */
+	{"lo.s.xs", {{ 0x3d06f000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registern_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LO_variant_doscale_registerN_registerY_registerZ_simple */
+	{"lo.us", {{ 0x3f06e000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registern_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LO_variant_doscale_registerN_registerY_registerZ_simple */
+	{"lo.us.xs", {{ 0x3f06f000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registern_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LO_variant_doscale_registerN_registerY_registerZ_simple */
+	{"lo.u", {{ 0x3e06e000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registern_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LO_variant_doscale_registerN_registerY_registerZ_simple */
+	{"lo.u.xs", {{ 0x3e06f000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registern_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LO_variant_doscale_registerN_registerY_registerZ_simple */
+	{"lo", {{ 0x3c06e000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registern_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LO_variant_doscale_registerN_registerY_registerZ_simple */
+	{"lo.xs", {{ 0x3c06f000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registern_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LO_variant_doscale_registerN_registerY_registerZ_simple */
 	{"lo.s.deqz", {{ 0x3d061000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registery_opnd, &kv3_registern_opnd, &kv3_registerz_opnd, 0}, "", "%s? %s = [%s]"}, /* Opcode-v1-LO_variant_lsucond_registerY_registerN_registerZ_simple */
 	{"lo.s.dgez", {{ 0x3d063000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
@@ -12875,22 +12891,22 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW_Y, {&kv3_registern_opnd, &kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LO_variant_registerN_w064_registerZ_triple */
 	{"lo.us", {{ 0xbf040000, 0xff0f0000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x80000000, 0xe0000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX1|kvxOPCODE_FLAG_LSU }, }, 3, 96,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW_Y, {&kv3_registern_opnd, &kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LO_variant_registerN_w064_registerZ_triple */
-	{"lo.s", {{ 0x3d06e000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registern_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LO_variant_scaling_registerN_registerY_registerZ_simple */
-	{"lo.s.xs", {{ 0x3d06f000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registern_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LO_variant_scaling_registerN_registerY_registerZ_simple */
-	{"lo.us", {{ 0x3f06e000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registern_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LO_variant_scaling_registerN_registerY_registerZ_simple */
-	{"lo.us.xs", {{ 0x3f06f000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registern_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LO_variant_scaling_registerN_registerY_registerZ_simple */
-	{"lo.u", {{ 0x3e06e000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registern_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LO_variant_scaling_registerN_registerY_registerZ_simple */
-	{"lo.u.xs", {{ 0x3e06f000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registern_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LO_variant_scaling_registerN_registerY_registerZ_simple */
-	{"lo", {{ 0x3c06e000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registern_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LO_variant_scaling_registerN_registerY_registerZ_simple */
-	{"lo.xs", {{ 0x3c06f000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registern_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LO_variant_scaling_registerN_registerY_registerZ_simple */
+	{"lq.s", {{ 0x3d02e000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerm_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LQ_variant_doscale_registerM_registerY_registerZ_simple */
+	{"lq.s.xs", {{ 0x3d02f000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerm_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LQ_variant_doscale_registerM_registerY_registerZ_simple */
+	{"lq.us", {{ 0x3f02e000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerm_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LQ_variant_doscale_registerM_registerY_registerZ_simple */
+	{"lq.us.xs", {{ 0x3f02f000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerm_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LQ_variant_doscale_registerM_registerY_registerZ_simple */
+	{"lq.u", {{ 0x3e02e000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerm_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LQ_variant_doscale_registerM_registerY_registerZ_simple */
+	{"lq.u.xs", {{ 0x3e02f000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerm_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LQ_variant_doscale_registerM_registerY_registerZ_simple */
+	{"lq", {{ 0x3c02e000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerm_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LQ_variant_doscale_registerM_registerY_registerZ_simple */
+	{"lq.xs", {{ 0x3c02f000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerm_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LQ_variant_doscale_registerM_registerY_registerZ_simple */
 	{"lq.s.deqz", {{ 0x3d021000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registery_opnd, &kv3_registerm_opnd, &kv3_registerz_opnd, 0}, "", "%s? %s = [%s]"}, /* Opcode-v1-LQ_variant_lsucond_registerY_registerM_registerZ_simple */
 	{"lq.s.dgez", {{ 0x3d023000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
@@ -13251,22 +13267,38 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW_Y, {&kv3_registerm_opnd, &kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LQ_variant_registerM_w064_registerZ_triple */
 	{"lq.us", {{ 0xbf000000, 0xff070000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x80000000, 0xe0000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX1|kvxOPCODE_FLAG_LSU }, }, 3, 96,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW_Y, {&kv3_registerm_opnd, &kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LQ_variant_registerM_w064_registerZ_triple */
-	{"lq.s", {{ 0x3d02e000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerm_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LQ_variant_scaling_registerM_registerY_registerZ_simple */
-	{"lq.s.xs", {{ 0x3d02f000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerm_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LQ_variant_scaling_registerM_registerY_registerZ_simple */
-	{"lq.us", {{ 0x3f02e000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerm_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LQ_variant_scaling_registerM_registerY_registerZ_simple */
-	{"lq.us.xs", {{ 0x3f02f000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerm_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LQ_variant_scaling_registerM_registerY_registerZ_simple */
-	{"lq.u", {{ 0x3e02e000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerm_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LQ_variant_scaling_registerM_registerY_registerZ_simple */
-	{"lq.u.xs", {{ 0x3e02f000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerm_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LQ_variant_scaling_registerM_registerY_registerZ_simple */
-	{"lq", {{ 0x3c02e000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerm_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LQ_variant_scaling_registerM_registerY_registerZ_simple */
-	{"lq.xs", {{ 0x3c02f000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerm_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LQ_variant_scaling_registerM_registerY_registerZ_simple */
+	{"lv.c0.s", {{ 0x2303e000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registeraq_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_doscale_registerAq_registerY_registerZ_simple */
+	{"lv.c0.s.xs", {{ 0x2303f000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registeraq_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_doscale_registerAq_registerY_registerZ_simple */
+	{"lv.c0", {{ 0x2203e000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registeraq_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_doscale_registerAq_registerY_registerZ_simple */
+	{"lv.c0.xs", {{ 0x2203f000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registeraq_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_doscale_registerAq_registerY_registerZ_simple */
+	{"lv.c1.s", {{ 0x2307e000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registeraq_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_doscale_registerAq_registerY_registerZ_simple */
+	{"lv.c1.s.xs", {{ 0x2307f000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registeraq_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_doscale_registerAq_registerY_registerZ_simple */
+	{"lv.c1", {{ 0x2207e000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registeraq_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_doscale_registerAq_registerY_registerZ_simple */
+	{"lv.c1.xs", {{ 0x2207f000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registeraq_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_doscale_registerAq_registerY_registerZ_simple */
+	{"lv.c2.s", {{ 0x230be000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registeraq_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_doscale_registerAq_registerY_registerZ_simple */
+	{"lv.c2.s.xs", {{ 0x230bf000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registeraq_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_doscale_registerAq_registerY_registerZ_simple */
+	{"lv.c2", {{ 0x220be000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registeraq_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_doscale_registerAq_registerY_registerZ_simple */
+	{"lv.c2.xs", {{ 0x220bf000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registeraq_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_doscale_registerAq_registerY_registerZ_simple */
+	{"lv.c3.s", {{ 0x230fe000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registeraq_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_doscale_registerAq_registerY_registerZ_simple */
+	{"lv.c3.s.xs", {{ 0x230ff000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registeraq_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_doscale_registerAq_registerY_registerZ_simple */
+	{"lv.c3", {{ 0x220fe000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registeraq_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_doscale_registerAq_registerY_registerZ_simple */
+	{"lv.c3.xs", {{ 0x220ff000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registeraq_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_doscale_registerAq_registerY_registerZ_simple */
 	{"lv.c0.s.deqz", {{ 0x23031000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registery_opnd, &kv3_registeraq_opnd, &kv3_registerz_opnd, 0}, "", "%s? %s = [%s]"}, /* Opcode-v1-LV_column_speculate_lsucond_registerY_registerAq_registerZ_simple */
 	{"lv.c0.s.dgez", {{ 0x23033000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
@@ -13987,38 +14019,14 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_Y, {&kv3_registeraq_opnd, &kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_registerAq_w064_registerZ_triple */
 	{"lv.c3.s", {{ 0xa30d0000, 0xff0f0000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x80000000, 0xe0000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX1|kvxOPCODE_FLAG_LSU }, }, 3, 96,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_Y, {&kv3_registeraq_opnd, &kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_registerAq_w064_registerZ_triple */
-	{"lv.c0.s", {{ 0x2303e000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registeraq_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_scaling_registerAq_registerY_registerZ_simple */
-	{"lv.c0.s.xs", {{ 0x2303f000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registeraq_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_scaling_registerAq_registerY_registerZ_simple */
-	{"lv.c0", {{ 0x2203e000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registeraq_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_scaling_registerAq_registerY_registerZ_simple */
-	{"lv.c0.xs", {{ 0x2203f000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registeraq_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_scaling_registerAq_registerY_registerZ_simple */
-	{"lv.c1.s", {{ 0x2307e000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registeraq_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_scaling_registerAq_registerY_registerZ_simple */
-	{"lv.c1.s.xs", {{ 0x2307f000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registeraq_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_scaling_registerAq_registerY_registerZ_simple */
-	{"lv.c1", {{ 0x2207e000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registeraq_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_scaling_registerAq_registerY_registerZ_simple */
-	{"lv.c1.xs", {{ 0x2207f000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registeraq_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_scaling_registerAq_registerY_registerZ_simple */
-	{"lv.c2.s", {{ 0x230be000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registeraq_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_scaling_registerAq_registerY_registerZ_simple */
-	{"lv.c2.s.xs", {{ 0x230bf000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registeraq_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_scaling_registerAq_registerY_registerZ_simple */
-	{"lv.c2", {{ 0x220be000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registeraq_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_scaling_registerAq_registerY_registerZ_simple */
-	{"lv.c2.xs", {{ 0x220bf000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registeraq_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_scaling_registerAq_registerY_registerZ_simple */
-	{"lv.c3.s", {{ 0x230fe000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registeraq_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_scaling_registerAq_registerY_registerZ_simple */
-	{"lv.c3.s.xs", {{ 0x230ff000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registeraq_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_scaling_registerAq_registerY_registerZ_simple */
-	{"lv.c3", {{ 0x220fe000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registeraq_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_scaling_registerAq_registerY_registerZ_simple */
-	{"lv.c3.xs", {{ 0x220ff000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registeraq_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_column_speculate_scaling_registerAq_registerY_registerZ_simple */
+	{"lv.s", {{ 0x2103e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registera_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_speculate_doscale_registerA_registerY_registerZ_simple */
+	{"lv.s.xs", {{ 0x2103f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registera_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_speculate_doscale_registerA_registerY_registerZ_simple */
+	{"lv", {{ 0x2003e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registera_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_speculate_doscale_registerA_registerY_registerZ_simple */
+	{"lv.xs", {{ 0x2003f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registera_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_speculate_doscale_registerA_registerY_registerZ_simple */
 	{"lv.s.deqz", {{ 0x21031000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registery_opnd, &kv3_registera_opnd, &kv3_registerz_opnd, 0}, "", "%s? %s = [%s]"}, /* Opcode-v1-LV_speculate_lsucond_registerY_registerA_registerZ_simple */
 	{"lv.s.dgez", {{ 0x21033000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
@@ -14199,14 +14207,22 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_Y, {&kv3_registera_opnd, &kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_speculate_registerA_w064_registerZ_triple */
 	{"lv.s", {{ 0xa1010000, 0xff030000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x80000000, 0xe0000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX1|kvxOPCODE_FLAG_LSU }, }, 3, 96,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_Y, {&kv3_registera_opnd, &kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_speculate_registerA_w064_registerZ_triple */
-	{"lv.s", {{ 0x2103e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registera_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_speculate_scaling_registerA_registerY_registerZ_simple */
-	{"lv.s.xs", {{ 0x2103f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registera_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_speculate_scaling_registerA_registerY_registerZ_simple */
-	{"lv", {{ 0x2003e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registera_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_speculate_scaling_registerA_registerY_registerZ_simple */
-	{"lv.xs", {{ 0x2003f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU, {&kv3_registera_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LV_speculate_scaling_registerA_registerY_registerZ_simple */
+	{"lws.s", {{ 0x3502e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWS_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lws.s.xs", {{ 0x3502f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWS_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lws.us", {{ 0x3702e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWS_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lws.us.xs", {{ 0x3702f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWS_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lws.u", {{ 0x3602e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWS_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lws.u.xs", {{ 0x3602f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWS_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lws", {{ 0x3402e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWS_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lws.xs", {{ 0x3402f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWS_variant_doscale_registerW_registerY_registerZ_simple */
 	{"lws.s.deqz", {{ 0x35021000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registery_opnd, &kv3_registerw_opnd, &kv3_registerz_opnd, 0}, "", "%s? %s = [%s]"}, /* Opcode-v1-LWS_variant_lsucond_registerY_registerW_registerZ_simple */
 	{"lws.s.dgez", {{ 0x35023000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
@@ -14567,22 +14583,22 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW_Y, {&kv3_registerw_opnd, &kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWS_variant_registerW_w064_registerZ_triple */
 	{"lws.us", {{ 0xb7000000, 0xff030000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x80000000, 0xe0000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX1|kvxOPCODE_FLAG_LSU }, }, 3, 96,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW_Y, {&kv3_registerw_opnd, &kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWS_variant_registerW_w064_registerZ_triple */
-	{"lws.s", {{ 0x3502e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWS_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lws.s.xs", {{ 0x3502f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWS_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lws.us", {{ 0x3702e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWS_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lws.us.xs", {{ 0x3702f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWS_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lws.u", {{ 0x3602e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWS_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lws.u.xs", {{ 0x3602f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWS_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lws", {{ 0x3402e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWS_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lws.xs", {{ 0x3402f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWS_variant_scaling_registerW_registerY_registerZ_simple */
+	{"lwz.s", {{ 0x3102e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWZ_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lwz.s.xs", {{ 0x3102f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWZ_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lwz.us", {{ 0x3302e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWZ_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lwz.us.xs", {{ 0x3302f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWZ_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lwz.u", {{ 0x3202e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWZ_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lwz.u.xs", {{ 0x3202f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWZ_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lwz", {{ 0x3002e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWZ_variant_doscale_registerW_registerY_registerZ_simple */
+	{"lwz.xs", {{ 0x3002f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWZ_variant_doscale_registerW_registerY_registerZ_simple */
 	{"lwz.s.deqz", {{ 0x31021000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registery_opnd, &kv3_registerw_opnd, &kv3_registerz_opnd, 0}, "", "%s? %s = [%s]"}, /* Opcode-v1-LWZ_variant_lsucond_registerY_registerW_registerZ_simple */
 	{"lwz.s.dgez", {{ 0x31023000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
@@ -14943,22 +14959,6 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW_Y, {&kv3_registerw_opnd, &kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWZ_variant_registerW_w064_registerZ_triple */
 	{"lwz.us", {{ 0xb3000000, 0xff030000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x80000000, 0xe0000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX1|kvxOPCODE_FLAG_LSU }, }, 3, 96,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW_Y, {&kv3_registerw_opnd, &kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWZ_variant_registerW_w064_registerZ_triple */
-	{"lwz.s", {{ 0x3102e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWZ_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lwz.s.xs", {{ 0x3102f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWZ_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lwz.us", {{ 0x3302e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWZ_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lwz.us.xs", {{ 0x3302f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWZ_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lwz.u", {{ 0x3202e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWZ_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lwz.u.xs", {{ 0x3202f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWZ_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lwz", {{ 0x3002e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWZ_variant_scaling_registerW_registerY_registerZ_simple */
-	{"lwz.xs", {{ 0x3002f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXW, {&kv3_registerw_opnd, &kv3_registery_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s[%s]"}, /* Opcode-v1-LWZ_variant_scaling_registerW_registerY_registerZ_simple */
 	{"madddt", {{ 0x58001000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_MAU, ((int)0 << 8) | (int)Reservation_kv3_MAU_AUXR, {&kv3_registerm_opnd, &kv3_registerz_opnd, &kv3_registery_opnd, 0}, "", "%s = %s, %s"}, /* Opcode-v1-MADDDT_registerM_registerZ_registerY_simple */
 	{"madddt", {{ 0x48000000, 0x7f070000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
@@ -15685,6 +15685,10 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LITE_X, ((int)0 << 8) | (int)Reservation_kv3_ALU_LITE_X, {&kv3_registerw_opnd, &kv3_registerz_opnd, &kv3_upper27_lower10_opnd, 0}, "", "%s = %s, %s"}, /* Opcode-v1-SBMMT8_registerW_registerZ_s037_double */
 	{"sbmmt8", {{ 0xef020000, 0xff030000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x80000000, 0xe0000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_ALU }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX1|kvxOPCODE_FLAG_ALU }, }, 3, 96,
 ((int)0 << 8) | (int)Bundling_kv3_LITE_Y, ((int)0 << 8) | (int)Reservation_kv3_ALU_LITE_Y, {&kv3_registerw_opnd, &kv3_registerz_opnd, &kv3_extend27_upper27_lower10_opnd, 0}, "", "%s = %s, %s"}, /* Opcode-v1-SBMMT8_registerW_registerZ_w064_triple */
+	{"sb", {{ 0x2403e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SB_doscale_registerY_registerZ_registerT_simple */
+	{"sb.xs", {{ 0x2403f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SB_doscale_registerY_registerZ_registerT_simple */
 	{"sb.deqz", {{ 0x24031000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s? [%s] = %s"}, /* Opcode-v1-SB_lsucond_registerY_registerZ_registerT_simple */
 	{"sb.dgez", {{ 0x24033000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
@@ -15773,16 +15777,16 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_signed10_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SB_s010_registerZ_registerT_simple */
 	{"sb", {{ 0xa4010000, 0xff030000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, }, 2, 64,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_X, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_X, {&kv3_upper27_lower10_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SB_s037_registerZ_registerT_double */
-	{"sb", {{ 0x2403e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SB_scaling_registerY_registerZ_registerT_simple */
-	{"sb.xs", {{ 0x2403f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SB_scaling_registerY_registerZ_registerT_simple */
 	{"sb", {{ 0xa4010000, 0xff030000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x80000000, 0xe0000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX1|kvxOPCODE_FLAG_LSU }, }, 3, 96,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_Y, {&kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SB_w064_registerZ_registerT_triple */
 	{"scall", {{ 0x0fe40000, 0x7ffc0000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_ALL, ((int)0 << 8) | (int)Reservation_kv3_ALL, {&kv3_registerz_opnd, 0}, "", "%s"}, /* Opcode-v1-SCALL_registerZ_simple */
 	{"scall", {{ 0x0fe00000, 0x7ffc0000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_ALL, ((int)0 << 8) | (int)Reservation_kv3_ALL, {&kv3_sysnumber_opnd, 0}, "", "%s"}, /* Opcode-v1-SCALL_u012_simple */
+	{"sd", {{ 0x2703e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SD_doscale_registerY_registerZ_registerT_simple */
+	{"sd.xs", {{ 0x2703f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SD_doscale_registerY_registerZ_registerT_simple */
 	{"sd.deqz", {{ 0x27031000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s? [%s] = %s"}, /* Opcode-v1-SD_lsucond_registerY_registerZ_registerT_simple */
 	{"sd.dgez", {{ 0x27033000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
@@ -15871,10 +15875,6 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_signed10_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SD_s010_registerZ_registerT_simple */
 	{"sd", {{ 0xa7010000, 0xff030000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, }, 2, 64,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_X, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_X, {&kv3_upper27_lower10_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SD_s037_registerZ_registerT_double */
-	{"sd", {{ 0x2703e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SD_scaling_registerY_registerZ_registerT_simple */
-	{"sd.xs", {{ 0x2703f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SD_scaling_registerY_registerZ_registerT_simple */
 	{"sd", {{ 0xa7010000, 0xff030000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x80000000, 0xe0000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX1|kvxOPCODE_FLAG_LSU }, }, 3, 96,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_Y, {&kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SD_w064_registerZ_registerT_triple */
 	{"set", {{ 0x0fc00000, 0x7ffc0000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
@@ -15885,6 +15885,10 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_BCU, ((int)0 << 8) | (int)Reservation_kv3_BCU, {&kv3_systemt3_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s"}, /* Opcode-v1-SET_systemT3_registerZ_simple */
 	{"set", {{ 0x0fc00000, 0x7ffc0000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_BCU, ((int)0 << 8) | (int)Reservation_kv3_BCU, {&kv3_systemt4_opnd, &kv3_registerz_opnd, 0}, "", "%s = %s"}, /* Opcode-v1-SET_systemT4_registerZ_simple */
+	{"sh", {{ 0x2503e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SH_doscale_registerY_registerZ_registerT_simple */
+	{"sh.xs", {{ 0x2503f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SH_doscale_registerY_registerZ_registerT_simple */
 	{"sh.deqz", {{ 0x25031000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s? [%s] = %s"}, /* Opcode-v1-SH_lsucond_registerY_registerZ_registerT_simple */
 	{"sh.dgez", {{ 0x25033000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
@@ -15973,10 +15977,6 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_signed10_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SH_s010_registerZ_registerT_simple */
 	{"sh", {{ 0xa5010000, 0xff030000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, }, 2, 64,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_X, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_X, {&kv3_upper27_lower10_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SH_s037_registerZ_registerT_double */
-	{"sh", {{ 0x2503e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SH_scaling_registerY_registerZ_registerT_simple */
-	{"sh.xs", {{ 0x2503f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SH_scaling_registerY_registerZ_registerT_simple */
 	{"sh", {{ 0xa5010000, 0xff030000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x80000000, 0xe0000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX1|kvxOPCODE_FLAG_LSU }, }, 3, 96,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_Y, {&kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SH_w064_registerZ_registerT_triple */
 	{"sleep", {{ 0x0fa40000, 0x7ffc0000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
@@ -16015,6 +16015,10 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LITE, ((int)0 << 8) | (int)Reservation_kv3_ALU_LITE, {&kv3_registerw_opnd, &kv3_registerz_opnd, &kv3_registery_opnd, 0}, "", "%s = %s, %s"}, /* Opcode-v1-SLSW_registerW_registerZ_registerY_simple */
 	{"slsw", {{ 0x7c023000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LITE, ((int)0 << 8) | (int)Reservation_kv3_ALU_LITE, {&kv3_registerw_opnd, &kv3_registerz_opnd, &kv3_unsigned6_opnd, 0}, "", "%s = %s, %s"}, /* Opcode-v1-SLSW_registerW_registerZ_u006_simple */
+	{"so", {{ 0x2807e000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registerv_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SO_doscale_registerY_registerZ_registerV_simple */
+	{"so.xs", {{ 0x2807f000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registerv_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SO_doscale_registerY_registerZ_registerV_simple */
 	{"so.deqz", {{ 0x28071000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registerv_opnd, 0}, "", "%s? [%s] = %s"}, /* Opcode-v1-SO_lsucond_registerY_registerZ_registerV_simple */
 	{"so.dgez", {{ 0x28073000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
@@ -16103,12 +16107,12 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_signed10_opnd, &kv3_registerz_opnd, &kv3_registerv_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SO_s010_registerZ_registerV_simple */
 	{"so", {{ 0xa8050000, 0xff0f0000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, }, 2, 64,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_X, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_X, {&kv3_upper27_lower10_opnd, &kv3_registerz_opnd, &kv3_registerv_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SO_s037_registerZ_registerV_double */
-	{"so", {{ 0x2807e000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registerv_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SO_scaling_registerY_registerZ_registerV_simple */
-	{"so.xs", {{ 0x2807f000, 0x7f0ff000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registerv_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SO_scaling_registerY_registerZ_registerV_simple */
 	{"so", {{ 0xa8050000, 0xff0f0000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x80000000, 0xe0000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX1|kvxOPCODE_FLAG_LSU }, }, 3, 96,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_Y, {&kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, &kv3_registerv_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SO_w064_registerZ_registerV_triple */
+	{"sq", {{ 0x2803e000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SQ_doscale_registerY_registerZ_registerU_simple */
+	{"sq.xs", {{ 0x2803f000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SQ_doscale_registerY_registerZ_registerU_simple */
 	{"sq.deqz", {{ 0x28031000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s? [%s] = %s"}, /* Opcode-v1-SQ_lsucond_registerY_registerZ_registerU_simple */
 	{"sq.dgez", {{ 0x28033000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
@@ -16197,10 +16201,6 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_signed10_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SQ_s010_registerZ_registerU_simple */
 	{"sq", {{ 0xa8010000, 0xff070000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, }, 2, 64,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_X, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_X, {&kv3_upper27_lower10_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SQ_s037_registerZ_registerU_double */
-	{"sq", {{ 0x2803e000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SQ_scaling_registerY_registerZ_registerU_simple */
-	{"sq.xs", {{ 0x2803f000, 0x7f07f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SQ_scaling_registerY_registerZ_registerU_simple */
 	{"sq", {{ 0xa8010000, 0xff070000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x80000000, 0xe0000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX1|kvxOPCODE_FLAG_LSU }, }, 3, 96,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_Y, {&kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, &kv3_registeru_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SQ_w064_registerZ_registerU_triple */
 	{"srad", {{ 0x7a026000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
@@ -16259,6 +16259,10 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LITE, ((int)0 << 8) | (int)Reservation_kv3_ALU_LITE, {&kv3_registerw_opnd, &kv3_registerz_opnd, &kv3_registery_opnd, 0}, "", "%s = %s, %s"}, /* Opcode-v1-STSUD_registerW_registerZ_registerY_simple */
 	{"stsuw", {{ 0x70011000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LITE, ((int)0 << 8) | (int)Reservation_kv3_ALU_LITE, {&kv3_registerw_opnd, &kv3_registerz_opnd, &kv3_registery_opnd, 0}, "", "%s = %s, %s"}, /* Opcode-v1-STSUW_registerW_registerZ_registerY_simple */
+	{"sv", {{ 0x2903e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_CRRP, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registere_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SV_doscale_registerY_registerZ_registerE_simple */
+	{"sv.xs", {{ 0x2903f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_CRRP, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registere_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SV_doscale_registerY_registerZ_registerE_simple */
 	{"sv.deqz", {{ 0x29031000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_CRRP, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registere_opnd, 0}, "", "%s? [%s] = %s"}, /* Opcode-v1-SV_lsucond_registerY_registerZ_registerE_simple */
 	{"sv.dgez", {{ 0x29033000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
@@ -16347,12 +16351,12 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_CRRP, {&kv3_signed10_opnd, &kv3_registerz_opnd, &kv3_registere_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SV_s010_registerZ_registerE_simple */
 	{"sv", {{ 0xa9010000, 0xff030000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, }, 2, 64,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_X, ((int)0 << 8) | (int)Reservation_kv3_LSU_CRRP_X, {&kv3_upper27_lower10_opnd, &kv3_registerz_opnd, &kv3_registere_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SV_s037_registerZ_registerE_double */
-	{"sv", {{ 0x2903e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_CRRP, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registere_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SV_scaling_registerY_registerZ_registerE_simple */
-	{"sv.xs", {{ 0x2903f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_CRRP, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registere_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SV_scaling_registerY_registerZ_registerE_simple */
 	{"sv", {{ 0xa9010000, 0xff030000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x80000000, 0xe0000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX1|kvxOPCODE_FLAG_LSU }, }, 3, 96,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_CRRP_Y, {&kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, &kv3_registere_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SV_w064_registerZ_registerE_triple */
+	{"sw", {{ 0x2603e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SW_doscale_registerY_registerZ_registerT_simple */
+	{"sw.xs", {{ 0x2603f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
+((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SW_doscale_registerY_registerZ_registerT_simple */
 	{"sw.deqz", {{ 0x26031000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s? [%s] = %s"}, /* Opcode-v1-SW_lsucond_registerY_registerZ_registerT_simple */
 	{"sw.dgez", {{ 0x26033000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
@@ -16441,10 +16445,6 @@ kv3opc_t kv3_v1_optab[] = {
 ((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_signed10_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SW_s010_registerZ_registerT_simple */
 	{"sw", {{ 0xa6010000, 0xff030000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, }, 2, 64,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_X, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_X, {&kv3_upper27_lower10_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SW_s037_registerZ_registerT_double */
-	{"sw", {{ 0x2603e000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SW_scaling_registerY_registerZ_registerT_simple */
-	{"sw.xs", {{ 0x2603f000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
-((int)0 << 8) | (int)Bundling_kv3_LSU, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR, {&kv3_registery_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SW_scaling_registerY_registerZ_registerT_simple */
 	{"sw", {{ 0xa6010000, 0xff030000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, { 0x80000000, 0xe0000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX0|kvxOPCODE_FLAG_LSU }, { 0x00000000, 0x60000000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32|kvxOPCODE_FLAG_IMMX1|kvxOPCODE_FLAG_LSU }, }, 3, 96,
 ((int)0 << 8) | (int)Bundling_kv3_LSU_Y, ((int)0 << 8) | (int)Reservation_kv3_LSU_AUXR_Y, {&kv3_extend27_upper27_lower10_opnd, &kv3_registerz_opnd, &kv3_registert_opnd, 0}, "", "%s[%s] = %s"}, /* Opcode-v1-SW_w064_registerZ_registerT_triple */
 	{"sxlbhq", {{ 0x76025000, 0x7f03f000, kvxOPCODE_FLAG_MODE64|kvxOPCODE_FLAG_MODE32 }, }, 1, 32,
