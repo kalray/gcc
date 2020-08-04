@@ -69,9 +69,7 @@ enum kvx_abi_type
 
 #define LINK_SPEC_COMMON "%{shared} %{m32:-melf32kvx} %{!m32:-melf64kvx} "
 
-#define CC1_SPEC                                                               \
-  " %{G*}"                                                                     \
-  "%{!fexceptions:%{!fno-exceptions: -fno-exceptions}} "
+#define CC1_SPEC " %{G*}"
 
 #define ASM_SPEC "%{march*} --check-resources %{m32} "
 
