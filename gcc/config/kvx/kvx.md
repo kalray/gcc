@@ -2174,33 +2174,12 @@
   "fwidenlhw %0 = %1"
 [(set_attr "type" "alu_lite")])
 
-;; (define_insn "builtin_extendv2hfv2sf2"
-;;   [(set (match_operand:V2SF 0 "register_operand" "=r")
-;; 	(unspec:V2SF [(match_operand:DI 1 "register_operand" "r")] UNSPEC_FWIDENLHWP))]
-;;   ""
-;;   "fwidenlhwp %0 = %1"
-;; [(set_attr "type" "alud")
-;;  (set_attr "length" "4")]
-;; )
-;; 
 (define_insn "builtin_extendhfsf2_tophalf"
   [(set (match_operand:SF 0 "register_operand" "=r")
         (unspec:SF [(match_operand:SI 1 "register_operand" "r")] UNSPEC_FWIDENMHW))]
   ""
   "fwidenmhw %0 = %1"
 [(set_attr "type" "alu_lite")])
-
-;; (define_insn "builtin_extendv2hfv2sf2_tophalf"
-;;   [(set (match_operand:V2SF 0 "register_operand" "=r")
-;; 	(unspec:V2SF [(match_operand:DI 1 "register_operand" "r")] UNSPEC_FWIDENMHWP))]
-;;   ""
-;;   "fwidenmhwp %0 = %1"
-;; [(set_attr "type" "alud")
-;;  (set_attr "length" "4")]
-;; )
-
-(define_mode_attr int_type [(SF "SI") (DF "DI")])
-(define_mode_attr float_type [(SI "SF") (DI "DF")])
 
 (define_insn "truncdfsf2"
   [(set (match_operand:SF 0 "register_operand" "=r")
@@ -2217,174 +2196,6 @@
   ""
   "fnarrowwh %0 = %1"
 [(set_attr "type" "alu_lite")
-])
-
-;; Beware that the half float are stored in 2 32bits words. They are /not/ packed.
-;; (define_insn "builtin_truncv2sf_2hf2"
-;;   [(set (match_operand:V2SI 0 "register_operand" "=r")
-;;         (unspec [(match_operand:V2SF 1 "register_operand" "r")] UNSPEC_FNARROWDWP))]
-;;   ""
-;;   "fnarrowdwp %0 = %1"
-;; [(set_attr "type" "alu_full")
-;;  (set_attr "length" "4")]
-;; )
-
-
-(define_expand "divsf3"
-  [(set (match_operand:SF 0 "register_operand" "=r")
-        (div:SF (match_operand:SF 1 "register_operand" "r")
-                (match_operand:SF 2 "register_operand" "r")))]
-  ""
-  {
-    rtx temp = gen_reg_rtx(SFmode);
-    emit_insn (gen_recipsf2_insn (temp, CONST1_RTX (SFmode), operands[2]));
-    emit_insn (gen_mulsf3 (operands[0], operands[1], temp));
-    DONE;
-  }
-)
-
-(define_expand "sqrtsf2"
-  [(set (match_operand:SF 0 "register_operand" "=r")
-        (sqrt:SF (match_operand:SF 1 "register_operand" "r")))]
-  ""
-  {
-    rtx temp = gen_reg_rtx(SFmode);
-    emit_insn (gen_rsqrtsf2_insn (temp, CONST1_RTX (SFmode), operands[1]));
-    emit_insn (gen_mulsf3 (operands[0], operands[1], temp));
-    DONE;
-  }
-)
-
-;; Jeff Law - [committed] Fix v850e3v5 recipf and rsqrt issues
-;; Generic code demands that the recip and rsqrt named patterns
-;; have precisely one operand.  So that what is exposed in the
-;; expander via the strange UNSPEC.  However, those expanders
-;; generate normal looking recip and rsqrt patterns.
-
-(define_expand "recipsf2"
-  [(set (match_operand:SF 0 "register_operand" "")
-   (unspec:SF [(match_operand:SF 1 "register_operand" "")]
-                UNSPEC_FINVW_))]
-  ""
-  {
-    emit_insn (gen_recipsf2_insn (operands[0], CONST1_RTX (SFmode), operands[1]));
-    DONE;
-  }
-)
-
-(define_insn "recipsf2_insn"
-  [(set (match_operand:SF 0 "register_operand" "=r")
-        (div:SF (match_operand:SF 1 "const_float_1_operand" "")
-                (match_operand:SF 2 "register_operand" "r")))]
-  ""
-  "finvw %0 = %2"
-  [(set_attr "type" "alu_full_copro")]
-)
-
-(define_insn "kvx_finvw"
-  [(set (match_operand:SF 0 "register_operand" "=r")
-        (unspec:SF [(match_operand:SF 1 "register_operand" "r")
-                    (match_operand 2 "" "")] UNSPEC_FINVW))]
-  ""
-  "finvw%2 %0 = %1"
-  [(set_attr "type" "alu_full_copro")]
-)
-
-(define_expand "rsqrtsf2"
-  [(set (match_operand:SF 0 "register_operand" "=")
-   (unspec:SF [(match_operand:SF 1 "register_operand" "")]
-                UNSPEC_FISRW_))]
-  ""
-  {
-    emit_insn (gen_rsqrtsf2_insn (operands[0], CONST1_RTX (SFmode), operands[1]));
-    DONE;
-  }
-)
-
-(define_insn "rsqrtsf2_insn"
-  [(set (match_operand:SF 0 "register_operand" "=r")
-        (div:SF (match_operand:SF 1 "const_float_1_operand" "")
-                (sqrt:SF (match_operand:SF 2 "register_operand" "r"))))]
-  ""
-  "fisrw %0 = %2"
-  [(set_attr "type" "alu_full_copro")]
-)
-
-(define_insn "kvx_fisrw"
-  [(set (match_operand:SF 0 "register_operand" "=r")
-        (unspec:SF [(match_operand:SF 1 "register_operand" "r")
-                    (match_operand 2 "" "")] UNSPEC_FISRW))]
-  ""
-  "fisrw%2 %0 = %1"
-  [(set_attr "type" "alu_full_copro")]
-)
-
-(define_insn "fcdivw"
-  [(set (match_operand:SF 0 "register_operand" "=r")
-        (unspec:SF [(match_operand:SF 1 "register_operand" "r")
-                    (match_operand:SF 2 "register_operand" "r")] UNSPEC_FCDIVW))]
-  ""
-  "fcdivw %0 = %1, %2"
-  [(set_attr "type" "alu_lite")
-])
-
-(define_insn "fcdivd"
-  [(set (match_operand:DF 0 "register_operand" "=r")
-        (unspec:DF [(match_operand:DF 1 "register_operand" "r")
-                    (match_operand:DF 2 "register_operand" "r")] UNSPEC_FCDIVD))]
-  ""
-  "fcdivd %0 = %1, %2"
-  [(set_attr "type" "alu_lite")
-])
-
-(define_insn "fsinvw"
-  [(set (match_operand:SF 0 "register_operand" "=r")
-        (unspec:SF [(match_operand:SF 1 "register_operand" "r")] UNSPEC_FSINVW))]
-  ""
-  "fsinvw %0 = %1"
-  [(set_attr "type" "alu_lite")
-])
-
-(define_insn "fsinvd"
-  [(set (match_operand:DF 0 "register_operand" "=r")
-        (unspec:DF [(match_operand:DF 1 "register_operand" "r")] UNSPEC_FSINVD))]
-  ""
-  "fsinvd %0 = %1"
-  [(set_attr "type" "alu_lite")
-])
-
-(define_insn "fsisrw"
-  [(set (match_operand:SF 0 "register_operand" "=r")
-        (unspec:SF [(match_operand:SF 1 "register_operand" "r")] UNSPEC_FSISRW))]
-  ""
-  "fsisrw %0 = %1"
-  [(set_attr "type" "alu_lite")
-])
-
-(define_insn "fsisrd"
-  [(set (match_operand:DF 0 "register_operand" "=r")
-        (unspec:DF [(match_operand:DF 1 "register_operand" "r")] UNSPEC_FSISRD))]
-  ""
-  "fsisrd %0 = %1"
-  [(set_attr "type" "alu_lite")
-])
-
-(define_insn "fsdivw"
-  [(set (match_operand:SF 0 "register_operand" "=r")
-	(unspec:SF [(match_operand:SF 1 "register_operand" "r")
-		    (match_operand:SF 2 "register_operand" "r")] UNSPEC_FSDIVW))]
-  ""
-  "fsdivw %0 = %1, %2"
-  [(set_attr "type" "alu_lite")
-])
-
-(define_insn "fsdivd"
-  [(set (match_operand:DF 0 "register_operand" "=r")
-	(unspec:DF [(match_operand:DF 1 "register_operand" "r")
-		    (match_operand:DF 2 "register_operand" "r")] UNSPEC_FSDIVD))]
-  ""
-  "fsdivd %0 = %1, %2"
-  [(set_attr "type" "alu_lite")
 ])
 
 
@@ -2449,15 +2260,6 @@
   [(set_attr "type" "alu_lite,alu_lite,alu_lite_x")
    (set_attr "length" "4,4,8")]
 )
-
-(define_insn "abdhq"
-  [(set (match_operand:DI 0 "register_operand" "=r")
-	(unspec:DI [(match_operand:DI 1 "register_operand" "r")
-		    (match_operand:DI 2 "register_operand" "r")] UNSPEC_ABDHQ))]
-  ""
-  "abdhq %0 = %1, %2"
-  [(set_attr "type" "alu_lite")
-])
 
 /********** Hardware loops **************/
 

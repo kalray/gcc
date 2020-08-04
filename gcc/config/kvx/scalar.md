@@ -1,3 +1,20 @@
+;; Pairing scalars into TI
+
+(define_insn_and_split "kvx_joinp<mode>"
+  [(set (match_operand:TI 0 "register_operand" "=r")
+        (unspec:TI [(match_operand:FITGPR 1 "register_operand" "r")
+                    (match_operand:FITGPR 2 "register_operand" "r")] UNSPEC_JOINP))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:DI (match_dup 0) 0)
+        (subreg:DI (match_dup 1) 0))
+   (set (subreg:DI (match_dup 0) 8)
+        (subreg:DI (match_dup 2) 0))]
+  ""
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length"         "8")]
+)
 
 ;; HI
 
@@ -360,6 +377,158 @@
   [(set_attr "type" "alu_lite")]
 )
 
+(define_expand "divsf3"
+  [(set (match_operand:SF 0 "register_operand" "=r")
+        (div:SF (match_operand:SF 1 "register_operand" "r")
+                (match_operand:SF 2 "register_operand" "r")))]
+  ""
+  {
+    rtx temp = gen_reg_rtx(SFmode);
+    emit_insn (gen_recipsf2_insn (temp, CONST1_RTX (SFmode), operands[2]));
+    emit_insn (gen_mulsf3 (operands[0], operands[1], temp));
+    DONE;
+  }
+)
+
+(define_expand "sqrtsf2"
+  [(set (match_operand:SF 0 "register_operand" "=r")
+        (sqrt:SF (match_operand:SF 1 "register_operand" "r")))]
+  ""
+  {
+    rtx temp = gen_reg_rtx(SFmode);
+    emit_insn (gen_rsqrtsf2_insn (temp, CONST1_RTX (SFmode), operands[1]));
+    emit_insn (gen_mulsf3 (operands[0], operands[1], temp));
+    DONE;
+  }
+)
+
+;; Jeff Law - [committed] Fix v850e3v5 recipf and rsqrt issues
+;; Generic code demands that the recip and rsqrt named patterns
+;; have precisely one operand.  So that what is exposed in the
+;; expander via the strange UNSPEC.  However, those expanders
+;; generate normal looking recip and rsqrt patterns.
+
+(define_expand "recipsf2"
+  [(set (match_operand:SF 0 "register_operand" "")
+   (unspec:SF [(match_operand:SF 1 "register_operand" "")] UNSPEC_FRECW_))]
+  ""
+  {
+    emit_insn (gen_recipsf2_insn (operands[0], CONST1_RTX (SFmode), operands[1]));
+    DONE;
+  }
+)
+
+(define_insn "recipsf2_insn"
+  [(set (match_operand:SF 0 "register_operand" "=r")
+        (div:SF (match_operand:SF 1 "const_float_1_operand" "")
+                (match_operand:SF 2 "register_operand" "r")))]
+  ""
+  "frecw %0 = %2"
+  [(set_attr "type" "alu_full_copro")]
+)
+
+(define_insn "kvx_frecw"
+  [(set (match_operand:SF 0 "register_operand" "=r")
+        (unspec:SF [(match_operand:SF 1 "register_operand" "r")
+                    (match_operand 2 "" "")] UNSPEC_FRECW))]
+  ""
+  "frecw%2 %0 = %1"
+  [(set_attr "type" "alu_full_copro")]
+)
+
+(define_expand "rsqrtsf2"
+  [(set (match_operand:SF 0 "register_operand" "=")
+   (unspec:SF [(match_operand:SF 1 "register_operand" "")]
+                UNSPEC_FRSRW_))]
+  ""
+  {
+    emit_insn (gen_rsqrtsf2_insn (operands[0], CONST1_RTX (SFmode), operands[1]));
+    DONE;
+  }
+)
+
+(define_insn "rsqrtsf2_insn"
+  [(set (match_operand:SF 0 "register_operand" "=r")
+        (div:SF (match_operand:SF 1 "const_float_1_operand" "")
+                (sqrt:SF (match_operand:SF 2 "register_operand" "r"))))]
+  ""
+  "frsrw %0 = %2"
+  [(set_attr "type" "alu_full_copro")]
+)
+
+(define_insn "kvx_frsrw"
+  [(set (match_operand:SF 0 "register_operand" "=r")
+        (unspec:SF [(match_operand:SF 1 "register_operand" "r")
+                    (match_operand 2 "" "")] UNSPEC_FRSRW))]
+  ""
+  "frsrw%2 %0 = %1"
+  [(set_attr "type" "alu_full_copro")]
+)
+
+(define_expand "kvx_fcdivw"
+  [(match_operand:SF 0 "register_operand" "")
+   (match_operand:SF 1 "register_operand" "")
+   (match_operand:SF 2 "register_operand" "")
+   (match_operand 3 "" "")]
+ ""
+ {
+    rtx regpair = gen_reg_rtx (TImode);
+    emit_insn (gen_kvx_joinpsf (regpair, operands[1], operands[2]));
+    emit_insn (gen_kvx_fcdivw_insn (operands[0], regpair, operands[3]));
+    DONE;
+ }
+)
+
+(define_insn "kvx_fcdivw_insn"
+  [(set (match_operand:SF 0 "register_operand" "=r")
+        (unspec:SF [(match_operand:TI 1 "register_operand" "r")
+                    (match_operand 2 "" "")] UNSPEC_FCDIVW))]
+  ""
+  "fcdivw %0 = %1, %2"
+  [(set_attr "type" "alu_lite")]
+)
+
+(define_expand "kvx_fsdivw"
+  [(match_operand:SF 0 "register_operand" "")
+   (match_operand:SF 1 "register_operand" "")
+   (match_operand:SF 2 "register_operand" "")
+   (match_operand 3 "" "")]
+ ""
+ {
+    rtx regpair = gen_reg_rtx (TImode);
+    emit_insn (gen_kvx_joinpsf (regpair, operands[1], operands[2]));
+    emit_insn (gen_kvx_fsdivw_insn (operands[0], regpair, operands[3]));
+    DONE;
+ }
+)
+
+(define_insn "kvx_fsdivw_insn"
+  [(set (match_operand:SF 0 "register_operand" "=r")
+        (unspec:SF [(match_operand:TI 1 "register_operand" "r")
+                    (match_operand 2 "" "")] UNSPEC_FSDIVW))]
+  ""
+  "fsdivw%2 %0 = %1"
+  [(set_attr "type" "alu_lite")]
+)
+
+(define_insn "kvx_fsrecw"
+  [(set (match_operand:SF 0 "register_operand" "=r")
+        (unspec:SF [(match_operand:SF 1 "register_operand" "r")
+                    (match_operand 2 "" "")] UNSPEC_FSRECW))]
+  ""
+  "fsrecw%2 %0 = %1"
+  [(set_attr "type" "alu_lite")]
+)
+
+(define_insn "kvx_fsrsrw"
+  [(set (match_operand:SF 0 "register_operand" "=r")
+        (unspec:SF [(match_operand:SF 1 "register_operand" "r")
+                    (match_operand 2 "" "")] UNSPEC_FSRSRW))]
+  ""
+  "fsrsrw%2 %0 = %1"
+  [(set_attr "type" "alu_lite")]
+)
+
 ;; DF
 
 (define_insn "adddf3"
@@ -599,6 +768,70 @@
   ""
   "fixedud%3 %0 = %1, %2"
   [(set_attr "type" "mau_fpu")]
+)
+
+(define_expand "kvx_fcdivd"
+  [(match_operand:DF 0 "register_operand" "")
+   (match_operand:DF 1 "register_operand" "")
+   (match_operand:DF 2 "register_operand" "")
+   (match_operand 3 "" "")]
+ ""
+ {
+    rtx regpair = gen_reg_rtx (TImode);
+    emit_insn (gen_kvx_joinpdf (regpair, operands[1], operands[2]));
+    emit_insn (gen_kvx_fcdivd_insn (operands[0], regpair, operands[3]));
+    DONE;
+ }
+)
+
+(define_insn "kvx_fcdivd_insn"
+  [(set (match_operand:DF 0 "register_operand" "=r")
+        (unspec:DF [(match_operand:TI 1 "register_operand" "r")
+                    (match_operand 2 "" "")] UNSPEC_FCDIVD))]
+  ""
+  "fcdivd%2 %0 = %1"
+  [(set_attr "type" "alu_lite")
+])
+
+(define_expand "kvx_fsdivd"
+  [(match_operand:DF 0 "register_operand" "")
+   (match_operand:DF 1 "register_operand" "")
+   (match_operand:DF 2 "register_operand" "")
+   (match_operand 3 "" "")]
+ ""
+ {
+    rtx regpair = gen_reg_rtx (TImode);
+    emit_insn (gen_kvx_joinpdf (regpair, operands[1], operands[2]));
+    emit_insn (gen_kvx_fsdivd_insn (operands[0], regpair, operands[3]));
+    DONE;
+ }
+)
+
+(define_insn "kvx_fsdivd_insn"
+  [(set (match_operand:DF 0 "register_operand" "=r")
+        (unspec:DF [(match_operand:TI 1 "register_operand" "r")
+                    (match_operand 2 "" "")] UNSPEC_FSDIVD))]
+  ""
+  "fsdivd%2 %0 = %1"
+  [(set_attr "type" "alu_lite")]
+)
+
+(define_insn "kvx_fsrecd"
+  [(set (match_operand:DF 0 "register_operand" "=r")
+        (unspec:DF [(match_operand:DF 1 "register_operand" "r")
+                    (match_operand 2 "" "")] UNSPEC_FSRECD))]
+  ""
+  "fsrecd%2 %0 = %1"
+  [(set_attr "type" "alu_lite")]
+)
+
+(define_insn "kvx_fsrsrd"
+  [(set (match_operand:DF 0 "register_operand" "=r")
+        (unspec:DF [(match_operand:DF 1 "register_operand" "r")
+                    (match_operand 2 "" "")] UNSPEC_FSRSRD))]
+  ""
+  "fsrsrd%2 %0 = %1"
+  [(set_attr "type" "alu_lite")]
 )
 
 
