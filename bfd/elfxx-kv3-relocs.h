@@ -1,5 +1,5 @@
 /* (c) Copyright 2010-2018 Kalray SA. */
-#ifdef KV3_V1
+#ifdef KV3_V1_V2
 static reloc_howto_type elf_kvx_howto_table[] =
 {
   EMPTY_HOWTO(0),
@@ -1072,4 +1072,4 @@ static reloc_howto_type elf_kvx_howto_table[] =
   EMPTY_HOWTO(0),
 };
 
-#endif /* KV3_V1 */
+#endif /* KV3_V1_V2 */

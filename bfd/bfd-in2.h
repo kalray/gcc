@@ -1030,7 +1030,7 @@ extern bfd_boolean v850_elf_create_sections
 extern bfd_boolean v850_elf_set_note
   (bfd *, unsigned int, unsigned int);
 
-/* K1C stub generation support for ELF64.  Called from the linker.  */
+/* KVX stub generation support for ELF64.  Called from the linker.  */
 extern int elf64_kvx_setup_section_lists
   (bfd *, struct bfd_link_info *);
 
@@ -1045,7 +1045,7 @@ extern bfd_boolean elf64_kvx_size_stubs
 extern bfd_boolean elf64_kvx_build_stubs
   (struct bfd_link_info *);
 
-/* K1C stub generation support for ELF32.  Called from the linker.  */
+/* KVX stub generation support for ELF32.  Called from the linker.  */
 extern int elf32_kvx_setup_section_lists
   (bfd *, struct bfd_link_info *);
 
@@ -2341,9 +2341,13 @@ enum bfd_architecture
 #define bfd_mach_lm32      1
   bfd_arch_microblaze,/* Xilinx MicroBlaze. */
   bfd_arch_kvx,        /* Kalray VLIW core of the MPPA processor family */
-#define bfd_mach_kv3_1                0
-#define bfd_mach_kv3_1_64             1
-#define bfd_mach_kv3_1_usr            2
+#define bfd_mach_kv3_unknown       0
+#define bfd_mach_kv3_1             1
+#define bfd_mach_kv3_1_64          2
+#define bfd_mach_kv3_1_usr         3
+#define bfd_mach_kv3_2             4
+#define bfd_mach_kv3_2_64          5
+#define bfd_mach_kv3_2_usr         6
   bfd_arch_tilepro,   /* Tilera TILEPro */
   bfd_arch_tilegx, /* Tilera TILE-Gx */
 #define bfd_mach_tilepro   1

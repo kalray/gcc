@@ -58,6 +58,7 @@
 #define ELF_KVX_CORE_KV3         (0x03 << ELF_KVX_CORE_BIT_SHIFT)
 
 #define ELF_KVX_CORE_KV3_1      (ELF_KVX_CORE_KV3 | (1 << (ELF_KVX_CORE_MINOR_SHIFT)))
+#define ELF_KVX_CORE_KV3_2      (ELF_KVX_CORE_KV3 | (2 << (ELF_KVX_CORE_MINOR_SHIFT)))
 
 #define ELF_KVX_IS_KV3(flags)   (((flags) & ELF_KVX_CORE_MAJOR_MASK) == (ELF_KVX_CORE_KV3))
 #define ELF_KVX_CHECK_CORE(flags,m) (((flags) & ELF_KVX_CORE_MASK)==(m))

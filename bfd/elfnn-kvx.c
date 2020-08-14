@@ -138,9 +138,9 @@ static const bfd_byte elfNN_kvx_long_branch_stub[] =
    Therefore, the table needs to be synced with BFD_RELOC_KVX_*
    in reloc.c.   */
 
-#define KV3_V1
+#define KV3_V1_V2
 #include "elfxx-kv3-relocs.h"
-#undef KV3_V1
+#undef KV3_V1_V2
 
 /* Given HOWTO, return the bfd internal relocation enumerator.  */
 
@@ -3058,11 +3058,20 @@ elfNN_kvx_object_p (bfd *abfd)
 
   if (elf_elfheader (abfd)->e_machine == EM_KVX)
     {
+      int e_core = elf_elfheader (abfd)->e_flags & ELF_KVX_CORE_MASK;
+      switch(e_core)
+	{
 #if ARCH_SIZE == 64
-      e_set = bfd_mach_kv3_1_64;
+	case ELF_KVX_CORE_KV3_1 : e_set = bfd_mach_kv3_1_64; break;
+	case ELF_KVX_CORE_KV3_2 : e_set = bfd_mach_kv3_2_64; break;
 #else
-      e_set = bfd_mach_kv3_1;
+	case ELF_KVX_CORE_KV3_1 : e_set = bfd_mach_kv3_1; break;
+	case ELF_KVX_CORE_KV3_2 : e_set = bfd_mach_kv3_2; break;
 #endif
+	default:
+	  (*_bfd_error_handler)(_("%s: Bad ELF id: `%d'"),
+				abfd->filename, e_core);
+	}
     }
   return bfd_default_set_arch_mach (abfd, bfd_arch_kvx, e_set);
     
@@ -3108,6 +3117,25 @@ elfNN_kvx_merge_private_bfd_data (bfd *ibfd, bfd *obfd)
      the assembler but I don't think an elf_flags_init field is
      written into the object.  */
   /* BFD_ASSERT (elf_flags_init (ibfd)); */
+
+  if (bfd_get_arch_size (ibfd) != bfd_get_arch_size (obfd))
+    {
+      const char *msg;
+
+      if (bfd_get_arch_size (ibfd) == 32
+	  && bfd_get_arch_size (obfd) == 64)
+	msg = _("%s: compiled as 32-bit object and %s is 64-bit");
+      else if (bfd_get_arch_size (ibfd) == 64
+	       && bfd_get_arch_size (obfd) == 32)
+	msg = _("%s: compiled as 64-bit object and %s is 32-bit");
+      else
+	msg = _("%s: object size does not match that of target %s");
+
+      (*_bfd_error_handler) (msg, bfd_get_filename (ibfd),
+			     bfd_get_filename (obfd));
+      bfd_set_error (bfd_error_wrong_format);
+      return FALSE;
+    }
 
   in_flags = elf_elfheader (ibfd)->e_flags;
   out_flags = elf_elfheader (obfd)->e_flags;
@@ -3190,11 +3218,22 @@ elfNN_kvx_print_private_bfd_data (bfd *abfd, void *ptr)
      containing valid data.  */
 
   /* xgettext:c-format */
-  fprintf (file, _("private flags = %lx:"), elf_elfheader (abfd)->e_flags);
-
-  if (flags)
-    fprintf (file, _("<Unrecognised flag bits set>"));
-
+  fprintf (file, _("Private flags = 0x%lx : "), elf_elfheader (abfd)->e_flags);
+  if((flags & ELF_KVX_ABI_64B_ADDR_BIT) == ELF_KVX_ABI_64B_ADDR_BIT)
+    {
+      if (ELF_KVX_CHECK_CORE(flags,ELF_KVX_CORE_KV3_1))
+	fprintf (file, _("Coolidge (kv3) V1 64 bits"));
+      else if (ELF_KVX_CHECK_CORE(flags,ELF_KVX_CORE_KV3_2))
+	fprintf (file, _("Coolidge (kv3) V2 64 bits"));
+    }
+  else
+    {
+      if (ELF_KVX_CHECK_CORE(flags,ELF_KVX_CORE_KV3_1))
+	fprintf (file, _("Coolidge (kv3) V1 32 bits"));
+      else if (ELF_KVX_CHECK_CORE(flags,ELF_KVX_CORE_KV3_2))
+	fprintf (file, _("Coolidge (kv3) V2 32 bits"));
+    }
+  
   fputc ('\n', file);
 
   return TRUE;
