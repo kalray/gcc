@@ -14,9 +14,21 @@ kvx_compatible (const bfd_arch_info_type *a, const bfd_arch_info_type *b)
   if (a->arch != b->arch)
     return NULL;
 
-  if (amach == bfd_mach_kv3_1_64 && bmach == bfd_mach_kv3_1_usr)
+  if (amach == bfd_mach_kv3_1_64 && bmach == bfd_mach_kv3_1_usr ||
+      amach == bfd_mach_kv3_2_64 && bmach == bfd_mach_kv3_2_usr)
     return b;
-  if (bmach == bfd_mach_kv3_1_64 && amach == bfd_mach_kv3_1_usr)
+  if (bmach == bfd_mach_kv3_1_64 && amach == bfd_mach_kv3_1_usr ||
+      bmach == bfd_mach_kv3_2_64 && amach == bfd_mach_kv3_2_usr)
+    return a;
+
+  /* Otherwise if either a or b is the 'default' machine
+   * then it can be polymorphed into the other.
+   * This will enable to execute merge_private_bfd_data
+   */
+  if (a->the_default)
+    return b;
+
+  if (b->the_default)
     return a;
 
   /* We do not want to transmute some machine into another one */
@@ -61,11 +73,20 @@ scan (const struct bfd_arch_info *info, const char *string)
   next                                                         \
 }
 
+const bfd_arch_info_type bfd_kv3_2_usr_arch =
+  N (64, bfd_mach_kv3_2_usr,  "kvx:kv3-2:usr", FALSE, NULL);
+
 const bfd_arch_info_type bfd_kv3_1_usr_arch =
-  N (64, bfd_mach_kv3_1_usr,  "kvx:kv3-1:usr", FALSE, NULL);
+  N (64, bfd_mach_kv3_1_usr,  "kvx:kv3-1:usr", FALSE, & bfd_kv3_2_usr_arch);
+
+const bfd_arch_info_type bfd_kv3_2_64_arch =
+  N (64, bfd_mach_kv3_2_64,   "kvx:kv3-2:64",  FALSE, & bfd_kv3_1_usr_arch);
 
 const bfd_arch_info_type bfd_kv3_1_64_arch =
-  N (64, bfd_mach_kv3_1_64,   "kvx:kv3-1:64",  FALSE, & bfd_kv3_1_usr_arch);
+  N (64, bfd_mach_kv3_1_64,   "kvx:kv3-1:64",  FALSE, & bfd_kv3_2_64_arch);
+
+const bfd_arch_info_type bfd_kv3_2_arch =
+  N (32, bfd_mach_kv3_2,      "kvx:kv3-2",     FALSE, & bfd_kv3_1_64_arch);
 
 const bfd_arch_info_type bfd_kvx_arch =
-  N (32, bfd_mach_kv3_1,      "kvx:kv3-1",     TRUE, & bfd_kv3_1_64_arch);
+  N (32, bfd_mach_kv3_1,      "kvx:kv3-1",     TRUE, & bfd_kv3_2_arch);
