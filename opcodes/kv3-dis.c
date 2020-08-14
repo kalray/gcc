@@ -336,6 +336,15 @@ int print_insn_kvx (bfd_vma memaddr, struct disassemble_info *info){
       kvx_registers = kvx_kv3_v1_registers;
       kvx_dec_registers = kvx_kv3_v1_dec_registers;
       break;
+    case bfd_mach_kv3_2_64:
+      kvx_arch_size = 64;
+    case bfd_mach_kv3_2_usr:
+    case bfd_mach_kv3_2:
+      opc_table = kv3_v2_optab;
+      kvx_regfiles = kvx_kv3_v2_regfiles;
+      kvx_registers = kvx_kv3_v2_registers;
+      kvx_dec_registers = kvx_kv3_v2_dec_registers;
+      break;
 
     default:
       /* Core not supported */

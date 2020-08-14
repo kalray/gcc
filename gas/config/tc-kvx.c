@@ -859,7 +859,7 @@ int md_parse_option(int c, char *arg ATTRIBUTE_UNUSED) {
     if (i == KVXNUMCORES){
       char buf[100];
       supported_cores(buf, sizeof(buf));
-      as_fatal("Core specified not supported [%s]", buf);
+      as_fatal("Specified arch not supported [%s]", buf);
     }
     break;
   case OPTION_CHECK_RESOURCES:
@@ -906,7 +906,7 @@ void md_show_usage(FILE * stream){
     fprintf(stream, " are not supported in this assembler.\n");
     fprintf(stream, "--emit-all-relocs \t emit all relocs\n");
     fprintf(stream, "--check-resources \t perform minimal resource checking\n");
-    fprintf(stream, "--march [%s] \t select encoding table and ELF flags\n", buf);
+    fprintf(stream, "--march [%s] \t select architecture\n", buf);
     fprintf(stream, "-V \t\t\t print assembler version number\n");
 }
 
@@ -2562,6 +2562,16 @@ kvx_set_cpu(void) {
     }
     print_insn = kv3_print_insn;
     break;
+  case ELF_KVX_CORE_KV3_2:
+    if (kvx_arch_size == 32) {
+      if (!bfd_set_arch_mach(stdoutput, TARGET_ARCH, bfd_mach_kv3_2))
+        as_warn(_("could not set architecture and machine"));
+    } else if (kvx_arch_size == 64) {
+      if (!bfd_set_arch_mach(stdoutput, TARGET_ARCH, bfd_mach_kv3_2_64))
+        as_warn(_("could not set architecture and machine"));
+    }
+    print_insn = kv3_print_insn;
+    break;
   default:
     as_fatal("Unknown elf core: 0x%x\n",kvx_core_info->elf_cores[subcore_id]);
   }
@@ -3484,6 +3494,10 @@ kvx_end(void)
 
     /* (pp) the flags must be set at once */
     newflags = kvx_core | kvx_abi | kvx_pic_flags;
+
+    if (kvx_arch_size == 64) {
+      newflags |= ELF_KVX_ABI_64B_ADDR_BIT;
+    }
 
     bfd_set_private_flags(stdoutput, newflags);
 
