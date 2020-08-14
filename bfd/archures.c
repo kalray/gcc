@@ -524,9 +524,13 @@ DESCRIPTION
 .#define bfd_mach_lm32		1
 .  bfd_arch_microblaze,{* Xilinx MicroBlaze.  *}
 .  bfd_arch_kvx,        {* Kalray VLIW core of the MPPA processor family *}
-.#define bfd_mach_kv3_1                0
-.#define bfd_mach_kv3_1_64             1
-.#define bfd_mach_kv3_1_usr            2
+.#define bfd_mach_kv3_unknown       0
+.#define bfd_mach_kv3_1             1
+.#define bfd_mach_kv3_1_64          2
+.#define bfd_mach_kv3_1_usr         3
+.#define bfd_mach_kv3_2             4
+.#define bfd_mach_kv3_2_64          5
+.#define bfd_mach_kv3_2_usr         6
 .  bfd_arch_tilepro,   {* Tilera TILEPro.  *}
 .  bfd_arch_tilegx,    {* Tilera TILE-Gx.  *}
 .#define bfd_mach_tilepro	1
