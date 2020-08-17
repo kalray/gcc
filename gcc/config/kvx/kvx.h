@@ -844,7 +844,6 @@ extern void kvx_profile_hook (void);
 #define REGISTER_TARGET_PRAGMAS()                                              \
   do                                                                           \
     {                                                                          \
-      c_register_addr_space ("__uncached", KVX_ADDR_SPACE_BYPASS);             \
       c_register_addr_space ("__bypass", KVX_ADDR_SPACE_BYPASS);               \
       c_register_addr_space ("__preload", KVX_ADDR_SPACE_PRELOAD);             \
       c_register_addr_space ("__convert", KVX_ADDR_SPACE_CONVERT);             \

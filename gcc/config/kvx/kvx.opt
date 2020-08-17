@@ -53,8 +53,8 @@ Name(kvx_abi) Type(int)
 Known KVX MPPA ABIs (for use with the -mabi= option):
 
 Waddress-space-conversion
-C C++ Warning Var(KVX_WARN_ADDRESS_SPACE_CONVERSION) Init(0)
-Warn if an __uncached pointer is converted to a general one or vice versa
+C Warning Var(KVX_WARN_ADDRESS_SPACE_CONVERSION) Init(0)
+Warn if an __bypass pointer is converted to a general one or vice versa
 
 EnumValue
 Enum(kvx_abi) String(lp64) Value(KVX_ABI_LP64)
