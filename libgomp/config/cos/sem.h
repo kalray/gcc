@@ -108,7 +108,7 @@ gomp_sem_wait (gomp_sem_t *sem)
 
   while (1)
     {
-      __uncached volatile uintptr_t *ptr = (void *) sem;
+      __bypass volatile uintptr_t *ptr = (void *) sem;
 
       uintptr_t count = *ptr;
 
