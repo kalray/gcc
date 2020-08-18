@@ -12937,8 +12937,8 @@ typedef enum {
 } Bundling;
 
 
-static char *bundling_names(Bundling bundling) __attribute__((unused));
-static char *bundling_names(Bundling bundling) {
+static const char *bundling_names(Bundling bundling) __attribute__((unused));
+static const char *bundling_names(Bundling bundling) {
   switch(bundling) {
   case Bundling_kv3_ALL: return "Bundling_kv3_ALL";
   case Bundling_kv3_BCU: return "Bundling_kv3_BCU";
