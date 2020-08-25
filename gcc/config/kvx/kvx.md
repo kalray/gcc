@@ -1233,15 +1233,6 @@
 [(set_attr "type" "all")]
 )
 
-(define_insn "doze"
-   [(unspec_volatile [(const_int 0)] UNSPEC_DOZE)
-    (set (match_operand:SI 0 "" "") 
-         (unspec:SI [(match_dup 0)] UNSPEC_SYNC))]
-   ""
-   "doze"
-[(set_attr "type" "all")]
-)
-
 (define_insn "sleep"
    [(unspec_volatile [(const_int 0)] UNSPEC_SLEEP)
     (set (match_operand:SI 0 "" "") 

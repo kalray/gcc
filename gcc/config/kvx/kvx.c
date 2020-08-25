@@ -3773,7 +3773,6 @@ enum kvx_builtin
   KVX_BUILTIN_ALCLRW,
   KVX_BUILTIN_DINVAL,
   KVX_BUILTIN_DINVALL,
-  KVX_BUILTIN_DOZE,
   KVX_BUILTIN_DPURGE,
   KVX_BUILTIN_DPURGEL,
   KVX_BUILTIN_DTOUCHL,
@@ -4175,7 +4174,6 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (ALCLRW, "alclrw", UINT32, VPTR); // Atomic
   ADD_KVX_BUILTIN (DINVAL, "dinval", VOID); // Memory
   ADD_KVX_BUILTIN (DINVALL, "dinvall", VOID, CVPTR); // Memory
-  ADD_KVX_BUILTIN (DOZE, "doze", VOID); // Control
   ADD_KVX_BUILTIN (DTOUCHL, "dtouchl", VOID, CVPTR); // Memory
   ADD_KVX_BUILTIN (DZEROL, "dzerol", VOID, VPTR); // Memory
   ADD_KVX_BUILTIN (FENCE, "fence", VOID); // Memory
@@ -4881,15 +4879,6 @@ kvx_expand_builtin_await (rtx target ATTRIBUTE_UNUSED,
 			  tree args ATTRIBUTE_UNUSED)
 {
   emit_insn (gen_await (kvx_sync_reg_rtx));
-
-  return NULL_RTX;
-}
-
-static rtx
-kvx_expand_builtin_doze (rtx target ATTRIBUTE_UNUSED,
-			 tree args ATTRIBUTE_UNUSED)
-{
-  emit_insn (gen_doze (kvx_sync_reg_rtx));
 
   return NULL_RTX;
 }
@@ -6201,8 +6190,6 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       return kvx_expand_builtin_dinval ();
     case KVX_BUILTIN_DINVALL:
       return kvx_expand_builtin_dinvall (target, exp);
-    case KVX_BUILTIN_DOZE:
-      return kvx_expand_builtin_doze (target, exp);
     case KVX_BUILTIN_DTOUCHL:
       return kvx_expand_builtin_dtouchl (target, exp);
     case KVX_BUILTIN_DZEROL:
