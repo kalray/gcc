@@ -14,11 +14,12 @@ kvx_compatible (const bfd_arch_info_type *a, const bfd_arch_info_type *b)
   if (a->arch != b->arch)
     return NULL;
 
-  if (amach == bfd_mach_kv3_1_64 && bmach == bfd_mach_kv3_1_usr ||
-      amach == bfd_mach_kv3_2_64 && bmach == bfd_mach_kv3_2_usr)
+  if ((amach == bfd_mach_kv3_1_64 && bmach == bfd_mach_kv3_1_usr)
+      || (amach == bfd_mach_kv3_2_64 && bmach == bfd_mach_kv3_2_usr))
     return b;
-  if (bmach == bfd_mach_kv3_1_64 && amach == bfd_mach_kv3_1_usr ||
-      bmach == bfd_mach_kv3_2_64 && amach == bfd_mach_kv3_2_usr)
+
+  if ((bmach == bfd_mach_kv3_1_64 && amach == bfd_mach_kv3_1_usr)
+      || (bmach == bfd_mach_kv3_2_64 && amach == bfd_mach_kv3_2_usr))
     return a;
 
   /* Otherwise if either a or b is the 'default' machine
