@@ -338,6 +338,7 @@ int print_insn_kvx (bfd_vma memaddr, struct disassemble_info *info){
       break;
     case bfd_mach_kv3_2_64:
       kvx_arch_size = 64;
+      /* fallthrough */
     case bfd_mach_kv3_2_usr:
     case bfd_mach_kv3_2:
       opc_table = kv3_v2_optab;
