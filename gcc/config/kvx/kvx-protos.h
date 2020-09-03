@@ -140,6 +140,9 @@ extern void kvx_expand_vector_insert (rtx target, rtx source, rtx where);
 
 extern void kvx_expand_vector_extract (rtx target, rtx source, rtx where);
 
+extern rtx kvx_expand_chunk_splat (rtx target, rtx source,
+				   enum machine_mode inner_mode);
+
 extern void kvx_expand_vector_init (rtx target, rtx source);
 
 extern void kvx_expand_vec_perm_const (rtx target, rtx source1, rtx source2, rtx selector);

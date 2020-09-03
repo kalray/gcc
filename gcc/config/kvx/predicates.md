@@ -40,8 +40,8 @@
 (define_predicate "poweroftwo_6bits_immediate_operand"
   (match_code "const_int")
 {
-  return (__builtin_popcount (INTVAL (op)) == 1)
-          && (INTVAL(op) <= 64);
+  return (__builtin_popcountll (INTVAL (op)) == 1)
+          && (INTVAL (op) >= 0) && (INTVAL(op) <= 64);
 })
 
 ;; register or immediate up to signed 32
@@ -49,13 +49,6 @@
  (and (match_code "reg,subreg,const,const_int")
       (ior (match_operand 0 "register_operand")
            (match_test "satisfies_constraint_I32(op)"))))
-
-;; register or immediate up to signed 64
-;; Does not really check value fits on 64bits as HOST_WIDE_INT
-;; is at most 64bits.
-(define_predicate "register_s64_operand"
- (ior (match_code "reg,subreg")
-      (match_code "const,const_int")))
 
 ;; register or immediate up to float 32
 (define_predicate "register_f32_operand"
