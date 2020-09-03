@@ -456,7 +456,7 @@
     [(match_operand:SIMDCMP2 4 "register_operand")
      (match_operand:SIMDCMP2 5 "register_operand")])]
   "(GET_MODE_NUNITS (<SIMDCMP:MODE>mode) == GET_MODE_NUNITS (<SIMDCMP2:MODE>mode))"
-  { 
+  {
     rtx target = operands[0];
     rtx select1 = operands[1];
     rtx select2 = operands[2];
@@ -565,17 +565,6 @@
                              (match_operand:V4HI 4 "register_operand" "0")))]
   ""
   "cmovehq.%2z %3? %0 = %1"
-  [(set_attr "type" "alu_lite")]
-)
-
-(define_insn "kvx_cmovehq"
-  [(set (match_operand:V4HI 0 "register_operand" "=r")
-        (unspec:V4HI [(match_operand:V4HI 1 "register_operand" "r")
-                      (match_operand:V4HI 2 "register_operand" "0")
-                      (match_operand:V4HI 3 "register_operand" "r")
-                      (match_operand 4 "" "")] UNSPEC_CMOVEHQ))]
-  ""
-  "cmovehq%4 %3? %0 = %1"
   [(set_attr "type" "alu_lite")]
 )
 
@@ -1153,18 +1142,6 @@
    (set_attr "length"         "8")]
 )
 
-(define_insn "kvx_cmoveho"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (unspec:V8HI [(match_operand:V8HI 1 "register_operand" "r")
-                      (match_operand:V8HI 2 "register_operand" "0")
-                      (match_operand:V8HI 3 "register_operand" "r")
-                      (match_operand 4 "" "")] UNSPEC_CMOVEHO))]
-  ""
-  "cmovehq%4 %x3? %x0 = %x1\n\tcmovehq%4 %y3? %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
 (define_insn "addv8hi3"
   [(set (match_operand:V8HI 0 "register_operand" "=r")
         (plus:V8HI (match_operand:V8HI 1 "register_operand" "r")
@@ -1731,29 +1708,6 @@
                                               (const_int 0)])])
                            (subreg:V8HI (match_dup 1) 16)
                            (subreg:V8HI (match_dup 4) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "kvx_cmovehx"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (unspec:V16HI [(match_operand:V16HI 1 "register_operand" "r")
-                       (match_operand:V16HI 2 "register_operand" "0")
-                       (match_operand:V16HI 3 "register_operand" "r")
-                       (match_operand 4 "" "")] UNSPEC_CMOVEHX))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (unspec:V8HI [(subreg:V8HI (match_dup 1) 0)
-                      (subreg:V8HI (match_dup 2) 0)
-                      (subreg:V8HI (match_dup 3) 0)
-                      (match_dup 4)] UNSPEC_CMOVEHO))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (unspec:V8HI [(subreg:V8HI (match_dup 1) 16)
-                      (subreg:V8HI (match_dup 2) 16)
-                      (subreg:V8HI (match_dup 3) 16)
-                      (match_dup 4)] UNSPEC_CMOVEHO))]
   ""
   [(set_attr "type" "alu_lite_x2")]
 )
@@ -2591,17 +2545,6 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "kvx_cmovewp"
-  [(set (match_operand:V2SI 0 "register_operand" "=r")
-        (unspec:V2SI [(match_operand:V2SI 1 "register_operand" "r")
-                      (match_operand:V2SI 2 "register_operand" "0")
-                      (match_operand:V2SI 3 "register_operand" "r")
-                      (match_operand 4 "" "")] UNSPEC_CMOVEWP))]
-  ""
-  "cmovewp%4 %3? %0 = %1"
-  [(set_attr "type" "alu_lite")]
-)
-
 (define_insn "addv2si3"
   [(set (match_operand:V2SI 0 "register_operand" "=r,r,r")
         (plus:V2SI (match_operand:V2SI 1 "register_operand" "r,r,r")
@@ -3128,18 +3071,6 @@
                              (match_operand:V4SI 4 "register_operand" "0")))]
   ""
   "cmovewp.%2z %x3? %x0 = %x1\n\tcmovewp.%2z %y3? %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "kvx_cmovewq"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (unspec:V4SI [(match_operand:V4SI 1 "register_operand" "r")
-                      (match_operand:V4SI 2 "register_operand" "0")
-                      (match_operand:V4SI 3 "register_operand" "r")
-                      (match_operand 4 "" "")] UNSPEC_CMOVEWQ))]
-  ""
-  "cmovewp%4 %x3? %x0 = %x1\n\tcmovewp%4 %y3? %y0 = %y1"
   [(set_attr "type" "alu_lite_x2")
    (set_attr "length"         "8")]
 )
@@ -3689,29 +3620,6 @@
   [(set_attr "type" "alu_lite_x2")]
 )
 
-(define_insn_and_split "kvx_cmovewo"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (unspec:V8SI [(match_operand:V8SI 1 "register_operand" "r")
-                      (match_operand:V8SI 2 "register_operand" "0")
-                      (match_operand:V8SI 3 "register_operand" "r")
-                      (match_operand 4 "" "")] UNSPEC_CMOVEWO))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (unspec:V4SI [(subreg:V4SI (match_dup 1) 0)
-                      (subreg:V4SI (match_dup 2) 0)
-                      (subreg:V4SI (match_dup 3) 0)
-                      (match_dup 4)] UNSPEC_CMOVEWQ))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (unspec:V4SI [(subreg:V4SI (match_dup 1) 16)
-                      (subreg:V4SI (match_dup 2) 16)
-                      (subreg:V4SI (match_dup 3) 16)
-                      (match_dup 4)] UNSPEC_CMOVEWQ))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
 (define_insn "addv8si3"
   [(set (match_operand:V8SI 0 "register_operand" "=r")
         (plus:V8SI (match_operand:V8SI 1 "register_operand" "r")
@@ -4099,18 +4007,12 @@
   ""
   "#"
   "reload_completed"
-  [(set (subreg:V2SI (match_dup 0) 0)
-        (mult:V2SI (subreg:V2SI (match_dup 1) 0)
-                   (subreg:V2SI (match_dup 2) 0)))
-   (set (subreg:V2SI (match_dup 0) 8)
-        (mult:V2SI (subreg:V2SI (match_dup 1) 8)
-                   (subreg:V2SI (match_dup 2) 8)))
-   (set (subreg:V2SI (match_dup 0) 16)
-        (mult:V2SI (subreg:V2SI (match_dup 1) 16)
-                   (subreg:V2SI (match_dup 2) 16)))
-   (set (subreg:V2SI (match_dup 0) 24)
-        (mult:V2SI (subreg:V2SI (match_dup 1) 24)
-                   (subreg:V2SI (match_dup 2) 24)))]
+  [(set (subreg:V4SI (match_dup 0) 0)
+        (mult:V4SI (subreg:V4SI (match_dup 1) 0)
+                   (subreg:V4SI (match_dup 2) 0)))
+   (set (subreg:V4SI (match_dup 0) 16)
+        (mult:V4SI (subreg:V4SI (match_dup 1) 16)
+                   (subreg:V4SI (match_dup 2) 16)))]
   ""
   [(set_attr "type" "mau_auxr")]
 )
@@ -4560,18 +4462,6 @@
                            (match_operand:V2DI 4 "register_operand" "0")))]
   ""
   "cmoved.d%2z %x3? %x0 = %x1\n\tcmoved.d%2z %y3? %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "kvx_cmovedp"
-  [(set (match_operand:V2DI 0 "register_operand" "=r")
-        (unspec:V2DI [(match_operand:V2DI 1 "register_operand" "r")
-                      (match_operand:V2DI 2 "register_operand" "0")
-                      (match_operand:V2DI 3 "register_operand" "r")
-                      (match_operand 4 "" "")] UNSPEC_CMOVEDP))]
-  ""
-  "cmoved%4 %x3? %x0 = %x1\n\tcmoved%4 %y3? %y0 = %y1"
   [(set_attr "type" "alu_lite_x2")
    (set_attr "length"         "8")]
 )
@@ -5138,29 +5028,6 @@
   [(set_attr "type" "alu_lite_x2")]
 )
 
-(define_insn_and_split "kvx_cmovedq"
-  [(set (match_operand:V4DI 0 "register_operand" "=r")
-        (unspec:V4DI [(match_operand:V4DI 1 "register_operand" "r")
-                      (match_operand:V4DI 2 "register_operand" "0")
-                      (match_operand:V4DI 3 "register_operand" "r")
-                      (match_operand 4 "" "")] UNSPEC_CMOVEDQ))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V2DI (match_dup 0) 0)
-        (unspec:V2DI [(subreg:V2DI (match_dup 1) 0)
-                      (subreg:V2DI (match_dup 2) 0)
-                      (subreg:V2DI (match_dup 3) 0)
-                      (match_dup 4)] UNSPEC_CMOVEDP))
-   (set (subreg:V2DI (match_dup 0) 16)
-        (unspec:V2DI [(subreg:V2DI (match_dup 1) 16)
-                      (subreg:V2DI (match_dup 2) 16)
-                      (subreg:V2DI (match_dup 3) 16)
-                      (match_dup 4)] UNSPEC_CMOVEDP))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
 (define_insn "addv4di3"
   [(set (match_operand:V4DI 0 "register_operand" "=r")
         (plus:V4DI (match_operand:V4DI 1 "register_operand" "r")
@@ -5354,7 +5221,7 @@
 (define_insn "subv4di3"
   [(set (match_operand:V4DI 0 "register_operand" "=r")
         (minus:V4DI (match_operand:V4DI 1 "nonmemory_operand" "r")
-                     (match_operand:V4DI 2 "register_operand" "r")))]
+                    (match_operand:V4DI 2 "register_operand" "r")))]
   ""
   {
     return "sbfd %x0 = %x2, %x1\n\tsbfd %y0 = %y2, %y1\n\t"
@@ -5367,7 +5234,7 @@
 (define_insn_and_split "sssubv4di3"
   [(set (match_operand:V4DI 0 "register_operand" "=r")
         (ss_minus:V4DI (match_operand:V4DI 1 "nonmemory_operand" "r")
-                        (match_operand:V4DI 2 "register_operand" "r")))]
+                       (match_operand:V4DI 2 "register_operand" "r")))]
   ""
   "#"
   "reload_completed"
@@ -5994,17 +5861,6 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "kvx_cmovefwp"
-  [(set (match_operand:V2SF 0 "register_operand" "=r")
-        (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")
-                      (match_operand:V2SF 2 "register_operand" "0")
-                      (match_operand:V2SI 3 "register_operand" "r")
-                      (match_operand 4 "" "")] UNSPEC_CMOVEFWP))]
-  ""
-  "cmovewp%4 %3? %0 = %1"
-  [(set_attr "type" "alu_lite")]
-)
-
 (define_insn "addv2sf3"
   [(set (match_operand:V2SF 0 "register_operand" "=r")
         (plus:V2SF (match_operand:V2SF 1 "register_operand" "r")
@@ -6472,18 +6328,6 @@
                              (match_operand:V4SF 4 "register_operand" "0")))]
   ""
   "cmovewp.%2z %x3? %x0 = %x1\n\tcmovewp.%2z %y3? %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "kvx_cmovefwq"
-  [(set (match_operand:V4SF 0 "register_operand" "=r")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
-                      (match_operand:V4SF 2 "register_operand" "0")
-                      (match_operand:V4SI 3 "register_operand" "r")
-                      (match_operand 4 "" "")] UNSPEC_CMOVEFWQ))]
-  ""
-  "cmovewp%4 %x3? %x0 = %x1\n\tcmovewp%4 %y3? %y0 = %y1"
   [(set_attr "type" "alu_lite_x2")
    (set_attr "length"         "8")]
 )
@@ -6986,29 +6830,6 @@
         (match_op_dup:V4SI 1
          [(subreg:V4SF (match_dup 2) 16)
           (subreg:V4SF (match_dup 3) 16)]))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "kvx_cmovefwo"
-  [(set (match_operand:V8SF 0 "register_operand" "=r")
-        (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "r")
-                      (match_operand:V8SF 2 "register_operand" "0")
-                      (match_operand:V8SI 3 "register_operand" "r")
-                      (match_operand 4 "" "")] UNSPEC_CMOVEFWO))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SF (match_dup 0) 0)
-        (unspec:V4SF [(subreg:V4SF (match_dup 1) 0)
-                      (subreg:V4SF (match_dup 2) 0)
-                      (subreg:V4SI (match_dup 3) 0)
-                      (match_dup 4)] UNSPEC_CMOVEFWQ))
-   (set (subreg:V4SF (match_dup 0) 16)
-        (unspec:V4SF [(subreg:V4SF (match_dup 1) 16)
-                      (subreg:V4SF (match_dup 2) 16)
-                      (subreg:V4SI (match_dup 3) 16)
-                      (match_dup 4)] UNSPEC_CMOVEFWQ))]
   ""
   [(set_attr "type" "alu_lite_x2")]
 )
@@ -7730,6 +7551,7 @@
   }
 )
 
+
 ;; V2DF
 
 (define_insn_and_split "*fcompndp"
@@ -7771,18 +7593,6 @@
                            (match_operand:V2DF 4 "register_operand" "0")))]
   ""
   "cmoved.d%2z %x3? %x0 = %x1\n\tcmoved.d%2z %y3? %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "kvx_cmovefdp"
-  [(set (match_operand:V2DF 0 "register_operand" "=r")
-        (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")
-                      (match_operand:V2DF 2 "register_operand" "0")
-                      (match_operand:V2DI 3 "register_operand" "r")
-                      (match_operand 4 "" "")] UNSPEC_CMOVEFDP))]
-  ""
-  "cmoved%4 %x3? %x0 = %x1\n\tcmoved%4 %y3? %y0 = %y1"
   [(set_attr "type" "alu_lite_x2")
    (set_attr "length"         "8")]
 )
@@ -8257,6 +8067,7 @@
   }
 )
 
+
 ;; V4DF
 
 (define_insn_and_split "*fcompdq"
@@ -8307,29 +8118,6 @@
                                               (const_int 0)])])
                            (subreg:V2DF (match_dup 1) 16)
                            (subreg:V2DF (match_dup 4) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "kvx_cmovefdq"
-  [(set (match_operand:V4DF 0 "register_operand" "=r")
-        (unspec:V4DF [(match_operand:V4DF 1 "register_operand" "r")
-                      (match_operand:V4DF 2 "register_operand" "0")
-                      (match_operand:V4DI 3 "register_operand" "r")
-                      (match_operand 4 "" "")] UNSPEC_CMOVEFDQ))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V2DF (match_dup 0) 0)
-        (unspec:V2DF [(subreg:V2DF (match_dup 1) 0)
-                      (subreg:V2DF (match_dup 2) 0)
-                      (subreg:V2DI (match_dup 3) 0)
-                      (match_dup 4)] UNSPEC_CMOVEFDP))
-   (set (subreg:V2DF (match_dup 0) 16)
-        (unspec:V2DF [(subreg:V2DF (match_dup 1) 16)
-                      (subreg:V2DF (match_dup 2) 16)
-                      (subreg:V2DI (match_dup 3) 16)
-                      (match_dup 4)] UNSPEC_CMOVEFDP))]
   ""
   [(set_attr "type" "alu_lite_x2")]
 )
@@ -9120,7 +8908,6 @@
   "movefo %0 = $%1"
   [(set_attr "type" "bcu_tiny_auxw_crrp")]
 )
-
 
 ;; KVX_ALIGNO, KVX_ALIGNV
 

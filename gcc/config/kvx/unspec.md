@@ -4,7 +4,6 @@
         UNSPEC_ATOMIC_OP
         UNSPEC_AWAIT
         UNSPEC_BARRIER
-        UNSPEC_DOZE
         UNSPEC_SLEEP
         UNSPEC_STOP
         UNSPEC_SCALL
@@ -45,14 +44,15 @@
         UNSPEC_LOOPDO_END
         UNSPEC_ACSWAP
         UNSPEC_ALADD
-        UNSPEC_ABDW
-        UNSPEC_ABDD
         UNSPEC_ADDD
         UNSPEC_SBFD
         UNSPEC_AVGW
-        UNSPEC_AVGRW
         UNSPEC_AVGUW
+        UNSPEC_AVGRW
+        UNSPEC_AVGRHX
         UNSPEC_AVGRUW
+        UNSPEC_SRSW
+        UNSPEC_SRSD
 
         UNSPEC_INSF
         UNSPEC_EXTFS
@@ -73,19 +73,6 @@
         UNSPEC_INITX8H
         UNSPEC_COMP
         UNSPEC_FCOMP
-        UNSPEC_CMOVEHQ
-        UNSPEC_CMOVEHO
-        UNSPEC_CMOVEHX
-        UNSPEC_CMOVEWP
-        UNSPEC_CMOVEWQ
-        UNSPEC_CMOVEWO
-        UNSPEC_CMOVEDP
-        UNSPEC_CMOVEDQ
-        UNSPEC_CMOVEFWP
-        UNSPEC_CMOVEFWQ
-        UNSPEC_CMOVEFWO
-        UNSPEC_CMOVEFDP
-        UNSPEC_CMOVEFDQ
         UNSPEC_JOINP
         
         UNSPEC_FRECW
@@ -226,9 +213,7 @@
         UNSPEC_SATD
         UNSPEC_SATUD
         UNSPEC_FWIDENLHW
-        UNSPEC_FWIDENLHWP
         UNSPEC_FWIDENMHW
-        UNSPEC_FWIDENMHWP
         UNSPEC_FNARROWWH
         UNSPEC_LBZ
         UNSPEC_LBS
@@ -236,8 +221,8 @@
         UNSPEC_LHS
         UNSPEC_LWZ
         UNSPEC_LWS
-        UNSPEC_LWF
         UNSPEC_LD
+        UNSPEC_LWF
         UNSPEC_LDF
         UNSPEC_SD
         UNSPEC_LQ
@@ -248,6 +233,7 @@
         UNSPEC_SV
         UNSPEC_MOVEFO
         UNSPEC_MOVETO
+        UNSPEC_SWAPV
         UNSPEC_ALIGNO
         UNSPEC_ALIGNV
         UNSPEC_COPYV
