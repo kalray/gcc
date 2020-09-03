@@ -395,36 +395,6 @@
 [(set_attr "type" "all")]
 )
 
-(define_insn "addsi3"
-  [(set (match_operand:SI 0 "register_operand" "=r,r,r")
-        (plus:SI (match_operand:SI 1 "register_operand" "r,r,r")
-                 (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i")))]
-  ""
-  "addw %0 = %1, %2"
-[(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x")
- (set_attr "length" "4,4,8")]
-)
-
-;; zero-extend version of the above insn
-(define_insn "*addsi3_zext"
-  [(set (match_operand:DI 0 "register_operand" "=r,r,r")
-        (zero_extend:DI
-             (plus:SI (match_operand:SI 1 "register_operand" "r,r,r")
-	              (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i"))))]
-  ""
-  "addw %0 = %1, %2"
-[(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x")
- (set_attr "length" "4,4,8")])
-
-(define_insn "adddi3"
-  [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
-	(plus:DI (match_operand:DI 1 "register_operand" "r,r,r,r")
-		 (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")))]
-""
-"addd %0 = %1, %2"
-[(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
- (set_attr "length" "4,4,8,12")])
-
 (define_insn "sub<mode>3_x2"
   [(set (match_operand:SIDI 0 "register_operand" "=r")
 	(minus:SIDI (match_operand:SIDI 1 "register_operand" "r")
@@ -505,161 +475,6 @@
 [(set_attr "type" "alu_lite")
  (set_attr "length" "4")])
 
-(define_insn "subsi3"
-  [(set (match_operand:SI 0 "register_operand" "=r,r,r")
-	(minus:SI (match_operand:SI 1 "kvx_r_s10_s37_s64_operand" "r,I10,i")
-	          (match_operand:SI 2 "register_operand" "r,r,r")))]
-  ""
-  "sbfw %0 = %2, %1"
-[(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x")
- (set_attr "length" "4,4,8")])
-
-;; zero-extend version of the above insn
-(define_insn "*subsi3_zext"
-  [(set (match_operand:DI 0 "register_operand" "=r,r,r")
-        (zero_extend:DI
-             (minus:SI (match_operand:SI 1 "kvx_r_s10_s37_s64_operand" "r,I10,i")
-                       (match_operand:SI 2 "register_operand" "r,r,r"))))]
-  ""
-  "sbfw %0 = %2, %1"
-[(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x")
- (set_attr "length" "4,4,8")])
-
-(define_insn "subdi3"
-  [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
-	(minus:DI (match_operand:DI 1 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")
- 		  (match_operand:DI 2 "register_operand" "r,r,r,r")))]
-  ""
-  "sbfd %0 = %2, %1"
-[(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
- (set_attr "length" "4,4,8,12")])
-
-;; MAU ISA
-
-(define_insn "mulsi3"
-  [(set (match_operand:SI 0 "register_operand" "=r,r")
-        (mult:SI (match_operand:SI 1 "register_operand" "r,r")
-                 (match_operand:SI 2 "kvx_r_any32_operand" "r,i")))]
- ""
- "mulw %0 = %1, %2"
-[(set_attr "type" "mau, mau_x")
- (set_attr "length" "4, 8")])
-
-(define_insn "muldi3"
-  [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
-        (mult:DI (match_operand:DI 1 "register_operand" "r,r,r,r")
-                 (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")))]
- ""
- "muld %0 = %1, %2"
-[(set_attr "type" "mau, mau, mau_x, mau_y")
- (set_attr "length" "4, 4, 8, 12")])
-
-(define_expand "<ssfx>mulsidi3"
-  [(set (match_operand:DI 0 "register_operand" "")
-        (mult:DI (ANY_EXTEND:DI (match_operand:SI 1 "register_operand" ""))
-                 (ANY_EXTEND:DI (match_operand:SI 2 "register_operand" ""))))]
-  ""
-)
-
-(define_insn "*<ssfx>mulsidi3_reg"
-  [(set (match_operand:DI 0 "register_operand" "=r")
-	(mult:DI (ANY_EXTEND:DI (match_operand:SI 1 "register_operand" "r"))
-		 (ANY_EXTEND:DI (match_operand:SI 2 "register_operand" "r"))))]
-  ""
-  "mul<ssfx>wd %0 = %1, %2"
-[(set_attr "type" "mau")
- (set_attr "length" "4")])
-
-(define_expand "usmulsidi3"
-  [(set (match_operand:DI 0 "register_operand" "")
-	(mult:DI (zero_extend:DI (match_operand:SI 1 "register_operand" ""))
-		 (sign_extend:DI (match_operand:SI 2 "register_operand" ""))))]
-  ""
-)
-
-(define_insn "*usmulsidi3_reg"
-  [(set (match_operand:DI 0 "register_operand" "=r")
-	(mult:DI (zero_extend:DI (match_operand:SI 1 "register_operand" "r"))
-		 (sign_extend:DI (match_operand:SI 2 "register_operand" "r"))))]
-  ""
-  "mulsuwd %0 = %2, %1"
-[(set_attr "type" "mau")
- (set_attr "length" "4")]
-)
-
-;; multiply/add
-
-(define_insn "madd<mode><mode>4"
-  [(set (match_operand:SIDI 0 "register_operand" "=r")
-        (plus:SIDI (mult:SIDI (match_operand:SIDI 1 "register_operand" "r")
-                              (match_operand:SIDI 2 "register_operand" "r"))
-                   (match_operand:SIDI 3 "register_operand" "0")))]
-  ""
-  "madd<SIDI:sfx> %0 = %1, %2"
-[(set_attr "type" "mau_auxr")
- (set_attr "length" "4")])
-
-(define_expand "<ssfx>maddsidi4"
-   [(set (match_operand:DI 0 "register_operand" "")
-         (plus:DI (mult:DI (ANY_EXTEND:DI (match_operand:SI 1 "register_operand" ""))
-                           (ANY_EXTEND:DI (match_operand:SI 2 "register_operand" "")))
-                  (match_operand:DI 3 "register_operand" "")))]
-  ""
- )
-
-(define_insn "*<ssfx>maddsidi4_reg"
-  [(set (match_operand:DI 0 "register_operand" "=r")
-        (plus:DI (mult:DI (ANY_EXTEND:DI (match_operand:SI 1 "register_operand" "r"))
-                          (ANY_EXTEND:DI (match_operand:SI 2 "register_operand" "r")))
-                 (match_operand:DI 3 "register_operand" "0")))]
-  ""
-  "madd<ssfx>wd %0 = %1, %2"
-[(set_attr "type" "mau_auxr")
- (set_attr "length" "4")])
-
-;; multiply/subtract
-
-(define_insn "msub<mode><mode>4"
-  [(set (match_operand:SIDI 0 "register_operand" "=r")
-  	(minus:SIDI (match_operand:SIDI 3 "register_operand" "0")
-                    (mult:SIDI (match_operand:SIDI 1 "register_operand" "r")
-                               (match_operand:SIDI 2 "register_operand" "r"))))]
-
-  ""
-  "msbf<SIDI:sfx> %0 = %1, %2"
-[(set_attr "type" "mau_auxr")
- (set_attr "length" "4")])
-
-(define_insn "*<ssfx>msubsidi4_reg"
-  [(set (match_operand:DI 0 "register_operand" "=r")
-        (minus:DI (match_operand:DI 3 "register_operand" "0")
-                  (mult:DI (ANY_EXTEND:DI (match_operand:SI 1 "register_operand" "r"))
-                           (ANY_EXTEND:DI (match_operand:SI 2 "register_operand" "r")))))]
-  ""
-  "msbf<ssfx>wd %0 = %1, %2"
-[(set_attr "type" "mau_auxr")
- (set_attr "length" "4")])
-
-;; max/min
-
-(define_insn "<spfx>min<mode>3"
-  [(set (match_operand:SIDI 0 "register_operand" "=r,r,r,r")
-	(MIN_UMIN:SIDI (match_operand:SIDI 1 "register_operand" "r,r,r,r")
-                       (match_operand:SIDI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")))]
-  ""
-  "min<ssfx><sfx> %0 = %1, %2"
-[(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
- (set_attr "length" "4,4,8,12")])
-
-(define_insn "<spfx>max<mode>3"
-  [(set (match_operand:SIDI 0 "register_operand" "=r,r,r,r")
-	(MAX_UMAX:SIDI (match_operand:SIDI 1 "register_operand" "r,r,r,r")
-                       (match_operand:SIDI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")))]
-  ""
-  "max<ssfx><sfx> %0 = %1, %2"
-[(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
- (set_attr "length" "4,4,8,12")])
-
 (define_insn "*zxh_and"
   [(set (match_operand:SI 0 "register_operand" "=r")
 	(and:SI (match_operand:SI 1 "register_operand" "r")
@@ -667,346 +482,6 @@
   ""
   "zxhd %0 = %1"
 [(set_attr "type" "alu_lite")]
-)
-
-(define_insn "andsi3"
-  [(set (match_operand:SI 0 "register_operand" "=r,r,r")
-        (and:SI (match_operand:SI 1 "register_operand" "r,r,r")
-                (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i")))]
-  ""
-  "andw %0 = %1, %2"
-[(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x")
- (set_attr "length" "4,4,8")]
-)
-
-(define_insn "*nandw"
-  [(set (match_operand:SI 0 "register_operand" "=r,r,r")
-        (ior:SI (not:SI (match_operand:SI 1 "register_operand" "r,r,r"))
-                (not:SI (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i"))))]
-  ""
-  "nandw %0 = %1, %2"
-[(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x")
- (set_attr "length" "4,4,8")]
-)
-
-(define_insn "*andnw"
-  [(set (match_operand:SI 0 "register_operand" "=r,r,r")
-        (and:SI (not:SI (match_operand:SI 1 "register_operand" "r,r,r"))
-                (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i")))]
-  ""
-  "andnw %0 = %1, %2"
-[(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x")
- (set_attr "length" "4,4,8")]
-)
-
-(define_insn "anddi3"
-  [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
-        (and:DI (match_operand:DI 1 "register_operand" "r,r,r,r")
-                (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")))]
-  ""
-  "andd %0 = %1, %2"
-[(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
- (set_attr "length" "4,4,8,12")]
-)
-
-(define_insn "*nandd"
-  [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
-        (ior:DI (not:DI (match_operand:DI 1 "register_operand" "r,r,r,r"))
-                (not:DI (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i"))))]
-  ""
-  "nandd %0 = %1, %2"
-[(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
- (set_attr "length" "4,4,8,12")]
-)
-
-(define_insn "*andnd"
-  [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
-        (and:DI (not:DI (match_operand:DI 1 "register_operand" "r,r,r,r"))
-                (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")))]
-  ""
-  "andnd %0 = %1, %2"
-[(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
- (set_attr "length" "4,4,8,12")]
-)
-
-(define_insn "iorsi3"
-  [(set (match_operand:SI 0 "register_operand" "=r,r,r")
-        (ior:SI (match_operand:SI 1 "register_operand" "r,r,r")
-                (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i")))]
-  ""
-  "orw %0 = %1, %2"
-[(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x")
- (set_attr "length" "4,4,8")]
-)
-
-(define_insn "*norw"
-  [(set (match_operand:SI 0 "register_operand" "=r,r,r")
-        (and:SI (not:SI (match_operand:SI 1 "register_operand" "r,r,r"))
-                (not:SI (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i"))))]
-  ""
-  "norw %0 = %1, %2"
-[(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x")
- (set_attr "length" "4,4,8")]
-)
-
-(define_insn "*ornw"
-  [(set (match_operand:SI 0 "register_operand" "=r,r,r")
-        (ior:SI (not:SI (match_operand:SI 1 "register_operand" "r,r,r"))
-                (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i")))]
-  ""
-  "ornw %0 = %1, %2"
-[(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x")
- (set_attr "length" "4,4,8")]
-)
-
-(define_insn "iordi3"
-  [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
-        (ior:DI (match_operand:DI 1 "register_operand" "r,r,r,r")
-                (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")))]
-  ""
-  "ord %0 = %1, %2"
-[(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
- (set_attr "length" "4,4,8,12")]
-)
-
-(define_insn "*nord"
-  [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
-        (and:DI (not:DI (match_operand:DI 1 "register_operand" "r,r,r,r"))
-                (not:DI (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i"))))]
-  ""
-  "nord %0 = %1, %2"
-[(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
- (set_attr "length" "4,4,8,12")]
-)
-
-(define_insn "*ornd"
-  [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
-        (ior:DI (not:DI (match_operand:DI 1 "register_operand" "r,r,r,r"))
-                (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")))]
-  ""
-  "ornd %0 = %1, %2"
-[(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
- (set_attr "length" "4,4,8,12")]
-)
-
-(define_insn "xorsi3"
-  [(set (match_operand:SI 0 "register_operand" "=r,r,r")
-        (xor:SI (match_operand:SI 1 "register_operand" "r,r,r")
-                (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i")))]
-  ""
-  "xorw %0 = %1, %2"
-[(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x")
- (set_attr "length" "4,4,8")]
-)
-
-(define_insn "*nxorw"
-  [(set (match_operand:SI 0 "register_operand" "=r,r,r")
-        (not:SI (xor:SI (match_operand:SI 1 "register_operand" "r,r,r")
-                        (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i"))))]
-  ""
-  "nxorw %0 = %1, %2"
-[(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x")
- (set_attr "length" "4,4,8")]
-)
-
-(define_insn "xordi3"
-  [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
-        (xor:DI (match_operand:DI 1 "register_operand" "r,r,r,r")
-                (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")))]
-  ""
-  "xord %0 = %1, %2"
-[(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
- (set_attr "length" "4,4,8,12")]
-)
-
-(define_insn "*nxord"
-  [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
-        (not:DI (xor:DI (match_operand:DI 1 "register_operand" "r,r,r,r")
-                        (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i"))))]
-  ""
-  "nxord %0 = %1, %2"
-[(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
- (set_attr "length" "4,4,8,12")]
-)
-
-(define_insn "ashlsi3"
-  [(set (match_operand:SI 0 "register_operand" "=r,r")
-        (ashift:SI (match_operand:SI 1 "register_operand" "r,r")
-                   (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
-  ""
-  "sllw %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny")
-   (set_attr "length" "     4,       4")]
-)
-
-(define_insn "ssashlsi3"
-  [(set (match_operand:SI 0 "register_operand" "=r,r")
-        (ss_ashift:SI (match_operand:SI 1 "register_operand" "r,r")
-                      (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
-  ""
-  "slsw %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite")
-   (set_attr "length" "     4,       4")]
-)
-
-(define_insn "ashrsi3"
-  [(set (match_operand:SI 0 "register_operand" "=r,r")
-        (ashiftrt:SI (match_operand:SI 1 "register_operand" "r,r")
-                     (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
-  ""
-  "sraw %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny")
-   (set_attr "length" "     4,       4")]
-)
-
-(define_insn "lshrsi3"
-  [(set (match_operand:SI 0 "register_operand" "=r,r")
-        (lshiftrt:SI (match_operand:SI 1 "register_operand" "r,r")
-                     (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
-  ""
-  "srlw %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny")
-   (set_attr "length" "     4,       4")]
-)
-
-(define_insn "ashldi3"
-  [(set (match_operand:DI 0 "register_operand" "=r,r")
-        (ashift:DI (match_operand:DI 1 "register_operand" "r,r")
-                   (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
-  ""
-  "slld %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny")
-   (set_attr "length" "     4,       4")]
-)
-
-(define_insn "ssashldi3"
-  [(set (match_operand:DI 0 "register_operand" "=r,r")
-        (ss_ashift:DI (match_operand:DI 1 "register_operand" "r,r")
-                      (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
-  ""
-  "slsd %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny")
-   (set_attr "length" "     4,       4")]
-)
-
-(define_insn "ashrdi3"
-  [(set (match_operand:DI 0 "register_operand" "=r,r")
-        (ashiftrt:DI (match_operand:DI 1 "register_operand" "r,r")
-                     (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
-  ""
-  "srad %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny")
-   (set_attr "length" "     4,       4")]
-)
-
-(define_insn "lshrdi3"
-  [(set (match_operand:DI 0 "register_operand" "=r,r")
-        (lshiftrt:DI (match_operand:DI 1 "register_operand" "r,r")
-                     (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
-  ""
-  "srld %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny")
-   (set_attr "length" "     4,       4")]
-)
-
-(define_insn "rol"
-  [(set (match_operand:SI 0 "register_operand" "=r,r")
-        (rotate:SI (match_operand:SI 1 "register_operand" "r,r")
-                   (match_operand:SI 2 "rotate_operand" "r,U05")))]
-  ""
-  "rolw %0 = %1, %2"
-[(set_attr "type" "alu_lite,alu_lite")])
-
-(define_insn "ror"
-  [(set (match_operand:SI 0 "register_operand" "=r,r")
-        (rotatert:SI (match_operand:SI 1 "register_operand" "r,r")
-                     (match_operand:SI 2 "rotate_operand" "r,U05")))]
-  ""
-  "rorw %0 = %1, %2"
-[(set_attr "type" "alu_lite,alu_lite")
-])
-
-(define_expand "rotrsi3"
-  [(set (match_operand:SI 0 "register_operand" "")
-	(rotatert:SI (match_operand:SI 1 "register_operand" "")
-	  	     (match_operand:SI 2 "rotate_operand" "")))]
-""
-)
-
-(define_expand "rotlsi3"
-  [(set (match_operand:SI 0 "register_operand" "")
-	(rotate:SI (match_operand:SI 1 "register_operand" "")
-	           (match_operand:SI 2 "rotate_operand" "")))]
-  ""
-)
-
-(define_insn "abs<mode>2"
-  [(set (match_operand:SIDI           0 "register_operand" "=r")
-        (abs:SIDI (match_operand:SIDI 1 "register_operand" "r")))]
-  ""
-  "abs<SIDI:suffix> %0 = %1"
-  [(set_attr "type" "alu_lite")
-   (set_attr "length" "4")]
-)
-
-;; ctzw/ctzd clzw/clzd
-(define_insn "<code><mode>2"
-  [(set (match_operand:SIDI 0 "register_operand" "=r")
-        (CXZ:SIDI (match_operand:SIDI 1 "register_operand" "r")))]
-  ""
-  "<code><sfx> %0 = %1"
-  [(set_attr "type" "alu_lite")
-   (set_attr "length" "4")]
-)
-
-(define_insn "popcountsi2"
-  [(set (match_operand:SI 0 "register_operand" "=r")
-        (popcount:SI (match_operand:SI 1 "register_operand" "r")))]
-  ""
-  "cbsw %0 = %1"
-  [(set_attr "type" "alu_lite")
-   (set_attr "length" "4")]
-)
-
-(define_insn "popcountdi2"
-  [(set (match_operand:DI 0 "register_operand" "=r")
-        (popcount:DI (match_operand:DI 1 "register_operand" "r")))]
-  ""
-  "cbsd %0 = %1"
-  [(set_attr "type" "alu_lite")
-   (set_attr "length" "4")]
-)
-
-(define_insn "one_cmplsi2"
-  [(set (match_operand:SI 0 "register_operand" "=r")
-        (not:SI (match_operand:SI 1 "register_operand" "r")))]
-  ""
-  "notw %0 = %1"
-  [(set_attr "type" "alu_tiny")]
-)
-
-(define_insn "one_cmpldi2"
-  [(set (match_operand:DI 0 "register_operand" "=r")
-        (not:DI (match_operand:DI 1 "register_operand" "r")))]
-  ""
-  "notd %0 = %1"
-  [(set_attr "type" "alu_tiny")]
-)
-
-(define_insn "negsi2"
-  [(set (match_operand:SI 0 "register_operand" "=r")
-        (neg:SI (match_operand:SI 1 "register_operand" "r")))]
-  ""
-  "negw %0 = %1"
-  [(set_attr "type" "alu_tiny")]
-)
-
-(define_insn "negdi2"
-  [(set (match_operand:DI 0 "register_operand" "=r")
-        (neg:DI (match_operand:DI 1 "register_operand" "r")))]
-  ""
-  "negd %0 = %1"
-  [(set_attr "type" "alu_tiny")]
 )
 
 (define_insn "extv<mode>"
@@ -1146,7 +621,7 @@
 (define_insn "kvx_set"
    [(set (match_operand:DI 0 "system_register_operand" "=RYY,RXX")
          (unspec_volatile:DI [(match_operand:DI 1 "register_operand" "r,r")] UNSPEC_SET))
-    (set (match_operand:SI 2 "" "") 
+    (set (match_operand:SI 2 "" "")
          (unspec:SI [(match_dup 2)] UNSPEC_SYNC))]
    ""
    "set %0 = %1"
@@ -1167,7 +642,7 @@
 )
 
 (define_insn "*get_<mode>"
-   [(set (match_operand:ALLP 0 "register_operand" "=r") 
+   [(set (match_operand:ALLP 0 "register_operand" "=r")
          (match_operand:ALLP 1 "system_register_operand" "RXX"))]
    ""
    "get %0 = %1"
@@ -1177,7 +652,7 @@
 (define_insn "kvx_get"
    [(set (match_operand:DI 0 "register_operand" "=r")
          (unspec_volatile:DI [(match_operand:DI 1 "system_register_operand" "RXX")] UNSPEC_GET))
-    (set (match_operand:SI 2 "" "") 
+    (set (match_operand:SI 2 "" "")
          (unspec:SI [(match_dup 2)] UNSPEC_SYNC))]
    ""
    "get %0 = %1"
@@ -1187,7 +662,7 @@
 (define_insn "kvx_wfxl"
    [(set (match_operand:DI 0 "system_register_operand" "=RYY,RXX")
          (unspec_volatile:DI [(match_operand:DI 1 "register_operand" "r,r")] UNSPEC_WFXL))
-    (set (match_operand:DI 2 "" "") 
+    (set (match_operand:DI 2 "" "")
          (unspec:DI [(match_dup 2)] UNSPEC_SYNC))]
    ""
    "wfxl %0, %1"
@@ -1197,7 +672,7 @@
 (define_insn "kvx_wfxm"
    [(set (match_operand:DI 0 "system_register_operand" "=RYY,RXX")
          (unspec_volatile:DI [(match_operand:DI 1 "register_operand" "r,r")] UNSPEC_WFXM))
-    (set (match_operand:DI 2 "" "") 
+    (set (match_operand:DI 2 "" "")
          (unspec:DI [(match_dup 2)] UNSPEC_SYNC))]
    ""
    "wfxm %0, %1"
@@ -1216,7 +691,7 @@
 
 (define_insn "await"
    [(unspec_volatile [(const_int 0)] UNSPEC_AWAIT)
-    (set (match_operand:SI 0 "" "") 
+    (set (match_operand:SI 0 "" "")
          (unspec:SI [(match_dup 0)] UNSPEC_SYNC))]
    ""
    "await"
@@ -1226,7 +701,7 @@
 (define_insn "barrier"
    [(unspec_volatile [(const_int 0)] UNSPEC_BARRIER)
     (clobber (mem:BLK (scratch)))
-    (set (match_operand:SI 0 "" "") 
+    (set (match_operand:SI 0 "" "")
          (unspec:SI [(match_dup 0)] UNSPEC_SYNC))]
    ""
    "barrier"
@@ -1235,7 +710,7 @@
 
 (define_insn "sleep"
    [(unspec_volatile [(const_int 0)] UNSPEC_SLEEP)
-    (set (match_operand:SI 0 "" "") 
+    (set (match_operand:SI 0 "" "")
          (unspec:SI [(match_dup 0)] UNSPEC_SYNC))]
    ""
    "sleep"
@@ -1244,7 +719,7 @@
 
 (define_insn "stop"
    [(unspec_volatile [(const_int 0)] UNSPEC_STOP)
-    (set (match_operand:SI 0 "" "") 
+    (set (match_operand:SI 0 "" "")
          (unspec:SI [(match_dup 0)] UNSPEC_SYNC))]
    ""
    "stop"
@@ -1283,10 +758,9 @@
 
 (define_insn "scall_<mode>"
    [(set (reg:SI 0)
-         (call 
+         (call
 	    (mem:SI (unspec:SI [(match_operand 0 "immediate_operand" "i")] UNSPEC_SCALL))
 	    (const_int 0)))
-    
     (use (reg:SI 0))
     (use (reg:SI 1))
     (use (reg:SI 2))
@@ -1297,7 +771,7 @@
     (use (reg:SI 7))
     (clobber (match_operand:P 1 "system_register_operand" "=RXX")) /* LINK_REG */
     (clobber (mem:BLK (scratch)))
-    (set (match_operand:SI 2 "" "") 
+    (set (match_operand:SI 2 "" "")
          (unspec:SI [(match_dup 2)] UNSPEC_SYNC))]
    ""
    "scall %0"
@@ -1355,7 +829,7 @@
 (define_insn "fence"
    [(unspec_volatile [(const_int 0)] UNSPEC_FENCE)
     (clobber (mem:BLK (scratch)))
-    (set (match_operand:SI 0 "" "") 
+    (set (match_operand:SI 0 "" "")
          (unspec:SI [(match_dup 0)] UNSPEC_SYNC))]
    ""
    "fence"
@@ -1365,7 +839,7 @@
 (define_insn "dinval"
    [(unspec [(const_int 0)] UNSPEC_DINVAL)
     (clobber (mem:BLK (scratch)))
-    (set (match_operand:SI 0 "" "") 
+    (set (match_operand:SI 0 "" "")
          (unspec:SI [(match_dup 0)] UNSPEC_SYNC))]
    ""
    "dinval"
@@ -1375,7 +849,7 @@
 (define_insn "iinval"
    [(unspec_volatile [(const_int 0)] UNSPEC_IINVAL)
     (clobber (mem:BLK (scratch)))
-    (set (match_operand:SI 0 "" "") 
+    (set (match_operand:SI 0 "" "")
          (unspec:SI [(match_dup 0)] UNSPEC_SYNC))]
    ""
    "iinval "
@@ -1396,7 +870,7 @@
 (define_insn "iinvals"
    [(unspec_volatile [(match_operand:SI 0 "memory_operand" "a,b,m")] UNSPEC_IINVALS)
     (clobber (mem:BLK (scratch)))
-    (set (match_operand:SI 1 "" "") 
+    (set (match_operand:SI 1 "" "")
          (unspec:SI [(match_dup 1)] UNSPEC_SYNC))]
    ""
    "iinvals%m0 %0"
@@ -1429,7 +903,7 @@
 (define_insn "dzerol"
    [(unspec [(match_operand:SI 0 "memory_operand" "a,b,m")] UNSPEC_DZEROL)
     (clobber (mem:BLK (scratch)))
-    (set (match_operand:SI 1 "" "") 
+    (set (match_operand:SI 1 "" "")
          (unspec:SI [(match_dup 1)] UNSPEC_SYNC))]
    ""
    "dzerol%m0 %0"
@@ -1440,7 +914,7 @@
 (define_insn "tlbdinval"
    [(unspec_volatile [(const_int 0)] UNSPEC_TLBDINVAL)
     (clobber (mem:BLK (scratch)))
-    (set (match_operand:SI 0 "" "") 
+    (set (match_operand:SI 0 "" "")
          (unspec:SI [(match_dup 0)] UNSPEC_SYNC))]
    ""
    "tlbdinval "
@@ -1450,7 +924,7 @@
 (define_insn "tlbiinval"
    [(unspec_volatile [(const_int 0)] UNSPEC_TLBIINVAL)
     (clobber (mem:BLK (scratch)))
-    (set (match_operand:SI 0 "" "") 
+    (set (match_operand:SI 0 "" "")
          (unspec:SI [(match_dup 0)] UNSPEC_SYNC))]
    ""
    "tlbiinval "
@@ -1460,7 +934,7 @@
 (define_insn "tlbprobe"
    [(unspec_volatile [(const_int 0)] UNSPEC_TLBPROBE)
     (clobber (mem:BLK (scratch)))
-    (set (match_operand:SI 0 "" "") 
+    (set (match_operand:SI 0 "" "")
          (unspec_volatile [(match_dup 0)] UNSPEC_SYNC))]
    ""
    "tlbprobe "
@@ -1470,7 +944,7 @@
 (define_insn "tlbread"
    [(unspec_volatile [(const_int 0)] UNSPEC_TLBREAD)
     (clobber (mem:BLK (scratch)))
-    (set (match_operand:SI 0 "" "") 
+    (set (match_operand:SI 0 "" "")
          (unspec:SI [(match_dup 0)] UNSPEC_SYNC))]
    ""
    "tlbread "
@@ -1480,7 +954,7 @@
 (define_insn "tlbwrite"
    [(unspec_volatile [(const_int 0)] UNSPEC_TLBWRITE)
     (clobber (mem:BLK (scratch)))
-    (set (match_operand:SI 0 "" "") 
+    (set (match_operand:SI 0 "" "")
          (unspec:SI [(match_dup 0)] UNSPEC_SYNC))]
    ""
    "tlbwrite "
@@ -1623,55 +1097,6 @@
 }
   [(set_attr "type"   "alu_lite, lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_y, lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y")
    (set_attr "length" "       4,             4,               8,              12,                      4,                        8,                       12")])
-
-(define_insn "stsuw"
-  [(set (match_operand:SI 0 "register_operand" "=r")
-        (unspec:SI [(match_operand:SI 1 "register_operand" "r")
-                    (match_operand:SI 2 "register_operand" "r")] UNSPEC_STSUW))]
-  ""
-  "stsuw %0 = %1, %2"
-  [(set_attr "type" "alu_lite")
-   (set_attr "length" "4")]
-)
-
-(define_insn "stsud"
-  [(set (match_operand:DI 0 "register_operand" "=r")
-        (unspec:DI [(match_operand:DI 1 "register_operand" "r")
-                    (match_operand:DI 2 "register_operand" "r")] UNSPEC_STSUD))]
-  ""
-  "stsud %0 = %1, %2"
-  [(set_attr "type" "alu_lite")
-   (set_attr "length" "4")]
-)
-
-(define_expand "bswapdi2"
-  [(set (match_operand:DI 0 "register_operand")
-        (bswap:DI (match_operand:DI 1 "kvx_r_s10_s37_s64_operand")))]
-  ""
-{
-	/* multiply by transposed identity */
-	rtx inv_mat = gen_rtx_CONST_INT(VOIDmode, 0x0102040810204080);
-	emit_insn(gen_sbmm8(operands[0], operands[1], inv_mat));
-	DONE;
-})
-
-(define_insn "sbmm8"
-  [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
-	(unspec:DI [(match_operand:DI 1 "register_operand" "r,r,r,r")
-		    (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")] UNSPEC_SBMM8))]
-""
-"sbmm8 %0 = %1, %2"
-[(set_attr "type" "alu_lite,alu_lite,alu_lite_x,alu_lite_y")
- (set_attr "length" "4,4,8,12")])
-
-(define_insn "sbmmt8"
-  [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
-	(unspec:DI [(match_operand:DI 1 "register_operand" "r,r,r,r")
-		    (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,I37,i")] UNSPEC_SBMMT8))]
-""
-"sbmmt8 %0 = %1, %2"
-[(set_attr "type" "alu_lite,alu_lite,alu_lite_x,alu_lite_y")
- (set_attr "length" "4,4,8,12")])
 
 (define_insn "*icall_<mode>"
   [(call (mem:P (match_operand:P 0 "register_operand" "r"))
@@ -1994,7 +1419,7 @@
   "ret"
 [(set_attr "type" "bcu")
  (set_attr "class" "return")]
-) 
+)
 
 (define_expand "untyped_call"
   [(parallel [(call (match_operand 0 "" "")
@@ -2018,28 +1443,6 @@
 
     DONE;
   })
-
-;; Do not allow any immediate, only numerical ones.
-;; (define_expand "div_srs<SIDI:suffix>"
-;;   [(set (match_operand:SIDI 0 "register_operand" )
-;; 	(div:SIDI (match_operand:SIDI 1 "register_operand" )
-;; 	       (match_operand   2 "poweroftwo_6bits_immediate_operand" )))])
-
-(define_insn "div_srs<SIDI:suffix>"
-  [(set (match_operand:SIDI 0 "register_operand" "=r")
-	(div:SIDI (match_operand:SIDI 1 "register_operand" "r")
-	          (match_operand 2 "poweroftwo_6bits_immediate_operand" "n")))]
-  ""
-  {
-  rtx op = operands[2];
-  gcc_assert (CONST_INT_P(op));
-  long long div = INTVAL(op);
-  gcc_assert (__builtin_popcount (div) == 1);
-  operands[2] = gen_rtx_CONST_INT(VOIDmode, __builtin_ctzl (div));
-  return "srs<SIDI:suffix> %0 = %1, %2";
-}
-[(set_attr "type" "alu_lite")
-])
 
 (define_insn "*land<SIDI:suffix>"
   [(set (match_operand:SI 0 "register_operand" "=r")
@@ -2098,64 +1501,6 @@
    (set_attr "length" "4,4")]
 )
 
-(define_insn "ssaddsi3"
-  [(set (match_operand:SI 0 "register_operand" "=r,r,r")
-        (ss_plus:SI (match_operand:SI 1 "register_operand" "r,r,r")
-                    (match_operand:SI 2 "register_s32_operand" "r,I10,I32")))]
-  ""
-  "addsw %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite,alu_lite_x")
-   (set_attr "length" "4,4,8")])
-
-;; zero extend version of above.
-(define_insn "*ssaddsi3_zext"
-  [(set (match_operand:DI 0 "register_operand" "=r,r,r")
-        (zero_extend:DI (ss_plus:SI (match_operand:SI 1 "register_operand" "r,r,r")
-                                    (match_operand:SI 2 "register_s32_operand" "r,I10,I32"))))]
-  ""
-  "addsw %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite,alu_lite_x")
-   (set_attr "length" "4,4,8")])
-
-(define_insn "ssadddi3"
-  [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
-        (ss_plus:DI (match_operand:DI 1 "register_operand" "r,r,r,r")
-                    (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")))]
-  ""
-  "addsd %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite,alu_lite_x,alu_lite_y")
-   (set_attr "length" "4,4,8,12")]
-)
-
-(define_insn "sssubsi3"
-  [(set (match_operand:SI 0 "register_operand" "=r,r,r")
-        (ss_minus:SI (match_operand:SI 1 "register_operand" "r,I10,I32")
-                     (match_operand:SI 2 "register_s32_operand" "r,r,r")))]
-  ""
-  "sbfsw %0 = %2, %1"
-  [(set_attr "type" "alu_lite,alu_lite,alu_lite_x")
-   (set_attr "length" "4,4,8")])
-
-;; zero extend version of above.
-(define_insn "*sssubsi3_zext"
-  [(set (match_operand:DI 0 "register_operand" "=r,r,r")
-        (zero_extend:DI (ss_minus:SI (match_operand:SI 1 "register_operand" "r,I10,I32")
-                                     (match_operand:SI 2 "register_s32_operand" "r,r,r"))))]
-  ""
-  "sbfsw %0 = %2, %1"
-  [(set_attr "type" "alu_lite,alu_lite,alu_lite_x")
-   (set_attr "length" "4,4,8")])
-
-(define_insn "sssubdi3"
-  [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
-        (ss_minus:DI (match_operand:DI 1 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")
-                     (match_operand:DI 2 "register_operand" "r,r,r,r")))]
-  ""
-  "sbfsd %0 = %2, %1"
-  [(set_attr "type" "alu_lite,alu_lite,alu_lite_x,alu_lite_y")
-   (set_attr "length" "4,4,8,12")]
-)
-
 /*************** FLOATING POINT **************/
 
 (define_insn "builtin_extendhfsf2"
@@ -2189,68 +1534,6 @@
 [(set_attr "type" "alu_lite")
 ])
 
-
-/******* ALU instructions **********/
-
-(define_insn "kvx_abdw"
-  [(set (match_operand:SI 0 "register_operand" "=r,r,r")
-        (abs:SI (minus:SI  (match_operand:SI 2 "register_s32_operand" "r,I10,I32")
-                           (match_operand:SI 1 "register_operand" "r,r,r"))))]
-  ""
-  "abdw %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite,alu_lite_x")
-   (set_attr "length" "4,4,8")]
-)
-
-(define_insn "kvx_abdd"
-  [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
-        (abs:DI (minus:DI  (match_operand:DI 2 "register_s64_operand" "r,I10,I37,i")
-                           (match_operand:DI 1 "register_operand" "r,r,r,r"))))]
-  ""
-  "abdd %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite,alu_lite_x,alu_lite_y")
-   (set_attr "length" "4,4,8,12")]
-)
-
-(define_insn "kvx_avgw"
-  [(set (match_operand:SI 0 "register_operand" "=r,r,r")
-        (unspec:SI [(match_operand:SI 1 "register_operand" "r,r,r")
-                    (match_operand:SI 2 "register_s32_operand" "r,I10,I32")] UNSPEC_AVGW))]
-  ""
-  "avgw %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite,alu_lite_x")
-   (set_attr "length" "4,4,8")]
-)
-
-(define_insn "kvx_avguw"
-  [(set (match_operand:SI 0 "register_operand" "=r,r,r")
-        (unspec:SI [(match_operand:SI 1 "register_operand" "r,r,r")
-                    (match_operand:SI 2 "register_s32_operand" "r,I10,I32")] UNSPEC_AVGUW))]
-  ""
-  "avguw %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite,alu_lite_x")
-   (set_attr "length" "4,4,8")]
-)
-
-(define_insn "kvx_avgrw"
-  [(set (match_operand:SI 0 "register_operand" "=r,r,r")
-        (unspec:SI [(match_operand:SI 1 "register_operand" "r,r,r")
-                    (match_operand:SI 2 "register_s32_operand" "r,I10,I32")] UNSPEC_AVGRW))]
-  ""
-  "avgrw %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite,alu_lite_x")
-   (set_attr "length" "4,4,8")]
-)
-
-(define_insn "kvx_avgruw"
-  [(set (match_operand:SI 0 "register_operand" "=r,r,r")
-        (unspec:SI [(match_operand:SI 1 "register_operand" "r,r,r")
-                    (match_operand:SI 2 "register_s32_operand" "r,I10,I32")] UNSPEC_AVGRUW))]
-  ""
-  "avgruw %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite,alu_lite_x")
-   (set_attr "length" "4,4,8")]
-)
 
 /********** Hardware loops **************/
 
@@ -2350,3 +1633,4 @@
 (include "vector.md")
 
 (include "control.md")
+

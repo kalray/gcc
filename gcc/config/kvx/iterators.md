@@ -55,17 +55,6 @@
 ])
 
 ;; Code iterator for sign/zero extension
-(define_code_iterator MAX_UMAX [smax umax])
-(define_code_iterator MIN_UMIN [smin umin])
-
-(define_code_attr spfx [
-  (smax "s")
-  (umax "u")
-  (smin "s")
-  (umin "u")
-])
-
-;; Code iterator for sign/zero extension
 (define_code_iterator ANY_EXTEND [sign_extend zero_extend])
 
 ;; Sign- or zero-extending data-op
@@ -73,9 +62,6 @@
   (sign_extend "s")
   (zero_extend "z")
 ])
-
-;; Count lead/trailing zero
-(define_code_iterator CXZ [ctz clz])
 
 ;; Sign- or zero-extending mapping to unsigned mnemonics
 (define_code_attr ssfx [
