@@ -1477,9 +1477,9 @@
 )
 
 (define_expand "divsf3"
-  [(set (match_operand:SF 0 "register_operand" "=r")
-        (div:SF (match_operand:SF 1 "register_operand" "r")
-                (match_operand:SF 2 "register_operand" "r")))]
+  [(set (match_operand:SF 0 "register_operand" "")
+        (div:SF (match_operand:SF 1 "register_operand" "")
+                (match_operand:SF 2 "register_operand" "")))]
   ""
   {
     rtx temp = gen_reg_rtx(SFmode);
@@ -1490,8 +1490,8 @@
 )
 
 (define_expand "sqrtsf2"
-  [(set (match_operand:SF 0 "register_operand" "=r")
-        (sqrt:SF (match_operand:SF 1 "register_operand" "r")))]
+  [(set (match_operand:SF 0 "register_operand" "")
+        (sqrt:SF (match_operand:SF 1 "register_operand" "")))]
   ""
   {
     rtx temp = gen_reg_rtx(SFmode);
