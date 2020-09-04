@@ -12,6 +12,12 @@
   (and (match_code "const_double")
        (match_test "op == CONST1_RTX (mode)")))
 
+(define_predicate "reg_or_zero_operand"
+  (and (match_code "reg,subreg,const_int,const_vector")
+       (ior (match_operand 0 "register_operand")
+            (match_test "op == const0_rtx")
+            (match_test "op == CONST0_RTX (mode)"))))
+
 ;; Allow for LABELs to be used in the mov expander
 ;; It will split it using add_pcrel insn.
 ;; This predicates should only be used in the expander as LABELs
