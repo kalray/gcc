@@ -20,9 +20,9 @@
 #ifndef GCC_KVX_MPPA_LINUX
 #define GCC_KVX_MPPA_LINUX
 
-#define GLIBC_DYNAMIC_LINKER "/lib/ld-linux-kvx.so.1"
-#undef MUSL_DYNAMIC_LINKER
-#define MUSL_DYNAMIC_LINKER "/lib/ld-musl-kvx.so.1"
+#define GLIBC_DYNAMIC_LINKER64 "/lib/ld-linux-kvx.so.1"
+#undef MUSL_DYNAMIC_LINKER64
+#define MUSL_DYNAMIC_LINKER64 "/lib/ld-musl-kvx.so.1"
 
 #define TARGET_OS_CPP_BUILTINS()                                               \
   do                                                                           \
@@ -40,7 +40,7 @@
    %{symbolic:-Bsymbolic}			\
    %{!static:					\
      %{rdynamic:-export-dynamic}		\
-     %{!shared:-dynamic-linker " GNU_USER_DYNAMIC_LINKER "}} \
+     %{!shared:-dynamic-linker " GNU_USER_DYNAMIC_LINKER64 "}} \
    -X"
 
 #endif
