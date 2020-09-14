@@ -60,7 +60,12 @@ typedef long long int64_t;
 
 typedef uint64_t uint64x2_t __attribute ((vector_size (2 * sizeof (uint64_t))));
 
-#define ERROR __asm__("errop\n\t;;\n")
+uint64_t __udivdi3 (uint64_t a, uint64_t b);
+int64_t __moddi3 (int64_t a, int64_t b);
+uint64_t __umoddi3 (uint64_t a, uint64_t b);
+uint64_t __udivmoddi4 (uint64_t a, uint64_t b, uint64_t *c);
+uint64_t __udivdi3 (uint64_t a, uint64_t b);
+int64_t __divdi3 (int64_t a, int64_t b);
 
 #ifndef __linux__
 /*
@@ -73,6 +78,14 @@ typedef uint64_t uint64x2_t __attribute ((vector_size (2 * sizeof (uint64_t))));
  */
 extern char *_KVX_DIVMOD_ZERO_RETURN_ZERO __attribute__ ((weak));
 #endif
+
+static inline void _fatal (void) __attribute__ ((noreturn));
+static inline void
+_fatal (void)
+{
+  __asm__("errop\n\t;;\n");
+  __builtin_unreachable ();
+}
 
 static inline uint64x2_t
 uint64_divmod (uint64_t a, uint64_t b)
@@ -105,17 +118,10 @@ end:
 div0:
 #ifndef __linux__
   if (&_KVX_DIVMOD_ZERO_RETURN_ZERO)
-    {
-      return (uint64x2_t){0, 0};
-    }
+    return (uint64x2_t){0, 0};
   else
-    {
 #endif
-      ERROR;
-      __builtin_unreachable ();
-#ifndef __linux__
-    }
-#endif
+    _fatal ();
 }
 
 uint64_t
