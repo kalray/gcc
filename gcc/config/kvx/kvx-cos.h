@@ -21,12 +21,12 @@
 #ifndef GCC_KVX_MPPA_COS
 #define GCC_KVX_MPPA_COS
 
-#define STARTFILE_SPEC " crti%O%s crtbegin%O%s crt0%O%s"
-#define ENDFILE_SPEC " crtend%O%s crtn%O%s"
-
 #define DRIVER_SELF_SPECS                                                      \
   DRIVER_SELF_SPECS_COMMON, "%{lpthread: -pthread} "                           \
 			    "%{pthread:%<pthread}"
+
+#define STARTFILE_SPEC ""
+#define ENDFILE_SPEC ""
 
 /* The GNU C++ standard library requires that these macros be defined.  */
 #undef CPLUSPLUS_CPP_SPEC
@@ -38,7 +38,7 @@
  */
 #undef LIB_SPEC
 #define LIB_SPEC                                                               \
-  "--start-group -lmppacos -lmppa_rsrc -lc -lgloss -lmppa_fdt --end-group "    \
+  "--start-group -lc -lmppacos -lmppa_rsrc -lgloss -lmppa_fdt --end-group "    \
   "%{!nostartfiles:%{!nodefaultlibs:%{!nostdlib:%{!T*:-Tmppacos.ld}}}}"
 
 #undef LINK_SPEC
