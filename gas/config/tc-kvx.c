@@ -2492,45 +2492,32 @@ md_assemble(char *s)
 
 static void
 kvx_set_cpu(void) {
-  if (!kvx_core_info) {
-      kvx_core_info = &kvx_kv3_v1_core_info;
-      if (!bfd_set_arch_mach(stdoutput, TARGET_ARCH, bfd_mach_kv3_1)){
-        as_warn(_("could not set architecture and machine"));
-      }
-  }
+  if (!kvx_core_info)
+    kvx_core_info = &kvx_kv3_v1_core_info;
 
-  if(!kvx_registers) {
+  if(!kvx_registers)
     kvx_registers = kvx_kv3_v1_registers;
-  }
 
-  if(!kvx_regfiles) {
+  if(!kvx_regfiles)
     kvx_regfiles = kvx_kv3_v1_regfiles;
-  }
 
-  switch(kvx_core_info->elf_cores[subcore_id]) {
-  case ELF_KVX_CORE_KV3_1:
-    if (kvx_arch_size == 32) {
-      if (!bfd_set_arch_mach(stdoutput, TARGET_ARCH, bfd_mach_kv3_1))
-        as_warn(_("could not set architecture and machine"));
-    } else if (kvx_arch_size == 64) {
-      if (!bfd_set_arch_mach(stdoutput, TARGET_ARCH, bfd_mach_kv3_1_64))
-        as_warn(_("could not set architecture and machine"));
+  int kvx_bfd_mach;
+  print_insn = kv3_print_insn;
+
+  switch(kvx_core_info->elf_cores[subcore_id])
+    {
+    case ELF_KVX_CORE_KV3_1:
+      kvx_bfd_mach = kvx_arch_size == 32 ? bfd_mach_kv3_1 : bfd_mach_kv3_1_64;
+      break;
+    case ELF_KVX_CORE_KV3_2:
+      kvx_bfd_mach = kvx_arch_size == 32 ? bfd_mach_kv3_2 : bfd_mach_kv3_2_64;
+      break;
+    default:
+      as_fatal("Unknown elf core: 0x%x\n",kvx_core_info->elf_cores[subcore_id]);
     }
-    print_insn = kv3_print_insn;
-    break;
-  case ELF_KVX_CORE_KV3_2:
-    if (kvx_arch_size == 32) {
-      if (!bfd_set_arch_mach(stdoutput, TARGET_ARCH, bfd_mach_kv3_2))
-        as_warn(_("could not set architecture and machine"));
-    } else if (kvx_arch_size == 64) {
-      if (!bfd_set_arch_mach(stdoutput, TARGET_ARCH, bfd_mach_kv3_2_64))
-        as_warn(_("could not set architecture and machine"));
-    }
-    print_insn = kv3_print_insn;
-    break;
-  default:
-    as_fatal("Unknown elf core: 0x%x\n",kvx_core_info->elf_cores[subcore_id]);
-  }
+
+  if (!bfd_set_arch_mach(stdoutput, TARGET_ARCH, kvx_bfd_mach))
+    as_warn(_("could not set architecture and machine"));
 }
 
 static int kvxop_compar(const void *a, const void *b)
