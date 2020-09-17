@@ -228,7 +228,6 @@ static void kvx_nop_insertion(int);
 static void kvx_check_resources(int);
 static void kvx_float_cons(int type);
 static void kvx_stringer(int append_zero);
-static void kvx_ignore(int size);
 static void kvx_proc(int start);
 static void kvx_endp(int start);
 static void kvx_type(int start);
@@ -310,57 +309,11 @@ const pseudo_typeS md_pseudo_table[] =
      {"spill_psrel", kvx_unwind, (int) UNW_SPILL_PSREL},
      {"spill_sprel", kvx_unwind, (int) UNW_SPILL_SPREL},
 
-     /* ignore cs directives */
-
-     {"comment", kvx_ignore, 0},
      {"endp", kvx_endp, 0},
-     {"entry", kvx_ignore, 0},
-     {"import", kvx_ignore, 0},
+
      {"proc", kvx_proc, 1},
-     {"return", kvx_ignore, 0},
-     {"sversion", kvx_ignore, 0},
-     {"trace", kvx_ignore, 0},
      {"type", kvx_type, 0},
-     {"call", kvx_ignore, 0},
-     {"longjmp", kvx_ignore, 0},
-     {"_longjmp", kvx_ignore, 0},
-     {"__longjmp", kvx_ignore, 0},
-     {"siglongjmp", kvx_ignore, 0},
-     {"_siglongjmp", kvx_ignore, 0},
-     {"setjmp", kvx_ignore, 0},
-     {"_setjmp", kvx_ignore, 0},
-     {"__setjmp", kvx_ignore, 0},
-     {"sigsetjmp", kvx_ignore, 0},
-     {"_sigsetjmp", kvx_ignore, 0},
 
-     /* ignore some standard ones */
-
-     {"dc", s_ignore, 0},
-     {"dc.b", s_ignore, 0},
-     {"dc.d", s_ignore, 0},
-     {"dc.l", s_ignore, 0},
-     {"dc.s", s_ignore, 0},
-     {"dc.w", s_ignore, 0},
-     {"dc.x", s_ignore, 0},
-     {"dcb", s_ignore, 0},
-     {"dcb.b", s_ignore, 0},
-     {"dcb.d", s_ignore, 0},
-     {"dcb.l", s_ignore, 0},
-     {"dcb.s", s_ignore, 0},
-     {"dcb.w", s_ignore, 0},
-     {"dcb.x", s_ignore, 0},
-     {"ds", s_ignore, 0},
-     {"ds.b", s_ignore, 0},
-     {"ds.d", s_ignore, 0},
-     {"ds.l", s_ignore, 0},
-     {"ds.p", s_ignore, 0},
-     {"ds.s", s_ignore, 0},
-     {"ds.w", s_ignore, 0},
-     {"ds.x", s_ignore, 0},
-     {"lflags", s_ignore, 0},
-     {"mri", s_ignore, 0},
-     {".mri", s_ignore, 0},
-     {"org", s_ignore, 0},
      {"p2align", kvx_align_ptwo, 2},
      {"p2alignw", kvx_align_ptwo, -2},
      {"p2alignl", kvx_align_ptwo, -4},
@@ -3653,14 +3606,6 @@ kvx_stringer(int append_zero)
         set_byte_counter(now_seg, 1);
     }
     stringer(append_zero);
-}
-
-static void
-kvx_ignore(int arg ATTRIBUTE_UNUSED)
-{
-    /* the cs directives may have ';' in them.  These we must skip ! */
-    while (input_line_pointer && (input_line_pointer[0] != '\n'))
-        input_line_pointer++;
 }
 
 static void
