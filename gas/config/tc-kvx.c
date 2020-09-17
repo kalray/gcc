@@ -2112,20 +2112,19 @@ insn_syntax(kv3opc_t *op, char *buf, int buf_size)
   return chars;
 }
 
-#pragma GCC diagnostic ignored "-Wstack-usage="
+#define ASM_CHARS_MAX (48)
+
 static void
 kv3_print_insn(kv3opc_t *op) {
-  int asm_chars = 48;
-  char asm_str[asm_chars];
-  int chars = insn_syntax(op, asm_str, asm_chars);
+  char asm_str[ASM_CHARS_MAX];
+  int chars = insn_syntax(op, asm_str, ASM_CHARS_MAX);
   int i;
   const char *insn_type = "UNKNOWN";
   const char *insn_mode = "";
-  
-  for(i=chars-1; i<asm_chars-1; i++) {
+
+  for(i=chars-1; i<ASM_CHARS_MAX-1; i++)
     asm_str[i] = '-';
-  }
- 
+
   switch(op->bundling) {
   case Bundling_kv3_ALL:
     insn_type="ALL            ";
@@ -2168,19 +2167,15 @@ kv3_print_insn(kv3opc_t *op) {
     as_fatal("Unhandled Bundling class %d\n", op->bundling);
   }
 
-  if (op->codewords[0].flags & kvxOPCODE_FLAG_MODE64 && 
-      op->codewords[0].flags & kvxOPCODE_FLAG_MODE32) {
+  if (op->codewords[0].flags & kvxOPCODE_FLAG_MODE64
+      && op->codewords[0].flags & kvxOPCODE_FLAG_MODE32)
     insn_mode = "32|64";
-  }
-  else if(op->codewords[0].flags & kvxOPCODE_FLAG_MODE64) {
+  else if(op->codewords[0].flags & kvxOPCODE_FLAG_MODE64)
     insn_mode = "64";
-  }
-  else if(op->codewords[0].flags & kvxOPCODE_FLAG_MODE32) {
+  else if(op->codewords[0].flags & kvxOPCODE_FLAG_MODE32)
     insn_mode = "32";
-  }
-  else {
+  else
     as_fatal("Unknown instruction mode.\n");
-  }
 
   printf("%s | syllables: %d | type: %s | mode: %s bits\n", asm_str, op->wordcount, insn_type, insn_mode);
 }
@@ -2324,8 +2319,6 @@ kv3_reorder_bundle(kvxinsn_t *bundle_insn[], int bundle_insncnt)
     as_fatal("Mismatch between bundle and issued instructions\n");
 }
 
-#pragma GCC diagnostic ignored "-Wstack-usage="
-
 /*
  * Called by core to assemble a single line
  */
@@ -2384,26 +2377,31 @@ md_assemble(char *s)
             /* Check that resources are not oversubscribed.
              * We check only for a single bundle, so resources that are used
              * in multiple cycles will not be fully checked. */
-            if (check_resource_usage) {
-                const int reservation_table_len = (kv3_reservation_table_lines * kv3_resource_max);
-                const int *resources = kvx_core_info->resources;
-                int *resources_used = (int *)alloca(reservation_table_len * sizeof (int));
-                memset(resources_used, 0, reservation_table_len * sizeof (int));
 
-                for (i = 0; i < bundle_insncnt; i++) {
-                    int insn_reservation = find_reservation(bundle_insn[i]);
-                    int reservation = insn_reservation & 0xff;
-                    const int *reservation_table = kv3_reservation_table_table[reservation];
-                    for (j = 0; j < reservation_table_len; j++)
-                        resources_used[j] += reservation_table[j];
-                }
-                for (i = 0; i < kv3_reservation_table_lines; i++) {
-                    for (j = 0; j < kv3_resource_max; j++)
-                        if (resources_used[(i * kv3_resource_max) + j] > resources[j]) {
-                            as_bad("Resource %s over-used in bundle: %d used, %d available",
-                                   kv3_resource_names[j], resources_used[(i * kv3_resource_max) + j], resources[j]);
-                        }
-                }
+            if (check_resource_usage) {
+              const int reservation_table_len = (kv3_reservation_table_lines * kv3_resource_max);
+              const int *resources = kvx_core_info->resources;
+              int *resources_used = malloc(reservation_table_len * sizeof(int));
+              memset(resources_used, 0, reservation_table_len * sizeof(int));
+
+              for (i = 0; i < bundle_insncnt; i++) {
+                int insn_reservation = find_reservation(bundle_insn[i]);
+                int reservation = insn_reservation & 0xff;
+                const int *reservation_table = kv3_reservation_table_table[reservation];
+                for (j = 0; j < reservation_table_len; j++)
+                  resources_used[j] += reservation_table[j];
+              }
+
+              for (i = 0; i < kv3_reservation_table_lines; i++) {
+                for (j = 0; j < kv3_resource_max; j++)
+                  if (resources_used[(i * kv3_resource_max) + j] > resources[j]) {
+                    int v = resources_used[(i * kv3_resource_max) + j];
+                    free (resources_used);
+                    as_bad("Resource %s over-used in bundle: %d used, %d available",
+                           kv3_resource_names[j], v, resources[j]);
+                  }
+              }
+              free (resources_used);
             }
 
             if(!generate_illegal_code){
@@ -3734,12 +3732,13 @@ kvx_endp(int start ATTRIBUTE_UNUSED)
         /* Add .size funcname,.-funcname in order to add size
          * attribute to the current function */
         {
-            char *newdirective = (char *)alloca(strlen(S_GET_NAME(last_proc_sym)) +
-            strlen(MINUSEXPR) + 1);
+            const int newdirective_sz = strlen(S_GET_NAME(last_proc_sym)) + strlen(MINUSEXPR) + 1;
+            char *newdirective = malloc(newdirective_sz);
             char *savep = input_line_pointer;
             expressionS exp;
 
-            *newdirective = '\0';
+            memset(newdirective, 0, newdirective_sz);
+
             /* BUILD :".-funcname" expression */
             strcat(newdirective, MINUSEXPR);
             strcat(newdirective, S_GET_NAME(last_proc_sym));
@@ -3764,6 +3763,7 @@ kvx_endp(int start ATTRIBUTE_UNUSED)
 
             /* just restore the real input pointer */
             input_line_pointer = savep;
+            free (newdirective);
         }
     }
     /* TB end */
