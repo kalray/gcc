@@ -21,11 +21,17 @@
 #ifndef GCC_KVX_MPPA_COS
 #define GCC_KVX_MPPA_COS
 
-#define DRIVER_SELF_SPECS                                                      \
-  DRIVER_SELF_SPECS_COMMON, "%{lpthread: -pthread} "                           \
-			    "%{pthread:%<pthread}"
+#undef DRIVER_SELF_SPECS
+#define DRIVER_SELF_SPECS						\
+  DRIVER_SELF_SPECS_COMMON,						\
+    "%{lpthread: -pthread} "						\
+    "%{pthread:%<pthread}"
 
-#define STARTFILE_SPEC ""
+
+#undef STARTFILE_SPEC
+#define STARTFILE_SPEC "%{shared:crtcxa_s%O%s;:crtcxa%O%s}"
+
+#undef ENDFILE_SPEC
 #define ENDFILE_SPEC ""
 
 /* The GNU C++ standard library requires that these macros be defined.  */
