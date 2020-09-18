@@ -1,2 +1,7 @@
 LIB2ADD += $(srcdir)/config/kvx/divmod.c
 
+crtcxa.o: $(srcdir)/config/kvx/crtcxa.c
+	$(crt_compile) -c $<
+
+crtcxa_s.o: $(srcdir)/config/kvx/crtcxa.c
+	$(crt_compile) -DSHARED -c $<
