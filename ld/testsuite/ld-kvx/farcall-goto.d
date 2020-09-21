@@ -8,17 +8,16 @@
 Disassembly of section .text:
 
 .* <__bar_veneer>:
-    1000:	00 00 40 e0 04 00 08 00                         	make \$r16 = 536875008 \(0x20001000\);;
+    .*:	00 00 40 e0 04 00 08 00                         	make \$r16 = .* \(0x.*\);;
 
-    1008:	10 00 d8 0f                                     	igoto \$r16;;
+    .*:	10 00 d8 0f                                     	igoto \$r16;;
 
-    100c:	00 00 00 00                                     	errop ;;
-
+    .*:	00 f0 03 7f                                     	nop ;;
 
 .* <_start>:
-    1010:	fc ff ff 17                                     	goto 1000 <__bar_veneer>;;
+    .*:	.. ff ff 17                                     	goto .* <__bar_veneer>;;
 
-    1014:	00 00 d0 0f                                     	ret ;;
+    .*:	00 00 d0 0f                                     	ret ;;
 
 
 Disassembly of section .foo:

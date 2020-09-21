@@ -21,7 +21,7 @@
 # MA 02110-1301, USA.
 
 # Exclude non-kvx-ELF targets.
-if { ![is_elf_format] || ![istarget "kvx*-*-*"] } {
+if { ![istarget "kvx-*-*"] } {
     return
 }
 
