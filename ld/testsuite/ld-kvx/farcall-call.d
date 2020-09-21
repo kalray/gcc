@@ -12,7 +12,7 @@ Disassembly of section .text:
 
     1008:	10 00 d8 0f                                     	igoto \$r16;;
 
-    100c:	00 00 00 00                                     	errop ;;
+    100c:	00 f0 03 7f                                     	nop ;;
 
 
 .* <_start>:

@@ -84,11 +84,7 @@
 #define GOT_ENTRY_SIZE                  (ARCH_SIZE / 8)
 #define PLT_ENTRY_SIZE                  (32)
 
-#if ARCH_SIZE == 32
-#define PLT_SMALL_ENTRY_SIZE            (16)
-#else  /* 64 */
-#define PLT_SMALL_ENTRY_SIZE            (20)
-#endif
+#define PLT_SMALL_ENTRY_SIZE            (4*4)
 
 /* Encoding of the nop instruction */
 #define INSN_NOP 0x00f0037f
@@ -1117,8 +1113,6 @@ kvx_build_one_stub (struct bfd_hash_entry *gen_entry,
 
   memcpy(loc, template, template_size);
 
-  /* Align stubs. Padding is 0 <=> errop insns */
-  template_size = (template_size + 7) & ~7;
   stub_sec->size += template_size;
 
   switch (stub_entry->stub_type)
@@ -1169,9 +1163,6 @@ kvx_size_one_stub (struct bfd_hash_entry *gen_entry,
     default:
       abort ();
     }
-
-  /* align on 64bits */
-  size = (size + 7) & ~7;
 
   stub_entry->stub_sec->size += size;
 
