@@ -78,7 +78,7 @@
 
 (define_insn "*cb<mode>"
   [(set (pc)
-        (if_then_else (match_operator 0 "signed_comparison_operator"
+        (if_then_else (match_operator 0 "zero_comparison_operator"
                                       [(match_operand:SIDI 1 "register_operand" "r")
                                        (const_int 0)])
                       (label_ref (match_operand 2 "" ""))
@@ -120,7 +120,7 @@
 
 (define_insn "*cmov<mode>.<FITGPR:mode>"
   [(set (match_operand:FITGPR 0 "register_operand" "=r,r,r,r")
-        (if_then_else:FITGPR (match_operator 2 "signed_comparison_operator"
+        (if_then_else:FITGPR (match_operator 2 "zero_comparison_operator"
                                                [(match_operand:SIDI 3 "register_operand" "r,r,r,r")
                                                 (const_int 0)])
                              (match_operand:FITGPR 1 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")
@@ -159,7 +159,7 @@
 
 (define_insn "*cmov<mode>.<ALL128:mode>"
   [(set (match_operand:ALL128 0 "register_operand" "=r")
-        (if_then_else:ALL128 (match_operator 2 "signed_comparison_operator"
+        (if_then_else:ALL128 (match_operator 2 "zero_comparison_operator"
                                                [(match_operand:SIDI 3 "register_operand" "r")
                                                 (const_int 0)])
                              (match_operand:ALL128 1 "register_operand" "r")
@@ -198,7 +198,7 @@
 
 (define_insn_and_split "*cmov<mode>.<ALL256:mode>"
   [(set (match_operand:ALL256 0 "register_operand" "=r")
-        (if_then_else:ALL256 (match_operator 2 "signed_comparison_operator"
+        (if_then_else:ALL256 (match_operator 2 "zero_comparison_operator"
                                                 [(match_operand:SIDI 3 "register_operand" "r")
                                                  (const_int 0)])
                              (match_operand:ALL256 1 "register_operand" "r")

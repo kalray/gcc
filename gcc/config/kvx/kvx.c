@@ -4095,6 +4095,14 @@ enum kvx_builtin
   KVX_BUILTIN_SELECTFDP,
   KVX_BUILTIN_SELECTFDQ,
 
+  KVX_BUILTIN_COPYSIGNW,
+  KVX_BUILTIN_COPYSIGNWP,
+  KVX_BUILTIN_COPYSIGNWQ,
+  KVX_BUILTIN_COPYSIGNWO,
+  KVX_BUILTIN_COPYSIGND,
+  KVX_BUILTIN_COPYSIGNDP,
+  KVX_BUILTIN_COPYSIGNDQ,
+
   KVX_BUILTIN_FMINW,
   KVX_BUILTIN_FMINWP,
   KVX_BUILTIN_FMINWQ,
@@ -4775,6 +4783,14 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (SELECTFWO, "selectfwo", FLOAT32X8, FLOAT32X8, FLOAT32X8, INT32X8, SIMDCOND); // Vector
   ADD_KVX_BUILTIN (SELECTFDP, "selectfdp", FLOAT64X2, FLOAT64X2, FLOAT64X2, INT64X2, SIMDCOND); // Vector
   ADD_KVX_BUILTIN (SELECTFDQ, "selectfdq", FLOAT64X4, FLOAT64X4, FLOAT64X4, INT64X4, SIMDCOND); // Vector
+
+  ADD_KVX_BUILTIN (COPYSIGNW, "copysignw", FLOAT32, FLOAT32, FLOAT32); // Scalar
+  ADD_KVX_BUILTIN (COPYSIGNWP, "copysignwp", FLOAT32X2, FLOAT32X2, FLOAT32X2); // Vector
+  ADD_KVX_BUILTIN (COPYSIGNWQ, "copysignwq", FLOAT32X4, FLOAT32X4, FLOAT32X4); // Vector
+  ADD_KVX_BUILTIN (COPYSIGNWO, "copysignwo", FLOAT32X8, FLOAT32X8, FLOAT32X8); // Vector
+  ADD_KVX_BUILTIN (COPYSIGND, "copysignd", FLOAT64, FLOAT64, FLOAT64); // Scalar
+  ADD_KVX_BUILTIN (COPYSIGNDP, "copysigndp", FLOAT64X2, FLOAT64X2, FLOAT64X2); // Vector
+  ADD_KVX_BUILTIN (COPYSIGNDQ, "copysigndq", FLOAT64X4, FLOAT64X4, FLOAT64X4); // Vector
 
   ADD_KVX_BUILTIN (FMINW, "fminw", FLOAT32, FLOAT32, FLOAT32); // Scalar
   ADD_KVX_BUILTIN (FMINWP, "fminwp", FLOAT32X2, FLOAT32X2, FLOAT32X2); // Vector
@@ -6245,6 +6261,14 @@ KVX_EXPAND_BUILTIN_SELECT (selectfwo, V8SFmode, V8SImode)
 KVX_EXPAND_BUILTIN_SELECT (selectfdp, V2DFmode, V2DImode)
 KVX_EXPAND_BUILTIN_SELECT (selectfdq, V4DFmode, V4DImode)
 
+KVX_EXPAND_BUILTIN_3_STANDARD (copysignw, copysignsf3, SFmode, SFmode)
+KVX_EXPAND_BUILTIN_3_STANDARD (copysignwp, copysignv2sf3, V2SFmode, V2SFmode)
+KVX_EXPAND_BUILTIN_3_STANDARD (copysignwq, copysignv4sf3, V4SFmode, V4SFmode)
+KVX_EXPAND_BUILTIN_3_STANDARD (copysignwo, copysignv8sf3, V8SFmode, V8SFmode)
+KVX_EXPAND_BUILTIN_3_STANDARD (copysignd, copysigndf3, DFmode, DFmode)
+KVX_EXPAND_BUILTIN_3_STANDARD (copysigndp, copysignv2df3, V2DFmode, V2DFmode)
+KVX_EXPAND_BUILTIN_3_STANDARD (copysigndq, copysignv4df3, V4DFmode, V4DFmode)
+
 KVX_EXPAND_BUILTIN_3_STANDARD (fminw, fminsf3, SFmode, SFmode)
 KVX_EXPAND_BUILTIN_3_STANDARD (fminwp, fminv2sf3, V2SFmode, V2SFmode)
 KVX_EXPAND_BUILTIN_3_STANDARD (fminwq, fminv4sf3, V4SFmode, V4SFmode)
@@ -7178,6 +7202,14 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_SELECTFWO: return kvx_expand_builtin_selectfwo (target, exp);
     case KVX_BUILTIN_SELECTFDP: return kvx_expand_builtin_selectfdp (target, exp);
     case KVX_BUILTIN_SELECTFDQ: return kvx_expand_builtin_selectfdq (target, exp);
+
+    case KVX_BUILTIN_COPYSIGNW: return kvx_expand_builtin_copysignw (target, exp);
+    case KVX_BUILTIN_COPYSIGNWP: return kvx_expand_builtin_copysignwp (target, exp);
+    case KVX_BUILTIN_COPYSIGNWQ: return kvx_expand_builtin_copysignwq (target, exp);
+    case KVX_BUILTIN_COPYSIGNWO: return kvx_expand_builtin_copysignwo (target, exp);
+    case KVX_BUILTIN_COPYSIGND: return kvx_expand_builtin_copysignd (target, exp);
+    case KVX_BUILTIN_COPYSIGNDP: return kvx_expand_builtin_copysigndp (target, exp);
+    case KVX_BUILTIN_COPYSIGNDQ: return kvx_expand_builtin_copysigndq (target, exp);
 
     case KVX_BUILTIN_FMINW: return kvx_expand_builtin_fminw (target, exp);
     case KVX_BUILTIN_FMINWP: return kvx_expand_builtin_fminwp (target, exp);
