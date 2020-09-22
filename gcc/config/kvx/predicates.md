@@ -1,22 +1,30 @@
-;; Return true if OP is the zero constant for MODE.
+;; Constant zero operand for scalar or vector MODE
 (define_predicate "const_zero_operand"
   (and (match_code "const_int,const_wide_int,const_double,const_vector")
        (match_test "op == CONST0_RTX (mode)")))
 
-;; Return true if OP an all ones operand (int/vector).
+;; Constant -1 operand for scalar or vector MODE
 (define_predicate "const_mone_operand"
-  (and (match_code "const_int, const_wide_int, const_vector")
+  (and (match_code "const_int, const_wide_int,const_vector")
        (match_test "op == CONSTM1_RTX (mode)")))
 
-(define_predicate "const_float_1_operand"
-  (and (match_code "const_double")
+;; Constant 1.0 operand for floating-point MODE
+(define_predicate "const_float1_operand"
+  (and (match_code "const_double,const_vector")
        (match_test "op == CONST1_RTX (mode)")))
 
+;; Register or constant zero.
 (define_predicate "reg_or_zero_operand"
   (and (match_code "reg,subreg,const_int,const_vector")
        (ior (match_operand 0 "register_operand")
             (match_test "op == const0_rtx")
             (match_test "op == CONST0_RTX (mode)"))))
+
+;; Register or constant 1.0 (floating-point).
+(define_predicate "reg_or_float1_operand"
+  (and (match_code "reg,subreg,const_double,const_vector")
+       (ior (match_operand 0 "register_operand")
+            (match_test "op == CONST1_RTX (mode)"))))
 
 ;; Allow for LABELs to be used in the mov expander
 ;; It will split it using add_pcrel insn.
@@ -50,13 +58,13 @@
           && (INTVAL (op) >= 0) && (INTVAL(op) <= 64);
 })
 
-;; register or immediate up to signed 32
+;; Register or immediate up to signed 32
 (define_predicate "register_s32_operand"
  (and (match_code "reg,subreg,const,const_int")
       (ior (match_operand 0 "register_operand")
            (match_test "satisfies_constraint_I32(op)"))))
 
-;; register or immediate up to float 32
+;; Register or immediate up to float 32
 (define_predicate "register_f32_operand"
  (and (match_code "reg,subreg,const_double")
       (ior (match_operand 0 "register_operand")
@@ -78,9 +86,11 @@
 			   && !SYMBOL_REF_WEAK (XEXP (op, 0))));
 })
 
-(define_predicate "signed_comparison_operator"
+;; Integer comparison operators against integer zero.
+(define_predicate "zero_comparison_operator"
   (match_code "eq,ne,le,lt,ge,gt"))
 
+;; Floating-point comparisons operators supported.
 (define_predicate "float_comparison_operator"
   (match_code "ne,eq,ge,lt,uneq,unge,unlt,ltgt"))
 
