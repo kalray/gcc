@@ -748,6 +748,19 @@
    (set_attr "length" "4, 4, 8, 12")]
 )
 
+(define_expand "divdi3"
+  [(set (match_operand:DI 0 "register_operand" "")
+        (div:DI (match_operand:DI 1 "register_operand" "")
+                (match_operand 2 "poweroftwo_6bits_immediate_operand" "")))]
+  ""
+  {
+    HOST_WIDE_INT constant = INTVAL (operands[2]);
+    operands[2] = gen_rtx_CONST_INT (VOIDmode, __builtin_ctzll (constant));
+    emit_insn (gen_kvx_srsd (operands[0], operands[1], operands[2]));
+    DONE;
+  }
+)
+
 (define_insn "mulditi3"
   [(set (match_operand:TI 0 "register_operand" "=r")
         (mult:TI (sign_extend:TI (match_operand:DI 1 "register_operand" "r"))
@@ -775,16 +788,51 @@
   [(set_attr "type" "mau")]
 )
 
-(define_expand "divdi3"
-  [(set (match_operand:DI 0 "register_operand" "")
-        (div:DI (match_operand:DI 1 "register_operand" "")
-                (match_operand 2 "poweroftwo_6bits_immediate_operand" "")))]
+(define_insn_and_split "smuldi3_highpart"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (truncate:DI
+          (lshiftrt:TI
+            (mult:TI
+              (sign_extend:TI (match_operand:DI 1 "register_operand" "r"))
+              (sign_extend:TI (match_operand:DI 2 "register_operand" "r")))
+            (const_int 64))))
+   (clobber (match_scratch:TI 3 "=&r"))]
   ""
+  "#"
+  ""
+  [(set (match_dup 3)
+        (mult:TI
+          (sign_extend:TI (match_dup 1))
+          (sign_extend:TI (match_dup 2))))
+   (set (match_dup 0)
+        (subreg:DI (match_dup 3) 8))]
   {
-    HOST_WIDE_INT constant = INTVAL (operands[2]);
-    operands[2] = gen_rtx_CONST_INT (VOIDmode, __builtin_ctzll (constant));
-    emit_insn (gen_kvx_srsd (operands[0], operands[1], operands[2]));
-    DONE;
+    if (GET_CODE (operands[3]) == SCRATCH)
+      operands[3] = gen_reg_rtx (TImode);
+  }
+)
+
+(define_insn_and_split "umuldi3_highpart"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (truncate:DI
+          (lshiftrt:TI
+            (mult:TI
+              (zero_extend:TI (match_operand:DI 1 "register_operand" "r"))
+              (zero_extend:TI (match_operand:DI 2 "register_operand" "r")))
+            (const_int 64))))
+   (clobber (match_scratch:TI 3 "=&r"))]
+  ""
+  "#"
+  ""
+  [(set (match_dup 3)
+        (mult:TI
+          (zero_extend:TI (match_dup 1))
+          (zero_extend:TI (match_dup 2))))
+   (set (match_dup 0)
+        (subreg:DI (match_dup 3) 8))]
+  {
+    if (GET_CODE (operands[3]) == SCRATCH)
+      operands[3] = gen_reg_rtx (TImode);
   }
 )
 
@@ -1145,6 +1193,64 @@
 
 
 ;; TI
+
+(define_expand "addti3"
+  [(set (match_operand:TI 0 "register_operand")
+        (plus:TI (match_operand:TI 1 "register_operand")
+                 (match_operand:TI 2 "register_operand")))]
+  ""
+  {
+    rtx lo_0 = simplify_gen_subreg (DImode, operands[0], TImode, 0);
+    rtx hi_0 = simplify_gen_subreg (DImode, operands[0], TImode, 8);
+    rtx lo_1 = simplify_gen_subreg (DImode, operands[1], TImode, 0);
+    rtx hi_1 = simplify_gen_subreg (DImode, operands[1], TImode, 8);
+    rtx lo_2 = simplify_gen_subreg (DImode, operands[2], TImode, 0);
+    rtx hi_2 = simplify_gen_subreg (DImode, operands[2], TImode, 8);
+    rtx ci = gen_rtx_CONST_STRING (VOIDmode, ".ci");
+    rtx c = gen_rtx_CONST_STRING (VOIDmode, ".c");
+    emit_insn (gen_kvx_addd (lo_0, lo_1, lo_2, ci));
+    emit_insn (gen_kvx_addd (hi_0, hi_1, hi_2, c));
+    DONE;
+  }
+)
+
+(define_expand "subti3"
+  [(set (match_operand:TI 0 "register_operand")
+        (minus:TI (match_operand:TI 1 "register_operand")
+                  (match_operand:TI 2 "register_operand")))]
+  ""
+  {
+    rtx lo_0 = simplify_gen_subreg (DImode, operands[0], TImode, 0);
+    rtx hi_0 = simplify_gen_subreg (DImode, operands[0], TImode, 8);
+    rtx lo_1 = simplify_gen_subreg (DImode, operands[1], TImode, 0);
+    rtx hi_1 = simplify_gen_subreg (DImode, operands[1], TImode, 8);
+    rtx lo_2 = simplify_gen_subreg (DImode, operands[2], TImode, 0);
+    rtx hi_2 = simplify_gen_subreg (DImode, operands[2], TImode, 8);
+    rtx ci = gen_rtx_CONST_STRING (VOIDmode, ".ci");
+    rtx c = gen_rtx_CONST_STRING (VOIDmode, ".c");
+    emit_insn (gen_kvx_sbfd (lo_0, lo_2, lo_1, ci));
+    emit_insn (gen_kvx_sbfd (hi_0, hi_2, hi_1, c));
+    DONE;
+  }
+)
+
+(define_expand "multi3"
+  [(set (match_operand:TI 0 "register_operand")
+        (mult:TI (match_operand:TI 1 "register_operand")
+                 (match_operand:TI 2 "register_operand")))]
+  ""
+  {
+    rtx hi_0 = simplify_gen_subreg (DImode, operands[0], TImode, 8);
+    rtx lo_1 = simplify_gen_subreg (DImode, operands[1], TImode, 0);
+    rtx hi_1 = simplify_gen_subreg (DImode, operands[1], TImode, 8);
+    rtx lo_2 = simplify_gen_subreg (DImode, operands[2], TImode, 0);
+    rtx hi_2 = simplify_gen_subreg (DImode, operands[2], TImode, 8);
+    emit_insn (gen_umulditi3 (operands[0], lo_1, lo_2));
+    emit_insn (gen_madddidi4 (hi_0, lo_1, hi_2, hi_0));
+    emit_insn (gen_madddidi4 (hi_0, hi_1, lo_2, hi_0));
+    DONE;
+  }
+)
 
 
 ;; SF
