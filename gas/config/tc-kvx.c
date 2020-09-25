@@ -47,7 +47,6 @@ static void supported_cores(char buf[], size_t buflen);
 #define STREQ(x,y) !strcmp(((x) ? (x) : ""), ((y) ? (y) : ""))
 #define STRNEQ(x,y,n) !strncmp(((x) ? (x) : ""), ((y) ? (y) : ""),(n))
 
-int emit_all_relocs = 0;
 /*TB begin*/
 int size_type_function = 1;
 /*TB end */
@@ -734,7 +733,6 @@ const char *md_shortopts = "hV";	/* catted to std short options */
 /* added to std long options */
 
 #define OPTION_HEXFILE	(OPTION_MD_BASE + 0)
-#define OPTION_EMITALLRELOCS (OPTION_MD_BASE + 3)
 #define OPTION_MARCH (OPTION_MD_BASE + 4)
 #define OPTION_CHECK_RESOURCES (OPTION_MD_BASE + 5)
 #define OPTION_NO_CHECK_RESOURCES (OPTION_MD_BASE + 6)
@@ -749,7 +747,6 @@ const char *md_shortopts = "hV";	/* catted to std short options */
 
 struct option md_longopts[] =
 {
-     {"emit-all-relocs", no_argument, NULL, OPTION_EMITALLRELOCS},
      {"march", required_argument, NULL, OPTION_MARCH},
      {"check-resources", no_argument, NULL, OPTION_CHECK_RESOURCES},
      {"no-check-resources", no_argument, NULL, OPTION_NO_CHECK_RESOURCES},
@@ -775,13 +772,10 @@ int md_parse_option(int c, const char *arg ATTRIBUTE_UNUSED) {
     md_show_usage(stdout);
     exit(EXIT_SUCCESS);
     break;
-    
+
     /* -V: SVR4 argument to print version ID.  */
   case 'V':
     print_version_id();
-    break;
-  case OPTION_EMITALLRELOCS:
-    emit_all_relocs = 1;
     break;
   case OPTION_MARCH:
     march = strdup(arg);
@@ -853,7 +847,6 @@ void md_show_usage(FILE * stream){
 
     fprintf(stream, "\nThe options -M, --mri and -f");
     fprintf(stream, " are not supported in this assembler.\n");
-    fprintf(stream, "--emit-all-relocs \t emit all relocs\n");
     fprintf(stream, "--check-resources \t perform minimal resource checking\n");
     fprintf(stream, "--march [%s] \t select architecture\n", buf);
     fprintf(stream, "-V \t\t\t print assembler version number\n");
@@ -1886,66 +1879,6 @@ md_operand(expressionS *e)
  err:
   ignore_rest_of_line();
 }
-
-/* Return 1 if it's OK to adjust a reloc by replacing the symbol with
- * a section symbol plus some offset.  For relocs involving @fptr(),
- * directives we don't want such adjustments since we need to have the
- * original symbol's name in the reloc.  */
-int kvx_fix_adjustable(fix)
-fixS *fix;
-{
-    if (emit_all_relocs)
-        return 0;
-
-#if defined (OBJ_ELF) || defined (OBJ_MAYBE_ELF)
-    /* Prevent all adjustments to global symbols, or else ELF dynamic
-     * linking will not work correctly.  */
-    if (S_IS_EXTERNAL(fix->fx_addsy)
-            || S_IS_WEAK(fix->fx_addsy))
-        return 0;
-#endif
-    switch (fix->fx_r_type)
-    {
-        default:
-            break;
-            /*
-             * case BFD_RELOC_KVX_FPTR32:
-             * case BFD_RELOC_KVX_GOTOFF_FPTR_HI23:
-             * case BFD_RELOC_KVX_GOTOFF_FPTR_LO9:
-             */
-        case BFD_RELOC_KVX_32_GOTOFF:
-        case BFD_RELOC_KVX_S37_GOTOFF_UP27:
-        case BFD_RELOC_KVX_S37_GOTOFF_LO10:
-
-        case BFD_RELOC_KVX_64_GOTOFF:
-        case BFD_RELOC_KVX_S43_GOTOFF_UP27:
-        case BFD_RELOC_KVX_S43_GOTOFF_LO10:
-        case BFD_RELOC_KVX_S43_GOTOFF_EX6:
-
-        case BFD_RELOC_KVX_32_GOT:
-        case BFD_RELOC_KVX_64_GOT:
-        case BFD_RELOC_KVX_S37_GOT_UP27:
-        case BFD_RELOC_KVX_S37_GOT_LO10:
-
-        /* case BFD_RELOC_KVX_S37_PLT_UP27: */
-        /* case BFD_RELOC_KVX_S37_PLT_LO10: */
-        /* case BFD_RELOC_KVX_FUNCDESC_GOT_LO10: */
-        /* case BFD_RELOC_KVX_FUNCDESC_GOT_UP27: */
-        /* case BFD_RELOC_KVX_FUNCDESC_GOTOFF_LO10: */
-        /* case BFD_RELOC_KVX_FUNCDESC_GOTOFF_UP27: */
-        /* case BFD_RELOC_KVX_FUNCDESC: */
-        case BFD_RELOC_KVX_GLOB_DAT:
-             /* case BFD_RELOC_KVX_GOTOFFX_HI23:
-             * case BFD_RELOC_KVX_GOTOFFX_LO9:             
-             * case BFD_RELOC_KVX_IPLT:
-             * case BFD_RELOC_KVX_JMP_SLOT:
-             */
-             return 0;
-    }
-
-    return 1;
- }
-
 
 /*
  * Return the Bundling type for an insn.
@@ -3043,19 +2976,11 @@ tc_gen_reloc(asection * sec ATTRIBUTE_UNUSED, fixS * fixp)
      * I also do not understand why it was necessary to move the emit_all_relocs
      * condition to write.c.
      */
-    if (emit_all_relocs) {
-        /* Thierry Bidault: This is done later in write.c to fix a bug */
-        /*       if (!((fixp->fx_addsy->bsym->flags & BSF_SECTION_SYM) == 0 */
-        /*        && (!reloc->howto->partial_inplace */
-        /*            || reloc->addend == 0))) */
-        /*    reloc->addend -= fixp->fx_addsy->bsym->value; */
-    }
-    else {
-        if (S_IS_EXTERNAL(fixp->fx_addsy)  &&
-                !S_IS_COMMON(fixp->fx_addsy) &&
-                reloc->howto->partial_inplace)
-            reloc->addend -= symbol_get_bfdsym(fixp->fx_addsy)->value;
-    }
+
+    if (S_IS_EXTERNAL(fixp->fx_addsy)  &&
+        !S_IS_COMMON(fixp->fx_addsy) &&
+        reloc->howto->partial_inplace)
+      reloc->addend -= symbol_get_bfdsym(fixp->fx_addsy)->value;
 
     return reloc;
 }
@@ -3195,16 +3120,11 @@ kvx_md_start_line_hook(void) {
                 }
                 newline_seen = FALSE; /* reset */
 
-                /* For cores st231 and onward, empty bundles don't need to cause the
-                 * generation of a NOP instruction. Just ignore them...
-                 */
-                if ((kvx_core_info->elf_cores[subcore_id] & ELF_KVX_CORE_MASK) !=
-                        -6) {
-                    /* this is an empty bundle, transform it into an
-                     * empty statement */
-                    tmp_t[0] = ';';
-                    tmp_t[1] = ' ';
-                }
+                /* this is an empty bundle, transform it into an
+                 * empty statement */
+                tmp_t[0] = ';';
+                tmp_t[1] = ' ';
+
                 tmp_t += 2;
             } else {
                 break;
@@ -3806,7 +3726,7 @@ kvx_proc(int start ATTRIBUTE_UNUSED)
     /* marking the end of it is _foo$endproc                              */
     /* It is also required for generation of .size directive in kvx_endp() */
 
-    if ((emit_all_relocs) || (size_type_function))
+    if (size_type_function)
     {
         update_last_proc_sym = 1;
     }
@@ -3821,40 +3741,28 @@ kvx_force_reloc(fixS * fixP)
     if (generic_force_reloc(fixP))
         return 1;
 
-    if (!emit_all_relocs)
+    switch (fixP->fx_r_type)
       {
-        switch (fixP->fx_r_type)
-          {
-            case BFD_RELOC_KVX_32_GOTOFF:
-            case BFD_RELOC_KVX_S37_GOTOFF_UP27:
-            case BFD_RELOC_KVX_S37_GOTOFF_LO10:
+      case BFD_RELOC_KVX_32_GOTOFF:
+      case BFD_RELOC_KVX_S37_GOTOFF_UP27:
+      case BFD_RELOC_KVX_S37_GOTOFF_LO10:
 
-            case BFD_RELOC_KVX_64_GOTOFF:
-            case BFD_RELOC_KVX_S43_GOTOFF_UP27:
-            case BFD_RELOC_KVX_S43_GOTOFF_LO10:
-            case BFD_RELOC_KVX_S43_GOTOFF_EX6:
+      case BFD_RELOC_KVX_64_GOTOFF:
+      case BFD_RELOC_KVX_S43_GOTOFF_UP27:
+      case BFD_RELOC_KVX_S43_GOTOFF_LO10:
+      case BFD_RELOC_KVX_S43_GOTOFF_EX6:
 
-            case BFD_RELOC_KVX_32_GOT:
-            case BFD_RELOC_KVX_64_GOT:
-            case BFD_RELOC_KVX_S37_GOT_UP27:
-            case BFD_RELOC_KVX_S37_GOT_LO10:
+      case BFD_RELOC_KVX_32_GOT:
+      case BFD_RELOC_KVX_64_GOT:
+      case BFD_RELOC_KVX_S37_GOT_UP27:
+      case BFD_RELOC_KVX_S37_GOT_LO10:
 
-            /* case BFD_RELOC_KVX_S37_PLT_UP27: */
-            /* case BFD_RELOC_KVX_S37_PLT_LO10: */
+      case BFD_RELOC_KVX_GLOB_DAT:
+        return 1;
+      default:
+        return 0;
+      }
 
-            case BFD_RELOC_KVX_GLOB_DAT:
-              
- /* case BFD_RELOC_KVX_GOTOFFX_HI23:
-  * case BFD_RELOC_KVX_GOTOFFX_LO9:
-  * case BFD_RELOC_KVX_FPTR32:  
-  * case BFD_RELOC_KVX_GOTOFF_FPTR_HI23:
-  * case BFD_RELOC_KVX_GOTOFF_FPTR_LO9:
-  */
-              return 1;
-            default:
-                return 0;
-        }
-    }
     sym = fixP->fx_addsy;
     if (sym)
     {
@@ -3876,35 +3784,29 @@ kvx_force_reloc_sub_same(fixS * fixP, segT sec)
     if (generic_force_reloc(fixP))
         return 1;
 
-    if (!emit_all_relocs)
-    {
-        switch (fixP->fx_r_type)
-        {
-          case BFD_RELOC_KVX_32_GOTOFF:
-          case BFD_RELOC_KVX_S37_GOTOFF_UP27:
-          case BFD_RELOC_KVX_S37_GOTOFF_LO10:
+    switch (fixP->fx_r_type)
+      {
+      case BFD_RELOC_KVX_32_GOTOFF:
+      case BFD_RELOC_KVX_S37_GOTOFF_UP27:
+      case BFD_RELOC_KVX_S37_GOTOFF_LO10:
 
-          case BFD_RELOC_KVX_64_GOTOFF:
-          case BFD_RELOC_KVX_S43_GOTOFF_UP27:
-          case BFD_RELOC_KVX_S43_GOTOFF_LO10:
-          case BFD_RELOC_KVX_S43_GOTOFF_EX6:
+      case BFD_RELOC_KVX_64_GOTOFF:
+      case BFD_RELOC_KVX_S43_GOTOFF_UP27:
+      case BFD_RELOC_KVX_S43_GOTOFF_LO10:
+      case BFD_RELOC_KVX_S43_GOTOFF_EX6:
 
-          case BFD_RELOC_KVX_32_GOT:
-          case BFD_RELOC_KVX_64_GOT:
-          case BFD_RELOC_KVX_S37_GOT_UP27:
-          case BFD_RELOC_KVX_S37_GOT_LO10:
-//           case BFD_RELOC_KVX_PCREL_HI22:
-//           case BFD_RELOC_KVX_PCREL_LO10:
+      case BFD_RELOC_KVX_32_GOT:
+      case BFD_RELOC_KVX_64_GOT:
+      case BFD_RELOC_KVX_S37_GOT_UP27:
+      case BFD_RELOC_KVX_S37_GOT_LO10:
 
-          /* case BFD_RELOC_KVX_S37_PLT_UP27: */
-          /* case BFD_RELOC_KVX_S37_PLT_LO10: */
-          case BFD_RELOC_KVX_GLOB_DAT:
-            return 1;
+      case BFD_RELOC_KVX_GLOB_DAT:
+        return 1;
 
-          default:
-            return 0;
-        }
-    }
+      default:
+        return 0;
+      }
+
     sym = fixP->fx_addsy;
     if (sym)
     {
