@@ -101,18 +101,26 @@ enum kvx_abi_type
 	}                                                                      \
     }
 
-#define PARM_BOUNDARY 64
-
 /* We handle the alignment of automatic variables in kvx_compute_frame_info */
 #define STACK_ALIGNMENT_NEEDED 0
 
+/* Normal alignment required for function parameters on the stack, in bits.  */
+#define PARM_BOUNDARY 64
+
+/* The minimum alignment for the stack pointer on this machine.  */
 #define STACK_BOUNDARY 256
+
+/* Biggest alignment that any data type can require on this machine, in bits. */
 #define BIGGEST_ALIGNMENT 256
 
 /* Alignment required for a function entry point, in bits.  */
 #define FUNCTION_BOUNDARY 64
 
 #define PCC_BITFIELD_TYPE_MATTERS 1
+
+/* An integer expression for the size in bits of the largest integer machine
+   mode that should actually be used.  */
+#define MAX_FIXED_MODE_SIZE 64
 
 /* Make strings word-aligned so strcpy from constants will be faster.  */
 #define CONSTANT_ALIGNMENT(EXP, ALIGN)                                         \
@@ -689,14 +697,43 @@ extern void kvx_profile_hook (void);
  are resolved during assembly */
 #define JUMP_TABLES_IN_TEXT_SECTION (flag_pic || CASE_VECTOR_PC_RELATIVE)
 
-/* The maximum number of bytes that a single instruction can move quickly from
-   memory to memory.  */
-#define MOVE_MAX 8
+/* Define this macro to 1 if operations between registers with integral mode
+ * smaller than a word are always performed on the entire register.  */
+#define WORD_REGISTER_OPERATIONS 1
+
+/* Define this macro to be a C expression indicating when insns that read memory
+ * in mem mode, an integral mode narrower than a word, set the bits outside of
+ * mem mode to be either the sign-extension or the zero-extension of the data
+ * read.  */
+#define LOAD_EXTEND_OP(MODE) ZERO_EXTEND
+
+/* Define this macro to 1 if loading short immediate values into registers sign
+ * extends.
+ */
+#define SHORT_IMMEDIATES_SIGN_EXTEND 1
+
+/* A C expression that is nonzero if on this machine the number of bits actually
+ * used for the count of a shift operation is equal to the number of bits needed
+ * to represent the size of the object being shifted.  */
+#define SHIFT_COUNT_TRUNCATED 1
 
 /* A C expression which is nonzero if on this machine it is safe to "convert"
    an integer of INPREC bits to one of OUTPREC bits (where OUTPREC is smaller
    than INPREC) by merely operating on it as if it had only OUTPREC bits.  */
 #define TRULY_NOOP_TRUNCATION(OUTPREC, INPREC) 1
+
+/* The maximum number of bytes that a single instruction can move quickly from
+   memory to memory.  */
+#define MOVE_MAX 8
+
+#define STORE_FLAG_VALUE 1
+
+/* A C expression that indicates whether the architecture defines a
+   value for clz or ctz with a zero operand.  */
+#define CLZ_DEFINED_VALUE_AT_ZERO(mode, value)                                 \
+  (mode == SImode ? (value = 32, 1) : (mode == DImode ? (value = 64, 1) : 0))
+#define CTZ_DEFINED_VALUE_AT_ZERO(mode, value)                                 \
+  CLZ_DEFINED_VALUE_AT_ZERO (mode, value)
 
 /* An alias for the machine mode for pointers.  */
 #define Pmode (TARGET_32 ? SImode : DImode)
@@ -751,50 +788,13 @@ extern void kvx_profile_hook (void);
 #undef PRINT_OPERAND_PUNCT_VALID_P
 #define PRINT_OPERAND_PUNCT_VALID_P kvx_print_punct_valid_p
 
-#undef STORE_FLAG_VALUE
-#define STORE_FLAG_VALUE 1
-
-#undef VECTOR_STORE_FLAG_VALUE
-#define VECTOR_STORE_FLAG_VALUE(MODE) constm1_rtx
-
-/* A C expression that indicates whether the architecture defines a
-   value for clz or ctz with a zero operand. A result of 0 indicates
-   the value is undefined. If the value is defined for only the RTL
-   expression, the macro should evaluate to 1; if the value applies
-   also to the corresponding optab entry (which is normally the case
-   if it expands directly into the corresponding RTL), then the macro
-   should evaluate to 2. In the cases where the value is defined,
-   value should be set to this value.
-
-   If this macro is not defined, the value of clz or ctz at zero is
-   assumed to be undefined.
-
-   This macro must be defined if the target's expansion for ffs relies
-   on a particular value to get correct results. Otherwise it is not
-   necessary, though it may be used to optimize some corner cases, and
-   to provide a default expansion for the ffs optab.
-
-   Note that regardless of this macro the “definedness” of clz and ctz
-   at zero do not extend to the builtin functions visible to the
-   user. Thus one may be free to adjust the value at will to match the
-   target expansion of these operations without fear of breaking the
-   API. */
-#define CLZ_DEFINED_VALUE_AT_ZERO(mode, value)                                 \
-  (mode == SImode ? (value = 32, 1) : (mode == DImode ? (value = 64, 1) : 0))
-#define CTZ_DEFINED_VALUE_AT_ZERO(mode, value)                                 \
-  CLZ_DEFINED_VALUE_AT_ZERO (mode, value)
-
-/* Copy/paste from cr16 port
-   Macros to check the range of integers . These macros are used across
-   the port, majorly in constraints.md, predicates.md files. */
+/* Macros to check the range of integers that fit into HOST_WIDE_INT. */
 #define SIGNED_INT_FITS_N_BITS(imm, N)                                         \
-  ((((imm) < ((HOST_WIDE_INT) 1 << ((N) -1)))                                  \
-    && ((imm) >= -((HOST_WIDE_INT) 1 << ((N) -1))))                            \
-     ? 1                                                                       \
-     : 0)
+  ((HOST_WIDE_INT) (imm) < ((HOST_WIDE_INT) 1 << ((N) -1))                     \
+   && (HOST_WIDE_INT) (imm) >= -((HOST_WIDE_INT) 1 << ((N) -1)))
 
 #define UNSIGNED_INT_FITS_N_BITS(imm, N)                                       \
-  (((imm) < ((HOST_WIDE_INT) 1 << (N)) && (imm) >= (HOST_WIDE_INT) 0) ? 1 : 0)
+  ((unsigned HOST_WIDE_INT) (imm) < ((unsigned HOST_WIDE_INT) 1 << (N)))
 
 #define kvx_strict_to_nonstrict_comparison_operator(code)                      \
   __extension__({                                                              \
@@ -834,8 +834,6 @@ extern void kvx_profile_hook (void);
   })
 
 #define TARGET_SUPPORTS_WIDE_INT 1
-
-#define SHIFT_COUNT_TRUNCATED 1
 
 /* Address spaces
 
