@@ -7995,35 +7995,35 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "kvx_fmm2wq"
+(define_insn "kvx_fmm212w"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (unspec:V4SF [(match_operand:V2SF 1 "register_operand" "r")
                       (match_operand:V2SF 2 "register_operand" "r")
-                      (match_operand 3 "" "")] UNSPEC_FMM2WQ))]
+                      (match_operand 3 "" "")] UNSPEC_FMM212W))]
   ""
-  "fmm2wq%3 %0 = %1, %2"
+  "fmm212w%3 %0 = %1, %2"
   [(set_attr "type" "mau_fpu")]
 )
 
-(define_insn "kvx_fmm2awq"
+(define_insn "kvx_fmma212w"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (unspec:V4SF [(match_operand:V2SF 1 "register_operand" "r")
                       (match_operand:V2SF 2 "register_operand" "r")
                       (match_operand:V4SF 3 "register_operand" "0")
-                      (match_operand 4 "" "")] UNSPEC_FMM2AWQ))]
+                      (match_operand 4 "" "")] UNSPEC_FMMA212W))]
   ""
-  "fmm2awq%4 %0 = %1, %2"
+  "fmma212w%4 %0 = %1, %2"
   [(set_attr "type" "mau_auxr_fpu")]
 )
 
-(define_insn "kvx_fmm2swq"
+(define_insn "kvx_fmms212w"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (unspec:V4SF [(match_operand:V2SF 1 "register_operand" "r")
                       (match_operand:V2SF 2 "register_operand" "r")
                       (match_operand:V4SF 3 "register_operand" "0")
-                      (match_operand 4 "" "")] UNSPEC_FMM2SWQ))]
+                      (match_operand 4 "" "")] UNSPEC_FMMS212W))]
   ""
-  "fmm2swq%4 %0 = %1, %2"
+  "fmms212w%4 %0 = %1, %2"
   [(set_attr "type" "mau_auxr_fpu")]
 )
 

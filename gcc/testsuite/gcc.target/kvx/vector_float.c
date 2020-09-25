@@ -429,19 +429,19 @@ k1_float64x2_axpyb(int n, float64_t a, float64_t b, float64x2_t x[], float64x2_t
 }
 
 float32x4_t __attribute__ ((noinline))
-k1_float32x2_fmm2wq(float32x2_t a, float32x2_t b)
+k1_float32x2_fmm212w(float32x2_t a, float32x2_t b)
 {
-    return __builtin_kvx_fmm2wq(a, b, ".rn");
+    return __builtin_kvx_fmm212w(a, b, ".rn");
 }
 float32x4_t __attribute__ ((noinline))
-k1_float32x2_fmm2awq(float32x2_t a, float32x2_t b, float32x4_t c)
+k1_float32x2_fmma212w(float32x2_t a, float32x2_t b, float32x4_t c)
 {
-    return __builtin_kvx_fmm2awq(a, b, c, ".rn");
+    return __builtin_kvx_fmma212w(a, b, c, ".rn");
 }
 float32x4_t __attribute__ ((noinline))
-k1_float32x2_fmm2swq(float32x2_t a, float32x2_t b, float32x4_t c)
+k1_float32x2_fmms212w(float32x2_t a, float32x2_t b, float32x4_t c)
 {
-    return __builtin_kvx_fmm2swq(a, b, c, ".rn");
+    return __builtin_kvx_fmms212w(a, b, c, ".rn");
 }
 
 float32_t stof(signed int a) {
