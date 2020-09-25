@@ -112,8 +112,6 @@ extern int kvx_force_reloc_sub_same (struct fix *, segT);
   (!(FIX)->fx_pcrel					\
    || TC_FORCE_RELOCATION (FIX))
 
-extern int emit_all_relocs;
-
 /* This expression evaluates to false if the relocation is for a local object
    for which we still want to do the relocation at runtime.  True if we
    are willing to perform this relocation while building the .o file.
@@ -129,8 +127,8 @@ extern int emit_all_relocs;
        && S_IS_DEFINED ((FIX)->fx_addsy)			\
        && ! S_IS_COMMON ((FIX)->fx_addsy)))
 
-#define tc_fix_adjustable(fixP) kvx_fix_adjustable (fixP)
-extern int kvx_fix_adjustable (struct fix *);
+# define EXTERN_FORCE_RELOC 1
+#define tc_fix_adjustable(fixP) 1
 
 /* This arranges for gas/write.c to not apply a relocation if
    tc_fix_adjustable() says it is not adjustable.
