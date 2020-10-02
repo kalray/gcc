@@ -33,8 +33,6 @@
 
 #define ARCH_SIZE	NN
 
-#define KVX_DISABLE_IFUNC (1)
-
 #if ARCH_SIZE == 64
 #define LOG_FILE_ALIGN	3
 #endif
@@ -529,10 +527,6 @@ struct elf_kvx_link_hash_table
   unsigned int bfd_count;
   unsigned int top_index;
   asection **input_list;
-
-  /* Used by local STT_GNU_IFUNC symbols.  */
-  htab_t loc_hash_table; // FIXME update to be removed?
-  void * loc_hash_memory;// FIXME update to be removed?
 };
 
 /* Create an entry in an KVX ELF linker hash table.  */
@@ -604,32 +598,6 @@ stub_hash_newfunc (struct bfd_hash_entry *entry,
   return entry;
 }
 
-/* Compute a hash of a local hash entry.  We use elf_link_hash_entry
-  for local symbol so that we can handle local STT_GNU_IFUNC symbols
-  as global symbol.  We reuse indx and dynstr_index for local symbol
-  hash since they aren't used by global symbols in this backend.  */
-
-static hashval_t
-elfNN_kvx_local_htab_hash (const void *ptr)
-{
-  struct elf_link_hash_entry *h
-    = (struct elf_link_hash_entry *) ptr;
-  return ELF_LOCAL_SYMBOL_HASH (h->indx, h->dynstr_index);
-}
-
-/* Compare local hash entries.  */
-
-static int
-elfNN_kvx_local_htab_eq (const void *ptr1, const void *ptr2)
-{
-  struct elf_link_hash_entry *h1
-     = (struct elf_link_hash_entry *) ptr1;
-  struct elf_link_hash_entry *h2
-    = (struct elf_link_hash_entry *) ptr2;
-
-  return h1->indx == h2->indx && h1->dynstr_index == h2->dynstr_index;
-}
-
 /* Copy the extra info we tack onto an elf_link_hash_entry.  */
 
 static void
@@ -655,18 +623,13 @@ elfNN_kvx_copy_indirect_symbol (struct bfd_link_info *info,
   _bfd_elf_link_hash_copy_indirect (info, dir, ind);
 }
 
-/* Destroy an KVX elf linker hash table.  */
+/* Destroy a KVX elf linker hash table.  */
 
 static void
 elfNN_kvx_link_hash_table_free (bfd *obfd)
 {
   struct elf_kvx_link_hash_table *ret
     = (struct elf_kvx_link_hash_table *) obfd->link.hash;
-
-  if (ret->loc_hash_table)
-    htab_delete (ret->loc_hash_table);
-  if (ret->loc_hash_memory)
-    objalloc_free ((struct objalloc *) ret->loc_hash_memory);
 
   bfd_hash_table_free (&ret->stub_hash_table);
   _bfd_elf_link_hash_table_free (obfd);
@@ -705,17 +668,6 @@ elfNN_kvx_link_hash_table_create (bfd *abfd)
       return NULL;
     }
 
-  // FIXME this may be removed 
-  ret->loc_hash_table = htab_try_create (1024,
-					 elfNN_kvx_local_htab_hash,
-					 elfNN_kvx_local_htab_eq,
-					 NULL);
-  ret->loc_hash_memory = objalloc_create ();
-  if (!ret->loc_hash_table || !ret->loc_hash_memory)
-    {
-      elfNN_kvx_link_hash_table_free (abfd);
-      return NULL;
-    }
   ret->root.root.hash_table_free = elfNN_kvx_link_hash_table_free;
 
   return &ret->root.root;
@@ -2097,11 +2049,6 @@ elfNN_kvx_final_link_relocate (reloc_howto_type *howto,
   weak_undef_p = (h ? h->root.type == bfd_link_hash_undefweak
 		  : bfd_is_und_section (sym_sec));
 
-  /* Original AARCH64 code has code for IFUNC here */
-#if ! KVX_DISABLE_IFUNC
-#error IFUNC not ready
-#endif
-
   switch (bfd_r_type)
     {
     case BFD_RELOC_KVX_NN:
@@ -2607,10 +2554,6 @@ elfNN_kvx_relocate_section (bfd *output_bfd,
                                   input_bfd, input_section, rel->r_offset, TRUE);
 
 	  relocation = _bfd_elf_rela_local_sym (output_bfd, sym, &sec, rel);
-  /* Original AARCH64 code has code for IFUNC here */
-#if ! KVX_DISABLE_IFUNC
-#error IFUNC not ready
-#endif
 	}
       else
 	{
@@ -3117,11 +3060,10 @@ elfNN_kvx_adjust_dynamic_symbol (struct bfd_link_info *info,
   /* If this is a function, put it in the procedure linkage table.  We
      will fill in the contents of the procedure linkage table later,
      when we know the address of the .got section.  */
-  if (h->type == STT_FUNC || h->type == STT_GNU_IFUNC || h->needs_plt)
+  if (h->type == STT_FUNC || h->needs_plt)
     {
       if (h->plt.refcount <= 0
-	  || (h->type != STT_GNU_IFUNC
-	      && (SYMBOL_CALLS_LOCAL (info, h)
+	  || ((SYMBOL_CALLS_LOCAL (info, h)
 		  || (ELF_ST_VISIBILITY (h->other) != STV_DEFAULT
 		      && h->root.type == bfd_link_hash_undefweak))))
 	{
@@ -3339,11 +3281,7 @@ elfNN_kvx_check_relocs (bfd *abfd, struct bfd_link_info *info,
 	  if (isym == NULL)
 	    return FALSE;
 
-	  /* Original AARCH64 code has code for IFUNC here */
-#if ! KVX_DISABLE_IFUNC
-#error IFUNC not ready
-#endif
-	    h = NULL;
+          h = NULL;
 	}
       else
 	{
@@ -3847,11 +3785,7 @@ elfNN_kvx_allocate_dynrelocs (struct elf_link_hash_entry *h, void *inf)
   info = (struct bfd_link_info *) inf;
   htab = elf_kvx_hash_table (info);
 
-  /* Original AARCH64 code has code for IFUNC here */
-#if ! KVX_DISABLE_IFUNC
-#error IFUNC not ready
-#endif
-    if (htab->root.dynamic_sections_created && h->plt.refcount > 0)
+  if (htab->root.dynamic_sections_created && h->plt.refcount > 0)
     {
       /* Make sure this symbol is output as a dynamic symbol.
          Undefined weak syms won't yet be marked as dynamic.  */
@@ -4092,59 +4026,13 @@ elfNN_kvx_allocate_dynrelocs (struct elf_link_hash_entry *h, void *inf)
   return TRUE;
 }
 
-/* Allocate space in .plt, .got and associated reloc sections for
-   ifunc dynamic relocs.  */
-#if ! KVX_DISABLE_IFUNC
-  /* Original AARCH64 code has code for IFUNC here */
-#error IFUNC not ready
-
-static bfd_boolean
-elfNN_kvx_allocate_ifunc_dynrelocs (struct elf_link_hash_entry *h,
-					void *inf)
-{
-}
-#endif /* KVX_DISABLE_IFUNC */
-
-/* Allocate space in .plt, .got and associated reloc sections for
-   local dynamic relocs.  */
-
-static bfd_boolean
-elfNN_kvx_allocate_local_dynrelocs (void **slot, void *inf)
-{
-  struct elf_link_hash_entry *h
-    = (struct elf_link_hash_entry *) *slot;
-
-  if (h->type != STT_GNU_IFUNC
-      || !h->def_regular
-      || !h->ref_regular
-      || !h->forced_local
-      || h->root.type != bfd_link_hash_defined)
-    abort ();
-
-  return elfNN_kvx_allocate_dynrelocs (h, inf);
-}
-
-/* Allocate space in .plt, .got and associated reloc sections for
-   local ifunc dynamic relocs.  */
-#if ! KVX_DISABLE_IFUNC
-  /* Original AARCH64 code has code for IFUNC here */
-#error IFUNC not ready
-static bfd_boolean
-elfNN_kvx_allocate_local_ifunc_dynrelocs (void **slot, void *inf)
-{
-}
-#endif /* KVX_DISABLE_IFUNC */
-
 /* Find any dynamic relocs that apply to read-only sections.  */
 
 static bfd_boolean
 kvx_readonly_dynrelocs (struct elf_link_hash_entry * h, void * inf)
 {
-  //  struct elf_kvx_link_hash_entry * eh;
   struct elf_dyn_relocs * p;
 
-  //  eh = (struct elf_kvx_link_hash_entry *) h;
-  //  for (p = eh->dyn_relocs; p != NULL; p = p->next)
   for (p = h->dyn_relocs; p != NULL; p = p->next)
     {
       asection *s = p->sec;
@@ -4279,24 +4167,6 @@ elfNN_kvx_size_dynamic_sections (bfd *output_bfd ATTRIBUTE_UNUSED,
      sym dynamic relocs.  */
   elf_link_hash_traverse (&htab->root, elfNN_kvx_allocate_dynrelocs,
 			  info);
-
-  /* Allocate global ifunc sym .plt and .got entries, and space for global
-     ifunc sym dynamic relocs.  */
-#if ! KVX_DISABLE_IFUNC
-  /* Original AARCH64 code has code for IFUNC here */
-#error IFUNC not ready
-#endif /* KVX_DISABLE_IFUNC */
-
-  /* Allocate .plt and .got entries, and space for local symbols.  */
-  htab_traverse (htab->loc_hash_table,
-		 elfNN_kvx_allocate_local_dynrelocs,
-		 info);
-
-  /* Allocate .plt and .got entries, and space for local ifunc symbols.  */
-#if ! KVX_DISABLE_IFUNC
-  /* Original AARCH64 code has code for IFUNC here */
-#error IFUNC not ready
-#endif /* KVX_DISABLE_IFUNC */
 
   /* For every jump slot reserved in the sgotplt, reloc_count is
      incremented.  However, when we reserve space for TLS descriptors,
@@ -4443,20 +4313,9 @@ elfNN_kvx_create_small_pltn_entry (struct elf_link_hash_entry *h,
   bfd_byte *loc;
   asection *plt, *gotplt, *relplt;
 
-  /* When building a static executable, use .iplt, .igot.plt and
-     .rela.iplt sections for STT_GNU_IFUNC symbols.  */
-  if (htab->root.splt != NULL)
-    {
-      plt = htab->root.splt;
-      gotplt = htab->root.sgotplt;
-      relplt = htab->root.srelplt;
-    }
-  else
-    {
-      plt = htab->root.iplt;
-      gotplt = htab->root.igotplt;
-      relplt = htab->root.irelplt;
-    }
+  plt = htab->root.splt;
+  gotplt = htab->root.sgotplt;
+  relplt = htab->root.srelplt;
 
   /* Get the index in the procedure linkage table which
      corresponds to this symbol.  This is the index of this symbol
@@ -4506,15 +4365,9 @@ elfNN_kvx_create_small_pltn_entry (struct elf_link_hash_entry *h,
 
   rela.r_offset = gotplt_entry_address;
 
-  /* Original AARCH64 code has code for IFUNC here */
-#if ! KVX_DISABLE_IFUNC
-#error IFUNC not ready
-#endif
-    {
-      /* Fill in the entry in the .rela.plt section.  */
-      rela.r_info = ELFNN_R_INFO (h->dynindx, R_KVX_JMP_SLOT);
-      rela.r_addend = 0;
-    }
+  /* Fill in the entry in the .rela.plt section.  */
+  rela.r_info = ELFNN_R_INFO (h->dynindx, R_KVX_JMP_SLOT);
+  rela.r_addend = 0;
 
   /* Compute the relocation entry to used based on PLT index and do
      not adjust reloc_count. The reloc_count has already been adjusted
@@ -4584,18 +4437,12 @@ elfNN_kvx_finish_dynamic_symbol (bfd *output_bfd,
       /* This symbol has an entry in the procedure linkage table.  Set
          it up.  */
 
-      /* When building a static executable, use .iplt, .igot.plt and
-	 .rela.iplt sections for STT_GNU_IFUNC symbols.  */
       if (htab->root.splt != NULL)
 	{
 	  plt = htab->root.splt;
 	  gotplt = htab->root.sgotplt;
 	  relplt = htab->root.srelplt;
 	}
-#if ! KVX_DISABLE_IFUNC
-  /* Original AARCH64 code has code for IFUNC here */
-#error IFUNC not ready
-#endif /* KVX_DISABLE_IFUNC */
 
       /* This symbol has an entry in the procedure linkage table.  Set
 	 it up.	 */
@@ -4651,10 +4498,6 @@ elfNN_kvx_finish_dynamic_symbol (bfd *output_bfd,
 	     h->root.root.string);
 #endif
 
-#if ! KVX_DISABLE_IFUNC
-  /* Original AARCH64 code has code for IFUNC here */
-#error IFUNC not ready
-#endif /* KVX_DISABLE_IFUNC */
 	if (bfd_link_pic (info) && SYMBOL_REFERENCES_LOCAL (info, h))
 	{
 	  if (!h->def_regular)
@@ -4717,21 +4560,6 @@ elfNN_kvx_finish_dynamic_symbol (bfd *output_bfd,
     sym->st_shndx = SHN_ABS;
 
   return TRUE;
-}
-
-/* Finish up local dynamic symbol handling.  We set the contents of
-   various dynamic sections here.  */
-
-static bfd_boolean
-elfNN_kvx_finish_local_dynamic_symbol (void **slot, void *inf)
-{
-  struct elf_link_hash_entry *h
-    = (struct elf_link_hash_entry *) *slot;
-  struct bfd_link_info *info
-    = (struct bfd_link_info *) inf;
-
-  return elfNN_kvx_finish_dynamic_symbol (info->output_bfd,
-					      info, h, NULL);
 }
 
 static void
@@ -4862,11 +4690,6 @@ elfNN_kvx_finish_dynamic_sections (bfd *output_bfd,
   if (htab->root.sgot && htab->root.sgot->size > 0)
     elf_section_data (htab->root.sgot->output_section)->this_hdr.sh_entsize
       = GOT_ENTRY_SIZE;
-
-  /* Fill PLT and GOT entries for local STT_GNU_IFUNC symbols.  */
-  htab_traverse (htab->loc_hash_table,
-		 elfNN_kvx_finish_local_dynamic_symbol,
-		 info);
 
   return TRUE;
 }
