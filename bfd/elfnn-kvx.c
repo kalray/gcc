@@ -2142,7 +2142,7 @@ elfNN_kvx_final_link_relocate (reloc_howto_type *howto,
 		(*_bfd_error_handler)
                         /* xgettext:c-format */
                         (_("%pB(%pA+%#" PRIx64 "): "
-                                "unresolvable %s relocation in section `%pA'"),
+                                "unresolvable %s relocation in section `%s'"),
                                 input_bfd, input_section, (uint64_t) rel->r_offset, howto->name,
                                 name);
 		return bfd_reloc_notsupported;
