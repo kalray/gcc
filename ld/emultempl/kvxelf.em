@@ -29,6 +29,20 @@ fragment <<EOF
 #include "elf/kv3.h"
 #include "elfxx-kvx.h"
 
+
+static void
+elf${ELFSIZE}_kvx_before_allocation (void)
+{
+  if (bfd_link_pie (&link_info)) {
+          einfo (_("%F:%P: -pie not supported\n"));
+  }
+
+  /* Call the standard elf routine.  */
+  gld${EMULATION_NAME}_before_allocation ();
+}
+
+
+
 /* Fake input file for stubs.  */
 static lang_input_statement_type *stub_file;
 
@@ -289,6 +303,7 @@ kvx_elf_create_output_section_statements (void)
 
 EOF
 
+LDEMUL_BEFORE_ALLOCATION=elf${ELFSIZE}_kvx_before_allocation
 LDEMUL_AFTER_ALLOCATION=gld${EMULATION_NAME}_after_allocation
 LDEMUL_CREATE_OUTPUT_SECTION_STATEMENTS=kvx_elf_create_output_section_statements
 
