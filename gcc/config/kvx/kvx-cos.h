@@ -41,18 +41,22 @@
 /* Link against Newlib libraries, because the COS backend assumes Newlib.
    Handle the circular dependence between libc and libgloss.
    Link against MPPA Bare Runtime
+
+   In case of -shared, do not use any library nor linker scripts as nothing is
+   provided.
  */
 #undef LIB_SPEC
 #define LIB_SPEC                                                               \
-  "--start-group -lc -lmppacos -lmppa_rsrc -lgloss -lmppa_fdt --end-group "    \
-  "%{!nostartfiles:%{!nodefaultlibs:%{!nostdlib:%{!T*:-Tmppacos.ld}}}}"
+  "%{!shared:--start-group -lc -lmppacos -lmppa_rsrc -lgloss -lmppa_fdt --end-group " \
+  "%{!nostartfiles:%{!nodefaultlibs:%{!nostdlib:%{!T*:-Tmppacos.ld}}}}}"
 
 #undef LINK_SPEC
 #define LINK_SPEC                                                              \
   LINK_SPEC_COMMON                                                             \
-  "%{pthread:}"
+  "%{pthread:}"								\
+  "%{fpie|fPIE|pie:%ePIE (-fpie -pie -fPIE) is not supported in this configuration}"
 
-#define TARGET_OS_CPP_BUILTINS()                                               \
+#define TARGET_OS_CPP_BUILTINS()		\
   do                                                                           \
     {                                                                          \
       builtin_define ("__CLUSTER_OS__");                                       \
