@@ -20,7 +20,7 @@
 // 21.3.3 string capacity
 
 // { dg-options "-DMAX_SIZE=16" { target simulator } }
-
+// { dg-skip-if "Disabled on KVX until bug in simulator fixed" { "kvx-*-*" }  { "*" } { "" } } */
 #ifndef MAX_SIZE
 #define MAX_SIZE 20
 #endif
