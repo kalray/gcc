@@ -17,6 +17,8 @@
 // with this library; see the file COPYING3.  If not see
 // <http://www.gnu.org/licenses/>.
 
+// { dg-skip-if "Disabled on KVX until bug in simulator fixed" { "kvx-*-*" }  { "*" } { "" } } */
+
 #include <algorithm>
 #include <deque>
 #include <testsuite_hooks.h>
