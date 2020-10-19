@@ -80,7 +80,7 @@ enum reg_class {
 	"pc",	"ps",	"pcr",	"ra",	"cs",	"csit",	"aespc",	"ls", \
 	"le",	"lc",	"ipe",	"men",	"pmc",	"pm0",	"pm1",	"pm2", \
 	"pm3",	"pmsa",	"tcr",	"t0v",	"t1v",	"t0r",	"t1r",	"wdv", \
-	"wdr",	"ile",	"ill",	"ilr",	"mmc",	"tel",	"teh",	"res31", \
+	"wdr",	"ile",	"ill",	"ilr",	"mmc",	"tel",	"teh",	"ixc", \
 	"syo",	"hto",	"ito",	"do",	"mo",	"pso",	"res38",	"res39", \
 	"dc",	"dba0",	"dba1",	"dwa0",	"dwa1",	"mes",	"ws",	"res47", \
 	"res48",	"res49",	"res50",	"res51",	"res52",	"res53",	"res54",	"res55", \
@@ -88,7 +88,7 @@ enum reg_class {
 	"spc_pl0",	"spc_pl1",	"spc_pl2",	"spc_pl3",	"sps_pl0",	"sps_pl1",	"sps_pl2",	"sps_pl3", \
 	"ea_pl0",	"ea_pl1",	"ea_pl2",	"ea_pl3",	"ev_pl0",	"ev_pl1",	"ev_pl2",	"ev_pl3", \
 	"sr_pl0",	"sr_pl1",	"sr_pl2",	"sr_pl3",	"es_pl0",	"es_pl1",	"es_pl2",	"es_pl3", \
-	"res88",	"res89",	"res90",	"res91",	"res92",	"res93",	"res94",	"res95", \
+	"sid_pl0",	"sid_pl1",	"sid_pl2",	"sid_pl3",	"res92",	"res93",	"res94",	"res95", \
 	"syow",	"htow",	"itow",	"dow",	"mow",	"psow",	"res102",	"res103", \
 	"res104",	"res105",	"res106",	"res107",	"res108",	"res109",	"res110",	"res111", \
 	"res112",	"res113",	"res114",	"res115",	"res116",	"res117",	"res118",	"res119", \
@@ -96,7 +96,7 @@ enum reg_class {
 	"spc",	"res129",	"res130",	"res131",	"sps",	"res133",	"res134",	"res135", \
 	"ea",	"res137",	"res138",	"res139",	"ev",	"res141",	"res142",	"res143", \
 	"sr",	"res145",	"res146",	"res147",	"es",	"res149",	"res150",	"res151", \
-	"res152",	"res153",	"res154",	"res155",	"res156",	"res157",	"res158",	"res159", \
+	"sid",	"res153",	"res154",	"res155",	"res156",	"res157",	"res158",	"res159", \
 	"res160",	"res161",	"res162",	"res163",	"res164",	"res165",	"res166",	"res167", \
 	"res168",	"res169",	"res170",	"res171",	"res172",	"res173",	"res174",	"res175", \
 	"res176",	"res177",	"res178",	"res179",	"res180",	"res181",	"res182",	"res183", \
