@@ -1194,17 +1194,23 @@ match_operands(const kv3opc_t * op, const expressionS * tok,
             case RegClass_kv3_quadReg:
                 MATCH_KVX_REGFILE(tok[jj],IS_KVX_REGFILE_QGR)
             case RegClass_kv3_systemReg:
+            case RegClass_v2_systemReg:
 		 if( ! allow_all_sfr ) {
 		      /* If option all-sfr not set, doest not match systemReg for SET/GET/WFX: used only for HW validation. */
 		      return MATCH_NOT_FOUND;
 		 }
                  /* fallthrough */
             case RegClass_kv3_aloneReg:
+            case RegClass_v2_aloneReg:
             case RegClass_kv3_onlyraReg:
             case RegClass_kv3_onlyfxReg:
+            case RegClass_v2_onlyfxReg:
             case RegClass_kv3_onlygetReg:
+            case RegClass_v2_onlygetReg:
             case RegClass_kv3_onlysetReg:
+            case RegClass_v2_onlysetReg:
 	    case RegClass_kv3_onlyswapReg:
+	    case RegClass_v2_onlyswapReg:
                 MATCH_KVX_REGFILE(tok[jj],IS_KVX_REGFILE_SFR)
             case RegClass_kv3_coproReg:
             case RegClass_kv3_coproReg0M4:
@@ -1246,6 +1252,7 @@ match_operands(const kv3opc_t * op, const expressionS * tok,
             case Immediate_kv3_signed43:
             case Immediate_kv3_signed54:
             case Immediate_kv3_wrapped64:
+            case Immediate_kv3_brknumber:
             case Immediate_kv3_sysnumber:
             case Immediate_kv3_unsigned6:
                 if(tok[jj].X_op == O_symbol || tok[jj].X_op == O_pseudo_fixup){
@@ -1969,12 +1976,18 @@ insn_syntax(kv3opc_t *op, char *buf, int buf_size)
       chars += snprintf(&buf[chars], buf_size - chars, "prf");
       break;
     case RegClass_kv3_systemReg:
+    case RegClass_v2_systemReg:
     case RegClass_kv3_aloneReg:
+    case RegClass_v2_aloneReg:
     case RegClass_kv3_onlyraReg:
     case RegClass_kv3_onlyfxReg:
+    case RegClass_v2_onlyfxReg:
     case RegClass_kv3_onlygetReg:
+    case RegClass_v2_onlygetReg:
     case RegClass_kv3_onlysetReg:
+    case RegClass_v2_onlysetReg:
     case RegClass_kv3_onlyswapReg:
+    case RegClass_v2_onlyswapReg:
       chars += snprintf(&buf[chars], buf_size - chars, "srf");
       break;
     case RegClass_kv3_coproReg:
@@ -2014,6 +2027,7 @@ insn_syntax(kv3opc_t *op, char *buf, int buf_size)
     case Immediate_kv3_signed37:
     case Immediate_kv3_signed43:
     case Immediate_kv3_wrapped64:
+    case Immediate_kv3_brknumber:
     case Immediate_kv3_sysnumber:
     case Immediate_kv3_unsigned6:
       if(flags & kvxSIGNED){

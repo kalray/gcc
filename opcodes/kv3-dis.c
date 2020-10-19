@@ -492,11 +492,16 @@ int print_insn_kvx (bfd_vma memaddr, struct disassemble_info *info){
                       KVX_PRINT_REG(KVX_REGFILE_DEC_QGR,value)
                       break;
                   case RegClass_kv3_systemReg:
+                  case RegClass_v2_systemReg:
                   case RegClass_kv3_aloneReg:
+                  case RegClass_v2_aloneReg:
                   case RegClass_kv3_onlyraReg:
                   case RegClass_kv3_onlygetReg:
+                  case RegClass_v2_onlygetReg:
                   case RegClass_kv3_onlysetReg:
+                  case RegClass_v2_onlysetReg:
                   case RegClass_kv3_onlyfxReg:
+                  case RegClass_v2_onlyfxReg:
                       KVX_PRINT_REG(KVX_REGFILE_DEC_SFR,value)
                       break;
                   case RegClass_kv3_coproReg:
@@ -533,6 +538,7 @@ int print_insn_kvx (bfd_vma memaddr, struct disassemble_info *info){
                       KVX_PRINT_REG(KVX_REGFILE_DEC_XMR,value)
                       break;
 
+                  case Immediate_kv3_brknumber:
                   case Immediate_kv3_sysnumber:
                   case Immediate_kv3_signed6:
                   case Immediate_kv3_signed10:
