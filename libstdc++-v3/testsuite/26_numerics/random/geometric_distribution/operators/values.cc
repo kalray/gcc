@@ -20,6 +20,8 @@
 
 // 26.5.8.2.3 Class template geometric_distribution [rand.dist.bern.geom]
 
+// { dg-skip-if "Disabled on KVX until bug in simulator fixed" { "kvx-*-*" }  { "*" } { "" } }
+
 #include <random>
 #include <functional>
 #include <testsuite_random.h>
