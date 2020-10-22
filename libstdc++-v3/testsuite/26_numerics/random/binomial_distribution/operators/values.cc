@@ -21,6 +21,8 @@
 
 // 26.5.8.2.2 Class template binomial_distribution [rand.dist.bern.bin]
 
+// { dg-skip-if "Disabled on KVX until bug in simulator fixed" { "kvx-*-*" }  { "*" } { "" } }
+
 #include <random>
 #include <functional>
 #include <testsuite_random.h>
