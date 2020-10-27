@@ -43,4 +43,6 @@
      %{!shared:-dynamic-linker " GNU_USER_DYNAMIC_LINKER64 "}} \
    -X"
 
+#undef CPP_SPEC
+#define CPP_SPEC "%{pthread:-D_REENTRANT}"
 #endif
