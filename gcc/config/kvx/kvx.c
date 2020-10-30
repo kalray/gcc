@@ -2884,7 +2884,7 @@ kvx_expand_conditional_move (rtx target, rtx select1, rtx select2,
       dst = target;
     }
   else if (! rtx_equal_p (select1, target)
-           && ! rtx_equal_p (select2, target))
+	   && ! rtx_equal_p (select2, target))
     {
       if (reg_overlap_mentioned_p (target, cmp))
 	dst = gen_reg_rtx (mode);
@@ -2955,7 +2955,7 @@ kvx_expand_masked_move (rtx target, rtx select1, rtx select2, rtx mask)
       dst = target;
     }
   else if (! rtx_equal_p (select1, target)
-           && ! rtx_equal_p (select2, target))
+	   && ! rtx_equal_p (select2, target))
     {
       if (reg_overlap_mentioned_p (target, mask))
 	dst = gen_reg_rtx (mode);
@@ -3454,7 +3454,8 @@ kvx_expand_vec_perm_const_emit (rtx target, rtx source1, rtx source2)
 	      rtx source = orig >= nwords? source2: source1;
 	      int offset = orig >= nwords? orig - nwords: orig;
 	      rtx op1 = simplify_gen_subreg (DImode, source, vector_mode, offset*UNITS_PER_WORD);
-	      emit_insn (gen_kvx_sbmm8 (tmp, op1, GEN_INT (constant)));
+	      rtx op2 = force_reg (DImode, GEN_INT (constant));
+	      emit_insn (gen_kvx_sbmm8 (tmp, op1, op2));
 	      emit_insn (gen_xordi3 (acc, acc, tmp));
 	    }
 	}
@@ -3481,22 +3482,27 @@ kvx_expand_vec_perm_const (rtx target, rtx source1, rtx source2, rtx selector)
   gcc_assert (nunits*ibytes <= 32);
   memset (&kvx_expand_vec_perm, 0, sizeof (kvx_expand_vec_perm));
 
+  // Fill the kvx_expand_vec_perm.from[] array, where each byte of the
+  // destination records the index of the source byte in [source1,source2].
   for (int i = 0; i < nunits; i++)
     {
       rtx elt = XVECEXP (selector, 0, i);
       int index = INTVAL (elt) & idx_mask;
       which |= 1 << (index >= nunits);
       for (int j = 0; j < ibytes; j++)
-        kvx_expand_vec_perm.from[i*ibytes + j] = index*ibytes + j;
+	kvx_expand_vec_perm.from[i*ibytes + j] = index*ibytes + j;
     }
 
-  if (rtx_equal_p (source1, source2) || which == 2)
+  // In case the two sources are equal, only index into the first source.
+  if (rtx_equal_p (source1, source2) && which == 2)
     {
       for (int i = 0; i < nunits*ibytes; i++)
 	kvx_expand_vec_perm.from[i] &= nunits*ibytes - 1;
       which = 1;
     }
 
+  // Use the kvx_expand_vec_perm.from[] array to compute the SBMM8 constants.
+  // There is one SBMM8 constant per origin word and per destination word.
   for (int i = 0; i < nwords; i++)
     {
       for (int j = 0; j < nunits*ibytes; j++)
@@ -4268,6 +4274,12 @@ enum kvx_builtin
   KVX_BUILTIN_FIXEDUDP,
   KVX_BUILTIN_FIXEDUDQ,
 
+  KVX_BUILTIN_FCONJWC,
+  KVX_BUILTIN_FCONJWCP,
+  KVX_BUILTIN_FCONJWCQ,
+  KVX_BUILTIN_FCONJDC,
+  KVX_BUILTIN_FCONJDCP,
+
   KVX_BUILTIN_FCDIVW,
   KVX_BUILTIN_FCDIVWP,
   KVX_BUILTIN_FCDIVWQ,
@@ -4958,6 +4970,12 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (FIXEDUD, "fixedud", UINT64, FLOAT64, UINT8, ROUNDING); // Scalar
   ADD_KVX_BUILTIN (FIXEDUDP, "fixedudp", UINT64X2, FLOAT64X2, UINT8, ROUNDING); // Vector
   ADD_KVX_BUILTIN (FIXEDUDQ, "fixedudq", UINT64X4, FLOAT64X4, UINT8, ROUNDING); // Vector
+
+  ADD_KVX_BUILTIN (FCONJWC, "fconjwc", FLOAT32X2, FLOAT32X2); // Vector
+  ADD_KVX_BUILTIN (FCONJWCP, "fconjwcp", FLOAT32X4, FLOAT32X4); // Vector
+  ADD_KVX_BUILTIN (FCONJWCQ, "fconjwcq", FLOAT32X8, FLOAT32X8); // Vector
+  ADD_KVX_BUILTIN (FCONJDC, "fconjdc", FLOAT64X2, FLOAT64X2); // Vector
+  ADD_KVX_BUILTIN (FCONJDCP, "fconjdcp", FLOAT64X4, FLOAT64X4); // Vector
 
   ADD_KVX_BUILTIN (FCDIVW, "fcdivw", FLOAT32, FLOAT32, FLOAT32, SILENT); // Scalar
   ADD_KVX_BUILTIN (FCDIVWP, "fcdivwp", FLOAT32X2, FLOAT32X2, FLOAT32X2, SILENT); // Vector
@@ -6434,6 +6452,12 @@ KVX_EXPAND_BUILTIN_FCONVERT (fixedud, DImode, DFmode)
 KVX_EXPAND_BUILTIN_FCONVERT (fixedudp, V2DImode, V2DFmode)
 KVX_EXPAND_BUILTIN_FCONVERT (fixedudq, V4DImode, V4DFmode)
 
+KVX_EXPAND_BUILTIN_2_STANDARD (fconjwc, kvx_fconjwc, V2SFmode, V2SFmode)
+KVX_EXPAND_BUILTIN_2_STANDARD (fconjwcp, kvx_fconjwcp, V4SFmode, V4SFmode)
+KVX_EXPAND_BUILTIN_2_STANDARD (fconjwcq, kvx_fconjwcq, V8SFmode, V8SFmode)
+KVX_EXPAND_BUILTIN_2_STANDARD (fconjdc, kvx_fconjdc, V2DFmode, V2DFmode)
+KVX_EXPAND_BUILTIN_2_STANDARD (fconjdcp, kvx_fconjdcp, V4DFmode, V4DFmode)
+
 KVX_EXPAND_BUILTIN_3_SILENT (fcdivw, sf, SFmode, SFmode)
 KVX_EXPAND_BUILTIN_3_SILENT (fcdivwp, v2sf, V2SFmode, V2SFmode)
 KVX_EXPAND_BUILTIN_3_SILENT (fcdivwq, v4sf, V4SFmode, V4SFmode)
@@ -7376,6 +7400,12 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_FIXEDUDP: return kvx_expand_builtin_fixedudp (target, exp);
     case KVX_BUILTIN_FIXEDUDQ: return kvx_expand_builtin_fixedudq (target, exp);
 
+    case KVX_BUILTIN_FCONJWC: return kvx_expand_builtin_fconjwc (target, exp);
+    case KVX_BUILTIN_FCONJWCP: return kvx_expand_builtin_fconjwcp (target, exp);
+    case KVX_BUILTIN_FCONJWCQ: return kvx_expand_builtin_fconjwcq (target, exp);
+    case KVX_BUILTIN_FCONJDC: return kvx_expand_builtin_fconjdc (target, exp);
+    case KVX_BUILTIN_FCONJDCP: return kvx_expand_builtin_fconjdcp (target, exp);
+
     case KVX_BUILTIN_FCDIVW: return kvx_expand_builtin_fcdivw (target, exp);
     case KVX_BUILTIN_FCDIVWP: return kvx_expand_builtin_fcdivwp (target, exp);
     case KVX_BUILTIN_FCDIVWQ: return kvx_expand_builtin_fcdivwq (target, exp);
@@ -7587,7 +7617,7 @@ kvx_sched_adjust_cost (rtx_insn *insn, int dep_type,
 static int
 kvx_sched_issue_rate (void)
 {
-  return 4;
+  return 5;
 }
 
 static int
