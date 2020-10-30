@@ -187,7 +187,7 @@
 
 ;; Vector Set/Extract/Init/Perm
 
-(define_insn "kvx_insf_<MODE>"
+(define_insn "*insf"
   [(set (match_operand:ALL64 0 "register_operand" "+r")
         (unspec:ALL64 [(match_operand:<INNER> 1 "register_operand" "r")
                        (match_operand:SI 2 "sixbits_unsigned_operand" "i")
@@ -212,7 +212,7 @@
   }
 )
 
-(define_insn "kvx_extfz_<MODE>"
+(define_insn "*extfz"
   [(set (match_operand:<INNER> 0 "register_operand" "=r")
         (unspec:<INNER> [(match_operand:ALL64 1 "register_operand" "r")
                          (match_operand:SI 2 "sixbits_unsigned_operand" "i")
@@ -236,7 +236,7 @@
   }
 )
 
-(define_insn "kvx_sbmm8_<MODE>"
+(define_insn "*sbmm8"
   [(set (match_operand:ALL64 0 "register_operand" "=r")
         (unspec:ALL64 [(match_operand:<INNER> 1 "register_operand" "r")
                        (match_operand:DI 2 "register_operand" "r")] UNSPEC_SBMM8))]
@@ -245,7 +245,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "kvx_initx2a_<MODE>"
+(define_insn "*initx2a"
   [(set (match_operand:SIMD32X2 0 "register_operand" "=r")
         (unspec:SIMD32X2 [(match_operand:<INNER> 1 "register_operand" "r")] UNSPEC_INITX2A))]
   ""
@@ -253,7 +253,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "kvx_initx2b_<MODE>"
+(define_insn "*initx2b"
   [(set (match_operand:SIMD32X2 0 "register_operand" "+r")
         (unspec:SIMD32X2 [(match_operand:<INNER> 1 "register_operand" "r")
                           (match_dup 0)] UNSPEC_INITX2B))]
@@ -262,7 +262,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "kvx_initx4a_<MODE>"
+(define_insn "*initx4a"
   [(set (match_operand:SIMD16X4 0 "register_operand" "=r")
         (unspec:SIMD16X4 [(match_operand:<INNER> 1 "register_operand" "r")] UNSPEC_INITX4A))]
   ""
@@ -270,7 +270,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "kvx_initx4b_<MODE>"
+(define_insn "*initx4b"
   [(set (match_operand:SIMD16X4 0 "register_operand" "+r")
         (unspec:SIMD16X4 [(match_operand:<INNER> 1 "register_operand" "r")
                           (match_dup 0)] UNSPEC_INITX4B))]
@@ -279,7 +279,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "kvx_initx4c_<MODE>"
+(define_insn "*initx4c"
   [(set (match_operand:SIMD16X4 0 "register_operand" "+r")
         (unspec:SIMD16X4 [(match_operand:<INNER> 1 "register_operand" "r")
                           (match_dup 0)] UNSPEC_INITX4C))]
@@ -288,7 +288,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "kvx_initx4d_<MODE>"
+(define_insn "*initx4d"
   [(set (match_operand:SIMD16X4 0 "register_operand" "+r")
         (unspec:SIMD16X4 [(match_operand:<INNER> 1 "register_operand" "r")
                           (match_dup 0)] UNSPEC_INITX4D))]
@@ -297,7 +297,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "kvx_initx8a_<MODE>"
+(define_insn "*initx8a"
   [(set (match_operand:SIMD8X8 0 "register_operand" "=r")
         (unspec:SIMD8X8 [(match_operand:<INNER> 1 "register_operand" "r")] UNSPEC_INITX8A))]
   ""
@@ -305,7 +305,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "kvx_initx8b_<MODE>"
+(define_insn "*initx8b"
   [(set (match_operand:SIMD8X8 0 "register_operand" "+r")
         (unspec:SIMD8X8 [(match_operand:<INNER> 1 "register_operand" "r")
                          (match_dup 0)] UNSPEC_INITX8B))]
@@ -314,7 +314,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "kvx_initx8c_<MODE>"
+(define_insn "*initx8c"
   [(set (match_operand:SIMD8X8 0 "register_operand" "+r")
         (unspec:SIMD8X8 [(match_operand:<INNER> 1 "register_operand" "r")
                          (match_dup 0)] UNSPEC_INITX8C))]
@@ -323,7 +323,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "kvx_initx8d_<MODE>"
+(define_insn "*initx8d"
   [(set (match_operand:SIMD8X8 0 "register_operand" "+r")
         (unspec:SIMD8X8 [(match_operand:<INNER> 1 "register_operand" "r")
                          (match_dup 0)] UNSPEC_INITX8D))]
@@ -332,7 +332,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "kvx_initx8e_<MODE>"
+(define_insn "*initx8e"
   [(set (match_operand:SIMD8X8 0 "register_operand" "+r")
         (unspec:SIMD8X8 [(match_operand:<INNER> 1 "register_operand" "r")
                          (match_dup 0)] UNSPEC_INITX8E))]
@@ -341,7 +341,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "kvx_initx8f_<MODE>"
+(define_insn "*initx8f"
   [(set (match_operand:SIMD8X8 0 "register_operand" "+r")
         (unspec:SIMD8X8 [(match_operand:<INNER> 1 "register_operand" "r")
                          (match_dup 0)] UNSPEC_INITX8F))]
@@ -350,7 +350,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "kvx_initx8g_<MODE>"
+(define_insn "*initx8g"
   [(set (match_operand:SIMD8X8 0 "register_operand" "+r")
         (unspec:SIMD8X8 [(match_operand:<INNER> 1 "register_operand" "r")
                          (match_dup 0)] UNSPEC_INITX8G))]
@@ -359,7 +359,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "kvx_initx8h_<MODE>"
+(define_insn "*initx8h"
   [(set (match_operand:SIMD8X8 0 "register_operand" "+r")
         (unspec:SIMD8X8 [(match_operand:<INNER> 1 "register_operand" "r")
                          (match_dup 0)] UNSPEC_INITX8H))]
@@ -8010,6 +8010,14 @@
   }
 )
 
+(define_insn "kvx_fconjwc"
+  [(set (match_operand:V2SF 0 "register_operand" "=r")
+        (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")] UNSPEC_FCONJWC))]
+  ""
+  "fnegd %0 = %1"
+  [(set_attr "type" "alu_lite")]
+)
+
 
 ;; V4SF
 
@@ -8607,6 +8615,15 @@
                    (match_operand:V2SF 2 "register_operand" "r")))]
   ""
   "fmaxwp %x0 = %x1, %2\n\tfmaxwp %y0 = %y1, %2"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "kvx_fconjwcp"
+  [(set (match_operand:V4SF 0 "register_operand" "=r")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")] UNSPEC_FCONJWCP))]
+  ""
+  "fnegd %x0 = %x1\n\tfnegd %y0 = %y1"
   [(set_attr "type" "alu_lite_x2")
    (set_attr "length"         "8")]
 )
@@ -9515,6 +9532,20 @@
   }
 )
 
+(define_insn_and_split "kvx_fconjwcq"
+  [(set (match_operand:V8SF 0 "register_operand" "=r")
+        (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "r")] UNSPEC_FCONJWCQ))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V4SF (match_dup 0) 0)
+        (unspec:V4SF [(subreg:V4SF (match_dup 1) 0)] UNSPEC_FCONJWCP))
+   (set (subreg:V4SF (match_dup 0) 16)
+        (unspec:V4SF [(subreg:V4SF (match_dup 1) 16)] UNSPEC_FCONJWCP))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
 
 ;; VXSF
 
@@ -9793,9 +9824,9 @@
     rtx imag_2 = gen_rtx_SUBREG (DFmode, operands[2], 8);
     rtx real_t = gen_reg_rtx (DFmode), imag_t = gen_reg_rtx (DFmode);
     emit_insn (gen_kvx_fmuld (real_t, real_1, real_2, operands[3]));
-    emit_insn (gen_kvx_ffmad (real_0, real_t, imag_1, imag_2, operands[3]));
-    emit_insn (gen_kvx_fmuld (imag_t, real_2, imag_1, operands[3]));
-    emit_insn (gen_kvx_ffmsd (imag_0, imag_t, real_1, imag_2, operands[3]));
+    emit_insn (gen_kvx_ffmad (real_0, imag_1, imag_2, real_t, operands[3]));
+    emit_insn (gen_kvx_fmuld (imag_t, real_1, imag_2, operands[3]));
+    emit_insn (gen_kvx_ffmsd (imag_0, real_2, imag_1, imag_t, operands[3]));
     DONE;
   }
 )
@@ -10178,6 +10209,16 @@
    (set_attr "length"         "8")]
 )
 
+(define_insn "kvx_fconjdc"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")] UNSPEC_FCONJDC))]
+  ""
+  "copyd %x0 = %x1\n\tfnegd %y0 = %y1"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+
 ;; V4DF
 
 (define_insn_and_split "*fcompdq"
@@ -10452,17 +10493,32 @@
                       (match_operand 3 "" "")] UNSPEC_FMULDCP))]
   ""
   {
-    rtx real_0 = gen_rtx_SUBREG (V2DFmode, operands[0], 0);
-    rtx imag_0 = gen_rtx_SUBREG (V2DFmode, operands[0], 16);
-    rtx real_1 = gen_rtx_SUBREG (V2DFmode, operands[1], 0);
-    rtx imag_1 = gen_rtx_SUBREG (V2DFmode, operands[1], 16);
-    rtx real_2 = gen_rtx_SUBREG (V2DFmode, operands[2], 0);
-    rtx imag_2 = gen_rtx_SUBREG (V2DFmode, operands[2], 16);
-    rtx real_t = gen_reg_rtx (V2DFmode), imag_t = gen_reg_rtx (V2DFmode);
-    emit_insn (gen_kvx_fmuldp (real_t, real_1, real_2, operands[3]));
-    emit_insn (gen_kvx_ffmsdp (real_0, imag_1, imag_2, real_t, operands[3]));
-    emit_insn (gen_kvx_fmuldp (imag_t, real_1, imag_2, operands[3]));
-    emit_insn (gen_kvx_ffmadp (imag_0, real_2, imag_1, imag_t, operands[3]));
+    {
+      rtx real_0 = gen_rtx_SUBREG (DFmode, operands[0], 0);
+      rtx imag_0 = gen_rtx_SUBREG (DFmode, operands[0], 8);
+      rtx real_1 = gen_rtx_SUBREG (DFmode, operands[1], 0);
+      rtx imag_1 = gen_rtx_SUBREG (DFmode, operands[1], 8);
+      rtx real_2 = gen_rtx_SUBREG (DFmode, operands[2], 0);
+      rtx imag_2 = gen_rtx_SUBREG (DFmode, operands[2], 8);
+      rtx real_t = gen_reg_rtx (DFmode), imag_t = gen_reg_rtx (DFmode);
+      emit_insn (gen_kvx_fmuld (real_t, real_1, real_2, operands[3]));
+      emit_insn (gen_kvx_ffmsd (real_0, imag_1, imag_2, real_t, operands[3]));
+      emit_insn (gen_kvx_fmuld (imag_t, real_1, imag_2, operands[3]));
+      emit_insn (gen_kvx_ffmad (imag_0, real_2, imag_1, imag_t, operands[3]));
+    }
+    {
+      rtx real_0 = gen_rtx_SUBREG (DFmode, operands[0], 16);
+      rtx imag_0 = gen_rtx_SUBREG (DFmode, operands[0], 24);
+      rtx real_1 = gen_rtx_SUBREG (DFmode, operands[1], 16);
+      rtx imag_1 = gen_rtx_SUBREG (DFmode, operands[1], 24);
+      rtx real_2 = gen_rtx_SUBREG (DFmode, operands[2], 16);
+      rtx imag_2 = gen_rtx_SUBREG (DFmode, operands[2], 24);
+      rtx real_t = gen_reg_rtx (DFmode), imag_t = gen_reg_rtx (DFmode);
+      emit_insn (gen_kvx_fmuld (real_t, real_1, real_2, operands[3]));
+      emit_insn (gen_kvx_ffmsd (real_0, imag_1, imag_2, real_t, operands[3]));
+      emit_insn (gen_kvx_fmuld (imag_t, real_1, imag_2, operands[3]));
+      emit_insn (gen_kvx_ffmad (imag_0, real_2, imag_1, imag_t, operands[3]));
+    }
     DONE;
   }
 )
@@ -10474,17 +10530,32 @@
                       (match_operand 3 "" "")] UNSPEC_FMULCDCP))]
   ""
   {
-    rtx real_0 = gen_rtx_SUBREG (V2DFmode, operands[0], 0);
-    rtx imag_0 = gen_rtx_SUBREG (V2DFmode, operands[0], 16);
-    rtx real_1 = gen_rtx_SUBREG (V2DFmode, operands[1], 0);
-    rtx imag_1 = gen_rtx_SUBREG (V2DFmode, operands[1], 16);
-    rtx real_2 = gen_rtx_SUBREG (V2DFmode, operands[2], 0);
-    rtx imag_2 = gen_rtx_SUBREG (V2DFmode, operands[2], 16);
-    rtx real_t = gen_reg_rtx (V2DFmode), imag_t = gen_reg_rtx (V2DFmode);
-    emit_insn (gen_kvx_fmuldp (real_t, real_1, real_2, operands[3]));
-    emit_insn (gen_kvx_ffmadp (real_0, real_t, imag_1, imag_2, operands[3]));
-    emit_insn (gen_kvx_fmuldp (imag_t, real_2, imag_1, operands[3]));
-    emit_insn (gen_kvx_ffmsdp (imag_0, imag_t, real_1, imag_2, operands[3]));
+    {
+      rtx real_0 = gen_rtx_SUBREG (DFmode, operands[0], 0);
+      rtx imag_0 = gen_rtx_SUBREG (DFmode, operands[0], 8);
+      rtx real_1 = gen_rtx_SUBREG (DFmode, operands[1], 0);
+      rtx imag_1 = gen_rtx_SUBREG (DFmode, operands[1], 8);
+      rtx real_2 = gen_rtx_SUBREG (DFmode, operands[2], 0);
+      rtx imag_2 = gen_rtx_SUBREG (DFmode, operands[2], 8);
+      rtx real_t = gen_reg_rtx (DFmode), imag_t = gen_reg_rtx (DFmode);
+      emit_insn (gen_kvx_fmuld (real_t, real_1, real_2, operands[3]));
+      emit_insn (gen_kvx_ffmad (real_0, imag_1, imag_2, real_t, operands[3]));
+      emit_insn (gen_kvx_fmuld (imag_t, real_1, imag_2, operands[3]));
+      emit_insn (gen_kvx_ffmsd (imag_0, real_2, imag_1, imag_t, operands[3]));
+    }
+    {
+      rtx real_0 = gen_rtx_SUBREG (DFmode, operands[0], 16);
+      rtx imag_0 = gen_rtx_SUBREG (DFmode, operands[0], 24);
+      rtx real_1 = gen_rtx_SUBREG (DFmode, operands[1], 16);
+      rtx imag_1 = gen_rtx_SUBREG (DFmode, operands[1], 24);
+      rtx real_2 = gen_rtx_SUBREG (DFmode, operands[2], 16);
+      rtx imag_2 = gen_rtx_SUBREG (DFmode, operands[2], 24);
+      rtx real_t = gen_reg_rtx (DFmode), imag_t = gen_reg_rtx (DFmode);
+      emit_insn (gen_kvx_fmuld (real_t, real_1, real_2, operands[3]));
+      emit_insn (gen_kvx_ffmad (real_0, imag_1, imag_2, real_t, operands[3]));
+      emit_insn (gen_kvx_fmuld (imag_t, real_1, imag_2, operands[3]));
+      emit_insn (gen_kvx_ffmsd (imag_0, real_2, imag_1, imag_t, operands[3]));
+    }
     DONE;
   }
 )
@@ -11017,6 +11088,15 @@
                    (match_dup 2)))]
   ""
   [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn "kvx_fconjdcp"
+  [(set (match_operand:V4DF 0 "register_operand" "=r")
+        (unspec:V4DF [(match_operand:V4DF 1 "register_operand" "r")] UNSPEC_FCONJDC))]
+  ""
+  "copyd %x0 = %x1\n\tfnegd %y0 = %y1\n\tcopyd %z0 = %z1\n\tfnegd %t0 = %t1"
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
 )
 
 
