@@ -828,7 +828,7 @@ validate_subreg (machine_mode omode, machine_mode imode,
      subregs of anything.  The most common offender is (subreg:SI (reg:DF)).
      Generally, backends are doing something sketchy but it'll take time to
      fix them all.  */
-  if (omode == word_mode)
+  if (omode == word_mode || omode == SImode)
     ;
   /* ??? Similarly, e.g. with (subreg:DF (reg:TI)).  Though store_bit_field
      is the culprit here, and not the backends.  */
