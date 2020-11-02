@@ -19,6 +19,9 @@ along with GCC; see the file COPYING3.  If not see
 
 INT_MODE (OI, 32);
 
+FLOAT_MODE (HF, 2, 0);
+ADJUST_FLOAT_FORMAT (HF, &ieee_half_format);
+
 VECTOR_MODE (INT, QI, 8);          /* V8QI */
 VECTOR_MODE (INT, QI, 16);         /* V16QI */
 VECTOR_MODE (INT, QI, 32);         /* V32QI */
@@ -30,6 +33,9 @@ VECTOR_MODE (INT, SI, 4);          /* V4SI */
 VECTOR_MODE (INT, SI, 8);          /* V8SI */
 VECTOR_MODE (INT, DI, 2);          /* V2DI */
 VECTOR_MODE (INT, DI, 4);          /* V4DI */
+VECTOR_MODE (FLOAT, HF, 4);        /* V4HF */
+VECTOR_MODE (FLOAT, HF, 8);        /* V8HF */
+VECTOR_MODE (FLOAT, HF, 16);       /* V16HF */
 VECTOR_MODE (FLOAT, SF, 2);        /* V2SF */
 VECTOR_MODE (FLOAT, SF, 4);        /* V4SF */
 VECTOR_MODE (FLOAT, SF, 8);        /* V8SF */

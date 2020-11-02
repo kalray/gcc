@@ -1420,39 +1420,6 @@
    (set_attr "length" "4,4")]
 )
 
-/*************** FLOATING POINT **************/
-
-(define_insn "builtin_extendhfsf2"
-  [(set (match_operand:SF 0 "register_operand" "=r")
-        (unspec:SF [(match_operand:SI 1 "register_operand" "r")] UNSPEC_FWIDENLHW))]
-  ""
-  "fwidenlhw %0 = %1"
-[(set_attr "type" "alu_lite")])
-
-(define_insn "builtin_extendhfsf2_tophalf"
-  [(set (match_operand:SF 0 "register_operand" "=r")
-        (unspec:SF [(match_operand:SI 1 "register_operand" "r")] UNSPEC_FWIDENMHW))]
-  ""
-  "fwidenmhw %0 = %1"
-[(set_attr "type" "alu_lite")])
-
-(define_insn "truncdfsf2"
-  [(set (match_operand:SF 0 "register_operand" "=r")
-        (float_truncate:SF
-         (match_operand:DF 1 "register_operand" "r")))]
-  ""
-  "fnarrowdw %0 = %1"
-[(set_attr "type" "alu_full")
-])
-
-(define_insn "builtin_truncsfhf2"
-  [(set (match_operand:HI 0 "register_operand" "=r")
-        (unspec:HI [(match_operand:SF 1 "register_operand" "r")] UNSPEC_FNARROWWH))]
-  ""
-  "fnarrowwh %0 = %1"
-[(set_attr "type" "alu_lite")
-])
-
 
 /********** Hardware loops **************/
 

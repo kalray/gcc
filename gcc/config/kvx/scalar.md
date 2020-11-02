@@ -1253,6 +1253,264 @@
 )
 
 
+;; HF
+
+(define_insn "addhf3"
+  [(set (match_operand:HF 0 "register_operand" "=r")
+        (plus:HF (match_operand:HF 1 "register_operand" "r")
+                 (match_operand:HF 2 "register_operand" "r")))]
+  ""
+  "faddhq %0 = %1, %2"
+  [(set_attr "type" "mau_fpu")]
+)
+
+(define_insn "subhf3"
+  [(set (match_operand:HF 0 "register_operand" "=r")
+        (minus:HF (match_operand:HF 1 "register_operand" "r")
+                  (match_operand:HF 2 "register_operand" "r")))]
+  ""
+  "fsbfhq %0 = %2, %1"
+  [(set_attr "type" "mau_fpu")]
+)
+
+(define_insn "mulhf3"
+  [(set (match_operand:HF 0 "register_operand" "=r")
+        (mult:HF (match_operand:HF 1 "register_operand" "r")
+                 (match_operand:HF 2 "register_operand" "r")))]
+  ""
+  "fmulhq %0 = %1, %2"
+  [(set_attr "type" "mau_fpu")]
+)
+
+(define_insn "*fmulhw"
+  [(set (match_operand:SF 0 "register_operand" "=r")
+        (mult:SF (float_extend:SF (match_operand:HF 1 "register_operand" "r"))
+                 (float_extend:SF (match_operand:HF 2 "register_operand" "r"))))]
+  ""
+  "fmulhw %0 = %1, %2"
+  [(set_attr "type" "mau_fpu")]
+)
+
+(define_expand "divhf3"
+  [(set (match_operand:HF 0 "register_operand" "")
+        (div:HF (match_operand:HF 1 "reg_or_float1_operand" "")
+                (match_operand:HF 2 "register_operand" "")))]
+  ""
+  {
+    rtx a = gen_reg_rtx(SFmode);
+    rtx b = gen_reg_rtx(SFmode);
+    rtx r = gen_reg_rtx(SFmode);
+    rtx d = gen_reg_rtx(SFmode);
+    emit_insn (gen_extendhfsf2 (a, operands[1]));
+    emit_insn (gen_extendhfsf2 (b, operands[2]));
+    emit_insn (gen_recipsf2 (r, b));
+    emit_insn (gen_mulsf3 (d, a, r));
+    emit_insn (gen_truncsfhf2 (operands[0], d));
+    DONE;
+  }
+)
+
+(define_insn "fmahf4"
+  [(set (match_operand:HF 0 "register_operand" "=r")
+        (fma:HF  (match_operand:HF 1 "register_operand" "r")
+                 (match_operand:HF 2 "register_operand" "r")
+                 (match_operand:HF 3 "register_operand" "0")))]
+  ""
+  "ffmahq %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn "*ffmahw"
+  [(set (match_operand:SF 0 "register_operand" "=r")
+        (fma:SF  (float_extend:SF (match_operand:HF 1 "register_operand" "r"))
+                 (float_extend:SF (match_operand:HF 2 "register_operand" "r"))
+                 (match_operand:SF 3 "register_operand" "0")))]
+  ""
+  "ffmahw %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn "fnmahf4"
+  [(set (match_operand:HF 0 "register_operand" "=r")
+        (fma:HF  (neg:HF (match_operand:HF 1 "register_operand" "r"))
+                 (match_operand:HF 2 "register_operand" "r")
+                 (match_operand:HF 3 "register_operand" "0")))]
+  ""
+  "ffmshq %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn "*ffmshw"
+  [(set (match_operand:SF 0 "register_operand" "=r")
+        (fma:SF (float_extend:SF (neg:HF (match_operand:HF 1 "register_operand" "r")))
+                (float_extend:SF (match_operand:HF 2 "register_operand" "r"))
+                (match_operand:SF 3 "register_operand" "0")))]
+  ""
+  "ffmshw %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn "*ffmshw2"
+  [(set (match_operand:SF 0 "register_operand" "=r")
+        (fma:SF (float_extend:SF (match_operand:HF 1 "register_operand" "r"))
+                (float_extend:SF (neg:HF (match_operand:HF 2 "register_operand" "r")))
+                (match_operand:SF 3 "register_operand" "0")))]
+  ""
+  "ffmshw %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn "fminhf3"
+  [(set (match_operand:HF 0 "register_operand" "=r")
+        (smin:HF (match_operand:HF 1 "register_operand" "r")
+                 (match_operand:HF 2 "register_operand" "r")))]
+  ""
+  "fminhq %0 = %1, %2"
+  [(set_attr "type" "alu_lite")]
+)
+
+(define_insn "fmaxhf3"
+  [(set (match_operand:HF 0 "register_operand" "=r")
+        (smax:HF (match_operand:HF 1 "register_operand" "r")
+                 (match_operand:HF 2 "register_operand" "r")))]
+  ""
+  "fmaxhq %0 = %1, %2"
+  [(set_attr "type" "alu_lite")]
+)
+
+(define_insn "neghf2"
+  [(set (match_operand:HF 0 "register_operand" "=r")
+        (neg:HF (match_operand:HF 1 "register_operand" "r")))]
+  ""
+  "fneghq %0 = %1"
+  [(set_attr "type" "alu_lite")]
+)
+
+(define_insn "abshf2"
+  [(set (match_operand:HF 0 "register_operand" "=r")
+        (abs:HF (match_operand:HF 1 "register_operand" "r")))]
+  ""
+  "fabshq %0 = %1"
+  [(set_attr "type" "alu_lite")]
+)
+
+(define_insn "kvx_getsignh"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (unspec:DI  [(match_operand:HF 1 "register_operand" "r")] UNSPEC_GETSIGNH))]
+  ""
+  "extfs %0 = %1, 15, 15"
+  [(set_attr "type" "alu_lite")]
+)
+
+(define_insn "kvx_setsignh"
+  [(set (match_operand:HF 0 "register_operand" "=r")
+        (unspec:HF [(match_operand:HF 1 "register_operand" "0")
+                    (match_operand:DI 2 "register_operand" "r")] UNSPEC_SETSIGNH))]
+  ""
+  "insf %0 = %2, 15, 15"
+  [(set_attr "type" "alu_lite")]
+)
+
+(define_expand "copysignhf3"
+  [(match_operand:HF 0 "register_operand")
+   (match_operand:HF 1 "register_operand")
+   (match_operand:HF 2 "register_operand")]
+  ""
+  {
+    rtx sign2 = gen_reg_rtx (DImode);
+    emit_insn (gen_kvx_getsignh (sign2, operands[2]));
+    emit_insn (gen_kvx_setsignh (operands[0], operands[1], sign2));
+    DONE;
+  }
+)
+
+(define_expand "floatsihf2"
+  [(set (match_operand:HF 0 "register_operand" "")
+        (float:HF (match_operand:SI 1 "register_operand" "")))]
+  ""
+  {
+    rtx tempsf = gen_reg_rtx (SFmode);
+    emit_insn (gen_floatsisf2 (tempsf, operands[1]));
+    emit_insn (gen_truncsfhf2 (operands[1], tempsf));
+    DONE;
+  }
+)
+
+(define_expand "floatdihf2"
+  [(set (match_operand:HF 0 "register_operand" "")
+        (float:HF (match_operand:DI 1 "register_operand" "")))]
+  ""
+  {
+    rtx tempdf = gen_reg_rtx (DFmode);
+    emit_insn (gen_floatdidf2 (tempdf, operands[1]));
+    rtx tempsf = gen_reg_rtx (SFmode);
+    emit_insn (gen_truncdfsf2 (tempsf, tempdf));
+    emit_insn (gen_truncsfhf2 (operands[1], tempsf));
+    DONE;
+  }
+)
+
+(define_expand "floatunssihf2"
+  [(set (match_operand:HF 0 "register_operand" "")
+        (unsigned_float:HF (match_operand:SI 1 "register_operand" "")))]
+  ""
+  {
+    rtx tempsf = gen_reg_rtx (SFmode);
+    emit_insn (gen_floatunssisf2 (tempsf, operands[1]));
+    emit_insn (gen_truncsfhf2 (operands[1], tempsf));
+    DONE;
+  }
+)
+
+(define_expand "floatunsdihf2"
+  [(set (match_operand:HF 0 "register_operand" "")
+        (unsigned_float:HF (match_operand:DI 1 "register_operand" "")))]
+  ""
+  {
+    rtx tempdf = gen_reg_rtx (DFmode);
+    emit_insn (gen_floatunsdidf2 (tempdf, operands[1]));
+    rtx tempsf = gen_reg_rtx (SFmode);
+    emit_insn (gen_truncdfsf2 (tempsf, tempdf));
+    emit_insn (gen_truncsfhf2 (operands[1], tempsf));
+    DONE;
+  }
+)
+
+(define_insn "extendhfsf2"
+  [(set (match_operand:SF 0 "register_operand" "=r")
+        (float_extend:SF (match_operand:HF 1 "register_operand" "r")))]
+  ""
+  "fwidenlhw %0 = %1"
+  [(set_attr "type" "alu_lite")]
+)
+
+(define_insn "kvx_fwidenlhw"
+  [(set (match_operand:SF 0 "register_operand" "=r")
+        (unspec:SF [(match_operand:SI 1 "register_operand" "r")] UNSPEC_FWIDENLHW))]
+  ""
+  "fwidenlhw %0 = %1"
+[(set_attr "type" "alu_lite")])
+
+(define_insn "kvx_fwidenmhw"
+  [(set (match_operand:SF 0 "register_operand" "=r")
+        (unspec:SF [(match_operand:SI 1 "register_operand" "r")] UNSPEC_FWIDENMHW))]
+  ""
+  "fwidenmhw %0 = %1"
+[(set_attr "type" "alu_lite")])
+
+(define_expand "extendhfdf2"
+  [(set (match_operand:DF 0 "register_operand" "")
+        (float_extend:DF (match_operand:HF 1 "register_operand" "")))]
+  ""
+  {
+    rtx tempsf = gen_reg_rtx (SFmode);
+    emit_insn (gen_extendhfsf2 (tempsf, operands[1]));
+    emit_insn (gen_extendsfdf2 (operands[0], tempsf));
+    DONE;
+  }
+)
+
+
 ;; SF
 
 (define_insn "addsf3"
@@ -1321,15 +1579,6 @@
   [(set_attr "type" "mau_fpu")]
 )
 
-(define_insn "*fmulwd2"
-  [(set (match_operand:DF 0 "register_operand" "=r")
-        (float_extend:DF (mult:SF (match_operand:SF 1 "register_operand" "r")
-                                  (match_operand:SF 2 "register_operand" "r"))))]
-  ""
-  "fmulwd %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
-)
-
 (define_insn "kvx_fmulwd"
   [(set (match_operand:DF 0 "register_operand" "=r")
         (unspec:DF [(match_operand:SF 1 "register_operand" "r")
@@ -1338,6 +1587,44 @@
   ""
   "fmulwd%3 %0 = %1, %2"
   [(set_attr "type" "mau_fpu")]
+)
+
+(define_expand "divsf3"
+  [(set (match_operand:SF 0 "register_operand" "")
+        (div:SF (match_operand:SF 1 "reg_or_float1_operand" "")
+                (match_operand:SF 2 "register_operand" "")))]
+  "flag_reciprocal_math || flag_unsafe_math_optimizations"
+  {
+    rtx rm = gen_rtx_CONST_STRING (VOIDmode, "");
+    rtx rn = gen_rtx_CONST_STRING (VOIDmode, ".rn");
+    rtx a = operands[1], b = operands[2];
+    if (a == CONST1_RTX (SFmode))
+      {
+        emit_insn (gen_kvx_frecw (operands[0], b, rm));
+      }
+    else if (flag_reciprocal_math)
+      {
+        rtx t = gen_reg_rtx(SFmode);
+        emit_insn (gen_kvx_frecw (t, b, rm));
+        emit_insn (gen_kvx_fmulw (operands[0], a, t, rm));
+      }
+    else // (flag_unsafe_math_optimizations)
+      {
+        rtx re = gen_reg_rtx (SFmode);
+        emit_insn (gen_kvx_frecw (re, b, rn));
+        rtx y0 = gen_reg_rtx (SFmode);
+        emit_insn (gen_kvx_fmulw (y0, a, re, rn));
+        rtx e0 = gen_reg_rtx (SFmode);
+        emit_insn (gen_kvx_ffmsw (e0, b, y0, a, rn));
+        rtx y1 = gen_reg_rtx (SFmode);
+        emit_insn (gen_kvx_ffmaw (y1, e0, re, y0, rn));
+        rtx e1 = gen_reg_rtx (SFmode);
+        emit_insn (gen_kvx_ffmsw (e1, b, y1, a, rn));
+        rtx y2 = operands[0];
+        emit_insn (gen_kvx_ffmaw (y2, e1, re, y1, rm));
+      }
+    DONE;
+  }
 )
 
 (define_insn "fmasf4"
@@ -1468,20 +1755,20 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "kvx_fsignw"
-  [(set (match_operand:SI 0 "register_operand" "=r")
-        (unspec:SI [(match_operand:SF 1 "register_operand" "r")] UNSPEC_FSIGNW))]
+(define_insn "kvx_getsignw"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (unspec:DI  [(match_operand:SF 1 "register_operand" "r")] UNSPEC_GETSIGNW))]
   ""
-  "sraw %0 = %1, 31"
-  [(set_attr "type" "alu_tiny")]
+  "extfs %0 = %1, 31, 31"
+  [(set_attr "type" "alu_lite")]
 )
 
 (define_insn "kvx_setsignw"
   [(set (match_operand:SF 0 "register_operand" "=r")
-        (unspec:SF [(match_operand:SI 1 "register_operand" "r")
-                    (match_operand:SF 2 "register_operand" "0")] UNSPEC_SETSIGNW))]
+        (unspec:SF [(match_operand:SF 1 "register_operand" "0")
+                    (match_operand:DI 2 "register_operand" "r")] UNSPEC_SETSIGNW))]
   ""
-  "insf %0 = %1, 31, 31"
+  "insf %0 = %2, 31, 31"
   [(set_attr "type" "alu_lite")]
 )
 
@@ -1491,9 +1778,9 @@
    (match_operand:SF 2 "register_operand")]
   ""
   {
-    rtx sign2 = gen_reg_rtx (SImode);
-    emit_insn (gen_kvx_fsignw (sign2, operands[2]));
-    emit_insn (gen_kvx_setsignw (operands[0], sign2, operands[1]));
+    rtx sign2 = gen_reg_rtx (DImode);
+    emit_insn (gen_kvx_getsignw (sign2, operands[2]));
+    emit_insn (gen_kvx_setsignw (operands[0], operands[1], sign2));
     DONE;
   }
 )
@@ -1570,6 +1857,22 @@
   [(set_attr "type" "mau_fpu")]
 )
 
+(define_insn "truncsfhf2"
+  [(set (match_operand:HF 0 "register_operand" "=r")
+        (float_truncate:HF (match_operand:SF 1 "register_operand" "r")))]
+  ""
+  "fnarrowwh %0 = %1"
+  [(set_attr "type" "alu_lite")]
+)
+
+(define_insn "kvx_fnarrowwh"
+  [(set (match_operand:HI 0 "register_operand" "=r")
+        (unspec:HI [(match_operand:SF 1 "register_operand" "r")] UNSPEC_FNARROWWH))]
+  ""
+  "fnarrowwh %0 = %1"
+  [(set_attr "type" "alu_lite")]
+)
+
 (define_insn "extendsfdf2"
   [(set (match_operand:DF 0 "register_operand" "=r")
         (float_extend:DF (match_operand:SF 1 "register_operand" "r")))]
@@ -1578,53 +1881,15 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_expand "divsf3"
-  [(set (match_operand:SF 0 "register_operand" "")
-        (div:SF (match_operand:SF 1 "reg_or_float1_operand" "")
-                (match_operand:SF 2 "register_operand" "")))]
-  "flag_reciprocal_math || flag_unsafe_math_optimizations"
-  {
-    rtx rm = gen_rtx_CONST_STRING (VOIDmode, "");
-    rtx rn = gen_rtx_CONST_STRING (VOIDmode, ".rn");
-    rtx a = operands[1], b = operands[2];
-    if (a == CONST1_RTX (SFmode))
-      {
-        emit_insn (gen_kvx_frecw (operands[0], b, rm));
-      }
-    else if (flag_reciprocal_math)
-      {
-        rtx t = gen_reg_rtx(SFmode);
-        emit_insn (gen_kvx_frecw (t, b, rm));
-        emit_insn (gen_kvx_fmulw (operands[0], a, t, rm));
-      }
-    else // (flag_unsafe_math_optimizations)
-      {
-        rtx re = gen_reg_rtx (SFmode);
-        emit_insn (gen_kvx_frecw (re, b, rn));
-        rtx y0 = gen_reg_rtx (SFmode);
-        emit_insn (gen_kvx_fmulw (y0, a, re, rn));
-        rtx e0 = gen_reg_rtx (SFmode);
-        emit_insn (gen_kvx_ffmsw (e0, b, y0, a, rn));
-        rtx y1 = gen_reg_rtx (SFmode);
-        emit_insn (gen_kvx_ffmaw (y1, e0, re, y0, rn));
-        rtx e1 = gen_reg_rtx (SFmode);
-        emit_insn (gen_kvx_ffmsw (e1, b, y1, a, rn));
-        rtx y2 = operands[0];
-        emit_insn (gen_kvx_ffmaw (y2, e1, re, y1, rm));
-      }
-    DONE;
-  }
-)
-
 (define_expand "sqrtsf2"
   [(match_operand:SF 0 "register_operand" "")
    (match_operand:SF 1 "register_operand" "")]
   "flag_reciprocal_math"
   {
-    rtx temp = gen_reg_rtx(SFmode);
+    rtx tempsf = gen_reg_rtx(SFmode);
     rtx rm = gen_rtx_CONST_STRING (VOIDmode, "");
-    emit_insn (gen_kvx_frsrw (temp, operands[1], rm));
-    emit_insn (gen_mulsf3 (operands[0], operands[1], temp));
+    emit_insn (gen_kvx_frsrw (tempsf, operands[1], rm));
+    emit_insn (gen_mulsf3 (operands[0], operands[1], tempsf));
     DONE;
   }
 )
@@ -1868,20 +2133,20 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "kvx_fsignd"
+(define_insn "kvx_getsignd"
   [(set (match_operand:DI 0 "register_operand" "=r")
-        (unspec:DI [(match_operand:DF 1 "register_operand" "r")] UNSPEC_FSIGND))]
+        (unspec:DI  [(match_operand:DF 1 "register_operand" "r")] UNSPEC_GETSIGND))]
   ""
-  "srad %0 = %1, 63"
-  [(set_attr "type" "alu_tiny")]
+  "extfs %0 = %1, 63, 63"
+  [(set_attr "type" "alu_lite")]
 )
 
 (define_insn "kvx_setsignd"
   [(set (match_operand:DF 0 "register_operand" "=r")
-        (unspec:DF [(match_operand:DI 1 "register_operand" "r")
-                    (match_operand:DF 2 "register_operand" "0")] UNSPEC_SETSIGND))]
+        (unspec:DF [(match_operand:DF 1 "register_operand" "0")
+                    (match_operand:DI 2 "register_operand" "r")] UNSPEC_SETSIGND))]
   ""
-  "insf %0 = %1, 63, 63"
+  "insf %0 = %2, 63, 63"
   [(set_attr "type" "alu_lite")]
 )
 
@@ -1892,8 +2157,8 @@
   ""
   {
     rtx sign2 = gen_reg_rtx (DImode);
-    emit_insn (gen_kvx_fsignd (sign2, operands[2]));
-    emit_insn (gen_kvx_setsignd (operands[0], sign2, operands[1]));
+    emit_insn (gen_kvx_getsignd (sign2, operands[2]));
+    emit_insn (gen_kvx_setsignd (operands[0], operands[1], sign2));
     DONE;
   }
 )
@@ -1968,6 +2233,26 @@
   ""
   "fixedud%3 %0 = %1, %2"
   [(set_attr "type" "mau_fpu")]
+)
+
+(define_expand "truncdfhf2"
+  [(set (match_operand:HF 0 "register_operand" "")
+        (float_truncate:HF (match_operand:DF 1 "register_operand" "")))]
+  ""
+  {
+    rtx tempsf = gen_reg_rtx (SFmode);
+    emit_insn (gen_truncdfsf2 (tempsf, operands[1]));
+    emit_insn (gen_truncsfhf2 (operands[0], tempsf));
+    DONE;
+  }
+)
+
+(define_insn "truncdfsf2"
+  [(set (match_operand:SF 0 "register_operand" "=r")
+        (float_truncate:SF (match_operand:DF 1 "register_operand" "r")))]
+  ""
+  "fnarrowdw %0 = %1"
+  [(set_attr "type" "alu_full")]
 )
 
 (define_expand "kvx_fcdivd"

@@ -7735,14 +7735,6 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "kvx_fsignwp"
-  [(set (match_operand:V2SI 0 "register_operand" "=r")
-        (unspec:V2SI [(match_operand:V2SF 1 "register_operand" "r")] UNSPEC_FSIGNWP))]
-  ""
-  "srawps %0 = %1, 31"
-  [(set_attr "type" "alu_lite")]
-)
-
 (define_expand "copysignv2sf3"
   [(match_operand:V2SF 0 "register_operand")
    (match_operand:V2SF 1 "register_operand")
@@ -8308,15 +8300,6 @@
         (abs:V4SF (match_operand:V4SF 1 "register_operand" "r")))]
   ""
   "fabswp %x0 = %x1\n\tfabswp %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "kvx_fsignwq"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (unspec:V4SI [(match_operand:V4SF 1 "register_operand" "r")] UNSPEC_FSIGNWQ))]
-  ""
-  "srawps %x0 = %x1, 31\n\tsrawps %y0 = %y1, 31"
   [(set_attr "type" "alu_lite_x2")
    (set_attr "length"         "8")]
 )
@@ -9130,20 +9113,6 @@
   [(set_attr "type" "alu_lite_x2")]
 )
 
-(define_expand "kvx_fsignwo"
-  [(match_operand:V8SF 0 "register_operand")
-   (match_operand:V8SF 1 "register_operand")]
-  ""
-  {
-    rtx opnd0_lo = gen_rtx_SUBREG (V4SFmode, operands[0], 0);
-    rtx opnd0_hi = gen_rtx_SUBREG (V4SFmode, operands[0], 16);
-    rtx opnd1_lo = gen_rtx_SUBREG (V4SFmode, operands[1], 0);
-    rtx opnd1_hi = gen_rtx_SUBREG (V4SFmode, operands[1], 16);
-    emit_insn (gen_kvx_fsignwq (opnd0_lo, opnd1_lo));
-    emit_insn (gen_kvx_fsignwq (opnd0_hi, opnd1_hi));
-  }
-)
-
 (define_expand "copysignv8sf3"
   [(match_operand:V8SF 0 "register_operand")
    (match_operand:V8SF 1 "register_operand")
@@ -9955,15 +9924,6 @@
    (set_attr "length"         "8")]
 )
 
-(define_insn "kvx_fsigndp"
-  [(set (match_operand:V2DI 0 "register_operand" "=r")
-        (unspec:V2DI [(match_operand:V2DF 1 "register_operand" "r")] UNSPEC_FSIGNDP))]
-  ""
-  "srad %x0 = %x1, 63\n\tsrad %y0 = %y1, 63"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
 (define_expand "copysignv2df3"
   [(match_operand:V2DF 0 "register_operand")
    (match_operand:V2DF 1 "register_operand")
@@ -10742,18 +10702,6 @@
         (abs:V2DF (subreg:V2DF (match_dup 1) 16)))]
   ""
   [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn "kvx_fsigndq"
-  [(set (match_operand:V4DI 0 "register_operand" "=r")
-        (unspec:V4DI [(match_operand:V4DF 1 "register_operand" "r")] UNSPEC_FSIGNDQ))]
-  ""
-  {
-    return "srad %x0 = %x1, 63\n\tsrad %y0 = %y1, 63\n\t"
-           "srad %z0 = %z1, 63\n\tsrad %t0 = %t1, 63";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
 )
 
 (define_expand "copysignv4df3"
