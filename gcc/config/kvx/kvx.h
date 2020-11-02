@@ -41,19 +41,20 @@ enum kvx_abi_type
       builtin_assert ("cpu=kvx");                                              \
       builtin_define ("__KVX__");                                              \
       builtin_define ("__kvx__");                                              \
-      if (kvx_arch_name == KVX_ARCH_KV3_1 ||				       \
-	  kvx_arch_name == KVX_ARCH_KV3_2)				       \
+      if (kvx_arch_name == KVX_ARCH_KV3_1 || kvx_arch_name == KVX_ARCH_KV3_2)  \
 	{                                                                      \
 	  builtin_define ("__KV3__");                                          \
 	  builtin_define ("__kv3__");                                          \
-	  if (kvx_arch_name == KVX_ARCH_KV3_1) {			       \
-	    builtin_assert ("machine=kv3-1");                                  \
+	  if (kvx_arch_name == KVX_ARCH_KV3_1)                                 \
+	    {                                                                  \
+	      builtin_assert ("machine=kv3-1");                                \
 	    builtin_define ("__kvxarch_kv3_1");                                \
-	  }								       \
-	  if (kvx_arch_name == KVX_ARCH_KV3_2) {			       \
-	    builtin_assert ("machine=kv3-2");                                  \
+	    }                                                                  \
+	  if (kvx_arch_name == KVX_ARCH_KV3_2)                                 \
+	    {                                                                  \
+	      builtin_assert ("machine=kv3-2");                                \
 	    builtin_define ("__kvxarch_kv3_2");                                \
-	  }								       \
+	    }                                                                  \
 	  if (TARGET_STRICT_ALIGN)                                             \
 	    builtin_define ("__STRICT_ALIGN__");                               \
 	  if (TARGET_STACK_CHECK_USE_TLS)                                      \
@@ -61,6 +62,8 @@ enum kvx_abi_type
 	  if (!TARGET_32)                                                      \
 	    builtin_define ("__KV3_64__");                                     \
 	}                                                                      \
+      cpp_undef (pfile, "__FLT_EVAL_METHOD__");                                \
+      builtin_define_with_int_value ("__FLT_EVAL_METHOD__", 0);                \
     }                                                                          \
   while (0)
 
