@@ -1218,7 +1218,38 @@ kvx_fixed_point_supported_p (void)
 }
 
 static bool
-kvx_vector_mode_supported_p (enum machine_mode mode ATTRIBUTE_UNUSED)
+kvx_scalar_mode_supported_p (enum machine_mode mode)
+{
+  if (mode == HFmode)
+    return true;
+  return default_scalar_mode_supported_p (mode);
+}
+
+static bool
+kvx_libgcc_floating_mode_supported_p (enum machine_mode mode)
+{
+  if (mode == HFmode)
+    return true;
+  return default_libgcc_floating_mode_supported_p (mode);
+}
+
+static enum flt_eval_method
+kvx_excess_precision (enum excess_precision_type type)
+{
+  switch (type)
+    {
+    case EXCESS_PRECISION_TYPE_FAST:
+    case EXCESS_PRECISION_TYPE_STANDARD:
+    case EXCESS_PRECISION_TYPE_IMPLICIT:
+      return FLT_EVAL_METHOD_PROMOTE_TO_FLOAT16;
+    default:
+      gcc_unreachable ();
+    }
+  return FLT_EVAL_METHOD_UNPREDICTABLE;
+}
+
+static bool
+kvx_vector_mode_supported_p (enum machine_mode mode)
 {
   switch (mode)
     {
@@ -1331,6 +1362,36 @@ kvx_secondary_reload (bool in_p ATTRIBUTE_UNUSED, rtx x ATTRIBUTE_UNUSED,
 
 static const char *kvx_unspec_tls_asm_op[]
   = {"@tlsgd", "@tlsld", "@tlsle", "@dtpoff", "@tlsie"};
+
+/* Helper function to produce manifest _Float16 constants, where the float
+ * value represented as integer comes from REAL_VALUE_TO_TARGET_SINGLE.
+ * Adapted from http://openkb.fr/Half-precision_floating-point_in_Java */
+static unsigned
+kvx_float_to_half_as_int (unsigned fbits)
+{
+  unsigned sign = fbits >> 16 & 0x8000;		// sign only
+  unsigned val = (fbits & 0x7fffffff) + 0x1000; // rounded value
+  if (val >= 0x47800000)			// might be or become NaN/Inf
+    {						// avoid Inf due to rounding
+      if ((fbits & 0x7fffffff) >= 0x47800000)
+	{				     // is or must become NaN/Inf
+	  if (val < 0x7f800000)		     // was value but too large
+	    return sign | 0x7c00;	     // make it +/-Inf
+	  return sign | 0x7c00 |	     // remains +/-Inf or NaN
+		 (fbits & 0x007fffff) >> 13; // keep NaN (and Inf) bits
+	}
+      return sign | 0x7bff; // unrounded not quite Inf
+    }
+  if (val >= 0x38800000)		  // remains normalized value
+    return sign | val - 0x38000000 >> 13; // exp - 127 + 15
+  if (val < 0x33000000)			  // too small for subnormal
+    return sign;			  // becomes +/-0
+  val = (fbits & 0x7fffffff) >> 23;	  // tmp exp for subnormal calc
+  return sign
+	 | ((fbits & 0x7fffff | 0x800000) // add subnormal bit
+	      + (0x800000 >> val - 102)	  // round depending on cut off
+	    >> 126 - val); // div by 2^(1-(exp-127+15)) and >> 13 | exp=0
+}
 
 void
 kvx_print_operand (FILE *file, rtx x, int code)
@@ -1536,26 +1597,31 @@ kvx_print_operand (FILE *file, rtx x, int code)
 	}
       return;
 
-    case CONST_DOUBLE:
-      if (GET_MODE (x) == SFmode)
-	{
-	  REAL_VALUE_TYPE r;
-	  long l;
-	  r = *CONST_DOUBLE_REAL_VALUE (operand);
-	  REAL_VALUE_TO_TARGET_SINGLE (r, l);
-	  fprintf (file, "0x%08x", (unsigned int) l);
-	  return;
-	}
-      else if (GET_MODE (x) == DFmode)
-	{
-	  /* this is a double that should fit on less than 64bits */
-	  REAL_VALUE_TYPE r;
-	  long l[2];
-	  r = *CONST_DOUBLE_REAL_VALUE (operand);
-	  REAL_VALUE_TO_TARGET_DOUBLE (r, l);
-	  fprintf (file, "0x%08x%08x", (unsigned int) l[1], (unsigned int) l[0]);
-	  return;
-	}
+    case CONST_DOUBLE: {
+	long l[2];
+	REAL_VALUE_TYPE r = *CONST_DOUBLE_REAL_VALUE (operand);
+	if (GET_MODE (x) == HFmode)
+	  {
+	    REAL_VALUE_TO_TARGET_SINGLE (r, l[0]);
+	    l[0] = kvx_float_to_half_as_int (l[0]);
+	    fprintf (file, "0x%04x", (unsigned int) l[0]);
+	    return;
+	  }
+	else if (GET_MODE (x) == SFmode)
+	  {
+	    REAL_VALUE_TO_TARGET_SINGLE (r, l[0]);
+	    fprintf (file, "0x%08x", (unsigned int) l[0]);
+	    return;
+	  }
+	else if (GET_MODE (x) == DFmode)
+	  {
+	    /* this is a double that should fit on less than 64bits */
+	    REAL_VALUE_TO_TARGET_DOUBLE (r, l);
+	    fprintf (file, "0x%08x%08x", (unsigned int) l[1],
+		     (unsigned int) l[0]);
+	    return;
+	  }
+      }
       gcc_unreachable ();
       return;
 
@@ -5021,9 +5087,9 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (STSUD, "stsud", UINT64, UINT64, UINT64); // Scalar
   ADD_KVX_BUILTIN (SBMM8, "sbmm8", UINT64, UINT64, UINT64); // Scalar
   ADD_KVX_BUILTIN (SBMMT8, "sbmmt8", UINT64, UINT64, UINT64); // Scalar
-  ADD_KVX_BUILTIN (FWIDENLHW, "fwidenlhw", FLOAT32, UINT32); // Scalar
-  ADD_KVX_BUILTIN (FWIDENMHW, "fwidenmhw", FLOAT32, UINT32); // Scalar
-  ADD_KVX_BUILTIN (FNARROWWH, "fnarrowwh", UINT16, FLOAT32); // Scalar
+  ADD_KVX_BUILTIN (FWIDENLHW, "fwidenlhw", FLOAT32, UINT32);  // Deprecated
+  ADD_KVX_BUILTIN (FWIDENMHW, "fwidenmhw", FLOAT32, UINT32);  // Deprecated
+  ADD_KVX_BUILTIN (FNARROWWH, "fnarrowwh", UINT16, FLOAT32);  // Deprecated
 
   ADD_KVX_BUILTIN (LBZ, "lbz", INT64, CVPTR, BYPASS, BOOL); // Memory
   ADD_KVX_BUILTIN (LBS, "lbs", INT64, CVPTR, BYPASS, BOOL); // Memory
@@ -6607,7 +6673,7 @@ kvx_expand_builtin_stsud (rtx target, tree args)
 }
 
 static rtx
-kvx_expand_builtin_fwiden (rtx target, tree args, int low_bits)
+kvx_expand_builtin_fwidenlhw (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   arg1 = force_reg (SImode, arg1);
@@ -6617,10 +6683,23 @@ kvx_expand_builtin_fwiden (rtx target, tree args, int low_bits)
   else
     target = force_reg (SFmode, target);
 
-  if (low_bits)
-    emit_insn (gen_builtin_extendhfsf2 (target, arg1));
+  emit_insn (gen_kvx_fwidenlhw (target, arg1));
+
+  return target;
+}
+
+static rtx
+kvx_expand_builtin_fwidenmhw (rtx target, tree args)
+{
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  arg1 = force_reg (SImode, arg1);
+
+  if (!target)
+    target = gen_reg_rtx (SFmode);
   else
-    emit_insn (gen_builtin_extendhfsf2_tophalf (target, arg1));
+    target = force_reg (SFmode, target);
+
+  emit_insn (gen_kvx_fwidenmhw (target, arg1));
 
   return target;
 }
@@ -6636,7 +6715,7 @@ kvx_expand_builtin_fnarrowwh (rtx target, tree args)
   else
     target = force_reg (HImode, target);
 
-  emit_insn (gen_builtin_truncsfhf2 (target, arg1));
+  emit_insn (gen_kvx_fnarrowwh (target, arg1));
 
   return target;
 }
@@ -7450,8 +7529,8 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_STSUD: return kvx_expand_builtin_stsud (target, exp);
     case KVX_BUILTIN_SBMM8: return kvx_expand_builtin_sbmm8 (target, exp);
     case KVX_BUILTIN_SBMMT8: return kvx_expand_builtin_sbmmt8 (target, exp);
-    case KVX_BUILTIN_FWIDENLHW: return kvx_expand_builtin_fwiden (target, exp, 1);
-    case KVX_BUILTIN_FWIDENMHW: return kvx_expand_builtin_fwiden (target, exp, 0);
+    case KVX_BUILTIN_FWIDENLHW: return kvx_expand_builtin_fwidenlhw (target, exp);
+    case KVX_BUILTIN_FWIDENMHW: return kvx_expand_builtin_fwidenmhw (target, exp);
     case KVX_BUILTIN_FNARROWWH: return kvx_expand_builtin_fnarrowwh (target, exp);
 
     case KVX_BUILTIN_LBZ: return kvx_expand_builtin_lbz (target, exp);
@@ -7648,6 +7727,8 @@ kvx_sched_adjust_cost (rtx_insn *insn, int dep_type, rtx_insn *dep_insn,
 {
   if (dep_type == REG_DEP_TRUE)
     {
+      // Use (set_of) instead of (reg_overlap_mentioned_p) to catch cases in
+      // SCHED2 of producing a register pair and consuming a single register.
       if (JUMP_P (insn))
 	// Reduce cost except for the dependence carrying the tested value.
 	// Case of carrying is when DEP_INSN modifies a REG used by INSN.
@@ -7690,6 +7771,18 @@ kvx_sched_adjust_cost (rtx_insn *insn, int dep_type, rtx_insn *dep_insn,
 	  if (!REG_P (x) || !set_of (x, dep_insn))
 	    cost = 0;
 	}
+      else if (recog_memoized (dep_insn) >= 0)
+	// If the producer is a MAU that sets HF inner mode, decrement cost.
+	{
+	  enum attr_type type = get_attr_type (dep_insn);
+	  if (type >= TYPE_MAU && type < TYPE_BCU)
+	    {
+	      rtx x = SET_DEST (single_set (dep_insn));
+	      machine_mode inner_mode = GET_MODE_INNER (GET_MODE (x));
+	      if (inner_mode == HFmode)
+		cost--;
+	    }
+	}
     }
   else if (dep_type == REG_DEP_ANTI)
     {
@@ -7702,6 +7795,8 @@ kvx_sched_adjust_cost (rtx_insn *insn, int dep_type, rtx_insn *dep_insn,
       else if (GET_CODE (PATTERN (dep_insn)) == CLOBBER)
 	// Delay consumer INSN of CLOBBER for non-zero number of clock cycles.
 	// This corrects the rewriting of dependencies by chain_to_prev_insn().
+	// Problem appears in cases the CLOBBER of an INSF is located after the
+	// producer for the INSF. So we find this producer and apply its cost.
 	{
 	  cost = 1;
 	  dep_t dep;
@@ -8113,17 +8208,33 @@ kvx_const_vector_value (rtx x, int slice)
 	{
 	  value = INTVAL (CONST_VECTOR_ELT (x, index + 0));
 	}
-      else if (inner_mode == SFmode)
+      else if (inner_mode == HFmode)
 	{
-	  long val[2] = {0, 0};
+	  long val_0 = 0, val_1 = 0, val_2 = 0, val_3 = 0;
 	  rtx elt_0 = CONST_VECTOR_ELT (x, index + 0);
 	  rtx elt_1 = CONST_VECTOR_ELT (x, index + 1);
-	  REAL_VALUE_TO_TARGET_SINGLE (*CONST_DOUBLE_REAL_VALUE (elt_0),
-				       val[0]);
-	  REAL_VALUE_TO_TARGET_SINGLE (*CONST_DOUBLE_REAL_VALUE (elt_1),
-				       val[1]);
-	  value = ((HOST_WIDE_INT) val[0] & 0xFFFFFFFF)
-		  | ((HOST_WIDE_INT) val[1] & 0xFFFFFFFF) << 32;
+	  rtx elt_2 = CONST_VECTOR_ELT (x, index + 2);
+	  rtx elt_3 = CONST_VECTOR_ELT (x, index + 3);
+	  REAL_VALUE_TO_TARGET_SINGLE (*CONST_DOUBLE_REAL_VALUE (elt_0), val_0);
+	  REAL_VALUE_TO_TARGET_SINGLE (*CONST_DOUBLE_REAL_VALUE (elt_1), val_1);
+	  REAL_VALUE_TO_TARGET_SINGLE (*CONST_DOUBLE_REAL_VALUE (elt_2), val_2);
+	  REAL_VALUE_TO_TARGET_SINGLE (*CONST_DOUBLE_REAL_VALUE (elt_3), val_3);
+	  val_0 = kvx_float_to_half_as_int (val_0);
+	  val_1 = kvx_float_to_half_as_int (val_1);
+	  val_2 = kvx_float_to_half_as_int (val_2);
+	  val_3 = kvx_float_to_half_as_int (val_3);
+	  value = (val_0 & 0xFFFF) | (val_1 & 0xFFFF) << 16
+		  | (val_2 & 0xFFFF) << 32 | (val_3 & 0xFFFF) << 48;
+	}
+      else if (inner_mode == SFmode)
+	{
+	  long val_0 = 0, val_1 = 0;
+	  rtx elt_0 = CONST_VECTOR_ELT (x, index + 0);
+	  rtx elt_1 = CONST_VECTOR_ELT (x, index + 1);
+	  REAL_VALUE_TO_TARGET_SINGLE (*CONST_DOUBLE_REAL_VALUE (elt_0), val_0);
+	  REAL_VALUE_TO_TARGET_SINGLE (*CONST_DOUBLE_REAL_VALUE (elt_1), val_1);
+	  value = ((HOST_WIDE_INT) val_0 & 0xFFFFFFFF)
+		  | ((HOST_WIDE_INT) val_1 & 0xFFFFFFFF) << 32;
 	}
       else if (inner_mode == DFmode)
 	{
@@ -9895,36 +10006,30 @@ bool
 kvx_float_fits_bits (const REAL_VALUE_TYPE *r, unsigned bitsz,
 		     enum machine_mode mode)
 {
-  long l[2];
-  gcc_assert (mode == DFmode || mode == SFmode);
+  if (bitsz >= 64)
+    return true;
 
-  if (mode == SFmode)
+  long l[2];
+  unsigned long long value = 0;
+  if (mode == HFmode)
     {
       REAL_VALUE_TO_TARGET_SINGLE (*r, l[0]);
-      return (l[0] == 0)
-	     || (8 * sizeof (l[0]) - __builtin_clzl (l[0])) <= bitsz;
+      value = kvx_float_to_half_as_int (l[0]);
+    }
+  else if (mode == SFmode)
+    {
+      REAL_VALUE_TO_TARGET_SINGLE (*r, l[0]);
+      value = l[0] & 0xFFFFFFFFULL;
+    }
+  else if (mode == DFmode)
+    {
+      REAL_VALUE_TO_TARGET_DOUBLE (*r, l);
+      value = (l[0] & 0xFFFFFFFFULL) | ((unsigned long long) l[1] << 32);
     }
   else
-    { /*  (mode == DFmode) */
-      REAL_VALUE_TO_TARGET_DOUBLE (*r, l);
-      if (bitsz > 32)
-	{
-	  if (l[1] == 0)
-	    {
-	      return true;
-	    }
-	  bitsz -= 32;
-	  return (8 * sizeof (l[1]) - __builtin_clzl (l[1])) <= bitsz;
-	}
-      else
-	{
-	  if (l[1] != 0)
-	    {
-	      return false;
-	    }
-	  return ((8 * sizeof (l[0]) - __builtin_clzl (l[0])) <= bitsz);
-	}
-    }
+    gcc_unreachable ();
+
+  return SIGNED_INT_FITS_N_BITS (value, bitsz);
 }
 
 /* Returns a pattern suitable for copyq asm insn with the paired
@@ -10177,8 +10282,18 @@ kvx_ctrapsi4 (void)
 #undef TARGET_FIXED_POINT_SUPPORTED_P
 #define TARGET_FIXED_POINT_SUPPORTED_P kvx_fixed_point_supported_p
 
+#undef TARGET_SCALAR_MODE_SUPPORTED_P
+#define TARGET_SCALAR_MODE_SUPPORTED_P kvx_scalar_mode_supported_p
+
 #undef TARGET_VECTOR_MODE_SUPPORTED_P
 #define TARGET_VECTOR_MODE_SUPPORTED_P kvx_vector_mode_supported_p
+
+#undef TARGET_LIBGCC_FLOATING_MODE_SUPPORTED_P
+#define TARGET_LIBGCC_FLOATING_MODE_SUPPORTED_P                                \
+  kvx_libgcc_floating_mode_supported_p
+
+#undef TARGET_C_EXCESS_PRECISION
+#define TARGET_C_EXCESS_PRECISION kvx_excess_precision
 
 #undef TARGET_VECTORIZE_SUPPORT_VECTOR_MISALIGNMENT
 #define TARGET_VECTORIZE_SUPPORT_VECTOR_MISALIGNMENT                           \
