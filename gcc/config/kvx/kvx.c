@@ -1780,7 +1780,7 @@ kvx_expand_tablejump (rtx op0, rtx op1)
     }
 }
 
-/* Return TRUE if REGNO should be saves in the prologue of current function */
+/* Return TRUE if REGNO should be saved in the prologue of current function */
 static bool
 should_be_saved_in_prologue (int regno)
 {
@@ -1807,8 +1807,18 @@ kvx_get_callersaved_nonfixed_reg (machine_mode mode, unsigned int n)
   // We should be able to use the veneer regs if not fixed.
   for (i = 0, regno = 16; regno < FIRST_PSEUDO_REGISTER; regno++)
     {
-      if (call_really_used_regs[regno] && !fixed_regs[regno] && (i++ == n))
-	return gen_rtx_REG (mode, regno);
+      bool candidate = call_really_used_regs[regno] && !fixed_regs[regno];
+#ifdef GCC_KVX_MPPA_LINUX
+      candidate &= !((regno == PROFILE_REGNO) && (crtl->profile));
+#endif
+
+      if (!candidate)
+        continue;
+
+      if (i == n)
+        return gen_rtx_REG (mode, regno);
+      else
+        i++;
     }
 
   error ("No scratch register available in function prologue.");
@@ -9627,6 +9637,23 @@ kvx_is_farcall_p (rtx op)
   return farcall;
 }
 
+#ifdef GCC_KVX_MPPA_LINUX
+void
+kvx_output_function_profiler (FILE *file)
+{
+  int temp_reg = REGNO (kvx_get_callersaved_nonfixed_reg (Pmode, 2));
+  fprintf (file, "\n\tget $r%d = $ra", PROFILE_REGNO);
+  if (KVX_FARCALL)
+    {
+      fprintf (file, "\n\tmake $r%d = __mcount\n\t;;\n\t", temp_reg);
+      fprintf (file, "\n\ticall $r%d\n\t;;\n\t", temp_reg);
+    }
+  else
+    {
+      fputs ("\n\t;;\n\tcall __mcount\n\t;;\n\t", file);
+    }
+}
+#else
 void
 kvx_profile_hook (void)
 {
@@ -9634,6 +9661,7 @@ kvx_profile_hook (void)
   rtx fun = gen_rtx_SYMBOL_REF (Pmode, "__mcount");
   emit_library_call (fun, LCT_NORMAL, VOIDmode, 1, ra_arg, Pmode);
 }
+#endif
 
 /* Returns asm template for ctrapsi4 */
 char *
