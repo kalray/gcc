@@ -32,6 +32,7 @@ extern bool kvx_cannot_change_mode_class (enum machine_mode from,
 #ifdef RTX_CODE
 #include "tree-pass.h"
 
+extern void kvx_output_function_profiler (FILE *);
 extern HOST_WIDE_INT kvx_first_parm_offset (tree decl);
 extern int kvx_starting_frame_offset (void);
 
