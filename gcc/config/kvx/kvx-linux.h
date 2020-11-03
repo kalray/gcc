@@ -45,4 +45,11 @@
 
 #undef CPP_SPEC
 #define CPP_SPEC "%{pthread:-D_REENTRANT}"
+#undef PROFILE_HOOK
+
+#undef FUNCTION_PROFILER
+#define FUNCTION_PROFILER(FILE, LABELNO) kvx_output_function_profiler (FILE)
+#define PROFILE_REGNO (32)
+#define NO_PROFILE_COUNTERS 1
+
 #endif
