@@ -39,6 +39,10 @@ fhwloop
 Target Report Mask(HWLOOP)
 Enable hwloop generation when optimizing (active by default)
 
+fsched2-dates
+Target Report Mask(SCHED2_DATES)
+Display sched2 schedule dates in assembly output (active by default)
+
 fstrict-align
 Target Report Mask(STRICT_ALIGN)
 Do not generate misaligned memory accesses 

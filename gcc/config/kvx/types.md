@@ -45,10 +45,10 @@
   mau,\
   mau_x,\
   mau_y,\
+  mau_fpu,\
   mau_auxr, \
   mau_auxr_x, \
   mau_auxr_y, \
-  mau_fpu,\
   mau_auxr_fpu,\
   bcu,\
   bcu_get,\
