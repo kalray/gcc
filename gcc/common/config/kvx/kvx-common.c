@@ -62,6 +62,6 @@ kvx_option_default_params (void)
 #undef TARGET_EXCEPT_UNWIND_INFO
 #define TARGET_EXCEPT_UNWIND_INFO sjlj_except_unwind_info
 #undef TARGET_DEFAULT_TARGET_FLAGS
-#define TARGET_DEFAULT_TARGET_FLAGS (MASK_BUNDLING | MASK_HWLOOP)
+#define TARGET_DEFAULT_TARGET_FLAGS (MASK_HWLOOP | MASK_SCHED2_DATES)
 
 struct gcc_targetm_common targetm_common = TARGETM_COMMON_INITIALIZER;
