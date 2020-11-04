@@ -107,7 +107,7 @@
 //#include "recog.h"
 #include "regs.h"
 
-#include "sched-int.h"
+#include "sel-sched.h"
 #include "toplev.h"
 #include "stor-layout.h"
 #include "varasm.h"
@@ -116,6 +116,7 @@
 #include "target.h"
 #include "target-def.h"
 #include "ira.h"
+#include "ddg.h"
 
 #include "kvx-protos.h"
 #include "kvx-opts.h"
@@ -7573,21 +7574,124 @@ kv3_mau_lsu_double_port_bypass_p (rtx_insn *producer, rtx_insn *consumer)
   return reg_overlap_mentioned_p (produced, consumed);
 }
 
-static int
-kvx_sched_issue_rate (void)
+static int kvx_sched2_max_uid;
+static short *kvx_sched2_insn_cycle;
+static unsigned char *kvx_sched2_insn_flags;
+#define KVX_SCHED2_INSN_HEAD 1
+#define KVX_SCHED2_INSN_START 2
+#define KVX_SCHED2_INSN_STOP 4
+#define KVX_SCHED2_INSN_TAIL 8
+#define KVX_SCHED2_INSN_STALL 16
+static int kvx_sched2_prev_uid;
+static int kvx_sched2_verbose;
+
+static void
+kvx_dependencies_fprint (FILE *file, rtx_insn *insn)
 {
-  return 4;
+  dep_t dep;
+  sd_iterator_def sd_it;
+  fprintf (file, "forward dependences(# %d)\n", INSN_UID (insn));
+  FOR_EACH_DEP (insn, SD_LIST_FORW, sd_it, dep)
+    {
+      enum reg_note dep_type = DEP_TYPE (dep);
+      const char *dtype = "<none>";
+      if (dep_type == REG_DEP_TRUE)
+	dtype = "true";
+      if (dep_type == REG_DEP_ANTI)
+	dtype = "anti";
+      if (dep_type == REG_DEP_OUTPUT)
+	dtype = "output";
+      if (dep_type == REG_DEP_CONTROL)
+	dtype = "control";
+      fprintf (file, "\t%s -> (# %d)\n", dtype, INSN_UID (DEP_CON (dep)));
+    }
+  fprintf (file, "backward dependences(# %d)\n", INSN_UID (insn));
+  FOR_EACH_DEP (insn, SD_LIST_BACK, sd_it, dep)
+    {
+      enum reg_note dep_type = DEP_TYPE (dep);
+      const char *dtype = "<none>";
+      if (dep_type == REG_DEP_TRUE)
+	dtype = "true";
+      if (dep_type == REG_DEP_ANTI)
+	dtype = "anti";
+      if (dep_type == REG_DEP_OUTPUT)
+	dtype = "output";
+      if (dep_type == REG_DEP_CONTROL)
+	dtype = "control";
+      fprintf (file, "\t%s <- (# %d)\n", dtype, INSN_UID (DEP_PRO (dep)));
+    }
 }
 
 static int
-kvx_sched_adjust_cost (rtx_insn *insn, int dep_type,
-		       rtx_insn *dep_insn ATTRIBUTE_UNUSED, int cost,
-		       unsigned int)
+kvx_sched_issue_rate (void)
 {
-  /* On the kvx, it is possible to read then write the same register in a
-   * bundle so we set the WAR cost to 0 unless insn is a control-flow consuming
-   * reg then it is 1 */
-  if (dep_type == REG_DEP_ANTI)
+  return 5;
+}
+
+static int
+kvx_sched_variable_issue (FILE *file ATTRIBUTE_UNUSED,
+			  int verbose ATTRIBUTE_UNUSED, rtx_insn *insn,
+			  int more)
+{
+  rtx x = PATTERN (insn);
+  if (GET_CODE (x) == CLOBBER || GET_CODE (x) == USE)
+    return more;
+  // Cannot issue further insns at the same cycle as JUMP or CALL.
+  if (JUMP_P (insn) || CALL_P (insn))
+    return 0;
+  return more - 1;
+}
+
+static int
+kvx_sched_adjust_cost (rtx_insn *insn, int dep_type, rtx_insn *dep_insn,
+		       int cost, unsigned int dw ATTRIBUTE_UNUSED)
+{
+  if (dep_type == REG_DEP_TRUE)
+    {
+      if (JUMP_P (insn))
+	// Reduce cost except for the dependence carrying the tested value.
+	// Case of carrying is when DEP_INSN modifies a REG used by INSN.
+	{
+	  rtx x = PATTERN (insn);
+	  if (GET_CODE (x) == PARALLEL)
+	    x = XVECEXP (x, 0, 0);
+	  if (GET_CODE (x) == SET)
+	    {
+	      x = SET_SRC (x);
+	    if (GET_CODE (x) == IF_THEN_ELSE)
+	      x = XEXP (XEXP (x, 0), 0);
+	    if (GET_CODE (x) == ZERO_EXTRACT)
+	      x = XEXP (x, 0);
+	    if (!REG_P (x) || !set_of (x, dep_insn))
+	      cost = 0;
+	    }
+	  else if (ANY_RETURN_P (x))
+	    {
+	      rtx y = PATTERN (dep_insn);
+	      if (GET_CODE (y) == PARALLEL)
+		y = XVECEXP (y, 0, 0);
+	      if (GET_CODE (y) == SET)
+		y = SET_DEST (y);
+	      if (!REG_P (y) || REGNO (y) != KV3_RA_REGNO)
+		cost = 0;
+	    }
+	}
+      else if (CALL_P (insn))
+	// Reduce cost except for the dependence carrying the call target.
+	// Case of carrying is when DEP_INSN modifies a REG used by INSN.
+	{
+	  rtx x = PATTERN (insn);
+	  if (GET_CODE (x) == PARALLEL)
+	    x = XVECEXP (x, 0, 0);
+	  if (GET_CODE (x) == SET)
+	    x = SET_SRC (x);
+	  if (GET_CODE (x) == CALL)
+	    x = XEXP (XEXP (x, 0), 0);
+	  if (!REG_P (x) || !set_of (x, dep_insn))
+	    cost = 0;
+	}
+    }
+  else if (dep_type == REG_DEP_ANTI)
     {
       cost = 0;
       if (JUMP_P (dep_insn) || CALL_P (dep_insn))
@@ -7595,19 +7699,54 @@ kvx_sched_adjust_cost (rtx_insn *insn, int dep_type,
 	{
 	  cost = 1;
 	}
+      else if (GET_CODE (PATTERN (dep_insn)) == CLOBBER)
+	// Delay consumer INSN of CLOBBER for non-zero number of clock cycles.
+	// This corrects the rewriting of dependencies by chain_to_prev_insn().
+	{
+	  cost = 1;
+	  dep_t dep;
+	  sd_iterator_def sd_it;
+	  FOR_EACH_DEP (dep_insn, SD_LIST_BACK, sd_it, dep)
+	    {
+	      if (DEP_TYPE (dep) == REG_DEP_TRUE)
+		{
+		  rtx_insn *pro_insn = DEP_PRO (dep);
+		  int pro_cost = insn_cost (pro_insn);
+		  if (cost < pro_cost)
+		    cost = pro_cost;
+		}
+	    }
+	}
     }
-  else
-    /* Just to be sure, force the WAW cost to 1 */
-    if (dep_type == REG_DEP_OUTPUT)
+  else if (dep_type == REG_DEP_OUTPUT)
     {
       cost = 1;
+      if (JUMP_P (insn) || CALL_P (insn))
+	// Consumer is JUMP or CALL, producer can issue at same clock cycle.
+	{
+	  cost = 0;
+	}
     }
+
+  if (!cost && reg_mentioned_p (kvx_sync_reg_rtx, insn)
+      && reg_mentioned_p (kvx_sync_reg_rtx, dep_insn))
+    cost = 1;
 
   return cost;
 }
 
+static int
+kvx_sched_adjust_priority (rtx_insn *insn, int priority)
+{
+  rtx x = PATTERN (insn);
+  // CLOBBER insns better remain first in scheduling group after SCHED1.
+  if (GET_CODE (x) == CLOBBER)
+    priority += 10;
+  return priority;
+}
+
 static void
-kvx_dependencies_evaluation_hook (rtx_insn *head, rtx_insn *tail)
+kvx_sched_dependencies_evaluation_hook (rtx_insn *head, rtx_insn *tail)
 {
   rtx_insn *insn, *insn2, *next_tail, *last_sync = head;
 
@@ -7636,46 +7775,183 @@ kvx_dependencies_evaluation_hook (rtx_insn *head, rtx_insn *tail)
 }
 
 static void
+kvx_sched_init (FILE *file ATTRIBUTE_UNUSED, int verbose ATTRIBUTE_UNUSED,
+		int max_ready ATTRIBUTE_UNUSED)
+{
+  if (reload_completed)
+    {
+      if ((unsigned) kvx_sched2_prev_uid < kvx_sched2_max_uid)
+	{
+	  kvx_sched2_insn_flags[kvx_sched2_prev_uid]
+	    |= KVX_SCHED2_INSN_STOP | KVX_SCHED2_INSN_TAIL;
+	}
+      kvx_sched2_prev_uid = -1;
+    }
+}
+
+static void
+kvx_sched_finish (FILE *file ATTRIBUTE_UNUSED, int verbose ATTRIBUTE_UNUSED)
+{
+  if (reload_completed)
+    {
+      if ((unsigned) kvx_sched2_prev_uid < kvx_sched2_max_uid)
+	{
+	  kvx_sched2_insn_flags[kvx_sched2_prev_uid]
+	    |= KVX_SCHED2_INSN_STOP | KVX_SCHED2_INSN_TAIL;
+	}
+    }
+}
+
+static void
 kvx_sched_init_global (FILE *file ATTRIBUTE_UNUSED,
-		       int verbose ATTRIBUTE_UNUSED,
-		       int max_ready ATTRIBUTE_UNUSED)
+		       int verbose ATTRIBUTE_UNUSED, int old_max_uid)
 {
   scheduling = true;
+  if (reload_completed)
+    {
+      /* Allocate here, deallocate in kvx_function_epilogue(). */
+      kvx_sched2_max_uid = old_max_uid;
+      kvx_sched2_insn_cycle = XNEWVEC (short, kvx_sched2_max_uid);
+      memset (kvx_sched2_insn_cycle, -1, sizeof (short) * kvx_sched2_max_uid);
+      kvx_sched2_insn_flags = XCNEWVEC (unsigned char, kvx_sched2_max_uid);
+      kvx_sched2_verbose = verbose;
+    }
+}
+
+static void
+kvx_sched_finish_global (FILE *file ATTRIBUTE_UNUSED,
+			 int verbose ATTRIBUTE_UNUSED)
+{
 }
 
 static int
 kvx_sched_dfa_new_cycle (FILE *dump ATTRIBUTE_UNUSED,
 			 int verbose ATTRIBUTE_UNUSED, rtx_insn *insn,
-			 int last_clock, int clock,
+			 int last_clock ATTRIBUTE_UNUSED, int clock,
 			 int *sort_p ATTRIBUTE_UNUSED)
 {
-  if (clock != last_clock)
-    return 0;
+  // Use this hook to record the cycle and flags of INSN in SCHED2.
+  int uid = INSN_UID (insn);
+  if ((unsigned) uid < kvx_sched2_max_uid && GET_CODE (PATTERN (insn)) != USE
+      && GET_CODE (PATTERN (insn)) != CLOBBER)
+    {
+      int prev_uid = kvx_sched2_prev_uid;
+      if (prev_uid < 0)
+	{
+	  // Head of the scheduling region, start a new bundle.
+	  kvx_sched2_insn_flags[uid]
+	    = KVX_SCHED2_INSN_HEAD | KVX_SCHED2_INSN_START;
+	}
+      else if (clock > kvx_sched2_insn_cycle[prev_uid])
+	{
+	  // Advanced clock, stop previous bundle and start a new one.
+	  kvx_sched2_insn_flags[prev_uid] |= KVX_SCHED2_INSN_STOP;
+	  kvx_sched2_insn_flags[uid] = KVX_SCHED2_INSN_START;
+	}
+      else if (kvx_sched2_insn_flags[prev_uid] & KVX_SCHED2_INSN_STOP)
+	{
+	  // Previous bundle was stopped for some reason, start a new one.
+	  kvx_sched2_insn_flags[uid] |= KVX_SCHED2_INSN_START;
+	}
 
-  if (reg_mentioned_p (kvx_sync_reg_rtx, insn))
-    return 1;
+      if (JUMP_P (insn) || CALL_P (insn))
+	{
+	  // JUMP or CALL, stop the current bundle regardless of clock.
+	  kvx_sched2_insn_flags[uid] |= KVX_SCHED2_INSN_STOP;
+	}
 
+      kvx_sched2_insn_cycle[uid] = clock;
+      kvx_sched2_prev_uid = uid;
+    }
   return 0;
 }
 
 static void
-kvx_sched_set_sched_flags (struct spec_info_def *spec ATTRIBUTE_UNUSED)
+kvx_sched_set_sched_flags (struct spec_info_def *spec_info)
 {
+  unsigned int *flags = &(current_sched_info->flags);
+  // Speculative scheduling is enabled by non-zero spec_info->mask.
+  spec_info->mask = 0;
 }
 
-/* Implement TARGET_SCHED_CAN_SPECULATE_INSN.  Return true if INSN can be
-   scheduled for speculative execution.  Reject the long-running division
-   and square-root instructions. (Like in aarch64.c) */
+// Always return true, as long-running instructions are fully pipelined.
 static bool
 kvx_sched_can_speculate_insn (rtx_insn *insn)
 {
-  switch (get_attr_type (insn))
+  return true;
+}
+
+static int
+kvx_sched_sms_res_mii (struct ddg *g)
+{
+  int insn_count = 0;
+  int tiny_count = 0;
+  int lite_count = 0;
+  int full_count = 0;
+  int auxr_count = 0;
+  int alu_count = 0;
+  int lsu_count = 0;
+  int mau_count = 0;
+  int bcu_count = 0;
+  int issue_rate = kvx_sched_issue_rate ();
+  for (int i = 0; i < g->num_nodes; i++)
     {
-    case TYPE_ALU_FULL_COPRO:
-      return false;
-    default:
-      return true;
+      rtx_insn *insn = g->nodes[i].insn;
+      if (NONDEBUG_INSN_P (insn))
+	{
+	  insn_count++;
+	  // Keep the TYPE tests in sync with the order of the types.md file.
+	  enum attr_type type = get_attr_type (insn);
+	  if (type == TYPE_ALL)
+	    {
+	      insn_count += issue_rate;
+	      lsu_count++, mau_count++;
+	      bcu_count++;
+	    }
+	  else if (type >= TYPE_ALU_TINY && type < TYPE_LSU)
+	    {
+	      if (type < TYPE_ALU_TINY_X2)
+		tiny_count++;
+	      else if (type < TYPE_ALU_TINY_X4)
+		tiny_count += 2;
+	      else if (type < TYPE_ALU_LITE)
+		tiny_count += 4;
+	      else if (type < TYPE_ALU_LITE_X2)
+		lite_count++;
+	      else if (type < TYPE_ALU_FULL)
+		lite_count += 2;
+	      else
+		full_count++;
+	    }
+	  else if (type >= TYPE_LSU && type < TYPE_MAU)
+	    lsu_count++;
+	    if (type >= TYPE_LSU_AUXR_STORE
+		&& type < TYPE_LSU_CRRP_STORE)
+	      auxr_count++;
+	  else if (type >= TYPE_MAU && type < TYPE_BCU)
+	    mau_count++;
+	    if (type >= TYPE_MAU_AUXR)
+	      auxr_count++;
+	  else if (type >= TYPE_BCU && type < TYPE_TCA)
+	    bcu_count++;
+	}
     }
+  int res_mii = (insn_count + issue_rate - 1) / issue_rate;
+  if (res_mii < (tiny_count + 3)/4)
+    res_mii = (tiny_count + 3)/4;
+  if (res_mii < (lite_count + 1)/2)
+    res_mii = (lite_count + 1)/2;
+  if (res_mii < full_count)
+    res_mii = full_count;
+  if (res_mii < auxr_count)
+    res_mii = auxr_count;
+  if (res_mii < lsu_count)
+    res_mii = lsu_count;
+  if (res_mii < mau_count)
+    res_mii = mau_count;
+  if (res_mii < bcu_count)
+    res_mii = bcu_count;
+  return res_mii;
 }
 
 /* FIXME AUTO: This must be fixed for coolidge */
@@ -8648,7 +8924,50 @@ static void
 kvx_fix_debug_for_bundles (void)
 {
   unsigned cur_cfa_reg = REGNO (stack_pointer_rtx);
-  if (TARGET_BUNDLING)
+  if (!TARGET_BUNDLING)
+    {
+      rtx_insn *start_insn = 0, *stop_insn = 0;
+      basic_block bb;
+      FOR_EACH_BB_FN (bb, cfun)
+	{
+	  rtx_insn *insn;
+	  FOR_BB_INSNS (bb, insn)
+	    {
+	      if (NONDEBUG_INSN_P (insn) && GET_CODE (PATTERN (insn)) != USE
+		  && GET_CODE (PATTERN (insn)) != CLOBBER)
+		{
+		  int uid = INSN_UID (insn);
+		  if ((unsigned) uid >= kvx_sched2_max_uid
+		      || kvx_sched2_insn_cycle[uid] < 0)
+		    {
+		      if (!start_insn)
+			start_insn = stop_insn = insn;
+		    }
+		  else
+		    {
+		      unsigned flags = kvx_sched2_insn_flags[uid];
+		      if (flags & KVX_SCHED2_INSN_HEAD)
+			cur_cfa_reg = REGNO (stack_pointer_rtx);
+		      if (flags & KVX_SCHED2_INSN_START)
+			start_insn = insn;
+		      if (flags & KVX_SCHED2_INSN_STOP)
+			stop_insn = insn;
+		    }
+		  if (start_insn && stop_insn)
+		    {
+		      kvx_fix_debug_for_bundle_1 (start_insn, stop_insn);
+		      cur_cfa_reg
+			= kvx_fix_debug_for_bundle_2 (start_insn, stop_insn,
+						      cur_cfa_reg);
+		      start_insn = stop_insn = 0;
+		    }
+		}
+	    }
+	}
+      if (start_insn || stop_insn)
+	gcc_assert (!start_insn && !stop_insn);
+    }
+  else
     {
       for (bundle_state *i = cur_bundle_list; i; i = i->next)
 	{
@@ -8661,12 +8980,124 @@ kvx_fix_debug_for_bundles (void)
     }
 }
 
+static unsigned
+kvx_mode_size (machine_mode mode)
+{
+  return GET_MODE_SIZE (mode);
+}
+
+/* Adjust for the stall effects of AUXR RAW on issue cycle. */
+static void
+kvx_sched2_insn_issue (rtx_insn *insn, rtx *opvec, int noperands)
+{
+  int uid = INSN_UID (insn);
+
+  static struct
+  {
+    int delay;
+    short write[KV3_MDS_REGISTERS];
+  } scoreboard;
+  if (kvx_sched2_insn_flags[uid] & KVX_SCHED2_INSN_HEAD)
+    {
+      scoreboard.delay = 0;
+      memset (scoreboard.write, -1, sizeof (scoreboard.write));
+    }
+
+  if (NONDEBUG_INSN_P (insn))
+    {
+      int stall = 0;
+      int cycle = kvx_sched2_insn_cycle[uid] + scoreboard.delay;
+      // Keep TYPE tests in sync with the order of the types.md file.
+      enum attr_type type = get_attr_type (insn);
+      if (type >= TYPE_MAU_AUXR && type <= TYPE_MAU_AUXR_FPU && noperands > 3
+	  && REG_P (opvec[3]))
+	{
+	  int regno = REGNO (opvec[3]);
+	  int regno_quad = (regno & -4);
+	  machine_mode mode = GET_MODE (opvec[3]);
+	  // unsigned mode_size = GET_MODE_SIZE (mode);
+	  unsigned mode_size = kvx_mode_size (mode); // Workaround g++ bug?
+	  if (mode_size <= UNITS_PER_WORD)
+	    {
+	      for (int i = 0; i < 4; i += 2)
+		{
+		  int j = (regno + i) & 3;
+		  int write = scoreboard.write[regno_quad + j];
+		  int delta = write - cycle;
+		  if (stall < delta)
+		    stall = delta;
+		}
+	    }
+	  else if (mode_size >= 2 * UNITS_PER_WORD)
+	    {
+	      for (int i = 0; i < 4; i++)
+		{
+		  int write = scoreboard.write[regno_quad + i];
+		  int delta = write - cycle;
+		  if (stall < delta)
+		    stall = delta;
+		}
+	    }
+	}
+      if (type >= TYPE_MAU && type < TYPE_BCU && noperands > 0
+	  && REG_P (opvec[0]))
+	{
+	  int regno = REGNO (opvec[0]);
+	  machine_mode mode = GET_MODE (opvec[0]);
+	  int cost = FLOAT_MODE_P (mode) ? 4 : (INTEGRAL_MODE_P (mode) ? 3 : 1);
+	  int i = hard_regno_nregs[regno][mode];
+	  while (--i >= 0)
+	    {
+	      scoreboard.write[regno + i] = cycle + cost + stall;
+	    }
+	}
+
+      if (stall)
+	kvx_sched2_insn_flags[uid] |= KVX_SCHED2_INSN_STALL;
+      kvx_sched2_insn_cycle[uid] = cycle + stall;
+      scoreboard.delay += stall;
+    }
+}
+
 static void
 kvx_asm_final_postscan_insn (FILE *file, rtx_insn *insn,
 			     rtx *opvec ATTRIBUTE_UNUSED,
 			     int noperands ATTRIBUTE_UNUSED)
 {
-  if (!scheduling || !TARGET_BUNDLING || kvx_insn_is_bundle_end_p (insn))
+  if (!TARGET_BUNDLING && kvx_sched2_insn_cycle)
+    {
+      int uid = INSN_UID (insn);
+      if ((unsigned) uid >= kvx_sched2_max_uid
+	  || kvx_sched2_insn_cycle[uid] < 0)
+	{
+	  if (TARGET_SCHED2_DATES)
+	    fprintf (file, "\t;;\t(unscheduled)\n");
+	  else
+	    fprintf (file, "\t;;\n");
+	  return;
+	}
+      kvx_sched2_insn_issue (insn, opvec, noperands);
+      if (kvx_sched2_insn_flags[uid] & KVX_SCHED2_INSN_STOP)
+	{
+	  if (TARGET_SCHED2_DATES)
+	    {
+	      const char *stalled = "";
+	      if (kvx_sched2_insn_flags[uid] & KVX_SCHED2_INSN_STALL)
+		stalled = "(stalled)";
+	      int cycle = kvx_sched2_insn_cycle[uid];
+	      fprintf (file, "\t;;\t(end cycle %d)%s\n", cycle, stalled);
+	    }
+	  else
+	    fprintf (file, "\t;;\n");
+	  return;
+	}
+    }
+  if (!TARGET_BUNDLING && !kvx_sched2_insn_cycle)
+    {
+      fprintf (file, "\t;;\n");
+      return;
+    }
+  if (!scheduling || kvx_insn_is_bundle_end_p (insn))
     {
       fprintf (file, "\t;;\n");
       return;
@@ -8983,6 +9414,11 @@ static void
 kvx_function_epilogue (FILE *file ATTRIBUTE_UNUSED,
 		       HOST_WIDE_INT size ATTRIBUTE_UNUSED)
 {
+  kvx_sched2_max_uid = 0;
+  XDELETEVEC (kvx_sched2_insn_cycle);
+  XDELETEVEC (kvx_sched2_insn_flags);
+  kvx_sched2_insn_cycle = 0;
+  kvx_sched2_insn_flags = 0;
   dfa_finish ();
 }
 
@@ -9246,13 +9682,6 @@ hwloop_optimize (hwloop_info loop)
 static struct hw_doloop_hooks kvx_doloop_hooks
   = {hwloop_pattern_reg, hwloop_optimize, hwloop_fail};
 
-static void
-kvx_reorg_loops (void)
-{
-  if (optimize)
-    reorg_loops (false, &kvx_doloop_hooks);
-}
-
 /* Implement the TARGET_MACHINE_DEPENDENT_REORG pass.  */
 
 static void
@@ -9266,8 +9695,26 @@ kvx_reorg (void)
 
   df_analyze ();
 
+  if (optimize && flag_schedule_insns_after_reload)
+    {
+      timevar_push (TV_SCHED2);
+
+      if (flag_selective_scheduling2 && !maybe_skip_selective_scheduling ())
+	run_selective_scheduling ();
+      else
+	schedule_ebbs ();
+
+      timevar_pop (TV_SCHED2);
+    }
+
   /* Doloop optimization. */
-  kvx_reorg_loops ();
+  if (optimize)
+    reorg_loops (false, &kvx_doloop_hooks);
+
+  if (scheduling && !TARGET_BUNDLING)
+    {
+      kvx_fix_debug_for_bundles ();
+    }
 
   /* Do it even if ! TARGET_BUNDLING because it also takes care of
    cleaning previous data */
@@ -9770,15 +10217,30 @@ kvx_ctrapsi4 (void)
 #undef TARGET_SCHED_ISSUE_RATE
 #define TARGET_SCHED_ISSUE_RATE kvx_sched_issue_rate
 
+#undef TARGET_SCHED_VARIABLE_ISSUE
+#define TARGET_SCHED_VARIABLE_ISSUE kvx_sched_variable_issue
+
 #undef TARGET_SCHED_ADJUST_COST
 #define TARGET_SCHED_ADJUST_COST kvx_sched_adjust_cost
 
+#undef TARGET_SCHED_ADJUST_PRIORITY
+#define TARGET_SCHED_ADJUST_PRIORITY kvx_sched_adjust_priority
+
 #undef TARGET_SCHED_DEPENDENCIES_EVALUATION_HOOK
 #define TARGET_SCHED_DEPENDENCIES_EVALUATION_HOOK                              \
-  kvx_dependencies_evaluation_hook
+  kvx_sched_dependencies_evaluation_hook
+
+#undef TARGET_SCHED_INIT
+#define TARGET_SCHED_INIT kvx_sched_init
+
+#undef TARGET_SCHED_FINISH
+#define TARGET_SCHED_FINISH kvx_sched_finish
 
 #undef TARGET_SCHED_INIT_GLOBAL
 #define TARGET_SCHED_INIT_GLOBAL kvx_sched_init_global
+
+#undef TARGET_SCHED_FINISH_GLOBAL
+#define TARGET_SCHED_FINISH_GLOBAL kvx_sched_finish_global
 
 #undef TARGET_SCHED_DFA_NEW_CYCLE
 #define TARGET_SCHED_DFA_NEW_CYCLE kvx_sched_dfa_new_cycle
@@ -9788,6 +10250,12 @@ kvx_ctrapsi4 (void)
 
 #undef TARGET_SCHED_CAN_SPECULATE_INSN
 #define TARGET_SCHED_CAN_SPECULATE_INSN kvx_sched_can_speculate_insn
+
+#undef TARGET_SCHED_SMS_RES_MII
+#define TARGET_SCHED_SMS_RES_MII kvx_sched_sms_res_mii
+
+#undef TARGET_SCHED_EXPOSED_PIPELINE
+#define TARGET_SCHED_EXPOSED_PIPELINE true
 
 #undef TARGET_SCHED_REASSOCIATION_WIDTH
 #define TARGET_SCHED_REASSOCIATION_WIDTH kvx_sched_reassociation_width
@@ -9876,6 +10344,12 @@ kvx_ctrapsi4 (void)
 /* FIXME AUTO: trampoline are broken T6775 */
 #undef TARGET_STATIC_CHAIN
 #define TARGET_STATIC_CHAIN kvx_static_chain
+
+#undef TARGET_DELAY_SCHED2
+#define TARGET_DELAY_SCHED2 (!TARGET_BUNDLING)
+
+#undef TARGET_DELAY_VARTRACK
+#define TARGET_DELAY_VARTRACK (!TARGET_BUNDLING)
 
 struct gcc_target targetm = TARGET_INITIALIZER;
 
