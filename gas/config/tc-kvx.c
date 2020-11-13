@@ -50,7 +50,7 @@ static void supported_cores(char buf[], size_t buflen);
 /*TB begin*/
 int size_type_function = 1;
 /*TB end */
-static int nop_insertion_allowed = 1;
+
 /* Resource usage checking is disabled by default, because it
  * can produce false positives. */
 static int check_resource_usage = 1;
@@ -276,8 +276,6 @@ const pseudo_typeS md_pseudo_table[] =
      {"real8", kvx_cons, 8},	/* uncertain syntax */
      {"skip", kvx_skip, 0},		/* equiv to GNU .space */
      {"space", kvx_skip, 0},	/* equiv to GNU .space */
-     {"nopinsertion", kvx_nop_insertion, 1},
-     {"nonopinsertion", kvx_nop_insertion, 0},
      {"checkresources", kvx_check_resources, 1},
      {"nocheckresources", kvx_check_resources, 0},
 
@@ -3336,12 +3334,6 @@ kvx_set_assume_flags(int ignore ATTRIBUTE_UNUSED)
             SKIP_WHITESPACE();
         }
     } /* end while */
-}
-
-static void
-kvx_nop_insertion(int f)
-{
-    nop_insertion_allowed = f;
 }
 
 static void
