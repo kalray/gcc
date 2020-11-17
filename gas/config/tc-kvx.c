@@ -159,12 +159,6 @@ int get_byte_counter(asection *sec)
     return sec->target_index;
 }
 
-static int is_code_section(asection *sec);
-int is_code_section(asection *sec)
-{
-    return ((bfd_section_flags(sec) & (SEC_CODE))) ;
-}
-
 /* Either 32 or 64.  */
 static int kvx_arch_size = 64;
 
@@ -211,71 +205,30 @@ enum unwrecord
     UNW_SPILL_SPREL
 };
 static int get_regnum_by_name(char *name);
-static void kvx_align(int bytes, int is_byte);
-static void kvx_align_bytes(int bytes);
-static void kvx_align_ptwo(int pow);
-static void kvx_skip(int mult);
-static void kvx_comm(int ignore);
-static void kvx_cons(int size);
-static void kvx_set_rta_flags(int);
-static void kvx_set_assume_flags(int);
-static void kvx_nop_insertion(int);
 static void kvx_check_resources(int);
-static void kvx_float_cons(int type);
-static void kvx_stringer(int append_zero);
 static void kvx_proc(int start);
 static void kvx_endp(int start);
 static void kvx_type(int start);
 static void kvx_unwind(int r);
-static void kvx_pic_ptr (int);
-#if 0
-static void md_after_pass(void);
-#endif
 
 const pseudo_typeS md_pseudo_table[] =
 {
-    /* override ones defined in read.c */
+     /* override default 2-bytes */
+     {"word", cons, 4},
 
-     {"ascii", kvx_stringer, 8},
-     {"asciz", kvx_stringer, 9},
-     {"byte", kvx_cons, 1},
-     {"double", kvx_float_cons, 'd'},
-     {"float", kvx_float_cons, 'f'},
-     {"hword", kvx_cons, 2},
-     {"int", kvx_cons, 4},
-     {"long", kvx_cons, 4},
-     {"octa", kvx_cons, 16},
-     {"quad", kvx_cons, 8},
-     {"short", kvx_cons, 2},
-     {"single", kvx_float_cons, 'f'},
-     {"string", kvx_stringer, 9},
-     {"word", kvx_cons, 4},
-     {"dword", kvx_cons, 8},
+     /* KVX specific */
+     {"dword", cons, 8},
 
-     /* override ones defined in obj-elf.c */
+     {"align", s_align_bytes, 0},
 
-     {"2byte", kvx_cons, 2},
-     {"4byte", kvx_cons, 4},
-     {"8byte", kvx_cons, 8},
+     /* KVX specific, should be deprecated */
+     {"data1", cons, 1},
+     {"data2", cons, 2},
+     {"data4", cons, 4},
+     {"real4", cons, 4},
+     {"data8", cons, 8},	/* uncertain syntax */
+     {"real8", cons, 8},	/* uncertain syntax */
 
-     /* kvx-specific */
-
-     {"picptr", kvx_pic_ptr, 4},
-     {"assume", kvx_set_assume_flags, 0},
-     {"rta", kvx_set_rta_flags, 0},
-     {"align", kvx_align_bytes, 4},
-     {"balign", kvx_align_bytes, 4},
-     {"balignw", kvx_align_bytes, -2},
-     {"balignl", kvx_align_bytes, -4},
-     {"comm", kvx_comm, 0},
-     {"data1", kvx_cons, 1},
-     {"data2", kvx_cons, 2},
-     {"data4", kvx_cons, 4},
-     {"real4", kvx_cons, 4},
-     {"data8", kvx_cons, 8},	/* uncertain syntax */
-     {"real8", kvx_cons, 8},	/* uncertain syntax */
-     {"skip", kvx_skip, 0},		/* equiv to GNU .space */
-     {"space", kvx_skip, 0},	/* equiv to GNU .space */
      {"checkresources", kvx_check_resources, 1},
      {"nocheckresources", kvx_check_resources, 0},
 
@@ -307,9 +260,6 @@ const pseudo_typeS md_pseudo_table[] =
      {"proc", kvx_proc, 1},
      {"type", kvx_type, 0},
 
-     {"p2align", kvx_align_ptwo, 2},
-     {"p2alignw", kvx_align_ptwo, -2},
-     {"p2alignl", kvx_align_ptwo, -4},
 #ifdef OBJ_ELF
      { "file", (void (*) (int)) dwarf2_directive_file, 0},
      { "loc", dwarf2_directive_loc, 0},
@@ -2046,7 +1996,7 @@ insn_syntax(kv3opc_t *op, char *buf, int buf_size)
     buf[chars++] = ch;
     fmtp++;
   }
-  
+
   if(chars < buf_size) {
     buf[chars++] = '\0';
   }
@@ -3155,199 +3105,10 @@ kvx_md_start_line_hook(void) {
     }
 }
 
-/*********************************************************/
-/*     Hooks to handle assembler directives              */
-/*     These override defaults by checking segment       */
-/*     info.                                             */
-/*********************************************************/
-
-static void
-kvx_cons(int size)
-{
-    if (is_code_section(now_seg))
-        set_byte_counter(now_seg, (get_byte_counter(now_seg) + size) );
-    cons(size);
-}
-
-static int is_assume_param(char** input, const char* param)
-{
-    if ( (input!=NULL) && (strncmp(*input, param, strlen(param))==0) )
-    {
-        *input=*input+strlen(param);
-        return TRUE;
-    }
-    else
-        return FALSE;
-}
-
-static void set_assume_param(int* param, int param_value, int* param_set);
-void
-set_assume_param(int* param, int param_value, int* param_set)
-{
-    if (!*param_set) {
-        *param = param_value;
-        *param_set = 1;
-    } else {
-        as_bad("Attempt to redefine .assume or .rta parameter");
-        demand_empty_rest_of_line();
-    }
-}
-
-/* Frv specific function to handle 4 byte initializations for pointers that are
-   considered 'safe' for use with pic support.  Until kvx_frob_file{,_section}
-   is run, we encode it a BFD_RELOC_CTOR, and it is turned back into a normal
-   BFD_RELOC_32 at that time.  */
-
-void
-kvx_pic_ptr (int nbytes)
-{
-  expressionS exp;
-  char *p;
-
-  if (nbytes != 4)
-    abort ();
-
-#ifdef md_flush_pending_output
-  md_flush_pending_output ();
-#endif
-
-  if (is_it_end_of_statement ())
-    {
-      demand_empty_rest_of_line ();
-      return;
-    }
-
-#ifdef md_cons_align
-  md_cons_align (nbytes);
-#endif
-
-  do
-    {
-      bfd_reloc_code_real_type reloc_type = BFD_RELOC_KVX_GLOB_DAT;
-
-      /* if (strncasecmp (input_line_pointer, "funcdesc(", 9) == 0) */
-      /*         { */
-      /*           input_line_pointer += 9; */
-      /*           expression (&exp); */
-      /*           if (*input_line_pointer == ')') */
-      /*             input_line_pointer++; */
-      /*           else */
-      /*             as_bad (_("missing ')'")); */
-      /*           reloc_type = BFD_RELOC_KVX_FUNCDESC; */
-      /*         } */
-//       else if (strncasecmp (input_line_pointer, "tlsmoff(", 8) == 0)
-//         {
-//           input_line_pointer += 8;
-//           expression (&exp);
-//           if (*input_line_pointer == ')')
-//             input_line_pointer++;
-//           else
-//             as_bad (_("missing ')'"));
-//           reloc_type = BFD_RELOC_FRV_TLSMOFF;
-//         }
-      /* else */
-        expression (&exp);
-
-      p = frag_more (4);
-      memset (p, 0, 4);
-      fix_new_exp (frag_now, p - frag_now->fr_literal, 4, &exp, 0,
-                   reloc_type);
-    }
-  while (*input_line_pointer++ == ',');
-
-  input_line_pointer--;                        /* Put terminator back into stream. */
-  demand_empty_rest_of_line ();
-}
-
-
-#define MAX_STR_LENGTH 20
-static void
-kvx_set_assume_flags(int ignore ATTRIBUTE_UNUSED)
-{
-    const char *target_name = kvx_core_info->names[subcore_id];
-
-    while ( (input_line_pointer!=NULL)
-            && ! is_end_of_line [(unsigned char) *input_line_pointer])
-    {
-        int found = FALSE;
-        int i, j;
-        SKIP_WHITESPACE();
-
-        /* core */
-        for (i = 0; i < KVXNUMCORES; i++) {
-          j=0;
-          while(kvx_core_info_table[i]->elf_cores[j] != -1) {
-            if (is_assume_param(&input_line_pointer, kvx_core_info_table[i]->names[j])) {
-                set_assume_param(&kvx_core, kvx_core_info_table[i]->elf_cores[subcore_id], &kvx_core_set);
-                if (kvx_core_info != kvx_core_info_table[i])
-                    as_fatal("assume machine '%s' is inconsistent with current machine '%s'",
-                            kvx_core_info_table[i]->names[j], target_name);
-                found = TRUE;
-                break;
-            }
-            j++;
-          }
-        }
-
-        if (! found) {
-            static const struct {
-                const char *name;
-                int value;
-                int *variable;
-                int *set_variable;
-            } assume_params[] = {
-              { "no-abi", ELF_KVX_ABI_UNDEF, &kvx_abi, &kvx_abi_set },
-              { "abi-kv3-regular", ELF_KVX_ABI_REGULAR, &kvx_abi, &kvx_abi_set },
-              { "abi-kv3-pic", ELF_KVX_ABI_PIC_BIT, &kvx_abi, &kvx_abi_set },
-              { "bare-machine", ELFOSABI_NONE, &kvx_osabi, &kvx_osabi_set },
-              { "linux", ELFOSABI_LINUX, &kvx_osabi, &kvx_osabi_set },
-            };
-
-            for (i = 0; i < ((int)(sizeof(assume_params)/sizeof(assume_params[0]))); i++) {
-                if (is_assume_param(&input_line_pointer, assume_params[i].name)) {
-                  set_assume_param(assume_params[i].variable,
-                                   assume_params[i].value,
-                                   assume_params[i].set_variable);
-                  
-                  found = TRUE;
-                  break;
-                }
-            }
-        }
-
-        if (! found)
-        {
-            as_bad("Bad assume parameter");
-            demand_empty_rest_of_line();
-        }
-
-        SKIP_WHITESPACE();
-        if ( (*input_line_pointer!=',')
-                && ! is_end_of_line[(unsigned char) *input_line_pointer])
-        {
-            as_bad("Bad assume parameter");
-            demand_empty_rest_of_line();
-        }
-        if ( *input_line_pointer==',' )
-        {
-            input_line_pointer++;
-            SKIP_WHITESPACE();
-        }
-    } /* end while */
-}
-
 static void
 kvx_check_resources(int f)
 {
     check_resource_usage = f;
-}
-
-static void
-kvx_set_rta_flags(int f ATTRIBUTE_UNUSED)
-{
-   get_absolute_expression();
-    /* Ignore .rta directive from know on. */
-    /*  set_assume_param(&kvx_abi, get_absolute_expression (), &kvx_abi_set); */
 }
 
 /** called before write_object_file */
@@ -3372,155 +3133,6 @@ kvx_end(void)
     i_ehdrp = elf_elfheader(stdoutput);
     i_ehdrp->e_ident[EI_ABIVERSION] = kvx_abi;
     i_ehdrp->e_ident[EI_OSABI] = kvx_osabi;
-}
-
-
-static void
-kvx_float_cons(int type)
-{
-    if (is_code_section(now_seg))
-    {
-        if (type == 'd')
-            set_byte_counter(now_seg, (get_byte_counter(now_seg) + 8) );
-        if (type == 'f')
-            set_byte_counter(now_seg, (get_byte_counter(now_seg) + 4) );
-    }
-    float_cons(type);
-}
-
-static void
-kvx_skip(int mult)
-{
-    char * saved_input_line_pointer;
-    int skip;
-
-    if (is_code_section(now_seg)) {
-        saved_input_line_pointer = input_line_pointer;
-        /* Get argument of .skip/.space directive */
-        if (is_end_of_line[(unsigned char) *input_line_pointer]) {
-            skip = mult;
-        } else {
-            skip = get_absolute_expression();
-        }
-        set_byte_counter(now_seg, (get_byte_counter(now_seg) + skip) );
-
-        /* Reset input_line_pointer to its original value in order to be able to run
-         * through the standard s_space procedure */
-        input_line_pointer = saved_input_line_pointer;
-    }
-    s_space(mult);
-}
-
-static void
-kvx_align_ptwo(int pow)
-{
-    kvx_align(pow, 0);
-    return;
-}
-
-static void
-kvx_align_bytes(int bytes)
-{
-    kvx_align(bytes, 1);
-    return;
-}
-
-/*
- * arg is default alignment if none spec
- * is_bytes is 1 if arg is a number of bytes, 0 if it's a power of 2
- */
-static void
-kvx_align(int arg, int is_bytes)
-{
-    char * saved_input_line_pointer = input_line_pointer;
-    int align;
-    int max;
-
-    if (is_code_section(now_seg))
-    {
-        /* Get argument of .align directive */
-        if (is_end_of_line[(unsigned char) *input_line_pointer])
-        {
-            if (!is_bytes) {
-                int i;
-
-                align = 1;
-                if (arg > 0)
-                    for ( i = 0; i < arg; i++)
-                        align *= 2;
-            } else {
-                align = arg;
-            }
-        }
-        else
-        {
-            align = get_absolute_expression();
-            if (!is_bytes) {
-                int i, tmp = 1;
-
-                if (align > 0) {
-                    for ( i = 0; i < align; i ++)
-                        tmp *= 2;
-                } else {
-                    /* Let later error handling do it's work */
-                }
-                align = tmp;
-            }
-
-            SKIP_WHITESPACE();
-        }
-        /* Check that there's no optional third operand (max bytes to skip).
-         * Currently we cannot evaluate the "byte_counter" in this case,
-         * as the decision of performing the align or not is postponed
-         * in a later phase */
-        if (*input_line_pointer == ',')
-          {
-            ++input_line_pointer;
-            if (*input_line_pointer != ',')
-              {
-                get_absolute_expression();
-                SKIP_WHITESPACE();
-              }
-            if (*input_line_pointer == ',')
-              {
-                ++input_line_pointer;
-                max = get_absolute_expression();
-                if (max)
-                  {
-                    as_fatal(".align : Third operand (max bytes) not supported on text sections");
-                  }
-              }
-          }
-        /* Reset counter */
-        set_byte_counter(now_seg, get_byte_counter(now_seg) & ~(align - 1));
-
-        /* Reset input_line_pointer to its original value in order to be able to run
-         * through the standard s_align_bytes procedure */
-        input_line_pointer = saved_input_line_pointer;
-    }
-    if (!is_bytes)
-        s_align_ptwo(arg);
-    else
-        s_align_bytes(arg);
-}
-
-/* Handle .comm directive */
-static void
-kvx_comm(int param) {
-    s_comm_internal (param, elf_common_parse);
-}
-
-/* .ascii, .asciz, .string -  in text segment, we lose track of */
-/* of alignment, so we punt a little -- force to byte alignment */
-
-static void
-kvx_stringer(int append_zero)
-{
-    if (is_code_section(now_seg))
-    {
-        set_byte_counter(now_seg, 1);
-    }
-    stringer(append_zero);
 }
 
 static void
