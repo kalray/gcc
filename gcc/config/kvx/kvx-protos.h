@@ -81,8 +81,6 @@ extern void kvx_emit_immediate_to_register_move (rtx, rtx);
 
 extern void kvx_emit_stack_overflow_block (rtx *seq, rtx *last);
 
-extern void kvx_final_prescan_insn (rtx insn, rtx *opvec, int nops);
-
 extern void kvx_expand_mov_constant (rtx operands[]);
 
 extern rtx kvx_find_or_create_SC_register (rtx curr_insn, rtx low, rtx high);

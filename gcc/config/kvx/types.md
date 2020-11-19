@@ -57,5 +57,3 @@
   tca"
   (const_string "all"))
 
-(define_attr "class" "other,branch,jump,call,link,return" (const_string "other"))
-

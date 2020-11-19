@@ -72,19 +72,27 @@
 ;; Iterator for all float modes (up to 64-bit)
 (define_mode_iterator ALLF [SF DF])
 
-(define_mode_attr sfx [
+;; Attribute for ALLF compares.
+(define_mode_attr cfx [
   (SF "w")
   (DF "d")
-  (QI "w")
-  (HI "w")
-  (SI "w")
-  (DI "d")
-  (TI "q")
-  (OI "o")])
+])
 
 ;; Scalar modes used by the mov pattern that fit in a register.
 ;; TI and OI and to be handled elsewhere.
-(define_mode_iterator ALLIF [QI HI SI DI SF DF])
+(define_mode_iterator ALLIF [QI HI SI SF DI DF])
+
+;; Attribute for ALLIF copies (COPYW, COPYD, COPYQ, COPYO).
+(define_mode_attr sfx [
+  (QI "w")
+  (HI "w")
+  (SI "w")
+  (SF "w")
+  (DI "d")
+  (DF "d")
+  (TI "q")
+  (OI "o")
+])
 
 (define_mode_iterator ALLP [SI DI])
 
@@ -96,8 +104,12 @@
 ;; using make insn. Alternatives using these should only be enabled
 ;; for valid pointer modes: SI or DI. Anything else is an error.
 ;; Values 999 are used for modes where the alternative must always be disabled.
-(define_mode_attr symlen1 [(SI "_x") (DI "_y") (QI "") (HI "") (SF "") (DF "")])
-(define_mode_attr symlen2 [(SI "8") (DI "12") (QI "999") (HI "999") (SF "999") (DF "999")])
+(define_mode_attr symlen1 [
+  (SI "_x") (DI "_y") (QI "") (HI "") (SF "") (DF "")
+])
+(define_mode_attr symlen2 [
+  (SI "8") (DI "12") (QI "999") (HI "999") (SF "999") (DF "999")
+])
 
 (define_attr "disabled" "yes,no" (const_string "no"))
 
@@ -124,12 +136,7 @@
   SI SF DI DF
 ])
 
-;; Iterator for the scalar modes that fit in a GPR.
-(define_mode_iterator SCALAR [
-  QI HI SI SF DI DF
-])
-
-;; Iterator for the modes that fit in a GPR.
+;; Iterator for the modes that fit in a GPR for CMOVED.
 (define_mode_iterator FITGPR [
   QI HI SI SF DI DF
   V8QI V4HI V2SI V2SF
@@ -204,7 +211,7 @@
   V32QI V16HI V8SI V4DI V8SF V4DF
 ])
 
-;; Iterator for all modes (integer, float, vector).
+;; Iterator for all modes (integer, float, vector) for MOV*CC.
 (define_mode_iterator ALLIFV [
   QI HI SI SF DI DF TI OI
   V8QI V4HI V2SI V2SF
