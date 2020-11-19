@@ -511,6 +511,7 @@ run_ld_link_tests {
 }
 
 if { [istarget *-*-linux*]
+     || [istarget kvx-*-*]
      || [istarget *-*-nacl*]
      || [istarget *-*-gnu*] } {
     run_ld_link_tests {
