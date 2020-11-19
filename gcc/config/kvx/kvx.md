@@ -352,8 +352,7 @@
   [(set (pc) (label_ref (match_operand 0)))]
   ""
   "goto %0"
-[(set_attr "type" "bcu")
- (set_attr "class" "branch")]
+[(set_attr "type" "bcu")]
 )
 
 (define_expand "indirect_jump"
@@ -363,8 +362,7 @@
   [(set (pc) (match_operand:P 0 "address_operand" "r"))]
   ""
   "igoto %0"
-[(set_attr "type" "bcu")
- (set_attr "class" "jump")]
+[(set_attr "type" "bcu")]
 )
 
 (define_expand "tablejump"
@@ -384,8 +382,7 @@
   )]
   "<MODE>mode == Pmode"
   "igoto %0"
-[(set_attr "type" "bcu")
- (set_attr "class" "jump")]
+[(set_attr "type" "bcu")]
 )
 
 (define_insn "nop"
@@ -752,8 +749,7 @@
   {
     return kvx_ctrapsi4();
   }
-[(set_attr "type" "bcu")
- (set_attr "class" "branch")]
+[(set_attr "type" "bcu")]
 )
 
 (define_insn "scall_<mode>"
@@ -1104,8 +1100,7 @@
    (clobber (reg:DI KV3_RA_REGNO))]
   ""
   "icall %0"
-[(set_attr "type" "bcu")
- (set_attr "class" "link")]
+[(set_attr "type" "bcu")]
 )
 
 (define_expand "call"
@@ -1125,8 +1120,8 @@
    (clobber (reg:DI KV3_RA_REGNO))]
   ""
   "call %0"
-[(set_attr "type" "bcu")
- (set_attr "class" "call")])
+[(set_attr "type" "bcu")]
+)
 
 (define_expand "call_value"
   [(parallel [(set (match_operand 0 "" "")
@@ -1147,8 +1142,8 @@
    (clobber (reg:DI KV3_RA_REGNO))]
   ""
   "call %1"
-[(set_attr "type" "bcu")
- (set_attr "class" "call")])
+[(set_attr "type" "bcu")]
+)
 
 (define_expand "sibcall_value"
   [(parallel
@@ -1170,8 +1165,8 @@
    (return)]
   ""
   "goto %1"
-[(set_attr "type" "bcu")
- (set_attr "class" "branch")])
+[(set_attr "type" "bcu")]
+)
 
 (define_expand "sibcall"
   [(parallel
@@ -1191,8 +1186,8 @@
    (return)]
   ""
   "goto %0"
-[(set_attr "type" "bcu")
- (set_attr "class" "branch")])
+[(set_attr "type" "bcu")]
+)
 
 ;;
 ;; These pattern were used for indirect sibcall
@@ -1206,8 +1201,7 @@
 ;; 	  	(match_operand 2 "" "")))
 ;;      (return)]
 ;;   "igoto<P:suffix> %1"
-;; [(set_attr "type" "bcu")
-;; (set_attr "class" "jump")]
+;; [(set_attr "type" "bcu")]
 ;; )
 
 ;; (define_insn "*isibcall_real_<mode>"
@@ -1215,8 +1209,7 @@
 ;; 	   (match_operand 1 "" ""))
 ;;      (return)]
 ;;   "igoto<P:suffix> %0"
-;; [(set_attr "type" "bcu")
-;; (set_attr "class" "jump")]
+;; [(set_attr "type" "bcu")]
 ;; )
 
 (define_insn "*icall_value_<mode>"
@@ -1226,8 +1219,7 @@
    (clobber (reg:DI KV3_RA_REGNO))]
   ""
   "icall %1"
-[(set_attr "type" "bcu")
- (set_attr "class" "link")]
+[(set_attr "type" "bcu")]
 )
 
 (define_code_iterator gt_comp [gt gtu])
@@ -1345,8 +1337,7 @@
    (use (reg:DI KV3_RA_REGNO))]
   ""
   "ret"
-[(set_attr "type" "bcu")
- (set_attr "class" "return")]
+[(set_attr "type" "bcu")]
 )
 
 (define_expand "untyped_call"

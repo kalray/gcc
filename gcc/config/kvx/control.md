@@ -22,13 +22,13 @@
    (set_attr "length"      "4,       4,         8,        12")]
 )
 
-(define_insn "*fcomp<sfx>"
+(define_insn "*fcomp<cfx>"
   [(set (match_operand:DI 0 "register_operand" "=r,r")
         (match_operator:DI 1 "float_comparison_operator"
          [(match_operand:ALLF 2 "register_operand" "r,r")
           (match_operand:ALLF 3 "register_f32_operand" "r,H32")]))]
   ""
-  "fcomp<sfx>.%f1 %0 = %2, %3"
+  "fcomp<cfx>.%f1 %0 = %2, %3"
   [(set_attr "type" "alu_lite,alu_lite_x")
    (set_attr "length"      "4,         8")]
 )
@@ -85,8 +85,7 @@
                       (pc)))]
   ""
   "cb.<SIDI:suffix>%0z %1? %2"
-  [(set_attr "type" "bcu")
-   (set_attr "class" "branch")]
+  [(set_attr "type" "bcu")]
 )
 
 (define_insn "*cb<mode>.odd"
@@ -98,8 +97,7 @@
                       (pc)))]
   ""
   "cb.odd %0? %1"
-  [(set_attr "type" "bcu")
-   (set_attr "class" "branch")]
+  [(set_attr "type" "bcu")]
 )
 
 (define_insn "*cb<mode>.even"
@@ -111,8 +109,7 @@
                       (pc)))]
   ""
   "cb.even %0? %1"
-  [(set_attr "type" "bcu")
-   (set_attr "class" "branch")]
+  [(set_attr "type" "bcu")]
 )
 
 

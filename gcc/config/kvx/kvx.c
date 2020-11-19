@@ -132,21 +132,6 @@ static bool scheduling = false;
 rtx kvx_sync_reg_rtx;
 rtx kvx_link_reg_rtx;
 
-typedef enum
-{
-  CLOBBER_INSERT,
-  INSN_DELETE,
-  REG_COPY_INSERT
-} post_packing_action_type;
-struct post_packing_action
-{
-  post_packing_action_type type;
-  rtx insn;
-  rtx reg, reg2;
-  struct post_packing_action *next;
-} * post_packing_action;
-
-
 /* Which arch are we scheduling for */
 enum attr_arch kvx_arch_schedule;
 
@@ -233,7 +218,7 @@ struct GTY (()) machine_function
 				| Save          |
 				|               |
 				| $ra           | (if frame_pointer_needed)
-		                | caller FP     | (<- $fp if frame_pointer_needed) [64-bits aligned]
+				| caller FP     | (<- $fp if frame_pointer_needed) [64-bits aligned]
 				+---------------+
 				|               |
 				| padding3      |
@@ -242,7 +227,7 @@ struct GTY (()) machine_function
 				|               |
 				| Outgoing      |
 				| Args          |
-			        |               | <- $sp [256-bits aligned]
+				|               | <- $sp [256-bits aligned]
 				+---------------+
 
 */
@@ -2748,8 +2733,8 @@ kvx_canonicalize_comparison (int *code, rtx *op0, rtx *op1,
   bool float_compare_p = (GET_MODE_CLASS (mode) == MODE_FLOAT);
   static struct rtx_def rtx_; PUT_CODE (&rtx_, (enum rtx_code)*code);
 
-  if (! op0_preserve_value && float_compare_p
-      && ! float_comparison_operator (&rtx_, VOIDmode))
+  if (!op0_preserve_value && float_compare_p
+      && !float_comparison_operator (&rtx_, VOIDmode))
     {
       rtx temp = *op1;
       *op1 = *op0;
@@ -2806,7 +2791,7 @@ kvx_lower_comparison (rtx pred, enum rtx_code cmp_code, rtx left, rtx right)
 
   if (float_compare_p)
     {
-      if (! float_comparison_operator (cmp, VOIDmode))
+      if (!float_comparison_operator (cmp, VOIDmode))
 	{
 	  enum rtx_code swapped = swap_condition (cmp_code);
 
@@ -2883,8 +2868,7 @@ kvx_expand_conditional_move (rtx target, rtx select1, rtx select2,
     {
       dst = target;
     }
-  else if (! rtx_equal_p (select1, target)
-	   && ! rtx_equal_p (select2, target))
+  else if (!rtx_equal_p (select1, target) && !rtx_equal_p (select2, target))
     {
       if (reg_overlap_mentioned_p (target, cmp))
 	dst = gen_reg_rtx (mode);
@@ -2954,8 +2938,7 @@ kvx_expand_masked_move (rtx target, rtx select1, rtx select2, rtx mask)
     {
       dst = target;
     }
-  else if (! rtx_equal_p (select1, target)
-	   && ! rtx_equal_p (select2, target))
+  else if (!rtx_equal_p (select1, target) && !rtx_equal_p (select2, target))
     {
       if (reg_overlap_mentioned_p (target, mask))
 	dst = gen_reg_rtx (mode);
@@ -7591,18 +7574,27 @@ kv3_mau_lsu_double_port_bypass_p (rtx_insn *producer, rtx_insn *consumer)
 }
 
 static int
+kvx_sched_issue_rate (void)
+{
+  return 4;
+}
+
+static int
 kvx_sched_adjust_cost (rtx_insn *insn, int dep_type,
 		       rtx_insn *dep_insn ATTRIBUTE_UNUSED, int cost,
 		       unsigned int)
 {
-  enum attr_class insn_class = get_attr_class (insn);
   /* On the kvx, it is possible to read then write the same register in a
    * bundle so we set the WAR cost to 0 unless insn is a control-flow consuming
    * reg then it is 1 */
   if (dep_type == REG_DEP_ANTI)
     {
-      cost = (insn_class == CLASS_BRANCH) | (insn_class == CLASS_JUMP)
-	     | (insn_class == CLASS_LINK);
+      cost = 0;
+      if (JUMP_P (dep_insn) || CALL_P (dep_insn))
+	// Consumer INSN must issue after a JUMP or CALL producer.
+	{
+	  cost = 1;
+	}
     }
   else
     /* Just to be sure, force the WAW cost to 1 */
@@ -7614,10 +7606,41 @@ kvx_sched_adjust_cost (rtx_insn *insn, int dep_type,
   return cost;
 }
 
-static int
-kvx_sched_issue_rate (void)
+static void
+kvx_dependencies_evaluation_hook (rtx_insn *head, rtx_insn *tail)
 {
-  return 5;
+  rtx_insn *insn, *insn2, *next_tail, *last_sync = head;
+
+  next_tail = NEXT_INSN (tail);
+
+  for (insn = head; insn != next_tail; insn = NEXT_INSN (insn))
+    if (INSN_P (insn))
+      {
+	int sync = reg_mentioned_p (kvx_sync_reg_rtx, insn);
+
+	if (sync)
+	  {
+	    for (insn2 = last_sync; insn2 != insn; insn2 = NEXT_INSN (insn2))
+	      if (INSN_P (insn2))
+		{
+		  add_dependence (insn, insn2, REG_DEP_TRUE);
+		}
+	    last_sync = insn;
+	  }
+      }
+
+  if (last_sync != head)
+    for (insn2 = last_sync; insn2 != next_tail; insn2 = NEXT_INSN (insn2))
+      if (INSN_P (insn2))
+	add_dependence (insn2, last_sync, REG_DEP_TRUE);
+}
+
+static void
+kvx_sched_init_global (FILE *file ATTRIBUTE_UNUSED,
+		       int verbose ATTRIBUTE_UNUSED,
+		       int max_ready ATTRIBUTE_UNUSED)
+{
+  scheduling = true;
 }
 
 static int
@@ -7633,6 +7656,58 @@ kvx_sched_dfa_new_cycle (FILE *dump ATTRIBUTE_UNUSED,
     return 1;
 
   return 0;
+}
+
+static void
+kvx_sched_set_sched_flags (struct spec_info_def *spec ATTRIBUTE_UNUSED)
+{
+}
+
+/* Implement TARGET_SCHED_CAN_SPECULATE_INSN.  Return true if INSN can be
+   scheduled for speculative execution.  Reject the long-running division
+   and square-root instructions. (Like in aarch64.c) */
+static bool
+kvx_sched_can_speculate_insn (rtx_insn *insn)
+{
+  switch (get_attr_type (insn))
+    {
+    case TYPE_ALU_FULL_COPRO:
+      return false;
+    default:
+      return true;
+    }
+}
+
+/* FIXME AUTO: This must be fixed for coolidge */
+/* See T7749 */
+static int
+kvx_sched_reassociation_width (unsigned int opc, enum machine_mode mode)
+{
+  int res = 1;
+
+  /* see tree.c:associative_tree_code () for possible values of opc. */
+
+  switch (opc)
+    {
+    case BIT_IOR_EXPR:
+    case BIT_AND_EXPR:
+    case BIT_XOR_EXPR:
+      if (mode == SImode || mode == HImode || mode == QImode || mode == DImode)
+	res = 4;
+      else if (mode == TImode)
+	res = 2;
+      break;
+    case PLUS_EXPR:
+    case MIN_EXPR:
+    case MAX_EXPR:
+      if (mode == SImode || mode == HImode || mode == QImode || mode == DImode)
+	res = 4;
+      break;
+    case MULT_EXPR:
+      break;
+    }
+
+  return res;
 }
 
 /* Test if X is of the form reg[reg] or .xs reg = reg[reg] or signed10bits[reg]
@@ -8443,144 +8518,146 @@ kvx_swap_fp_sp_in_note (rtx note, rtx old_base)
     }
 }
 
+static void
+kvx_fix_debug_for_bundle_1 (rtx_insn *start_insn, rtx_insn *stop_insn)
+{
+  /* Start from the end so that NOTEs will be added in the correct order. */
+  rtx_insn *binsn = stop_insn;
+  bool last_do = false;
+  do
+    {
+      last_do = (binsn == start_insn);
+      if (INSN_P (binsn) && RTX_FRAME_RELATED_P (binsn))
+	{
+	  bool handled = false;
+	  for (rtx note = REG_NOTES (binsn); note; note = XEXP (note, 1))
+	    {
+	      switch (REG_NOTE_KIND (note))
+		{
+		case REG_CFA_DEF_CFA:
+		case REG_CFA_ADJUST_CFA:
+		case REG_CFA_REGISTER:
+		case REG_CFA_RESTORE:
+		case REG_CFA_OFFSET:
+		  handled = true;
+		  if (binsn != stop_insn)
+		    {
+		      /* Move note to last insn in bundle */
+		      add_shallow_copy_of_reg_note (stop_insn, note);
+		      remove_note (binsn, note);
+		    }
+		  break;
+
+		case REG_CFA_EXPRESSION:
+		case REG_CFA_SET_VDRAP:
+		case REG_CFA_WINDOW_SAVE:
+		case REG_CFA_FLUSH_QUEUE:
+		  error ("Unexpected CFA notes found.");
+		  break;
+
+		default:
+		  break;
+		}
+	    }
+
+	  if (!handled)
+	    {
+	      /* This *must* be some mem write emitted by builtin_save_regs,
+	       * or a bug */
+	      add_reg_note (stop_insn, REG_CFA_OFFSET,
+			    copy_rtx (PATTERN (binsn)));
+	    }
+
+	  RTX_FRAME_RELATED_P (binsn) = 0;
+	  RTX_FRAME_RELATED_P (stop_insn) = 1;
+	}
+
+      binsn = PREV_INSN (binsn);
+    }
+  while (!last_do);
+}
+
+static unsigned
+kvx_fix_debug_for_bundle_2 (rtx_insn *start_insn, rtx_insn *stop_insn,
+			    unsigned cur_cfa_reg)
+{
+  rtx_insn *binsn = start_insn;
+  bool last_do = false;
+  do
+    {
+      last_do = (binsn == stop_insn);
+      if (INSN_P (binsn) && RTX_FRAME_RELATED_P (binsn))
+	{
+	  for (rtx note = REG_NOTES (binsn); note; note = XEXP (note, 1))
+	    {
+
+	      switch (REG_NOTE_KIND (note))
+		{
+		  case REG_CFA_DEF_CFA: {
+		    rtx pat = XEXP (note, 0);
+
+		    /* (PLUS ( CFA_REG, OFFSET)) */
+		    gcc_assert (GET_CODE (pat) == PLUS);
+		    cur_cfa_reg = REGNO (XEXP (pat, 0));
+		    break;
+		  }
+		  /* We only need to fixup register spill */
+		  case REG_CFA_OFFSET: {
+		    rtx pat = XEXP (note, 0);
+
+		    gcc_assert (GET_CODE (pat) == SET);
+
+		    rtx mem_dest = SET_DEST (pat);
+		    rtx base_reg;
+		    if (GET_CODE (XEXP (mem_dest, 0)) == PLUS)
+		      {
+			base_reg = XEXP (XEXP (mem_dest, 0), 0);
+		      }
+		    else
+		      {
+			base_reg = XEXP (mem_dest, 0);
+		      }
+		    gcc_assert (REG_P (base_reg));
+
+		    if (REGNO (base_reg) != cur_cfa_reg)
+		      {
+			/* Most likely an insn was moved around and
+			   its note has not been modified accordingly.
+			   We need to rebuild an offset based on
+			   current CFA.
+			*/
+			kvx_swap_fp_sp_in_note (note, base_reg);
+		      }
+		  }
+		  break;
+
+		default:
+		  break;
+		}
+	    }
+	}
+      binsn = NEXT_INSN (binsn);
+    }
+  while (!last_do);
+  return cur_cfa_reg;
+}
+
 /* Visit all bundles and force all debug insns after the last insn in
    the bundle. */
 static void
 kvx_fix_debug_for_bundles (void)
 {
-  bundle_state *i;
-  unsigned int cur_cfa_reg = REGNO (stack_pointer_rtx);
-
-  for (i = cur_bundle_list; i; i = i->next)
+  unsigned cur_cfa_reg = REGNO (stack_pointer_rtx);
+  if (TARGET_BUNDLING)
     {
-      rtx_insn *binsn = i->last_insn;
-
-      gcc_assert (i->insn != NULL);
-      gcc_assert (i->last_insn != NULL);
-
-      bool bundle_start;
-      bool bundle_end;
-      /* Start from the end so that NOTEs will be added in the correct order. */
-      do
+      for (bundle_state *i = cur_bundle_list; i; i = i->next)
 	{
-	  bundle_start = (binsn == i->insn);
-	  bundle_end = (binsn == i->last_insn);
-
-	  if (INSN_P (binsn) && RTX_FRAME_RELATED_P (binsn))
-	    {
-	      rtx note;
-	      bool handled = false;
-	      for (note = REG_NOTES (binsn); note; note = XEXP (note, 1))
-		{
-		  switch (REG_NOTE_KIND (note))
-		    {
-		    case REG_CFA_DEF_CFA:
-		    case REG_CFA_ADJUST_CFA:
-		    case REG_CFA_REGISTER:
-		    case REG_CFA_RESTORE:
-		    case REG_CFA_OFFSET:
-		      handled = true;
-		      if (!bundle_end)
-			{
-			  /* Move note to last insn in bundle */
-			  add_shallow_copy_of_reg_note (i->last_insn, note);
-			  remove_note (binsn, note);
-			}
-		      break;
-
-		    case REG_CFA_EXPRESSION:
-		    case REG_CFA_SET_VDRAP:
-		    case REG_CFA_WINDOW_SAVE:
-		    case REG_CFA_FLUSH_QUEUE:
-		      error ("Unexpected CFA notes found.");
-		      break;
-
-		    default:
-		      break;
-		    }
-		}
-
-	      if (!handled)
-		{
-		  /* This *must* be some mem write emitted by builtin_save_regs,
-		   * or a bug */
-		  add_reg_note (i->last_insn, REG_CFA_OFFSET,
-				copy_rtx (PATTERN (binsn)));
-		}
-
-	      RTX_FRAME_RELATED_P (binsn) = 0;
-	      RTX_FRAME_RELATED_P (i->last_insn) = 1;
-	    }
-
-	  binsn = PREV_INSN (binsn);
+	  rtx_insn *start_insn = i->insn;
+	  rtx_insn *stop_insn = i->last_insn;
+	  kvx_fix_debug_for_bundle_1 (start_insn, stop_insn);
+	  cur_cfa_reg
+	    = kvx_fix_debug_for_bundle_2 (start_insn, stop_insn, cur_cfa_reg);
 	}
-      while (!bundle_start);
-
-      /* Iterate from start and fix possible MEM using the incorrect base
-       * register */
-      /* This only works if FRAME_RELATED_P insns are in sequence. If
-	 this is not the case, relying on NEXT_INSN is *incorrect* */
-      binsn = i->insn;
-      do
-	{
-	  bundle_start = (binsn == i->insn);
-	  bundle_end = (binsn == i->last_insn);
-
-	  if (INSN_P (binsn) && RTX_FRAME_RELATED_P (binsn))
-	    {
-	      rtx note;
-
-	      for (note = REG_NOTES (binsn); note; note = XEXP (note, 1))
-		{
-
-		  switch (REG_NOTE_KIND (note))
-		    {
-		      case REG_CFA_DEF_CFA: {
-			rtx pat = XEXP (note, 0);
-
-			/* (PLUS ( CFA_REG, OFFSET)) */
-			gcc_assert (GET_CODE (pat) == PLUS);
-			cur_cfa_reg = REGNO (XEXP (pat, 0));
-			break;
-		      }
-		      /* We only need to fixup register spill */
-		      case REG_CFA_OFFSET: {
-			rtx pat = XEXP (note, 0);
-
-			gcc_assert (GET_CODE (pat) == SET);
-
-			rtx mem_dest = SET_DEST (pat);
-			rtx base_reg;
-			if (GET_CODE (XEXP (mem_dest, 0)) == PLUS)
-			  {
-			    base_reg = XEXP (XEXP (mem_dest, 0), 0);
-			  }
-			else
-			  {
-			    base_reg = XEXP (mem_dest, 0);
-			  }
-			gcc_assert (REG_P (base_reg));
-
-			if (REGNO (base_reg) != cur_cfa_reg)
-			  {
-			    /* Most likely an insn was moved around and
-			       its note has not been modified accordingly.
-			       We need to rebuild an offset based on
-			       current CFA.
-			    */
-			    kvx_swap_fp_sp_in_note (note, base_reg);
-			  }
-		      }
-		      break;
-
-		    default:
-		      break;
-		    }
-		}
-	    }
-	  binsn = NEXT_INSN (binsn);
-	}
-      while (!bundle_end);
     }
 }
 
@@ -8594,12 +8671,6 @@ kvx_asm_final_postscan_insn (FILE *file, rtx_insn *insn,
       fprintf (file, "\t;;\n");
       return;
     }
-}
-
-static int
-kvx_sched_first_cycle_multipass_dfa_lookahead (void)
-{
-  return 5;
 }
 
 struct cost_walker
@@ -8743,26 +8814,6 @@ kvx_address_cost (rtx x, machine_mode mode ATTRIBUTE_UNUSED,
     return cost - 1;
 
   return cost;
-}
-
-static void
-kvx_sched_set_sched_flags (struct spec_info_def *spec ATTRIBUTE_UNUSED)
-{
-  /* TARGET_SCHED_SET_SCHED_FLAGS is called right before the
-     scheduler calls df_analyze (). Use this hook to add the
-     problems we're interested in for the mem access packing.  */
-  if (!reload_completed && common_sched_info->sched_pass_id != SCHED_SMS_PASS)
-    {
-      df_chain_add_problem (DF_DU_CHAIN | DF_UD_CHAIN);
-    }
-}
-
-static void
-kvx_sched_init_global (FILE *file ATTRIBUTE_UNUSED,
-		       int verbose ATTRIBUTE_UNUSED,
-		       int max_ready ATTRIBUTE_UNUSED)
-{
-  scheduling = true;
 }
 
 static bool
@@ -8933,35 +8984,6 @@ kvx_function_epilogue (FILE *file ATTRIBUTE_UNUSED,
 		       HOST_WIDE_INT size ATTRIBUTE_UNUSED)
 {
   dfa_finish ();
-}
-
-static void
-kvx_dependencies_evaluation_hook (rtx_insn *head, rtx_insn *tail)
-{
-  rtx_insn *insn, *insn2, *next_tail, *last_sync = head;
-
-  next_tail = NEXT_INSN (tail);
-
-  for (insn = head; insn != next_tail; insn = NEXT_INSN (insn))
-    if (INSN_P (insn))
-      {
-	int sync = reg_mentioned_p (kvx_sync_reg_rtx, insn);
-
-	if (sync)
-	  {
-	    for (insn2 = last_sync; insn2 != insn; insn2 = NEXT_INSN (insn2))
-	      if (INSN_P (insn2))
-		{
-		  add_dependence (insn, insn2, REG_DEP_TRUE);
-		}
-	    last_sync = insn;
-	  }
-      }
-
-  if (last_sync != head)
-    for (insn2 = last_sync; insn2 != next_tail; insn2 = NEXT_INSN (insn2))
-      if (INSN_P (insn2))
-	add_dependence (insn2, last_sync, REG_DEP_TRUE);
 }
 
 /* NULL if INSN insn is valid within a low-overhead loop.
@@ -9406,38 +9428,6 @@ kvx_output_addr_const_extra (FILE *fp, rtx x)
   return false;
 }
 
-/* FIXME AUTO: This must be fixed for coolidge */
-/* See T7749 */
-static int
-kvx_reassociation_width (unsigned int opc, enum machine_mode mode)
-{
-  int res = 1;
-
-  /* see tree.c:associative_tree_code () for possible values of opc. */
-
-  switch (opc)
-    {
-    case BIT_IOR_EXPR:
-    case BIT_AND_EXPR:
-    case BIT_XOR_EXPR:
-      if (mode == SImode || mode == HImode || mode == QImode || mode == DImode)
-	res = 4;
-      else if (mode == TImode)
-	res = 2;
-      break;
-    case PLUS_EXPR:
-    case MIN_EXPR:
-    case MAX_EXPR:
-      if (mode == SImode || mode == HImode || mode == QImode || mode == DImode)
-	res = 4;
-      break;
-    case MULT_EXPR:
-      break;
-    }
-
-  return res;
-}
-
 /* Return true for the .xs addressing modes, else false. */
 static bool
 kvx_mode_dependent_address_p (const_rtx addr,
@@ -9452,22 +9442,6 @@ kvx_mode_dependent_address_p (const_rtx addr,
     return true;
 
   return false;
-}
-
-/* Implement TARGET_SCHED_CAN_SPECULATE_INSN.  Return true if INSN can be
-   scheduled for speculative execution.  Reject the long-running division
-   and square-root instructions. (Like in aarch64.c) */
-
-static bool
-kvx_sched_can_speculate_insn (rtx_insn *insn)
-{
-  switch (get_attr_type (insn))
-    {
-    case TYPE_ALU_FULL_COPRO:
-      return false;
-    default:
-      return true;
-    }
 }
 
 bool
@@ -9793,18 +9767,15 @@ kvx_ctrapsi4 (void)
 #undef TARGET_CANNOT_FORCE_CONST_MEM
 #define TARGET_CANNOT_FORCE_CONST_MEM kvx_cannot_force_const_mem
 
-#undef TARGET_SCHED_ADJUST_COST
-#define TARGET_SCHED_ADJUST_COST kvx_sched_adjust_cost
-
 #undef TARGET_SCHED_ISSUE_RATE
 #define TARGET_SCHED_ISSUE_RATE kvx_sched_issue_rate
 
-#undef TARGET_SCHED_FIRST_CYCLE_MULTIPASS_DFA_LOOKAHEAD
-#define TARGET_SCHED_FIRST_CYCLE_MULTIPASS_DFA_LOOKAHEAD                       \
-  kvx_sched_first_cycle_multipass_dfa_lookahead
+#undef TARGET_SCHED_ADJUST_COST
+#define TARGET_SCHED_ADJUST_COST kvx_sched_adjust_cost
 
-#undef TARGET_SCHED_SET_SCHED_FLAGS
-#define TARGET_SCHED_SET_SCHED_FLAGS kvx_sched_set_sched_flags
+#undef TARGET_SCHED_DEPENDENCIES_EVALUATION_HOOK
+#define TARGET_SCHED_DEPENDENCIES_EVALUATION_HOOK                              \
+  kvx_dependencies_evaluation_hook
 
 #undef TARGET_SCHED_INIT_GLOBAL
 #define TARGET_SCHED_INIT_GLOBAL kvx_sched_init_global
@@ -9812,8 +9783,14 @@ kvx_ctrapsi4 (void)
 #undef TARGET_SCHED_DFA_NEW_CYCLE
 #define TARGET_SCHED_DFA_NEW_CYCLE kvx_sched_dfa_new_cycle
 
+#undef TARGET_SCHED_SET_SCHED_FLAGS
+#define TARGET_SCHED_SET_SCHED_FLAGS kvx_sched_set_sched_flags
+
+#undef TARGET_SCHED_CAN_SPECULATE_INSN
+#define TARGET_SCHED_CAN_SPECULATE_INSN kvx_sched_can_speculate_insn
+
 #undef TARGET_SCHED_REASSOCIATION_WIDTH
-#define TARGET_SCHED_REASSOCIATION_WIDTH kvx_reassociation_width
+#define TARGET_SCHED_REASSOCIATION_WIDTH kvx_sched_reassociation_width
 
 #undef TARGET_RTX_COSTS
 #define TARGET_RTX_COSTS kvx_rtx_costs
@@ -9845,10 +9822,6 @@ kvx_ctrapsi4 (void)
 #undef TARGET_ASM_FINAL_POSTSCAN_INSN
 #define TARGET_ASM_FINAL_POSTSCAN_INSN kvx_asm_final_postscan_insn
 
-#undef TARGET_SCHED_DEPENDENCIES_EVALUATION_HOOK
-#define TARGET_SCHED_DEPENDENCIES_EVALUATION_HOOK                              \
-  kvx_dependencies_evaluation_hook
-
 #undef TARGET_MACHINE_DEPENDENT_REORG
 #define TARGET_MACHINE_DEPENDENT_REORG kvx_reorg
 
@@ -9878,9 +9851,6 @@ kvx_ctrapsi4 (void)
 
 #undef TARGET_MODE_DEPENDENT_ADDRESS_P
 #define TARGET_MODE_DEPENDENT_ADDRESS_P kvx_mode_dependent_address_p
-
-#undef TARGET_SCHED_CAN_SPECULATE_INSN
-#define TARGET_SCHED_CAN_SPECULATE_INSN kvx_sched_can_speculate_insn
 
 #undef TARGET_CAN_USE_DOLOOP_P
 #define TARGET_CAN_USE_DOLOOP_P can_use_doloop_if_innermost
