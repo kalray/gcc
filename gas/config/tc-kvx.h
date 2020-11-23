@@ -46,6 +46,9 @@ extern const char * kvx_target_format (void);
 #define md_end kvx_end
 extern void kvx_end (void);
 
+extern void kvx_handle_align (fragS *);
+#define HANDLE_ALIGN kvx_handle_align
+
 #define md_number_to_chars number_to_chars_littleendian
 
 #define TC_FIX_TYPE struct _symbol_struct *

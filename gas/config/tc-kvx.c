@@ -47,6 +47,8 @@ static void supported_cores(char buf[], size_t buflen);
 #define STREQ(x,y) !strcmp(((x) ? (x) : ""), ((y) ? (y) : ""))
 #define STRNEQ(x,y,n) !strncmp(((x) ? (x) : ""), ((y) ? (y) : ""),(n))
 
+#define PARALLEL_BIT (1<<31)
+
 /*TB begin*/
 int size_type_function = 1;
 /*TB end */
@@ -219,6 +221,8 @@ const pseudo_typeS md_pseudo_table[] =
      /* KVX specific */
      {"dword", cons, 8},
 
+     /* Override align directives to have a boundary as argument (and not the
+        power of two as in p2align)*/
      {"align", s_align_bytes, 0},
 
      /* KVX specific, should be deprecated */
@@ -1645,9 +1649,9 @@ emit_insn (kvxinsn_t *insn, int insn_pos, int stopflag)
 
     /* Handle bundle parallel bit. */ ;
     if ((i == insn->len - 1) && stopflag){
-      image &= 0x7FFFFFFF;
+      image &= ~PARALLEL_BIT;
     }else{
-      image |= 0x80000000;
+      image |= PARALLEL_BIT;
     }
 
     /* Emit the instruction image. */
@@ -3481,6 +3485,75 @@ kvx_emit_uleb128(int i)
         FRAG_APPEND_1_CHAR((i != 0) ? (tmp + 1) : tmp);
     }
     while (i != 0);
+}
+
+/* Implement HANDLE_ALIGN.  */
+
+static void
+kvx_make_nops (char *buf, bfd_vma bytes)
+{
+  bfd_vma i = 0;
+  unsigned int j;
+
+  static unsigned int nop_single = 0;
+
+  if (!nop_single)
+    {
+      const kv3opc_t *opcode = (kv3opc_t *) hash_find(kvx_opcode_hash, "nop");
+
+      if (opcode == NULL)
+        as_fatal("internal error: could not find opcode for 'nop' during padding");
+
+      nop_single = opcode->codewords[0].opcode;
+    }
+
+  /* KVX instructions are always 4-bytes aligned. If we are at a position */
+  /* that is not 4 bytes aligned, it means this is not part of an instruction, */
+  /* so it is safe to use a zero byte for padding. */
+
+  for (j = bytes % 4; j > 0; j--)
+      buf[i++] = 0;
+
+  for (j = 0; j < (bytes-i); j+=4 )
+    {
+      unsigned nop = nop_single;
+
+      // nop has bundle end only if #4 nop or last padding nop.
+      // Sets the parallel bit when neither conditions are matched.
+      // 4*4 = biggest nop bundle we can get
+      // 12 = offset when writting the last nop possible in a 4 nops bundle
+      // bytes-i-4 = offset for the last 4-words in the padding
+      if (j%(4*4) != 12 && j != (bytes-i-4))
+        nop |= PARALLEL_BIT;
+
+      memcpy(buf + i + j, &nop, sizeof(nop));
+    }
+}
+
+/* Pads code section with bundle of nops when possible, 0 if not. */
+void
+kvx_handle_align (fragS *fragP)
+{
+  switch (fragP->fr_type)
+    {
+    case rs_align_code:
+      {
+        bfd_signed_vma bytes = (fragP->fr_next->fr_address
+                                - fragP->fr_address - fragP->fr_fix);
+        char *p = fragP->fr_literal + fragP->fr_fix;
+
+        if (bytes <= 0)
+          break;
+
+        /* Insert zeros or nops to get 4 byte alignment.  */
+        kvx_make_nops (p, bytes);
+        fragP->fr_fix += bytes;
+      }
+      break;
+
+    default:
+      break;
+    }
 }
 
 static void
