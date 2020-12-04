@@ -17,19 +17,19 @@
    with this program; if not, write to the Free Software Foundation, Inc.,
    51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA.  */
 
-#include "sysdep.h"
 #define STATIC_TABLE
 #define DEFINE_TABLE
 
+#include "sysdep.h"
+#include "bfd_stdint.h"
 #include "disassemble.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <stdint.h>
+#include "libiberty.h"
+#include "opintl.h"
 #include <assert.h>
+#include "elf-bfd.h"
+
 #include "elf/kv3.h"
 #include "opcode/kv3.h"
-#include "dis-asm.h"
 
 // Steering values for the kv3 VLIW architecture.
 typedef enum {
@@ -152,7 +152,6 @@ kv3_reassemble_bundle(int wordcount, int *_insncount) {
   for (i = 0; i < wordcount ; i++) {
     uint32_t syllable = bundle_words[i];
     switch (kv3_steering(syllable)) {
-      
     case Steering_BCU:
       // BCU or TCA instruction
       if (i == 0) {
@@ -201,7 +200,7 @@ kv3_reassemble_bundle(int wordcount, int *_insncount) {
         }
       }
       break;
-      
+
     case Steering_ALU:
       if (alu0_taken == 0) {
         if(debug) fprintf(stderr,"Set valid on ALU0 for instr %d with 0x%x\n",BundleIssue_ALU0,syllable);
@@ -234,7 +233,7 @@ kv3_reassemble_bundle(int wordcount, int *_insncount) {
         return 1;
       }
       break;
-      
+
     case Steering_MAU:
       if (mau_taken == 1) {
         if(debug) fprintf(stderr,"Too many MAU instructions");
@@ -247,7 +246,7 @@ kv3_reassemble_bundle(int wordcount, int *_insncount) {
         mau_taken = 1;
       }
       break;
-      
+
     case Steering_LSU:
       if (lsu_taken == 1) {
         if(debug) fprintf(stderr,"Too many LSU instructions");
@@ -265,7 +264,7 @@ kv3_reassemble_bundle(int wordcount, int *_insncount) {
       break;
     }
     if(debug) fprintf(stderr,"Continue %d < %d?\n",i,wordcount);
-    
+
   }
   if (kv3_has_parallel_bit(bundle_words[i])) {
       if(debug) fprintf(stderr,"bundle exceeds maximum size");
