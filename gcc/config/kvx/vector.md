@@ -384,7 +384,7 @@
   [(match_operand:SIMDALL 0 "register_operand" "")
    (match_operand:SIMDALL 1 "register_operand" "")
    (match_operand:SIMDALL 2 "register_operand" "")
-   (match_operand:<PRED> 3 "" "")]
+   (match_operand:<MASK> 3 "" "")]
   ""
   {
     rtx target = operands[0];
@@ -396,34 +396,34 @@
   }
 )
 
-(define_expand "vec_cmp<mode><pred>"
-  [(set (match_operand:<PRED> 0 "register_operand")
+(define_expand "vec_cmp<mode><mask>"
+  [(set (match_operand:<MASK> 0 "register_operand")
         (match_operator 1 "comparison_operator"
          [(match_operand:SIMDCMP 2 "register_operand")
           (match_operand:SIMDCMP 3 "reg_or_zero_operand")]))]
   ""
   {
-    rtx pred = operands[0];
+    rtx mask = operands[0];
     rtx cmp = operands[1];
     rtx left = operands[2];
     rtx right = operands[3];
-    kvx_lower_comparison (pred, GET_CODE (cmp), left, right);
+    kvx_lower_comparison (mask, GET_CODE (cmp), left, right);
     DONE;
   }
 )
 
-(define_expand "vec_cmpu<mode><pred>"
-  [(set (match_operand:<PRED> 0 "register_operand")
+(define_expand "vec_cmpu<mode><mask>"
+  [(set (match_operand:<MASK> 0 "register_operand")
         (match_operator 1 "comparison_operator"
          [(match_operand:SIMDCMP 2 "register_operand")
           (match_operand:SIMDCMP 3 "reg_or_zero_operand")]))]
   ""
   {
-    rtx pred = operands[0];
+    rtx mask = operands[0];
     rtx cmp = operands[1];
     rtx left = operands[2];
     rtx right = operands[3];
-    kvx_lower_comparison (pred, GET_CODE (cmp), left, right);
+    kvx_lower_comparison (mask, GET_CODE (cmp), left, right);
     DONE;
   }
 )
@@ -468,11 +468,11 @@
   }
 )
 
-(define_expand "vcond_mask_<mode><pred>"
+(define_expand "vcond_mask_<mode><mask>"
   [(match_operand:SIMDCMP 0 "register_operand")
    (match_operand:SIMDCMP 1 "nonmemory_operand")
    (match_operand:SIMDCMP 2 "nonmemory_operand")
-   (match_operand:<PRED> 3 "register_operand")]
+   (match_operand:<MASK> 3 "register_operand")]
   ""
   {
     rtx target = operands[0];
@@ -485,285 +485,664 @@
 )
 
 
-;; V4HI
+;; V64I (V4HI/V2SI)
 
-(define_insn "*compnhq"
-  [(set (match_operand:V4HI 0 "register_operand" "=r")
-        (match_operator:V4HI 1 "comparison_operator"
-         [(match_operand:V4HI 2 "register_operand" "r")
-          (match_operand:V4HI 3 "register_operand" "r")]))]
+(define_insn "*compn<suffix>"
+  [(set (match_operand:<MASK> 0 "register_operand" "=r")
+        (match_operator:<MASK> 1 "comparison_operator"
+         [(match_operand:V64I 2 "register_operand" "r")
+          (match_operand:V64I 3 "register_operand" "r")]))]
   ""
-  "compnhq.%1 %0 = %2, %3"
+  "compn<suffix>.%1 %0 = %2, %3"
   [(set_attr "type" "alu_tiny")]
 )
 
-(define_insn "*selecthq"
-  [(set (match_operand:V4HI 0 "register_operand" "=r")
-        (if_then_else:V4HI (match_operator 2 "zero_comparison_operator"
-                                               [(match_operand:V4HI 3 "register_operand" "r")
-                                                (match_operand:V4HI 5 "const_zero_operand" "")])
-                           (match_operand:V4HI 1 "register_operand" "r")
-                           (match_operand:V4HI 4 "register_operand" "0")))]
+(define_insn "*select<suffix>"
+  [(set (match_operand:V64I 0 "register_operand" "=r")
+        (if_then_else:V64I (match_operator 2 "zero_comparison_operator"
+                                               [(match_operand:<MASK> 3 "register_operand" "r")
+                                                (match_operand:<MASK> 5 "const_zero_operand" "")])
+                           (match_operand:V64I 1 "register_operand" "r")
+                           (match_operand:V64I 4 "register_operand" "0")))]
   ""
-  "cmovehq.%2z %3? %0 = %1"
+  "cmove<suffix>.%2z %3? %0 = %1"
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "*selecthq_nez"
-  [(set (match_operand:V4HI 0 "register_operand" "=r")
-        (if_then_else:V4HI (ne (match_operator:V4HI 2 "zero_comparison_operator"
-                                               [(match_operand:V4HI 3 "register_operand" "r")
-                                                (match_operand:V4HI 5 "const_zero_operand" "")])
-                               (match_operand:V4HI 6 "const_zero_operand" ""))
-                           (match_operand:V4HI 1 "register_operand" "r")
-                           (match_operand:V4HI 4 "register_operand" "0")))]
+(define_insn "*select<suffix>_nez"
+  [(set (match_operand:V64I 0 "register_operand" "=r")
+        (if_then_else:V64I (ne (match_operator:<MASK> 2 "zero_comparison_operator"
+                                               [(match_operand:<MASK> 3 "register_operand" "r")
+                                                (match_operand:<MASK> 5 "const_zero_operand" "")])
+                               (match_operand:<MASK> 6 "const_zero_operand" ""))
+                           (match_operand:V64I 1 "register_operand" "r")
+                           (match_operand:V64I 4 "register_operand" "0")))]
   ""
-  "cmovehq.%2z %3? %0 = %1"
+  "cmove<suffix>.%2z %3? %0 = %1"
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "kvx_selecthq"
-  [(set (match_operand:V4HI 0 "register_operand" "=r")
-        (unspec:V4HI [(match_operand:V4HI 1 "register_operand" "r")
-                      (match_operand:V4HI 2 "register_operand" "0")
-                      (match_operand:V4HI 3 "register_operand" "r")
-                      (match_operand 4 "" "")] UNSPEC_SELECTHQ))]
+(define_insn "kvx_select<suffix>"
+  [(set (match_operand:V64I 0 "register_operand" "=r")
+        (unspec:V64I [(match_operand:V64I 1 "register_operand" "r")
+                      (match_operand:V64I 2 "register_operand" "0")
+                      (match_operand:<MASK> 3 "register_operand" "r")
+                      (match_operand 4 "" "")] UNSPEC_SELECTWP))]
   ""
-  "cmovehq%4 %3? %0 = %1"
+  "cmove<suffix>%4 %3? %0 = %1"
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "addv4hi3"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r")
-        (plus:V4HI (match_operand:V4HI 1 "register_operand" "r,r,r")
-                   (match_operand:V4HI 2 "nonmemory_operand" "r,v32,vx2")))]
+(define_insn "add<mode>3"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r")
+        (plus:V64I (match_operand:V64I 1 "register_operand" "r,r,r")
+                   (match_operand:V64I 2 "nonmemory_operand" "r,v32,vx2")))]
   ""
-  "addhq %0 = %1, %2"
+  "add<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_tiny,alu_tiny_x,alu_tiny_x")
    (set_attr "length" "     4,        8,          8")]
 )
 
-(define_insn "ssaddv4hi3"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r")
-        (ss_plus:V4HI (match_operand:V4HI 1 "register_operand" "r,r,r")
-                      (match_operand:V4HI 2 "nonmemory_operand" "r,v32,vx2")))]
+(define_insn "ssadd<mode>3"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r")
+        (ss_plus:V64I (match_operand:V64I 1 "register_operand" "r,r,r")
+                      (match_operand:V64I 2 "nonmemory_operand" "r,v32,vx2")))]
   ""
-  "addshq %0 = %1, %2"
+  "adds<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
    (set_attr "length" "     4,         8,         8")]
 )
 
-(define_insn "*addx2hq"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r")
-        (plus:V4HI (mult:V4HI (match_operand:V4HI 1 "register_operand" "r,r,r")
+(define_insn "*addx2<suffix>"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r")
+        (plus:V64I (mult:V64I (match_operand:V64I 1 "register_operand" "r,r,r")
                               (const_int 2))
-                   (match_operand:V4HI 2 "nonmemory_operand" "r,v32,vx2")))]
+                   (match_operand:V64I 2 "nonmemory_operand" "r,v32,vx2")))]
   ""
-  "addx2hq %0 = %1, %2"
+  "addx2<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
    (set_attr "length" "     4,         8,         8")]
 )
 
-(define_insn "*addx2hq2"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r")
-        (plus:V4HI (ashift:V4HI (match_operand:V4HI 1 "register_operand" "r,r,r")
+(define_insn "*addx2<suffix>2"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r")
+        (plus:V64I (ashift:V64I (match_operand:V64I 1 "register_operand" "r,r,r")
                                 (const_int 1))
-                   (match_operand:V4HI 2 "nonmemory_operand" "r,v32,vx2")))]
+                   (match_operand:V64I 2 "nonmemory_operand" "r,v32,vx2")))]
   ""
-  "addx2hq %0 = %1, %2"
+  "addx2<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
    (set_attr "length" "     4,         8,         8")]
 )
 
-(define_insn "*addx4hq"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r")
-        (plus:V4HI (mult:V4HI (match_operand:V4HI 1 "register_operand" "r,r,r")
+(define_insn "*addx4<suffix>"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r")
+        (plus:V64I (mult:V64I (match_operand:V64I 1 "register_operand" "r,r,r")
                               (const_int 4))
-                   (match_operand:V4HI 2 "nonmemory_operand" "r,v32,vx2")))]
+                   (match_operand:V64I 2 "nonmemory_operand" "r,v32,vx2")))]
   ""
-  "addx4hq %0 = %1, %2"
+  "addx4<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
    (set_attr "length" "     4,         8,         8")]
 )
 
-(define_insn "*addx4hq2"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r")
-        (plus:V4HI (ashift:V4HI (match_operand:V4HI 1 "register_operand" "r,r,r")
+(define_insn "*addx4<suffix>2"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r")
+        (plus:V64I (ashift:V64I (match_operand:V64I 1 "register_operand" "r,r,r")
                                 (const_int 2))
-                   (match_operand:V4HI 2 "nonmemory_operand" "r,v32,vx2")))]
+                   (match_operand:V64I 2 "nonmemory_operand" "r,v32,vx2")))]
   ""
-  "addx4hq %0 = %1, %2"
+  "addx4<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
    (set_attr "length" "     4,         8,         8")]
 )
 
-(define_insn "*addx8hq"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r")
-        (plus:V4HI (mult:V4HI (match_operand:V4HI 1 "register_operand" "r,r,r")
+(define_insn "*addx8<suffix>"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r")
+        (plus:V64I (mult:V64I (match_operand:V64I 1 "register_operand" "r,r,r")
                               (const_int 8))
-                   (match_operand:V4HI 2 "nonmemory_operand" "r,v32,vx2")))]
+                   (match_operand:V64I 2 "nonmemory_operand" "r,v32,vx2")))]
   ""
-  "addx8hq %0 = %1, %2"
+  "addx8<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
    (set_attr "length" "     4,         8,         8")]
 )
 
-(define_insn "*addx8hq2"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r")
-        (plus:V4HI (ashift:V4HI (match_operand:V4HI 1 "register_operand" "r,r,r")
+(define_insn "*addx8<suffix>2"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r")
+        (plus:V64I (ashift:V64I (match_operand:V64I 1 "register_operand" "r,r,r")
                                 (const_int 3))
-                   (match_operand:V4HI 2 "nonmemory_operand" "r,v32,vx2")))]
+                   (match_operand:V64I 2 "nonmemory_operand" "r,v32,vx2")))]
   ""
-  "addx8hq %0 = %1, %2"
+  "addx8<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
    (set_attr "length" "     4,         8,         8")]
 )
 
-(define_insn "*addx16hq"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r")
-        (plus:V4HI (mult:V4HI (match_operand:V4HI 1 "register_operand" "r,r,r")
+(define_insn "*addx16<suffix>"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r")
+        (plus:V64I (mult:V64I (match_operand:V64I 1 "register_operand" "r,r,r")
                               (const_int 16))
-                   (match_operand:V4HI 2 "nonmemory_operand" "r,v32,vx2")))]
+                   (match_operand:V64I 2 "nonmemory_operand" "r,v32,vx2")))]
   ""
-  "addx16hq %0 = %1, %2"
+  "addx16<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
    (set_attr "length" "     4,         8,         8")]
 )
 
-(define_insn "*addx16hq2"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r")
-        (plus:V4HI (ashift:V4HI (match_operand:V4HI 1 "register_operand" "r,r,r")
+(define_insn "*addx16<suffix>2"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r")
+        (plus:V64I (ashift:V64I (match_operand:V64I 1 "register_operand" "r,r,r")
                                 (const_int 4))
-                   (match_operand:V4HI 2 "nonmemory_operand" "r,v32,vx2")))]
+                   (match_operand:V64I 2 "nonmemory_operand" "r,v32,vx2")))]
   ""
-  "addx16hq %0 = %1, %2"
+  "addx16<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
    (set_attr "length" "     4,         8,         8")]
 )
 
-(define_insn "subv4hi3"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r")
-        (minus:V4HI (match_operand:V4HI 1 "nonmemory_operand" "r,v32,vx2")
-                    (match_operand:V4HI 2 "register_operand" "r,r,r")))]
+(define_insn "sub<mode>3"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r")
+        (minus:V64I (match_operand:V64I 1 "nonmemory_operand" "r,v32,vx2")
+                    (match_operand:V64I 2 "register_operand" "r,r,r")))]
   ""
-  "sbfhq %0 = %2, %1"
+  "sbf<suffix> %0 = %2, %1"
   [(set_attr "type" "alu_tiny,alu_tiny_x,alu_tiny_x")
    (set_attr "length" "     4,         8,         8")]
 )
 
-(define_insn "sssubv4hi3"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r")
-        (ss_minus:V4HI (match_operand:V4HI 1 "nonmemory_operand" "r,v32,vx2")
-                       (match_operand:V4HI 2 "register_operand" "r,r,r")))]
+(define_insn "sssub<mode>3"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r")
+        (ss_minus:V64I (match_operand:V64I 1 "nonmemory_operand" "r,v32,vx2")
+                       (match_operand:V64I 2 "register_operand" "r,r,r")))]
   ""
-  "sbfshq %0 = %2, %1"
+  "sbfs<suffix> %0 = %2, %1"
   [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
    (set_attr "length" "     4,         8,         8")]
 )
 
-(define_insn "*sbfx2hq"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r")
-        (minus:V4HI (match_operand:V4HI 1 "nonmemory_operand" "r,v32,vx2")
-                    (mult:V4HI (match_operand:V4HI 2 "register_operand" "r,r,r")
+(define_insn "*sbfx2<suffix>"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r")
+        (minus:V64I (match_operand:V64I 1 "nonmemory_operand" "r,v32,vx2")
+                    (mult:V64I (match_operand:V64I 2 "register_operand" "r,r,r")
                                (const_int 2))))]
   ""
-  "sbfx2hq %0 = %2, %1"
+  "sbfx2<suffix> %0 = %2, %1"
   [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
    (set_attr "length" "     4,         8,         8")]
 )
 
-(define_insn "*sbfx2hq2"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r")
-        (minus:V4HI (match_operand:V4HI 1 "nonmemory_operand" "r,v32,vx2")
-                    (ashift:V4HI (match_operand:V4HI 2 "register_operand" "r,r,r")
+(define_insn "*sbfx2<suffix>2"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r")
+        (minus:V64I (match_operand:V64I 1 "nonmemory_operand" "r,v32,vx2")
+                    (ashift:V64I (match_operand:V64I 2 "register_operand" "r,r,r")
                                  (const_int 1))))]
   ""
-  "sbfx2hq %0 = %2, %1"
+  "sbfx2<suffix> %0 = %2, %1"
   [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
    (set_attr "length" "     4,         8,         8")]
 )
 
-(define_insn "*sbfx4hq"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r")
-        (minus:V4HI (match_operand:V4HI 1 "nonmemory_operand" "r,v32,vx2")
-                    (mult:V4HI (match_operand:V4HI 2 "register_operand" "r,r,r")
+(define_insn "*sbfx4<suffix>"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r")
+        (minus:V64I (match_operand:V64I 1 "nonmemory_operand" "r,v32,vx2")
+                    (mult:V64I (match_operand:V64I 2 "register_operand" "r,r,r")
                                (const_int 4))))]
   ""
-  "sbfx4hq %0 = %2, %1"
+  "sbfx4<suffix> %0 = %2, %1"
   [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
    (set_attr "length" "     4,         8,         8")]
 )
 
-(define_insn "*sbfx4hq2"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r")
-        (minus:V4HI (match_operand:V4HI 1 "nonmemory_operand" "r,v32,vx2")
-                    (ashift:V4HI (match_operand:V4HI 2 "register_operand" "r,r,r")
+(define_insn "*sbfx4<suffix>2"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r")
+        (minus:V64I (match_operand:V64I 1 "nonmemory_operand" "r,v32,vx2")
+                    (ashift:V64I (match_operand:V64I 2 "register_operand" "r,r,r")
                                  (const_int 2))))]
   ""
-  "sbfx4hq %0 = %2, %1"
+  "sbfx4<suffix> %0 = %2, %1"
   [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
    (set_attr "length" "     4,         8,         8")]
 )
 
-(define_insn "*sbfx8hq"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r")
-        (minus:V4HI (match_operand:V4HI 1 "nonmemory_operand" "r,v32,vx2")
-                    (mult:V4HI (match_operand:V4HI 2 "register_operand" "r,r,r")
+(define_insn "*sbfx8<suffix>"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r")
+        (minus:V64I (match_operand:V64I 1 "nonmemory_operand" "r,v32,vx2")
+                    (mult:V64I (match_operand:V64I 2 "register_operand" "r,r,r")
                                (const_int 8))))]
   ""
-  "sbfx8hq %0 = %2, %1"
+  "sbfx8<suffix> %0 = %2, %1"
   [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
    (set_attr "length" "     4,         8,         8")]
 )
 
-(define_insn "*sbfx8hq2"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r")
-        (minus:V4HI (match_operand:V4HI 1 "nonmemory_operand" "r,v32,vx2")
-                    (ashift:V4HI (match_operand:V4HI 2 "register_operand" "r,r,r")
+(define_insn "*sbfx8<suffix>2"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r")
+        (minus:V64I (match_operand:V64I 1 "nonmemory_operand" "r,v32,vx2")
+                    (ashift:V64I (match_operand:V64I 2 "register_operand" "r,r,r")
                                  (const_int 3))))]
   ""
-  "sbfx8hq %0 = %2, %1"
+  "sbfx8<suffix> %0 = %2, %1"
   [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
    (set_attr "length" "     4,         8,         8")]
 )
 
-(define_insn "*sbfx16hq"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r")
-        (minus:V4HI (match_operand:V4HI 1 "nonmemory_operand" "r,v32,vx2")
-                    (mult:V4HI (match_operand:V4HI 2 "register_operand" "r,r,r")
+(define_insn "*sbfx16<suffix>"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r")
+        (minus:V64I (match_operand:V64I 1 "nonmemory_operand" "r,v32,vx2")
+                    (mult:V64I (match_operand:V64I 2 "register_operand" "r,r,r")
                                (const_int 16))))]
   ""
-  "sbfx16hq %0 = %2, %1"
+  "sbfx16<suffix> %0 = %2, %1"
   [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
    (set_attr "length" "     4,         8,         8")]
 )
 
-(define_insn "*sbfx16hq2"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r")
-        (minus:V4HI (match_operand:V4HI 1 "nonmemory_operand" "r,v32,vx2")
-                    (ashift:V4HI (match_operand:V4HI 2 "register_operand" "r,r,r")
+(define_insn "*sbfx16<suffix>2"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r")
+        (minus:V64I (match_operand:V64I 1 "nonmemory_operand" "r,v32,vx2")
+                    (ashift:V64I (match_operand:V64I 2 "register_operand" "r,r,r")
                                  (const_int 4))))]
   ""
-  "sbfx16hq %0 = %2, %1"
+  "sbfx16<suffix> %0 = %2, %1"
   [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
    (set_attr "length" "     4,         8,         8")]
 )
 
-(define_insn "mulv4hi3"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r")
-        (mult:V4HI (match_operand:V4HI 1 "register_operand" "r,r,r")
-                   (match_operand:V4HI 2 "nonmemory_operand" "r,v32,vx2")))]
+(define_insn "mul<mode>3"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r")
+        (mult:V64I (match_operand:V64I 1 "register_operand" "r,r,r")
+                   (match_operand:V64I 2 "nonmemory_operand" "r,v32,vx2")))]
   ""
-  "mulhq %0 = %1, %2"
+  "mul<suffix> %0 = %1, %2"
   [(set_attr "type" "mau,mau_x,mau_x")
    (set_attr "length" "4,    8,    8")]
 )
+
+(define_insn "smin<mode>3"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r")
+        (smin:V64I (match_operand:V64I 1 "register_operand" "r,r,r")
+                   (match_operand:V64I 2 "nonmemory_operand" "r,v32,vx2")))]
+  ""
+  "min<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_tiny,alu_tiny_x,alu_tiny_x")
+   (set_attr "length" "     4,         8,         8")]
+)
+
+(define_insn "smax<mode>3"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r")
+        (smax:V64I (match_operand:V64I 1 "register_operand" "r,r,r")
+                   (match_operand:V64I 2 "nonmemory_operand" "r,v32,vx2")))]
+  ""
+  "max<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_tiny,alu_tiny_x,alu_tiny_x")
+   (set_attr "length" "     4,         8,         8")]
+)
+
+(define_insn "umin<mode>3"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r")
+        (umin:V64I (match_operand:V64I 1 "register_operand" "r,r,r")
+                   (match_operand:V64I 2 "nonmemory_operand" "r,v32,vx2")))]
+  ""
+  "minu<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_tiny,alu_tiny_x,alu_tiny_x")
+   (set_attr "length" "     4,         8,         8")]
+)
+
+(define_insn "umax<mode>3"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r")
+        (umax:V64I (match_operand:V64I 1 "register_operand" "r,r,r")
+                   (match_operand:V64I 2 "nonmemory_operand" "r,v32,vx2")))]
+  ""
+  "maxu<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_tiny,alu_tiny_x,alu_tiny_x")
+   (set_attr "length" "     4,         8,         8")]
+)
+
+(define_insn "and<mode>3"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r,r")
+        (and:V64I (match_operand:V64I 1 "register_operand" "r,r,r,r")
+                  (match_operand:V64I 2 "nonmemory_operand" "r,v10,v37,i")))]
+  ""
+  "andd %0 = %1, %2"
+  [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
+   (set_attr "length" "     4,       4,         8,        12")]
+)
+
+(define_insn "*nand<mode>3"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r,r")
+        (ior:V64I (not:V64I (match_operand:V64I 1 "register_operand" "r,r,r,r"))
+                  (not:V64I (match_operand:V64I 2 "nonmemory_operand" "r,v10,v37,i"))))]
+  ""
+  "nandd %0 = %1, %2"
+  [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
+   (set_attr "length" "     4,       4,         8,        12")]
+)
+
+(define_insn "*andn<mode>3"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r,r")
+        (and:V64I (not:V64I (match_operand:V64I 1 "register_operand" "r,r,r,r"))
+                  (match_operand:V64I 2 "nonmemory_operand" "r,v10,v37,i")))]
+  ""
+  "andnd %0 = %1, %2"
+  [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
+   (set_attr "length" "     4,       4,         8,        12")]
+)
+
+(define_insn "ior<mode>3"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r,r")
+        (ior:V64I (match_operand:V64I 1 "register_operand" "r,r,r,r")
+                  (match_operand:V64I 2 "nonmemory_operand" "r,v10,v37,i")))]
+  ""
+  "ord %0 = %1, %2"
+  [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
+   (set_attr "length" "     4,       4,         8,        12")]
+)
+
+(define_insn "*nior<mode>3"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r,r")
+        (and:V64I (not:V64I (match_operand:V64I 1 "register_operand" "r,r,r,r"))
+                  (not:V64I (match_operand:V64I 2 "nonmemory_operand" "r,v10,v37,i"))))]
+  ""
+  "nord %0 = %1, %2"
+  [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
+   (set_attr "length" "     4,       4,         8,        12")]
+)
+
+(define_insn "*iorn<mode>3"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r,r")
+        (ior:V64I (not:V64I (match_operand:V64I 1 "register_operand" "r,r,r,r"))
+                  (match_operand:V64I 2 "nonmemory_operand" "r,v10,v37,i")))]
+  ""
+  "ornd %0 = %1, %2"
+  [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
+   (set_attr "length" "     4,       4,         8,        12")]
+)
+
+(define_insn "xor<mode>3"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r,r")
+        (xor:V64I (match_operand:V64I 1 "register_operand" "r,r,r,r")
+                  (match_operand:V64I 2 "nonmemory_operand" "r,v10,v37,i")))]
+  ""
+  "xord %0 = %1, %2"
+  [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
+   (set_attr "length" "     4,       4,         8,        12")]
+)
+
+(define_insn "*nxor<mode>3"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r,r")
+        (not:V64I (xor:V64I (match_operand:V64I 1 "register_operand" "r,r,r,r")
+                            (match_operand:V64I 2 "nonmemory_operand" "r,v10,v37,i"))))]
+  ""
+  "nxord %0 = %1, %2"
+  [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
+   (set_attr "length" "     4,       4,         8,        12")]
+)
+
+(define_insn "madd<mode><mode>4"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r,r,r")
+        (plus:V64I (mult:V64I (match_operand:V64I 1 "register_operand" "r,r,r,r")
+                              (match_operand:V64I 2 "nonmemory_operand" "r,v10,v37,i"))
+                   (match_operand:V64I 3 "register_operand" "0,0,0,0")))]
+  ""
+  "madd<suffix> %0 = %1, %2"
+  [(set_attr "type" "mau_auxr,mau_auxr,mau_auxr_x,mau_auxr_y")
+   (set_attr "length" "     4,       4,         8,        12")]
+)
+
+(define_insn "msub<mode><mode>4"
+  [(set (match_operand:V64I 0 "register_operand" "=r")
+        (minus:V64I (match_operand:V64I 3 "register_operand" "0")
+                    (mult:V64I (match_operand:V64I 1 "register_operand" "r")
+                               (match_operand:V64I 2 "register_operand" "r"))))]
+  ""
+  "msbf<suffix> %0 = %1, %2"
+  [(set_attr "type" "mau_auxr")]
+)
+
+(define_insn "ashl<mode>3"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r")
+        (ashift:V64I (match_operand:V64I 1 "register_operand" "r,r")
+                     (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
+  ""
+  "sll<suffix>s %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite")
+   (set_attr "length" "     4,       4")]
+)
+
+(define_insn "ssashl<mode>3"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r")
+        (ss_ashift:V64I (match_operand:V64I 1 "register_operand" "r,r")
+                        (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
+  ""
+  "sls<suffix>s %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite")
+   (set_attr "length" "     4,       4")]
+)
+
+(define_insn "ashr<mode>3"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r")
+        (ashiftrt:V64I (match_operand:V64I 1 "register_operand" "r,r")
+                       (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
+  ""
+  "sra<suffix>s %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite")
+   (set_attr "length" "     4,       4")]
+)
+
+(define_insn "lshr<mode>3"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r")
+        (lshiftrt:V64I (match_operand:V64I 1 "register_operand" "r,r")
+                       (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
+  ""
+  "srl<suffix>s %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite")
+   (set_attr "length" "     4,       4")]
+)
+
+(define_insn "kvx_srs<suffix>s"
+  [(set (match_operand:V64I 0 "register_operand" "=r,r")
+        (unspec:V64I [(match_operand:V64I 1 "register_operand" "r,r")
+                      (match_operand:SI 2 "sat_shift_operand" "r,U06")] UNSPEC_SRSWP))]
+  ""
+  "srs<suffix>s %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite")
+   (set_attr "length" "     4,       4")]
+)
+
+(define_insn "avg<mode>3_floor"
+  [(set (match_operand:V64I 0 "register_operand" "=r")
+        (unspec:V64I [(match_operand:V64I 1 "register_operand" "r")
+                      (match_operand:V64I 2 "register_operand" "r")] UNSPEC_AVGWP))]
+  ""
+  "avg<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_lite")]
+)
+
+(define_insn "uavg<mode>3_floor"
+  [(set (match_operand:V64I 0 "register_operand" "=r")
+        (unspec:V64I [(match_operand:V64I 1 "register_operand" "r")
+                      (match_operand:V64I 2 "register_operand" "r")] UNSPEC_AVGUWP))]
+  ""
+  "avgu<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_lite")]
+)
+
+(define_insn "avg<mode>3_ceil"
+  [(set (match_operand:V64I 0 "register_operand" "=r")
+        (unspec:V64I [(match_operand:V64I 1 "register_operand" "r")
+                      (match_operand:V64I 2 "register_operand" "r")] UNSPEC_AVGRWP))]
+  ""
+  "avgr<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_lite")]
+)
+
+(define_insn "uavg<mode>3_ceil"
+  [(set (match_operand:V64I 0 "register_operand" "=r")
+        (unspec:V64I [(match_operand:V64I 1 "register_operand" "r")
+                      (match_operand:V64I 2 "register_operand" "r")] UNSPEC_AVGRUWP))]
+  ""
+  "avgru<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_lite")]
+)
+
+(define_insn "neg<mode>2"
+  [(set (match_operand:V64I 0 "register_operand" "=r")
+        (neg:V64I (match_operand:V64I 1 "register_operand" "r")))]
+  ""
+  "neg<suffix> %0 = %1"
+  [(set_attr "type" "alu_tiny_x")
+   (set_attr "length" "8")]
+)
+
+(define_insn "abs<mode>2"
+  [(set (match_operand:V64I 0 "register_operand" "=r")
+        (abs:V64I (match_operand:V64I 1 "register_operand" "r")))]
+  ""
+  "abs<suffix> %0 = %1"
+  [(set_attr "type" "alu_lite_x")
+   (set_attr "length" "8")]
+)
+
+(define_insn "clrsb<mode>2"
+  [(set (match_operand:V64I 0 "register_operand" "=r")
+        (clrsb:V64I (match_operand:V64I 1 "register_operand" "r")))]
+  ""
+  "cls<suffix> %0 = %1"
+  [(set_attr "type" "alu_lite")]
+)
+
+(define_insn "clz<mode>2"
+  [(set (match_operand:V64I 0 "register_operand" "=r")
+        (clz:V64I (match_operand:V64I 1 "register_operand" "r")))]
+  ""
+  "clz<suffix> %0 = %1"
+  [(set_attr "type" "alu_lite")]
+)
+
+(define_insn "ctz<mode>2"
+  [(set (match_operand:V64I 0 "register_operand" "=r")
+        (ctz:V64I (match_operand:V64I 1 "register_operand" "r")))]
+  ""
+  "ctz<suffix> %0 = %1"
+  [(set_attr "type" "alu_lite")]
+)
+
+(define_insn "popcount<mode>2"
+  [(set (match_operand:V64I 0 "register_operand" "=r")
+        (popcount:V64I (match_operand:V64I 1 "register_operand" "r")))]
+  ""
+  "cbs<suffix> %0 = %1"
+  [(set_attr "type" "alu_lite")]
+)
+
+(define_insn "one_cmpl<mode>2"
+  [(set (match_operand:V64I 0 "register_operand" "=r")
+        (not:V64I (match_operand:V64I 1 "register_operand" "r")))]
+  ""
+  "notd %0 = %1"
+  [(set_attr "type" "alu_tiny")]
+)
+
+(define_insn "kvx_abd<suffix>"
+  [(set (match_operand:V64I 0 "register_operand" "=r")
+        (abs:V64I (minus:V64I (match_operand:V64I 2 "nonmemory_operand" "r")
+                              (match_operand:V64I 1 "register_operand" "r"))))]
+  ""
+  "abd<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_lite")]
+)
+
+(define_expand "kvx_abd<suffix>s"
+  [(set (match_operand:V64I 0 "register_operand" "")
+        (abs:V64I (minus:V64I (match_operand:V64I 2 "nonmemory_operand" "")
+                              (match_operand:V64I 1 "register_operand" ""))))]
+  ""
+  {
+    if (operands[2] == const0_rtx)
+      {
+        emit_insn (gen_abs<mode>2 (operands[0], operands[1]));
+        DONE;
+      }
+    rtx chunk = gen_reg_rtx (<MODE>mode);
+    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], <INNER>mode);
+  }
+)
+
+(define_expand "kvx_adds<suffix>s"
+  [(set (match_operand:V64I 0 "register_operand" "")
+        (ss_plus:V64I (match_operand:V64I 1 "register_operand" "")
+                      (match_operand:V64I 2 "nonmemory_operand" "")))]
+  ""
+  {
+    rtx chunk = gen_reg_rtx (<MODE>mode);
+    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], <INNER>mode);
+  }
+)
+
+(define_expand "kvx_sbfs<suffix>s"
+  [(set (match_operand:V64I 0 "register_operand" "")
+        (ss_minus:V64I (match_operand:V64I 2 "nonmemory_operand" "")
+                       (match_operand:V64I 1 "register_operand" "")))]
+  ""
+  {
+    rtx chunk = gen_reg_rtx (<MODE>mode);
+    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], <INNER>mode);
+  }
+)
+
+(define_expand "kvx_min<suffix>s"
+  [(set (match_operand:V64I 0 "register_operand" "")
+        (smin:V64I (match_operand:V64I 1 "register_operand" "")
+                   (match_operand:V64I 2 "nonmemory_operand" "")))]
+  ""
+  {
+    rtx chunk = gen_reg_rtx (<MODE>mode);
+    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], <INNER>mode);
+  }
+)
+
+(define_expand "kvx_max<suffix>s"
+  [(set (match_operand:V64I 0 "register_operand" "")
+        (smax:V64I (match_operand:V64I 1 "register_operand" "")
+                   (match_operand:V64I 2 "nonmemory_operand" "")))]
+  ""
+  {
+    rtx chunk = gen_reg_rtx (<MODE>mode);
+    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], <INNER>mode);
+  }
+)
+
+(define_expand "kvx_minu<suffix>s"
+  [(set (match_operand:V64I 0 "register_operand" "")
+        (umin:V64I (match_operand:V64I 1 "register_operand" "")
+                   (match_operand:V64I 2 "nonmemory_operand" "")))]
+  ""
+  {
+    rtx chunk = gen_reg_rtx (<MODE>mode);
+    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], <INNER>mode);
+  }
+)
+
+(define_expand "kvx_maxu<suffix>s"
+  [(set (match_operand:V64I 0 "register_operand" "")
+        (umax:V64I (match_operand:V64I 1 "register_operand" "")
+                   (match_operand:V64I 2 "nonmemory_operand" "")))]
+  ""
+  {
+    rtx chunk = gen_reg_rtx (<MODE>mode);
+    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], <INNER>mode);
+  }
+)
+
+
+;; V4HI
 
 (define_insn "*mulv4hiv4si3"
   [(set (match_operand:V4SI 0 "register_operand" "=r")
         (mult:V4SI (sign_extend:V4SI (match_operand:V4HI 1 "register_operand" "r"))
                    (sign_extend:V4SI (match_operand:V4HI 2 "register_operand" "r"))))]
-  "0"
+  ""
   "mulhwq %0 = %1, %2"
   [(set_attr "type" "mau")]
 )
@@ -772,140 +1151,9 @@
   [(set (match_operand:V4SI 0 "register_operand" "=r")
         (mult:V4SI (zero_extend:V4SI (match_operand:V4HI 1 "register_operand" "r"))
                    (zero_extend:V4SI (match_operand:V4HI 2 "register_operand" "r"))))]
-  "0"
+  ""
   "muluhwq %0 = %1, %2"
   [(set_attr "type" "mau")]
-)
-
-(define_insn "sminv4hi3"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r")
-        (smin:V4HI (match_operand:V4HI 1 "register_operand" "r,r,r")
-                   (match_operand:V4HI 2 "nonmemory_operand" "r,v32,vx2")))]
-  ""
-  "minhq %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny_x,alu_tiny_x")
-   (set_attr "length" "     4,         8,         8")]
-)
-
-(define_insn "smaxv4hi3"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r")
-        (smax:V4HI (match_operand:V4HI 1 "register_operand" "r,r,r")
-                   (match_operand:V4HI 2 "nonmemory_operand" "r,v32,vx2")))]
-  ""
-  "maxhq %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny_x,alu_tiny_x")
-   (set_attr "length" "     4,         8,         8")]
-)
-
-(define_insn "uminv4hi3"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r")
-        (umin:V4HI (match_operand:V4HI 1 "register_operand" "r,r,r")
-                   (match_operand:V4HI 2 "nonmemory_operand" "r,v32,vx2")))]
-  ""
-  "minuhq %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny_x,alu_tiny_x")
-   (set_attr "length" "     4,         8,         8")]
-)
-
-(define_insn "umaxv4hi3"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r")
-        (umax:V4HI (match_operand:V4HI 1 "register_operand" "r,r,r")
-                   (match_operand:V4HI 2 "nonmemory_operand" "r,v32,vx2")))]
-  ""
-  "maxuhq %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny_x,alu_tiny_x")
-   (set_attr "length" "     4,         8,         8")]
-)
-
-(define_insn "andv4hi3"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r,r")
-        (and:V4HI (match_operand:V4HI 1 "register_operand" "r,r,r,r")
-                  (match_operand:V4HI 2 "nonmemory_operand" "r,v10,v37,i")))]
-  ""
-  "andd %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
-   (set_attr "length" "     4,       4,         8,        12")]
-)
-
-(define_insn "*nandv4hi3"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r,r")
-        (ior:V4HI (not:V4HI (match_operand:V4HI 1 "register_operand" "r,r,r,r"))
-                  (not:V4HI (match_operand:V4HI 2 "nonmemory_operand" "r,v10,v37,i"))))]
-  ""
-  "nandd %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
-   (set_attr "length" "     4,       4,         8,        12")]
-)
-
-(define_insn "*andnv4hi3"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r,r")
-        (and:V4HI (not:V4HI (match_operand:V4HI 1 "register_operand" "r,r,r,r"))
-                  (match_operand:V4HI 2 "nonmemory_operand" "r,v10,v37,i")))]
-  ""
-  "andnd %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
-   (set_attr "length" "     4,       4,         8,        12")]
-)
-
-(define_insn "iorv4hi3"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r,r")
-        (ior:V4HI (match_operand:V4HI 1 "register_operand" "r,r,r,r")
-                  (match_operand:V4HI 2 "nonmemory_operand" "r,v10,v37,i")))]
-  ""
-  "ord %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
-   (set_attr "length" "     4,       4,         8,        12")]
-)
-
-(define_insn "*niorv4hi3"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r,r")
-        (and:V4HI (not:V4HI (match_operand:V4HI 1 "register_operand" "r,r,r,r"))
-                  (not:V4HI (match_operand:V4HI 2 "nonmemory_operand" "r,v10,v37,i"))))]
-  ""
-  "nord %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
-   (set_attr "length" "     4,       4,         8,        12")]
-)
-
-(define_insn "*iornv4hi3"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r,r")
-        (ior:V4HI (not:V4HI (match_operand:V4HI 1 "register_operand" "r,r,r,r"))
-                  (match_operand:V4HI 2 "nonmemory_operand" "r,v10,v37,i")))]
-  ""
-  "ornd %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
-   (set_attr "length" "     4,       4,         8,        12")]
-)
-
-(define_insn "xorv4hi3"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r,r")
-        (xor:V4HI (match_operand:V4HI 1 "register_operand" "r,r,r,r")
-                  (match_operand:V4HI 2 "nonmemory_operand" "r,v10,v37,i")))]
-  ""
-  "xord %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
-   (set_attr "length" "     4,       4,         8,        12")]
-)
-
-(define_insn "*nxorv4hi3"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r,r")
-        (not:V4HI (xor:V4HI (match_operand:V4HI 1 "register_operand" "r,r,r,r")
-                            (match_operand:V4HI 2 "nonmemory_operand" "r,v10,v37,i"))))]
-  ""
-  "nxord %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
-   (set_attr "length" "     4,       4,         8,        12")]
-)
-
-(define_insn "maddv4hiv4hi4"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r,r,r")
-        (plus:V4HI (mult:V4HI (match_operand:V4HI 1 "register_operand" "r,r,r,r")
-                              (match_operand:V4HI 2 "nonmemory_operand" "r,v10,v37,i"))
-                   (match_operand:V4HI 3 "register_operand" "0,0,0,0")))]
-  ""
-  "maddhq %0 = %1, %2"
-  [(set_attr "type" "mau_auxr,mau_auxr,mau_auxr_x,mau_auxr_y")
-   (set_attr "length" "     4,       4,         8,        12")]
 )
 
 (define_insn "maddv4hiv4si4"
@@ -925,16 +1173,6 @@
                    (match_operand:V4SI 3 "register_operand" "0")))]
   ""
   "madduhwq %0 = %1, %2"
-  [(set_attr "type" "mau_auxr")]
-)
-
-(define_insn "msubv4hiv4hi4"
-  [(set (match_operand:V4HI 0 "register_operand" "=r")
-        (minus:V4HI (match_operand:V4HI 3 "register_operand" "0")
-                    (mult:V4HI (match_operand:V4HI 1 "register_operand" "r")
-                               (match_operand:V4HI 2 "register_operand" "r"))))]
-  ""
-  "msbfhq %0 = %1, %2"
   [(set_attr "type" "mau_auxr")]
 )
 
@@ -958,2498 +1196,8 @@
   [(set_attr "type" "mau_auxr")]
 )
 
-(define_insn "ashlv4hi3"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r")
-        (ashift:V4HI (match_operand:V4HI 1 "register_operand" "r,r")
-                     (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
-  ""
-  "sllhqs %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite")
-   (set_attr "length" "     4,       4")]
-)
-
-(define_insn "ssashlv4hi3"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r")
-        (ss_ashift:V4HI (match_operand:V4HI 1 "register_operand" "r,r")
-                        (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
-  ""
-  "slshqs %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite")
-   (set_attr "length" "     4,       4")]
-)
-
-(define_insn "ashrv4hi3"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r")
-        (ashiftrt:V4HI (match_operand:V4HI 1 "register_operand" "r,r")
-                       (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
-  ""
-  "srahqs %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite")
-   (set_attr "length" "     4,       4")]
-)
-
-(define_insn "lshrv4hi3"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r")
-        (lshiftrt:V4HI (match_operand:V4HI 1 "register_operand" "r,r")
-                       (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
-  ""
-  "srlhqs %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite")
-   (set_attr "length" "     4,       4")]
-)
-
-(define_insn "kvx_srshqs"
-  [(set (match_operand:V4HI 0 "register_operand" "=r,r")
-        (unspec:V4HI [(match_operand:V4HI 1 "register_operand" "r,r")
-                      (match_operand:SI 2 "sat_shift_operand" "r,U06")] UNSPEC_SRSHQ))]
-  ""
-  "srshqs %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite")
-   (set_attr "length" "     4,       4")]
-)
-
-(define_insn "avgv4hi3_floor"
-  [(set (match_operand:V4HI 0 "register_operand" "=r")
-        (unspec:V4HI [(match_operand:V4HI 1 "register_operand" "r")
-                      (match_operand:V4HI 2 "register_operand" "r")] UNSPEC_AVGHQ))]
-  ""
-  "avghq %0 = %1, %2"
-  [(set_attr "type" "alu_lite")]
-)
-
-(define_insn "uavgv4hi3_floor"
-  [(set (match_operand:V4HI 0 "register_operand" "=r")
-        (unspec:V4HI [(match_operand:V4HI 1 "register_operand" "r")
-                      (match_operand:V4HI 2 "register_operand" "r")] UNSPEC_AVGUHQ))]
-  ""
-  "avguhq %0 = %1, %2"
-  [(set_attr "type" "alu_lite")]
-)
-
-(define_insn "avgv4hi3_ceil"
-  [(set (match_operand:V4HI 0 "register_operand" "=r")
-        (unspec:V4HI [(match_operand:V4HI 1 "register_operand" "r")
-                      (match_operand:V4HI 2 "register_operand" "r")] UNSPEC_AVGRHQ))]
-  ""
-  "avgrhq %0 = %1, %2"
-  [(set_attr "type" "alu_lite")]
-)
-
-(define_insn "uavgv4hi3_ceil"
-  [(set (match_operand:V4HI 0 "register_operand" "=r")
-        (unspec:V4HI [(match_operand:V4HI 1 "register_operand" "r")
-                      (match_operand:V4HI 2 "register_operand" "r")] UNSPEC_AVGRUHQ))]
-  ""
-  "avgruhq %0 = %1, %2"
-  [(set_attr "type" "alu_lite")]
-)
-
-(define_insn "negv4hi2"
-  [(set (match_operand:V4HI 0 "register_operand" "=r")
-        (neg:V4HI (match_operand:V4HI 1 "register_operand" "r")))]
-  ""
-  "neghq %0 = %1"
-  [(set_attr "type" "alu_tiny_x")
-   (set_attr "length" "8")]
-)
-
-(define_insn "absv4hi2"
-  [(set (match_operand:V4HI 0 "register_operand" "=r")
-        (abs:V4HI (match_operand:V4HI 1 "register_operand" "r")))]
-  ""
-  "abshq %0 = %1"
-  [(set_attr "type" "alu_lite_x")
-   (set_attr "length" "8")]
-)
-
-(define_insn "clrsbv4hi2"
-  [(set (match_operand:V4HI 0 "register_operand" "=r")
-        (clrsb:V4HI (match_operand:V4HI 1 "register_operand" "r")))]
-  ""
-  "clshq %0 = %1"
-  [(set_attr "type" "alu_lite")]
-)
-
-(define_insn "clzv4hi2"
-  [(set (match_operand:V4HI 0 "register_operand" "=r")
-        (clz:V4HI (match_operand:V4HI 1 "register_operand" "r")))]
-  ""
-  "clzhq %0 = %1"
-  [(set_attr "type" "alu_lite")]
-)
-
-(define_insn "ctzv4hi2"
-  [(set (match_operand:V4HI 0 "register_operand" "=r")
-        (ctz:V4HI (match_operand:V4HI 1 "register_operand" "r")))]
-  ""
-  "ctzhq %0 = %1"
-  [(set_attr "type" "alu_lite")]
-)
-
-(define_insn "popcountv4hi2"
-  [(set (match_operand:V4HI 0 "register_operand" "=r")
-        (popcount:V4HI (match_operand:V4HI 1 "register_operand" "r")))]
-  ""
-  "cbshq %0 = %1"
-  [(set_attr "type" "alu_lite")]
-)
-
-(define_insn "one_cmplv4hi2"
-  [(set (match_operand:V4HI 0 "register_operand" "=r")
-        (not:V4HI (match_operand:V4HI 1 "register_operand" "r")))]
-  ""
-  "notd %0 = %1"
-  [(set_attr "type" "alu_tiny")]
-)
-
-(define_insn "kvx_abdhq"
-  [(set (match_operand:V4HI 0 "register_operand" "=r")
-        (abs:V4HI (minus:V4HI (match_operand:V4HI 2 "nonmemory_operand" "r")
-                              (match_operand:V4HI 1 "register_operand" "r"))))]
-  ""
-  "abdhq %0 = %1, %2"
-  [(set_attr "type" "alu_lite")]
-)
-
-(define_expand "kvx_abdhqs"
-  [(set (match_operand:V4HI 0 "register_operand" "")
-        (abs:V4HI (minus:V4HI (match_operand:V4HI 2 "nonmemory_operand" "")
-                              (match_operand:V4HI 1 "register_operand" ""))))]
-  ""
-  {
-    if (operands[2] == const0_rtx)
-      {
-        emit_insn (gen_absv4hi2 (operands[0], operands[1]));
-        DONE;
-      }
-    rtx chunk = gen_reg_rtx (V4HImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], HImode);
-  }
-)
-
-(define_expand "kvx_addshqs"
-  [(set (match_operand:V4HI 0 "register_operand" "")
-        (ss_plus:V4HI (match_operand:V4HI 1 "register_operand" "")
-                      (match_operand:V4HI 2 "nonmemory_operand" "")))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V4HImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], HImode);
-  }
-)
-
-(define_expand "kvx_sbfshqs"
-  [(set (match_operand:V4HI 0 "register_operand" "")
-        (ss_minus:V4HI (match_operand:V4HI 2 "nonmemory_operand" "")
-                       (match_operand:V4HI 1 "register_operand" "")))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V4HImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], HImode);
-  }
-)
-
-(define_expand "kvx_minhqs"
-  [(set (match_operand:V4HI 0 "register_operand" "")
-        (smin:V4HI (match_operand:V4HI 1 "register_operand" "")
-                   (match_operand:V4HI 2 "nonmemory_operand" "")))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V4HImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], HImode);
-  }
-)
-
-(define_expand "kvx_maxhqs"
-  [(set (match_operand:V4HI 0 "register_operand" "")
-        (smax:V4HI (match_operand:V4HI 1 "register_operand" "")
-                   (match_operand:V4HI 2 "nonmemory_operand" "")))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V4HImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], HImode);
-  }
-)
-
-(define_expand "kvx_minuhqs"
-  [(set (match_operand:V4HI 0 "register_operand" "")
-        (umin:V4HI (match_operand:V4HI 1 "register_operand" "")
-                   (match_operand:V4HI 2 "nonmemory_operand" "")))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V4HImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], HImode);
-  }
-)
-
-(define_expand "kvx_maxuhqs"
-  [(set (match_operand:V4HI 0 "register_operand" "")
-        (umax:V4HI (match_operand:V4HI 1 "register_operand" "")
-                   (match_operand:V4HI 2 "nonmemory_operand" "")))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V4HImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], HImode);
-  }
-)
-
-
-;; V8HI
-
-(define_insn "*compnho"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (match_operator:V8HI 1 "comparison_operator"
-         [(match_operand:V8HI 2 "register_operand" "r")
-          (match_operand:V8HI 3 "register_operand" "r")]))]
-  ""
-  "compnhq.%1 %x0 = %x2, %x3\n\tcompnhq.%1 %y0 = %y2, %y3"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*selectho"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (if_then_else:V8HI (match_operator 2 "zero_comparison_operator"
-                                               [(match_operand:V8HI 3 "register_operand" "r")
-                                                (match_operand:V8HI 5 "const_zero_operand" "")])
-                           (match_operand:V8HI 1 "register_operand" "r")
-                           (match_operand:V8HI 4 "register_operand" "0")))]
-  ""
-  "cmovehq.%2z %x3? %x0 = %x1\n\tcmovehq.%2z %y3? %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*selectho_nez"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (if_then_else:V8HI (ne (match_operator:V8HI 2 "zero_comparison_operator"
-                                               [(match_operand:V8HI 3 "register_operand" "r")
-                                                (match_operand:V8HI 5 "const_zero_operand" "")])
-                               (match_operand:V8HI 6 "const_zero_operand" ""))
-                           (match_operand:V8HI 1 "register_operand" "r")
-                           (match_operand:V8HI 4 "register_operand" "0")))]
-  ""
-  "cmovehq.%2z %x3? %x0 = %x1\n\tcmovehq.%2z %y3? %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "kvx_selectho"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (unspec:V8HI [(match_operand:V8HI 1 "register_operand" "r")
-                      (match_operand:V8HI 2 "register_operand" "0")
-                      (match_operand:V8HI 3 "register_operand" "r")
-                      (match_operand 4 "" "")] UNSPEC_SELECTHO))]
-  ""
-  "cmovehq%4 %x3? %x0 = %x1\n\tcmovehq%4 %y3? %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "addv8hi3"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (plus:V8HI (match_operand:V8HI 1 "register_operand" "r")
-                   (match_operand:V8HI 2 "nonmemory_operand" "r")))]
-  ""
-  "addhq %x0 = %x1, %x2\n\taddhq %y0 = %y1, %y2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "ssaddv8hi3"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (ss_plus:V8HI (match_operand:V8HI 1 "register_operand" "r")
-                      (match_operand:V8HI 2 "nonmemory_operand" "r")))]
-  ""
-  "addshq %x0 = %x1, %x2\n\taddshq %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*addx2v8hi"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (plus:V8HI (mult:V8HI (match_operand:V8HI 1 "register_operand" "r")
-                              (const_int 2))
-                   (match_operand:V8HI 2 "nonmemory_operand" "r")))]
-  ""
-  "addx2hq %x0 = %x1, %x2\n\taddx2hq %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*addx2v8hi2"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (plus:V8HI (ashift:V8HI (match_operand:V8HI 1 "register_operand" "r")
-                                (const_int 1))
-                   (match_operand:V8HI 2 "nonmemory_operand" "r")))]
-  ""
-  "addx2hq %x0 = %x1, %x2\n\taddx2hq %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*addx4v8hi"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (plus:V8HI (mult:V8HI (match_operand:V8HI 1 "register_operand" "r")
-                              (const_int 4))
-                   (match_operand:V8HI 2 "nonmemory_operand" "r")))]
-  ""
-  "addx4hq %x0 = %x1, %x2\n\taddx4hq %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*addx4v8hi2"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (plus:V8HI (ashift:V8HI (match_operand:V8HI 1 "register_operand" "r")
-                                (const_int 2))
-                   (match_operand:V8HI 2 "nonmemory_operand" "r")))]
-  ""
-  "addx4hq %x0 = %x1, %x2\n\taddx4hq %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*addx8v8hi"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (plus:V8HI (mult:V8HI (match_operand:V8HI 1 "register_operand" "r")
-                              (const_int 8))
-                   (match_operand:V8HI 2 "nonmemory_operand" "r")))]
-  ""
-  "addx8hq %x0 = %x1, %x2\n\taddx8hq %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*addx8v8hi2"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (plus:V8HI (ashift:V8HI (match_operand:V8HI 1 "register_operand" "r")
-                                (const_int 3))
-                   (match_operand:V8HI 2 "nonmemory_operand" "r")))]
-  ""
-  "addx8hq %x0 = %x1, %x2\n\taddx8hq %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*addx16v8hi"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (plus:V8HI (mult:V8HI (match_operand:V8HI 1 "register_operand" "r")
-                              (const_int 16))
-                   (match_operand:V8HI 2 "nonmemory_operand" "r")))]
-  ""
-  "addx16hq %x0 = %x1, %x2\n\taddx16hq %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*addx16v8hi2"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (plus:V8HI (ashift:V8HI (match_operand:V8HI 1 "register_operand" "r")
-                                (const_int 4))
-                   (match_operand:V8HI 2 "nonmemory_operand" "r")))]
-  ""
-  "addx16hq %x0 = %x1, %x2\n\taddx16hq %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "subv8hi3"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (minus:V8HI (match_operand:V8HI 1 "nonmemory_operand" "r")
-                    (match_operand:V8HI 2 "register_operand" "r")))]
-  ""
-  "sbfhq %x0 = %x2, %x1\n\tsbfhq %y0 = %y2, %y1"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "sssubv8hi3"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (ss_minus:V8HI (match_operand:V8HI 1 "nonmemory_operand" "r")
-                       (match_operand:V8HI 2 "register_operand" "r")))]
-  ""
-  "sbfshq %x0 = %x2, %x1\n\tsbfshq %y0 = %y2, %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*sbfx2v8hi"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (minus:V8HI (match_operand:V8HI 1 "nonmemory_operand" "r")
-                    (mult:V8HI (match_operand:V8HI 2 "register_operand" "r")
-                               (const_int 2))))]
-  ""
-  "sbfx2hq %x0 = %x2, %x1\n\tsbfx2hq %y0 = %y2, %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*sbfx2v8hi2"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (minus:V8HI (match_operand:V8HI 1 "nonmemory_operand" "r")
-                    (ashift:V8HI (match_operand:V8HI 2 "register_operand" "r")
-                                 (const_int 1))))]
-  ""
-  "sbfx2hq %x0 = %x2, %x1\n\tsbfx2hq %y0 = %y2, %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*sbfx4v8hi"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (minus:V8HI (match_operand:V8HI 1 "nonmemory_operand" "r")
-                    (mult:V8HI (match_operand:V8HI 2 "register_operand" "r")
-                               (const_int 4))))]
-  ""
-  "sbfx4hq %x0 = %x2, %x1\n\tsbfx4hq %y0 = %y2, %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*sbfx4v8hi2"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (minus:V8HI (match_operand:V8HI 1 "nonmemory_operand" "r")
-                    (ashift:V8HI (match_operand:V8HI 2 "register_operand" "r")
-                                 (const_int 2))))]
-  ""
-  "sbfx4hq %x0 = %x2, %x1\n\tsbfx4hq %y0 = %y2, %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*sbfx8v8hi"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (minus:V8HI (match_operand:V8HI 1 "nonmemory_operand" "r")
-                    (mult:V8HI (match_operand:V8HI 2 "register_operand" "r")
-                               (const_int 8))))]
-  ""
-  "sbfx8hq %x0 = %x2, %x1\n\tsbfx8hq %y0 = %y2, %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*sbfx8v8hi2"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (minus:V8HI (match_operand:V8HI 1 "nonmemory_operand" "r")
-                    (ashift:V8HI (match_operand:V8HI 2 "register_operand" "r")
-                                 (const_int 3))))]
-  ""
-  "sbfx8hq %x0 = %x2, %x1\n\tsbfx8hq %y0 = %y2, %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*sbfx16v8hi"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (minus:V8HI (match_operand:V8HI 1 "nonmemory_operand" "r")
-                    (mult:V8HI (match_operand:V8HI 2 "register_operand" "r")
-                               (const_int 16))))]
-  ""
-  "sbfx16hq %x0 = %x2, %x1\n\tsbfx16hq %y0 = %y2, %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*sbfx16v8hi2"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (minus:V8HI (match_operand:V8HI 1 "nonmemory_operand" "r")
-                    (ashift:V8HI (match_operand:V8HI 2 "register_operand" "r")
-                                 (const_int 4))))]
-  ""
-  "sbfx16hq %x0 = %x2, %x1\n\tsbfx16hq %y0 = %y2, %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn_and_split "mulv8hi3"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (mult:V8HI (match_operand:V8HI 1 "register_operand" "r")
-                   (match_operand:V8HI 2 "nonmemory_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4HI (match_dup 0) 0)
-        (mult:V4HI (subreg:V4HI (match_dup 1) 0)
-                   (subreg:V4HI (match_dup 2) 0)))
-   (set (subreg:V4HI (match_dup 0) 8)
-        (mult:V4HI (subreg:V4HI (match_dup 1) 8)
-                   (subreg:V4HI (match_dup 2) 8)))]
-  ""
-  [(set_attr "type" "mau_auxr")]
-)
-
-(define_insn "sminv8hi3"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (smin:V8HI (match_operand:V8HI 1 "register_operand" "r")
-                   (match_operand:V8HI 2 "nonmemory_operand" "r")))]
-  ""
-  "minhq %x0 = %x1, %x2\n\tminhq %y0 = %y1, %y2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "smaxv8hi3"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (smax:V8HI (match_operand:V8HI 1 "register_operand" "r")
-                   (match_operand:V8HI 2 "nonmemory_operand" "r")))]
-  ""
-  "maxhq %x0 = %x1, %x2\n\tmaxhq %y0 = %y1, %y2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "uminv8hi3"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (umin:V8HI (match_operand:V8HI 1 "register_operand" "r")
-                   (match_operand:V8HI 2 "nonmemory_operand" "r")))]
-  ""
-  "minuhq %x0 = %x1, %x2\n\tminuhq %y0 = %y1, %y2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "umaxv8hi3"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (umax:V8HI (match_operand:V8HI 1 "register_operand" "r")
-                   (match_operand:V8HI 2 "nonmemory_operand" "r")))]
-  ""
-  "maxuhq %x0 = %x1, %x2\n\tmaxuhq %y0 = %y1, %y2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "andv8hi3"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (and:V8HI (match_operand:V8HI 1 "register_operand" "r")
-                  (match_operand:V8HI 2 "nonmemory_operand" "r")))]
-  ""
-  "andd %x0 = %x1, %x2\n\tandd %y0 = %y1, %y2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*nandv8hi3"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (ior:V8HI (not:V8HI (match_operand:V8HI 1 "register_operand" "r"))
-                  (not:V8HI (match_operand:V8HI 2 "nonmemory_operand" "r"))))]
-  ""
-  "nandd %x0 = %x1, %x2\n\tnandd %y0 = %y1, %y2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*andnv8hi3"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (and:V8HI (not:V8HI (match_operand:V8HI 1 "register_operand" "r"))
-                  (match_operand:V8HI 2 "nonmemory_operand" "r")))]
-  ""
-  "andnd %x0 = %x1, %x2\n\tandnd %y0 = %y1, %y2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "iorv8hi3"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (ior:V8HI (match_operand:V8HI 1 "register_operand" "r")
-                  (match_operand:V8HI 2 "nonmemory_operand" "r")))]
-  ""
-  "ord %x0 = %x1, %x2\n\tord %y0 = %y1, %y2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*niorv8hi3"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (and:V8HI (not:V8HI (match_operand:V8HI 1 "register_operand" "r"))
-                  (not:V8HI (match_operand:V8HI 2 "nonmemory_operand" "r"))))]
-  ""
-  "nord %x0 = %x1, %x2\n\tnord %y0 = %y1, %y2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*iornv8hi3"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (ior:V8HI (not:V8HI (match_operand:V8HI 1 "register_operand" "r"))
-                  (match_operand:V8HI 2 "nonmemory_operand" "r")))]
-  ""
-  "ornd %x0 = %x1, %x2\n\tornd %y0 = %y1, %y2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "xorv8hi3"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (xor:V8HI (match_operand:V8HI 1 "register_operand" "r")
-                  (match_operand:V8HI 2 "nonmemory_operand" "r")))]
-  ""
-  "xord %x0 = %x1, %x2\n\txord %y0 = %y1, %y2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*nxorv8hi3"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (not:V8HI (xor:V8HI (match_operand:V8HI 1 "register_operand" "r")
-                            (match_operand:V8HI 2 "nonmemory_operand" "r"))))]
-  ""
-  "nxord %x0 = %x1, %x2\n\tnxord %y0 = %y1, %y2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn_and_split "maddv8hiv8hi4"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (plus:V8HI (mult:V8HI (match_operand:V8HI 1 "register_operand" "r")
-                              (match_operand:V8HI 2 "nonmemory_operand" "r"))
-                   (match_operand:V8HI 3 "register_operand" "0")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4HI (match_dup 0) 0)
-        (plus:V4HI (mult:V4HI (subreg:V4HI (match_dup 1) 0)
-                              (subreg:V4HI (match_dup 2) 0))
-                   (subreg:V4HI (match_dup 3) 0)))
-   (set (subreg:V4HI (match_dup 0) 8)
-        (plus:V4HI (mult:V4HI (subreg:V4HI (match_dup 1) 8)
-                              (subreg:V4HI (match_dup 2) 8))
-                   (subreg:V4HI (match_dup 3) 8)))]
-  ""
-  [(set_attr "type" "mau_auxr")]
-)
-
-(define_insn_and_split "msubv8hiv8hi4"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (minus:V8HI (match_operand:V8HI 3 "register_operand" "0")
-                    (mult:V8HI (match_operand:V8HI 1 "register_operand" "r")
-                               (match_operand:V8HI 2 "register_operand" "r"))))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4HI (match_dup 0) 0)
-        (minus:V4HI (subreg:V4HI (match_dup 3) 0)
-                    (mult:V4HI (subreg:V4HI (match_dup 1) 0)
-                               (subreg:V4HI (match_dup 2) 0))))
-   (set (subreg:V4HI (match_dup 0) 8)
-        (minus:V4HI (subreg:V4HI (match_dup 3) 8)
-                    (mult:V4HI (subreg:V4HI (match_dup 1) 8)
-                               (subreg:V4HI (match_dup 2) 8))))]
-  ""
-  [(set_attr "type" "mau_auxr")
-   (set_attr "length"      "8")]
-)
-
-(define_insn "ashlv8hi3"
-  [(set (match_operand:V8HI 0 "register_operand" "=r,r")
-        (ashift:V8HI (match_operand:V8HI 1 "register_operand" "r,r")
-                     (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
-  ""
-  "sllhqs %x0 = %x1, %2\n\tsllhqs %y0 = %y1, %2"
-  [(set_attr "type" "alu_lite_x2,alu_lite_x2")
-   (set_attr "length" "        8,          8")]
-)
-
-(define_insn "ssashlv8hi3"
-  [(set (match_operand:V8HI 0 "register_operand" "=r,r")
-        (ss_ashift:V8HI (match_operand:V8HI 1 "register_operand" "r,r")
-                        (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
-  ""
-  "slshqs %x0 = %x1, %2\n\tslshqs %y0 = %y1, %2"
-  [(set_attr "type" "alu_lite_x2,alu_lite_x2")
-   (set_attr "length" "        8,          8")]
-)
-
-(define_insn "ashrv8hi3"
-  [(set (match_operand:V8HI 0 "register_operand" "=r,r")
-        (ashiftrt:V8HI (match_operand:V8HI 1 "register_operand" "r,r")
-                       (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
-  ""
-  "srahqs %x0 = %x1, %2\n\tsrahqs %y0 = %y1, %2"
-  [(set_attr "type" "alu_lite_x2,alu_lite_x2")
-   (set_attr "length" "        8,          8")]
-)
-
-(define_insn "lshrv8hi3"
-  [(set (match_operand:V8HI 0 "register_operand" "=r,r")
-        (lshiftrt:V8HI (match_operand:V8HI 1 "register_operand" "r,r")
-                       (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
-  ""
-  "srlhqs %x0 = %x1, %2\n\tsrlhqs %y0 = %y1, %2"
-  [(set_attr "type" "alu_lite_x2,alu_lite_x2")
-   (set_attr "length" "        8,          8")]
-)
-
-(define_insn "kvx_srshos"
-  [(set (match_operand:V8HI 0 "register_operand" "=r,r")
-        (unspec:V8HI [(match_operand:V8HI 1 "register_operand" "r,r")
-                      (match_operand:SI 2 "sat_shift_operand" "r,U06")] UNSPEC_SRSHO))]
-  ""
-  "srshqs %x0 = %x1, %2\n\tsrshqs %y0 = %y1, %2"
-  [(set_attr "type" "alu_lite_x2,alu_lite_x2")
-   (set_attr "length" "        8,          8")]
-)
-
-(define_insn "avgv8hi3_floor"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (unspec:V8HI [(match_operand:V8HI 1 "register_operand" "r")
-                      (match_operand:V8HI 2 "register_operand" "r")] UNSPEC_AVGHO))]
-  ""
-  "avghq %x0 = %x1, %x2\n\tavghq %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "uavgv8hi3_floor"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (unspec:V8HI [(match_operand:V8HI 1 "register_operand" "r")
-                      (match_operand:V8HI 2 "register_operand" "r")] UNSPEC_AVGUHO))]
-  ""
-  "avguhq %x0 = %x1, %x2\n\tavguhq %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "avgv8hi3_ceil"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (unspec:V8HI [(match_operand:V8HI 1 "register_operand" "r")
-                      (match_operand:V8HI 2 "register_operand" "r")] UNSPEC_AVGRHO))]
-  ""
-  "avgrhq %x0 = %x1, %x2\n\tavgrhq %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "uavgv8hi3_ceil"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (unspec:V8HI [(match_operand:V8HI 1 "register_operand" "r")
-                      (match_operand:V8HI 2 "register_operand" "r")] UNSPEC_AVGRUHO))]
-  ""
-  "avgruhq %x0 = %x1, %x2\n\tavgruhq %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "negv8hi2"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (neg:V8HI (match_operand:V8HI 1 "register_operand" "r")))]
-  ""
-  "neghq %x0 = %x1\n\tneghq %y0 = %y1"
-  [(set_attr "type" "alu_tiny_x2_x")
-   (set_attr "length"        "16")]
-)
-
-(define_insn "absv8hi2"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (abs:V8HI (match_operand:V8HI 1 "register_operand" "r")))]
-  ""
-  "abshq %x0 = %x1\n\tabshq %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2_x")
-   (set_attr "length"          "16")]
-)
-
-(define_insn "clrsbv8hi2"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (clrsb:V8HI (match_operand:V8HI 1 "register_operand" "r")))]
-  ""
-  "clshq %x0 = %x1\n\tclshq %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "clzv8hi2"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (clz:V8HI (match_operand:V8HI 1 "register_operand" "r")))]
-  ""
-  "clzhq %x0 = %x1\n\tclzhq %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "ctzv8hi2"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (ctz:V8HI (match_operand:V8HI 1 "register_operand" "r")))]
-  ""
-  "ctzhq %x0 = %x1\n\tctzhq %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "popcountv8hi2"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (popcount:V8HI (match_operand:V8HI 1 "register_operand" "r")))]
-  ""
-  "cbshq %x0 = %x1\n\tcbshq %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "one_cmplv8hi2"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (not:V8HI (match_operand:V8HI 1 "register_operand" "r")))]
-  ""
-  "notd %x0 = %x1\n\tnotd %y0 = %y1"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "kvx_abdho"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (abs:V8HI (minus:V8HI (match_operand:V8HI 2 "nonmemory_operand" "r")
-                              (match_operand:V8HI 1 "register_operand" "r"))))]
-  ""
-  "abdhq %x0 = %x1, %x2\n\tabdhq %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_expand "kvx_abdhos"
-  [(set (match_operand:V8HI 0 "register_operand" "")
-        (abs:V8HI (minus:V8HI (unspec:V8HI [(match_operand:V4HI 2 "nonmemory_operand" "")] UNSPEC_VECDUP)
-                              (match_operand:V8HI 1 "register_operand" ""))))]
-  ""
-  {
-    if (operands[2] == const0_rtx)
-      {
-        emit_insn (gen_absv8hi2 (operands[0], operands[1]));
-        DONE;
-      }
-    rtx chunk = gen_reg_rtx (V4HImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], HImode);
-  }
-)
-
-(define_insn "*abdhos"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (abs:V8HI (minus:V8HI (unspec:V8HI [(match_operand:V4HI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)
-                              (match_operand:V8HI 1 "register_operand" "r"))))]
-  ""
-  "abdhq %x0 = %x1, %2\n\tabdhq %y0 = %y1, %2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_expand "kvx_addshos"
-  [(set (match_operand:V8HI 0 "register_operand" "")
-        (ss_plus:V8HI (match_operand:V8HI 1 "register_operand" "")
-                      (unspec:V8HI [(match_operand:V4HI 2 "nonmemory_operand" "")] UNSPEC_VECDUP)))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V4HImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], HImode);
-  }
-)
-
-(define_insn "*addshos"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (ss_plus:V8HI (match_operand:V8HI 1 "register_operand" "r")
-                      (unspec:V8HI [(match_operand:V4HI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)))]
-  ""
-  "addshq %x0 = %x1, %2\n\taddshq %y0 = %y1, %2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_expand "kvx_sbfshos"
-  [(set (match_operand:V8HI 0 "register_operand" "")
-        (ss_minus:V8HI (unspec:V8HI [(match_operand:V4HI 2 "nonmemory_operand" "")] UNSPEC_VECDUP)
-                       (match_operand:V8HI 1 "register_operand" "")))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V4HImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], HImode);
-  }
-)
-
-(define_insn "*sbfshos"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (ss_minus:V8HI (unspec:V8HI [(match_operand:V4HI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)
-                       (match_operand:V8HI 1 "register_operand" "r")))]
-  ""
-  "sbfshq %x0 = %x1, %2\n\tsbfshq %y0 = %y1, %2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_expand "kvx_minhos"
-  [(set (match_operand:V8HI 0 "register_operand" "")
-        (smin:V8HI (match_operand:V8HI 1 "register_operand" "")
-                   (unspec:V8HI [(match_operand:V4HI 2 "nonmemory_operand" "")] UNSPEC_VECDUP)))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V4HImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], HImode);
-  }
-)
-
-(define_insn "*minhos"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (smin:V8HI (match_operand:V8HI 1 "register_operand" "r")
-                   (unspec:V8HI [(match_operand:V4HI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)))]
-  ""
-  "minhq %x0 = %x1, %2\n\tminhq %y0 = %y1, %2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_expand "kvx_maxhos"
-  [(set (match_operand:V8HI 0 "register_operand" "")
-        (smax:V8HI (match_operand:V8HI 1 "register_operand" "")
-                   (unspec:V8HI [(match_operand:V4HI 2 "nonmemory_operand" "")] UNSPEC_VECDUP)))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V4HImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], HImode);
-  }
-)
-
-(define_insn "*maxhos"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (smax:V8HI (match_operand:V8HI 1 "register_operand" "r")
-                   (unspec:V8HI [(match_operand:V4HI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)))]
-  ""
-  "maxhq %x0 = %x1, %2\n\tmaxhq %y0 = %y1, %2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_expand "kvx_minuhos"
-  [(set (match_operand:V8HI 0 "register_operand" "")
-        (umin:V8HI (match_operand:V8HI 1 "register_operand" "")
-                   (unspec:V8HI [(match_operand:V4HI 2 "nonmemory_operand" "")] UNSPEC_VECDUP)))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V4HImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], HImode);
-  }
-)
-
-(define_insn "*minuhos"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (umin:V8HI (match_operand:V8HI 1 "register_operand" "r")
-                   (unspec:V8HI [(match_operand:V4HI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)))]
-  ""
-  "minuhq %x0 = %x1, %2\n\tminuhq %y0 = %y1, %2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_expand "kvx_maxuhos"
-  [(set (match_operand:V8HI 0 "register_operand" "")
-        (umax:V8HI (match_operand:V8HI 1 "register_operand" "")
-                   (unspec:V8HI [(match_operand:V4HI 2 "nonmemory_operand" "")] UNSPEC_VECDUP)))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V4HImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], HImode);
-  }
-)
-
-(define_insn "*maxuhos"
-  [(set (match_operand:V8HI 0 "register_operand" "=r")
-        (umax:V8HI (match_operand:V8HI 1 "register_operand" "r")
-                   (unspec:V8HI [(match_operand:V4HI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)))]
-  ""
-  "maxuhq %x0 = %x1, %2\n\tmaxuhq %y0 = %y1, %2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-
-;; V16HI
-
-(define_insn "*compnhx"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (match_operator:V16HI 1 "comparison_operator"
-         [(match_operand:V16HI 2 "register_operand" "r")
-          (match_operand:V16HI 3 "register_operand" "r")]))]
-  ""
-  {
-    return "compnhq.%1 %x0 = %x2, %x3\n\tcompnhq.%1 %y0 = %y2, %y3\n\t"
-           "compnhq.%1 %z0 = %z2, %z3\n\tcompnhq.%1 %t0 = %t2, %t3";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn_and_split "*selecthx"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (if_then_else:V16HI (match_operator 2 "zero_comparison_operator"
-                                               [(match_operand:V16HI 3 "register_operand" "r")
-                                                (match_operand:V16HI 5 "const_zero_operand" "")])
-                            (match_operand:V16HI 1 "register_operand" "r")
-                            (match_operand:V16HI 4 "register_operand" "0")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (if_then_else:V8HI (match_op_dup 2 [(subreg:V8HI (match_dup 3) 0)
-                                            (const_vector:V8HI [
-                                              (const_int 0)
-                                              (const_int 0)
-                                              (const_int 0)
-                                              (const_int 0)
-                                              (const_int 0)
-                                              (const_int 0)
-                                              (const_int 0)
-                                              (const_int 0)])])
-                           (subreg:V8HI (match_dup 1) 0)
-                           (subreg:V8HI (match_dup 4) 0)))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (if_then_else:V8HI (match_op_dup 2 [(subreg:V8HI (match_dup 3) 16)
-                                            (const_vector:V8HI [
-                                              (const_int 0)
-                                              (const_int 0)
-                                              (const_int 0)
-                                              (const_int 0)
-                                              (const_int 0)
-                                              (const_int 0)
-                                              (const_int 0)
-                                              (const_int 0)])])
-                           (subreg:V8HI (match_dup 1) 16)
-                           (subreg:V8HI (match_dup 4) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*selecthx_nez"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (if_then_else:V16HI (ne (match_operator:V16HI 2 "zero_comparison_operator"
-                                               [(match_operand:V16HI 3 "register_operand" "r")
-                                                (match_operand:V16HI 5 "const_zero_operand" "")])
-                                (match_operand:V16HI 6 "const_zero_operand" ""))
-                            (match_operand:V16HI 1 "register_operand" "r")
-                            (match_operand:V16HI 4 "register_operand" "0")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (if_then_else:V8HI (match_op_dup 2 [(subreg:V8HI (match_dup 3) 0)
-                                            (const_vector:V8HI [
-                                              (const_int 0)
-                                              (const_int 0)
-                                              (const_int 0)
-                                              (const_int 0)
-                                              (const_int 0)
-                                              (const_int 0)
-                                              (const_int 0)
-                                              (const_int 0)])])
-                           (subreg:V8HI (match_dup 1) 0)
-                           (subreg:V8HI (match_dup 4) 0)))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (if_then_else:V8HI (match_op_dup 2 [(subreg:V8HI (match_dup 3) 16)
-                                            (const_vector:V8HI [
-                                              (const_int 0)
-                                              (const_int 0)
-                                              (const_int 0)
-                                              (const_int 0)
-                                              (const_int 0)
-                                              (const_int 0)
-                                              (const_int 0)
-                                              (const_int 0)])])
-                           (subreg:V8HI (match_dup 1) 16)
-                           (subreg:V8HI (match_dup 4) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "kvx_selecthx"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (unspec:V16HI [(match_operand:V16HI 1 "register_operand" "r")
-                       (match_operand:V16HI 2 "register_operand" "0")
-                       (match_operand:V16HI 3 "register_operand" "r")
-                       (match_operand 4 "" "")] UNSPEC_SELECTHX))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (unspec:V8HI [(subreg:V8HI (match_dup 1) 0)
-                      (subreg:V8HI (match_dup 2) 0)
-                      (subreg:V8HI (match_dup 3) 0)
-                      (match_dup 4)] UNSPEC_SELECTHO))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (unspec:V8HI [(subreg:V8HI (match_dup 1) 16)
-                      (subreg:V8HI (match_dup 2) 16)
-                      (subreg:V8HI (match_dup 3) 16)
-                      (match_dup 4)] UNSPEC_SELECTHO))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn "addv16hi3"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (plus:V16HI (match_operand:V16HI 1 "register_operand" "r")
-                    (match_operand:V16HI 2 "nonmemory_operand" "r")))]
-  ""
-  {
-    return "addhq %x0 = %x1, %x2\n\taddhq %y0 = %y1, %y2\n\t"
-           "addhq %z0 = %z1, %z2\n\taddhq %t0 = %t1, %t2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn_and_split "ssaddv16hi3"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (ss_plus:V16HI (match_operand:V16HI 1 "register_operand" "r")
-                       (match_operand:V16HI 2 "nonmemory_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (ss_plus:V8HI (subreg:V8HI (match_dup 1) 0)
-                      (subreg:V8HI (match_dup 2) 0)))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (ss_plus:V8HI (subreg:V8HI (match_dup 1) 16)
-                      (subreg:V8HI (match_dup 2) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*addx2v16hi"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (plus:V16HI (mult:V16HI (match_operand:V16HI 1 "register_operand" "r")
-                                (const_int 2))
-                    (match_operand:V16HI 2 "nonmemory_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (plus:V8HI (mult:V8HI (subreg:V8HI (match_dup 1) 0)
-                              (const_int 2))
-                   (subreg:V8HI (match_dup 2) 0)))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (plus:V8HI (mult:V8HI (subreg:V8HI (match_dup 1) 16)
-                              (const_int 2))
-                   (subreg:V8HI (match_dup 2) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*addx2v16hi2"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (plus:V16HI (ashift:V16HI (match_operand:V16HI 1 "register_operand" "r")
-                                  (const_int 1))
-                    (match_operand:V16HI 2 "nonmemory_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (plus:V8HI (ashift:V8HI (subreg:V8HI (match_dup 1) 0)
-                                (const_int 1))
-                   (subreg:V8HI (match_dup 2) 0)))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (plus:V8HI (ashift:V8HI (subreg:V8HI (match_dup 1) 16)
-                                (const_int 1))
-                   (subreg:V8HI (match_dup 2) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*addx4v16hi"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (plus:V16HI (mult:V16HI (match_operand:V16HI 1 "register_operand" "r")
-                                (const_int 4))
-                    (match_operand:V16HI 2 "nonmemory_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (plus:V8HI (mult:V8HI (subreg:V8HI (match_dup 1) 0)
-                              (const_int 4))
-                   (subreg:V8HI (match_dup 2) 0)))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (plus:V8HI (mult:V8HI (subreg:V8HI (match_dup 1) 16)
-                              (const_int 4))
-                   (subreg:V8HI (match_dup 2) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*addx4v16hi2"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (plus:V16HI (ashift:V16HI (match_operand:V16HI 1 "register_operand" "r")
-                                  (const_int 2))
-                    (match_operand:V16HI 2 "nonmemory_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (plus:V8HI (ashift:V8HI (subreg:V8HI (match_dup 1) 0)
-                                (const_int 2))
-                   (subreg:V8HI (match_dup 2) 0)))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (plus:V8HI (ashift:V8HI (subreg:V8HI (match_dup 1) 16)
-                                (const_int 2))
-                   (subreg:V8HI (match_dup 2) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*addx8v16hi"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (plus:V16HI (mult:V16HI (match_operand:V16HI 1 "register_operand" "r")
-                                (const_int 8))
-                    (match_operand:V16HI 2 "nonmemory_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (plus:V8HI (mult:V8HI (subreg:V8HI (match_dup 1) 0)
-                              (const_int 8))
-                   (subreg:V8HI (match_dup 2) 0)))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (plus:V8HI (mult:V8HI (subreg:V8HI (match_dup 1) 16)
-                              (const_int 8))
-                   (subreg:V8HI (match_dup 2) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*addx8v16hi2"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (plus:V16HI (ashift:V16HI (match_operand:V16HI 1 "register_operand" "r")
-                                  (const_int 3))
-                    (match_operand:V16HI 2 "nonmemory_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (plus:V8HI (ashift:V8HI (subreg:V8HI (match_dup 1) 0)
-                                (const_int 3))
-                   (subreg:V8HI (match_dup 2) 0)))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (plus:V8HI (ashift:V8HI (subreg:V8HI (match_dup 1) 16)
-                                (const_int 3))
-                   (subreg:V8HI (match_dup 2) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*addx16v16hi"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (plus:V16HI (mult:V16HI (match_operand:V16HI 1 "register_operand" "r")
-                                (const_int 16))
-                    (match_operand:V16HI 2 "nonmemory_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (plus:V8HI (mult:V8HI (subreg:V8HI (match_dup 1) 0)
-                              (const_int 16))
-                   (subreg:V8HI (match_dup 2) 0)))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (plus:V8HI (mult:V8HI (subreg:V8HI (match_dup 1) 16)
-                              (const_int 16))
-                   (subreg:V8HI (match_dup 2) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*addx16v16hi2"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (plus:V16HI (ashift:V16HI (match_operand:V16HI 1 "register_operand" "r")
-                                  (const_int 4))
-                    (match_operand:V16HI 2 "nonmemory_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (plus:V8HI (ashift:V8HI (subreg:V8HI (match_dup 1) 0)
-                                (const_int 4))
-                   (subreg:V8HI (match_dup 2) 0)))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (plus:V8HI (ashift:V8HI (subreg:V8HI (match_dup 1) 16)
-                                (const_int 4))
-                   (subreg:V8HI (match_dup 2) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn "subv16hi3"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (minus:V16HI (match_operand:V16HI 1 "nonmemory_operand" "r")
-                     (match_operand:V16HI 2 "register_operand" "r")))]
-  ""
-  {
-    return "sbfhq %x0 = %x2, %x1\n\tsbfhq %y0 = %y2, %y1\n\t"
-           "sbfhq %z0 = %z2, %z1\n\tsbfhq %t0 = %t2, %t1";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn_and_split "sssubv16hi3"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (ss_minus:V16HI (match_operand:V16HI 1 "nonmemory_operand" "r")
-                        (match_operand:V16HI 2 "register_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (ss_minus:V8HI (subreg:V8HI (match_dup 1) 0)
-                       (subreg:V8HI (match_dup 2) 0)))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (ss_minus:V8HI (subreg:V8HI (match_dup 1) 16)
-                       (subreg:V8HI (match_dup 2) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*sbfx2v16hi"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (minus:V16HI (match_operand:V16HI 1 "nonmemory_operand" "r")
-                     (mult:V16HI (match_operand:V16HI 2 "register_operand" "r")
-                                 (const_int 2))))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (minus:V8HI (subreg:V8HI (match_dup 1) 0)
-                    (mult:V8HI (subreg:V8HI (match_dup 2) 0)
-                               (const_int 2))))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (minus:V8HI (subreg:V8HI (match_dup 1) 16)
-                    (mult:V8HI (subreg:V8HI (match_dup 2) 16)
-                               (const_int 2))))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*sbfx2v16hi2"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (minus:V16HI (match_operand:V16HI 1 "nonmemory_operand" "r")
-                     (ashift:V16HI (match_operand:V16HI 2 "register_operand" "r")
-                                   (const_int 1))))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (minus:V8HI (subreg:V8HI (match_dup 1) 0)
-                    (ashift:V8HI (subreg:V8HI (match_dup 2) 0)
-                                 (const_int 1))))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (minus:V8HI (subreg:V8HI (match_dup 1) 16)
-                    (ashift:V8HI (subreg:V8HI (match_dup 2) 16)
-                                 (const_int 1))))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*sbfx4v16hi"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (minus:V16HI (match_operand:V16HI 1 "nonmemory_operand" "r")
-                     (mult:V16HI (match_operand:V16HI 2 "register_operand" "r")
-                                 (const_int 4))))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (minus:V8HI (subreg:V8HI (match_dup 1) 0)
-                    (mult:V8HI (subreg:V8HI (match_dup 2) 0)
-                               (const_int 4))))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (minus:V8HI (subreg:V8HI (match_dup 1) 16)
-                    (mult:V8HI (subreg:V8HI (match_dup 2) 16)
-                               (const_int 4))))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*sbfx4v16hi2"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (minus:V16HI (match_operand:V16HI 1 "nonmemory_operand" "r")
-                     (ashift:V16HI (match_operand:V16HI 2 "register_operand" "r")
-                                   (const_int 2))))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (minus:V8HI (subreg:V8HI (match_dup 1) 0)
-                    (ashift:V8HI (subreg:V8HI (match_dup 2) 0)
-                                 (const_int 2))))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (minus:V8HI (subreg:V8HI (match_dup 1) 16)
-                    (ashift:V8HI (subreg:V8HI (match_dup 2) 16)
-                                 (const_int 2))))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*sbfx8v16hi"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (minus:V16HI (match_operand:V16HI 1 "nonmemory_operand" "r")
-                     (mult:V16HI (match_operand:V16HI 2 "register_operand" "r")
-                                 (const_int 8))))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (minus:V8HI (subreg:V8HI (match_dup 1) 0)
-                    (mult:V8HI (subreg:V8HI (match_dup 2) 0)
-                               (const_int 8))))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (minus:V8HI (subreg:V8HI (match_dup 1) 16)
-                    (mult:V8HI (subreg:V8HI (match_dup 2) 16)
-                               (const_int 8))))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*sbfx8v16hi2"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (minus:V16HI (match_operand:V16HI 1 "nonmemory_operand" "r")
-                     (ashift:V16HI (match_operand:V16HI 2 "register_operand" "r")
-                                   (const_int 3))))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (minus:V8HI (subreg:V8HI (match_dup 1) 0)
-                    (ashift:V8HI (subreg:V8HI (match_dup 2) 0)
-                                 (const_int 3))))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (minus:V8HI (subreg:V8HI (match_dup 1) 16)
-                    (ashift:V8HI (subreg:V8HI (match_dup 2) 16)
-                                 (const_int 3))))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*sbfx16v16hi"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (minus:V16HI (match_operand:V16HI 1 "nonmemory_operand" "r")
-                     (mult:V16HI (match_operand:V16HI 2 "register_operand" "r")
-                                 (const_int 16))))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (minus:V8HI (subreg:V8HI (match_dup 1) 0)
-                    (mult:V8HI (subreg:V8HI (match_dup 2) 0)
-                               (const_int 16))))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (minus:V8HI (subreg:V8HI (match_dup 1) 16)
-                    (mult:V8HI (subreg:V8HI (match_dup 2) 16)
-                               (const_int 16))))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*sbfx16v16hi2"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (minus:V16HI (match_operand:V16HI 1 "nonmemory_operand" "r")
-                     (ashift:V16HI (match_operand:V16HI 2 "register_operand" "r")
-                                   (const_int 4))))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (minus:V8HI (subreg:V8HI (match_dup 1) 0)
-                    (ashift:V8HI (subreg:V8HI (match_dup 2) 0)
-                                 (const_int 4))))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (minus:V8HI (subreg:V8HI (match_dup 1) 16)
-                    (ashift:V8HI (subreg:V8HI (match_dup 2) 16)
-                                 (const_int 4))))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "mulv16hi3"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (mult:V16HI (match_operand:V16HI 1 "register_operand" "r")
-                    (match_operand:V16HI 2 "nonmemory_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4HI (match_dup 0) 0)
-        (mult:V4HI (subreg:V4HI (match_dup 1) 0)
-                   (subreg:V4HI (match_dup 2) 0)))
-   (set (subreg:V4HI (match_dup 0) 8)
-        (mult:V4HI (subreg:V4HI (match_dup 1) 8)
-                   (subreg:V4HI (match_dup 2) 8)))
-   (set (subreg:V4HI (match_dup 0) 16)
-        (mult:V4HI (subreg:V4HI (match_dup 1) 16)
-                   (subreg:V4HI (match_dup 2) 16)))
-   (set (subreg:V4HI (match_dup 0) 24)
-        (mult:V4HI (subreg:V4HI (match_dup 1) 24)
-                   (subreg:V4HI (match_dup 2) 24)))]
-  ""
-  [(set_attr "type" "mau_auxr")]
-)
-
-(define_insn "sminv16hi3"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (smin:V16HI (match_operand:V16HI 1 "register_operand" "r")
-                    (match_operand:V16HI 2 "nonmemory_operand" "r")))]
-  ""
-  {
-    return "minhq %x0 = %x1, %x2\n\tminhq %y0 = %y1, %y2\n\t"
-           "minhq %z0 = %z1, %z2\n\tminhq %t0 = %t1, %t2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn "smaxv16hi3"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (smax:V16HI (match_operand:V16HI 1 "register_operand" "r")
-                    (match_operand:V16HI 2 "nonmemory_operand" "r")))]
-  ""
-  {
-    return "maxhq %x0 = %x1, %x2\n\tmaxhq %y0 = %y1, %y2\n\t"
-           "maxhq %z0 = %z1, %z2\n\tmaxhq %t0 = %t1, %t2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn "uminv16hi3"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (umin:V16HI (match_operand:V16HI 1 "register_operand" "r")
-                    (match_operand:V16HI 2 "nonmemory_operand" "r")))]
-  ""
-  {
-    return "minuhq %x0 = %x1, %x2\n\tminuhq %y0 = %y1, %y2\n\t"
-           "minuhq %z0 = %z1, %z2\n\tminuhq %t0 = %t1, %t2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn "umaxv16hi3"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (umax:V16HI (match_operand:V16HI 1 "register_operand" "r")
-                    (match_operand:V16HI 2 "nonmemory_operand" "r")))]
-  ""
-  {
-    return "maxuhq %x0 = %x1, %x2\n\tmaxuhq %y0 = %y1, %y2\n\t"
-           "maxuhq %z0 = %z1, %z2\n\tmaxuhq %t0 = %t1, %t2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn "andv16hi3"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (and:V16HI (match_operand:V16HI 1 "register_operand" "r")
-                   (match_operand:V16HI 2 "nonmemory_operand" "r")))]
-  ""
-  {
-    return "andd %x0 = %x1, %x2\n\tandd %y0 = %y1, %y2\n\t"
-           "andd %z0 = %z1, %z2\n\tandd %t0 = %t1, %t2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn "*nandv16hi3"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (ior:V16HI (not:V16HI (match_operand:V16HI 1 "register_operand" "r"))
-                   (not:V16HI (match_operand:V16HI 2 "nonmemory_operand" "r"))))]
-  ""
-  {
-    return "nandd %x0 = %x1, %x2\n\tnandd %y0 = %y1, %y2\n\t"
-           "nandd %z0 = %z1, %z2\n\tnandd %t0 = %t1, %t2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn "*andnv16hi3"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (and:V16HI (not:V16HI (match_operand:V16HI 1 "register_operand" "r"))
-                   (match_operand:V16HI 2 "nonmemory_operand" "r")))]
-  ""
-  {
-    return "andnd %x0 = %x1, %x2\n\tandnd %y0 = %y1, %y2\n\t"
-           "andnd %z0 = %z1, %z2\n\tandnd %t0 = %t1, %t2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn "iorv16hi3"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (ior:V16HI (match_operand:V16HI 1 "register_operand" "r")
-                   (match_operand:V16HI 2 "nonmemory_operand" "r")))]
-  ""
-  {
-    return "ord %x0 = %x1, %x2\n\tord %y0 = %y1, %y2\n\t"
-           "ord %z0 = %z1, %z2\n\tord %t0 = %t1, %t2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn "*niorv16hi3"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (and:V16HI (not:V16HI (match_operand:V16HI 1 "register_operand" "r"))
-                   (not:V16HI (match_operand:V16HI 2 "nonmemory_operand" "r"))))]
-  ""
-  {
-    return "nord %x0 = %x1, %x2\n\tnord %y0 = %y1, %y2\n\t"
-           "nord %z0 = %z1, %z2\n\tnord %t0 = %t1, %t2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn "*iornv16hi3"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (ior:V16HI (not:V16HI (match_operand:V16HI 1 "register_operand" "r"))
-                   (match_operand:V16HI 2 "nonmemory_operand" "r")))]
-  ""
-  {
-    return "ornd %x0 = %x1, %x2\n\tornd %y0 = %y1, %y2\n\t"
-           "ornd %z0 = %z1, %z2\n\tornd %t0 = %t1, %t2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn "xorv16hi3"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (xor:V16HI (match_operand:V16HI 1 "register_operand" "r")
-                   (match_operand:V16HI 2 "nonmemory_operand" "r")))]
-  ""
-  {
-    return "xord %x0 = %x1, %x2\n\txord %y0 = %y1, %y2\n\t"
-           "xord %z0 = %z1, %z2\n\txord %t0 = %t1, %t2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn "*nxorv16hi3"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (not:V16HI (xor:V16HI (match_operand:V16HI 1 "register_operand" "r")
-                              (match_operand:V16HI 2 "nonmemory_operand" "r"))))]
-  ""
-  {
-    return "nxord %x0 = %x1, %x2\n\tnxord %y0 = %y1, %y2\n\t"
-           "nxord %z0 = %z1, %z2\n\tnxord %t0 = %t1, %t2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn_and_split "maddv16hiv16hi4"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (plus:V16HI (mult:V16HI (match_operand:V16HI 1 "register_operand" "r")
-                                (match_operand:V16HI 2 "nonmemory_operand" "r"))
-                    (match_operand:V16HI 3 "register_operand" "0")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4HI (match_dup 0) 0)
-        (plus:V4HI (mult:V4HI (subreg:V4HI (match_dup 1) 0)
-                              (subreg:V4HI (match_dup 2) 0))
-                   (subreg:V4HI (match_dup 3) 0)))
-   (set (subreg:V4HI (match_dup 0) 8)
-        (plus:V4HI (mult:V4HI (subreg:V4HI (match_dup 1) 8)
-                              (subreg:V4HI (match_dup 2) 8))
-                   (subreg:V4HI (match_dup 3) 8)))
-   (set (subreg:V4HI (match_dup 0) 16)
-        (plus:V4HI (mult:V4HI (subreg:V4HI (match_dup 1) 16)
-                              (subreg:V4HI (match_dup 2) 16))
-                   (subreg:V4HI (match_dup 3) 16)))
-   (set (subreg:V4HI (match_dup 0) 24)
-        (plus:V4HI (mult:V4HI (subreg:V4HI (match_dup 1) 24)
-                              (subreg:V4HI (match_dup 2) 24))
-                   (subreg:V4HI (match_dup 3) 24)))]
-  ""
-  [(set_attr "type" "mau_auxr")]
-)
-
-(define_insn_and_split "msubv16hiv16hi4"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (minus:V16HI (match_operand:V16HI 3 "register_operand" "0")
-                     (mult:V16HI (match_operand:V16HI 1 "register_operand" "r")
-                                 (match_operand:V16HI 2 "register_operand" "r"))))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4HI (match_dup 0) 0)
-        (minus:V4HI (subreg:V4HI (match_dup 3) 0)
-                    (mult:V4HI (subreg:V4HI (match_dup 1) 0)
-                               (subreg:V4HI (match_dup 2) 0))))
-   (set (subreg:V4HI (match_dup 0) 8)
-        (minus:V4HI (subreg:V4HI (match_dup 3) 8)
-                    (mult:V4HI (subreg:V4HI (match_dup 1) 8)
-                               (subreg:V4HI (match_dup 2) 8))))
-   (set (subreg:V4HI (match_dup 0) 16)
-        (minus:V4HI (subreg:V4HI (match_dup 3) 16)
-                    (mult:V4HI (subreg:V4HI (match_dup 1) 16)
-                               (subreg:V4HI (match_dup 2) 16))))
-   (set (subreg:V4HI (match_dup 0) 24)
-        (minus:V4HI (subreg:V4HI (match_dup 3) 24)
-                    (mult:V4HI (subreg:V4HI (match_dup 1) 24)
-                               (subreg:V4HI (match_dup 2) 24))))]
-  ""
-  [(set_attr "type" "mau_auxr")
-   (set_attr "length"      "8")]
-)
-
-(define_insn_and_split "ashlv16hi3"
-  [(set (match_operand:V16HI 0 "register_operand" "=r,r")
-        (ashift:V16HI (match_operand:V16HI 1 "register_operand" "r,r")
-                      (match_operand:SI 2 "sat_shift_operand" "r,U06")))
-   (clobber (match_scratch:SI 3 "=&r,X"))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (ashift:V8HI (subreg:V8HI (match_dup 1) 0)
-                     (match_dup 2)))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (ashift:V8HI (subreg:V8HI (match_dup 1) 16)
-                     (match_dup 2)))]
-  {
-    if (GET_CODE (operands[2]) == REG)
-      {
-        emit_move_insn (operands[3], operands[2]);
-        operands[2] = operands[3];
-      }
-  }
-  [(set_attr "type" "alu_lite_x2,alu_lite_x2")]
-)
-
-(define_insn_and_split "ssashlv16hi3"
-  [(set (match_operand:V16HI 0 "register_operand" "=r,r")
-        (ss_ashift:V16HI (match_operand:V16HI 1 "register_operand" "r,r")
-                         (match_operand:SI 2 "sat_shift_operand" "r,U06")))
-   (clobber (match_scratch:SI 3 "=&r,X"))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (ss_ashift:V8HI (subreg:V8HI (match_dup 1) 0)
-                        (match_dup 2)))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (ss_ashift:V8HI (subreg:V8HI (match_dup 1) 16)
-                        (match_dup 2)))]
-  {
-    if (GET_CODE (operands[2]) == REG)
-      {
-        emit_move_insn (operands[3], operands[2]);
-        operands[2] = operands[3];
-      }
-  }
-  [(set_attr "type" "alu_lite_x2,alu_lite_x2")]
-)
-
-(define_insn_and_split "ashrv16hi3"
-  [(set (match_operand:V16HI 0 "register_operand" "=r,r")
-        (ashiftrt:V16HI (match_operand:V16HI 1 "register_operand" "r,r")
-                        (match_operand:SI 2 "sat_shift_operand" "r,U06")))
-   (clobber (match_scratch:SI 3 "=&r,X"))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (ashiftrt:V8HI (subreg:V8HI (match_dup 1) 0)
-                       (match_dup 2)))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (ashiftrt:V8HI (subreg:V8HI (match_dup 1) 16)
-                       (match_dup 2)))]
-  {
-    if (GET_CODE (operands[2]) == REG)
-      {
-        emit_move_insn (operands[3], operands[2]);
-        operands[2] = operands[3];
-      }
-  }
-  [(set_attr "type" "alu_lite_x2,alu_lite_x2")]
-)
-
-(define_insn_and_split "lshrv16hi3"
-  [(set (match_operand:V16HI 0 "register_operand" "=r,r")
-        (lshiftrt:V16HI (match_operand:V16HI 1 "register_operand" "r,r")
-                        (match_operand:SI 2 "sat_shift_operand" "r,U06")))
-   (clobber (match_scratch:SI 3 "=&r,X"))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (lshiftrt:V8HI (subreg:V8HI (match_dup 1) 0)
-                       (match_dup 2)))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (lshiftrt:V8HI (subreg:V8HI (match_dup 1) 16)
-                       (match_dup 2)))]
-  {
-    if (GET_CODE (operands[2]) == REG)
-      {
-        emit_move_insn (operands[3], operands[2]);
-        operands[2] = operands[3];
-      }
-  }
-  [(set_attr "type" "alu_lite_x2,alu_lite_x2")]
-)
-
-(define_insn_and_split "kvx_srshxs"
-  [(set (match_operand:V16HI 0 "register_operand" "=r,r")
-        (unspec:V16HI [(match_operand:V16HI 1 "register_operand" "r,r")
-                       (match_operand:SI 2 "sat_shift_operand" "r,U06")] UNSPEC_SRSHX))
-   (clobber (match_scratch:SI 3 "=&r,X"))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (unspec:V8HI [(subreg:V8HI (match_dup 1) 0)
-                      (match_dup 2)] UNSPEC_SRSHO))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (unspec:V8HI [(subreg:V8HI (match_dup 1) 16)
-                      (match_dup 2)] UNSPEC_SRSHO))]
-  {
-    if (GET_CODE (operands[2]) == REG)
-      {
-        emit_move_insn (operands[3], operands[2]);
-        operands[2] = operands[3];
-      }
-  }
-  [(set_attr "type" "alu_lite_x2,alu_lite_x2")]
-)
-
-(define_insn_and_split "avgv16hi3_floor"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (unspec:V16HI [(match_operand:V16HI 1 "register_operand" "r")
-                       (match_operand:V16HI 2 "register_operand" "r")] UNSPEC_AVGHX))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (unspec:V8HI [(subreg:V8HI (match_dup 1) 0)
-                      (subreg:V8HI (match_dup 2) 0)] UNSPEC_AVGHO))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (unspec:V8HI [(subreg:V8HI (match_dup 1) 16)
-                      (subreg:V8HI (match_dup 2) 16)] UNSPEC_AVGHO))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "uavgv16hi3_floor"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (unspec:V16HI [(match_operand:V16HI 1 "register_operand" "r")
-                       (match_operand:V16HI 2 "register_operand" "r")] UNSPEC_AVGUHX))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (unspec:V8HI [(subreg:V8HI (match_dup 1) 0)
-                      (subreg:V8HI (match_dup 2) 0)] UNSPEC_AVGUHO))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (unspec:V8HI [(subreg:V8HI (match_dup 1) 16)
-                      (subreg:V8HI (match_dup 2) 16)] UNSPEC_AVGUHO))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "avgv16hi3_ceil"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (unspec:V16HI [(match_operand:V16HI 1 "register_operand" "r")
-                       (match_operand:V16HI 2 "register_operand" "r")] UNSPEC_AVGRHX))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (unspec:V8HI [(subreg:V8HI (match_dup 1) 0)
-                      (subreg:V8HI (match_dup 2) 0)] UNSPEC_AVGRHO))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (unspec:V8HI [(subreg:V8HI (match_dup 1) 16)
-                      (subreg:V8HI (match_dup 2) 16)] UNSPEC_AVGRHO))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "uavgv16hi3_ceil"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (unspec:V16HI [(match_operand:V16HI 1 "register_operand" "r")
-                       (match_operand:V16HI 2 "register_operand" "r")] UNSPEC_AVGRUHX))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (unspec:V8HI [(subreg:V8HI (match_dup 1) 0)
-                      (subreg:V8HI (match_dup 2) 0)] UNSPEC_AVGRUHO))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (unspec:V8HI [(subreg:V8HI (match_dup 1) 16)
-                      (subreg:V8HI (match_dup 2) 16)] UNSPEC_AVGRUHO))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn "negv16hi2"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (neg:V16HI (match_operand:V16HI 1 "register_operand" "r")))]
-  ""
-  {
-    return "neghq %x0 = %x1\n\tneghq %y0 = %y1\n\t"
-           "neghq %z0 = %z1\n\tneghq %t0 = %t1";
-  }
-  [(set_attr "type" "alu_tiny_x4_x")
-   (set_attr "length"          "32")]
-)
-
-(define_insn_and_split "absv16hi2"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (abs:V16HI (match_operand:V16HI 1 "register_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (abs:V8HI (subreg:V8HI (match_dup 1) 0)))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (abs:V8HI (subreg:V8HI (match_dup 1) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2_x")]
-)
-
-(define_insn_and_split "clrsbv16hi2"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (clrsb:V16HI (match_operand:V16HI 1 "register_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (clrsb:V8HI (subreg:V8HI (match_dup 1) 0)))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (clrsb:V8HI (subreg:V8HI (match_dup 1) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "clzv16hi2"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (clz:V16HI (match_operand:V16HI 1 "register_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (clz:V8HI (subreg:V8HI (match_dup 1) 0)))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (clz:V8HI (subreg:V8HI (match_dup 1) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "ctzv16hi2"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (ctz:V16HI (match_operand:V16HI 1 "register_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (ctz:V8HI (subreg:V8HI (match_dup 1) 0)))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (ctz:V8HI (subreg:V8HI (match_dup 1) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "popcountv16hi2"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (popcount:V16HI (match_operand:V16HI 1 "register_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (popcount:V8HI (subreg:V8HI (match_dup 1) 0)))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (popcount:V8HI (subreg:V8HI (match_dup 1) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn "one_cmplv16hi2"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (not:V16HI (match_operand:V16HI 1 "register_operand" "r")))]
-  ""
-  {
-    return "notd %x0 = %x1\n\tnotd %y0 = %y1\n\t"
-           "notd %z0 = %z1\n\tnotd %t0 = %t1";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn_and_split "kvx_abdhx"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (abs:V16HI (minus:V16HI (match_operand:V16HI 2 "nonmemory_operand" "r")
-                                (match_operand:V16HI 1 "register_operand" "r"))))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (abs:V8HI (minus:V8HI (subreg:V8HI (match_dup 2) 0)
-                              (subreg:V8HI (match_dup 1) 0))))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (abs:V8HI (minus:V8HI (subreg:V8HI (match_dup 2) 16)
-                              (subreg:V8HI (match_dup 1) 16))))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_expand "kvx_abdhxs"
-  [(set (match_operand:V16HI 0 "register_operand" "")
-        (abs:V16HI (minus:V16HI (unspec:V16HI [(match_operand:V4HI 2 "nonmemory_operand" "")] UNSPEC_VECDUP)
-                                (match_operand:V16HI 1 "register_operand" ""))))]
-  ""
-  {
-    if (operands[2] == const0_rtx)
-      {
-        emit_insn (gen_absv16hi2 (operands[0], operands[1]));
-        DONE;
-      }
-    rtx chunk = gen_reg_rtx (V4HImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], HImode);
-  }
-)
-
-(define_insn_and_split "*abdhxs"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (abs:V16HI (minus:V16HI (unspec:V16HI [(match_operand:V4HI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)
-                                (match_operand:V16HI 1 "register_operand" "r"))))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (abs:V8HI (minus:V8HI (unspec:V8HI [(match_dup 2)] UNSPEC_VECDUP)
-                              (subreg:V8HI (match_dup 1) 0))))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (abs:V8HI (minus:V8HI (unspec:V8HI [(match_dup 2)] UNSPEC_VECDUP)
-                              (subreg:V8HI (match_dup 1) 16))))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_expand "kvx_addshxs"
-  [(set (match_operand:V16HI 0 "register_operand" "")
-        (ss_plus:V16HI (match_operand:V16HI 1 "register_operand" "")
-                       (unspec:V16HI [(match_operand:V4HI 2 "nonmemory_operand" "")] UNSPEC_VECDUP)))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V4HImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], HImode);
-  }
-)
-
-(define_insn_and_split "*addshxs"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (ss_plus:V16HI (match_operand:V16HI 1 "register_operand" "r")
-                       (unspec:V16HI [(match_operand:V4HI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (ss_plus:V8HI (subreg:V8HI (match_dup 1) 0)
-                      (unspec:V8HI [(match_dup 2)] UNSPEC_VECDUP)))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (ss_plus:V8HI (subreg:V8HI (match_dup 1) 16)
-                      (unspec:V8HI [(match_dup 2)] UNSPEC_VECDUP)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_expand "kvx_sbfshxs"
-  [(set (match_operand:V16HI 0 "register_operand" "")
-        (ss_minus:V16HI (unspec:V16HI [(match_operand:V4HI 2 "nonmemory_operand" "")] UNSPEC_VECDUP)
-                        (match_operand:V16HI 1 "register_operand" "")))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V4HImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], HImode);
-  }
-)
-
-(define_insn_and_split "*sbfshxs"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (ss_minus:V16HI (unspec:V16HI [(match_operand:V4HI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)
-                        (match_operand:V16HI 1 "register_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V8HI (match_dup 0) 0)
-        (ss_minus:V8HI (unspec:V8HI [(match_dup 2)] UNSPEC_VECDUP)
-                       (subreg:V8HI (match_dup 1) 0)))
-   (set (subreg:V8HI (match_dup 0) 16)
-        (ss_minus:V8HI (unspec:V8HI [(match_dup 2)] UNSPEC_VECDUP)
-                       (subreg:V8HI (match_dup 1) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_expand "kvx_minhxs"
-  [(set (match_operand:V16HI 0 "register_operand" "")
-        (smin:V16HI (match_operand:V16HI 1 "register_operand" "")
-                    (unspec:V16HI [(match_operand:V4HI 2 "nonmemory_operand" "")] UNSPEC_VECDUP)))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V4HImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], HImode);
-  }
-)
-
-(define_insn "*minhxs"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (smin:V16HI (match_operand:V16HI 1 "register_operand" "r")
-                    (unspec:V16HI [(match_operand:V4HI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)))]
-  ""
-  {
-    return "minhq %x0 = %x1, %2\n\tminhq %y0 = %y1, %2\n\t"
-           "minhq %z0 = %z1, %2\n\tminhq %t0 = %t1, %2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_expand "kvx_maxhxs"
-  [(set (match_operand:V16HI 0 "register_operand" "")
-        (smax:V16HI (match_operand:V16HI 1 "register_operand" "")
-                    (unspec:V16HI [(match_operand:V4HI 2 "nonmemory_operand" "")] UNSPEC_VECDUP)))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V4HImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], HImode);
-  }
-)
-
-(define_insn "*maxhxs"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (smax:V16HI (match_operand:V16HI 1 "register_operand" "r")
-                    (unspec:V16HI [(match_operand:V4HI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)))]
-  ""
-  {
-    return "maxhq %x0 = %x1, %2\n\tmaxhq %y0 = %y1, %2\n\t"
-           "maxhq %z0 = %z1, %2\n\tmaxhq %t0 = %t1, %2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_expand "kvx_minuhxs"
-  [(set (match_operand:V16HI 0 "register_operand" "")
-        (umin:V16HI (match_operand:V16HI 1 "register_operand" "")
-                    (unspec:V16HI [(match_operand:V4HI 2 "nonmemory_operand" "")] UNSPEC_VECDUP)))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V4HImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], HImode);
-  }
-)
-
-(define_insn "*minuhxs"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (umin:V16HI (match_operand:V16HI 1 "register_operand" "r")
-                    (unspec:V16HI [(match_operand:V4HI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)))]
-  ""
-  {
-    return "minuhq %x0 = %x1, %2\n\tminuhq %y0 = %y1, %2\n\t"
-           "minuhq %z0 = %z1, %2\n\tminuhq %t0 = %t1, %2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_expand "kvx_maxuhxs"
-  [(set (match_operand:V16HI 0 "register_operand" "")
-        (umax:V16HI (match_operand:V16HI 1 "register_operand" "")
-                    (unspec:V16HI [(match_operand:V4HI 2 "nonmemory_operand" "")] UNSPEC_VECDUP)))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V4HImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], HImode);
-  }
-)
-
-(define_insn "*maxuhxs"
-  [(set (match_operand:V16HI 0 "register_operand" "=r")
-        (umax:V16HI (match_operand:V16HI 1 "register_operand" "r")
-                    (unspec:V16HI [(match_operand:V4HI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)))]
-  ""
-  {
-    return "maxuhq %x0 = %x1, %2\n\tmaxuhq %y0 = %y1, %2\n\t"
-           "maxuhq %z0 = %z1, %2\n\tmaxuhq %t0 = %t1, %2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
 
 ;; V2SI
-
-(define_insn "*compnwp"
-  [(set (match_operand:V2SI 0 "register_operand" "=r")
-        (match_operator:V2SI 1 "comparison_operator"
-         [(match_operand:V2SI 2 "register_operand" "r")
-          (match_operand:V2SI 3 "register_operand" "r")]))]
-  ""
-  "compnwp.%1 %0 = %2, %3"
-  [(set_attr "type" "alu_tiny")]
-)
-
-(define_insn "*selectwp"
-  [(set (match_operand:V2SI 0 "register_operand" "=r")
-        (if_then_else:V2SI (match_operator 2 "zero_comparison_operator"
-                                               [(match_operand:V2SI 3 "register_operand" "r")
-                                                (match_operand:V2SI 5 "const_zero_operand" "")])
-                           (match_operand:V2SI 1 "register_operand" "r")
-                           (match_operand:V2SI 4 "register_operand" "0")))]
-  ""
-  "cmovewp.%2z %3? %0 = %1"
-  [(set_attr "type" "alu_lite")]
-)
-
-(define_insn "*selectwp_nez"
-  [(set (match_operand:V2SI 0 "register_operand" "=r")
-        (if_then_else:V2SI (ne (match_operator:V2SI 2 "zero_comparison_operator"
-                                               [(match_operand:V2SI 3 "register_operand" "r")
-                                                (match_operand:V2SI 5 "const_zero_operand" "")])
-                               (match_operand:V2SI 6 "const_zero_operand" ""))
-                           (match_operand:V2SI 1 "register_operand" "r")
-                           (match_operand:V2SI 4 "register_operand" "0")))]
-  ""
-  "cmovewp.%2z %3? %0 = %1"
-  [(set_attr "type" "alu_lite")]
-)
-
-(define_insn "kvx_selectwp"
-  [(set (match_operand:V2SI 0 "register_operand" "=r")
-        (unspec:V2SI [(match_operand:V2SI 1 "register_operand" "r")
-                      (match_operand:V2SI 2 "register_operand" "0")
-                      (match_operand:V2SI 3 "register_operand" "r")
-                      (match_operand 4 "" "")] UNSPEC_SELECTWP))]
-  ""
-  "cmovewp%4 %3? %0 = %1"
-  [(set_attr "type" "alu_lite")]
-)
-
-(define_insn "addv2si3"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r")
-        (plus:V2SI (match_operand:V2SI 1 "register_operand" "r,r,r")
-                   (match_operand:V2SI 2 "nonmemory_operand" "r,v32,vx2")))]
-  ""
-  "addwp %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny_x,alu_tiny_x")
-   (set_attr "length" "     4,        8,          8")]
-)
-
-(define_insn "ssaddv2si3"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r")
-        (ss_plus:V2SI (match_operand:V2SI 1 "register_operand" "r,r,r")
-                      (match_operand:V2SI 2 "nonmemory_operand" "r,v32,vx2")))]
-  ""
-  "addswp %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
-   (set_attr "length" "     4,         8,         8")]
-)
-
-(define_insn "*addx2v2si"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r")
-        (plus:V2SI (mult:V2SI (match_operand:V2SI 1 "register_operand" "r,r,r")
-                              (const_int 2))
-                   (match_operand:V2SI 2 "nonmemory_operand" "r,v32,vx2")))]
-  ""
-  "addx2wp %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
-   (set_attr "length" "     4,         8,         8")]
-)
-
-(define_insn "*addx2v2si2"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r")
-        (plus:V2SI (ashift:V2SI (match_operand:V2SI 1 "register_operand" "r,r,r")
-                                (const_int 1))
-                   (match_operand:V2SI 2 "nonmemory_operand" "r,v32,vx2")))]
-  ""
-  "addx2wp %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
-   (set_attr "length" "     4,         8,         8")]
-)
-
-(define_insn "*addx4v2si"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r")
-        (plus:V2SI (mult:V2SI (match_operand:V2SI 1 "register_operand" "r,r,r")
-                              (const_int 4))
-                   (match_operand:V2SI 2 "nonmemory_operand" "r,v32,vx2")))]
-  ""
-  "addx4wp %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
-   (set_attr "length" "     4,         8,         8")]
-)
-
-(define_insn "*addx4v2si2"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r")
-        (plus:V2SI (ashift:V2SI (match_operand:V2SI 1 "register_operand" "r,r,r")
-                                (const_int 2))
-                   (match_operand:V2SI 2 "nonmemory_operand" "r,v32,vx2")))]
-  ""
-  "addx4wp %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
-   (set_attr "length" "     4,         8,         8")]
-)
-
-(define_insn "*addx8v2si"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r")
-        (plus:V2SI (mult:V2SI (match_operand:V2SI 1 "register_operand" "r,r,r")
-                              (const_int 8))
-                   (match_operand:V2SI 2 "nonmemory_operand" "r,v32,vx2")))]
-  ""
-  "addx8wp %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
-   (set_attr "length" "     4,         8,         8")]
-)
-
-(define_insn "*addx8v2si2"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r")
-        (plus:V2SI (ashift:V2SI (match_operand:V2SI 1 "register_operand" "r,r,r")
-                                (const_int 3))
-                   (match_operand:V2SI 2 "nonmemory_operand" "r,v32,vx2")))]
-  ""
-  "addx8wp %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
-   (set_attr "length" "     4,         8,         8")]
-)
-
-(define_insn "*addx16v2si"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r")
-        (plus:V2SI (mult:V2SI (match_operand:V2SI 1 "register_operand" "r,r,r")
-                              (const_int 16))
-                   (match_operand:V2SI 2 "nonmemory_operand" "r,v32,vx2")))]
-  ""
-  "addx16wp %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
-   (set_attr "length" "     4,         8,         8")]
-)
-
-(define_insn "*addx16v2si2"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r")
-        (plus:V2SI (ashift:V2SI (match_operand:V2SI 1 "register_operand" "r,r,r")
-                                (const_int 4))
-                   (match_operand:V2SI 2 "nonmemory_operand" "r,v32,vx2")))]
-  ""
-  "addx16wp %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
-   (set_attr "length" "     4,         8,         8")]
-)
-
-(define_insn "subv2si3"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r")
-        (minus:V2SI (match_operand:V2SI 1 "nonmemory_operand" "r,v32,vx2")
-                    (match_operand:V2SI 2 "register_operand" "r,r,r")))]
-  ""
-  "sbfwp %0 = %2, %1"
-  [(set_attr "type" "alu_tiny,alu_tiny_x,alu_tiny_x")
-   (set_attr "length" "     4,         8,         8")]
-)
-
-(define_insn "sssubv2si3"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r")
-        (ss_minus:V2SI (match_operand:V2SI 1 "nonmemory_operand" "r,v32,vx2")
-                       (match_operand:V2SI 2 "register_operand" "r,r,r")))]
-  ""
-  "sbfswp %0 = %2, %1"
-  [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
-   (set_attr "length" "     4,         8,         8")]
-)
-
-(define_insn "*sbfx2v2si"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r")
-        (minus:V2SI (match_operand:V2SI 1 "nonmemory_operand" "r,v32,vx2")
-                    (mult:V2SI (match_operand:V2SI 2 "register_operand" "r,r,r")
-                               (const_int 2))))]
-  ""
-  "sbfx2wp %0 = %2, %1"
-  [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
-   (set_attr "length" "     4,         8,         8")]
-)
-
-(define_insn "*sbfx2v2si2"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r")
-        (minus:V2SI (match_operand:V2SI 1 "nonmemory_operand" "r,v32,vx2")
-                    (ashift:V2SI (match_operand:V2SI 2 "register_operand" "r,r,r")
-                                 (const_int 1))))]
-  ""
-  "sbfx2wp %0 = %2, %1"
-  [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
-   (set_attr "length" "     4,         8,         8")]
-)
-
-(define_insn "*sbfx4v2si"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r")
-        (minus:V2SI (match_operand:V2SI 1 "nonmemory_operand" "r,v32,vx2")
-                    (mult:V2SI (match_operand:V2SI 2 "register_operand" "r,r,r")
-                               (const_int 4))))]
-  ""
-  "sbfx4wp %0 = %2, %1"
-  [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
-   (set_attr "length" "     4,         8,         8")]
-)
-
-(define_insn "*sbfx4v2si2"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r")
-        (minus:V2SI (match_operand:V2SI 1 "nonmemory_operand" "r,v32,vx2")
-                    (ashift:V2SI (match_operand:V2SI 2 "register_operand" "r,r,r")
-                                 (const_int 2))))]
-  ""
-  "sbfx4wp %0 = %2, %1"
-  [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
-   (set_attr "length" "     4,         8,         8")]
-)
-
-(define_insn "*sbfx8v2si"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r")
-        (minus:V2SI (match_operand:V2SI 1 "nonmemory_operand" "r,v32,vx2")
-                    (mult:V2SI (match_operand:V2SI 2 "register_operand" "r,r,r")
-                               (const_int 8))))]
-  ""
-  "sbfx8wp %0 = %2, %1"
-  [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
-   (set_attr "length" "     4,         8,         8")]
-)
-
-(define_insn "*sbfx8v2si2"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r")
-        (minus:V2SI (match_operand:V2SI 1 "nonmemory_operand" "r,v32,vx2")
-                    (ashift:V2SI (match_operand:V2SI 2 "register_operand" "r,r,r")
-                                 (const_int 3))))]
-  ""
-  "sbfx8wp %0 = %2, %1"
-  [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
-   (set_attr "length" "     4,         8,         8")]
-)
-
-(define_insn "*sbfx16v2si"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r")
-        (minus:V2SI (match_operand:V2SI 1 "nonmemory_operand" "r,v32,vx2")
-                    (mult:V2SI (match_operand:V2SI 2 "register_operand" "r,r,r")
-                               (const_int 16))))]
-  ""
-  "sbfx16wp %0 = %2, %1"
-  [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
-   (set_attr "length" "     4,         8,         8")]
-)
-
-(define_insn "*sbfx16v2si2"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r")
-        (minus:V2SI (match_operand:V2SI 1 "nonmemory_operand" "r,v32,vx2")
-                    (ashift:V2SI (match_operand:V2SI 2 "register_operand" "r,r,r")
-                                 (const_int 4))))]
-  ""
-  "sbfx16wp %0 = %2, %1"
-  [(set_attr "type" "alu_lite,alu_lite_x,alu_lite_x")
-   (set_attr "length" "     4,         8,         8")]
-)
-
-(define_insn "mulv2si3"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r")
-        (mult:V2SI (match_operand:V2SI 1 "register_operand" "r,r,r")
-                   (match_operand:V2SI 2 "nonmemory_operand" "r,v32,vx2")))]
-  ""
-  "mulwp %0 = %1, %2"
-  [(set_attr "type" "mau,mau_x,mau_x")
-   (set_attr "length" "4,    8,    8")]
-)
 
 (define_insn "*mulv2siv2di3"
   [(set (match_operand:V2DI 0 "register_operand" "=r")
@@ -3469,650 +1217,773 @@
   [(set_attr "type" "mau")]
 )
 
-(define_insn "sminv2si3"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r")
-        (smin:V2SI (match_operand:V2SI 1 "register_operand" "r,r,r")
-                   (match_operand:V2SI 2 "nonmemory_operand" "r,v32,vx2")))]
+
+;; V128I (V8HI/V4SI)
+
+(define_insn "*compn<suffix>"
+  [(set (match_operand:<MASK> 0 "register_operand" "=r")
+        (match_operator:<MASK> 1 "comparison_operator"
+         [(match_operand:V128I 2 "register_operand" "r")
+          (match_operand:V128I 3 "register_operand" "r")]))]
   ""
-  "minwp %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny_x,alu_tiny_x")
-   (set_attr "length" "     4,         8,         8")]
+  "compn<halfx>.%1 %x0 = %x2, %x3\n\tcompn<halfx>.%1 %y0 = %y2, %y3"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length"         "8")]
 )
 
-(define_insn "smaxv2si3"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r")
-        (smax:V2SI (match_operand:V2SI 1 "register_operand" "r,r,r")
-                   (match_operand:V2SI 2 "nonmemory_operand" "r,v32,vx2")))]
+(define_insn "*select<suffix>"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (if_then_else:V128I (match_operator 2 "zero_comparison_operator"
+                                               [(match_operand:<MASK> 3 "register_operand" "r")
+                                                (match_operand:<MASK> 5 "const_zero_operand" "")])
+                            (match_operand:V128I 1 "register_operand" "r")
+                            (match_operand:V128I 4 "register_operand" "0")))]
   ""
-  "maxwp %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny_x,alu_tiny_x")
-   (set_attr "length" "     4,         8,         8")]
+  "cmove<halfx>.%2z %x3? %x0 = %x1\n\tcmove<halfx>.%2z %y3? %y0 = %y1"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
 )
 
-(define_insn "uminv2si3"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r")
-        (umin:V2SI (match_operand:V2SI 1 "register_operand" "r,r,r")
-                   (match_operand:V2SI 2 "nonmemory_operand" "r,v32,vx2")))]
+(define_insn "*select<suffix>_nez"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (if_then_else:V128I (ne (match_operator:<MASK> 2 "zero_comparison_operator"
+                                               [(match_operand:<MASK> 3 "register_operand" "r")
+                                                (match_operand:<MASK> 5 "const_zero_operand" "")])
+                                (match_operand:<MASK> 6 "const_zero_operand" ""))
+                            (match_operand:V128I 1 "register_operand" "r")
+                            (match_operand:V128I 4 "register_operand" "0")))]
   ""
-  "minuwp %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny_x,alu_tiny_x")
-   (set_attr "length" "     4,         8,         8")]
+  "cmove<halfx>.%2z %x3? %x0 = %x1\n\tcmove<halfx>.%2z %y3? %y0 = %y1"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
 )
 
-(define_insn "umaxv2si3"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r")
-        (umax:V2SI (match_operand:V2SI 1 "register_operand" "r,r,r")
-                   (match_operand:V2SI 2 "nonmemory_operand" "r,v32,vx2")))]
+(define_insn "kvx_select<suffix>"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (unspec:V128I [(match_operand:V128I 1 "register_operand" "r")
+                       (match_operand:V128I 2 "register_operand" "0")
+                       (match_operand:<MASK> 3 "register_operand" "r")
+                       (match_operand 4 "" "")] UNSPEC_SELECTWQ))]
   ""
-  "maxuwp %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny_x,alu_tiny_x")
-   (set_attr "length" "     4,         8,         8")]
+  "cmove<halfx>%4 %x3? %x0 = %x1\n\tcmove<halfx>%4 %y3? %y0 = %y1"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
 )
 
-(define_insn "andv2si3"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r,r")
-        (and:V2SI (match_operand:V2SI 1 "register_operand" "r,r,r,r")
-                  (match_operand:V2SI 2 "nonmemory_operand" "r,v10,v37,i")))]
+(define_insn "add<mode>3"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (plus:V128I (match_operand:V128I 1 "register_operand" "r")
+                    (match_operand:V128I 2 "nonmemory_operand" "r")))]
   ""
-  "andd %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
-   (set_attr "length" "     4,       4,         8,        12")]
+  "add<halfx> %x0 = %x1, %x2\n\tadd<halfx> %y0 = %y1, %y2"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length"         "8")]
 )
 
-(define_insn "*nandv2si3"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r,r")
-        (ior:V2SI (not:V2SI (match_operand:V2SI 1 "register_operand" "r,r,r,r"))
-                  (not:V2SI (match_operand:V2SI 2 "nonmemory_operand" "r,v10,v37,i"))))]
+(define_insn "ssadd<mode>3"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (ss_plus:V128I (match_operand:V128I 1 "register_operand" "r")
+                       (match_operand:V128I 2 "nonmemory_operand" "r")))]
   ""
-  "nandd %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
-   (set_attr "length" "     4,       4,         8,        12")]
+  "adds<halfx> %x0 = %x1, %x2\n\tadds<halfx> %y0 = %y1, %y2"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
 )
 
-(define_insn "*andnv2si3"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r,r")
-        (and:V2SI (not:V2SI (match_operand:V2SI 1 "register_operand" "r,r,r,r"))
-                  (match_operand:V2SI 2 "nonmemory_operand" "r,v10,v37,i")))]
+(define_insn "*addx2<mode>"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (plus:V128I (mult:V128I (match_operand:V128I 1 "register_operand" "r")
+                                (const_int 2))
+                    (match_operand:V128I 2 "nonmemory_operand" "r")))]
   ""
-  "andnd %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
-   (set_attr "length" "     4,       4,         8,        12")]
+  "addx2<halfx> %x0 = %x1, %x2\n\taddx2<halfx> %y0 = %y1, %y2"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
 )
 
-(define_insn "iorv2si3"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r,r")
-        (ior:V2SI (match_operand:V2SI 1 "register_operand" "r,r,r,r")
-                  (match_operand:V2SI 2 "nonmemory_operand" "r,v10,v37,i")))]
+(define_insn "*addx2<mode>2"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (plus:V128I (ashift:V128I (match_operand:V128I 1 "register_operand" "r")
+                                  (const_int 1))
+                    (match_operand:V128I 2 "nonmemory_operand" "r")))]
   ""
-  "ord %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
-   (set_attr "length" "     4,       4,         8,        12")]
+  "addx2<halfx> %x0 = %x1, %x2\n\taddx2<halfx> %y0 = %y1, %y2"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
 )
 
-(define_insn "*niorv2si3"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r,r")
-        (and:V2SI (not:V2SI (match_operand:V2SI 1 "register_operand" "r,r,r,r"))
-                  (not:V2SI (match_operand:V2SI 2 "nonmemory_operand" "r,v10,v37,i"))))]
+(define_insn "*addx4<mode>"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (plus:V128I (mult:V128I (match_operand:V128I 1 "register_operand" "r")
+                                (const_int 4))
+                    (match_operand:V128I 2 "nonmemory_operand" "r")))]
   ""
-  "nord %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
-   (set_attr "length" "     4,       4,         8,        12")]
+  "addx4<halfx> %x0 = %x1, %x2\n\taddx4<halfx> %y0 = %y1, %y2"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
 )
 
-(define_insn "*iornv2si3"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r,r")
-        (ior:V2SI (not:V2SI (match_operand:V2SI 1 "register_operand" "r,r,r,r"))
-                  (match_operand:V2SI 2 "nonmemory_operand" "r,v10,v37,i")))]
+(define_insn "*addx4<mode>2"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (plus:V128I (ashift:V128I (match_operand:V128I 1 "register_operand" "r")
+                                  (const_int 2))
+                    (match_operand:V128I 2 "nonmemory_operand" "r")))]
   ""
-  "ornd %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
-   (set_attr "length" "     4,       4,         8,        12")]
+  "addx4<halfx> %x0 = %x1, %x2\n\taddx4<halfx> %y0 = %y1, %y2"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
 )
 
-(define_insn "xorv2si3"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r,r")
-        (xor:V2SI (match_operand:V2SI 1 "register_operand" "r,r,r,r")
-                  (match_operand:V2SI 2 "nonmemory_operand" "r,v10,v37,i")))]
+(define_insn "*addx8<mode>"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (plus:V128I (mult:V128I (match_operand:V128I 1 "register_operand" "r")
+                                (const_int 8))
+                    (match_operand:V128I 2 "nonmemory_operand" "r")))]
   ""
-  "xord %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
-   (set_attr "length" "     4,       4,         8,        12")]
+  "addx8<halfx> %x0 = %x1, %x2\n\taddx8<halfx> %y0 = %y1, %y2"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
 )
 
-(define_insn "*nxorv2si3"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r,r")
-        (not:V2SI (xor:V2SI (match_operand:V2SI 1 "register_operand" "r,r,r,r")
-                            (match_operand:V2SI 2 "nonmemory_operand" "r,v10,v37,i"))))]
+(define_insn "*addx8<mode>2"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (plus:V128I (ashift:V128I (match_operand:V128I 1 "register_operand" "r")
+                                  (const_int 3))
+                    (match_operand:V128I 2 "nonmemory_operand" "r")))]
   ""
-  "nxord %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
-   (set_attr "length" "     4,       4,         8,        12")]
+  "addx8<halfx> %x0 = %x1, %x2\n\taddx8<halfx> %y0 = %y1, %y2"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
 )
 
-(define_insn "maddv2siv2si4"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r,r,r")
-        (plus:V2SI (mult:V2SI (match_operand:V2SI 1 "register_operand" "r,r,r,r")
-                              (match_operand:V2SI 2 "nonmemory_operand" "r,v10,v37,i"))
-                   (match_operand:V2SI 3 "register_operand" "0,0,0,0")))]
+(define_insn "*addx16<mode>"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (plus:V128I (mult:V128I (match_operand:V128I 1 "register_operand" "r")
+                                (const_int 16))
+                    (match_operand:V128I 2 "nonmemory_operand" "r")))]
   ""
-  "maddwp %0 = %1, %2"
-  [(set_attr "type" "mau_auxr,mau_auxr,mau_auxr_x,mau_auxr_y")
-   (set_attr "length" "     4,       4,         8,        12")]
+  "addx16<halfx> %x0 = %x1, %x2\n\taddx16<halfx> %y0 = %y1, %y2"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
 )
 
-(define_insn "msubv2siv2si4"
-  [(set (match_operand:V2SI 0 "register_operand" "=r")
-        (minus:V2SI (match_operand:V2SI 3 "register_operand" "0")
-                    (mult:V2SI (match_operand:V2SI 1 "register_operand" "r")
-                               (match_operand:V2SI 2 "register_operand" "r"))))]
+(define_insn "*addx16<mode>2"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (plus:V128I (ashift:V128I (match_operand:V128I 1 "register_operand" "r")
+                                  (const_int 4))
+                    (match_operand:V128I 2 "nonmemory_operand" "r")))]
   ""
-  "msbfwp %0 = %1, %2"
+  "addx16<halfx> %x0 = %x1, %x2\n\taddx16<halfx> %y0 = %y1, %y2"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "sub<mode>3"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (minus:V128I (match_operand:V128I 1 "nonmemory_operand" "r")
+                     (match_operand:V128I 2 "register_operand" "r")))]
+  ""
+  "sbf<halfx> %x0 = %x2, %x1\n\tsbf<halfx> %y0 = %y2, %y1"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "sssub<mode>3"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (ss_minus:V128I (match_operand:V128I 1 "nonmemory_operand" "r")
+                        (match_operand:V128I 2 "register_operand" "r")))]
+  ""
+  "sbfs<halfx> %x0 = %x2, %x1\n\tsbfs<halfx> %y0 = %y2, %y1"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "*sbfx2<mode>"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (minus:V128I (match_operand:V128I 1 "nonmemory_operand" "r")
+                     (mult:V128I (match_operand:V128I 2 "register_operand" "r")
+                                 (const_int 2))))]
+  ""
+  "sbfx2<halfx> %x0 = %x2, %x1\n\tsbfx2<halfx> %y0 = %y2, %y1"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "*sbfx2<mode>2"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (minus:V128I (match_operand:V128I 1 "nonmemory_operand" "r")
+                     (ashift:V128I (match_operand:V128I 2 "register_operand" "r")
+                                   (const_int 1))))]
+  ""
+  "sbfx2<halfx> %x0 = %x2, %x1\n\tsbfx2<halfx> %y0 = %y2, %y1"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "*sbfx4<mode>"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (minus:V128I (match_operand:V128I 1 "nonmemory_operand" "r")
+                     (mult:V128I (match_operand:V128I 2 "register_operand" "r")
+                                 (const_int 4))))]
+  ""
+  "sbfx4<halfx> %x0 = %x2, %x1\n\tsbfx4<halfx> %y0 = %y2, %y1"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "*sbfx4<mode>2"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (minus:V128I (match_operand:V128I 1 "nonmemory_operand" "r")
+                     (ashift:V128I (match_operand:V128I 2 "register_operand" "r")
+                                   (const_int 2))))]
+  ""
+  "sbfx4<halfx> %x0 = %x2, %x1\n\tsbfx4<halfx> %y0 = %y2, %y1"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "*sbfx8<mode>"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (minus:V128I (match_operand:V128I 1 "nonmemory_operand" "r")
+                     (mult:V128I (match_operand:V128I 2 "register_operand" "r")
+                                 (const_int 8))))]
+  ""
+  "sbfx8<halfx> %x0 = %x2, %x1\n\tsbfx8<halfx> %y0 = %y2, %y1"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "*sbfx8<mode>2"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (minus:V128I (match_operand:V128I 1 "nonmemory_operand" "r")
+                     (ashift:V128I (match_operand:V128I 2 "register_operand" "r")
+                                   (const_int 3))))]
+  ""
+  "sbfx8<halfx> %x0 = %x2, %x1\n\tsbfx8<halfx> %y0 = %y2, %y1"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "*sbfx16<mode>"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (minus:V128I (match_operand:V128I 1 "nonmemory_operand" "r")
+                     (mult:V128I (match_operand:V128I 2 "register_operand" "r")
+                                 (const_int 16))))]
+  ""
+  "sbfx16<halfx> %x0 = %x2, %x1\n\tsbfx16<halfx> %y0 = %y2, %y1"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "*sbfx16<mode>2"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (minus:V128I (match_operand:V128I 1 "nonmemory_operand" "r")
+                     (ashift:V128I (match_operand:V128I 2 "register_operand" "r")
+                                   (const_int 4))))]
+  ""
+  "sbfx16<halfx> %x0 = %x2, %x1\n\tsbfx16<halfx> %y0 = %y2, %y1"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "smin<mode>3"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (smin:V128I (match_operand:V128I 1 "register_operand" "r")
+                    (match_operand:V128I 2 "nonmemory_operand" "r")))]
+  ""
+  "min<halfx> %x0 = %x1, %x2\n\tmin<halfx> %y0 = %y1, %y2"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "smax<mode>3"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (smax:V128I (match_operand:V128I 1 "register_operand" "r")
+                    (match_operand:V128I 2 "nonmemory_operand" "r")))]
+  ""
+  "max<halfx> %x0 = %x1, %x2\n\tmax<halfx> %y0 = %y1, %y2"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "umin<mode>3"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (umin:V128I (match_operand:V128I 1 "register_operand" "r")
+                    (match_operand:V128I 2 "nonmemory_operand" "r")))]
+  ""
+  "minu<halfx> %x0 = %x1, %x2\n\tminu<halfx> %y0 = %y1, %y2"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "umax<mode>3"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (umax:V128I (match_operand:V128I 1 "register_operand" "r")
+                    (match_operand:V128I 2 "nonmemory_operand" "r")))]
+  ""
+  "maxu<halfx> %x0 = %x1, %x2\n\tmaxu<halfx> %y0 = %y1, %y2"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "and<mode>3"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (and:V128I (match_operand:V128I 1 "register_operand" "r")
+                   (match_operand:V128I 2 "nonmemory_operand" "r")))]
+  ""
+  "andd %x0 = %x1, %x2\n\tandd %y0 = %y1, %y2"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "*nand<mode>3"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (ior:V128I (not:V128I (match_operand:V128I 1 "register_operand" "r"))
+                   (not:V128I (match_operand:V128I 2 "nonmemory_operand" "r"))))]
+  ""
+  "nandd %x0 = %x1, %x2\n\tnandd %y0 = %y1, %y2"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "*andn<mode>3"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (and:V128I (not:V128I (match_operand:V128I 1 "register_operand" "r"))
+                   (match_operand:V128I 2 "nonmemory_operand" "r")))]
+  ""
+  "andnd %x0 = %x1, %x2\n\tandnd %y0 = %y1, %y2"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "ior<mode>3"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (ior:V128I (match_operand:V128I 1 "register_operand" "r")
+                   (match_operand:V128I 2 "nonmemory_operand" "r")))]
+  ""
+  "ord %x0 = %x1, %x2\n\tord %y0 = %y1, %y2"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "*nior<mode>3"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (and:V128I (not:V128I (match_operand:V128I 1 "register_operand" "r"))
+                   (not:V128I (match_operand:V128I 2 "nonmemory_operand" "r"))))]
+  ""
+  "nord %x0 = %x1, %x2\n\tnord %y0 = %y1, %y2"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "*iorn<mode>3"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (ior:V128I (not:V128I (match_operand:V128I 1 "register_operand" "r"))
+                   (match_operand:V128I 2 "nonmemory_operand" "r")))]
+  ""
+  "ornd %x0 = %x1, %x2\n\tornd %y0 = %y1, %y2"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "xor<mode>3"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (xor:V128I (match_operand:V128I 1 "register_operand" "r")
+                   (match_operand:V128I 2 "nonmemory_operand" "r")))]
+  ""
+  "xord %x0 = %x1, %x2\n\txord %y0 = %y1, %y2"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "*nxor<mode>3"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (not:V128I (xor:V128I (match_operand:V128I 1 "register_operand" "r")
+                              (match_operand:V128I 2 "nonmemory_operand" "r"))))]
+  ""
+  "nxord %x0 = %x1, %x2\n\tnxord %y0 = %y1, %y2"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn_and_split "madd<mode><mode>4"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (plus:V128I (mult:V128I (match_operand:V128I 1 "register_operand" "r")
+                                (match_operand:V128I 2 "nonmemory_operand" "r"))
+                    (match_operand:V128I 3 "register_operand" "0")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (plus:<HALF> (mult:<HALF> (subreg:<HALF> (match_dup 1) 0)
+                                  (subreg:<HALF> (match_dup 2) 0))
+                     (subreg:<HALF> (match_dup 3) 0)))
+   (set (subreg:<HALF> (match_dup 0) 8)
+        (plus:<HALF> (mult:<HALF> (subreg:<HALF> (match_dup 1) 8)
+                                  (subreg:<HALF> (match_dup 2) 8))
+                     (subreg:<HALF> (match_dup 3) 8)))]
+  ""
   [(set_attr "type" "mau_auxr")]
 )
 
-(define_insn "ashlv2si3"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r")
-        (ashift:V2SI (match_operand:V2SI 1 "register_operand" "r,r")
-                     (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
+(define_insn_and_split "msub<mode><mode>4"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (minus:V128I (match_operand:V128I 3 "register_operand" "0")
+                    (mult:V128I (match_operand:V128I 1 "register_operand" "r")
+                               (match_operand:V128I 2 "register_operand" "r"))))]
   ""
-  "sllwps %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite")
-   (set_attr "length" "     4,       4")]
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (minus:<HALF> (subreg:<HALF> (match_dup 3) 0)
+                      (mult:<HALF> (subreg:<HALF> (match_dup 1) 0)
+                                   (subreg:<HALF> (match_dup 2) 0))))
+   (set (subreg:<HALF> (match_dup 0) 8)
+        (minus:<HALF> (subreg:<HALF> (match_dup 3) 8)
+                      (mult:<HALF> (subreg:<HALF> (match_dup 1) 8)
+                                   (subreg:<HALF> (match_dup 2) 8))))]
+  ""
+  [(set_attr "type" "mau_auxr")
+   (set_attr "length"      "8")]
 )
 
-(define_insn "ssashlv2si3"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r")
-        (ss_ashift:V2SI (match_operand:V2SI 1 "register_operand" "r,r")
+(define_insn "ashl<mode>3"
+  [(set (match_operand:V128I 0 "register_operand" "=r,r")
+        (ashift:V128I (match_operand:V128I 1 "register_operand" "r,r")
+                      (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
+  ""
+  "sll<halfx>s %x0 = %x1, %2\n\tsll<halfx>s %y0 = %y1, %2"
+  [(set_attr "type" "alu_lite_x2,alu_lite_x2")
+   (set_attr "length" "        8,          8")]
+)
+
+(define_insn "ssashl<mode>3"
+  [(set (match_operand:V128I 0 "register_operand" "=r,r")
+        (ss_ashift:V128I (match_operand:V128I 1 "register_operand" "r,r")
+                         (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
+  ""
+  "sls<halfx>s %x0 = %x1, %2\n\tsls<halfx>s %y0 = %y1, %2"
+  [(set_attr "type" "alu_lite_x2,alu_lite_x2")
+   (set_attr "length" "        8,          8")]
+)
+
+(define_insn "ashr<mode>3"
+  [(set (match_operand:V128I 0 "register_operand" "=r,r")
+        (ashiftrt:V128I (match_operand:V128I 1 "register_operand" "r,r")
                         (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
   ""
-  "slswps %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite")
-   (set_attr "length" "     4,       4")]
+  "sra<halfx>s %x0 = %x1, %2\n\tsra<halfx>s %y0 = %y1, %2"
+  [(set_attr "type" "alu_lite_x2,alu_lite_x2")
+   (set_attr "length" "        8,          8")]
 )
 
-(define_insn "ashrv2si3"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r")
-        (ashiftrt:V2SI (match_operand:V2SI 1 "register_operand" "r,r")
-                       (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
+(define_insn "lshr<mode>3"
+  [(set (match_operand:V128I 0 "register_operand" "=r,r")
+        (lshiftrt:V128I (match_operand:V128I 1 "register_operand" "r,r")
+                        (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
   ""
-  "srawps %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite")
-   (set_attr "length" "     4,       4")]
+  "srl<halfx>s %x0 = %x1, %2\n\tsrl<halfx>s %y0 = %y1, %2"
+  [(set_attr "type" "alu_lite_x2,alu_lite_x2")
+   (set_attr "length" "        8,          8")]
 )
 
-(define_insn "lshrv2si3"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r")
-        (lshiftrt:V2SI (match_operand:V2SI 1 "register_operand" "r,r")
-                       (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
+(define_insn "kvx_srs<suffix>s"
+  [(set (match_operand:V128I 0 "register_operand" "=r,r")
+        (unspec:V128I [(match_operand:V128I 1 "register_operand" "r,r")
+                       (match_operand:SI 2 "sat_shift_operand" "r,U06")] UNSPEC_SRSWQ))]
   ""
-  "srlwps %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite")
-   (set_attr "length" "     4,       4")]
+  "srs<halfx>s %x0 = %x1, %2\n\tsrs<halfx>s %y0 = %y1, %2"
+  [(set_attr "type" "alu_lite_x2,alu_lite_x2")
+   (set_attr "length" "        8,          8")]
 )
 
-(define_insn "kvx_srswps"
-  [(set (match_operand:V2SI 0 "register_operand" "=r,r")
-        (unspec:V2SI [(match_operand:V2SI 1 "register_operand" "r,r")
-                      (match_operand:SI 2 "sat_shift_operand" "r,U06")] UNSPEC_SRSWP))]
+(define_insn "avg<mode>3_floor"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (unspec:V128I [(match_operand:V128I 1 "register_operand" "r")
+                       (match_operand:V128I 2 "register_operand" "r")] UNSPEC_AVGWQ))]
   ""
-  "srswps %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite")
-   (set_attr "length" "     4,       4")]
+  "avg<halfx> %x0 = %x1, %x2\n\tavg<halfx> %y0 = %y1, %y2"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
 )
 
-(define_insn "avgv2si3_floor"
-  [(set (match_operand:V2SI 0 "register_operand" "=r")
-        (unspec:V2SI [(match_operand:V2SI 1 "register_operand" "r")
-                      (match_operand:V2SI 2 "register_operand" "r")] UNSPEC_AVGWP))]
+(define_insn "uavg<mode>3_floor"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (unspec:V128I [(match_operand:V128I 1 "register_operand" "r")
+                       (match_operand:V128I 2 "register_operand" "r")] UNSPEC_AVGUWQ))]
   ""
-  "avgwp %0 = %1, %2"
-  [(set_attr "type" "alu_lite")]
+  "avgu<halfx> %x0 = %x1, %x2\n\tavgu<halfx> %y0 = %y1, %y2"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
 )
 
-(define_insn "uavgv2si3_floor"
-  [(set (match_operand:V2SI 0 "register_operand" "=r")
-        (unspec:V2SI [(match_operand:V2SI 1 "register_operand" "r")
-                      (match_operand:V2SI 2 "register_operand" "r")] UNSPEC_AVGUWP))]
+(define_insn "avg<mode>3_ceil"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (unspec:V128I [(match_operand:V128I 1 "register_operand" "r")
+                       (match_operand:V128I 2 "register_operand" "r")] UNSPEC_AVGRWQ))]
   ""
-  "avguwp %0 = %1, %2"
-  [(set_attr "type" "alu_lite")]
+  "avgr<halfx> %x0 = %x1, %x2\n\tavgr<halfx> %y0 = %y1, %y2"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
 )
 
-(define_insn "avgv2si3_ceil"
-  [(set (match_operand:V2SI 0 "register_operand" "=r")
-        (unspec:V2SI [(match_operand:V2SI 1 "register_operand" "r")
-                      (match_operand:V2SI 2 "register_operand" "r")] UNSPEC_AVGRWP))]
+(define_insn "uavg<mode>3_ceil"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (unspec:V128I [(match_operand:V128I 1 "register_operand" "r")
+                       (match_operand:V128I 2 "register_operand" "r")] UNSPEC_AVGRUWQ))]
   ""
-  "avgrwp %0 = %1, %2"
-  [(set_attr "type" "alu_lite")]
+  "avgru<halfx> %x0 = %x1, %x2\n\tavgru<halfx> %y0 = %y1, %y2"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
 )
 
-(define_insn "uavgv2si3_ceil"
-  [(set (match_operand:V2SI 0 "register_operand" "=r")
-        (unspec:V2SI [(match_operand:V2SI 1 "register_operand" "r")
-                      (match_operand:V2SI 2 "register_operand" "r")] UNSPEC_AVGRUWP))]
+(define_insn "neg<mode>2"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (neg:V128I (match_operand:V128I 1 "register_operand" "r")))]
   ""
-  "avgruwp %0 = %1, %2"
-  [(set_attr "type" "alu_lite")]
+  "neg<halfx> %x0 = %x1\n\tneg<halfx> %y0 = %y1"
+  [(set_attr "type" "alu_tiny_x2_x")
+   (set_attr "length"        "16")]
 )
 
-(define_insn "negv2si2"
-  [(set (match_operand:V2SI 0 "register_operand" "=r")
-        (neg:V2SI (match_operand:V2SI 1 "register_operand" "r")))]
+(define_insn "abs<mode>2"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (abs:V128I (match_operand:V128I 1 "register_operand" "r")))]
   ""
-  "negwp %0 = %1"
-  [(set_attr "type" "alu_tiny_x")
-   (set_attr "length" "8")]
+  "abs<halfx> %x0 = %x1\n\tabs<halfx> %y0 = %y1"
+  [(set_attr "type" "alu_lite_x2_x")
+   (set_attr "length"          "16")]
 )
 
-(define_insn "absv2si2"
-  [(set (match_operand:V2SI 0 "register_operand" "=r")
-        (abs:V2SI (match_operand:V2SI 1 "register_operand" "r")))]
+(define_insn "clrsb<mode>2"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (clrsb:V128I (match_operand:V128I 1 "register_operand" "r")))]
   ""
-  "abswp %0 = %1"
-  [(set_attr "type" "alu_lite_x")
-   (set_attr "length" "8")]
+  "cls<halfx> %x0 = %x1\n\tcls<halfx> %y0 = %y1"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
 )
 
-(define_insn "clrsbv2si2"
-  [(set (match_operand:V2SI 0 "register_operand" "=r")
-        (clrsb:V2SI (match_operand:V2SI 1 "register_operand" "r")))]
+(define_insn "clz<mode>2"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (clz:V128I (match_operand:V128I 1 "register_operand" "r")))]
   ""
-  "clswp %0 = %1"
-  [(set_attr "type" "alu_lite")]
+  "clz<halfx> %x0 = %x1\n\tclz<halfx> %y0 = %y1"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
 )
 
-(define_insn "clzv2si2"
-  [(set (match_operand:V2SI 0 "register_operand" "=r")
-        (clz:V2SI (match_operand:V2SI 1 "register_operand" "r")))]
+(define_insn "ctz<mode>2"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (ctz:V128I (match_operand:V128I 1 "register_operand" "r")))]
   ""
-  "clzwp %0 = %1"
-  [(set_attr "type" "alu_lite")]
+  "ctz<halfx> %x0 = %x1\n\tctz<halfx> %y0 = %y1"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
 )
 
-(define_insn "ctzv2si2"
-  [(set (match_operand:V2SI 0 "register_operand" "=r")
-        (ctz:V2SI (match_operand:V2SI 1 "register_operand" "r")))]
+(define_insn "popcount<mode>2"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (popcount:V128I (match_operand:V128I 1 "register_operand" "r")))]
   ""
-  "ctzwp %0 = %1"
-  [(set_attr "type" "alu_lite")]
+  "cbs<halfx> %x0 = %x1\n\tcbs<halfx> %y0 = %y1"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
 )
 
-(define_insn "popcountv2si2"
-  [(set (match_operand:V2SI 0 "register_operand" "=r")
-        (popcount:V2SI (match_operand:V2SI 1 "register_operand" "r")))]
+(define_insn "one_cmpl<mode>2"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (not:V128I (match_operand:V128I 1 "register_operand" "r")))]
   ""
-  "cbswp %0 = %1"
-  [(set_attr "type" "alu_lite")]
+  "notd %x0 = %x1\n\tnotd %y0 = %y1"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length"         "8")]
 )
 
-(define_insn "one_cmplv2si2"
-  [(set (match_operand:V2SI 0 "register_operand" "=r")
-        (not:V2SI (match_operand:V2SI 1 "register_operand" "r")))]
+(define_insn "kvx_abd<suffix>"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (abs:V128I (minus:V128I (match_operand:V128I 2 "nonmemory_operand" "r")
+                                (match_operand:V128I 1 "register_operand" "r"))))]
   ""
-  "notd %0 = %1"
-  [(set_attr "type" "alu_tiny")]
+  "abd<halfx> %x0 = %x1, %x2\n\tabd<halfx> %y0 = %y1, %y2"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
 )
 
-(define_insn "kvx_abdwp"
-  [(set (match_operand:V2SI 0 "register_operand" "=r")
-        (abs:V2SI (minus:V2SI (match_operand:V2SI 2 "nonmemory_operand" "r")
-                              (match_operand:V2SI 1 "register_operand" "r"))))]
-  ""
-  "abdwp %0 = %1, %2"
-  [(set_attr "type" "alu_lite")]
-)
-
-(define_expand "kvx_abdwps"
-  [(set (match_operand:V2SI 0 "register_operand" "")
-        (abs:V2SI (minus:V2SI (match_operand:V2SI 2 "nonmemory_operand" "")
-                              (match_operand:V2SI 1 "register_operand" ""))))]
+(define_expand "kvx_abd<suffix>s"
+  [(set (match_operand:V128I 0 "register_operand" "")
+        (abs:V128I (minus:V128I (unspec:V128I [(match_operand:<CHUNK> 2 "nonmemory_operand" "")] UNSPEC_V128)
+                                (match_operand:V128I 1 "register_operand" ""))))]
   ""
   {
     if (operands[2] == const0_rtx)
       {
-        emit_insn (gen_absv2si2 (operands[0], operands[1]));
+        emit_insn (gen_abs<mode>2 (operands[0], operands[1]));
         DONE;
       }
-    rtx chunk = gen_reg_rtx (V2SImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], SImode);
+    rtx chunk = gen_reg_rtx (<CHUNK>mode);
+    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], <INNER>mode);
   }
 )
 
-(define_expand "kvx_addswps"
-  [(set (match_operand:V2SI 0 "register_operand" "")
-        (ss_plus:V2SI (match_operand:V2SI 1 "register_operand" "")
-                      (match_operand:V2SI 2 "nonmemory_operand" "")))]
+(define_insn "*abd<suffix>s"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (abs:V128I (minus:V128I (unspec:V128I [(match_operand:<CHUNK> 2 "nonmemory_operand" "r")] UNSPEC_V128)
+                                (match_operand:V128I 1 "register_operand" "r"))))]
+  ""
+  "abd<halfx> %x0 = %x1, %2\n\tabd<halfx> %y0 = %y1, %2"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_expand "kvx_adds<suffix>s"
+  [(set (match_operand:V128I 0 "register_operand" "")
+        (ss_plus:V128I (match_operand:V128I 1 "register_operand" "")
+                       (unspec:V128I [(match_operand:<CHUNK> 2 "nonmemory_operand" "")] UNSPEC_V128)))]
   ""
   {
-    rtx chunk = gen_reg_rtx (V2SImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], SImode);
+    rtx chunk = gen_reg_rtx (<CHUNK>mode);
+    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], <INNER>mode);
   }
 )
 
-(define_expand "kvx_sbfswps"
-  [(set (match_operand:V2SI 0 "register_operand" "")
-        (ss_minus:V2SI (match_operand:V2SI 2 "nonmemory_operand" "")
-                       (match_operand:V2SI 1 "register_operand" "")))]
+(define_insn "*adds<suffix>s"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (ss_plus:V128I (match_operand:V128I 1 "register_operand" "r")
+                       (unspec:V128I [(match_operand:<CHUNK> 2 "nonmemory_operand" "r")] UNSPEC_V128)))]
+  ""
+  "adds<halfx> %x0 = %x1, %2\n\tadds<halfx> %y0 = %y1, %2"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_expand "kvx_sbfs<suffix>s"
+  [(set (match_operand:V128I 0 "register_operand" "")
+        (ss_minus:V128I (unspec:V128I [(match_operand:<CHUNK> 2 "nonmemory_operand" "")] UNSPEC_V128)
+                        (match_operand:V128I 1 "register_operand" "")))]
   ""
   {
-    rtx chunk = gen_reg_rtx (V2SImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], SImode);
+    rtx chunk = gen_reg_rtx (<CHUNK>mode);
+    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], <INNER>mode);
   }
 )
 
-(define_expand "kvx_minwps"
-  [(set (match_operand:V2SI 0 "register_operand" "")
-        (smin:V2SI (match_operand:V2SI 1 "register_operand" "")
-                   (match_operand:V2SI 2 "nonmemory_operand" "")))]
+(define_insn "*sbfs<suffix>s"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (ss_minus:V128I (unspec:V128I [(match_operand:<CHUNK> 2 "nonmemory_operand" "r")] UNSPEC_V128)
+                        (match_operand:V128I 1 "register_operand" "r")))]
+  ""
+  "sbfs<halfx> %x0 = %x1, %2\n\tsbfs<halfx> %y0 = %y1, %2"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_expand "kvx_min<suffix>s"
+  [(set (match_operand:V128I 0 "register_operand" "")
+        (smin:V128I (match_operand:V128I 1 "register_operand" "")
+                    (unspec:V128I [(match_operand:<CHUNK> 2 "nonmemory_operand" "")] UNSPEC_V128)))]
   ""
   {
-    rtx chunk = gen_reg_rtx (V2SImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], SImode);
+    rtx chunk = gen_reg_rtx (<CHUNK>mode);
+    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], <INNER>mode);
   }
 )
 
-(define_expand "kvx_maxwps"
-  [(set (match_operand:V2SI 0 "register_operand" "")
-        (smax:V2SI (match_operand:V2SI 1 "register_operand" "")
-                   (match_operand:V2SI 2 "nonmemory_operand" "")))]
+(define_insn "*min<suffix>s"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (smin:V128I (match_operand:V128I 1 "register_operand" "r")
+                    (unspec:V128I [(match_operand:<CHUNK> 2 "nonmemory_operand" "r")] UNSPEC_V128)))]
+  ""
+  "min<halfx> %x0 = %x1, %2\n\tmin<halfx> %y0 = %y1, %2"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_expand "kvx_max<suffix>s"
+  [(set (match_operand:V128I 0 "register_operand" "")
+        (smax:V128I (match_operand:V128I 1 "register_operand" "")
+                    (unspec:V128I [(match_operand:<CHUNK> 2 "nonmemory_operand" "")] UNSPEC_V128)))]
   ""
   {
-    rtx chunk = gen_reg_rtx (V2SImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], SImode);
+    rtx chunk = gen_reg_rtx (<CHUNK>mode);
+    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], <INNER>mode);
   }
 )
 
-(define_expand "kvx_minuwps"
-  [(set (match_operand:V2SI 0 "register_operand" "")
-        (umin:V2SI (match_operand:V2SI 1 "register_operand" "")
-                   (match_operand:V2SI 2 "nonmemory_operand" "")))]
+(define_insn "*max<suffix>s"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (smax:V128I (match_operand:V128I 1 "register_operand" "r")
+                    (unspec:V128I [(match_operand:<CHUNK> 2 "nonmemory_operand" "r")] UNSPEC_V128)))]
+  ""
+  "max<halfx> %x0 = %x1, %2\n\tmax<halfx> %y0 = %y1, %2"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_expand "kvx_minu<suffix>s"
+  [(set (match_operand:V128I 0 "register_operand" "")
+        (umin:V128I (match_operand:V128I 1 "register_operand" "")
+                    (unspec:V128I [(match_operand:<CHUNK> 2 "nonmemory_operand" "")] UNSPEC_V128)))]
   ""
   {
-    rtx chunk = gen_reg_rtx (V2SImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], SImode);
+    rtx chunk = gen_reg_rtx (<CHUNK>mode);
+    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], <INNER>mode);
   }
 )
 
-(define_expand "kvx_maxuwps"
-  [(set (match_operand:V2SI 0 "register_operand" "")
-        (umax:V2SI (match_operand:V2SI 1 "register_operand" "")
-                   (match_operand:V2SI 2 "nonmemory_operand" "")))]
+(define_insn "*minu<suffix>s"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (umin:V128I (match_operand:V128I 1 "register_operand" "r")
+                    (unspec:V128I [(match_operand:<CHUNK> 2 "nonmemory_operand" "r")] UNSPEC_V128)))]
+  ""
+  "minu<halfx> %x0 = %x1, %2\n\tminu<halfx> %y0 = %y1, %2"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_expand "kvx_maxu<suffix>s"
+  [(set (match_operand:V128I 0 "register_operand" "")
+        (umax:V128I (match_operand:V128I 1 "register_operand" "")
+                    (unspec:V128I [(match_operand:<CHUNK> 2 "nonmemory_operand" "")] UNSPEC_V128)))]
   ""
   {
-    rtx chunk = gen_reg_rtx (V2SImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], SImode);
+    rtx chunk = gen_reg_rtx (<CHUNK>mode);
+    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], <INNER>mode);
   }
+)
+
+(define_insn "*maxu<suffix>s"
+  [(set (match_operand:V128I 0 "register_operand" "=r")
+        (umax:V128I (match_operand:V128I 1 "register_operand" "r")
+                    (unspec:V128I [(match_operand:<CHUNK> 2 "nonmemory_operand" "r")] UNSPEC_V128)))]
+  ""
+  "maxu<halfx> %x0 = %x1, %2\n\tmaxu<halfx> %y0 = %y1, %2"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length"         "8")]
+)
+
+
+;; V8HI
+
+(define_insn_and_split "mulv8hi3"
+  [(set (match_operand:V8HI 0 "register_operand" "=r")
+        (mult:V8HI (match_operand:V8HI 1 "register_operand" "r")
+                   (match_operand:V8HI 2 "nonmemory_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V4HI (match_dup 0) 0)
+        (mult:V4HI (subreg:V4HI (match_dup 1) 0)
+                   (subreg:V4HI (match_dup 2) 0)))
+   (set (subreg:V4HI (match_dup 0) 8)
+        (mult:V4HI (subreg:V4HI (match_dup 1) 8)
+                   (subreg:V4HI (match_dup 2) 8)))]
+  ""
+  [(set_attr "type" "mau_auxr")]
 )
 
 
 ;; V4SI
-
-(define_insn "*compnwq"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (match_operator:V4SI 1 "comparison_operator"
-         [(match_operand:V4SI 2 "register_operand" "r")
-          (match_operand:V4SI 3 "register_operand" "r")]))]
-  ""
-  "compnwp.%1 %x0 = %x2, %x3\n\tcompnwp.%1 %y0 = %y2, %y3"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*selectwq"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (if_then_else:V4SI (match_operator 2 "zero_comparison_operator"
-                                               [(match_operand:V4SI 3 "register_operand" "r")
-                                                (match_operand:V4SI 5 "const_zero_operand" "")])
-                           (match_operand:V4SI 1 "register_operand" "r")
-                           (match_operand:V4SI 4 "register_operand" "0")))]
-  ""
-  "cmovewp.%2z %x3? %x0 = %x1\n\tcmovewp.%2z %y3? %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*selectwq_nez"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (if_then_else:V4SI (ne (match_operator:V4SI 2 "zero_comparison_operator"
-                                               [(match_operand:V4SI 3 "register_operand" "r")
-                                                (match_operand:V4SI 5 "const_zero_operand" "")])
-                               (match_operand:V4SI 6 "const_zero_operand" ""))
-                           (match_operand:V4SI 1 "register_operand" "r")
-                           (match_operand:V4SI 4 "register_operand" "0")))]
-  ""
-  "cmovewp.%2z %x3? %x0 = %x1\n\tcmovewp.%2z %y3? %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "kvx_selectwq"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (unspec:V4SI [(match_operand:V4SI 1 "register_operand" "r")
-                      (match_operand:V4SI 2 "register_operand" "0")
-                      (match_operand:V4SI 3 "register_operand" "r")
-                      (match_operand 4 "" "")] UNSPEC_SELECTWQ))]
-  ""
-  "cmovewp%4 %x3? %x0 = %x1\n\tcmovewp%4 %y3? %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "addv4si3"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (plus:V4SI (match_operand:V4SI 1 "register_operand" "r")
-                   (match_operand:V4SI 2 "nonmemory_operand" "r")))]
-  ""
-  "addwp %x0 = %x1, %x2\n\taddwp %y0 = %y1, %y2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "ssaddv4si3"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (ss_plus:V4SI (match_operand:V4SI 1 "register_operand" "r")
-                      (match_operand:V4SI 2 "nonmemory_operand" "r")))]
-  ""
-  "addswp %x0 = %x1, %x2\n\taddswp %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*addx2v4si"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (plus:V4SI (mult:V4SI (match_operand:V4SI 1 "register_operand" "r")
-                              (const_int 2))
-                   (match_operand:V4SI 2 "nonmemory_operand" "r")))]
-  ""
-  "addx2wp %x0 = %x1, %x2\n\taddx2wp %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*addx2v4si2"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (plus:V4SI (ashift:V4SI (match_operand:V4SI 1 "register_operand" "r")
-                                (const_int 1))
-                   (match_operand:V4SI 2 "nonmemory_operand" "r")))]
-  ""
-  "addx2wp %x0 = %x1, %x2\n\taddx2wp %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*addx4v4si"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (plus:V4SI (mult:V4SI (match_operand:V4SI 1 "register_operand" "r")
-                              (const_int 4))
-                   (match_operand:V4SI 2 "nonmemory_operand" "r")))]
-  ""
-  "addx4wp %x0 = %x1, %x2\n\taddx4wp %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*addx4v4si2"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (plus:V4SI (ashift:V4SI (match_operand:V4SI 1 "register_operand" "r")
-                                (const_int 2))
-                   (match_operand:V4SI 2 "nonmemory_operand" "r")))]
-  ""
-  "addx4wp %x0 = %x1, %x2\n\taddx4wp %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*addx8v4si"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (plus:V4SI (mult:V4SI (match_operand:V4SI 1 "register_operand" "r")
-                              (const_int 8))
-                   (match_operand:V4SI 2 "nonmemory_operand" "r")))]
-  ""
-  "addx8wp %x0 = %x1, %x2\n\taddx8wp %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*addx8v4si2"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (plus:V4SI (ashift:V4SI (match_operand:V4SI 1 "register_operand" "r")
-                                (const_int 3))
-                   (match_operand:V4SI 2 "nonmemory_operand" "r")))]
-  ""
-  "addx8wp %x0 = %x1, %x2\n\taddx8wp %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*addx16v4si"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (plus:V4SI (mult:V4SI (match_operand:V4SI 1 "register_operand" "r")
-                              (const_int 16))
-                   (match_operand:V4SI 2 "nonmemory_operand" "r")))]
-  ""
-  "addx16wp %x0 = %x1, %x2\n\taddx16wp %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*addx16v4si2"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (plus:V4SI (ashift:V4SI (match_operand:V4SI 1 "register_operand" "r")
-                                (const_int 4))
-                   (match_operand:V4SI 2 "nonmemory_operand" "r")))]
-  ""
-  "addx16wp %x0 = %x1, %x2\n\taddx16wp %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "subv4si3"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (minus:V4SI (match_operand:V4SI 1 "nonmemory_operand" "r")
-                    (match_operand:V4SI 2 "register_operand" "r")))]
-  ""
-  "sbfwp %x0 = %x2, %x1\n\tsbfwp %y0 = %y2, %y1"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "sssubv4si3"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (ss_minus:V4SI (match_operand:V4SI 1 "nonmemory_operand" "r")
-                       (match_operand:V4SI 2 "register_operand" "r")))]
-  ""
-  "sbfswp %x0 = %x2, %x1\n\tsbfswp %y0 = %y2, %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*sbfx2v4si"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (minus:V4SI (match_operand:V4SI 1 "nonmemory_operand" "r")
-                    (mult:V4SI (match_operand:V4SI 2 "register_operand" "r")
-                               (const_int 2))))]
-  ""
-  "sbfx2wp %x0 = %x2, %x1\n\tsbfx2wp %y0 = %y2, %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*sbfx2v4si2"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (minus:V4SI (match_operand:V4SI 1 "nonmemory_operand" "r")
-                    (ashift:V4SI (match_operand:V4SI 2 "register_operand" "r")
-                                 (const_int 1))))]
-  ""
-  "sbfx2wp %x0 = %x2, %x1\n\tsbfx2wp %y0 = %y2, %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*sbfx4v4si"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (minus:V4SI (match_operand:V4SI 1 "nonmemory_operand" "r")
-                    (mult:V4SI (match_operand:V4SI 2 "register_operand" "r")
-                               (const_int 4))))]
-  ""
-  "sbfx4wp %x0 = %x2, %x1\n\tsbfx4wp %y0 = %y2, %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*sbfx4v4si2"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (minus:V4SI (match_operand:V4SI 1 "nonmemory_operand" "r")
-                    (ashift:V4SI (match_operand:V4SI 2 "register_operand" "r")
-                                 (const_int 2))))]
-  ""
-  "sbfx4wp %x0 = %x2, %x1\n\tsbfx4wp %y0 = %y2, %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*sbfx8v4si"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (minus:V4SI (match_operand:V4SI 1 "nonmemory_operand" "r")
-                    (mult:V4SI (match_operand:V4SI 2 "register_operand" "r")
-                               (const_int 8))))]
-  ""
-  "sbfx8wp %x0 = %x2, %x1\n\tsbfx8wp %y0 = %y2, %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*sbfx8v4si2"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (minus:V4SI (match_operand:V4SI 1 "nonmemory_operand" "r")
-                    (ashift:V4SI (match_operand:V4SI 2 "register_operand" "r")
-                                 (const_int 3))))]
-  ""
-  "sbfx8wp %x0 = %x2, %x1\n\tsbfx8wp %y0 = %y2, %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*sbfx16v4si"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (minus:V4SI (match_operand:V4SI 1 "nonmemory_operand" "r")
-                    (mult:V4SI (match_operand:V4SI 2 "register_operand" "r")
-                               (const_int 16))))]
-  ""
-  "sbfx16wp %x0 = %x2, %x1\n\tsbfx16wp %y0 = %y2, %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*sbfx16v4si2"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (minus:V4SI (match_operand:V4SI 1 "nonmemory_operand" "r")
-                    (ashift:V4SI (match_operand:V4SI 2 "register_operand" "r")
-                                 (const_int 4))))]
-  ""
-  "sbfx16wp %x0 = %x2, %x1\n\tsbfx16wp %y0 = %y2, %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
 
 (define_insn "mulv4si3"
   [(set (match_operand:V4SI 0 "register_operand" "=r")
@@ -4121,1681 +1992,6 @@
   ""
   "mulwq %0 = %1, %2"
   [(set_attr "type" "mau_auxr")]
-)
-
-(define_insn "sminv4si3"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (smin:V4SI (match_operand:V4SI 1 "register_operand" "r")
-                   (match_operand:V4SI 2 "nonmemory_operand" "r")))]
-  ""
-  "minwp %x0 = %x1, %x2\n\tminwp %y0 = %y1, %y2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "smaxv4si3"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (smax:V4SI (match_operand:V4SI 1 "register_operand" "r")
-                   (match_operand:V4SI 2 "nonmemory_operand" "r")))]
-  ""
-  "maxwp %x0 = %x1, %x2\n\tmaxwp %y0 = %y1, %y2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "uminv4si3"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (umin:V4SI (match_operand:V4SI 1 "register_operand" "r")
-                   (match_operand:V4SI 2 "nonmemory_operand" "r")))]
-  ""
-  "minuwp %x0 = %x1, %x2\n\tminuwp %y0 = %y1, %y2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "umaxv4si3"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (umax:V4SI (match_operand:V4SI 1 "register_operand" "r")
-                   (match_operand:V4SI 2 "nonmemory_operand" "r")))]
-  ""
-  "maxuwp %x0 = %x1, %x2\n\tmaxuwp %y0 = %y1, %y2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "andv4si3"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (and:V4SI (match_operand:V4SI 1 "register_operand" "r")
-                  (match_operand:V4SI 2 "nonmemory_operand" "r")))]
-  ""
-  "andd %x0 = %x1, %x2\n\tandd %y0 = %y1, %y2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*nandv4si3"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (ior:V4SI (not:V4SI (match_operand:V4SI 1 "register_operand" "r"))
-                  (not:V4SI (match_operand:V4SI 2 "nonmemory_operand" "r"))))]
-  ""
-  "nandd %x0 = %x1, %x2\n\tnandd %y0 = %y1, %y2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*andnv4si3"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (and:V4SI (not:V4SI (match_operand:V4SI 1 "register_operand" "r"))
-                  (match_operand:V4SI 2 "nonmemory_operand" "r")))]
-  ""
-  "andnd %x0 = %x1, %x2\n\tandnd %y0 = %y1, %y2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "iorv4si3"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (ior:V4SI (match_operand:V4SI 1 "register_operand" "r")
-                  (match_operand:V4SI 2 "nonmemory_operand" "r")))]
-  ""
-  "ord %x0 = %x1, %x2\n\tord %y0 = %y1, %y2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*niorv4si3"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (and:V4SI (not:V4SI (match_operand:V4SI 1 "register_operand" "r"))
-                  (not:V4SI (match_operand:V4SI 2 "nonmemory_operand" "r"))))]
-  ""
-  "nord %x0 = %x1, %x2\n\tnord %y0 = %y1, %y2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*iornv4si3"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (ior:V4SI (not:V4SI (match_operand:V4SI 1 "register_operand" "r"))
-                  (match_operand:V4SI 2 "nonmemory_operand" "r")))]
-  ""
-  "ornd %x0 = %x1, %x2\n\tornd %y0 = %y1, %y2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "xorv4si3"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (xor:V4SI (match_operand:V4SI 1 "register_operand" "r")
-                  (match_operand:V4SI 2 "nonmemory_operand" "r")))]
-  ""
-  "xord %x0 = %x1, %x2\n\txord %y0 = %y1, %y2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*nxorv4si3"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (not:V4SI (xor:V4SI (match_operand:V4SI 1 "register_operand" "r")
-                            (match_operand:V4SI 2 "nonmemory_operand" "r"))))]
-  ""
-  "nxord %x0 = %x1, %x2\n\tnxord %y0 = %y1, %y2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn_and_split "maddv4siv4si4"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (plus:V4SI (mult:V4SI (match_operand:V4SI 1 "register_operand" "r")
-                              (match_operand:V4SI 2 "nonmemory_operand" "r"))
-                   (match_operand:V4SI 3 "register_operand" "0")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V2SI (match_dup 0) 0)
-        (plus:V2SI (mult:V2SI (subreg:V2SI (match_dup 1) 0)
-                              (subreg:V2SI (match_dup 2) 0))
-                   (subreg:V2SI (match_dup 3) 0)))
-   (set (subreg:V2SI (match_dup 0) 8)
-        (plus:V2SI (mult:V2SI (subreg:V2SI (match_dup 1) 8)
-                              (subreg:V2SI (match_dup 2) 8))
-                   (subreg:V2SI (match_dup 3) 8)))]
-  ""
-  [(set_attr "type" "mau_auxr")]
-)
-
-(define_insn_and_split "msubv4siv4si4"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (minus:V4SI (match_operand:V4SI 3 "register_operand" "0")
-                    (mult:V4SI (match_operand:V4SI 1 "register_operand" "r")
-                               (match_operand:V4SI 2 "register_operand" "r"))))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V2SI (match_dup 0) 0)
-        (minus:V2SI (subreg:V2SI (match_dup 3) 0)
-                    (mult:V2SI (subreg:V2SI (match_dup 1) 0)
-                               (subreg:V2SI (match_dup 2) 0))))
-   (set (subreg:V2SI (match_dup 0) 8)
-        (minus:V2SI (subreg:V2SI (match_dup 3) 8)
-                    (mult:V2SI (subreg:V2SI (match_dup 1) 8)
-                               (subreg:V2SI (match_dup 2) 8))))]
-  ""
-  [(set_attr "type" "mau_auxr")]
-)
-
-(define_insn "ashlv4si3"
-  [(set (match_operand:V4SI 0 "register_operand" "=r,r")
-        (ashift:V4SI (match_operand:V4SI 1 "register_operand" "r,r")
-                     (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
-  ""
-  "sllwps %x0 = %x1, %2\n\tsllwps %y0 = %y1, %2"
-  [(set_attr "type" "alu_lite_x2,alu_lite_x2")
-   (set_attr "length" "        8,          8")]
-)
-
-(define_insn "ssashlv4si3"
-  [(set (match_operand:V4SI 0 "register_operand" "=r,r")
-        (ss_ashift:V4SI (match_operand:V4SI 1 "register_operand" "r,r")
-                        (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
-  ""
-  "slswps %x0 = %x1, %2\n\tslswps %y0 = %y1, %2"
-  [(set_attr "type" "alu_lite_x2,alu_lite_x2")
-   (set_attr "length" "        8,          8")]
-)
-
-(define_insn "ashrv4si3"
-  [(set (match_operand:V4SI 0 "register_operand" "=r,r")
-        (ashiftrt:V4SI (match_operand:V4SI 1 "register_operand" "r,r")
-                       (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
-  ""
-  "srawps %x0 = %x1, %2\n\tsrawps %y0 = %y1, %2"
-  [(set_attr "type" "alu_lite_x2,alu_lite_x2")
-   (set_attr "length" "        8,          8")]
-)
-
-(define_insn "lshrv4si3"
-  [(set (match_operand:V4SI 0 "register_operand" "=r,r")
-        (lshiftrt:V4SI (match_operand:V4SI 1 "register_operand" "r,r")
-                       (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
-  ""
-  "srlwps %x0 = %x1, %2\n\tsrlwps %y0 = %y1, %2"
-  [(set_attr "type" "alu_lite_x2,alu_lite_x2")
-   (set_attr "length" "        8,          8")]
-)
-
-(define_insn "kvx_srswqs"
-  [(set (match_operand:V4SI 0 "register_operand" "=r,r")
-        (unspec:V4SI [(match_operand:V4SI 1 "register_operand" "r,r")
-                      (match_operand:SI 2 "sat_shift_operand" "r,U06")] UNSPEC_SRSWQ))]
-  ""
-  "srswps %x0 = %x1, %2\n\tsrswps %y0 = %y1, %2"
-  [(set_attr "type" "alu_lite_x2,alu_lite_x2")
-   (set_attr "length" "        8,          8")]
-)
-
-(define_insn "avgv4si3_floor"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (unspec:V4SI [(match_operand:V4SI 1 "register_operand" "r")
-                      (match_operand:V4SI 2 "register_operand" "r")] UNSPEC_AVGWQ))]
-  ""
-  "avgwp %x0 = %x1, %x2\n\tavgwp %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "uavgv4si3_floor"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (unspec:V4SI [(match_operand:V4SI 1 "register_operand" "r")
-                      (match_operand:V4SI 2 "register_operand" "r")] UNSPEC_AVGUWQ))]
-  ""
-  "avguwp %x0 = %x1, %x2\n\tavguwp %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "avgv4si3_ceil"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (unspec:V4SI [(match_operand:V4SI 1 "register_operand" "r")
-                      (match_operand:V4SI 2 "register_operand" "r")] UNSPEC_AVGRWQ))]
-  ""
-  "avgrwp %x0 = %x1, %x2\n\tavgrwp %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "uavgv4si3_ceil"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (unspec:V4SI [(match_operand:V4SI 1 "register_operand" "r")
-                      (match_operand:V4SI 2 "register_operand" "r")] UNSPEC_AVGRUWQ))]
-  ""
-  "avgruwp %x0 = %x1, %x2\n\tavgruwp %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "negv4si2"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (neg:V4SI (match_operand:V4SI 1 "register_operand" "r")))]
-  ""
-  "negwp %x0 = %x1\n\tnegwp %y0 = %y1"
-  [(set_attr "type" "alu_tiny_x2_x")
-   (set_attr "length"        "16")]
-)
-
-(define_insn "absv4si2"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (abs:V4SI (match_operand:V4SI 1 "register_operand" "r")))]
-  ""
-  "abswp %x0 = %x1\n\tabswp %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2_x")
-   (set_attr "length"          "16")]
-)
-
-(define_insn "clrsbv4si2"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (clrsb:V4SI (match_operand:V4SI 1 "register_operand" "r")))]
-  ""
-  "clswp %x0 = %x1\n\tclswp %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "clzv4si2"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (clz:V4SI (match_operand:V4SI 1 "register_operand" "r")))]
-  ""
-  "clzwp %x0 = %x1\n\tclzwp %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "ctzv4si2"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (ctz:V4SI (match_operand:V4SI 1 "register_operand" "r")))]
-  ""
-  "ctzwp %x0 = %x1\n\tctzwp %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "popcountv4si2"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (popcount:V4SI (match_operand:V4SI 1 "register_operand" "r")))]
-  ""
-  "cbswp %x0 = %x1\n\tcbswp %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "one_cmplv4si2"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (not:V4SI (match_operand:V4SI 1 "register_operand" "r")))]
-  ""
-  "notd %x0 = %x1\n\tnotd %y0 = %y1"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "kvx_abdwq"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (abs:V4SI (minus:V4SI (match_operand:V4SI 2 "nonmemory_operand" "r")
-                              (match_operand:V4SI 1 "register_operand" "r"))))]
-  ""
-  "abdwp %x0 = %x1, %x2\n\tabdwp %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_expand "kvx_abdwqs"
-  [(set (match_operand:V4SI 0 "register_operand" "")
-        (abs:V4SI (minus:V4SI (unspec:V4SI [(match_operand:V2SI 2 "nonmemory_operand" "")] UNSPEC_VECDUP)
-                              (match_operand:V4SI 1 "register_operand" ""))))]
-  ""
-  {
-    if (operands[2] == const0_rtx)
-      {
-        emit_insn (gen_absv4si2 (operands[0], operands[1]));
-        DONE;
-      }
-    rtx chunk = gen_reg_rtx (V2SImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], SImode);
-  }
-)
-
-(define_insn "*abdwqs"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (abs:V4SI (minus:V4SI (unspec:V4SI [(match_operand:V2SI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)
-                              (match_operand:V4SI 1 "register_operand" "r"))))]
-  ""
-  "abdwp %x0 = %x1, %2\n\tabdwp %y0 = %y1, %2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_expand "kvx_addswqs"
-  [(set (match_operand:V4SI 0 "register_operand" "")
-        (ss_plus:V4SI (match_operand:V4SI 1 "register_operand" "")
-                      (unspec:V4SI [(match_operand:V2SI 2 "nonmemory_operand" "")] UNSPEC_VECDUP)))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V2SImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], SImode);
-  }
-)
-
-(define_insn "*addswqs"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (ss_plus:V4SI (match_operand:V4SI 1 "register_operand" "r")
-                      (unspec:V4SI [(match_operand:V2SI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)))]
-  ""
-  "addswp %x0 = %x1, %2\n\taddswp %y0 = %y1, %2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_expand "kvx_sbfswqs"
-  [(set (match_operand:V4SI 0 "register_operand" "")
-        (ss_minus:V4SI (unspec:V4SI [(match_operand:V2SI 2 "nonmemory_operand" "")] UNSPEC_VECDUP)
-                       (match_operand:V4SI 1 "register_operand" "")))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V2SImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], SImode);
-  }
-)
-
-(define_insn "*sbfswqs"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (ss_minus:V4SI (unspec:V4SI [(match_operand:V2SI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)
-                       (match_operand:V4SI 1 "register_operand" "r")))]
-  ""
-  "sbfswp %x0 = %x1, %2\n\tsbfswp %y0 = %y1, %2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_expand "kvx_minwqs"
-  [(set (match_operand:V4SI 0 "register_operand" "")
-        (smin:V4SI (match_operand:V4SI 1 "register_operand" "")
-                   (unspec:V4SI [(match_operand:V2SI 2 "nonmemory_operand" "")] UNSPEC_VECDUP)))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V2SImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], SImode);
-  }
-)
-
-(define_insn "*minwqs"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (smin:V4SI (match_operand:V4SI 1 "register_operand" "r")
-                   (unspec:V4SI [(match_operand:V2SI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)))]
-  ""
-  "minwp %x0 = %x1, %2\n\tminwp %y0 = %y1, %2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_expand "kvx_maxwqs"
-  [(set (match_operand:V4SI 0 "register_operand" "")
-        (smax:V4SI (match_operand:V4SI 1 "register_operand" "")
-                   (unspec:V4SI [(match_operand:V2SI 2 "nonmemory_operand" "")] UNSPEC_VECDUP)))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V2SImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], SImode);
-  }
-)
-
-(define_insn "*maxwqs"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (smax:V4SI (match_operand:V4SI 1 "register_operand" "r")
-                   (unspec:V4SI [(match_operand:V2SI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)))]
-  ""
-  "maxwp %x0 = %x1, %2\n\tmaxwp %y0 = %y1, %2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_expand "kvx_minuwqs"
-  [(set (match_operand:V4SI 0 "register_operand" "")
-        (umin:V4SI (match_operand:V4SI 1 "register_operand" "")
-                   (unspec:V4SI [(match_operand:V2SI 2 "nonmemory_operand" "")] UNSPEC_VECDUP)))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V2SImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], SImode);
-  }
-)
-
-(define_insn "*minuwqs"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (umin:V4SI (match_operand:V4SI 1 "register_operand" "r")
-                   (unspec:V4SI [(match_operand:V2SI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)))]
-  ""
-  "minuwp %x0 = %x1, %2\n\tminuwp %y0 = %y1, %2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_expand "kvx_maxuwqs"
-  [(set (match_operand:V4SI 0 "register_operand" "")
-        (umax:V4SI (match_operand:V4SI 1 "register_operand" "")
-                   (unspec:V4SI [(match_operand:V2SI 2 "nonmemory_operand" "")] UNSPEC_VECDUP)))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V2SImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], SImode);
-  }
-)
-
-(define_insn "*maxuwqs"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (umax:V4SI (match_operand:V4SI 1 "register_operand" "r")
-                   (unspec:V4SI [(match_operand:V2SI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)))]
-  ""
-  "maxuwp %x0 = %x1, %2\n\tmaxuwp %y0 = %y1, %2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-
-;; V8SI
-
-(define_insn "*compnwo"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (match_operator:V8SI 1 "comparison_operator"
-         [(match_operand:V8SI 2 "register_operand" "r")
-          (match_operand:V8SI 3 "register_operand" "r")]))]
-  ""
-  {
-      return "compnwp.%1 %x0 = %x2, %x3\n\tcompnwp.%1 %y0 = %y2, %y3\n\t"
-             "compnwp.%1 %z0 = %z2, %z3\n\tcompnwp.%1 %t0 = %t2, %t3";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn_and_split "*selectwo"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (if_then_else:V8SI (match_operator 2 "zero_comparison_operator"
-                                             [(match_operand:V8SI 3 "register_operand" "r")
-                                              (match_operand:V8SI 5 "const_zero_operand" "")])
-                           (match_operand:V8SI 1 "register_operand" "r")
-                           (match_operand:V8SI 4 "register_operand" "0")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (if_then_else:V4SI (match_op_dup 2 [(subreg:V4SI (match_dup 3) 0)
-                                            (const_vector:V4SI [
-                                              (const_int 0)
-                                              (const_int 0)
-                                              (const_int 0)
-                                              (const_int 0)])])
-                           (subreg:V4SI (match_dup 1) 0)
-                           (subreg:V4SI (match_dup 4) 0)))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (if_then_else:V4SI (match_op_dup 2 [(subreg:V4SI (match_dup 3) 16)
-                                            (const_vector:V4SI [
-                                              (const_int 0)
-                                              (const_int 0)
-                                              (const_int 0)
-                                              (const_int 0)])])
-                           (subreg:V4SI (match_dup 1) 16)
-                           (subreg:V4SI (match_dup 4) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-
-(define_insn_and_split "*selectwo_nez"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (if_then_else:V8SI (ne (match_operator:V8SI 2 "zero_comparison_operator"
-                                             [(match_operand:V8SI 3 "register_operand" "r")
-                                              (match_operand:V8SI 5 "const_zero_operand" "")])
-                               (match_operand:V8SI 6 "const_zero_operand" ""))
-                           (match_operand:V8SI 1 "register_operand" "r")
-                           (match_operand:V8SI 4 "register_operand" "0")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (if_then_else:V4SI (match_op_dup 2 [(subreg:V4SI (match_dup 3) 0)
-                                            (const_vector:V4SI [
-                                              (const_int 0)
-                                              (const_int 0)
-                                              (const_int 0)
-                                              (const_int 0)])])
-                           (subreg:V4SI (match_dup 1) 0)
-                           (subreg:V4SI (match_dup 4) 0)))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (if_then_else:V4SI (match_op_dup 2 [(subreg:V4SI (match_dup 3) 16)
-                                            (const_vector:V4SI [
-                                              (const_int 0)
-                                              (const_int 0)
-                                              (const_int 0)
-                                              (const_int 0)])])
-                           (subreg:V4SI (match_dup 1) 16)
-                           (subreg:V4SI (match_dup 4) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "kvx_selectwo"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (unspec:V8SI [(match_operand:V8SI 1 "register_operand" "r")
-                      (match_operand:V8SI 2 "register_operand" "0")
-                      (match_operand:V8SI 3 "register_operand" "r")
-                      (match_operand 4 "" "")] UNSPEC_SELECTWO))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (unspec:V4SI [(subreg:V4SI (match_dup 1) 0)
-                      (subreg:V4SI (match_dup 2) 0)
-                      (subreg:V4SI (match_dup 3) 0)
-                      (match_dup 4)] UNSPEC_SELECTWQ))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (unspec:V4SI [(subreg:V4SI (match_dup 1) 16)
-                      (subreg:V4SI (match_dup 2) 16)
-                      (subreg:V4SI (match_dup 3) 16)
-                      (match_dup 4)] UNSPEC_SELECTWQ))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn "addv8si3"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (plus:V8SI (match_operand:V8SI 1 "register_operand" "r")
-                    (match_operand:V8SI 2 "nonmemory_operand" "r")))]
-  ""
-  {
-    return "addwp %x0 = %x1, %x2\n\taddwp %y0 = %y1, %y2\n\t"
-           "addwp %z0 = %z1, %z2\n\taddwp %t0 = %t1, %t2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn_and_split "ssaddv8si3"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (ss_plus:V8SI (match_operand:V8SI 1 "register_operand" "r")
-                       (match_operand:V8SI 2 "nonmemory_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (ss_plus:V4SI (subreg:V4SI (match_dup 1) 0)
-                      (subreg:V4SI (match_dup 2) 0)))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (ss_plus:V4SI (subreg:V4SI (match_dup 1) 16)
-                      (subreg:V4SI (match_dup 2) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*addx2v8si"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (plus:V8SI (mult:V8SI (match_operand:V8SI 1 "register_operand" "r")
-                              (const_int 2))
-                    (match_operand:V8SI 2 "nonmemory_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (plus:V4SI (mult:V4SI (subreg:V4SI (match_dup 1) 0)
-                              (const_int 2))
-                   (subreg:V4SI (match_dup 2) 0)))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (plus:V4SI (mult:V4SI (subreg:V4SI (match_dup 1) 16)
-                              (const_int 2))
-                   (subreg:V4SI (match_dup 2) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*addx2v8si2"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (plus:V8SI (ashift:V8SI (match_operand:V8SI 1 "register_operand" "r")
-                                (const_int 1))
-                    (match_operand:V8SI 2 "nonmemory_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (plus:V4SI (ashift:V4SI (subreg:V4SI (match_dup 1) 0)
-                                (const_int 1))
-                   (subreg:V4SI (match_dup 2) 0)))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (plus:V4SI (ashift:V4SI (subreg:V4SI (match_dup 1) 16)
-                                (const_int 1))
-                   (subreg:V4SI (match_dup 2) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*addx4v8si"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (plus:V8SI (mult:V8SI (match_operand:V8SI 1 "register_operand" "r")
-                              (const_int 4))
-                    (match_operand:V8SI 2 "nonmemory_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (plus:V4SI (mult:V4SI (subreg:V4SI (match_dup 1) 0)
-                              (const_int 4))
-                   (subreg:V4SI (match_dup 2) 0)))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (plus:V4SI (mult:V4SI (subreg:V4SI (match_dup 1) 16)
-                              (const_int 4))
-                   (subreg:V4SI (match_dup 2) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*addx4v8si2"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (plus:V8SI (ashift:V8SI (match_operand:V8SI 1 "register_operand" "r")
-                                (const_int 2))
-                    (match_operand:V8SI 2 "nonmemory_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (plus:V4SI (ashift:V4SI (subreg:V4SI (match_dup 1) 0)
-                                (const_int 2))
-                   (subreg:V4SI (match_dup 2) 0)))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (plus:V4SI (ashift:V4SI (subreg:V4SI (match_dup 1) 16)
-                                (const_int 2))
-                   (subreg:V4SI (match_dup 2) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*addx8v8si"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (plus:V8SI (mult:V8SI (match_operand:V8SI 1 "register_operand" "r")
-                              (const_int 8))
-                    (match_operand:V8SI 2 "nonmemory_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (plus:V4SI (mult:V4SI (subreg:V4SI (match_dup 1) 0)
-                              (const_int 8))
-                   (subreg:V4SI (match_dup 2) 0)))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (plus:V4SI (mult:V4SI (subreg:V4SI (match_dup 1) 16)
-                              (const_int 8))
-                   (subreg:V4SI (match_dup 2) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*addx8v8si2"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (plus:V8SI (ashift:V8SI (match_operand:V8SI 1 "register_operand" "r")
-                                (const_int 3))
-                    (match_operand:V8SI 2 "nonmemory_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (plus:V4SI (ashift:V4SI (subreg:V4SI (match_dup 1) 0)
-                                (const_int 3))
-                   (subreg:V4SI (match_dup 2) 0)))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (plus:V4SI (ashift:V4SI (subreg:V4SI (match_dup 1) 16)
-                                (const_int 3))
-                   (subreg:V4SI (match_dup 2) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*addx16v8si"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (plus:V8SI (mult:V8SI (match_operand:V8SI 1 "register_operand" "r")
-                              (const_int 16))
-                    (match_operand:V8SI 2 "nonmemory_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (plus:V4SI (mult:V4SI (subreg:V4SI (match_dup 1) 0)
-                              (const_int 16))
-                   (subreg:V4SI (match_dup 2) 0)))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (plus:V4SI (mult:V4SI (subreg:V4SI (match_dup 1) 16)
-                              (const_int 16))
-                   (subreg:V4SI (match_dup 2) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*addx16v8si2"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (plus:V8SI (ashift:V8SI (match_operand:V8SI 1 "register_operand" "r")
-                                (const_int 4))
-                    (match_operand:V8SI 2 "nonmemory_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (plus:V4SI (ashift:V4SI (subreg:V4SI (match_dup 1) 0)
-                                (const_int 4))
-                   (subreg:V4SI (match_dup 2) 0)))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (plus:V4SI (ashift:V4SI (subreg:V4SI (match_dup 1) 16)
-                                (const_int 4))
-                   (subreg:V4SI (match_dup 2) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn "subv8si3"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (minus:V8SI (match_operand:V8SI 1 "nonmemory_operand" "r")
-                     (match_operand:V8SI 2 "register_operand" "r")))]
-  ""
-  {
-    return "sbfwp %x0 = %x2, %x1\n\tsbfwp %y0 = %y2, %y1\n\t"
-           "sbfwp %z0 = %z2, %z1\n\tsbfwp %t0 = %t2, %t1";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn_and_split "sssubv8si3"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (ss_minus:V8SI (match_operand:V8SI 1 "nonmemory_operand" "r")
-                        (match_operand:V8SI 2 "register_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (ss_minus:V4SI (subreg:V4SI (match_dup 1) 0)
-                       (subreg:V4SI (match_dup 2) 0)))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (ss_minus:V4SI (subreg:V4SI (match_dup 1) 16)
-                       (subreg:V4SI (match_dup 2) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*sbfx2v8si"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (minus:V8SI (match_operand:V8SI 1 "nonmemory_operand" "r")
-                    (mult:V8SI (match_operand:V8SI 2 "register_operand" "r")
-                               (const_int 2))))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (minus:V4SI (subreg:V4SI (match_dup 1) 0)
-                    (mult:V4SI (subreg:V4SI (match_dup 2) 0)
-                               (const_int 2))))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (minus:V4SI (subreg:V4SI (match_dup 1) 16)
-                    (mult:V4SI (subreg:V4SI (match_dup 2) 16)
-                               (const_int 2))))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*sbfx2v8si2"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (minus:V8SI (match_operand:V8SI 1 "nonmemory_operand" "r")
-                     (ashift:V8SI (match_operand:V8SI 2 "register_operand" "r")
-                                  (const_int 1))))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (minus:V4SI (subreg:V4SI (match_dup 1) 0)
-                    (ashift:V4SI (subreg:V4SI (match_dup 2) 0)
-                                 (const_int 1))))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (minus:V4SI (subreg:V4SI (match_dup 1) 16)
-                    (ashift:V4SI (subreg:V4SI (match_dup 2) 16)
-                                 (const_int 1))))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*sbfx4v8si"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (minus:V8SI (match_operand:V8SI 1 "nonmemory_operand" "r")
-                     (mult:V8SI (match_operand:V8SI 2 "register_operand" "r")
-                                (const_int 4))))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (minus:V4SI (subreg:V4SI (match_dup 1) 0)
-                    (mult:V4SI (subreg:V4SI (match_dup 2) 0)
-                               (const_int 4))))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (minus:V4SI (subreg:V4SI (match_dup 1) 16)
-                    (mult:V4SI (subreg:V4SI (match_dup 2) 16)
-                               (const_int 4))))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*sbfx4v8si2"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (minus:V8SI (match_operand:V8SI 1 "nonmemory_operand" "r")
-                     (ashift:V8SI (match_operand:V8SI 2 "register_operand" "r")
-                                  (const_int 2))))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (minus:V4SI (subreg:V4SI (match_dup 1) 0)
-                    (ashift:V4SI (subreg:V4SI (match_dup 2) 0)
-                                 (const_int 2))))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (minus:V4SI (subreg:V4SI (match_dup 1) 16)
-                    (ashift:V4SI (subreg:V4SI (match_dup 2) 16)
-                                 (const_int 2))))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*sbfx8v8si"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (minus:V8SI (match_operand:V8SI 1 "nonmemory_operand" "r")
-                     (mult:V8SI (match_operand:V8SI 2 "register_operand" "r")
-                                (const_int 8))))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (minus:V4SI (subreg:V4SI (match_dup 1) 0)
-                    (mult:V4SI (subreg:V4SI (match_dup 2) 0)
-                               (const_int 8))))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (minus:V4SI (subreg:V4SI (match_dup 1) 16)
-                    (mult:V4SI (subreg:V4SI (match_dup 2) 16)
-                               (const_int 8))))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*sbfx8v8si2"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (minus:V8SI (match_operand:V8SI 1 "nonmemory_operand" "r")
-                     (ashift:V8SI (match_operand:V8SI 2 "register_operand" "r")
-                                  (const_int 3))))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (minus:V4SI (subreg:V4SI (match_dup 1) 0)
-                    (ashift:V4SI (subreg:V4SI (match_dup 2) 0)
-                                 (const_int 3))))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (minus:V4SI (subreg:V4SI (match_dup 1) 16)
-                    (ashift:V4SI (subreg:V4SI (match_dup 2) 16)
-                                 (const_int 3))))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*sbfx16v8si"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (minus:V8SI (match_operand:V8SI 1 "nonmemory_operand" "r")
-                     (mult:V8SI (match_operand:V8SI 2 "register_operand" "r")
-                                (const_int 16))))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (minus:V4SI (subreg:V4SI (match_dup 1) 0)
-                    (mult:V4SI (subreg:V4SI (match_dup 2) 0)
-                               (const_int 16))))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (minus:V4SI (subreg:V4SI (match_dup 1) 16)
-                    (mult:V4SI (subreg:V4SI (match_dup 2) 16)
-                               (const_int 16))))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*sbfx16v8si2"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (minus:V8SI (match_operand:V8SI 1 "nonmemory_operand" "r")
-                     (ashift:V8SI (match_operand:V8SI 2 "register_operand" "r")
-                                  (const_int 4))))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (minus:V4SI (subreg:V4SI (match_dup 1) 0)
-                    (ashift:V4SI (subreg:V4SI (match_dup 2) 0)
-                                 (const_int 4))))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (minus:V4SI (subreg:V4SI (match_dup 1) 16)
-                    (ashift:V4SI (subreg:V4SI (match_dup 2) 16)
-                                 (const_int 4))))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "mulv8si3"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (mult:V8SI (match_operand:V8SI 1 "register_operand" "r")
-                    (match_operand:V8SI 2 "nonmemory_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (mult:V4SI (subreg:V4SI (match_dup 1) 0)
-                   (subreg:V4SI (match_dup 2) 0)))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (mult:V4SI (subreg:V4SI (match_dup 1) 16)
-                   (subreg:V4SI (match_dup 2) 16)))]
-  ""
-  [(set_attr "type" "mau_auxr")]
-)
-
-(define_insn "sminv8si3"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (smin:V8SI (match_operand:V8SI 1 "register_operand" "r")
-                   (match_operand:V8SI 2 "nonmemory_operand" "r")))]
-  ""
-  {
-    return "minwp %x0 = %x1, %x2\n\tminwp %y0 = %y1, %y2\n\t"
-           "minwp %z0 = %z1, %z2\n\tminwp %t0 = %t1, %t2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn "smaxv8si3"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (smax:V8SI (match_operand:V8SI 1 "register_operand" "r")
-                   (match_operand:V8SI 2 "nonmemory_operand" "r")))]
-  ""
-  {
-    return "maxwp %x0 = %x1, %x2\n\tmaxwp %y0 = %y1, %y2\n\t"
-           "maxwp %z0 = %z1, %z2\n\tmaxwp %t0 = %t1, %t2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn "uminv8si3"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (umin:V8SI (match_operand:V8SI 1 "register_operand" "r")
-                   (match_operand:V8SI 2 "nonmemory_operand" "r")))]
-  ""
-  {
-    return "minuwp %x0 = %x1, %x2\n\tminuwp %y0 = %y1, %y2\n\t"
-           "minuwp %z0 = %z1, %z2\n\tminuwp %t0 = %t1, %t2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn "umaxv8si3"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (umax:V8SI (match_operand:V8SI 1 "register_operand" "r")
-                   (match_operand:V8SI 2 "nonmemory_operand" "r")))]
-  ""
-  {
-    return "maxuwp %x0 = %x1, %x2\n\tmaxuwp %y0 = %y1, %y2\n\t"
-           "maxuwp %z0 = %z1, %z2\n\tmaxuwp %t0 = %t1, %t2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn "andv8si3"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (and:V8SI (match_operand:V8SI 1 "register_operand" "r")
-                  (match_operand:V8SI 2 "nonmemory_operand" "r")))]
-  ""
-  {
-    return "andd %x0 = %x1, %x2\n\tandd %y0 = %y1, %y2\n\t"
-           "andd %z0 = %z1, %z2\n\tandd %t0 = %t1, %t2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn "*nandv8si3"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (ior:V8SI (not:V8SI (match_operand:V8SI 1 "register_operand" "r"))
-                  (not:V8SI (match_operand:V8SI 2 "nonmemory_operand" "r"))))]
-  ""
-  {
-    return "nandd %x0 = %x1, %x2\n\tnandd %y0 = %y1, %y2\n\t"
-           "nandd %z0 = %z1, %z2\n\tnandd %t0 = %t1, %t2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn "*andnv8si3"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (and:V8SI (not:V8SI (match_operand:V8SI 1 "register_operand" "r"))
-                  (match_operand:V8SI 2 "nonmemory_operand" "r")))]
-  ""
-  {
-    return "andnd %x0 = %x1, %x2\n\tandnd %y0 = %y1, %y2\n\t"
-           "andnd %z0 = %z1, %z2\n\tandnd %t0 = %t1, %t2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn "iorv8si3"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (ior:V8SI (match_operand:V8SI 1 "register_operand" "r")
-                  (match_operand:V8SI 2 "nonmemory_operand" "r")))]
-  ""
-  {
-    return "ord %x0 = %x1, %x2\n\tord %y0 = %y1, %y2\n\t"
-           "ord %z0 = %z1, %z2\n\tord %t0 = %t1, %t2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn "*niorv8si3"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (and:V8SI (not:V8SI (match_operand:V8SI 1 "register_operand" "r"))
-                  (not:V8SI (match_operand:V8SI 2 "nonmemory_operand" "r"))))]
-  ""
-  {
-    return "nord %x0 = %x1, %x2\n\tnord %y0 = %y1, %y2\n\t"
-           "nord %z0 = %z1, %z2\n\tnord %t0 = %t1, %t2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn "*iornv8si3"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (ior:V8SI (not:V8SI (match_operand:V8SI 1 "register_operand" "r"))
-                  (match_operand:V8SI 2 "nonmemory_operand" "r")))]
-  ""
-  {
-    return "ornd %x0 = %x1, %x2\n\tornd %y0 = %y1, %y2\n\t"
-           "ornd %z0 = %z1, %z2\n\tornd %t0 = %t1, %t2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn "xorv8si3"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (xor:V8SI (match_operand:V8SI 1 "register_operand" "r")
-                  (match_operand:V8SI 2 "nonmemory_operand" "r")))]
-  ""
-  {
-    return "xord %x0 = %x1, %x2\n\txord %y0 = %y1, %y2\n\t"
-           "xord %z0 = %z1, %z2\n\txord %t0 = %t1, %t2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn "*nxorv8si3"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (not:V8SI (xor:V8SI (match_operand:V8SI 1 "register_operand" "r")
-                            (match_operand:V8SI 2 "nonmemory_operand" "r"))))]
-  ""
-  {
-    return "nxord %x0 = %x1, %x2\n\tnxord %y0 = %y1, %y2\n\t"
-           "nxord %z0 = %z1, %z2\n\tnxord %t0 = %t1, %t2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn_and_split "maddv8siv8si4"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (plus:V8SI (mult:V8SI (match_operand:V8SI 1 "register_operand" "r")
-                              (match_operand:V8SI 2 "nonmemory_operand" "r"))
-                   (match_operand:V8SI 3 "register_operand" "0")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V2SI (match_dup 0) 0)
-        (plus:V2SI (mult:V2SI (subreg:V2SI (match_dup 1) 0)
-                              (subreg:V2SI (match_dup 2) 0))
-                   (subreg:V2SI (match_dup 3) 0)))
-   (set (subreg:V2SI (match_dup 0) 8)
-        (plus:V2SI (mult:V2SI (subreg:V2SI (match_dup 1) 8)
-                              (subreg:V2SI (match_dup 2) 8))
-                   (subreg:V2SI (match_dup 3) 8)))
-   (set (subreg:V2SI (match_dup 0) 16)
-        (plus:V2SI (mult:V2SI (subreg:V2SI (match_dup 1) 16)
-                              (subreg:V2SI (match_dup 2) 16))
-                   (subreg:V2SI (match_dup 3) 16)))
-   (set (subreg:V2SI (match_dup 0) 24)
-        (plus:V2SI (mult:V2SI (subreg:V2SI (match_dup 1) 24)
-                              (subreg:V2SI (match_dup 2) 24))
-                   (subreg:V2SI (match_dup 3) 24)))]
-  ""
-  [(set_attr "type" "mau_auxr")]
-)
-
-(define_insn_and_split "msubv8siv8si4"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (minus:V8SI (match_operand:V8SI 3 "register_operand" "0")
-                    (mult:V8SI (match_operand:V8SI 1 "register_operand" "r")
-                               (match_operand:V8SI 2 "register_operand" "r"))))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V2SI (match_dup 0) 0)
-        (minus:V2SI (subreg:V2SI (match_dup 3) 0)
-                    (mult:V2SI (subreg:V2SI (match_dup 1) 0)
-                               (subreg:V2SI (match_dup 2) 0))))
-   (set (subreg:V2SI (match_dup 0) 8)
-        (minus:V2SI (subreg:V2SI (match_dup 3) 8)
-                    (mult:V2SI (subreg:V2SI (match_dup 1) 8)
-                               (subreg:V2SI (match_dup 2) 8))))
-   (set (subreg:V2SI (match_dup 0) 16)
-        (minus:V2SI (subreg:V2SI (match_dup 3) 16)
-                    (mult:V2SI (subreg:V2SI (match_dup 1) 16)
-                               (subreg:V2SI (match_dup 2) 16))))
-   (set (subreg:V2SI (match_dup 0) 24)
-        (minus:V2SI (subreg:V2SI (match_dup 3) 24)
-                    (mult:V2SI (subreg:V2SI (match_dup 1) 24)
-                               (subreg:V2SI (match_dup 2) 24))))]
-  ""
-  [(set_attr "type" "mau_auxr")
-   (set_attr "length"      "8")]
-)
-
-(define_insn_and_split "ashlv8si3"
-  [(set (match_operand:V8SI 0 "register_operand" "=r,r")
-        (ashift:V8SI (match_operand:V8SI 1 "register_operand" "r,r")
-                     (match_operand:SI 2 "sat_shift_operand" "r,U06")))
-   (clobber (match_scratch:SI 3 "=&r,X"))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (ashift:V4SI (subreg:V4SI (match_dup 1) 0)
-                     (match_dup 2)))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (ashift:V4SI (subreg:V4SI (match_dup 1) 16)
-                     (match_dup 2)))]
-  {
-    if (GET_CODE (operands[2]) == REG)
-      {
-        emit_move_insn (operands[3], operands[2]);
-        operands[2] = operands[3];
-      }
-  }
-  [(set_attr "type" "alu_lite_x2,alu_lite_x2")]
-)
-
-(define_insn_and_split "ssashlv8si3"
-  [(set (match_operand:V8SI 0 "register_operand" "=r,r")
-        (ss_ashift:V8SI (match_operand:V8SI 1 "register_operand" "r,r")
-                        (match_operand:SI 2 "sat_shift_operand" "r,U06")))
-   (clobber (match_scratch:SI 3 "=&r,X"))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (ss_ashift:V4SI (subreg:V4SI (match_dup 1) 0)
-                        (match_dup 2)))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (ss_ashift:V4SI (subreg:V4SI (match_dup 1) 16)
-                        (match_dup 2)))]
-  {
-    if (GET_CODE (operands[2]) == REG)
-      {
-        emit_move_insn (operands[3], operands[2]);
-        operands[2] = operands[3];
-      }
-  }
-  [(set_attr "type" "alu_lite_x2,alu_lite_x2")]
-)
-
-(define_insn_and_split "ashrv8si3"
-  [(set (match_operand:V8SI 0 "register_operand" "=r,r")
-        (ashiftrt:V8SI (match_operand:V8SI 1 "register_operand" "r,r")
-                       (match_operand:SI 2 "sat_shift_operand" "r,U06")))
-   (clobber (match_scratch:SI 3 "=&r,X"))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (ashiftrt:V4SI (subreg:V4SI (match_dup 1) 0)
-                       (match_dup 2)))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (ashiftrt:V4SI (subreg:V4SI (match_dup 1) 16)
-                       (match_dup 2)))]
-  {
-    if (GET_CODE (operands[2]) == REG)
-      {
-        emit_move_insn (operands[3], operands[2]);
-        operands[2] = operands[3];
-      }
-  }
-  [(set_attr "type" "alu_lite_x2,alu_lite_x2")]
-)
-
-(define_insn_and_split "lshrv8si3"
-  [(set (match_operand:V8SI 0 "register_operand" "=r,r")
-        (lshiftrt:V8SI (match_operand:V8SI 1 "register_operand" "r,r")
-                       (match_operand:SI 2 "sat_shift_operand" "r,U06")))
-   (clobber (match_scratch:SI 3 "=&r,X"))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (lshiftrt:V4SI (subreg:V4SI (match_dup 1) 0)
-                       (match_dup 2)))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (lshiftrt:V4SI (subreg:V4SI (match_dup 1) 16)
-                       (match_dup 2)))]
-  {
-    if (GET_CODE (operands[2]) == REG)
-      {
-        emit_move_insn (operands[3], operands[2]);
-        operands[2] = operands[3];
-      }
-  }
-  [(set_attr "type" "alu_lite_x2,alu_lite_x2")]
-)
-
-(define_insn_and_split "kvx_srswos"
-  [(set (match_operand:V8SI 0 "register_operand" "=r,r")
-        (unspec:V8SI [(match_operand:V8SI 1 "register_operand" "r,r")
-                      (match_operand:SI 2 "sat_shift_operand" "r,U06")] UNSPEC_SRSWO))
-   (clobber (match_scratch:SI 3 "=&r,X"))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (unspec:V4SI [(subreg:V4SI (match_dup 1) 0)
-                      (match_dup 2)] UNSPEC_SRSWQ))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (unspec:V4SI [(subreg:V4SI (match_dup 1) 16)
-                      (match_dup 2)] UNSPEC_SRSWQ))]
-  {
-    if (GET_CODE (operands[2]) == REG)
-      {
-        emit_move_insn (operands[3], operands[2]);
-        operands[2] = operands[3];
-      }
-  }
-  [(set_attr "type" "alu_lite_x2,alu_lite_x2")]
-)
-
-(define_insn_and_split "avgv8si3_floor"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (unspec:V8SI [(match_operand:V8SI 1 "register_operand" "r")
-                      (match_operand:V8SI 2 "register_operand" "r")] UNSPEC_AVGWO))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (unspec:V4SI [(subreg:V4SI (match_dup 1) 0)
-                      (subreg:V4SI (match_dup 2) 0)] UNSPEC_AVGWQ))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (unspec:V4SI [(subreg:V4SI (match_dup 1) 16)
-                      (subreg:V4SI (match_dup 2) 16)] UNSPEC_AVGWQ))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "uavgv8si3_floor"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (unspec:V8SI [(match_operand:V8SI 1 "register_operand" "r")
-                      (match_operand:V8SI 2 "register_operand" "r")] UNSPEC_AVGUWO))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (unspec:V4SI [(subreg:V4SI (match_dup 1) 0)
-                      (subreg:V4SI (match_dup 2) 0)] UNSPEC_AVGUWQ))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (unspec:V4SI [(subreg:V4SI (match_dup 1) 16)
-                      (subreg:V4SI (match_dup 2) 16)] UNSPEC_AVGUWQ))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "avgv8si3_ceil"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (unspec:V8SI [(match_operand:V8SI 1 "register_operand" "r")
-                      (match_operand:V8SI 2 "register_operand" "r")] UNSPEC_AVGRWO))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (unspec:V4SI [(subreg:V4SI (match_dup 1) 0)
-                      (subreg:V4SI (match_dup 2) 0)] UNSPEC_AVGRWQ))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (unspec:V4SI [(subreg:V4SI (match_dup 1) 16)
-                      (subreg:V4SI (match_dup 2) 16)] UNSPEC_AVGRWQ))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "uavgv8si3_ceil"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (unspec:V8SI [(match_operand:V8SI 1 "register_operand" "r")
-                      (match_operand:V8SI 2 "register_operand" "r")] UNSPEC_AVGRUWO))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (unspec:V4SI [(subreg:V4SI (match_dup 1) 0)
-                      (subreg:V4SI (match_dup 2) 0)] UNSPEC_AVGRUWQ))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (unspec:V4SI [(subreg:V4SI (match_dup 1) 16)
-                      (subreg:V4SI (match_dup 2) 16)] UNSPEC_AVGRUWQ))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn "negv8si2"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (neg:V8SI (match_operand:V8SI 1 "register_operand" "r")))]
-  ""
-  {
-    return "negwp %x0 = %x1\n\tnegwp %y0 = %y1\n\t"
-           "negwp %z0 = %z1\n\tnegwp %t0 = %t1";
-  }
-  [(set_attr "type" "alu_tiny_x4_x")
-   (set_attr "length"          "32")]
-)
-
-(define_insn_and_split "absv8si2"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (abs:V8SI (match_operand:V8SI 1 "register_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (abs:V4SI (subreg:V4SI (match_dup 1) 0)))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (abs:V4SI (subreg:V4SI (match_dup 1) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2_x")]
-)
-
-(define_insn_and_split "clrsbv8si2"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (clrsb:V8SI (match_operand:V8SI 1 "register_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (clrsb:V4SI (subreg:V4SI (match_dup 1) 0)))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (clrsb:V4SI (subreg:V4SI (match_dup 1) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "clzv8si2"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (clz:V8SI (match_operand:V8SI 1 "register_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (clz:V4SI (subreg:V4SI (match_dup 1) 0)))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (clz:V4SI (subreg:V4SI (match_dup 1) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "ctzv8si2"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (ctz:V8SI (match_operand:V8SI 1 "register_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (ctz:V4SI (subreg:V4SI (match_dup 1) 0)))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (ctz:V4SI (subreg:V4SI (match_dup 1) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "popcountv8si2"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (popcount:V8SI (match_operand:V8SI 1 "register_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (popcount:V4SI (subreg:V4SI (match_dup 1) 0)))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (popcount:V4SI (subreg:V4SI (match_dup 1) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn "one_cmplv8si2"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (not:V8SI (match_operand:V8SI 1 "register_operand" "r")))]
-  ""
-  {
-    return "notd %x0 = %x1\n\tnotd %y0 = %y1\n\t"
-           "notd %z0 = %z1\n\tnotd %t0 = %t1";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn_and_split "kvx_abdwo"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (abs:V8SI (minus:V8SI (match_operand:V8SI 2 "nonmemory_operand" "r")
-                              (match_operand:V8SI 1 "register_operand" "r"))))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (abs:V4SI (minus:V4SI (subreg:V4SI (match_dup 2) 0)
-                              (subreg:V4SI (match_dup 1) 0))))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (abs:V4SI (minus:V4SI (subreg:V4SI (match_dup 2) 16)
-                              (subreg:V4SI (match_dup 1) 16))))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_expand "kvx_abdwos"
-  [(set (match_operand:V8SI 0 "register_operand" "")
-        (abs:V8SI (minus:V8SI (unspec:V8SI [(match_operand:V2SI 2 "nonmemory_operand" "")] UNSPEC_VECDUP)
-                              (match_operand:V8SI 1 "register_operand" ""))))]
-  ""
-  {
-    if (operands[2] == const0_rtx)
-      {
-        emit_insn (gen_absv8si2 (operands[0], operands[1]));
-        DONE;
-      }
-    rtx chunk = gen_reg_rtx (V2SImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], SImode);
-  }
-)
-
-(define_insn_and_split "*abdwos"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (abs:V8SI (minus:V8SI (unspec:V8SI [(match_operand:V2SI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)
-                              (match_operand:V8SI 1 "register_operand" "r"))))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (abs:V4SI (minus:V4SI (unspec:V4SI [(match_dup 2)] UNSPEC_VECDUP)
-                  (subreg:V4SI (match_dup 1) 0))))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (abs:V4SI (minus:V4SI (unspec:V4SI [(match_dup 2)] UNSPEC_VECDUP)
-                  (subreg:V4SI (match_dup 1) 16))))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_expand "kvx_addswos"
-  [(set (match_operand:V8SI 0 "register_operand" "")
-        (ss_plus:V8SI (match_operand:V8SI 1 "register_operand" "")
-                      (unspec:V8SI [(match_operand:V2SI 2 "nonmemory_operand" "")] UNSPEC_VECDUP)))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V2SImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], SImode);
-  }
-)
-
-(define_insn_and_split "*addswos"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (ss_plus:V8SI (match_operand:V8SI 1 "register_operand" "r")
-                      (unspec:V8SI [(match_operand:V2SI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (ss_plus:V4SI (subreg:V4SI (match_dup 1) 0)
-                      (unspec:V4SI [(match_dup 2)] UNSPEC_VECDUP)))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (ss_plus:V4SI (subreg:V4SI (match_dup 1) 16)
-                      (unspec:V4SI [(match_dup 2)] UNSPEC_VECDUP)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_expand "kvx_sbfswos"
-  [(set (match_operand:V8SI 0 "register_operand" "")
-        (ss_minus:V8SI (unspec:V8SI [(match_operand:V2SI 2 "nonmemory_operand" "")] UNSPEC_VECDUP)
-                       (match_operand:V8SI 1 "register_operand" "")))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V2SImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], SImode);
-  }
-)
-
-(define_insn_and_split "*sbfswos"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (ss_minus:V8SI (unspec:V8SI [(match_operand:V2SI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)
-                       (match_operand:V8SI 1 "register_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (ss_minus:V4SI (unspec:V4SI [(match_dup 2)] UNSPEC_VECDUP)
-                       (subreg:V4SI (match_dup 1) 0)))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (ss_minus:V4SI (unspec:V4SI [(match_dup 2)] UNSPEC_VECDUP)
-                       (subreg:V4SI (match_dup 1) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_expand "kvx_minwos"
-  [(set (match_operand:V8SI 0 "register_operand" "")
-        (smin:V8SI (match_operand:V8SI 1 "register_operand" "")
-                   (unspec:V8SI [(match_operand:V2SI 2 "nonmemory_operand" "")] UNSPEC_VECDUP)))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V2SImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], SImode);
-  }
-)
-
-(define_insn "*minwos"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (smin:V8SI (match_operand:V8SI 1 "register_operand" "r")
-                   (unspec:V8SI [(match_operand:V2SI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)))]
-  ""
-  {
-    return "minwp %x0 = %x1, %2\n\tminwp %y0 = %y1, %2\n\t"
-           "minwp %z0 = %z1, %2\n\tminwp %t0 = %t1, %2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_expand "kvx_maxwos"
-  [(set (match_operand:V8SI 0 "register_operand" "")
-        (smax:V8SI (match_operand:V8SI 1 "register_operand" "")
-                   (unspec:V8SI [(match_operand:V2SI 2 "nonmemory_operand" "")] UNSPEC_VECDUP)))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V2SImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], SImode);
-  }
-)
-
-(define_insn "*maxwos"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (smax:V8SI (match_operand:V8SI 1 "register_operand" "r")
-                   (unspec:V8SI [(match_operand:V2SI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)))]
-  ""
-  {
-    return "maxwp %x0 = %x1, %2\n\tmaxwp %y0 = %y1, %2\n\t"
-           "maxwp %z0 = %z1, %2\n\tmaxwp %t0 = %t1, %2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_expand "kvx_minuwos"
-  [(set (match_operand:V8SI 0 "register_operand" "")
-        (umin:V8SI (match_operand:V8SI 1 "register_operand" "")
-                   (unspec:V8SI [(match_operand:V2SI 2 "nonmemory_operand" "")] UNSPEC_VECDUP)))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V2SImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], SImode);
-  }
-)
-
-(define_insn "*minuwos"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (umin:V8SI (match_operand:V8SI 1 "register_operand" "r")
-                   (unspec:V8SI [(match_operand:V2SI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)))]
-  ""
-  {
-    return "minuwp %x0 = %x1, %2\n\tminuwp %y0 = %y1, %2\n\t"
-           "minuwp %z0 = %z1, %2\n\tminuwp %t0 = %t1, %2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_expand "kvx_maxuwos"
-  [(set (match_operand:V8SI 0 "register_operand" "")
-        (umax:V8SI (match_operand:V8SI 1 "register_operand" "")
-                   (unspec:V8SI [(match_operand:V2SI 2 "nonmemory_operand" "")] UNSPEC_VECDUP)))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V2SImode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], SImode);
-  }
-)
-
-(define_insn "*maxuwos"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (umax:V8SI (match_operand:V8SI 1 "register_operand" "r")
-                   (unspec:V8SI [(match_operand:V2SI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)))]
-  ""
-  {
-    return "maxuwp %x0 = %x1, %2\n\tmaxuwp %y0 = %y1, %2\n\t"
-           "maxuwp %z0 = %z1, %2\n\tmaxuwp %t0 = %t1, %2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
 )
 
 
@@ -5811,7 +2007,7 @@
   "reload_completed"
   [(set (match_dup 0)
         (unspec:V2DI [(match_op_dup 1 [(match_dup 2)
-                                       (match_dup 3)])] UNSPEC_COMP))
+                                       (match_dup 3)])] UNSPEC_COMP128))
    (set (match_dup 0)
         (neg:V2DI (match_dup 0)))]
   ""
@@ -5822,7 +2018,7 @@
   [(set (match_operand:V2DI 0 "register_operand" "=r")
         (unspec:V2DI [(match_operator:V2DI 1 "comparison_operator"
                        [(match_operand:V2DI 2 "register_operand" "r")
-                        (match_operand:V2DI 3 "register_operand" "r")])] UNSPEC_COMP))]
+                        (match_operand:V2DI 3 "register_operand" "r")])] UNSPEC_COMP128))]
   ""
   "compd.%1 %x0 = %x2, %x3\n\tcompd.%1 %y0 = %y2, %y3"
   [(set_attr "type" "alu_tiny_x2")
@@ -6386,7 +2582,7 @@
 
 (define_expand "kvx_abddps"
   [(set (match_operand:V2DI 0 "register_operand" "")
-        (abs:V2DI (minus:V2DI (unspec:V2DI [(match_operand:DI 2 "nonmemory_operand" "")] UNSPEC_VECDUP)
+        (abs:V2DI (minus:V2DI (unspec:V2DI [(match_operand:DI 2 "nonmemory_operand" "")] UNSPEC_V128)
                               (match_operand:V2DI 1 "register_operand" ""))))]
   ""
   {
@@ -6400,7 +2596,7 @@
 
 (define_insn "*abddps"
   [(set (match_operand:V2DI 0 "register_operand" "=r")
-        (abs:V2DI (minus:V2DI (unspec:V2DI [(match_operand:DI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)
+        (abs:V2DI (minus:V2DI (unspec:V2DI [(match_operand:DI 2 "nonmemory_operand" "r")] UNSPEC_V128)
                               (match_operand:V2DI 1 "register_operand" "r"))))]
   ""
   "abdd %x0 = %x1, %2\n\tabdd %y0 = %y1, %2"
@@ -6411,7 +2607,7 @@
 (define_insn "kvx_addsdps"
   [(set (match_operand:V2DI 0 "register_operand" "=r")
         (ss_plus:V2DI (match_operand:V2DI 1 "register_operand" "r")
-                      (unspec:V2DI [(match_operand:DI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)))]
+                      (unspec:V2DI [(match_operand:DI 2 "nonmemory_operand" "r")] UNSPEC_V128)))]
   ""
   "addsd %x0 = %x1, %2\n\taddsd %y0 = %y1, %2"
   [(set_attr "type" "alu_lite_x2")
@@ -6420,7 +2616,7 @@
 
 (define_insn "kvx_sbfsdps"
   [(set (match_operand:V2DI 0 "register_operand" "=r")
-        (ss_minus:V2DI (unspec:V2DI [(match_operand:DI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)
+        (ss_minus:V2DI (unspec:V2DI [(match_operand:DI 2 "nonmemory_operand" "r")] UNSPEC_V128)
                        (match_operand:V2DI 1 "register_operand" "r")))]
   ""
   "sbfsd %x0 = %x1, %2\n\tsbfsd %y0 = %y1, %2"
@@ -6431,7 +2627,7 @@
 (define_insn "kvx_mindps"
   [(set (match_operand:V2DI 0 "register_operand" "=r")
         (smin:V2DI (match_operand:V2DI 1 "register_operand" "r")
-                   (unspec:V2DI [(match_operand:DI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)))]
+                   (unspec:V2DI [(match_operand:DI 2 "nonmemory_operand" "r")] UNSPEC_V128)))]
   ""
   "mind %x0 = %x1, %2\n\tmind %y0 = %y1, %2"
   [(set_attr "type" "alu_tiny_x2")
@@ -6441,7 +2637,7 @@
 (define_insn "kvx_maxdps"
   [(set (match_operand:V2DI 0 "register_operand" "=r")
         (smax:V2DI (match_operand:V2DI 1 "register_operand" "r")
-                   (unspec:V2DI [(match_operand:DI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)))]
+                   (unspec:V2DI [(match_operand:DI 2 "nonmemory_operand" "r")] UNSPEC_V128)))]
   ""
   "maxd %x0 = %x1, %2\n\tmaxd %y0 = %y1, %2"
   [(set_attr "type" "alu_tiny_x2")
@@ -6451,7 +2647,7 @@
 (define_insn "kvx_minudps"
   [(set (match_operand:V2DI 0 "register_operand" "=r")
         (umin:V2DI (match_operand:V2DI 1 "register_operand" "r")
-                   (unspec:V2DI [(match_operand:DI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)))]
+                   (unspec:V2DI [(match_operand:DI 2 "nonmemory_operand" "r")] UNSPEC_V128)))]
   ""
   "minud %x0 = %x1, %2\n\tminud %y0 = %y1, %2"
   [(set_attr "type" "alu_tiny_x2")
@@ -6461,11 +2657,1335 @@
 (define_insn "kvx_maxudps"
   [(set (match_operand:V2DI 0 "register_operand" "=r")
         (umax:V2DI (match_operand:V2DI 1 "register_operand" "r")
-                   (unspec:V2DI [(match_operand:DI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)))]
+                   (unspec:V2DI [(match_operand:DI 2 "nonmemory_operand" "r")] UNSPEC_V128)))]
   ""
   "maxud %x0 = %x1, %2\n\tmaxud %y0 = %y1, %2"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
+)
+
+
+;; V256I (V16HI/V8SI)
+
+(define_insn_and_split "kvx_select<suffix>"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (unspec:V256I [(match_operand:V256I 1 "register_operand" "r")
+                       (match_operand:V256I 2 "register_operand" "0")
+                       (match_operand:V256I 3 "register_operand" "r")
+                       (match_operand 4 "" "")] UNSPEC_SELECTWO))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 0)
+                        (subreg:<HALF> (match_dup 2) 0)
+                        (subreg:<HALF> (match_dup 3) 0)
+                        (match_dup 4)] UNSPEC_SELECTWQ))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 16)
+                        (subreg:<HALF> (match_dup 2) 16)
+                        (subreg:<HALF> (match_dup 3) 16)
+                        (match_dup 4)] UNSPEC_SELECTWQ))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn "add<mode>3"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (plus:V256I (match_operand:V256I 1 "register_operand" "r")
+                    (match_operand:V256I 2 "nonmemory_operand" "r")))]
+  ""
+  {
+    return "add<quartx> %x0 = %x1, %x2\n\tadd<quartx> %y0 = %y1, %y2\n\t"
+           "add<quartx> %z0 = %z1, %z2\n\tadd<quartx> %t0 = %t1, %t2";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_insn_and_split "ssadd<mode>3"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (ss_plus:V256I (match_operand:V256I 1 "register_operand" "r")
+                       (match_operand:V256I 2 "nonmemory_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (ss_plus:<HALF> (subreg:<HALF> (match_dup 1) 0)
+                        (subreg:<HALF> (match_dup 2) 0)))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (ss_plus:<HALF> (subreg:<HALF> (match_dup 1) 16)
+                        (subreg:<HALF> (match_dup 2) 16)))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn_and_split "*addx2<mode>"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (plus:V256I (mult:V256I (match_operand:V256I 1 "register_operand" "r")
+                                (const_int 2))
+                    (match_operand:V256I 2 "nonmemory_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (plus:<HALF> (mult:<HALF> (subreg:<HALF> (match_dup 1) 0)
+                                  (const_int 2))
+                     (subreg:<HALF> (match_dup 2) 0)))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (plus:<HALF> (mult:<HALF> (subreg:<HALF> (match_dup 1) 16)
+                                  (const_int 2))
+                     (subreg:<HALF> (match_dup 2) 16)))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn_and_split "*addx2<mode>2"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (plus:V256I (ashift:V256I (match_operand:V256I 1 "register_operand" "r")
+                                  (const_int 1))
+                    (match_operand:V256I 2 "nonmemory_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (plus:<HALF> (ashift:<HALF> (subreg:<HALF> (match_dup 1) 0)
+                                    (const_int 1))
+                     (subreg:<HALF> (match_dup 2) 0)))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (plus:<HALF> (ashift:<HALF> (subreg:<HALF> (match_dup 1) 16)
+                                    (const_int 1))
+                     (subreg:<HALF> (match_dup 2) 16)))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn_and_split "*addx4<mode>"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (plus:V256I (mult:V256I (match_operand:V256I 1 "register_operand" "r")
+                                (const_int 4))
+                    (match_operand:V256I 2 "nonmemory_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (plus:<HALF> (mult:<HALF> (subreg:<HALF> (match_dup 1) 0)
+                                  (const_int 4))
+                     (subreg:<HALF> (match_dup 2) 0)))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (plus:<HALF> (mult:<HALF> (subreg:<HALF> (match_dup 1) 16)
+                                  (const_int 4))
+                     (subreg:<HALF> (match_dup 2) 16)))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn_and_split "*addx4<mode>2"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (plus:V256I (ashift:V256I (match_operand:V256I 1 "register_operand" "r")
+                                  (const_int 2))
+                    (match_operand:V256I 2 "nonmemory_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (plus:<HALF> (ashift:<HALF> (subreg:<HALF> (match_dup 1) 0)
+                                    (const_int 2))
+                     (subreg:<HALF> (match_dup 2) 0)))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (plus:<HALF> (ashift:<HALF> (subreg:<HALF> (match_dup 1) 16)
+                                    (const_int 2))
+                     (subreg:<HALF> (match_dup 2) 16)))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn_and_split "*addx8<mode>"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (plus:V256I (mult:V256I (match_operand:V256I 1 "register_operand" "r")
+                                (const_int 8))
+                    (match_operand:V256I 2 "nonmemory_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (plus:<HALF> (mult:<HALF> (subreg:<HALF> (match_dup 1) 0)
+                                  (const_int 8))
+                     (subreg:<HALF> (match_dup 2) 0)))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (plus:<HALF> (mult:<HALF> (subreg:<HALF> (match_dup 1) 16)
+                                  (const_int 8))
+                     (subreg:<HALF> (match_dup 2) 16)))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn_and_split "*addx8<mode>2"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (plus:V256I (ashift:V256I (match_operand:V256I 1 "register_operand" "r")
+                                  (const_int 3))
+                    (match_operand:V256I 2 "nonmemory_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (plus:<HALF> (ashift:<HALF> (subreg:<HALF> (match_dup 1) 0)
+                                    (const_int 3))
+                     (subreg:<HALF> (match_dup 2) 0)))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (plus:<HALF> (ashift:<HALF> (subreg:<HALF> (match_dup 1) 16)
+                                    (const_int 3))
+                     (subreg:<HALF> (match_dup 2) 16)))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn_and_split "*addx16<mode>"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (plus:V256I (mult:V256I (match_operand:V256I 1 "register_operand" "r")
+                                (const_int 16))
+                    (match_operand:V256I 2 "nonmemory_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (plus:<HALF> (mult:<HALF> (subreg:<HALF> (match_dup 1) 0)
+                                  (const_int 16))
+                     (subreg:<HALF> (match_dup 2) 0)))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (plus:<HALF> (mult:<HALF> (subreg:<HALF> (match_dup 1) 16)
+                                  (const_int 16))
+                     (subreg:<HALF> (match_dup 2) 16)))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn_and_split "*addx16<mode>2"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (plus:V256I (ashift:V256I (match_operand:V256I 1 "register_operand" "r")
+                                  (const_int 4))
+                    (match_operand:V256I 2 "nonmemory_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (plus:<HALF> (ashift:<HALF> (subreg:<HALF> (match_dup 1) 0)
+                                    (const_int 4))
+                     (subreg:<HALF> (match_dup 2) 0)))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (plus:<HALF> (ashift:<HALF> (subreg:<HALF> (match_dup 1) 16)
+                                    (const_int 4))
+                     (subreg:<HALF> (match_dup 2) 16)))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn "sub<mode>3"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (minus:V256I (match_operand:V256I 1 "nonmemory_operand" "r")
+                     (match_operand:V256I 2 "register_operand" "r")))]
+  ""
+  {
+    return "sbf<quartx> %x0 = %x2, %x1\n\tsbf<quartx> %y0 = %y2, %y1\n\t"
+           "sbf<quartx> %z0 = %z2, %z1\n\tsbf<quartx> %t0 = %t2, %t1";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_insn_and_split "sssub<mode>3"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (ss_minus:V256I (match_operand:V256I 1 "nonmemory_operand" "r")
+                        (match_operand:V256I 2 "register_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (ss_minus:<HALF> (subreg:<HALF> (match_dup 1) 0)
+                         (subreg:<HALF> (match_dup 2) 0)))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (ss_minus:<HALF> (subreg:<HALF> (match_dup 1) 16)
+                         (subreg:<HALF> (match_dup 2) 16)))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn_and_split "*sbfx2<mode>"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (minus:V256I (match_operand:V256I 1 "nonmemory_operand" "r")
+                     (mult:V256I (match_operand:V256I 2 "register_operand" "r")
+                                 (const_int 2))))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (minus:<HALF> (subreg:<HALF> (match_dup 1) 0)
+                      (mult:<HALF> (subreg:<HALF> (match_dup 2) 0)
+                                   (const_int 2))))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (minus:<HALF> (subreg:<HALF> (match_dup 1) 16)
+                      (mult:<HALF> (subreg:<HALF> (match_dup 2) 16)
+                                   (const_int 2))))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn_and_split "*sbfx2<mode>2"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (minus:V256I (match_operand:V256I 1 "nonmemory_operand" "r")
+                     (ashift:V256I (match_operand:V256I 2 "register_operand" "r")
+                                   (const_int 1))))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (minus:<HALF> (subreg:<HALF> (match_dup 1) 0)
+                      (ashift:<HALF> (subreg:<HALF> (match_dup 2) 0)
+                                     (const_int 1))))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (minus:<HALF> (subreg:<HALF> (match_dup 1) 16)
+                      (ashift:<HALF> (subreg:<HALF> (match_dup 2) 16)
+                                     (const_int 1))))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn_and_split "*sbfx4<mode>"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (minus:V256I (match_operand:V256I 1 "nonmemory_operand" "r")
+                     (mult:V256I (match_operand:V256I 2 "register_operand" "r")
+                                 (const_int 4))))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (minus:<HALF> (subreg:<HALF> (match_dup 1) 0)
+                      (mult:<HALF> (subreg:<HALF> (match_dup 2) 0)
+                                   (const_int 4))))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (minus:<HALF> (subreg:<HALF> (match_dup 1) 16)
+                      (mult:<HALF> (subreg:<HALF> (match_dup 2) 16)
+                                   (const_int 4))))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn_and_split "*sbfx4<mode>2"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (minus:V256I (match_operand:V256I 1 "nonmemory_operand" "r")
+                     (ashift:V256I (match_operand:V256I 2 "register_operand" "r")
+                                   (const_int 2))))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (minus:<HALF> (subreg:<HALF> (match_dup 1) 0)
+                      (ashift:<HALF> (subreg:<HALF> (match_dup 2) 0)
+                                     (const_int 2))))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (minus:<HALF> (subreg:<HALF> (match_dup 1) 16)
+                      (ashift:<HALF> (subreg:<HALF> (match_dup 2) 16)
+                                     (const_int 2))))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn_and_split "*sbfx8<mode>"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (minus:V256I (match_operand:V256I 1 "nonmemory_operand" "r")
+                     (mult:V256I (match_operand:V256I 2 "register_operand" "r")
+                                 (const_int 8))))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (minus:<HALF> (subreg:<HALF> (match_dup 1) 0)
+                      (mult:<HALF> (subreg:<HALF> (match_dup 2) 0)
+                                   (const_int 8))))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (minus:<HALF> (subreg:<HALF> (match_dup 1) 16)
+                      (mult:<HALF> (subreg:<HALF> (match_dup 2) 16)
+                                   (const_int 8))))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn_and_split "*sbfx8<mode>2"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (minus:V256I (match_operand:V256I 1 "nonmemory_operand" "r")
+                     (ashift:V256I (match_operand:V256I 2 "register_operand" "r")
+                                   (const_int 3))))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (minus:<HALF> (subreg:<HALF> (match_dup 1) 0)
+                      (ashift:<HALF> (subreg:<HALF> (match_dup 2) 0)
+                                     (const_int 3))))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (minus:<HALF> (subreg:<HALF> (match_dup 1) 16)
+                      (ashift:<HALF> (subreg:<HALF> (match_dup 2) 16)
+                                     (const_int 3))))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn_and_split "*sbfx16<mode>"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (minus:V256I (match_operand:V256I 1 "nonmemory_operand" "r")
+                     (mult:V256I (match_operand:V256I 2 "register_operand" "r")
+                                 (const_int 16))))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (minus:<HALF> (subreg:<HALF> (match_dup 1) 0)
+                      (mult:<HALF> (subreg:<HALF> (match_dup 2) 0)
+                                   (const_int 16))))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (minus:<HALF> (subreg:<HALF> (match_dup 1) 16)
+                      (mult:<HALF> (subreg:<HALF> (match_dup 2) 16)
+                                   (const_int 16))))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn_and_split "*sbfx16<mode>2"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (minus:V256I (match_operand:V256I 1 "nonmemory_operand" "r")
+                     (ashift:V256I (match_operand:V256I 2 "register_operand" "r")
+                                   (const_int 4))))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (minus:<HALF> (subreg:<HALF> (match_dup 1) 0)
+                      (ashift:<HALF> (subreg:<HALF> (match_dup 2) 0)
+                                     (const_int 4))))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (minus:<HALF> (subreg:<HALF> (match_dup 1) 16)
+                      (ashift:<HALF> (subreg:<HALF> (match_dup 2) 16)
+                                     (const_int 4))))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn "smin<mode>3"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (smin:V256I (match_operand:V256I 1 "register_operand" "r")
+                    (match_operand:V256I 2 "nonmemory_operand" "r")))]
+  ""
+  {
+    return "min<quartx> %x0 = %x1, %x2\n\tmin<quartx> %y0 = %y1, %y2\n\t"
+           "min<quartx> %z0 = %z1, %z2\n\tmin<quartx> %t0 = %t1, %t2";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_insn "smax<mode>3"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (smax:V256I (match_operand:V256I 1 "register_operand" "r")
+                    (match_operand:V256I 2 "nonmemory_operand" "r")))]
+  ""
+  {
+    return "max<quartx> %x0 = %x1, %x2\n\tmax<quartx> %y0 = %y1, %y2\n\t"
+           "max<quartx> %z0 = %z1, %z2\n\tmax<quartx> %t0 = %t1, %t2";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_insn "umin<mode>3"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (umin:V256I (match_operand:V256I 1 "register_operand" "r")
+                    (match_operand:V256I 2 "nonmemory_operand" "r")))]
+  ""
+  {
+    return "minu<quartx> %x0 = %x1, %x2\n\tminu<quartx> %y0 = %y1, %y2\n\t"
+           "minu<quartx> %z0 = %z1, %z2\n\tminu<quartx> %t0 = %t1, %t2";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_insn "umax<mode>3"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (umax:V256I (match_operand:V256I 1 "register_operand" "r")
+                    (match_operand:V256I 2 "nonmemory_operand" "r")))]
+  ""
+  {
+    return "maxu<quartx> %x0 = %x1, %x2\n\tmaxu<quartx> %y0 = %y1, %y2\n\t"
+           "maxu<quartx> %z0 = %z1, %z2\n\tmaxu<quartx> %t0 = %t1, %t2";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_insn "and<mode>3"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (and:V256I (match_operand:V256I 1 "register_operand" "r")
+                   (match_operand:V256I 2 "nonmemory_operand" "r")))]
+  ""
+  {
+    return "andd %x0 = %x1, %x2\n\tandd %y0 = %y1, %y2\n\t"
+           "andd %z0 = %z1, %z2\n\tandd %t0 = %t1, %t2";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_insn "*nand<mode>3"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (ior:V256I (not:V256I (match_operand:V256I 1 "register_operand" "r"))
+                   (not:V256I (match_operand:V256I 2 "nonmemory_operand" "r"))))]
+  ""
+  {
+    return "nandd %x0 = %x1, %x2\n\tnandd %y0 = %y1, %y2\n\t"
+           "nandd %z0 = %z1, %z2\n\tnandd %t0 = %t1, %t2";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_insn "*andn<mode>3"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (and:V256I (not:V256I (match_operand:V256I 1 "register_operand" "r"))
+                   (match_operand:V256I 2 "nonmemory_operand" "r")))]
+  ""
+  {
+    return "andnd %x0 = %x1, %x2\n\tandnd %y0 = %y1, %y2\n\t"
+           "andnd %z0 = %z1, %z2\n\tandnd %t0 = %t1, %t2";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_insn "ior<mode>3"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (ior:V256I (match_operand:V256I 1 "register_operand" "r")
+                   (match_operand:V256I 2 "nonmemory_operand" "r")))]
+  ""
+  {
+    return "ord %x0 = %x1, %x2\n\tord %y0 = %y1, %y2\n\t"
+           "ord %z0 = %z1, %z2\n\tord %t0 = %t1, %t2";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_insn "*nior<mode>3"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (and:V256I (not:V256I (match_operand:V256I 1 "register_operand" "r"))
+                   (not:V256I (match_operand:V256I 2 "nonmemory_operand" "r"))))]
+  ""
+  {
+    return "nord %x0 = %x1, %x2\n\tnord %y0 = %y1, %y2\n\t"
+           "nord %z0 = %z1, %z2\n\tnord %t0 = %t1, %t2";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_insn "*iorn<mode>3"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (ior:V256I (not:V256I (match_operand:V256I 1 "register_operand" "r"))
+                   (match_operand:V256I 2 "nonmemory_operand" "r")))]
+  ""
+  {
+    return "ornd %x0 = %x1, %x2\n\tornd %y0 = %y1, %y2\n\t"
+           "ornd %z0 = %z1, %z2\n\tornd %t0 = %t1, %t2";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_insn "xor<mode>3"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (xor:V256I (match_operand:V256I 1 "register_operand" "r")
+                   (match_operand:V256I 2 "nonmemory_operand" "r")))]
+  ""
+  {
+    return "xord %x0 = %x1, %x2\n\txord %y0 = %y1, %y2\n\t"
+           "xord %z0 = %z1, %z2\n\txord %t0 = %t1, %t2";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_insn "*nxor<mode>3"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (not:V256I (xor:V256I (match_operand:V256I 1 "register_operand" "r")
+                              (match_operand:V256I 2 "nonmemory_operand" "r"))))]
+  ""
+  {
+    return "nxord %x0 = %x1, %x2\n\tnxord %y0 = %y1, %y2\n\t"
+           "nxord %z0 = %z1, %z2\n\tnxord %t0 = %t1, %t2";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_insn_and_split "madd<mode><mode>4"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (plus:V256I (mult:V256I (match_operand:V256I 1 "register_operand" "r")
+                                (match_operand:V256I 2 "nonmemory_operand" "r"))
+                    (match_operand:V256I 3 "register_operand" "0")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<QUART> (match_dup 0) 0)
+        (plus:<QUART> (mult:<QUART> (subreg:<QUART> (match_dup 1) 0)
+                                    (subreg:<QUART> (match_dup 2) 0))
+                      (subreg:<QUART> (match_dup 3) 0)))
+   (set (subreg:<QUART> (match_dup 0) 8)
+        (plus:<QUART> (mult:<QUART> (subreg:<QUART> (match_dup 1) 8)
+                                    (subreg:<QUART> (match_dup 2) 8))
+                      (subreg:<QUART> (match_dup 3) 8)))
+   (set (subreg:<QUART> (match_dup 0) 16)
+        (plus:<QUART> (mult:<QUART> (subreg:<QUART> (match_dup 1) 16)
+                                    (subreg:<QUART> (match_dup 2) 16))
+                      (subreg:<QUART> (match_dup 3) 16)))
+   (set (subreg:<QUART> (match_dup 0) 24)
+        (plus:<QUART> (mult:<QUART> (subreg:<QUART> (match_dup 1) 24)
+                                    (subreg:<QUART> (match_dup 2) 24))
+                      (subreg:<QUART> (match_dup 3) 24)))]
+  ""
+  [(set_attr "type" "mau_auxr")]
+)
+
+(define_insn_and_split "msub<mode><mode>4"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (minus:V256I (match_operand:V256I 3 "register_operand" "0")
+                     (mult:V256I (match_operand:V256I 1 "register_operand" "r")
+                                 (match_operand:V256I 2 "register_operand" "r"))))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<QUART> (match_dup 0) 0)
+        (minus:<QUART> (subreg:<QUART> (match_dup 3) 0)
+                       (mult:<QUART> (subreg:<QUART> (match_dup 1) 0)
+                                     (subreg:<QUART> (match_dup 2) 0))))
+   (set (subreg:<QUART> (match_dup 0) 8)
+        (minus:<QUART> (subreg:<QUART> (match_dup 3) 8)
+                       (mult:<QUART> (subreg:<QUART> (match_dup 1) 8)
+                                     (subreg:<QUART> (match_dup 2) 8))))
+   (set (subreg:<QUART> (match_dup 0) 16)
+        (minus:<QUART> (subreg:<QUART> (match_dup 3) 16)
+                       (mult:<QUART> (subreg:<QUART> (match_dup 1) 16)
+                                     (subreg:<QUART> (match_dup 2) 16))))
+   (set (subreg:<QUART> (match_dup 0) 24)
+        (minus:<QUART> (subreg:<QUART> (match_dup 3) 24)
+                       (mult:<QUART> (subreg:<QUART> (match_dup 1) 24)
+                                     (subreg:<QUART> (match_dup 2) 24))))]
+  ""
+  [(set_attr "type" "mau_auxr")
+   (set_attr "length"      "8")]
+)
+
+(define_insn_and_split "ashl<mode>3"
+  [(set (match_operand:V256I 0 "register_operand" "=r,r")
+        (ashift:V256I (match_operand:V256I 1 "register_operand" "r,r")
+                      (match_operand:SI 2 "sat_shift_operand" "r,U06")))
+   (clobber (match_scratch:SI 3 "=&r,X"))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (ashift:<HALF> (subreg:<HALF> (match_dup 1) 0)
+                       (match_dup 2)))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (ashift:<HALF> (subreg:<HALF> (match_dup 1) 16)
+                       (match_dup 2)))]
+  {
+    if (GET_CODE (operands[2]) == REG)
+      {
+        emit_move_insn (operands[3], operands[2]);
+        operands[2] = operands[3];
+      }
+  }
+  [(set_attr "type" "alu_lite_x2,alu_lite_x2")]
+)
+
+(define_insn_and_split "ssashl<mode>3"
+  [(set (match_operand:V256I 0 "register_operand" "=r,r")
+        (ss_ashift:V256I (match_operand:V256I 1 "register_operand" "r,r")
+                         (match_operand:SI 2 "sat_shift_operand" "r,U06")))
+   (clobber (match_scratch:SI 3 "=&r,X"))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (ss_ashift:<HALF> (subreg:<HALF> (match_dup 1) 0)
+                          (match_dup 2)))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (ss_ashift:<HALF> (subreg:<HALF> (match_dup 1) 16)
+                          (match_dup 2)))]
+  {
+    if (GET_CODE (operands[2]) == REG)
+      {
+        emit_move_insn (operands[3], operands[2]);
+        operands[2] = operands[3];
+      }
+  }
+  [(set_attr "type" "alu_lite_x2,alu_lite_x2")]
+)
+
+(define_insn_and_split "ashr<mode>3"
+  [(set (match_operand:V256I 0 "register_operand" "=r,r")
+        (ashiftrt:V256I (match_operand:V256I 1 "register_operand" "r,r")
+                        (match_operand:SI 2 "sat_shift_operand" "r,U06")))
+   (clobber (match_scratch:SI 3 "=&r,X"))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (ashiftrt:<HALF> (subreg:<HALF> (match_dup 1) 0)
+                         (match_dup 2)))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (ashiftrt:<HALF> (subreg:<HALF> (match_dup 1) 16)
+                         (match_dup 2)))]
+  {
+    if (GET_CODE (operands[2]) == REG)
+      {
+        emit_move_insn (operands[3], operands[2]);
+        operands[2] = operands[3];
+      }
+  }
+  [(set_attr "type" "alu_lite_x2,alu_lite_x2")]
+)
+
+(define_insn_and_split "lshr<mode>3"
+  [(set (match_operand:V256I 0 "register_operand" "=r,r")
+        (lshiftrt:V256I (match_operand:V256I 1 "register_operand" "r,r")
+                        (match_operand:SI 2 "sat_shift_operand" "r,U06")))
+   (clobber (match_scratch:SI 3 "=&r,X"))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (lshiftrt:<HALF> (subreg:<HALF> (match_dup 1) 0)
+                         (match_dup 2)))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (lshiftrt:<HALF> (subreg:<HALF> (match_dup 1) 16)
+                         (match_dup 2)))]
+  {
+    if (GET_CODE (operands[2]) == REG)
+      {
+        emit_move_insn (operands[3], operands[2]);
+        operands[2] = operands[3];
+      }
+  }
+  [(set_attr "type" "alu_lite_x2,alu_lite_x2")]
+)
+
+(define_insn_and_split "kvx_srs<suffix>s"
+  [(set (match_operand:V256I 0 "register_operand" "=r,r")
+        (unspec:V256I [(match_operand:V256I 1 "register_operand" "r,r")
+                       (match_operand:SI 2 "sat_shift_operand" "r,U06")] UNSPEC_SRSWO))
+   (clobber (match_scratch:SI 3 "=&r,X"))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 0)
+                        (match_dup 2)] UNSPEC_SRSWQ))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 16)
+                        (match_dup 2)] UNSPEC_SRSWQ))]
+  {
+    if (GET_CODE (operands[2]) == REG)
+      {
+        emit_move_insn (operands[3], operands[2]);
+        operands[2] = operands[3];
+      }
+  }
+  [(set_attr "type" "alu_lite_x2,alu_lite_x2")]
+)
+
+(define_insn_and_split "avg<mode>3_floor"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (unspec:V256I [(match_operand:V256I 1 "register_operand" "r")
+                       (match_operand:V256I 2 "register_operand" "r")] UNSPEC_AVGWO))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 0)
+                        (subreg:<HALF> (match_dup 2) 0)] UNSPEC_AVGWQ))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 16)
+                        (subreg:<HALF> (match_dup 2) 16)] UNSPEC_AVGWQ))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn_and_split "uavg<mode>3_floor"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (unspec:V256I [(match_operand:V256I 1 "register_operand" "r")
+                       (match_operand:V256I 2 "register_operand" "r")] UNSPEC_AVGUWO))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 0)
+                        (subreg:<HALF> (match_dup 2) 0)] UNSPEC_AVGUWQ))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 16)
+                        (subreg:<HALF> (match_dup 2) 16)] UNSPEC_AVGUWQ))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn_and_split "avg<mode>3_ceil"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (unspec:V256I [(match_operand:V256I 1 "register_operand" "r")
+                       (match_operand:V256I 2 "register_operand" "r")] UNSPEC_AVGRWO))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 0)
+                        (subreg:<HALF> (match_dup 2) 0)] UNSPEC_AVGRWQ))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 16)
+                        (subreg:<HALF> (match_dup 2) 16)] UNSPEC_AVGRWQ))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn_and_split "uavg<mode>3_ceil"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (unspec:V256I [(match_operand:V256I 1 "register_operand" "r")
+                       (match_operand:V256I 2 "register_operand" "r")] UNSPEC_AVGRUWO))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 0)
+                        (subreg:<HALF> (match_dup 2) 0)] UNSPEC_AVGRUWQ))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 16)
+                        (subreg:<HALF> (match_dup 2) 16)] UNSPEC_AVGRUWQ))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn "neg<mode>2"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (neg:V256I (match_operand:V256I 1 "register_operand" "r")))]
+  ""
+  {
+    return "neg<quartx> %x0 = %x1\n\tneg<quartx> %y0 = %y1\n\t"
+           "neg<quartx> %z0 = %z1\n\tneg<quartx> %t0 = %t1";
+  }
+  [(set_attr "type" "alu_tiny_x4_x")
+   (set_attr "length"          "32")]
+)
+
+(define_insn_and_split "abs<mode>2"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (abs:V256I (match_operand:V256I 1 "register_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (abs:<HALF> (subreg:<HALF> (match_dup 1) 0)))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (abs:<HALF> (subreg:<HALF> (match_dup 1) 16)))]
+  ""
+  [(set_attr "type" "alu_lite_x2_x")]
+)
+
+(define_insn_and_split "clrsb<mode>2"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (clrsb:V256I (match_operand:V256I 1 "register_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (clrsb:<HALF> (subreg:<HALF> (match_dup 1) 0)))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (clrsb:<HALF> (subreg:<HALF> (match_dup 1) 16)))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn_and_split "clz<mode>2"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (clz:V256I (match_operand:V256I 1 "register_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (clz:<HALF> (subreg:<HALF> (match_dup 1) 0)))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (clz:<HALF> (subreg:<HALF> (match_dup 1) 16)))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn_and_split "ctz<mode>2"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (ctz:V256I (match_operand:V256I 1 "register_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (ctz:<HALF> (subreg:<HALF> (match_dup 1) 0)))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (ctz:<HALF> (subreg:<HALF> (match_dup 1) 16)))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn_and_split "popcount<mode>2"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (popcount:V256I (match_operand:V256I 1 "register_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (popcount:<HALF> (subreg:<HALF> (match_dup 1) 0)))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (popcount:<HALF> (subreg:<HALF> (match_dup 1) 16)))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn "one_cmpl<mode>2"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (not:V256I (match_operand:V256I 1 "register_operand" "r")))]
+  ""
+  {
+    return "notd %x0 = %x1\n\tnotd %y0 = %y1\n\t"
+           "notd %z0 = %z1\n\tnotd %t0 = %t1";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_insn_and_split "kvx_abd<suffix>"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (abs:V256I (minus:V256I (match_operand:V256I 2 "nonmemory_operand" "r")
+                                (match_operand:V256I 1 "register_operand" "r"))))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (abs:<HALF> (minus:<HALF> (subreg:<HALF> (match_dup 2) 0)
+                                  (subreg:<HALF> (match_dup 1) 0))))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (abs:<HALF> (minus:<HALF> (subreg:<HALF> (match_dup 2) 16)
+                                  (subreg:<HALF> (match_dup 1) 16))))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_expand "kvx_abd<suffix>s"
+  [(set (match_operand:V256I 0 "register_operand" "")
+        (abs:V256I (minus:V256I (unspec:V256I [(match_operand:<CHUNK> 2 "nonmemory_operand" "")] UNSPEC_V256)
+                                (match_operand:V256I 1 "register_operand" ""))))]
+  ""
+  {
+    if (operands[2] == const0_rtx)
+      {
+        emit_insn (gen_abs<mode>2 (operands[0], operands[1]));
+        DONE;
+      }
+    rtx chunk = gen_reg_rtx (<CHUNK>mode);
+    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], <INNER>mode);
+  }
+)
+
+(define_insn_and_split "*abd<suffix>s"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (abs:V256I (minus:V256I (unspec:V256I [(match_operand:<CHUNK> 2 "nonmemory_operand" "r")] UNSPEC_V256)
+                                (match_operand:V256I 1 "register_operand" "r"))))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (abs:<HALF> (minus:<HALF> (unspec:<HALF> [(match_dup 2)] UNSPEC_V128)
+                                  (subreg:<HALF> (match_dup 1) 0))))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (abs:<HALF> (minus:<HALF> (unspec:<HALF> [(match_dup 2)] UNSPEC_V128)
+                                  (subreg:<HALF> (match_dup 1) 16))))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_expand "kvx_adds<suffix>s"
+  [(set (match_operand:V256I 0 "register_operand" "")
+        (ss_plus:V256I (match_operand:V256I 1 "register_operand" "")
+                       (unspec:V256I [(match_operand:<CHUNK> 2 "nonmemory_operand" "")] UNSPEC_V256)))]
+  ""
+  {
+    rtx chunk = gen_reg_rtx (<CHUNK>mode);
+    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], <INNER>mode);
+  }
+)
+
+(define_insn_and_split "*adds<suffix>s"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (ss_plus:V256I (match_operand:V256I 1 "register_operand" "r")
+                       (unspec:V256I [(match_operand:<CHUNK> 2 "nonmemory_operand" "r")] UNSPEC_V256)))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (ss_plus:<HALF> (subreg:<HALF> (match_dup 1) 0)
+                        (unspec:<HALF> [(match_dup 2)] UNSPEC_V128)))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (ss_plus:<HALF> (subreg:<HALF> (match_dup 1) 16)
+                        (unspec:<HALF> [(match_dup 2)] UNSPEC_V128)))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_expand "kvx_sbfs<suffix>s"
+  [(set (match_operand:V256I 0 "register_operand" "")
+        (ss_minus:V256I (unspec:V256I [(match_operand:<CHUNK> 2 "nonmemory_operand" "")] UNSPEC_V256)
+                        (match_operand:V256I 1 "register_operand" "")))]
+  ""
+  {
+    rtx chunk = gen_reg_rtx (<CHUNK>mode);
+    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], <INNER>mode);
+  }
+)
+
+(define_insn_and_split "*sbfs<suffix>s"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (ss_minus:V256I (unspec:V256I [(match_operand:<CHUNK> 2 "nonmemory_operand" "r")] UNSPEC_V256)
+                        (match_operand:V256I 1 "register_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (ss_minus:<HALF> (unspec:<HALF> [(match_dup 2)] UNSPEC_V128)
+                         (subreg:<HALF> (match_dup 1) 0)))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (ss_minus:<HALF> (unspec:<HALF> [(match_dup 2)] UNSPEC_V128)
+                         (subreg:<HALF> (match_dup 1) 16)))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_expand "kvx_min<suffix>s"
+  [(set (match_operand:V256I 0 "register_operand" "")
+        (smin:V256I (match_operand:V256I 1 "register_operand" "")
+                    (unspec:V256I [(match_operand:<CHUNK> 2 "nonmemory_operand" "")] UNSPEC_V256)))]
+  ""
+  {
+    rtx chunk = gen_reg_rtx (<CHUNK>mode);
+    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], <INNER>mode);
+  }
+)
+
+(define_insn "*min<suffix>s"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (smin:V256I (match_operand:V256I 1 "register_operand" "r")
+                    (unspec:V256I [(match_operand:<CHUNK> 2 "nonmemory_operand" "r")] UNSPEC_V256)))]
+  ""
+  {
+    return "min<quartx> %x0 = %x1, %2\n\tmin<quartx> %y0 = %y1, %2\n\t"
+           "min<quartx> %z0 = %z1, %2\n\tmin<quartx> %t0 = %t1, %2";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_expand "kvx_max<suffix>s"
+  [(set (match_operand:V256I 0 "register_operand" "")
+        (smax:V256I (match_operand:V256I 1 "register_operand" "")
+                    (unspec:V256I [(match_operand:<CHUNK> 2 "nonmemory_operand" "")] UNSPEC_V256)))]
+  ""
+  {
+    rtx chunk = gen_reg_rtx (<CHUNK>mode);
+    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], <INNER>mode);
+  }
+)
+
+(define_insn "*max<suffix>s"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (smax:V256I (match_operand:V256I 1 "register_operand" "r")
+                    (unspec:V256I [(match_operand:<CHUNK> 2 "nonmemory_operand" "r")] UNSPEC_V256)))]
+  ""
+  {
+    return "max<quartx> %x0 = %x1, %2\n\tmax<quartx> %y0 = %y1, %2\n\t"
+           "max<quartx> %z0 = %z1, %2\n\tmax<quartx> %t0 = %t1, %2";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_expand "kvx_minu<suffix>s"
+  [(set (match_operand:V256I 0 "register_operand" "")
+        (umin:V256I (match_operand:V256I 1 "register_operand" "")
+                    (unspec:V256I [(match_operand:<CHUNK> 2 "nonmemory_operand" "")] UNSPEC_V256)))]
+  ""
+  {
+    rtx chunk = gen_reg_rtx (<CHUNK>mode);
+    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], <INNER>mode);
+  }
+)
+
+(define_insn "*minu<suffix>s"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (umin:V256I (match_operand:V256I 1 "register_operand" "r")
+                    (unspec:V256I [(match_operand:<CHUNK> 2 "nonmemory_operand" "r")] UNSPEC_V256)))]
+  ""
+  {
+    return "minu<quartx> %x0 = %x1, %2\n\tminu<quartx> %y0 = %y1, %2\n\t"
+           "minu<quartx> %z0 = %z1, %2\n\tminu<quartx> %t0 = %t1, %2";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_expand "kvx_maxu<suffix>s"
+  [(set (match_operand:V256I 0 "register_operand" "")
+        (umax:V256I (match_operand:V256I 1 "register_operand" "")
+                    (unspec:V256I [(match_operand:<CHUNK> 2 "nonmemory_operand" "")] UNSPEC_V256)))]
+  ""
+  {
+    rtx chunk = gen_reg_rtx (<CHUNK>mode);
+    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], <INNER>mode);
+  }
+)
+
+(define_insn "*maxu<suffix>s"
+  [(set (match_operand:V256I 0 "register_operand" "=r")
+        (umax:V256I (match_operand:V256I 1 "register_operand" "r")
+                    (unspec:V256I [(match_operand:<CHUNK> 2 "nonmemory_operand" "r")] UNSPEC_V256)))]
+  ""
+  {
+    return "maxu<quartx> %x0 = %x1, %2\n\tmaxu<quartx> %y0 = %y1, %2\n\t"
+           "maxu<quartx> %z0 = %z1, %2\n\tmaxu<quartx> %t0 = %t1, %2";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+
+;; V16HI
+
+(define_insn "*compnhx"
+  [(set (match_operand:V16HI 0 "register_operand" "=r")
+        (match_operator:V16HI 1 "comparison_operator"
+         [(match_operand:V16HI 2 "register_operand" "r")
+          (match_operand:V16HI 3 "register_operand" "r")]))]
+  ""
+  {
+    return "compnhq.%1 %x0 = %x2, %x3\n\tcompnhq.%1 %y0 = %y2, %y3\n\t"
+           "compnhq.%1 %z0 = %z2, %z3\n\tcompnhq.%1 %t0 = %t2, %t3";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_insn_and_split "*selecthx"
+  [(set (match_operand:V16HI 0 "register_operand" "=r")
+        (if_then_else:V16HI (match_operator 2 "zero_comparison_operator"
+                                               [(match_operand:V16HI 3 "register_operand" "r")
+                                                (match_operand:V16HI 5 "const_zero_operand" "")])
+                            (match_operand:V16HI 1 "register_operand" "r")
+                            (match_operand:V16HI 4 "register_operand" "0")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V8HI (match_dup 0) 0)
+        (if_then_else:V8HI (match_op_dup 2 [(subreg:V8HI (match_dup 3) 0)
+                                            (const_vector:V8HI [
+                                              (const_int 0)
+                                              (const_int 0)
+                                              (const_int 0)
+                                              (const_int 0)
+                                              (const_int 0)
+                                              (const_int 0)
+                                              (const_int 0)
+                                              (const_int 0)])])
+                           (subreg:V8HI (match_dup 1) 0)
+                           (subreg:V8HI (match_dup 4) 0)))
+   (set (subreg:V8HI (match_dup 0) 16)
+        (if_then_else:V8HI (match_op_dup 2 [(subreg:V8HI (match_dup 3) 16)
+                                            (const_vector:V8HI [
+                                              (const_int 0)
+                                              (const_int 0)
+                                              (const_int 0)
+                                              (const_int 0)
+                                              (const_int 0)
+                                              (const_int 0)
+                                              (const_int 0)
+                                              (const_int 0)])])
+                           (subreg:V8HI (match_dup 1) 16)
+                           (subreg:V8HI (match_dup 4) 16)))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn_and_split "*selecthx_nez"
+  [(set (match_operand:V16HI 0 "register_operand" "=r")
+        (if_then_else:V16HI (ne (match_operator:V16HI 2 "zero_comparison_operator"
+                                               [(match_operand:V16HI 3 "register_operand" "r")
+                                                (match_operand:V16HI 5 "const_zero_operand" "")])
+                                (match_operand:V16HI 6 "const_zero_operand" ""))
+                            (match_operand:V16HI 1 "register_operand" "r")
+                            (match_operand:V16HI 4 "register_operand" "0")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V8HI (match_dup 0) 0)
+        (if_then_else:V8HI (match_op_dup 2 [(subreg:V8HI (match_dup 3) 0)
+                                            (const_vector:V8HI [
+                                              (const_int 0)
+                                              (const_int 0)
+                                              (const_int 0)
+                                              (const_int 0)
+                                              (const_int 0)
+                                              (const_int 0)
+                                              (const_int 0)
+                                              (const_int 0)])])
+                           (subreg:V8HI (match_dup 1) 0)
+                           (subreg:V8HI (match_dup 4) 0)))
+   (set (subreg:V8HI (match_dup 0) 16)
+        (if_then_else:V8HI (match_op_dup 2 [(subreg:V8HI (match_dup 3) 16)
+                                            (const_vector:V8HI [
+                                              (const_int 0)
+                                              (const_int 0)
+                                              (const_int 0)
+                                              (const_int 0)
+                                              (const_int 0)
+                                              (const_int 0)
+                                              (const_int 0)
+                                              (const_int 0)])])
+                           (subreg:V8HI (match_dup 1) 16)
+                           (subreg:V8HI (match_dup 4) 16)))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn_and_split "mulv16hi3"
+  [(set (match_operand:V16HI 0 "register_operand" "=r")
+        (mult:V16HI (match_operand:V16HI 1 "register_operand" "r")
+                    (match_operand:V16HI 2 "nonmemory_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V4HI (match_dup 0) 0)
+        (mult:V4HI (subreg:V4HI (match_dup 1) 0)
+                   (subreg:V4HI (match_dup 2) 0)))
+   (set (subreg:V4HI (match_dup 0) 8)
+        (mult:V4HI (subreg:V4HI (match_dup 1) 8)
+                   (subreg:V4HI (match_dup 2) 8)))
+   (set (subreg:V4HI (match_dup 0) 16)
+        (mult:V4HI (subreg:V4HI (match_dup 1) 16)
+                   (subreg:V4HI (match_dup 2) 16)))
+   (set (subreg:V4HI (match_dup 0) 24)
+        (mult:V4HI (subreg:V4HI (match_dup 1) 24)
+                   (subreg:V4HI (match_dup 2) 24)))]
+  ""
+  [(set_attr "type" "mau_auxr")]
+)
+
+
+;; V8SI
+
+(define_insn "*compnwo"
+  [(set (match_operand:V8SI 0 "register_operand" "=r")
+        (match_operator:V8SI 1 "comparison_operator"
+         [(match_operand:V8SI 2 "register_operand" "r")
+          (match_operand:V8SI 3 "register_operand" "r")]))]
+  ""
+  {
+      return "compnwp.%1 %x0 = %x2, %x3\n\tcompnwp.%1 %y0 = %y2, %y3\n\t"
+             "compnwp.%1 %z0 = %z2, %z3\n\tcompnwp.%1 %t0 = %t2, %t3";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_insn_and_split "*selectwo"
+  [(set (match_operand:V8SI 0 "register_operand" "=r")
+        (if_then_else:V8SI (match_operator 2 "zero_comparison_operator"
+                                             [(match_operand:V8SI 3 "register_operand" "r")
+                                              (match_operand:V8SI 5 "const_zero_operand" "")])
+                           (match_operand:V8SI 1 "register_operand" "r")
+                           (match_operand:V8SI 4 "register_operand" "0")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V4SI (match_dup 0) 0)
+        (if_then_else:V4SI (match_op_dup 2 [(subreg:V4SI (match_dup 3) 0)
+                                            (const_vector:V4SI [
+                                              (const_int 0)
+                                              (const_int 0)
+                                              (const_int 0)
+                                              (const_int 0)])])
+                           (subreg:V4SI (match_dup 1) 0)
+                           (subreg:V4SI (match_dup 4) 0)))
+   (set (subreg:V4SI (match_dup 0) 16)
+        (if_then_else:V4SI (match_op_dup 2 [(subreg:V4SI (match_dup 3) 16)
+                                            (const_vector:V4SI [
+                                              (const_int 0)
+                                              (const_int 0)
+                                              (const_int 0)
+                                              (const_int 0)])])
+                           (subreg:V4SI (match_dup 1) 16)
+                           (subreg:V4SI (match_dup 4) 16)))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+
+(define_insn_and_split "*selectwo_nez"
+  [(set (match_operand:V8SI 0 "register_operand" "=r")
+        (if_then_else:V8SI (ne (match_operator:V8SI 2 "zero_comparison_operator"
+                                             [(match_operand:V8SI 3 "register_operand" "r")
+                                              (match_operand:V8SI 5 "const_zero_operand" "")])
+                               (match_operand:V8SI 6 "const_zero_operand" ""))
+                           (match_operand:V8SI 1 "register_operand" "r")
+                           (match_operand:V8SI 4 "register_operand" "0")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V4SI (match_dup 0) 0)
+        (if_then_else:V4SI (match_op_dup 2 [(subreg:V4SI (match_dup 3) 0)
+                                            (const_vector:V4SI [
+                                              (const_int 0)
+                                              (const_int 0)
+                                              (const_int 0)
+                                              (const_int 0)])])
+                           (subreg:V4SI (match_dup 1) 0)
+                           (subreg:V4SI (match_dup 4) 0)))
+   (set (subreg:V4SI (match_dup 0) 16)
+        (if_then_else:V4SI (match_op_dup 2 [(subreg:V4SI (match_dup 3) 16)
+                                            (const_vector:V4SI [
+                                              (const_int 0)
+                                              (const_int 0)
+                                              (const_int 0)
+                                              (const_int 0)])])
+                           (subreg:V4SI (match_dup 1) 16)
+                           (subreg:V4SI (match_dup 4) 16)))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn_and_split "mulv8si3"
+  [(set (match_operand:V8SI 0 "register_operand" "=r")
+        (mult:V8SI (match_operand:V8SI 1 "register_operand" "r")
+                    (match_operand:V8SI 2 "nonmemory_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V4SI (match_dup 0) 0)
+        (mult:V4SI (subreg:V4SI (match_dup 1) 0)
+                   (subreg:V4SI (match_dup 2) 0)))
+   (set (subreg:V4SI (match_dup 0) 16)
+        (mult:V4SI (subreg:V4SI (match_dup 1) 16)
+                   (subreg:V4SI (match_dup 2) 16)))]
+  ""
+  [(set_attr "type" "mau_auxr")]
 )
 
 
@@ -6481,7 +4001,7 @@
   "reload_completed"
   [(set (match_dup 0)
         (unspec:V4DI [(match_op_dup 1 [(match_dup 2)
-                                       (match_dup 3)])] UNSPEC_COMP))
+                                       (match_dup 3)])] UNSPEC_COMP256))
    (set (match_dup 0)
         (neg:V4DI (match_dup 0)))]
   ""
@@ -6492,7 +4012,7 @@
   [(set (match_operand:V4DI 0 "register_operand" "=r")
         (unspec:V4DI [(match_operator:V4DI 1 "comparison_operator"
                        [(match_operand:V4DI 2 "register_operand" "r")
-                        (match_operand:V4DI 3 "register_operand" "r")])] UNSPEC_COMP))]
+                        (match_operand:V4DI 3 "register_operand" "r")])] UNSPEC_COMP256))]
   ""
   {
     return "compd.%1 %x0 = %x2, %x3\n\tcompd.%1 %y0 = %y2, %y3\n\t"
@@ -7398,7 +4918,7 @@
 
 (define_expand "kvx_abddqs"
   [(set (match_operand:V4DI 0 "register_operand" "")
-        (abs:V4DI (minus:V4DI (unspec:V4DI [(match_operand:DI 2 "nonmemory_operand" "")] UNSPEC_VECDUP)
+        (abs:V4DI (minus:V4DI (unspec:V4DI [(match_operand:DI 2 "nonmemory_operand" "")] UNSPEC_V256)
                               (match_operand:V4DI 1 "register_operand" ""))))]
   ""
   {
@@ -7412,16 +4932,16 @@
 
 (define_insn_and_split "*abddqs"
   [(set (match_operand:V4DI 0 "register_operand" "=r")
-        (abs:V4DI (minus:V4DI (unspec:V4DI [(match_operand:DI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)
+        (abs:V4DI (minus:V4DI (unspec:V4DI [(match_operand:DI 2 "nonmemory_operand" "r")] UNSPEC_V256)
                               (match_operand:V4DI 1 "register_operand" "r"))))]
   ""
   "#"
   "reload_completed"
   [(set (subreg:V2DI (match_dup 0) 0)
-        (abs:V2DI (minus:V2DI (unspec:V2DI [(match_dup 2)] UNSPEC_VECDUP)
+        (abs:V2DI (minus:V2DI (unspec:V2DI [(match_dup 2)] UNSPEC_V128)
                   (subreg:V2DI (match_dup 1) 0))))
    (set (subreg:V2DI (match_dup 0) 16)
-        (abs:V2DI (minus:V2DI (unspec:V2DI [(match_dup 2)] UNSPEC_VECDUP)
+        (abs:V2DI (minus:V2DI (unspec:V2DI [(match_dup 2)] UNSPEC_V128)
                   (subreg:V2DI (match_dup 1) 16))))]
   ""
   [(set_attr "type" "alu_lite_x2")]
@@ -7430,32 +4950,32 @@
 (define_insn_and_split "kvx_addsdqs"
   [(set (match_operand:V4DI 0 "register_operand" "=r")
         (ss_plus:V4DI (match_operand:V4DI 1 "register_operand" "r")
-                      (unspec:V4DI [(match_operand:DI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)))]
+                      (unspec:V4DI [(match_operand:DI 2 "nonmemory_operand" "r")] UNSPEC_V256)))]
   ""
   "#"
   "reload_completed"
   [(set (subreg:V2DI (match_dup 0) 0)
         (ss_plus:V2DI (subreg:V2DI (match_dup 1) 0)
-                      (unspec:V2DI [(match_dup 2)] UNSPEC_VECDUP)))
+                      (unspec:V2DI [(match_dup 2)] UNSPEC_V128)))
    (set (subreg:V2DI (match_dup 0) 16)
         (ss_plus:V2DI (subreg:V2DI (match_dup 1) 16)
-                      (unspec:V2DI [(match_dup 2)] UNSPEC_VECDUP)))]
+                      (unspec:V2DI [(match_dup 2)] UNSPEC_V128)))]
   ""
   [(set_attr "type" "alu_lite_x2")]
 )
 
 (define_insn_and_split "kvx_sbfsdqs"
   [(set (match_operand:V4DI 0 "register_operand" "=r")
-        (ss_minus:V4DI (unspec:V4DI [(match_operand:DI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)
+        (ss_minus:V4DI (unspec:V4DI [(match_operand:DI 2 "nonmemory_operand" "r")] UNSPEC_V256)
                        (match_operand:V4DI 1 "register_operand" "r")))]
   ""
   "#"
   "reload_completed"
   [(set (subreg:V2DI (match_dup 0) 0)
-        (ss_minus:V2DI (unspec:V2DI [(match_dup 2)] UNSPEC_VECDUP)
+        (ss_minus:V2DI (unspec:V2DI [(match_dup 2)] UNSPEC_V128)
                        (subreg:V2DI (match_dup 1) 0)))
    (set (subreg:V2DI (match_dup 0) 16)
-        (ss_minus:V2DI (unspec:V2DI [(match_dup 2)] UNSPEC_VECDUP)
+        (ss_minus:V2DI (unspec:V2DI [(match_dup 2)] UNSPEC_V128)
                        (subreg:V2DI (match_dup 1) 16)))]
   ""
   [(set_attr "type" "alu_lite_x2")]
@@ -7464,7 +4984,7 @@
 (define_insn "kvx_mindqs"
   [(set (match_operand:V4DI 0 "register_operand" "=r")
         (smin:V4DI (match_operand:V4DI 1 "register_operand" "r")
-                   (unspec:V4DI [(match_operand:DI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)))]
+                   (unspec:V4DI [(match_operand:DI 2 "nonmemory_operand" "r")] UNSPEC_V256)))]
   ""
   {
     return "mind %x0 = %x1, %2\n\tmind %y0 = %y1, %2\n\t"
@@ -7477,7 +4997,7 @@
 (define_insn "kvx_maxdqs"
   [(set (match_operand:V4DI 0 "register_operand" "=r")
         (smax:V4DI (match_operand:V4DI 1 "register_operand" "r")
-                   (unspec:V4DI [(match_operand:DI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)))]
+                   (unspec:V4DI [(match_operand:DI 2 "nonmemory_operand" "r")] UNSPEC_V256)))]
   ""
   {
     return "maxd %x0 = %x1, %2\n\tmaxd %y0 = %y1, %2\n\t"
@@ -7490,7 +5010,7 @@
 (define_insn "kvx_minudqs"
   [(set (match_operand:V4DI 0 "register_operand" "=r")
         (umin:V4DI (match_operand:V4DI 1 "register_operand" "r")
-                   (unspec:V4DI [(match_operand:DI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)))]
+                   (unspec:V4DI [(match_operand:DI 2 "nonmemory_operand" "r")] UNSPEC_V256)))]
   ""
   {
     return "minud %x0 = %x1, %2\n\tminud %y0 = %y1, %2\n\t"
@@ -7503,7 +5023,7 @@
 (define_insn "kvx_maxudqs"
   [(set (match_operand:V4DI 0 "register_operand" "=r")
         (umax:V4DI (match_operand:V4DI 1 "register_operand" "r")
-                   (unspec:V4DI [(match_operand:DI 2 "nonmemory_operand" "r")] UNSPEC_VECDUP)))]
+                   (unspec:V4DI [(match_operand:DI 2 "nonmemory_operand" "r")] UNSPEC_V256)))]
   ""
   {
     return "maxud %x0 = %x1, %2\n\tmaxud %y0 = %y1, %2\n\t"
@@ -7514,72 +5034,229 @@
 )
 
 
-;; V2SF
+;; V64F (V4HF/V2SF)
 
-(define_insn "*fcompnwp"
-  [(set (match_operand:V2SI 0 "register_operand" "=r")
-        (match_operator:V2SI 1 "float_comparison_operator"
-         [(match_operand:V2SF 2 "register_operand" "r")
-          (match_operand:V2SF 3 "register_operand" "r")]))]
+(define_insn "*fcompn<suffix>"
+  [(set (match_operand:<MASK> 0 "register_operand" "=r")
+        (match_operator:<MASK> 1 "float_comparison_operator"
+         [(match_operand:V64F 2 "register_operand" "r")
+          (match_operand:V64F 3 "register_operand" "r")]))]
   ""
-  "fcompnwp.%f1 %0 = %2, %3"
+  "fcompn<suffix>.%f1 %0 = %2, %3"
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "*selectfwp"
-  [(set (match_operand:V2SF 0 "register_operand" "=r")
-        (if_then_else:V2SF (match_operator 2 "zero_comparison_operator"
-                                               [(match_operand:V2SI 3 "register_operand" "r")
-                                                (match_operand:V2SI 5 "const_zero_operand" "")])
-                           (match_operand:V2SF 1 "register_operand" "r")
-                           (match_operand:V2SF 4 "register_operand" "0")))]
+(define_insn "*selectf<suffix>"
+  [(set (match_operand:V64F 0 "register_operand" "=r")
+        (if_then_else:V64F (match_operator 2 "zero_comparison_operator"
+                                               [(match_operand:<MASK> 3 "register_operand" "r")
+                                                (match_operand:<MASK> 5 "const_zero_operand" "")])
+                           (match_operand:V64F 1 "register_operand" "r")
+                           (match_operand:V64F 4 "register_operand" "0")))]
   ""
-  "cmovewp.%2z %3? %0 = %1"
+  "cmove<suffix>.%2z %3? %0 = %1"
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "*selectfwp_nez"
-  [(set (match_operand:V2SF 0 "register_operand" "=r")
-        (if_then_else:V2SF (ne (match_operator:V2SI 2 "zero_comparison_operator"
-                                               [(match_operand:V2SI 3 "register_operand" "r")
-                                                (match_operand:V2SI 5 "const_zero_operand" "")])
-                               (match_operand:V2SI 6 "const_zero_operand" ""))
-                           (match_operand:V2SF 1 "register_operand" "r")
-                           (match_operand:V2SF 4 "register_operand" "0")))]
+(define_insn "*selectf<suffix>_nez"
+  [(set (match_operand:V64F 0 "register_operand" "=r")
+        (if_then_else:V64F (ne (match_operator:<MASK> 2 "zero_comparison_operator"
+                                               [(match_operand:<MASK> 3 "register_operand" "r")
+                                                (match_operand:<MASK> 5 "const_zero_operand" "")])
+                               (match_operand:<MASK> 6 "const_zero_operand" ""))
+                           (match_operand:V64F 1 "register_operand" "r")
+                           (match_operand:V64F 4 "register_operand" "0")))]
   ""
-  "cmovewp.%2z %3? %0 = %1"
+  "cmove<suffix>.%2z %3? %0 = %1"
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "kvx_selectfwp"
-  [(set (match_operand:V2SF 0 "register_operand" "=r")
-        (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")
-                      (match_operand:V2SF 2 "register_operand" "0")
-                      (match_operand:V2SI 3 "register_operand" "r")
+(define_insn "kvx_selectf<suffix>"
+  [(set (match_operand:V64F 0 "register_operand" "=r")
+        (unspec:V64F [(match_operand:V64F 1 "register_operand" "r")
+                      (match_operand:V64F 2 "register_operand" "0")
+                      (match_operand:<MASK> 3 "register_operand" "r")
                       (match_operand 4 "" "")] UNSPEC_SELECTFWP))]
   ""
-  "cmovewp%4 %3? %0 = %1"
+  "cmove<suffix>%4 %3? %0 = %1"
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "addv2sf3"
-  [(set (match_operand:V2SF 0 "register_operand" "=r")
-        (plus:V2SF (match_operand:V2SF 1 "register_operand" "r")
-                   (match_operand:V2SF 2 "register_operand" "r")))]
+(define_insn "add<mode>3"
+  [(set (match_operand:V64F 0 "register_operand" "=r")
+        (plus:V64F (match_operand:V64F 1 "register_operand" "r")
+                   (match_operand:V64F 2 "register_operand" "r")))]
   ""
-  "faddwp %0 = %1, %2"
+  "fadd<suffix> %0 = %1, %2"
   [(set_attr "type" "mau_fpu")]
 )
 
-(define_insn "kvx_faddwp"
-  [(set (match_operand:V2SF 0 "register_operand" "=r")
-        (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")
-                      (match_operand:V2SF 2 "register_operand" "r")
+(define_insn "kvx_fadd<suffix>"
+  [(set (match_operand:V64F 0 "register_operand" "=r")
+        (unspec:V64F [(match_operand:V64F 1 "register_operand" "r")
+                      (match_operand:V64F 2 "register_operand" "r")
                       (match_operand 3 "" "")] UNSPEC_FADDWP))]
   ""
-  "faddwp%3 %0 = %1, %2"
+  "fadd<suffix>%3 %0 = %1, %2"
   [(set_attr "type" "mau_fpu")]
 )
+
+(define_insn "sub<mode>3"
+  [(set (match_operand:V64F 0 "register_operand" "=r")
+        (minus:V64F (match_operand:V64F 1 "register_operand" "r")
+                    (match_operand:V64F 2 "register_operand" "r")))]
+  ""
+  "fsbf<suffix> %0 = %2, %1"
+  [(set_attr "type" "mau_fpu")]
+)
+
+(define_insn "kvx_fsbf<suffix>"
+  [(set (match_operand:V64F 0 "register_operand" "=r")
+        (unspec:V64F [(match_operand:V64F 1 "register_operand" "r")
+                      (match_operand:V64F 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FSBFWP))]
+  ""
+  "fsbf<suffix>%3 %0 = %1, %2"
+  [(set_attr "type" "mau_fpu")]
+)
+
+(define_insn "mul<mode>3"
+  [(set (match_operand:V64F 0 "register_operand" "=r")
+        (mult:V64F (match_operand:V64F 1 "register_operand" "r")
+                   (match_operand:V64F 2 "register_operand" "r")))]
+  ""
+  "fmul<suffix> %0 = %1, %2"
+  [(set_attr "type" "mau_fpu")]
+)
+
+(define_insn "kvx_fmul<suffix>"
+  [(set (match_operand:V64F 0 "register_operand" "=r")
+        (unspec:V64F [(match_operand:V64F 1 "register_operand" "r")
+                      (match_operand:V64F 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FMULWP))]
+  ""
+  "fmul<suffix>%3 %0 = %1, %2"
+  [(set_attr "type" "mau_fpu")]
+)
+
+(define_insn "fma<mode>4"
+  [(set (match_operand:V64F 0 "register_operand" "=r")
+        (fma:V64F (match_operand:V64F 1 "register_operand" "r")
+                  (match_operand:V64F 2 "register_operand" "r")
+                  (match_operand:V64F 3 "register_operand" "0")))]
+  ""
+  "ffma<suffix> %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn "kvx_ffma<suffix>"
+  [(set (match_operand:V64F 0 "register_operand" "=r")
+        (unspec:V64F [(match_operand:V64F 1 "register_operand" "r")
+                      (match_operand:V64F 2 "register_operand" "r")
+                      (match_operand:V64F 3 "register_operand" "0")
+                      (match_operand 4 "" "")] UNSPEC_FFMAWP))]
+  ""
+  "ffma<suffix>%4 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn "fnma<mode>4"
+  [(set (match_operand:V64F 0 "register_operand" "=r")
+        (fma:V64F (neg:V64F (match_operand:V64F 1 "register_operand" "r"))
+                  (match_operand:V64F 2 "register_operand" "r")
+                  (match_operand:V64F 3 "register_operand" "0")))]
+  ""
+  "ffms<suffix> %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn "kvx_ffms<suffix>"
+  [(set (match_operand:V64F 0 "register_operand" "=r")
+        (unspec:V64F [(match_operand:V64F 1 "register_operand" "r")
+                      (match_operand:V64F 2 "register_operand" "r")
+                      (match_operand:V64F 3 "register_operand" "0")
+                      (match_operand 4 "" "")] UNSPEC_FFMSWP))]
+  ""
+  "ffms<suffix>%4 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn "fmin<mode>3"
+  [(set (match_operand:V64F 0 "register_operand" "=r")
+        (smin:V64F (match_operand:V64F 1 "register_operand" "r")
+                   (match_operand:V64F 2 "register_operand" "r")))]
+  ""
+  "fmin<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_lite")]
+)
+
+(define_insn "fmax<mode>3"
+  [(set (match_operand:V64F 0 "register_operand" "=r")
+        (smax:V64F (match_operand:V64F 1 "register_operand" "r")
+                   (match_operand:V64F 2 "register_operand" "r")))]
+  ""
+  "fmax<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_lite")]
+)
+
+(define_insn "neg<mode>2"
+  [(set (match_operand:V64F 0 "register_operand" "=r")
+        (neg:V64F (match_operand:V64F 1 "register_operand" "r")))]
+  ""
+  "fneg<suffix> %0 = %1"
+  [(set_attr "type" "alu_lite")]
+)
+
+(define_insn "abs<mode>2"
+  [(set (match_operand:V64F 0 "register_operand" "=r")
+        (abs:V64F (match_operand:V64F 1 "register_operand" "r")))]
+  ""
+  "fabs<suffix> %0 = %1"
+  [(set_attr "type" "alu_lite")]
+)
+
+(define_expand "copysign<mode>3"
+  [(match_operand:V64F 0 "register_operand")
+   (match_operand:V64F 1 "register_operand")
+   (match_operand:V64F 2 "register_operand")]
+  ""
+  {
+    rtx fabs1 = gen_reg_rtx (<MODE>mode);
+    emit_insn (gen_abs<mode>2 (fabs1, operands[1]));
+    rtx fneg1 = gen_reg_rtx (<MODE>mode);
+    emit_insn (gen_neg<mode>2 (fneg1, fabs1));
+    rtx sign2 = gen_reg_rtx (<MASK>mode);
+    convert_move (sign2, operands[2], 0);
+    rtx ltz = gen_rtx_CONST_STRING (VOIDmode, ".ltz");
+    emit_insn (gen_kvx_selectf<suffix> (operands[0], fneg1, fabs1, sign2, ltz));
+    DONE;
+  }
+)
+
+(define_expand "kvx_fmin<suffix>s"
+  [(set (match_operand:V64F 0 "register_operand" "")
+        (smin:V64F (match_operand:V64F 1 "register_operand" "")
+                   (match_operand:V64F 2 "register_operand" "")))]
+  ""
+  {
+    rtx chunk = gen_reg_rtx (<CHUNK>mode);
+    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], <INNER>mode);
+  }
+)
+
+(define_expand "kvx_fmax<suffix>s"
+  [(set (match_operand:V64F 0 "register_operand" "")
+        (smax:V64F (match_operand:V64F 1 "register_operand" "")
+                   (match_operand:V64F 2 "register_operand" "")))]
+  ""
+  {
+    rtx chunk = gen_reg_rtx (<CHUNK>mode);
+    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], <INNER>mode);
+  }
+)
+
+
+;; V2SF
 
 (define_insn "kvx_faddcwc"
   [(set (match_operand:V2SF 0 "register_operand" "=r")
@@ -7591,25 +5268,6 @@
   [(set_attr "type" "mau_fpu")]
 )
 
-(define_insn "subv2sf3"
-  [(set (match_operand:V2SF 0 "register_operand" "=r")
-        (minus:V2SF (match_operand:V2SF 1 "register_operand" "r")
-                    (match_operand:V2SF 2 "register_operand" "r")))]
-  ""
-  "fsbfwp %0 = %2, %1"
-  [(set_attr "type" "mau_fpu")]
-)
-
-(define_insn "kvx_fsbfwp"
-  [(set (match_operand:V2SF 0 "register_operand" "=r")
-        (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")
-                      (match_operand:V2SF 2 "register_operand" "r")
-                      (match_operand 3 "" "")] UNSPEC_FSBFWP))]
-  ""
-  "fsbfwp%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
-)
-
 (define_insn "kvx_fsbfcwc"
   [(set (match_operand:V2SF 0 "register_operand" "=r")
         (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")
@@ -7617,25 +5275,6 @@
                       (match_operand 3 "" "")] UNSPEC_FSBFCWC))]
   ""
   "fsbfcwc%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
-)
-
-(define_insn "mulv2sf3"
-  [(set (match_operand:V2SF 0 "register_operand" "=r")
-        (mult:V2SF (match_operand:V2SF 1 "register_operand" "r")
-                   (match_operand:V2SF 2 "register_operand" "r")))]
-  ""
-  "fmulwp %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
-)
-
-(define_insn "kvx_fmulwp"
-  [(set (match_operand:V2SF 0 "register_operand" "=r")
-        (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")
-                      (match_operand:V2SF 2 "register_operand" "r")
-                      (match_operand 3 "" "")] UNSPEC_FMULWP))]
-  ""
-  "fmulwp%3 %0 = %1, %2"
   [(set_attr "type" "mau_fpu")]
 )
 
@@ -7657,100 +5296,6 @@
   ""
   "fmulcwc%3 %0 = %1, %2"
   [(set_attr "type" "mau_fpu")]
-)
-
-(define_insn "fmav2sf4"
-  [(set (match_operand:V2SF 0 "register_operand" "=r")
-        (fma:V2SF (match_operand:V2SF 1 "register_operand" "r")
-                  (match_operand:V2SF 2 "register_operand" "r")
-                  (match_operand:V2SF 3 "register_operand" "0")))]
-  ""
-  "ffmawp %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
-)
-
-(define_insn "kvx_ffmawp"
-  [(set (match_operand:V2SF 0 "register_operand" "=r")
-        (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")
-                      (match_operand:V2SF 2 "register_operand" "r")
-                      (match_operand:V2SF 3 "register_operand" "0")
-                      (match_operand 4 "" "")] UNSPEC_FFMAWP))]
-  ""
-  "ffmawp%4 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
-)
-
-(define_insn "fnmav2sf4"
-  [(set (match_operand:V2SF 0 "register_operand" "=r")
-        (fma:V2SF (neg:V2SF (match_operand:V2SF 1 "register_operand" "r"))
-                  (match_operand:V2SF 2 "register_operand" "r")
-                  (match_operand:V2SF 3 "register_operand" "0")))]
-  ""
-  "ffmswp %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
-)
-
-(define_insn "kvx_ffmswp"
-  [(set (match_operand:V2SF 0 "register_operand" "=r")
-        (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")
-                      (match_operand:V2SF 2 "register_operand" "r")
-                      (match_operand:V2SF 3 "register_operand" "0")
-                      (match_operand 4 "" "")] UNSPEC_FFMSWP))]
-  ""
-  "ffmswp%4 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
-)
-
-(define_insn "fminv2sf3"
-  [(set (match_operand:V2SF 0 "register_operand" "=r")
-        (smin:V2SF (match_operand:V2SF 1 "register_operand" "r")
-                   (match_operand:V2SF 2 "register_operand" "r")))]
-  ""
-  "fminwp %0 = %1, %2"
-  [(set_attr "type" "alu_lite")]
-)
-
-(define_insn "fmaxv2sf3"
-  [(set (match_operand:V2SF 0 "register_operand" "=r")
-        (smax:V2SF (match_operand:V2SF 1 "register_operand" "r")
-                   (match_operand:V2SF 2 "register_operand" "r")))]
-  ""
-  "fmaxwp %0 = %1, %2"
-  [(set_attr "type" "alu_lite")]
-)
-
-(define_insn "negv2sf2"
-  [(set (match_operand:V2SF 0 "register_operand" "=r")
-        (neg:V2SF (match_operand:V2SF 1 "register_operand" "r")))]
-  ""
-  "fnegwp %0 = %1"
-  [(set_attr "type" "alu_lite")]
-)
-
-(define_insn "absv2sf2"
-  [(set (match_operand:V2SF 0 "register_operand" "=r")
-        (abs:V2SF (match_operand:V2SF 1 "register_operand" "r")))]
-  ""
-  "fabswp %0 = %1"
-  [(set_attr "type" "alu_lite")]
-)
-
-(define_expand "copysignv2sf3"
-  [(match_operand:V2SF 0 "register_operand")
-   (match_operand:V2SF 1 "register_operand")
-   (match_operand:V2SF 2 "register_operand")]
-  ""
-  {
-    rtx fabs1 = gen_reg_rtx (V2SFmode);
-    emit_insn (gen_absv2sf2 (fabs1, operands[1]));
-    rtx fneg1 = gen_reg_rtx (V2SFmode);
-    emit_insn (gen_negv2sf2 (fneg1, fabs1));
-    rtx sign2 = gen_reg_rtx (V2SImode);
-    convert_move (sign2, operands[2], 0);
-    rtx ltz = gen_rtx_CONST_STRING (VOIDmode, ".ltz");
-    emit_insn (gen_kvx_selectfwp (operands[0], fneg1, fabs1, sign2, ltz));
-    DONE;
-  }
 )
 
 (define_insn "floatv2siv2sf2"
@@ -7980,28 +5525,6 @@
   [(set_attr "type" "mau_auxr_fpu")]
 )
 
-(define_expand "kvx_fminwps"
-  [(set (match_operand:V2SF 0 "register_operand" "")
-        (smin:V2SF (match_operand:V2SF 1 "register_operand" "")
-                   (match_operand:V2SF 2 "register_operand" "")))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V2SFmode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], SFmode);
-  }
-)
-
-(define_expand "kvx_fmaxwps"
-  [(set (match_operand:V2SF 0 "register_operand" "")
-        (smax:V2SF (match_operand:V2SF 1 "register_operand" "")
-                   (match_operand:V2SF 2 "register_operand" "")))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V2SFmode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], SFmode);
-  }
-)
-
 (define_insn "kvx_fconjwc"
   [(set (match_operand:V2SF 0 "register_operand" "=r")
         (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")] UNSPEC_FCONJWC))]
@@ -8011,57 +5534,434 @@
 )
 
 
+;; VXSF
+
+(define_expand "div<mode>3"
+  [(set (match_operand:VXSF 0 "register_operand" "")
+        (div:VXSF (match_operand:VXSF 1 "reg_or_float1_operand" "")
+                  (match_operand:VXSF 2 "register_operand" "")))]
+  "flag_reciprocal_math || flag_unsafe_math_optimizations"
+  {
+    rtx rm = gen_rtx_CONST_STRING (VOIDmode, "");
+    rtx rn = gen_rtx_CONST_STRING (VOIDmode, ".rn");
+    rtx a = operands[1], b = operands[2];
+    if (a == CONST1_RTX (<MODE>mode))
+      {
+        emit_insn (gen_kvx_frec<suffix> (operands[0], b, rm));
+      }
+    else if (flag_reciprocal_math)
+      {
+        rtx t = gen_reg_rtx(<MODE>mode);
+        emit_insn (gen_kvx_frec<suffix> (t, b, rm));
+        emit_insn (gen_kvx_fmul<suffix> (operands[0], a, t, rm));
+      }
+    else // (flag_unsafe_math_optimizations)
+      {
+        rtx re = gen_reg_rtx (<MODE>mode);
+        emit_insn (gen_kvx_frec<suffix> (re, b, rn));
+        rtx y0 = gen_reg_rtx (<MODE>mode);
+        emit_insn (gen_kvx_fmul<suffix> (y0, a, re, rn));
+        rtx e0 = gen_reg_rtx (<MODE>mode);
+        emit_insn (gen_kvx_ffms<suffix> (e0, b, y0, a, rn));
+        rtx y1 = gen_reg_rtx (<MODE>mode);
+        emit_insn (gen_kvx_ffma<suffix> (y1, e0, re, y0, rn));
+        rtx e1 = gen_reg_rtx (<MODE>mode);
+        emit_insn (gen_kvx_ffms<suffix> (e1, b, y1, a, rn));
+        rtx y2 = operands[0];
+        emit_insn (gen_kvx_ffma<suffix> (y2, e1, re, y1, rm));
+      }
+    DONE;
+  }
+)
+
+(define_expand "sqrt<mode>2"
+  [(match_operand:VXSF 0 "register_operand" "")
+   (match_operand:VXSF 1 "register_operand" "")]
+  "flag_reciprocal_math"
+  {
+    rtx temp = gen_reg_rtx(<MODE>mode);
+    rtx rm = gen_rtx_CONST_STRING (VOIDmode, "");
+    emit_insn (gen_kvx_frsr<suffix> (temp, operands[1], rm));
+    emit_insn (gen_mul<mode>3 (operands[0], operands[1], temp));
+    DONE;
+  }
+)
+
+(define_expand "recip<mode>2"
+  [(match_operand:VXSF 0 "register_operand" "")
+   (match_operand:VXSF 1 "register_operand" "")]
+  ""
+  {
+    rtx rm = gen_rtx_CONST_STRING (VOIDmode, "");
+    emit_insn (gen_kvx_frec<suffix> (operands[0], operands[1], rm));
+    DONE;
+  }
+)
+
+(define_expand "rsqrt<mode>2"
+  [(match_operand:VXSF 0 "register_operand" "")
+   (match_operand:VXSF 1 "register_operand" "")]
+  ""
+  {
+    rtx rm = gen_rtx_CONST_STRING (VOIDmode, "");
+    emit_insn (gen_kvx_frsr<suffix> (operands[0], operands[1], rm));
+    DONE;
+  }
+)
+
+
+;; V128F (V8HF/V4SF)
+
+(define_insn "*fcompn<suffix>"
+  [(set (match_operand:<MASK> 0 "register_operand" "=r")
+        (match_operator:<MASK> 1 "float_comparison_operator"
+         [(match_operand:V128F 2 "register_operand" "r")
+          (match_operand:V128F 3 "register_operand" "r")]))]
+  ""
+  "fcompn<halfx>.%f1 %x0 = %x2, %x3\n\tfcompn<halfx>.%f1 %y0 = %y2, %y3"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "*selectf<suffix>"
+  [(set (match_operand:V128F 0 "register_operand" "=r")
+        (if_then_else:V128F (match_operator 2 "zero_comparison_operator"
+                                               [(match_operand:<MASK> 3 "register_operand" "r")
+                                                (match_operand:<MASK> 5 "const_zero_operand" "")])
+                            (match_operand:V128F 1 "register_operand" "r")
+                            (match_operand:V128F 4 "register_operand" "0")))]
+  ""
+  "cmove<halfx>.%2z %x3? %x0 = %x1\n\tcmove<halfx>.%2z %y3? %y0 = %y1"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "*selectf<suffix>_nez"
+  [(set (match_operand:V128F 0 "register_operand" "=r")
+        (if_then_else:V128F (ne (match_operator:<MASK> 2 "zero_comparison_operator"
+                                               [(match_operand:<MASK> 3 "register_operand" "r")
+                                                (match_operand:<MASK> 5 "const_zero_operand" "")])
+                                (match_operand:<MASK> 6 "const_zero_operand" ""))
+                            (match_operand:V128F 1 "register_operand" "r")
+                            (match_operand:V128F 4 "register_operand" "0")))]
+  ""
+  "cmove<halfx>.%2z %x3? %x0 = %x1\n\tcmove<halfx>.%2z %y3? %y0 = %y1"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "kvx_selectf<suffix>"
+  [(set (match_operand:V128F 0 "register_operand" "=r")
+        (unspec:V128F [(match_operand:V128F 1 "register_operand" "r")
+                       (match_operand:V128F 2 "register_operand" "0")
+                       (match_operand:<MASK> 3 "register_operand" "r")
+                       (match_operand 4 "" "")] UNSPEC_SELECTFWQ))]
+  ""
+  "cmove<halfx>%4 %x3? %x0 = %x1\n\tcmove<halfx>%4 %y3? %y0 = %y1"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn_and_split "fma<mode>4"
+  [(set (match_operand:V128F 0 "register_operand" "=r")
+        (fma:V128F (match_operand:V128F 1 "register_operand" "r")
+                   (match_operand:V128F 2 "register_operand" "r")
+                   (match_operand:V128F 3 "register_operand" "0")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (fma:<HALF> (subreg:<HALF> (match_dup 1) 0)
+                    (subreg:<HALF> (match_dup 2) 0)
+                    (subreg:<HALF> (match_dup 3) 0)))
+   (set (subreg:<HALF> (match_dup 0) 8)
+        (fma:<HALF> (subreg:<HALF> (match_dup 1) 8)
+                    (subreg:<HALF> (match_dup 2) 8)
+                    (subreg:<HALF> (match_dup 3) 8)))]
+  ""
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn_and_split "kvx_ffma<suffix>"
+  [(set (match_operand:V128F 0 "register_operand" "=r")
+        (unspec:V128F [(match_operand:V128F 1 "register_operand" "r")
+                       (match_operand:V128F 2 "register_operand" "r")
+                       (match_operand:V128F 3 "register_operand" "0")
+                       (match_operand 4 "" "")] UNSPEC_FFMAWQ))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 0)
+                        (subreg:<HALF> (match_dup 2) 0)
+                        (subreg:<HALF> (match_dup 3) 0)
+                        (match_dup 4)] UNSPEC_FFMAWP))
+   (set (subreg:<HALF> (match_dup 0) 8)
+        (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 8)
+                        (subreg:<HALF> (match_dup 2) 8)
+                        (subreg:<HALF> (match_dup 3) 8)
+                        (match_dup 4)] UNSPEC_FFMAWP))]
+  ""
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn_and_split "fnma<mode>4"
+  [(set (match_operand:V128F 0 "register_operand" "=r")
+        (fma:V128F (neg:V128F (match_operand:V128F 1 "register_operand" "r"))
+                   (match_operand:V128F 2 "register_operand" "r")
+                   (match_operand:V128F 3 "register_operand" "0")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (fma:<HALF> (neg:<HALF> (subreg:<HALF> (match_dup 1) 0))
+                    (subreg:<HALF> (match_dup 2) 0)
+                    (subreg:<HALF> (match_dup 3) 0)))
+   (set (subreg:<HALF> (match_dup 0) 8)
+        (fma:<HALF> (neg:<HALF> (subreg:<HALF> (match_dup 1) 8))
+                    (subreg:<HALF> (match_dup 2) 8)
+                    (subreg:<HALF> (match_dup 3) 8)))]
+  ""
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn_and_split "kvx_ffms<suffix>"
+  [(set (match_operand:V128F 0 "register_operand" "=r")
+        (unspec:V128F [(match_operand:V128F 1 "register_operand" "r")
+                       (match_operand:V128F 2 "register_operand" "r")
+                       (match_operand:V128F 3 "register_operand" "0")
+                       (match_operand 4 "" "")] UNSPEC_FFMSWQ))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 0)
+                        (subreg:<HALF> (match_dup 2) 0)
+                        (subreg:<HALF> (match_dup 3) 0)
+                        (match_dup 4)] UNSPEC_FFMSWP))
+   (set (subreg:<HALF> (match_dup 0) 8)
+        (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 8)
+                        (subreg:<HALF> (match_dup 2) 8)
+                        (subreg:<HALF> (match_dup 3) 8)
+                        (match_dup 4)] UNSPEC_FFMSWP))]
+  ""
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn "fmin<mode>3"
+  [(set (match_operand:V128F 0 "register_operand" "=r")
+        (smin:V128F (match_operand:V128F 1 "register_operand" "r")
+                    (match_operand:V128F 2 "register_operand" "r")))]
+  ""
+  "fmin<halfx> %x0 = %x1, %x2\n\tfmin<halfx> %y0 = %y1, %y2"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "fmax<mode>3"
+  [(set (match_operand:V128F 0 "register_operand" "=r")
+        (smax:V128F (match_operand:V128F 1 "register_operand" "r")
+                    (match_operand:V128F 2 "register_operand" "r")))]
+  ""
+  "fmax<halfx> %x0 = %x1, %x2\n\tfmax<halfx> %y0 = %y1, %y2"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "neg<mode>2"
+  [(set (match_operand:V128F 0 "register_operand" "=r")
+        (neg:V128F (match_operand:V128F 1 "register_operand" "r")))]
+  ""
+  "fneg<halfx> %x0 = %x1\n\tfneg<halfx> %y0 = %y1"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "abs<mode>2"
+  [(set (match_operand:V128F 0 "register_operand" "=r")
+        (abs:V128F (match_operand:V128F 1 "register_operand" "r")))]
+  ""
+  "fabs<halfx> %x0 = %x1\n\tfabs<halfx> %y0 = %y1"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_expand "copysign<mode>3"
+  [(match_operand:V128F 0 "register_operand")
+   (match_operand:V128F 1 "register_operand")
+   (match_operand:V128F 2 "register_operand")]
+  ""
+  {
+    rtx fabs1 = gen_reg_rtx (<MODE>mode);
+    emit_insn (gen_abs<mode>2 (fabs1, operands[1]));
+    rtx fneg1 = gen_reg_rtx (<MODE>mode);
+    emit_insn (gen_neg<mode>2 (fneg1, fabs1));
+    rtx sign2 = gen_reg_rtx (<MASK>mode);
+    convert_move (sign2, operands[2], 0);
+    rtx ltz = gen_rtx_CONST_STRING (VOIDmode, ".ltz");
+    emit_insn (gen_kvx_selectf<suffix> (operands[0], fneg1, fabs1, sign2, ltz));
+    DONE;
+  }
+)
+
+(define_expand "kvx_fmin<suffix>s"
+  [(set (match_operand:V128F 0 "register_operand" "")
+        (smin:V128F (match_operand:V128F 1 "register_operand" "")
+                    (match_operand:<CHUNK> 2 "register_operand" "")))]
+  ""
+  {
+    rtx chunk = gen_reg_rtx (<CHUNK>mode);
+    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], <INNER>mode);
+  }
+)
+
+(define_insn "*fmin<suffix>s"
+  [(set (match_operand:V128F 0 "register_operand" "=r")
+        (smin:V128F (match_operand:V128F 1 "register_operand" "r")
+                    (match_operand:<CHUNK> 2 "register_operand" "r")))]
+  ""
+  "fmin<halfx> %x0 = %x1, %2\n\tfmin<halfx> %y0 = %y1, %2"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_expand "kvx_fmax<suffix>s"
+  [(set (match_operand:V128F 0 "register_operand" "")
+        (smax:V128F (match_operand:V128F 1 "register_operand" "")
+                    (match_operand:<CHUNK> 2 "register_operand" "")))]
+  ""
+  {
+    rtx chunk = gen_reg_rtx (<CHUNK>mode);
+    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], <INNER>mode);
+  }
+)
+
+(define_insn "*fmax<suffix>s"
+  [(set (match_operand:V128F 0 "register_operand" "=r")
+        (smax:V128F (match_operand:V128F 1 "register_operand" "r")
+                    (match_operand:<CHUNK> 2 "register_operand" "r")))]
+  ""
+  "fmax<halfx> %x0 = %x1, %2\n\tfmax<halfx> %y0 = %y1, %2"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+
+;; V8HF
+
+(define_expand "addv8hf3"
+  [(set (match_operand:V8HF 0 "register_operand" "")
+        (plus:V8HF (match_operand:V8HF 1 "register_operand" "")
+                   (match_operand:V8HF 2 "register_operand" "")))]
+  ""
+  {
+    rtx opnd0_0 = gen_rtx_SUBREG (V4HFmode, operands[0], 0);
+    rtx opnd1_0 = gen_rtx_SUBREG (V4HFmode, operands[1], 0);
+    rtx opnd2_0 = gen_rtx_SUBREG (V4HFmode, operands[2], 0);
+    emit_insn (gen_addv4hf3 (opnd0_0, opnd1_0, opnd2_0));
+    rtx opnd0_1 = gen_rtx_SUBREG (V4HFmode, operands[0], 8);
+    rtx opnd1_1 = gen_rtx_SUBREG (V4HFmode, operands[1], 8);
+    rtx opnd2_1 = gen_rtx_SUBREG (V4HFmode, operands[2], 8);
+    emit_insn (gen_addv4hf3 (opnd0_1, opnd1_1, opnd2_1));
+    DONE;
+  }
+)
+
+(define_expand "kvx_faddho"
+  [(set (match_operand:V8HF 0 "register_operand" "")
+        (unspec:V8HF [(match_operand:V8HF 1 "register_operand" "")
+                      (match_operand:V8HF 2 "register_operand" "")
+                      (match_operand 3 "" "")] UNSPEC_FADDWQ))]
+  ""
+  {
+    rtx opnd0_0 = gen_rtx_SUBREG (V4HFmode, operands[0], 0);
+    rtx opnd1_0 = gen_rtx_SUBREG (V4HFmode, operands[1], 0);
+    rtx opnd2_0 = gen_rtx_SUBREG (V4HFmode, operands[2], 0);
+    emit_insn (gen_kvx_faddhq (opnd0_0, opnd1_0, opnd2_0, operands[3]));
+    rtx opnd0_1 = gen_rtx_SUBREG (V4HFmode, operands[0], 8);
+    rtx opnd1_1 = gen_rtx_SUBREG (V4HFmode, operands[1], 8);
+    rtx opnd2_1 = gen_rtx_SUBREG (V4HFmode, operands[2], 8);
+    emit_insn (gen_kvx_faddhq (opnd0_1, opnd1_1, opnd2_1, operands[3]));
+    DONE;
+  }
+)
+
+(define_expand "subv8hf3"
+  [(set (match_operand:V8HF 0 "register_operand" "")
+        (minus:V8HF (match_operand:V8HF 1 "register_operand" "")
+                    (match_operand:V8HF 2 "register_operand" "")))]
+  ""
+  {
+    rtx opnd0_0 = gen_rtx_SUBREG (V4HFmode, operands[0], 0);
+    rtx opnd1_0 = gen_rtx_SUBREG (V4HFmode, operands[1], 0);
+    rtx opnd2_0 = gen_rtx_SUBREG (V4HFmode, operands[2], 0);
+    emit_insn (gen_subv4hf3 (opnd0_0, opnd1_0, opnd2_0));
+    rtx opnd0_1 = gen_rtx_SUBREG (V4HFmode, operands[0], 8);
+    rtx opnd1_1 = gen_rtx_SUBREG (V4HFmode, operands[1], 8);
+    rtx opnd2_1 = gen_rtx_SUBREG (V4HFmode, operands[2], 8);
+    emit_insn (gen_subv4hf3 (opnd0_1, opnd1_1, opnd2_1));
+    DONE;
+  }
+)
+
+(define_expand "kvx_fsbfho"
+  [(set (match_operand:V8HF 0 "register_operand" "")
+        (unspec:V8HF [(match_operand:V8HF 1 "register_operand" "")
+                      (match_operand:V8HF 2 "register_operand" "")
+                      (match_operand 3 "" "")] UNSPEC_FSBFWQ))]
+  ""
+  {
+    rtx opnd0_0 = gen_rtx_SUBREG (V4HFmode, operands[0], 0);
+    rtx opnd1_0 = gen_rtx_SUBREG (V4HFmode, operands[1], 0);
+    rtx opnd2_0 = gen_rtx_SUBREG (V4HFmode, operands[2], 0);
+    emit_insn (gen_kvx_fsbfhq (opnd0_0, opnd1_0, opnd2_0, operands[3]));
+    rtx opnd0_1 = gen_rtx_SUBREG (V4HFmode, operands[0], 8);
+    rtx opnd1_1 = gen_rtx_SUBREG (V4HFmode, operands[1], 8);
+    rtx opnd2_1 = gen_rtx_SUBREG (V4HFmode, operands[2], 8);
+    emit_insn (gen_kvx_fsbfhq (opnd0_1, opnd1_1, opnd2_1, operands[3]));
+    DONE;
+  }
+)
+
+(define_expand "mulv8hf3"
+  [(set (match_operand:V8HF 0 "register_operand" "")
+        (mult:V8HF (match_operand:V8HF 1 "register_operand" "")
+                   (match_operand:V8HF 2 "register_operand" "")))]
+  ""
+  {
+    rtx opnd0_0 = gen_rtx_SUBREG (V4HFmode, operands[0], 0);
+    rtx opnd1_0 = gen_rtx_SUBREG (V4HFmode, operands[1], 0);
+    rtx opnd2_0 = gen_rtx_SUBREG (V4HFmode, operands[2], 0);
+    emit_insn (gen_mulv4hf3 (opnd0_0, opnd1_0, opnd2_0));
+    rtx opnd0_1 = gen_rtx_SUBREG (V4HFmode, operands[0], 8);
+    rtx opnd1_1 = gen_rtx_SUBREG (V4HFmode, operands[1], 8);
+    rtx opnd2_1 = gen_rtx_SUBREG (V4HFmode, operands[2], 8);
+    emit_insn (gen_mulv4hf3 (opnd0_1, opnd1_1, opnd2_1));
+    DONE;
+  }
+)
+
+(define_expand "kvx_fmulho"
+  [(set (match_operand:V8HF 0 "register_operand" "")
+        (unspec:V8HF [(match_operand:V8HF 1 "register_operand" "")
+                      (match_operand:V8HF 2 "register_operand" "")
+                      (match_operand 3 "" "")] UNSPEC_FMULWQ))]
+  ""
+  {
+    rtx opnd0_0 = gen_rtx_SUBREG (V4HFmode, operands[0], 0);
+    rtx opnd1_0 = gen_rtx_SUBREG (V4HFmode, operands[1], 0);
+    rtx opnd2_0 = gen_rtx_SUBREG (V4HFmode, operands[2], 0);
+    emit_insn (gen_kvx_fmulhq (opnd0_0, opnd1_0, opnd2_0, operands[3]));
+    rtx opnd0_1 = gen_rtx_SUBREG (V4HFmode, operands[0], 8);
+    rtx opnd1_1 = gen_rtx_SUBREG (V4HFmode, operands[1], 8);
+    rtx opnd2_1 = gen_rtx_SUBREG (V4HFmode, operands[2], 8);
+    emit_insn (gen_kvx_fmulhq (opnd0_1, opnd1_1, opnd2_1, operands[3]));
+    DONE;
+  }
+)
+
+
 ;; V4SF
-
-(define_insn "*fcompnwq"
-  [(set (match_operand:V4SI 0 "register_operand" "=r")
-        (match_operator:V4SI 1 "float_comparison_operator"
-         [(match_operand:V4SF 2 "register_operand" "r")
-          (match_operand:V4SF 3 "register_operand" "r")]))]
-  ""
-  "fcompnwp.%f1 %x0 = %x2, %x3\n\tfcompnwp.%f1 %y0 = %y2, %y3"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*selectfwq"
-  [(set (match_operand:V4SF 0 "register_operand" "=r")
-        (if_then_else:V4SF (match_operator 2 "zero_comparison_operator"
-                                               [(match_operand:V4SI 3 "register_operand" "r")
-                                                (match_operand:V4SI 5 "const_zero_operand" "")])
-                           (match_operand:V4SF 1 "register_operand" "r")
-                           (match_operand:V4SF 4 "register_operand" "0")))]
-  ""
-  "cmovewp.%2z %x3? %x0 = %x1\n\tcmovewp.%2z %y3? %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*selectfwq_nez"
-  [(set (match_operand:V4SF 0 "register_operand" "=r")
-        (if_then_else:V4SF (ne (match_operator:V4SI 2 "zero_comparison_operator"
-                                               [(match_operand:V4SI 3 "register_operand" "r")
-                                                (match_operand:V4SI 5 "const_zero_operand" "")])
-                               (match_operand:V4SI 6 "const_zero_operand" ""))
-                           (match_operand:V4SF 1 "register_operand" "r")
-                           (match_operand:V4SF 4 "register_operand" "0")))]
-  ""
-  "cmovewp.%2z %x3? %x0 = %x1\n\tcmovewp.%2z %y3? %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "kvx_selectfwq"
-  [(set (match_operand:V4SF 0 "register_operand" "=r")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
-                      (match_operand:V4SF 2 "register_operand" "0")
-                      (match_operand:V4SI 3 "register_operand" "r")
-                      (match_operand 4 "" "")] UNSPEC_SELECTFWQ))]
-  ""
-  "cmovewp%4 %x3? %x0 = %x1\n\tcmovewp%4 %y3? %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
 
 (define_insn "addv4sf3"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
@@ -8079,16 +5979,6 @@
                       (match_operand 3 "" "")] UNSPEC_FADDWQ))]
   ""
   "faddwq%3 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
-)
-
-(define_insn "kvx_faddcwcp"
-  [(set (match_operand:V4SF 0 "register_operand" "=r")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
-                      (match_operand:V4SF 2 "register_operand" "r")
-                      (match_operand 3 "" "")] UNSPEC_FADDCWCP))]
-  ""
-  "faddcwcp%3 %0 = %1, %2"
   [(set_attr "type" "mau_auxr_fpu")]
 )
 
@@ -8111,16 +6001,6 @@
   [(set_attr "type" "mau_auxr_fpu")]
 )
 
-(define_insn "kvx_fsbfcwcp"
-  [(set (match_operand:V4SF 0 "register_operand" "=r")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
-                      (match_operand:V4SF 2 "register_operand" "r")
-                      (match_operand 3 "" "")] UNSPEC_FSBFCWCP))]
-  ""
-  "fsbfcwcp%3 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
-)
-
 (define_insn "mulv4sf3"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (mult:V4SF (match_operand:V4SF 1 "register_operand" "r")
@@ -8137,6 +6017,26 @@
                       (match_operand 3 "" "")] UNSPEC_FMULWQ))]
   ""
   "fmulwq%3 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn "kvx_faddcwcp"
+  [(set (match_operand:V4SF 0 "register_operand" "=r")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
+                      (match_operand:V4SF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FADDCWCP))]
+  ""
+  "faddcwcp%3 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn "kvx_fsbfcwcp"
+  [(set (match_operand:V4SF 0 "register_operand" "=r")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
+                      (match_operand:V4SF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FSBFCWCP))]
+  ""
+  "fsbfcwcp%3 %0 = %1, %2"
   [(set_attr "type" "mau_auxr_fpu")]
 )
 
@@ -8178,148 +6078,6 @@
                       (match_dup 3)] UNSPEC_FMULCWC))]
   ""
   [(set_attr "type" "mau_auxr_fpu")]
-)
-
-(define_insn_and_split "fmav4sf4"
-  [(set (match_operand:V4SF 0 "register_operand" "=r")
-        (fma:V4SF (match_operand:V4SF 1 "register_operand" "r")
-                  (match_operand:V4SF 2 "register_operand" "r")
-                  (match_operand:V4SF 3 "register_operand" "0")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V2SF (match_dup 0) 0)
-        (fma:V2SF (subreg:V2SF (match_dup 1) 0)
-                  (subreg:V2SF (match_dup 2) 0)
-                  (subreg:V2SF (match_dup 3) 0)))
-   (set (subreg:V2SF (match_dup 0) 8)
-        (fma:V2SF (subreg:V2SF (match_dup 1) 8)
-                  (subreg:V2SF (match_dup 2) 8)
-                  (subreg:V2SF (match_dup 3) 8)))]
-  ""
-  [(set_attr "type" "mau_auxr_fpu")]
-)
-
-(define_insn_and_split "kvx_ffmawq"
-  [(set (match_operand:V4SF 0 "register_operand" "=r")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
-                      (match_operand:V4SF 2 "register_operand" "r")
-                      (match_operand:V4SF 3 "register_operand" "0")
-                      (match_operand 4 "" "")] UNSPEC_FFMAWQ))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V2SF (match_dup 0) 0)
-        (unspec:V2SF [(subreg:V2SF (match_dup 1) 0)
-                      (subreg:V2SF (match_dup 2) 0)
-                      (subreg:V2SF (match_dup 3) 0)
-                      (match_dup 4)] UNSPEC_FFMAWP))
-   (set (subreg:V2SF (match_dup 0) 8)
-        (unspec:V2SF [(subreg:V2SF (match_dup 1) 8)
-                      (subreg:V2SF (match_dup 2) 8)
-                      (subreg:V2SF (match_dup 3) 8)
-                      (match_dup 4)] UNSPEC_FFMAWP))]
-  ""
-  [(set_attr "type" "mau_auxr_fpu")]
-)
-
-(define_insn_and_split "fnmav4sf4"
-  [(set (match_operand:V4SF 0 "register_operand" "=r")
-        (fma:V4SF (neg:V4SF (match_operand:V4SF 1 "register_operand" "r"))
-                  (match_operand:V4SF 2 "register_operand" "r")
-                  (match_operand:V4SF 3 "register_operand" "0")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V2SF (match_dup 0) 0)
-        (fma:V2SF (neg:V2SF (subreg:V2SF (match_dup 1) 0))
-                  (subreg:V2SF (match_dup 2) 0)
-                  (subreg:V2SF (match_dup 3) 0)))
-   (set (subreg:V2SF (match_dup 0) 8)
-        (fma:V2SF (neg:V2SF (subreg:V2SF (match_dup 1) 8))
-                  (subreg:V2SF (match_dup 2) 8)
-                  (subreg:V2SF (match_dup 3) 8)))]
-  ""
-  [(set_attr "type" "mau_auxr_fpu")]
-)
-
-(define_insn_and_split "kvx_ffmswq"
-  [(set (match_operand:V4SF 0 "register_operand" "=r")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
-                      (match_operand:V4SF 2 "register_operand" "r")
-                      (match_operand:V4SF 3 "register_operand" "0")
-                      (match_operand 4 "" "")] UNSPEC_FFMSWQ))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V2SF (match_dup 0) 0)
-        (unspec:V2SF [(subreg:V2SF (match_dup 1) 0)
-                      (subreg:V2SF (match_dup 2) 0)
-                      (subreg:V2SF (match_dup 3) 0)
-                      (match_dup 4)] UNSPEC_FFMSWP))
-   (set (subreg:V2SF (match_dup 0) 8)
-        (unspec:V2SF [(subreg:V2SF (match_dup 1) 8)
-                      (subreg:V2SF (match_dup 2) 8)
-                      (subreg:V2SF (match_dup 3) 8)
-                      (match_dup 4)] UNSPEC_FFMSWP))]
-  ""
-  [(set_attr "type" "mau_auxr_fpu")]
-)
-
-(define_insn "fminv4sf3"
-  [(set (match_operand:V4SF 0 "register_operand" "=r")
-        (smin:V4SF (match_operand:V4SF 1 "register_operand" "r")
-                   (match_operand:V4SF 2 "register_operand" "r")))]
-  ""
-  "fminwp %x0 = %x1, %x2\n\tfminwp %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "fmaxv4sf3"
-  [(set (match_operand:V4SF 0 "register_operand" "=r")
-        (smax:V4SF (match_operand:V4SF 1 "register_operand" "r")
-                   (match_operand:V4SF 2 "register_operand" "r")))]
-  ""
-  "fmaxwp %x0 = %x1, %x2\n\tfmaxwp %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "negv4sf2"
-  [(set (match_operand:V4SF 0 "register_operand" "=r")
-        (neg:V4SF (match_operand:V4SF 1 "register_operand" "r")))]
-  ""
-  "fnegwp %x0 = %x1\n\tfnegwp %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "absv4sf2"
-  [(set (match_operand:V4SF 0 "register_operand" "=r")
-        (abs:V4SF (match_operand:V4SF 1 "register_operand" "r")))]
-  ""
-  "fabswp %x0 = %x1\n\tfabswp %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_expand "copysignv4sf3"
-  [(match_operand:V4SF 0 "register_operand")
-   (match_operand:V4SF 1 "register_operand")
-   (match_operand:V4SF 2 "register_operand")]
-  ""
-  {
-    rtx fabs1 = gen_reg_rtx (V4SFmode);
-    emit_insn (gen_absv4sf2 (fabs1, operands[1]));
-    rtx fneg1 = gen_reg_rtx (V4SFmode);
-    emit_insn (gen_negv4sf2 (fneg1, fabs1));
-    rtx sign2 = gen_reg_rtx (V4SImode);
-    convert_move (sign2, operands[2], 0);
-    rtx ltz = gen_rtx_CONST_STRING (VOIDmode, ".ltz");
-    emit_insn (gen_kvx_selectfwq (operands[0], fneg1, fabs1, sign2, ltz));
-    DONE;
-  }
 )
 
 (define_insn_and_split "floatv4siv4sf2"
@@ -8560,48 +6318,6 @@
   }
 )
 
-(define_expand "kvx_fminwqs"
-  [(set (match_operand:V4SF 0 "register_operand" "")
-        (smin:V4SF (match_operand:V4SF 1 "register_operand" "")
-                   (match_operand:V2SF 2 "register_operand" "")))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V2SFmode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], SFmode);
-  }
-)
-
-(define_insn "*fminwqs"
-  [(set (match_operand:V4SF 0 "register_operand" "=r")
-        (smin:V4SF (match_operand:V4SF 1 "register_operand" "r")
-                   (match_operand:V2SF 2 "register_operand" "r")))]
-  ""
-  "fminwp %x0 = %x1, %2\n\tfminwp %y0 = %y1, %2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_expand "kvx_fmaxwqs"
-  [(set (match_operand:V4SF 0 "register_operand" "")
-        (smax:V4SF (match_operand:V4SF 1 "register_operand" "")
-                   (match_operand:V2SF 2 "register_operand" "")))]
-  ""
-  {
-    rtx chunk = gen_reg_rtx (V2SFmode);
-    operands[2] = kvx_expand_chunk_splat (chunk, operands[2], SFmode);
-  }
-)
-
-(define_insn "*fmaxwqs"
-  [(set (match_operand:V4SF 0 "register_operand" "=r")
-        (smax:V4SF (match_operand:V4SF 1 "register_operand" "r")
-                   (match_operand:V2SF 2 "register_operand" "r")))]
-  ""
-  "fmaxwp %x0 = %x1, %2\n\tfmaxwp %y0 = %y1, %2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
 (define_insn "kvx_fconjwcp"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")] UNSPEC_FCONJWCP))]
@@ -8612,115 +6328,520 @@
 )
 
 
-;; V8SF
+;; V256F (V16HF/V8SF)
 
-(define_insn_and_split "*fcompnwo"
-  [(set (match_operand:V8SI 0 "register_operand" "=r")
-        (match_operator:V8SI 1 "float_comparison_operator"
-         [(match_operand:V8SF 2 "register_operand" "r")
-          (match_operand:V8SF 3 "register_operand" "r")]))]
+(define_insn_and_split "*fcompn<suffix>"
+  [(set (match_operand:<MASK> 0 "register_operand" "=r")
+        (match_operator:<MASK> 1 "float_comparison_operator"
+         [(match_operand:V256F 2 "register_operand" "r")
+          (match_operand:V256F 3 "register_operand" "r")]))]
   ""
   "#"
   "reload_completed"
-  [(set (subreg:V4SI (match_dup 0) 0)
-        (match_op_dup:V4SI 1
-         [(subreg:V4SF (match_dup 2) 0)
-          (subreg:V4SF (match_dup 3) 0)]))
-   (set (subreg:V4SI (match_dup 0) 16)
-        (match_op_dup:V4SI 1
-         [(subreg:V4SF (match_dup 2) 16)
-          (subreg:V4SF (match_dup 3) 16)]))]
+  [(set (subreg:<HMASK> (match_dup 0) 0)
+        (match_op_dup:<HMASK> 1
+         [(subreg:<HALF> (match_dup 2) 0)
+          (subreg:<HALF> (match_dup 3) 0)]))
+   (set (subreg:<HMASK> (match_dup 0) 16)
+        (match_op_dup:<HMASK> 1
+         [(subreg:<HALF> (match_dup 2) 16)
+          (subreg:<HALF> (match_dup 3) 16)]))]
   ""
   [(set_attr "type" "alu_lite_x2")]
 )
 
-(define_insn_and_split "*selectfwo"
-  [(set (match_operand:V8SF 0 "register_operand" "=r")
-        (if_then_else:V8SF (match_operator 2 "zero_comparison_operator"
-                                             [(match_operand:V8SI 3 "register_operand" "r")
-                                              (match_operand:V8SI 5 "const_zero_operand" "")])
-                           (match_operand:V8SF 1 "register_operand" "r")
-                           (match_operand:V8SF 4 "register_operand" "0")))]
+(define_insn_and_split "*selectf<suffix>"
+  [(set (match_operand:V256F 0 "register_operand" "=r")
+        (if_then_else:V256F (match_operator 2 "zero_comparison_operator"
+                                             [(match_operand:<MASK> 3 "register_operand" "r")
+                                              (match_operand:<MASK> 5 "const_zero_operand" "")])
+                           (match_operand:V256F 1 "register_operand" "r")
+                           (match_operand:V256F 4 "register_operand" "0")))]
   ""
   "#"
   "reload_completed"
-  [(set (subreg:V4SF (match_dup 0) 0)
-        (if_then_else:V4SF (match_op_dup 2 [(subreg:V4SI (match_dup 3) 0)
-                                            (const_vector:V4SI [
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (if_then_else:<HALF> (match_op_dup 2 [(subreg:<HMASK> (match_dup 3) 0)
+                                            (const_vector:<HMASK> [
                                               (const_int 0)
                                               (const_int 0)
                                               (const_int 0)
                                               (const_int 0)])])
-                           (subreg:V4SF (match_dup 1) 0)
-                           (subreg:V4SF (match_dup 4) 0)))
-   (set (subreg:V4SF (match_dup 0) 16)
-        (if_then_else:V4SF (match_op_dup 2 [(subreg:V4SI (match_dup 3) 16)
-                                            (const_vector:V4SI [
+                           (subreg:<HALF> (match_dup 1) 0)
+                           (subreg:<HALF> (match_dup 4) 0)))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (if_then_else:<HALF> (match_op_dup 2 [(subreg:<HMASK> (match_dup 3) 16)
+                                            (const_vector:<HMASK> [
                                               (const_int 0)
                                               (const_int 0)
                                               (const_int 0)
                                               (const_int 0)])])
-                           (subreg:V4SF (match_dup 1) 16)
-                           (subreg:V4SF (match_dup 4) 16)))]
+                           (subreg:<HALF> (match_dup 1) 16)
+                           (subreg:<HALF> (match_dup 4) 16)))]
   ""
   [(set_attr "type" "alu_lite_x2")]
 )
 
-(define_insn_and_split "*selectfwo_nez"
-  [(set (match_operand:V8SF 0 "register_operand" "=r")
-        (if_then_else:V8SF (ne (match_operator:V8SI 2 "zero_comparison_operator"
-                                             [(match_operand:V8SI 3 "register_operand" "r")
-                                              (match_operand:V8SI 5 "const_zero_operand" "")])
-                               (match_operand:V8SI 6 "const_zero_operand" ""))
-                           (match_operand:V8SF 1 "register_operand" "r")
-                           (match_operand:V8SF 4 "register_operand" "0")))]
+(define_insn_and_split "*selectf<suffix>_nez"
+  [(set (match_operand:V256F 0 "register_operand" "=r")
+        (if_then_else:V256F (ne (match_operator:<MASK> 2 "zero_comparison_operator"
+                                             [(match_operand:<MASK> 3 "register_operand" "r")
+                                              (match_operand:<MASK> 5 "const_zero_operand" "")])
+                               (match_operand:<MASK> 6 "const_zero_operand" ""))
+                           (match_operand:V256F 1 "register_operand" "r")
+                           (match_operand:V256F 4 "register_operand" "0")))]
   ""
   "#"
   "reload_completed"
-  [(set (subreg:V4SF (match_dup 0) 0)
-        (if_then_else:V4SF (match_op_dup 2 [(subreg:V4SI (match_dup 3) 0)
-                                            (const_vector:V4SI [
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (if_then_else:<HALF> (match_op_dup 2 [(subreg:<HMASK> (match_dup 3) 0)
+                                            (const_vector:<HMASK> [
                                               (const_int 0)
                                               (const_int 0)
                                               (const_int 0)
                                               (const_int 0)])])
-                           (subreg:V4SF (match_dup 1) 0)
-                           (subreg:V4SF (match_dup 4) 0)))
-   (set (subreg:V4SF (match_dup 0) 16)
-        (if_then_else:V4SF (match_op_dup 2 [(subreg:V4SI (match_dup 3) 16)
-                                            (const_vector:V4SI [
+                           (subreg:<HALF> (match_dup 1) 0)
+                           (subreg:<HALF> (match_dup 4) 0)))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (if_then_else:<HALF> (match_op_dup 2 [(subreg:<HMASK> (match_dup 3) 16)
+                                            (const_vector:<HMASK> [
                                               (const_int 0)
                                               (const_int 0)
                                               (const_int 0)
                                               (const_int 0)])])
-                           (subreg:V4SF (match_dup 1) 16)
-                           (subreg:V4SF (match_dup 4) 16)))]
+                           (subreg:<HALF> (match_dup 1) 16)
+                           (subreg:<HALF> (match_dup 4) 16)))]
   ""
   [(set_attr "type" "alu_lite_x2")]
 )
 
-(define_insn_and_split "kvx_selectfwo"
-  [(set (match_operand:V8SF 0 "register_operand" "=r")
-        (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "r")
-                      (match_operand:V8SF 2 "register_operand" "0")
-                      (match_operand:V8SI 3 "register_operand" "r")
+(define_insn_and_split "kvx_selectf<suffix>"
+  [(set (match_operand:V256F 0 "register_operand" "=r")
+        (unspec:V256F [(match_operand:V256F 1 "register_operand" "r")
+                      (match_operand:V256F 2 "register_operand" "0")
+                      (match_operand:<MASK> 3 "register_operand" "r")
                       (match_operand 4 "" "")] UNSPEC_SELECTFWO))]
   ""
   "#"
   "reload_completed"
-  [(set (subreg:V4SF (match_dup 0) 0)
-        (unspec:V4SF [(subreg:V4SF (match_dup 1) 0)
-                      (subreg:V4SF (match_dup 2) 0)
-                      (subreg:V4SI (match_dup 3) 0)
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 0)
+                      (subreg:<HALF> (match_dup 2) 0)
+                      (subreg:<HMASK> (match_dup 3) 0)
                       (match_dup 4)] UNSPEC_SELECTFWQ))
-   (set (subreg:V4SF (match_dup 0) 16)
-        (unspec:V4SF [(subreg:V4SF (match_dup 1) 16)
-                      (subreg:V4SF (match_dup 2) 16)
-                      (subreg:V4SI (match_dup 3) 16)
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 16)
+                      (subreg:<HALF> (match_dup 2) 16)
+                      (subreg:<HMASK> (match_dup 3) 16)
                       (match_dup 4)] UNSPEC_SELECTFWQ))]
   ""
   [(set_attr "type" "alu_lite_x2")]
 )
+
+(define_insn_and_split "fma<mode>4"
+  [(set (match_operand:V256F 0 "register_operand" "=r")
+        (fma:V256F (match_operand:V256F 1 "register_operand" "r")
+                  (match_operand:V256F 2 "register_operand" "r")
+                  (match_operand:V256F 3 "register_operand" "0")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<CHUNK> (match_dup 0) 0)
+        (fma:<CHUNK> (subreg:<CHUNK> (match_dup 1) 0)
+                  (subreg:<CHUNK> (match_dup 2) 0)
+                  (subreg:<CHUNK> (match_dup 3) 0)))
+   (set (subreg:<CHUNK> (match_dup 0) 8)
+        (fma:<CHUNK> (subreg:<CHUNK> (match_dup 1) 8)
+                  (subreg:<CHUNK> (match_dup 2) 8)
+                  (subreg:<CHUNK> (match_dup 3) 8)))
+   (set (subreg:<CHUNK> (match_dup 0) 16)
+        (fma:<CHUNK> (subreg:<CHUNK> (match_dup 1) 16)
+                  (subreg:<CHUNK> (match_dup 2) 16)
+                  (subreg:<CHUNK> (match_dup 3) 16)))
+   (set (subreg:<CHUNK> (match_dup 0) 24)
+        (fma:<CHUNK> (subreg:<CHUNK> (match_dup 1) 24)
+                  (subreg:<CHUNK> (match_dup 2) 24)
+                  (subreg:<CHUNK> (match_dup 3) 24)))]
+  ""
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn_and_split "kvx_ffma<suffix>"
+  [(set (match_operand:V256F 0 "register_operand" "=r")
+        (unspec:V256F [(match_operand:V256F 1 "register_operand" "r")
+                      (match_operand:V256F 2 "register_operand" "r")
+                      (match_operand:V256F 3 "register_operand" "0")
+                      (match_operand 4 "" "")] UNSPEC_FFMAWO))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<CHUNK> (match_dup 0) 0)
+        (unspec:<CHUNK> [(subreg:<CHUNK> (match_dup 1) 0)
+                      (subreg:<CHUNK> (match_dup 2) 0)
+                      (subreg:<CHUNK> (match_dup 3) 0)
+                      (match_dup 4)] UNSPEC_FFMAWP))
+   (set (subreg:<CHUNK> (match_dup 0) 8)
+        (unspec:<CHUNK> [(subreg:<CHUNK> (match_dup 1) 8)
+                      (subreg:<CHUNK> (match_dup 2) 8)
+                      (subreg:<CHUNK> (match_dup 3) 8)
+                      (match_dup 4)] UNSPEC_FFMAWP))
+   (set (subreg:<CHUNK> (match_dup 0) 16)
+        (unspec:<CHUNK> [(subreg:<CHUNK> (match_dup 1) 16)
+                      (subreg:<CHUNK> (match_dup 2) 16)
+                      (subreg:<CHUNK> (match_dup 3) 16)
+                      (match_dup 4)] UNSPEC_FFMAWP))
+   (set (subreg:<CHUNK> (match_dup 0) 24)
+        (unspec:<CHUNK> [(subreg:<CHUNK> (match_dup 1) 24)
+                      (subreg:<CHUNK> (match_dup 2) 24)
+                      (subreg:<CHUNK> (match_dup 3) 24)
+                      (match_dup 4)] UNSPEC_FFMAWP))]
+  ""
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn_and_split "fnma<mode>4"
+  [(set (match_operand:V256F 0 "register_operand" "=r")
+        (fma:V256F (neg:V256F (match_operand:V256F 1 "register_operand" "r"))
+                  (match_operand:V256F 2 "register_operand" "r")
+                  (match_operand:V256F 3 "register_operand" "0")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<CHUNK> (match_dup 0) 0)
+        (fma:<CHUNK> (neg:<CHUNK> (subreg:<CHUNK> (match_dup 1) 0))
+                  (subreg:<CHUNK> (match_dup 2) 0)
+                  (subreg:<CHUNK> (match_dup 3) 0)))
+   (set (subreg:<CHUNK> (match_dup 0) 8)
+        (fma:<CHUNK> (neg:<CHUNK> (subreg:<CHUNK> (match_dup 1) 8))
+                  (subreg:<CHUNK> (match_dup 2) 8)
+                  (subreg:<CHUNK> (match_dup 3) 8)))
+   (set (subreg:<CHUNK> (match_dup 0) 16)
+        (fma:<CHUNK> (neg:<CHUNK> (subreg:<CHUNK> (match_dup 1) 16))
+                  (subreg:<CHUNK> (match_dup 2) 16)
+                  (subreg:<CHUNK> (match_dup 3) 16)))
+   (set (subreg:<CHUNK> (match_dup 0) 24)
+        (fma:<CHUNK> (neg:<CHUNK> (subreg:<CHUNK> (match_dup 1) 24))
+                  (subreg:<CHUNK> (match_dup 2) 24)
+                  (subreg:<CHUNK> (match_dup 3) 24)))]
+  ""
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn_and_split "kvx_ffms<suffix>"
+  [(set (match_operand:V256F 0 "register_operand" "=r")
+        (unspec:V256F [(match_operand:V256F 1 "register_operand" "r")
+                      (match_operand:V256F 2 "register_operand" "r")
+                      (match_operand:V256F 3 "register_operand" "0")
+                      (match_operand 4 "" "")] UNSPEC_FFMSWO))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<CHUNK> (match_dup 0) 0)
+        (unspec:<CHUNK> [(subreg:<CHUNK> (match_dup 1) 0)
+                      (subreg:<CHUNK> (match_dup 2) 0)
+                      (subreg:<CHUNK> (match_dup 3) 0)
+                      (match_dup 4)] UNSPEC_FFMSWP))
+   (set (subreg:<CHUNK> (match_dup 0) 8)
+        (unspec:<CHUNK> [(subreg:<CHUNK> (match_dup 1) 8)
+                      (subreg:<CHUNK> (match_dup 2) 8)
+                      (subreg:<CHUNK> (match_dup 3) 8)
+                      (match_dup 4)] UNSPEC_FFMSWP))
+   (set (subreg:<CHUNK> (match_dup 0) 16)
+        (unspec:<CHUNK> [(subreg:<CHUNK> (match_dup 1) 16)
+                      (subreg:<CHUNK> (match_dup 2) 16)
+                      (subreg:<CHUNK> (match_dup 3) 16)
+                      (match_dup 4)] UNSPEC_FFMSWP))
+   (set (subreg:<CHUNK> (match_dup 0) 24)
+        (unspec:<CHUNK> [(subreg:<CHUNK> (match_dup 1) 24)
+                      (subreg:<CHUNK> (match_dup 2) 24)
+                      (subreg:<CHUNK> (match_dup 3) 24)
+                      (match_dup 4)] UNSPEC_FFMSWP))]
+  ""
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn_and_split "fmin<mode>3"
+  [(set (match_operand:V256F 0 "register_operand" "=r")
+        (smin:V256F (match_operand:V256F 1 "register_operand" "r")
+                   (match_operand:V256F 2 "register_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (smin:<HALF> (subreg:<HALF> (match_dup 1) 0)
+                   (subreg:<HALF> (match_dup 2) 0)))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (smin:<HALF> (subreg:<HALF> (match_dup 1) 16)
+                   (subreg:<HALF> (match_dup 2) 16)))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn_and_split "fmax<mode>3"
+  [(set (match_operand:V256F 0 "register_operand" "=r")
+        (smax:V256F (match_operand:V256F 1 "register_operand" "r")
+                   (match_operand:V256F 2 "register_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (smax:<HALF> (subreg:<HALF> (match_dup 1) 0)
+                   (subreg:<HALF> (match_dup 2) 0)))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (smax:<HALF> (subreg:<HALF> (match_dup 1) 16)
+                   (subreg:<HALF> (match_dup 2) 16)))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn_and_split "neg<mode>2"
+  [(set (match_operand:V256F 0 "register_operand" "=r")
+        (neg:V256F (match_operand:V256F 1 "register_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (neg:<HALF> (subreg:<HALF> (match_dup 1) 0)))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (neg:<HALF> (subreg:<HALF> (match_dup 1) 16)))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn_and_split "abs<mode>2"
+  [(set (match_operand:V256F 0 "register_operand" "=r")
+        (abs:V256F (match_operand:V256F 1 "register_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (abs:<HALF> (subreg:<HALF> (match_dup 1) 0)))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (abs:<HALF> (subreg:<HALF> (match_dup 1) 16)))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_expand "copysign<mode>3"
+  [(match_operand:V256F 0 "register_operand")
+   (match_operand:V256F 1 "register_operand")
+   (match_operand:V256F 2 "register_operand")]
+  ""
+  {
+    rtx opnd0_lo = gen_rtx_SUBREG (<HALF>mode, operands[0], 0);
+    rtx opnd0_hi = gen_rtx_SUBREG (<HALF>mode, operands[0], 16);
+    rtx opnd1_lo = gen_rtx_SUBREG (<HALF>mode, operands[1], 0);
+    rtx opnd1_hi = gen_rtx_SUBREG (<HALF>mode, operands[1], 16);
+    rtx opnd2_lo = gen_rtx_SUBREG (<HALF>mode, operands[2], 0);
+    rtx opnd2_hi = gen_rtx_SUBREG (<HALF>mode, operands[2], 16);
+    emit_insn (gen_copysign<half>3 (opnd0_lo, opnd1_lo, opnd2_lo));
+    emit_insn (gen_copysign<half>3 (opnd0_hi, opnd1_hi, opnd2_hi));
+    DONE;
+  }
+)
+
+(define_expand "kvx_fmin<suffix>s"
+  [(match_operand:V256F 0 "register_operand" "")
+   (match_operand:V256F 1 "register_operand" "")
+   (match_operand:<INNER> 2 "register_operand" "")]
+  ""
+  {
+    rtx opnd0_0 = gen_rtx_SUBREG (<CHUNK>mode, operands[0], 0);
+    rtx opnd1_0 = gen_rtx_SUBREG (<CHUNK>mode, operands[1], 0);
+    emit_insn (gen_kvx_fmin<chunkx>s (opnd0_0, opnd1_0, operands[2]));
+    rtx opnd0_1 = gen_rtx_SUBREG (<CHUNK>mode, operands[0], 8);
+    rtx opnd1_1 = gen_rtx_SUBREG (<CHUNK>mode, operands[1], 8);
+    emit_insn (gen_kvx_fmin<chunkx>s (opnd0_1, opnd1_1, operands[2]));
+    rtx opnd0_2 = gen_rtx_SUBREG (<CHUNK>mode, operands[0], 16);
+    rtx opnd1_2 = gen_rtx_SUBREG (<CHUNK>mode, operands[1], 16);
+    emit_insn (gen_kvx_fmin<chunkx>s (opnd0_2, opnd1_2, operands[2]));
+    rtx opnd0_3 = gen_rtx_SUBREG (<CHUNK>mode, operands[0], 24);
+    rtx opnd1_3 = gen_rtx_SUBREG (<CHUNK>mode, operands[1], 24);
+    emit_insn (gen_kvx_fmin<chunkx>s (opnd0_3, opnd1_3, operands[2]));
+    DONE;
+  }
+)
+
+(define_expand "kvx_fmax<suffix>s"
+  [(match_operand:V256F 0 "register_operand" "")
+   (match_operand:V256F 1 "register_operand" "")
+   (match_operand:<INNER> 2 "register_operand" "")]
+  ""
+  {
+    rtx opnd0_0 = gen_rtx_SUBREG (<CHUNK>mode, operands[0], 0);
+    rtx opnd1_0 = gen_rtx_SUBREG (<CHUNK>mode, operands[1], 0);
+    emit_insn (gen_kvx_fmax<chunkx>s (opnd0_0, opnd1_0, operands[2]));
+    rtx opnd0_1 = gen_rtx_SUBREG (<CHUNK>mode, operands[0], 8);
+    rtx opnd1_1 = gen_rtx_SUBREG (<CHUNK>mode, operands[1], 8);
+    emit_insn (gen_kvx_fmax<chunkx>s (opnd0_1, opnd1_1, operands[2]));
+    rtx opnd0_2 = gen_rtx_SUBREG (<CHUNK>mode, operands[0], 16);
+    rtx opnd1_2 = gen_rtx_SUBREG (<CHUNK>mode, operands[1], 16);
+    emit_insn (gen_kvx_fmax<chunkx>s (opnd0_2, opnd1_2, operands[2]));
+    rtx opnd0_3 = gen_rtx_SUBREG (<CHUNK>mode, operands[0], 24);
+    rtx opnd1_3 = gen_rtx_SUBREG (<CHUNK>mode, operands[1], 24);
+    emit_insn (gen_kvx_fmax<chunkx>s (opnd0_3, opnd1_3, operands[2]));
+    DONE;
+  }
+)
+
+
+;; V16HF
+
+(define_insn_and_split "addv16hf3"
+  [(set (match_operand:V16HF 0 "register_operand" "=r")
+        (plus:V16HF (match_operand:V16HF 1 "register_operand" "r")
+                   (match_operand:V16HF 2 "register_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V4HF (match_dup 0) 0)
+        (plus:V4HF (subreg:V4HF (match_dup 1) 0)
+                   (subreg:V4HF (match_dup 2) 0)))
+   (set (subreg:V4HF (match_dup 0) 8)
+        (plus:V4HF (subreg:V4HF (match_dup 1) 8)
+                   (subreg:V4HF (match_dup 2) 8)))
+   (set (subreg:V4HF (match_dup 0) 16)
+        (plus:V4HF (subreg:V4HF (match_dup 1) 16)
+                   (subreg:V4HF (match_dup 2) 16)))
+   (set (subreg:V4HF (match_dup 0) 24)
+        (plus:V4HF (subreg:V4HF (match_dup 1) 24)
+                   (subreg:V4HF (match_dup 2) 24)))]
+  ""
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn_and_split "kvx_faddhx"
+  [(set (match_operand:V16HF 0 "register_operand" "=r")
+        (unspec:V16HF [(match_operand:V16HF 1 "register_operand" "r")
+                      (match_operand:V16HF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FADDWO))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V4HF (match_dup 0) 0)
+        (unspec:V4HF [(subreg:V4HF (match_dup 1) 0)
+                      (subreg:V4HF (match_dup 2) 0)
+                      (match_dup 3)] UNSPEC_FADDWP))
+   (set (subreg:V4HF (match_dup 0) 8)
+        (unspec:V4HF [(subreg:V4HF (match_dup 1) 8)
+                      (subreg:V4HF (match_dup 2) 8)
+                      (match_dup 3)] UNSPEC_FADDWP))
+   (set (subreg:V4HF (match_dup 0) 16)
+        (unspec:V4HF [(subreg:V4HF (match_dup 1) 16)
+                      (subreg:V4HF (match_dup 2) 16)
+                      (match_dup 3)] UNSPEC_FADDWP))
+   (set (subreg:V4HF (match_dup 0) 24)
+        (unspec:V4HF [(subreg:V4HF (match_dup 1) 24)
+                      (subreg:V4HF (match_dup 2) 24)
+                      (match_dup 3)] UNSPEC_FADDWP))]
+  ""
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn_and_split "subv16hf3"
+  [(set (match_operand:V16HF 0 "register_operand" "=r")
+        (minus:V16HF (match_operand:V16HF 1 "register_operand" "r")
+                    (match_operand:V16HF 2 "register_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V4HF (match_dup 0) 0)
+        (minus:V4HF (subreg:V4HF (match_dup 1) 0)
+                    (subreg:V4HF (match_dup 2) 0)))
+   (set (subreg:V4HF (match_dup 0) 8)
+        (minus:V4HF (subreg:V4HF (match_dup 1) 8)
+                    (subreg:V4HF (match_dup 2) 8)))
+   (set (subreg:V4HF (match_dup 0) 16)
+        (minus:V4HF (subreg:V4HF (match_dup 1) 16)
+                    (subreg:V4HF (match_dup 2) 16)))
+   (set (subreg:V4HF (match_dup 0) 24)
+        (minus:V4HF (subreg:V4HF (match_dup 1) 24)
+                    (subreg:V4HF (match_dup 2) 24)))]
+  ""
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn_and_split "kvx_fsbfhx"
+  [(set (match_operand:V16HF 0 "register_operand" "=r")
+        (unspec:V16HF [(match_operand:V16HF 1 "register_operand" "r")
+                      (match_operand:V16HF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FSBFWO))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V4HF (match_dup 0) 0)
+        (unspec:V4HF [(subreg:V4HF (match_dup 1) 0)
+                      (subreg:V4HF (match_dup 2) 0)
+                      (match_dup 3)] UNSPEC_FSBFWP))
+   (set (subreg:V4HF (match_dup 0) 8)
+        (unspec:V4HF [(subreg:V4HF (match_dup 1) 8)
+                      (subreg:V4HF (match_dup 2) 8)
+                      (match_dup 3)] UNSPEC_FSBFWP))
+   (set (subreg:V4HF (match_dup 0) 16)
+        (unspec:V4HF [(subreg:V4HF (match_dup 1) 16)
+                      (subreg:V4HF (match_dup 2) 16)
+                      (match_dup 3)] UNSPEC_FSBFWP))
+   (set (subreg:V4HF (match_dup 0) 24)
+        (unspec:V4HF [(subreg:V4HF (match_dup 1) 24)
+                      (subreg:V4HF (match_dup 2) 24)
+                      (match_dup 3)] UNSPEC_FSBFWP))]
+  ""
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn_and_split "mulv16hf3"
+  [(set (match_operand:V16HF 0 "register_operand" "=r")
+        (mult:V16HF (match_operand:V16HF 1 "register_operand" "r")
+                   (match_operand:V16HF 2 "register_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V4HF (match_dup 0) 0)
+        (mult:V4HF (subreg:V4HF (match_dup 1) 0)
+                   (subreg:V4HF (match_dup 2) 0)))
+   (set (subreg:V4HF (match_dup 0) 8)
+        (mult:V4HF (subreg:V4HF (match_dup 1) 8)
+                   (subreg:V4HF (match_dup 2) 8)))
+   (set (subreg:V4HF (match_dup 0) 16)
+        (mult:V4HF (subreg:V4HF (match_dup 1) 16)
+                   (subreg:V4HF (match_dup 2) 16)))
+   (set (subreg:V4HF (match_dup 0) 24)
+        (mult:V4HF (subreg:V4HF (match_dup 1) 24)
+                   (subreg:V4HF (match_dup 2) 24)))]
+  ""
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn_and_split "kvx_fmulhx"
+  [(set (match_operand:V16HF 0 "register_operand" "=r")
+        (unspec:V16HF [(match_operand:V16HF 1 "register_operand" "r")
+                      (match_operand:V16HF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FMULWO))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V4HF (match_dup 0) 0)
+        (unspec:V4HF [(subreg:V4HF (match_dup 1) 0)
+                      (subreg:V4HF (match_dup 2) 0)
+                      (match_dup 3)] UNSPEC_FMULWP))
+   (set (subreg:V4HF (match_dup 0) 16)
+        (unspec:V4HF [(subreg:V4HF (match_dup 1) 16)
+                      (subreg:V4HF (match_dup 2) 16)
+                      (match_dup 3)] UNSPEC_FMULWP))
+   (set (subreg:V4HF (match_dup 0) 16)
+        (unspec:V4HF [(subreg:V4HF (match_dup 1) 16)
+                      (subreg:V4HF (match_dup 2) 16)
+                      (match_dup 3)] UNSPEC_FMULWP))
+   (set (subreg:V4HF (match_dup 0) 16)
+        (unspec:V4HF [(subreg:V4HF (match_dup 1) 16)
+                      (subreg:V4HF (match_dup 2) 16)
+                      (match_dup 3)] UNSPEC_FMULWP))]
+  ""
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+
+;; V8SF
 
 (define_insn_and_split "addv8sf3"
   [(set (match_operand:V8SF 0 "register_operand" "=r")
@@ -8755,26 +6876,6 @@
         (unspec:V4SF [(subreg:V4SF (match_dup 1) 16)
                       (subreg:V4SF (match_dup 2) 16)
                       (match_dup 3)] UNSPEC_FADDWQ))]
-  ""
-  [(set_attr "type" "mau_auxr_fpu")]
-)
-
-(define_insn_and_split "kvx_faddcwcq"
-  [(set (match_operand:V8SF 0 "register_operand" "=r")
-        (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "r")
-                      (match_operand:V8SF 2 "register_operand" "r")
-                      (match_operand 3 "" "")] UNSPEC_FADDCWCQ))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SF (match_dup 0) 0)
-        (unspec:V4SF [(subreg:V4SF (match_dup 1) 0)
-                      (subreg:V4SF (match_dup 2) 0)
-                      (match_dup 3)] UNSPEC_FADDCWCP))
-   (set (subreg:V4SF (match_dup 0) 16)
-        (unspec:V4SF [(subreg:V4SF (match_dup 1) 16)
-                      (subreg:V4SF (match_dup 2) 16)
-                      (match_dup 3)] UNSPEC_FADDCWCP))]
   ""
   [(set_attr "type" "mau_auxr_fpu")]
 )
@@ -8816,26 +6917,6 @@
   [(set_attr "type" "mau_auxr_fpu")]
 )
 
-(define_insn_and_split "kvx_fsbfcwcq"
-  [(set (match_operand:V8SF 0 "register_operand" "=r")
-        (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "r")
-                      (match_operand:V8SF 2 "register_operand" "r")
-                      (match_operand 3 "" "")] UNSPEC_FSBFCWCQ))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SF (match_dup 0) 0)
-        (unspec:V4SF [(subreg:V4SF (match_dup 1) 0)
-                      (subreg:V4SF (match_dup 2) 0)
-                      (match_dup 3)] UNSPEC_FSBFCWCP))
-   (set (subreg:V4SF (match_dup 0) 16)
-        (unspec:V4SF [(subreg:V4SF (match_dup 1) 16)
-                      (subreg:V4SF (match_dup 2) 16)
-                      (match_dup 3)] UNSPEC_FSBFCWCP))]
-  ""
-  [(set_attr "type" "mau_auxr_fpu")]
-)
-
 (define_insn_and_split "mulv8sf3"
   [(set (match_operand:V8SF 0 "register_operand" "=r")
         (mult:V8SF (match_operand:V8SF 1 "register_operand" "r")
@@ -8869,6 +6950,46 @@
         (unspec:V4SF [(subreg:V4SF (match_dup 1) 16)
                       (subreg:V4SF (match_dup 2) 16)
                       (match_dup 3)] UNSPEC_FMULWQ))]
+  ""
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn_and_split "kvx_faddcwcq"
+  [(set (match_operand:V8SF 0 "register_operand" "=r")
+        (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "r")
+                      (match_operand:V8SF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FADDCWCQ))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V4SF (match_dup 0) 0)
+        (unspec:V4SF [(subreg:V4SF (match_dup 1) 0)
+                      (subreg:V4SF (match_dup 2) 0)
+                      (match_dup 3)] UNSPEC_FADDCWCP))
+   (set (subreg:V4SF (match_dup 0) 16)
+        (unspec:V4SF [(subreg:V4SF (match_dup 1) 16)
+                      (subreg:V4SF (match_dup 2) 16)
+                      (match_dup 3)] UNSPEC_FADDCWCP))]
+  ""
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn_and_split "kvx_fsbfcwcq"
+  [(set (match_operand:V8SF 0 "register_operand" "=r")
+        (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "r")
+                      (match_operand:V8SF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FSBFCWCQ))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V4SF (match_dup 0) 0)
+        (unspec:V4SF [(subreg:V4SF (match_dup 1) 0)
+                      (subreg:V4SF (match_dup 2) 0)
+                      (match_dup 3)] UNSPEC_FSBFCWCP))
+   (set (subreg:V4SF (match_dup 0) 16)
+        (unspec:V4SF [(subreg:V4SF (match_dup 1) 16)
+                      (subreg:V4SF (match_dup 2) 16)
+                      (match_dup 3)] UNSPEC_FSBFCWCP))]
   ""
   [(set_attr "type" "mau_auxr_fpu")]
 )
@@ -8927,208 +7048,6 @@
                       (match_dup 3)] UNSPEC_FMULCWC))]
   ""
   [(set_attr "type" "mau_auxr_fpu")]
-)
-
-(define_insn_and_split "fmav8sf4"
-  [(set (match_operand:V8SF 0 "register_operand" "=r")
-        (fma:V8SF (match_operand:V8SF 1 "register_operand" "r")
-                  (match_operand:V8SF 2 "register_operand" "r")
-                  (match_operand:V8SF 3 "register_operand" "0")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V2SF (match_dup 0) 0)
-        (fma:V2SF (subreg:V2SF (match_dup 1) 0)
-                  (subreg:V2SF (match_dup 2) 0)
-                  (subreg:V2SF (match_dup 3) 0)))
-   (set (subreg:V2SF (match_dup 0) 8)
-        (fma:V2SF (subreg:V2SF (match_dup 1) 8)
-                  (subreg:V2SF (match_dup 2) 8)
-                  (subreg:V2SF (match_dup 3) 8)))
-   (set (subreg:V2SF (match_dup 0) 16)
-        (fma:V2SF (subreg:V2SF (match_dup 1) 16)
-                  (subreg:V2SF (match_dup 2) 16)
-                  (subreg:V2SF (match_dup 3) 16)))
-   (set (subreg:V2SF (match_dup 0) 24)
-        (fma:V2SF (subreg:V2SF (match_dup 1) 24)
-                  (subreg:V2SF (match_dup 2) 24)
-                  (subreg:V2SF (match_dup 3) 24)))]
-  ""
-  [(set_attr "type" "mau_auxr_fpu")]
-)
-
-(define_insn_and_split "kvx_ffmawo"
-  [(set (match_operand:V8SF 0 "register_operand" "=r")
-        (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "r")
-                      (match_operand:V8SF 2 "register_operand" "r")
-                      (match_operand:V8SF 3 "register_operand" "0")
-                      (match_operand 4 "" "")] UNSPEC_FFMAWO))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V2SF (match_dup 0) 0)
-        (unspec:V2SF [(subreg:V2SF (match_dup 1) 0)
-                      (subreg:V2SF (match_dup 2) 0)
-                      (subreg:V2SF (match_dup 3) 0)
-                      (match_dup 4)] UNSPEC_FFMAWP))
-   (set (subreg:V2SF (match_dup 0) 8)
-        (unspec:V2SF [(subreg:V2SF (match_dup 1) 8)
-                      (subreg:V2SF (match_dup 2) 8)
-                      (subreg:V2SF (match_dup 3) 8)
-                      (match_dup 4)] UNSPEC_FFMAWP))
-   (set (subreg:V2SF (match_dup 0) 16)
-        (unspec:V2SF [(subreg:V2SF (match_dup 1) 16)
-                      (subreg:V2SF (match_dup 2) 16)
-                      (subreg:V2SF (match_dup 3) 16)
-                      (match_dup 4)] UNSPEC_FFMAWP))
-   (set (subreg:V2SF (match_dup 0) 24)
-        (unspec:V2SF [(subreg:V2SF (match_dup 1) 24)
-                      (subreg:V2SF (match_dup 2) 24)
-                      (subreg:V2SF (match_dup 3) 24)
-                      (match_dup 4)] UNSPEC_FFMAWP))]
-  ""
-  [(set_attr "type" "mau_auxr_fpu")]
-)
-
-(define_insn_and_split "fnmav8sf4"
-  [(set (match_operand:V8SF 0 "register_operand" "=r")
-        (fma:V8SF (neg:V8SF (match_operand:V8SF 1 "register_operand" "r"))
-                  (match_operand:V8SF 2 "register_operand" "r")
-                  (match_operand:V8SF 3 "register_operand" "0")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V2SF (match_dup 0) 0)
-        (fma:V2SF (neg:V2SF (subreg:V2SF (match_dup 1) 0))
-                  (subreg:V2SF (match_dup 2) 0)
-                  (subreg:V2SF (match_dup 3) 0)))
-   (set (subreg:V2SF (match_dup 0) 8)
-        (fma:V2SF (neg:V2SF (subreg:V2SF (match_dup 1) 8))
-                  (subreg:V2SF (match_dup 2) 8)
-                  (subreg:V2SF (match_dup 3) 8)))
-   (set (subreg:V2SF (match_dup 0) 16)
-        (fma:V2SF (neg:V2SF (subreg:V2SF (match_dup 1) 16))
-                  (subreg:V2SF (match_dup 2) 16)
-                  (subreg:V2SF (match_dup 3) 16)))
-   (set (subreg:V2SF (match_dup 0) 24)
-        (fma:V2SF (neg:V2SF (subreg:V2SF (match_dup 1) 24))
-                  (subreg:V2SF (match_dup 2) 24)
-                  (subreg:V2SF (match_dup 3) 24)))]
-  ""
-  [(set_attr "type" "mau_auxr_fpu")]
-)
-
-(define_insn_and_split "kvx_ffmswo"
-  [(set (match_operand:V8SF 0 "register_operand" "=r")
-        (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "r")
-                      (match_operand:V8SF 2 "register_operand" "r")
-                      (match_operand:V8SF 3 "register_operand" "0")
-                      (match_operand 4 "" "")] UNSPEC_FFMSWO))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V2SF (match_dup 0) 0)
-        (unspec:V2SF [(subreg:V2SF (match_dup 1) 0)
-                      (subreg:V2SF (match_dup 2) 0)
-                      (subreg:V2SF (match_dup 3) 0)
-                      (match_dup 4)] UNSPEC_FFMSWP))
-   (set (subreg:V2SF (match_dup 0) 8)
-        (unspec:V2SF [(subreg:V2SF (match_dup 1) 8)
-                      (subreg:V2SF (match_dup 2) 8)
-                      (subreg:V2SF (match_dup 3) 8)
-                      (match_dup 4)] UNSPEC_FFMSWP))
-   (set (subreg:V2SF (match_dup 0) 16)
-        (unspec:V2SF [(subreg:V2SF (match_dup 1) 16)
-                      (subreg:V2SF (match_dup 2) 16)
-                      (subreg:V2SF (match_dup 3) 16)
-                      (match_dup 4)] UNSPEC_FFMSWP))
-   (set (subreg:V2SF (match_dup 0) 24)
-        (unspec:V2SF [(subreg:V2SF (match_dup 1) 24)
-                      (subreg:V2SF (match_dup 2) 24)
-                      (subreg:V2SF (match_dup 3) 24)
-                      (match_dup 4)] UNSPEC_FFMSWP))]
-  ""
-  [(set_attr "type" "mau_auxr_fpu")]
-)
-
-(define_insn_and_split "fminv8sf3"
-  [(set (match_operand:V8SF 0 "register_operand" "=r")
-        (smin:V8SF (match_operand:V8SF 1 "register_operand" "r")
-                   (match_operand:V8SF 2 "register_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SF (match_dup 0) 0)
-        (smin:V4SF (subreg:V4SF (match_dup 1) 0)
-                   (subreg:V4SF (match_dup 2) 0)))
-   (set (subreg:V4SF (match_dup 0) 16)
-        (smin:V4SF (subreg:V4SF (match_dup 1) 16)
-                   (subreg:V4SF (match_dup 2) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "fmaxv8sf3"
-  [(set (match_operand:V8SF 0 "register_operand" "=r")
-        (smax:V8SF (match_operand:V8SF 1 "register_operand" "r")
-                   (match_operand:V8SF 2 "register_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SF (match_dup 0) 0)
-        (smax:V4SF (subreg:V4SF (match_dup 1) 0)
-                   (subreg:V4SF (match_dup 2) 0)))
-   (set (subreg:V4SF (match_dup 0) 16)
-        (smax:V4SF (subreg:V4SF (match_dup 1) 16)
-                   (subreg:V4SF (match_dup 2) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "negv8sf2"
-  [(set (match_operand:V8SF 0 "register_operand" "=r")
-        (neg:V8SF (match_operand:V8SF 1 "register_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SF (match_dup 0) 0)
-        (neg:V4SF (subreg:V4SF (match_dup 1) 0)))
-   (set (subreg:V4SF (match_dup 0) 16)
-        (neg:V4SF (subreg:V4SF (match_dup 1) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "absv8sf2"
-  [(set (match_operand:V8SF 0 "register_operand" "=r")
-        (abs:V8SF (match_operand:V8SF 1 "register_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V4SF (match_dup 0) 0)
-        (abs:V4SF (subreg:V4SF (match_dup 1) 0)))
-   (set (subreg:V4SF (match_dup 0) 16)
-        (abs:V4SF (subreg:V4SF (match_dup 1) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_expand "copysignv8sf3"
-  [(match_operand:V8SF 0 "register_operand")
-   (match_operand:V8SF 1 "register_operand")
-   (match_operand:V8SF 2 "register_operand")]
-  ""
-  {
-    rtx opnd0_lo = gen_rtx_SUBREG (V4SFmode, operands[0], 0);
-    rtx opnd0_hi = gen_rtx_SUBREG (V4SFmode, operands[0], 16);
-    rtx opnd1_lo = gen_rtx_SUBREG (V4SFmode, operands[1], 0);
-    rtx opnd1_hi = gen_rtx_SUBREG (V4SFmode, operands[1], 16);
-    rtx opnd2_lo = gen_rtx_SUBREG (V4SFmode, operands[2], 0);
-    rtx opnd2_hi = gen_rtx_SUBREG (V4SFmode, operands[2], 16);
-    emit_insn (gen_copysignv4sf3 (opnd0_lo, opnd1_lo, opnd2_lo));
-    emit_insn (gen_copysignv4sf3 (opnd0_hi, opnd1_hi, opnd2_hi));
-    DONE;
-  }
 )
 
 (define_insn_and_split "floatv8siv8sf2"
@@ -9457,50 +7376,6 @@
   }
 )
 
-(define_expand "kvx_fminwos"
-  [(match_operand:V8SF 0 "register_operand" "")
-   (match_operand:V8SF 1 "register_operand" "")
-   (match_operand:SF 2 "register_operand" "")]
-  ""
-  {
-    rtx opnd0_0 = gen_rtx_SUBREG (V2SFmode, operands[0], 0);
-    rtx opnd1_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 0);
-    emit_insn (gen_kvx_fminwps (opnd0_0, opnd1_0, operands[2]));
-    rtx opnd0_1 = gen_rtx_SUBREG (V2SFmode, operands[0], 8);
-    rtx opnd1_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 8);
-    emit_insn (gen_kvx_fminwps (opnd0_1, opnd1_1, operands[2]));
-    rtx opnd0_2 = gen_rtx_SUBREG (V2SFmode, operands[0], 16);
-    rtx opnd1_2 = gen_rtx_SUBREG (V2SFmode, operands[1], 16);
-    emit_insn (gen_kvx_fminwps (opnd0_2, opnd1_2, operands[2]));
-    rtx opnd0_3 = gen_rtx_SUBREG (V2SFmode, operands[0], 24);
-    rtx opnd1_3 = gen_rtx_SUBREG (V2SFmode, operands[1], 24);
-    emit_insn (gen_kvx_fminwps (opnd0_3, opnd1_3, operands[2]));
-    DONE;
-  }
-)
-
-(define_expand "kvx_fmaxwos"
-  [(match_operand:V8SF 0 "register_operand" "")
-   (match_operand:V8SF 1 "register_operand" "")
-   (match_operand:SF 2 "register_operand" "")]
-  ""
-  {
-    rtx opnd0_0 = gen_rtx_SUBREG (V2SFmode, operands[0], 0);
-    rtx opnd1_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 0);
-    emit_insn (gen_kvx_fmaxwps (opnd0_0, opnd1_0, operands[2]));
-    rtx opnd0_1 = gen_rtx_SUBREG (V2SFmode, operands[0], 8);
-    rtx opnd1_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 8);
-    emit_insn (gen_kvx_fmaxwps (opnd0_1, opnd1_1, operands[2]));
-    rtx opnd0_2 = gen_rtx_SUBREG (V2SFmode, operands[0], 16);
-    rtx opnd1_2 = gen_rtx_SUBREG (V2SFmode, operands[1], 16);
-    emit_insn (gen_kvx_fmaxwps (opnd0_2, opnd1_2, operands[2]));
-    rtx opnd0_3 = gen_rtx_SUBREG (V2SFmode, operands[0], 24);
-    rtx opnd1_3 = gen_rtx_SUBREG (V2SFmode, operands[1], 24);
-    emit_insn (gen_kvx_fmaxwps (opnd0_3, opnd1_3, operands[2]));
-    DONE;
-  }
-)
-
 (define_insn_and_split "kvx_fconjwcq"
   [(set (match_operand:V8SF 0 "register_operand" "=r")
         (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "r")] UNSPEC_FCONJWCQ))]
@@ -9513,669 +7388,6 @@
         (unspec:V4SF [(subreg:V4SF (match_dup 1) 16)] UNSPEC_FCONJWCP))]
   ""
   [(set_attr "type" "alu_lite_x2")]
-)
-
-
-;; VXSF
-
-(define_expand "div<mode>3"
-  [(set (match_operand:VXSF 0 "register_operand" "")
-        (div:VXSF (match_operand:VXSF 1 "reg_or_float1_operand" "")
-                  (match_operand:VXSF 2 "register_operand" "")))]
-  "flag_reciprocal_math || flag_unsafe_math_optimizations"
-  {
-    rtx rm = gen_rtx_CONST_STRING (VOIDmode, "");
-    rtx rn = gen_rtx_CONST_STRING (VOIDmode, ".rn");
-    rtx a = operands[1], b = operands[2];
-    if (a == CONST1_RTX (<MODE>mode))
-      {
-        emit_insn (gen_kvx_frec<suffix> (operands[0], b, rm));
-      }
-    else if (flag_reciprocal_math)
-      {
-        rtx t = gen_reg_rtx(<MODE>mode);
-        emit_insn (gen_kvx_frec<suffix> (t, b, rm));
-        emit_insn (gen_kvx_fmul<suffix> (operands[0], a, t, rm));
-      }
-    else // (flag_unsafe_math_optimizations)
-      {
-        rtx re = gen_reg_rtx (<MODE>mode);
-        emit_insn (gen_kvx_frec<suffix> (re, b, rn));
-        rtx y0 = gen_reg_rtx (<MODE>mode);
-        emit_insn (gen_kvx_fmul<suffix> (y0, a, re, rn));
-        rtx e0 = gen_reg_rtx (<MODE>mode);
-        emit_insn (gen_kvx_ffms<suffix> (e0, b, y0, a, rn));
-        rtx y1 = gen_reg_rtx (<MODE>mode);
-        emit_insn (gen_kvx_ffma<suffix> (y1, e0, re, y0, rn));
-        rtx e1 = gen_reg_rtx (<MODE>mode);
-        emit_insn (gen_kvx_ffms<suffix> (e1, b, y1, a, rn));
-        rtx y2 = operands[0];
-        emit_insn (gen_kvx_ffma<suffix> (y2, e1, re, y1, rm));
-      }
-    DONE;
-  }
-)
-
-(define_expand "sqrt<mode>2"
-  [(match_operand:VXSF 0 "register_operand" "")
-   (match_operand:VXSF 1 "register_operand" "")]
-  "flag_reciprocal_math"
-  {
-    rtx temp = gen_reg_rtx(<MODE>mode);
-    rtx rm = gen_rtx_CONST_STRING (VOIDmode, "");
-    emit_insn (gen_kvx_frsr<suffix> (temp, operands[1], rm));
-    emit_insn (gen_mul<mode>3 (operands[0], operands[1], temp));
-    DONE;
-  }
-)
-
-(define_expand "recip<mode>2"
-  [(match_operand:VXSF 0 "register_operand" "")
-   (match_operand:VXSF 1 "register_operand" "")]
-  ""
-  {
-    rtx rm = gen_rtx_CONST_STRING (VOIDmode, "");
-    emit_insn (gen_kvx_frec<suffix> (operands[0], operands[1], rm));
-    DONE;
-  }
-)
-
-(define_expand "rsqrt<mode>2"
-  [(match_operand:VXSF 0 "register_operand" "")
-   (match_operand:VXSF 1 "register_operand" "")]
-  ""
-  {
-    rtx rm = gen_rtx_CONST_STRING (VOIDmode, "");
-    emit_insn (gen_kvx_frsr<suffix> (operands[0], operands[1], rm));
-    DONE;
-  }
-)
-
-
-;; V2DF
-
-(define_insn_and_split "*fcompndp"
-  [(set (match_operand:V2DI 0 "register_operand" "=r")
-        (match_operator:V2DI 1 "float_comparison_operator"
-         [(match_operand:V2DF 2 "register_operand" "r")
-          (match_operand:V2DF 3 "register_operand" "r")]))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (match_dup 0)
-        (unspec:V2DI [(match_op_dup 1 [(match_dup 2)
-                                       (match_dup 3)])] UNSPEC_FCOMP))
-   (set (match_dup 0)
-        (neg:V2DI (match_dup 0)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn "*fcompdp"
-  [(set (match_operand:V2DI 0 "register_operand" "=r")
-        (unspec:V2DI [(match_operator:V2DI 1 "float_comparison_operator"
-                       [(match_operand:V2DF 2 "register_operand" "r")
-                        (match_operand:V2DF 3 "register_operand" "r")])] UNSPEC_FCOMP))]
-  ""
-  "fcompd.%f1 %x0 = %x2, %x3\n\tfcompd.%f1 %y0 = %y2, %y3"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*selectfdp"
-  [(set (match_operand:V2DF 0 "register_operand" "=r")
-        (if_then_else:V2DF (match_operator 2 "zero_comparison_operator"
-                                             [(match_operand:V2DI 3 "register_operand" "r")
-                                              (match_operand:V2DI 5 "const_zero_operand" "")])
-                           (match_operand:V2DF 1 "register_operand" "r")
-                           (match_operand:V2DF 4 "register_operand" "0")))]
-  ""
-  "cmoved.d%2z %x3? %x0 = %x1\n\tcmoved.d%2z %y3? %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*selectfdp_nez"
-  [(set (match_operand:V2DF 0 "register_operand" "=r")
-        (if_then_else:V2DF (ne (match_operator:V2DI 2 "zero_comparison_operator"
-                                             [(match_operand:V2DI 3 "register_operand" "r")
-                                              (match_operand:V2DI 5 "const_zero_operand" "")])
-                               (match_operand:V2DI 6 "const_zero_operand" ""))
-                           (match_operand:V2DF 1 "register_operand" "r")
-                           (match_operand:V2DF 4 "register_operand" "0")))]
-  ""
-  "cmoved.d%2z %x3? %x0 = %x1\n\tcmoved.d%2z %y3? %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "kvx_selectfdp"
-  [(set (match_operand:V2DF 0 "register_operand" "=r")
-        (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")
-                      (match_operand:V2DF 2 "register_operand" "0")
-                      (match_operand:V2DI 3 "register_operand" "r")
-                      (match_operand 4 "" "")] UNSPEC_SELECTFDP))]
-  ""
-  "cmoved%4 %x3? %x0 = %x1\n\tcmoved%4 %y3? %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "addv2df3"
-  [(set (match_operand:V2DF 0 "register_operand" "=r")
-        (plus:V2DF (match_operand:V2DF 1 "register_operand" "r")
-                   (match_operand:V2DF 2 "register_operand" "r")))]
-  ""
-  "fadddp %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
-)
-
-(define_insn "kvx_fadddp"
-  [(set (match_operand:V2DF 0 "register_operand" "=r")
-        (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")
-                      (match_operand:V2DF 2 "register_operand" "r")
-                      (match_operand 3 "" "")] UNSPEC_FADDDP))]
-  ""
-  "fadddp%3 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
-)
-
-(define_insn "kvx_faddcdc"
-  [(set (match_operand:V2DF 0 "register_operand" "=r")
-        (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")
-                      (match_operand:V2DF 2 "register_operand" "r")
-                      (match_operand 3 "" "")] UNSPEC_FADDCWC))]
-  ""
-  "faddcdc%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
-)
-
-(define_insn "subv2df3"
-  [(set (match_operand:V2DF 0 "register_operand" "=r")
-        (minus:V2DF (match_operand:V2DF 1 "register_operand" "r")
-                    (match_operand:V2DF 2 "register_operand" "r")))]
-  ""
-  "fsbfdp %0 = %2, %1"
-  [(set_attr "type" "mau_auxr_fpu")]
-)
-
-(define_insn "kvx_fsbfdp"
-  [(set (match_operand:V2DF 0 "register_operand" "=r")
-        (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")
-                      (match_operand:V2DF 2 "register_operand" "r")
-                      (match_operand 3 "" "")] UNSPEC_FSBFDP))]
-  ""
-  "fsbfdp%3 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
-)
-
-(define_insn "kvx_fsbfcdc"
-  [(set (match_operand:V2DF 0 "register_operand" "=r")
-        (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")
-                      (match_operand:V2DF 2 "register_operand" "r")
-                      (match_operand 3 "" "")] UNSPEC_FSBFCWC))]
-  ""
-  "fsbfcdc%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
-)
-
-(define_insn_and_split "mulv2df3"
-  [(set (match_operand:V2DF 0 "register_operand" "=r")
-        (mult:V2DF (match_operand:V2DF 1 "register_operand" "r")
-                   (match_operand:V2DF 2 "register_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:DF (match_dup 0) 0)
-        (mult:DF (subreg:DF (match_dup 1) 0)
-                 (subreg:DF (match_dup 2) 0)))
-   (set (subreg:DF (match_dup 0) 8)
-        (mult:DF (subreg:DF (match_dup 1) 8)
-                 (subreg:DF (match_dup 2) 8)))]
-  ""
-  [(set_attr "type" "mau_auxr_fpu")]
-)
-
-(define_insn_and_split "kvx_fmuldp"
-  [(set (match_operand:V2DF 0 "register_operand" "=r")
-        (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")
-                      (match_operand:V2DF 2 "register_operand" "r")
-                      (match_operand 3 "" "")] UNSPEC_FMULDP))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:DF (match_dup 0) 0)
-        (unspec:DF [(subreg:DF (match_dup 1) 0)
-                    (subreg:DF (match_dup 2) 0)
-                    (match_dup 3)] UNSPEC_FMULD))
-   (set (subreg:DF (match_dup 0) 8)
-        (unspec:DF [(subreg:DF (match_dup 1) 8)
-                    (subreg:DF (match_dup 2) 8)
-                    (match_dup 3)] UNSPEC_FMULD))]
-  ""
-  [(set_attr "type" "mau_auxr_fpu")]
-)
-
-(define_expand "kvx_fmuldc"
-  [(set (match_operand:V2DF 0 "register_operand")
-        (unspec:V2DF [(match_operand:V2DF 1 "register_operand")
-                      (match_operand:V2DF 2 "register_operand")
-                      (match_operand 3 "" "")] UNSPEC_FMULDC))]
-  ""
-  {
-    rtx real_0 = gen_rtx_SUBREG (DFmode, operands[0], 0);
-    rtx imag_0 = gen_rtx_SUBREG (DFmode, operands[0], 8);
-    rtx real_1 = gen_rtx_SUBREG (DFmode, operands[1], 0);
-    rtx imag_1 = gen_rtx_SUBREG (DFmode, operands[1], 8);
-    rtx real_2 = gen_rtx_SUBREG (DFmode, operands[2], 0);
-    rtx imag_2 = gen_rtx_SUBREG (DFmode, operands[2], 8);
-    rtx real_t = gen_reg_rtx (DFmode), imag_t = gen_reg_rtx (DFmode);
-    emit_insn (gen_kvx_fmuld (real_t, real_1, real_2, operands[3]));
-    emit_insn (gen_kvx_ffmsd (real_0, imag_1, imag_2, real_t, operands[3]));
-    emit_insn (gen_kvx_fmuld (imag_t, real_1, imag_2, operands[3]));
-    emit_insn (gen_kvx_ffmad (imag_0, real_2, imag_1, imag_t, operands[3]));
-    DONE;
-  }
-)
-
-(define_expand "kvx_fmulcdc"
-  [(set (match_operand:V2DF 0 "register_operand")
-        (unspec:V2DF [(match_operand:V2DF 1 "register_operand")
-                      (match_operand:V2DF 2 "register_operand")
-                      (match_operand 3 "" "")] UNSPEC_FMULCDC))]
-  ""
-  {
-    rtx real_0 = gen_rtx_SUBREG (DFmode, operands[0], 0);
-    rtx imag_0 = gen_rtx_SUBREG (DFmode, operands[0], 8);
-    rtx real_1 = gen_rtx_SUBREG (DFmode, operands[1], 0);
-    rtx imag_1 = gen_rtx_SUBREG (DFmode, operands[1], 8);
-    rtx real_2 = gen_rtx_SUBREG (DFmode, operands[2], 0);
-    rtx imag_2 = gen_rtx_SUBREG (DFmode, operands[2], 8);
-    rtx real_t = gen_reg_rtx (DFmode), imag_t = gen_reg_rtx (DFmode);
-    emit_insn (gen_kvx_fmuld (real_t, real_1, real_2, operands[3]));
-    emit_insn (gen_kvx_ffmad (real_0, imag_1, imag_2, real_t, operands[3]));
-    emit_insn (gen_kvx_fmuld (imag_t, real_1, imag_2, operands[3]));
-    emit_insn (gen_kvx_ffmsd (imag_0, real_2, imag_1, imag_t, operands[3]));
-    DONE;
-  }
-)
-
-(define_insn_and_split "fmav2df4"
-  [(set (match_operand:V2DF 0 "register_operand" "=r")
-        (fma:V2DF (match_operand:V2DF 1 "register_operand" "r")
-                  (match_operand:V2DF 2 "register_operand" "r")
-                  (match_operand:V2DF 3 "register_operand" "0")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:DF (match_dup 0) 0)
-        (fma:DF  (subreg:DF (match_dup 1) 0)
-                 (subreg:DF (match_dup 2) 0)
-                 (subreg:DF (match_dup 3) 0)))
-   (set (subreg:DF (match_dup 0) 8)
-        (fma:DF  (subreg:DF (match_dup 1) 8)
-                 (subreg:DF (match_dup 2) 8)
-                 (subreg:DF (match_dup 3) 8)))]
-  ""
-  [(set_attr "type" "mau_auxr_fpu")]
-)
-
-(define_insn_and_split "kvx_ffmadp"
-  [(set (match_operand:V2DF 0 "register_operand" "=r")
-        (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")
-                      (match_operand:V2DF 2 "register_operand" "r")
-                      (match_operand:V2DF 3 "register_operand" "0")
-                      (match_operand 4 "" "")] UNSPEC_FFMADP))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:DF (match_dup 0) 0)
-        (unspec:DF [(subreg:DF (match_dup 1) 0)
-                    (subreg:DF (match_dup 2) 0)
-                    (subreg:DF (match_dup 3) 0)
-                    (match_dup 4)] UNSPEC_FFMAD))
-   (set (subreg:DF (match_dup 0) 8)
-        (unspec:DF [(subreg:DF (match_dup 1) 8)
-                    (subreg:DF (match_dup 2) 8)
-                    (subreg:DF (match_dup 3) 8)
-                    (match_dup 4)] UNSPEC_FFMAD))]
-  ""
-  [(set_attr "type" "mau_auxr_fpu")]
-)
-
-(define_insn_and_split "fnmav2df4"
-  [(set (match_operand:V2DF 0 "register_operand" "=r")
-        (fma:V2DF (neg:V2DF (match_operand:V2DF 1 "register_operand" "r"))
-                  (match_operand:V2DF 2 "register_operand" "r")
-                  (match_operand:V2DF 3 "register_operand" "0")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:DF (match_dup 0) 0)
-        (fma:DF  (neg:DF (subreg:DF (match_dup 1) 0))
-                 (subreg:DF (match_dup 2) 0)
-                 (subreg:DF (match_dup 3) 0)))
-   (set (subreg:DF (match_dup 0) 8)
-        (fma:DF  (neg:DF (subreg:DF (match_dup 1) 8))
-                 (subreg:DF (match_dup 2) 8)
-                 (subreg:DF (match_dup 3) 8)))]
-  ""
-  [(set_attr "type" "mau_auxr_fpu")]
-)
-
-(define_insn_and_split "kvx_ffmsdp"
-  [(set (match_operand:V2DF 0 "register_operand" "=r")
-        (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")
-                      (match_operand:V2DF 2 "register_operand" "r")
-                      (match_operand:V2DF 3 "register_operand" "0")
-                      (match_operand 4 "" "")] UNSPEC_FFMSDP))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:DF (match_dup 0) 0)
-        (unspec:DF [(subreg:DF (match_dup 1) 0)
-                    (subreg:DF (match_dup 2) 0)
-                    (subreg:DF (match_dup 3) 0)
-                    (match_dup 4)] UNSPEC_FFMSD))
-   (set (subreg:DF (match_dup 0) 8)
-        (unspec:DF [(subreg:DF (match_dup 1) 8)
-                    (subreg:DF (match_dup 2) 8)
-                    (subreg:DF (match_dup 3) 8)
-                    (match_dup 4)] UNSPEC_FFMSD))]
-  ""
-  [(set_attr "type" "mau_auxr_fpu")]
-)
-
-(define_insn "fminv2df3"
-  [(set (match_operand:V2DF 0 "register_operand" "=r")
-        (smin:V2DF (match_operand:V2DF 1 "register_operand" "r")
-                   (match_operand:V2DF 2 "register_operand" "r")))]
-  ""
-  "fmind %x0 = %x1, %x2\n\tfmind %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "fmaxv2df3"
-  [(set (match_operand:V2DF 0 "register_operand" "=r")
-        (smax:V2DF (match_operand:V2DF 1 "register_operand" "r")
-                   (match_operand:V2DF 2 "register_operand" "r")))]
-  ""
-  "fmaxd %x0 = %x1, %x2\n\tfmaxd %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "negv2df2"
-  [(set (match_operand:V2DF 0 "register_operand" "=r")
-        (neg:V2DF (match_operand:V2DF 1 "register_operand" "r")))]
-  ""
-  "fnegd %x0 = %x1\n\tfnegd %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "absv2df2"
-  [(set (match_operand:V2DF 0 "register_operand" "=r")
-        (abs:V2DF (match_operand:V2DF 1 "register_operand" "r")))]
-  ""
-  "fabsd %x0 = %x1\n\tfabsd %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_expand "copysignv2df3"
-  [(match_operand:V2DF 0 "register_operand")
-   (match_operand:V2DF 1 "register_operand")
-   (match_operand:V2DF 2 "register_operand")]
-  ""
-  {
-    rtx fabs1 = gen_reg_rtx (V2DFmode);
-    emit_insn (gen_absv2df2 (fabs1, operands[1]));
-    rtx fneg1 = gen_reg_rtx (V2DFmode);
-    emit_insn (gen_negv2df2 (fneg1, fabs1));
-    rtx sign2 = gen_reg_rtx (V2DImode);
-    convert_move (sign2, operands[2], 0);
-    rtx ltz = gen_rtx_CONST_STRING (VOIDmode, ".dltz");
-    emit_insn (gen_kvx_selectfdp (operands[0], fneg1, fabs1, sign2, ltz));
-    DONE;
-  }
-)
-
-(define_insn_and_split "floatv2div2df2"
-  [(set (match_operand:V2DF 0 "register_operand" "=r")
-        (float:V2DF (match_operand:V2DI 1 "register_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:DF (match_dup 0) 0)
-        (float:DF (subreg:DI (match_dup 1) 0)))
-   (set (subreg:DF (match_dup 0) 8)
-        (float:DF (subreg:DI (match_dup 1) 8)))]
-  ""
-  [(set_attr "type" "mau_fpu")]
-)
-
-(define_insn_and_split "kvx_floatdp"
-  [(set (match_operand:V2DF 0 "register_operand" "=r")
-        (unspec:V2DF [(match_operand:V2DI 1 "register_operand" "r")
-                      (match_operand:SI 2 "sixbits_unsigned_operand" "i")
-                      (match_operand 3 "" "")] UNSPEC_FLOATDP))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:DF (match_dup 0) 0)
-        (unspec:DF [(subreg:DI (match_dup 1) 0)
-                    (match_dup 2)
-                    (match_dup 3)] UNSPEC_FLOATD))
-   (set (subreg:DF (match_dup 0) 8)
-        (unspec:DF [(subreg:DI (match_dup 1) 8)
-                    (match_dup 2)
-                    (match_dup 3)] UNSPEC_FLOATD))]
-  ""
-  [(set_attr "type" "mau_fpu")]
-)
-
-(define_insn_and_split "floatunsv2div2df2"
-  [(set (match_operand:V2DF 0 "register_operand" "=r")
-        (unsigned_float:V2DF (match_operand:V2DI 1 "register_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:DF (match_dup 0) 0)
-        (unsigned_float:DF (subreg:DI (match_dup 1) 0)))
-   (set (subreg:DF (match_dup 0) 8)
-        (unsigned_float:DF (subreg:DI (match_dup 1) 8)))]
-  ""
-  [(set_attr "type" "mau_fpu")]
-)
-
-(define_insn_and_split "kvx_floatudp"
-  [(set (match_operand:V2DF 0 "register_operand" "=r")
-        (unspec:V2DF [(match_operand:V2DI 1 "register_operand" "r")
-                      (match_operand:SI 2 "sixbits_unsigned_operand" "i")
-                      (match_operand 3 "" "")] UNSPEC_FLOATUDP))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:DF (match_dup 0) 0)
-        (unspec:DF [(subreg:DI (match_dup 1) 0)
-                    (match_dup 2)
-                    (match_operand 3 "" "")] UNSPEC_FLOATUD))
-   (set (subreg:DF (match_dup 0) 8)
-        (unspec:DF [(subreg:DI (match_dup 1) 8)
-                    (match_dup 2)
-                    (match_operand 3 "" "")] UNSPEC_FLOATUD))]
-  ""
-  [(set_attr "type" "mau_fpu")]
-)
-
-(define_insn_and_split "fix_truncv2dfv2di2"
-  [(set (match_operand:V2DI 0 "register_operand" "=r")
-        (fix:V2DI (match_operand:V2DF 1 "register_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:DI (match_dup 0) 0)
-        (fix:DI (subreg:DF (match_dup 1) 0)))
-   (set (subreg:DI (match_dup 0) 8)
-        (fix:DI (subreg:DF (match_dup 1) 8)))]
-  ""
-  [(set_attr "type" "mau_fpu")]
-)
-
-(define_insn_and_split "kvx_fixeddp"
-  [(set (match_operand:V2DI 0 "register_operand" "=r")
-        (unspec:V2DI [(match_operand:V2DF 1 "register_operand" "r")
-                      (match_operand:SI 2 "sixbits_unsigned_operand" "i")
-                      (match_operand 3 "" "")] UNSPEC_FIXEDDP))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:DI (match_dup 0) 0)
-        (unspec:DI [(subreg:DF (match_dup 1) 0)
-                    (match_dup 2)
-                    (match_dup 3)] UNSPEC_FIXEDD))
-   (set (subreg:DI (match_dup 0) 8)
-        (unspec:DI [(subreg:DF (match_dup 1) 8)
-                    (match_dup 2)
-                    (match_dup 3)] UNSPEC_FIXEDD))]
-  ""
-  [(set_attr "type" "mau_fpu")]
-)
-
-(define_insn_and_split "fixuns_truncv2dfv2di2"
-  [(set (match_operand:V2DI 0 "register_operand" "=r")
-        (unsigned_fix:V2DI (match_operand:V2DF 1 "register_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:DI (match_dup 0) 0)
-        (unsigned_fix:DI (subreg:DF (match_dup 1) 0)))
-   (set (subreg:DI (match_dup 0) 8)
-        (unsigned_fix:DI (subreg:DF (match_dup 1) 8)))]
-  ""
-  [(set_attr "type" "mau_fpu")]
-)
-
-(define_insn_and_split "kvx_fixedudp"
-  [(set (match_operand:V2DI 0 "register_operand" "=r")
-        (unspec:V2DI [(match_operand:V2DF 1 "register_operand" "r")
-                      (match_operand:SI 2 "sixbits_unsigned_operand" "i")
-                      (match_operand 3 "" "")] UNSPEC_FIXEDUDP))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:DI (match_dup 0) 0)
-        (unspec:DI [(subreg:DF (match_dup 1) 0)
-                    (match_dup 2)
-                    (match_dup 3)] UNSPEC_FIXEDUD))
-   (set (subreg:DI (match_dup 0) 8)
-        (unspec:DI [(subreg:DF (match_dup 1) 8)
-                    (match_dup 2)
-                    (match_dup 3)] UNSPEC_FIXEDUD))]
-  ""
-  [(set_attr "type" "mau_fpu")]
-)
-
-
-(define_expand "kvx_fcdivdp"
-  [(match_operand:V2DF 0 "register_operand" "")
-   (match_operand:V2DF 1 "register_operand" "")
-   (match_operand:V2DF 2 "register_operand" "")
-   (match_operand 3 "" "")]
-  ""
-  {
-    rtx opnd0_0 = gen_rtx_SUBREG (DFmode, operands[0], 0);
-    rtx opnd1_0 = gen_rtx_SUBREG (DFmode, operands[1], 0);
-    rtx opnd2_0 = gen_rtx_SUBREG (DFmode, operands[2], 0);
-    emit_insn (gen_kvx_fcdivd (opnd0_0, opnd1_0, opnd2_0, operands[3]));
-    rtx opnd0_1 = gen_rtx_SUBREG (DFmode, operands[0], 8);
-    rtx opnd1_1 = gen_rtx_SUBREG (DFmode, operands[1], 8);
-    rtx opnd2_1 = gen_rtx_SUBREG (DFmode, operands[2], 8);
-    emit_insn (gen_kvx_fcdivd (opnd0_1, opnd1_1, opnd2_1, operands[3]));
-    DONE;
-  }
-)
-
-(define_expand "kvx_fsdivdp"
-  [(match_operand:V2DF 0 "register_operand" "")
-   (match_operand:V2DF 1 "register_operand" "")
-   (match_operand:V2DF 2 "register_operand" "")
-   (match_operand 3 "" "")]
-  ""
-  {
-    rtx opnd0_0 = gen_rtx_SUBREG (DFmode, operands[0], 0);
-    rtx opnd1_0 = gen_rtx_SUBREG (DFmode, operands[1], 0);
-    rtx opnd2_0 = gen_rtx_SUBREG (DFmode, operands[2], 0);
-    emit_insn (gen_kvx_fsdivd (opnd0_0, opnd1_0, opnd2_0, operands[3]));
-    rtx opnd0_1 = gen_rtx_SUBREG (DFmode, operands[0], 8);
-    rtx opnd1_1 = gen_rtx_SUBREG (DFmode, operands[1], 8);
-    rtx opnd2_1 = gen_rtx_SUBREG (DFmode, operands[2], 8);
-    emit_insn (gen_kvx_fsdivd (opnd0_1, opnd1_1, opnd2_1, operands[3]));
-    DONE;
-  }
-)
-
-(define_expand "kvx_fsrecdp"
-  [(match_operand:V2DF 0 "register_operand" "")
-   (match_operand:V2DF 1 "register_operand" "")
-   (match_operand 2 "" "")]
-  ""
-  {
-    rtx opnd0_0 = gen_rtx_SUBREG (DFmode, operands[0], 0);
-    rtx opnd1_0 = gen_rtx_SUBREG (DFmode, operands[1], 0);
-    emit_insn (gen_kvx_fsrecd (opnd0_0, opnd1_0, operands[2]));
-    rtx opnd0_1 = gen_rtx_SUBREG (DFmode, operands[0], 8);
-    rtx opnd1_1 = gen_rtx_SUBREG (DFmode, operands[1], 8);
-    emit_insn (gen_kvx_fsrecd (opnd0_1, opnd1_1, operands[2]));
-    DONE;
-  }
-)
-
-(define_expand "kvx_fsrsrdp"
-  [(match_operand:V2DF 0 "register_operand" "")
-   (match_operand:V2DF 1 "register_operand" "")
-   (match_operand 2 "" "")]
-  ""
-  {
-    rtx opnd0_0 = gen_rtx_SUBREG (DFmode, operands[0], 0);
-    rtx opnd1_0 = gen_rtx_SUBREG (DFmode, operands[1], 0);
-    emit_insn (gen_kvx_fsrsrd (opnd0_0, opnd1_0, operands[2]));
-    rtx opnd0_1 = gen_rtx_SUBREG (DFmode, operands[0], 8);
-    rtx opnd1_1 = gen_rtx_SUBREG (DFmode, operands[1], 8);
-    emit_insn (gen_kvx_fsrsrd (opnd0_1, opnd1_1, operands[2]));
-    DONE;
-  }
-)
-
-(define_insn "kvx_fmindps"
-  [(set (match_operand:V2DF 0 "register_operand" "=r")
-        (smin:V2DF (match_operand:V2DF 1 "register_operand" "r")
-                   (match_operand:DF 2 "register_operand" "r")))]
-  ""
-  "fmind %x0 = %x1, %2\n\tfmind %y0 = %y1, %2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "kvx_fmaxdps"
-  [(set (match_operand:V2DF 0 "register_operand" "=r")
-        (smax:V2DF (match_operand:V2DF 1 "register_operand" "r")
-                   (match_operand:DF 2 "register_operand" "r")))]
-  ""
-  "fmaxd %x0 = %x1, %2\n\tfmaxd %y0 = %y1, %2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "kvx_fconjdc"
-  [(set (match_operand:V2DF 0 "register_operand" "=r")
-        (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")] UNSPEC_FCONJDC))]
-  ""
-  "copyd %x0 = %x1\n\tfnegd %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
 )
 
 
@@ -11045,6 +8257,593 @@
   "copyd %x0 = %x1\n\tfnegd %y0 = %y1\n\tcopyd %z0 = %z1\n\tfnegd %t0 = %t1"
   [(set_attr "type" "alu_tiny_x4")
    (set_attr "length"        "16")]
+)
+
+
+;; V2DF
+
+(define_insn_and_split "*fcompndp"
+  [(set (match_operand:V2DI 0 "register_operand" "=r")
+        (match_operator:V2DI 1 "float_comparison_operator"
+         [(match_operand:V2DF 2 "register_operand" "r")
+          (match_operand:V2DF 3 "register_operand" "r")]))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (match_dup 0)
+        (unspec:V2DI [(match_op_dup 1 [(match_dup 2)
+                                       (match_dup 3)])] UNSPEC_COMP128))
+   (set (match_dup 0)
+        (neg:V2DI (match_dup 0)))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn "*fcompdp"
+  [(set (match_operand:V2DI 0 "register_operand" "=r")
+        (unspec:V2DI [(match_operator:V2DI 1 "float_comparison_operator"
+                       [(match_operand:V2DF 2 "register_operand" "r")
+                        (match_operand:V2DF 3 "register_operand" "r")])] UNSPEC_COMP128))]
+  ""
+  "fcompd.%f1 %x0 = %x2, %x3\n\tfcompd.%f1 %y0 = %y2, %y3"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "*selectfdp"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (if_then_else:V2DF (match_operator 2 "zero_comparison_operator"
+                                             [(match_operand:V2DI 3 "register_operand" "r")
+                                              (match_operand:V2DI 5 "const_zero_operand" "")])
+                           (match_operand:V2DF 1 "register_operand" "r")
+                           (match_operand:V2DF 4 "register_operand" "0")))]
+  ""
+  "cmoved.d%2z %x3? %x0 = %x1\n\tcmoved.d%2z %y3? %y0 = %y1"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "*selectfdp_nez"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (if_then_else:V2DF (ne (match_operator:V2DI 2 "zero_comparison_operator"
+                                             [(match_operand:V2DI 3 "register_operand" "r")
+                                              (match_operand:V2DI 5 "const_zero_operand" "")])
+                               (match_operand:V2DI 6 "const_zero_operand" ""))
+                           (match_operand:V2DF 1 "register_operand" "r")
+                           (match_operand:V2DF 4 "register_operand" "0")))]
+  ""
+  "cmoved.d%2z %x3? %x0 = %x1\n\tcmoved.d%2z %y3? %y0 = %y1"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "kvx_selectfdp"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")
+                      (match_operand:V2DF 2 "register_operand" "0")
+                      (match_operand:V2DI 3 "register_operand" "r")
+                      (match_operand 4 "" "")] UNSPEC_SELECTFDP))]
+  ""
+  "cmoved%4 %x3? %x0 = %x1\n\tcmoved%4 %y3? %y0 = %y1"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "addv2df3"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (plus:V2DF (match_operand:V2DF 1 "register_operand" "r")
+                   (match_operand:V2DF 2 "register_operand" "r")))]
+  ""
+  "fadddp %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn "kvx_fadddp"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")
+                      (match_operand:V2DF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FADDDP))]
+  ""
+  "fadddp%3 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn "kvx_faddcdc"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")
+                      (match_operand:V2DF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FADDCWC))]
+  ""
+  "faddcdc%3 %0 = %1, %2"
+  [(set_attr "type" "mau_fpu")]
+)
+
+(define_insn "subv2df3"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (minus:V2DF (match_operand:V2DF 1 "register_operand" "r")
+                    (match_operand:V2DF 2 "register_operand" "r")))]
+  ""
+  "fsbfdp %0 = %2, %1"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn "kvx_fsbfdp"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")
+                      (match_operand:V2DF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FSBFDP))]
+  ""
+  "fsbfdp%3 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn "kvx_fsbfcdc"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")
+                      (match_operand:V2DF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FSBFCWC))]
+  ""
+  "fsbfcdc%3 %0 = %1, %2"
+  [(set_attr "type" "mau_fpu")]
+)
+
+(define_insn_and_split "mulv2df3"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (mult:V2DF (match_operand:V2DF 1 "register_operand" "r")
+                   (match_operand:V2DF 2 "register_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:DF (match_dup 0) 0)
+        (mult:DF (subreg:DF (match_dup 1) 0)
+                 (subreg:DF (match_dup 2) 0)))
+   (set (subreg:DF (match_dup 0) 8)
+        (mult:DF (subreg:DF (match_dup 1) 8)
+                 (subreg:DF (match_dup 2) 8)))]
+  ""
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn_and_split "kvx_fmuldp"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")
+                      (match_operand:V2DF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FMULDP))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:DF (match_dup 0) 0)
+        (unspec:DF [(subreg:DF (match_dup 1) 0)
+                    (subreg:DF (match_dup 2) 0)
+                    (match_dup 3)] UNSPEC_FMULD))
+   (set (subreg:DF (match_dup 0) 8)
+        (unspec:DF [(subreg:DF (match_dup 1) 8)
+                    (subreg:DF (match_dup 2) 8)
+                    (match_dup 3)] UNSPEC_FMULD))]
+  ""
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_expand "kvx_fmuldc"
+  [(set (match_operand:V2DF 0 "register_operand")
+        (unspec:V2DF [(match_operand:V2DF 1 "register_operand")
+                      (match_operand:V2DF 2 "register_operand")
+                      (match_operand 3 "" "")] UNSPEC_FMULDC))]
+  ""
+  {
+    rtx real_0 = gen_rtx_SUBREG (DFmode, operands[0], 0);
+    rtx imag_0 = gen_rtx_SUBREG (DFmode, operands[0], 8);
+    rtx real_1 = gen_rtx_SUBREG (DFmode, operands[1], 0);
+    rtx imag_1 = gen_rtx_SUBREG (DFmode, operands[1], 8);
+    rtx real_2 = gen_rtx_SUBREG (DFmode, operands[2], 0);
+    rtx imag_2 = gen_rtx_SUBREG (DFmode, operands[2], 8);
+    rtx real_t = gen_reg_rtx (DFmode), imag_t = gen_reg_rtx (DFmode);
+    emit_insn (gen_kvx_fmuld (real_t, real_1, real_2, operands[3]));
+    emit_insn (gen_kvx_ffmsd (real_0, imag_1, imag_2, real_t, operands[3]));
+    emit_insn (gen_kvx_fmuld (imag_t, real_1, imag_2, operands[3]));
+    emit_insn (gen_kvx_ffmad (imag_0, real_2, imag_1, imag_t, operands[3]));
+    DONE;
+  }
+)
+
+(define_expand "kvx_fmulcdc"
+  [(set (match_operand:V2DF 0 "register_operand")
+        (unspec:V2DF [(match_operand:V2DF 1 "register_operand")
+                      (match_operand:V2DF 2 "register_operand")
+                      (match_operand 3 "" "")] UNSPEC_FMULCDC))]
+  ""
+  {
+    rtx real_0 = gen_rtx_SUBREG (DFmode, operands[0], 0);
+    rtx imag_0 = gen_rtx_SUBREG (DFmode, operands[0], 8);
+    rtx real_1 = gen_rtx_SUBREG (DFmode, operands[1], 0);
+    rtx imag_1 = gen_rtx_SUBREG (DFmode, operands[1], 8);
+    rtx real_2 = gen_rtx_SUBREG (DFmode, operands[2], 0);
+    rtx imag_2 = gen_rtx_SUBREG (DFmode, operands[2], 8);
+    rtx real_t = gen_reg_rtx (DFmode), imag_t = gen_reg_rtx (DFmode);
+    emit_insn (gen_kvx_fmuld (real_t, real_1, real_2, operands[3]));
+    emit_insn (gen_kvx_ffmad (real_0, imag_1, imag_2, real_t, operands[3]));
+    emit_insn (gen_kvx_fmuld (imag_t, real_1, imag_2, operands[3]));
+    emit_insn (gen_kvx_ffmsd (imag_0, real_2, imag_1, imag_t, operands[3]));
+    DONE;
+  }
+)
+
+(define_insn_and_split "fmav2df4"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (fma:V2DF (match_operand:V2DF 1 "register_operand" "r")
+                  (match_operand:V2DF 2 "register_operand" "r")
+                  (match_operand:V2DF 3 "register_operand" "0")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:DF (match_dup 0) 0)
+        (fma:DF  (subreg:DF (match_dup 1) 0)
+                 (subreg:DF (match_dup 2) 0)
+                 (subreg:DF (match_dup 3) 0)))
+   (set (subreg:DF (match_dup 0) 8)
+        (fma:DF  (subreg:DF (match_dup 1) 8)
+                 (subreg:DF (match_dup 2) 8)
+                 (subreg:DF (match_dup 3) 8)))]
+  ""
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn_and_split "kvx_ffmadp"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")
+                      (match_operand:V2DF 2 "register_operand" "r")
+                      (match_operand:V2DF 3 "register_operand" "0")
+                      (match_operand 4 "" "")] UNSPEC_FFMADP))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:DF (match_dup 0) 0)
+        (unspec:DF [(subreg:DF (match_dup 1) 0)
+                    (subreg:DF (match_dup 2) 0)
+                    (subreg:DF (match_dup 3) 0)
+                    (match_dup 4)] UNSPEC_FFMAD))
+   (set (subreg:DF (match_dup 0) 8)
+        (unspec:DF [(subreg:DF (match_dup 1) 8)
+                    (subreg:DF (match_dup 2) 8)
+                    (subreg:DF (match_dup 3) 8)
+                    (match_dup 4)] UNSPEC_FFMAD))]
+  ""
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn_and_split "fnmav2df4"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (fma:V2DF (neg:V2DF (match_operand:V2DF 1 "register_operand" "r"))
+                  (match_operand:V2DF 2 "register_operand" "r")
+                  (match_operand:V2DF 3 "register_operand" "0")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:DF (match_dup 0) 0)
+        (fma:DF  (neg:DF (subreg:DF (match_dup 1) 0))
+                 (subreg:DF (match_dup 2) 0)
+                 (subreg:DF (match_dup 3) 0)))
+   (set (subreg:DF (match_dup 0) 8)
+        (fma:DF  (neg:DF (subreg:DF (match_dup 1) 8))
+                 (subreg:DF (match_dup 2) 8)
+                 (subreg:DF (match_dup 3) 8)))]
+  ""
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn_and_split "kvx_ffmsdp"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")
+                      (match_operand:V2DF 2 "register_operand" "r")
+                      (match_operand:V2DF 3 "register_operand" "0")
+                      (match_operand 4 "" "")] UNSPEC_FFMSDP))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:DF (match_dup 0) 0)
+        (unspec:DF [(subreg:DF (match_dup 1) 0)
+                    (subreg:DF (match_dup 2) 0)
+                    (subreg:DF (match_dup 3) 0)
+                    (match_dup 4)] UNSPEC_FFMSD))
+   (set (subreg:DF (match_dup 0) 8)
+        (unspec:DF [(subreg:DF (match_dup 1) 8)
+                    (subreg:DF (match_dup 2) 8)
+                    (subreg:DF (match_dup 3) 8)
+                    (match_dup 4)] UNSPEC_FFMSD))]
+  ""
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn "fminv2df3"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (smin:V2DF (match_operand:V2DF 1 "register_operand" "r")
+                   (match_operand:V2DF 2 "register_operand" "r")))]
+  ""
+  "fmind %x0 = %x1, %x2\n\tfmind %y0 = %y1, %y2"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "fmaxv2df3"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (smax:V2DF (match_operand:V2DF 1 "register_operand" "r")
+                   (match_operand:V2DF 2 "register_operand" "r")))]
+  ""
+  "fmaxd %x0 = %x1, %x2\n\tfmaxd %y0 = %y1, %y2"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "negv2df2"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (neg:V2DF (match_operand:V2DF 1 "register_operand" "r")))]
+  ""
+  "fnegd %x0 = %x1\n\tfnegd %y0 = %y1"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "absv2df2"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (abs:V2DF (match_operand:V2DF 1 "register_operand" "r")))]
+  ""
+  "fabsd %x0 = %x1\n\tfabsd %y0 = %y1"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_expand "copysignv2df3"
+  [(match_operand:V2DF 0 "register_operand")
+   (match_operand:V2DF 1 "register_operand")
+   (match_operand:V2DF 2 "register_operand")]
+  ""
+  {
+    rtx fabs1 = gen_reg_rtx (V2DFmode);
+    emit_insn (gen_absv2df2 (fabs1, operands[1]));
+    rtx fneg1 = gen_reg_rtx (V2DFmode);
+    emit_insn (gen_negv2df2 (fneg1, fabs1));
+    rtx sign2 = gen_reg_rtx (V2DImode);
+    convert_move (sign2, operands[2], 0);
+    rtx ltz = gen_rtx_CONST_STRING (VOIDmode, ".dltz");
+    emit_insn (gen_kvx_selectfdp (operands[0], fneg1, fabs1, sign2, ltz));
+    DONE;
+  }
+)
+
+(define_insn_and_split "floatv2div2df2"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (float:V2DF (match_operand:V2DI 1 "register_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:DF (match_dup 0) 0)
+        (float:DF (subreg:DI (match_dup 1) 0)))
+   (set (subreg:DF (match_dup 0) 8)
+        (float:DF (subreg:DI (match_dup 1) 8)))]
+  ""
+  [(set_attr "type" "mau_fpu")]
+)
+
+(define_insn_and_split "kvx_floatdp"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (unspec:V2DF [(match_operand:V2DI 1 "register_operand" "r")
+                      (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                      (match_operand 3 "" "")] UNSPEC_FLOATDP))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:DF (match_dup 0) 0)
+        (unspec:DF [(subreg:DI (match_dup 1) 0)
+                    (match_dup 2)
+                    (match_dup 3)] UNSPEC_FLOATD))
+   (set (subreg:DF (match_dup 0) 8)
+        (unspec:DF [(subreg:DI (match_dup 1) 8)
+                    (match_dup 2)
+                    (match_dup 3)] UNSPEC_FLOATD))]
+  ""
+  [(set_attr "type" "mau_fpu")]
+)
+
+(define_insn_and_split "floatunsv2div2df2"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (unsigned_float:V2DF (match_operand:V2DI 1 "register_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:DF (match_dup 0) 0)
+        (unsigned_float:DF (subreg:DI (match_dup 1) 0)))
+   (set (subreg:DF (match_dup 0) 8)
+        (unsigned_float:DF (subreg:DI (match_dup 1) 8)))]
+  ""
+  [(set_attr "type" "mau_fpu")]
+)
+
+(define_insn_and_split "kvx_floatudp"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (unspec:V2DF [(match_operand:V2DI 1 "register_operand" "r")
+                      (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                      (match_operand 3 "" "")] UNSPEC_FLOATUDP))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:DF (match_dup 0) 0)
+        (unspec:DF [(subreg:DI (match_dup 1) 0)
+                    (match_dup 2)
+                    (match_operand 3 "" "")] UNSPEC_FLOATUD))
+   (set (subreg:DF (match_dup 0) 8)
+        (unspec:DF [(subreg:DI (match_dup 1) 8)
+                    (match_dup 2)
+                    (match_operand 3 "" "")] UNSPEC_FLOATUD))]
+  ""
+  [(set_attr "type" "mau_fpu")]
+)
+
+(define_insn_and_split "fix_truncv2dfv2di2"
+  [(set (match_operand:V2DI 0 "register_operand" "=r")
+        (fix:V2DI (match_operand:V2DF 1 "register_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:DI (match_dup 0) 0)
+        (fix:DI (subreg:DF (match_dup 1) 0)))
+   (set (subreg:DI (match_dup 0) 8)
+        (fix:DI (subreg:DF (match_dup 1) 8)))]
+  ""
+  [(set_attr "type" "mau_fpu")]
+)
+
+(define_insn_and_split "kvx_fixeddp"
+  [(set (match_operand:V2DI 0 "register_operand" "=r")
+        (unspec:V2DI [(match_operand:V2DF 1 "register_operand" "r")
+                      (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                      (match_operand 3 "" "")] UNSPEC_FIXEDDP))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:DI (match_dup 0) 0)
+        (unspec:DI [(subreg:DF (match_dup 1) 0)
+                    (match_dup 2)
+                    (match_dup 3)] UNSPEC_FIXEDD))
+   (set (subreg:DI (match_dup 0) 8)
+        (unspec:DI [(subreg:DF (match_dup 1) 8)
+                    (match_dup 2)
+                    (match_dup 3)] UNSPEC_FIXEDD))]
+  ""
+  [(set_attr "type" "mau_fpu")]
+)
+
+(define_insn_and_split "fixuns_truncv2dfv2di2"
+  [(set (match_operand:V2DI 0 "register_operand" "=r")
+        (unsigned_fix:V2DI (match_operand:V2DF 1 "register_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:DI (match_dup 0) 0)
+        (unsigned_fix:DI (subreg:DF (match_dup 1) 0)))
+   (set (subreg:DI (match_dup 0) 8)
+        (unsigned_fix:DI (subreg:DF (match_dup 1) 8)))]
+  ""
+  [(set_attr "type" "mau_fpu")]
+)
+
+(define_insn_and_split "kvx_fixedudp"
+  [(set (match_operand:V2DI 0 "register_operand" "=r")
+        (unspec:V2DI [(match_operand:V2DF 1 "register_operand" "r")
+                      (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                      (match_operand 3 "" "")] UNSPEC_FIXEDUDP))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:DI (match_dup 0) 0)
+        (unspec:DI [(subreg:DF (match_dup 1) 0)
+                    (match_dup 2)
+                    (match_dup 3)] UNSPEC_FIXEDUD))
+   (set (subreg:DI (match_dup 0) 8)
+        (unspec:DI [(subreg:DF (match_dup 1) 8)
+                    (match_dup 2)
+                    (match_dup 3)] UNSPEC_FIXEDUD))]
+  ""
+  [(set_attr "type" "mau_fpu")]
+)
+
+
+(define_expand "kvx_fcdivdp"
+  [(match_operand:V2DF 0 "register_operand" "")
+   (match_operand:V2DF 1 "register_operand" "")
+   (match_operand:V2DF 2 "register_operand" "")
+   (match_operand 3 "" "")]
+  ""
+  {
+    rtx opnd0_0 = gen_rtx_SUBREG (DFmode, operands[0], 0);
+    rtx opnd1_0 = gen_rtx_SUBREG (DFmode, operands[1], 0);
+    rtx opnd2_0 = gen_rtx_SUBREG (DFmode, operands[2], 0);
+    emit_insn (gen_kvx_fcdivd (opnd0_0, opnd1_0, opnd2_0, operands[3]));
+    rtx opnd0_1 = gen_rtx_SUBREG (DFmode, operands[0], 8);
+    rtx opnd1_1 = gen_rtx_SUBREG (DFmode, operands[1], 8);
+    rtx opnd2_1 = gen_rtx_SUBREG (DFmode, operands[2], 8);
+    emit_insn (gen_kvx_fcdivd (opnd0_1, opnd1_1, opnd2_1, operands[3]));
+    DONE;
+  }
+)
+
+(define_expand "kvx_fsdivdp"
+  [(match_operand:V2DF 0 "register_operand" "")
+   (match_operand:V2DF 1 "register_operand" "")
+   (match_operand:V2DF 2 "register_operand" "")
+   (match_operand 3 "" "")]
+  ""
+  {
+    rtx opnd0_0 = gen_rtx_SUBREG (DFmode, operands[0], 0);
+    rtx opnd1_0 = gen_rtx_SUBREG (DFmode, operands[1], 0);
+    rtx opnd2_0 = gen_rtx_SUBREG (DFmode, operands[2], 0);
+    emit_insn (gen_kvx_fsdivd (opnd0_0, opnd1_0, opnd2_0, operands[3]));
+    rtx opnd0_1 = gen_rtx_SUBREG (DFmode, operands[0], 8);
+    rtx opnd1_1 = gen_rtx_SUBREG (DFmode, operands[1], 8);
+    rtx opnd2_1 = gen_rtx_SUBREG (DFmode, operands[2], 8);
+    emit_insn (gen_kvx_fsdivd (opnd0_1, opnd1_1, opnd2_1, operands[3]));
+    DONE;
+  }
+)
+
+(define_expand "kvx_fsrecdp"
+  [(match_operand:V2DF 0 "register_operand" "")
+   (match_operand:V2DF 1 "register_operand" "")
+   (match_operand 2 "" "")]
+  ""
+  {
+    rtx opnd0_0 = gen_rtx_SUBREG (DFmode, operands[0], 0);
+    rtx opnd1_0 = gen_rtx_SUBREG (DFmode, operands[1], 0);
+    emit_insn (gen_kvx_fsrecd (opnd0_0, opnd1_0, operands[2]));
+    rtx opnd0_1 = gen_rtx_SUBREG (DFmode, operands[0], 8);
+    rtx opnd1_1 = gen_rtx_SUBREG (DFmode, operands[1], 8);
+    emit_insn (gen_kvx_fsrecd (opnd0_1, opnd1_1, operands[2]));
+    DONE;
+  }
+)
+
+(define_expand "kvx_fsrsrdp"
+  [(match_operand:V2DF 0 "register_operand" "")
+   (match_operand:V2DF 1 "register_operand" "")
+   (match_operand 2 "" "")]
+  ""
+  {
+    rtx opnd0_0 = gen_rtx_SUBREG (DFmode, operands[0], 0);
+    rtx opnd1_0 = gen_rtx_SUBREG (DFmode, operands[1], 0);
+    emit_insn (gen_kvx_fsrsrd (opnd0_0, opnd1_0, operands[2]));
+    rtx opnd0_1 = gen_rtx_SUBREG (DFmode, operands[0], 8);
+    rtx opnd1_1 = gen_rtx_SUBREG (DFmode, operands[1], 8);
+    emit_insn (gen_kvx_fsrsrd (opnd0_1, opnd1_1, operands[2]));
+    DONE;
+  }
+)
+
+(define_insn "kvx_fmindps"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (smin:V2DF (match_operand:V2DF 1 "register_operand" "r")
+                   (match_operand:DF 2 "register_operand" "r")))]
+  ""
+  "fmind %x0 = %x1, %2\n\tfmind %y0 = %y1, %2"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "kvx_fmaxdps"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (smax:V2DF (match_operand:V2DF 1 "register_operand" "r")
+                   (match_operand:DF 2 "register_operand" "r")))]
+  ""
+  "fmaxd %x0 = %x1, %2\n\tfmaxd %y0 = %y1, %2"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "kvx_fconjdc"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")] UNSPEC_FCONJDC))]
+  ""
+  "copyd %x0 = %x1\n\tfnegd %y0 = %y1"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
 )
 
 
