@@ -318,7 +318,7 @@
 ])
 
 ;; Attribute to get the mask MODE of a vector mode.
-(define_mode_attr PRED [
+(define_mode_attr MASK [
   (V8QI    "V8QI")
   (V4HI    "V4HI")
   (V4HF    "V4HI")
@@ -341,7 +341,7 @@
 ])
 
 ;; Attribute to get the mask mode of a vector mode.
-(define_mode_attr pred [
+(define_mode_attr mask [
   (V4HI    "v4hi")
   (V4HF    "v4hi")
   (V2SI    "v2si")
@@ -358,6 +358,158 @@
   (V8SF    "v8si")
   (V4DI    "v4di")
   (V4DF    "v4di")
+])
+
+;; Attribute to get the half MODE of a vector mode.
+(define_mode_attr HALF [
+  (V16QI   "V8QI")
+  (V8HI    "V4HI")
+  (V8HF    "V4HF")
+  (V4SI    "V2SI")
+  (V4SF    "V2SF")
+  (V32QI   "V16QI")
+  (V16HI   "V8HI")
+  (V16HF   "V8HF")
+  (V8SI    "V4SI")
+  (V8SF    "V4SF")
+  (V4DI    "V2DI")
+  (V4DF    "V2DF")
+])
+
+;; Attribute to get the half mode of a vector mode.
+(define_mode_attr half [
+  (V16QI   "v8qi")
+  (V8HI    "v4hi")
+  (V8HF    "v4hf")
+  (V4SI    "v2si")
+  (V4SF    "v2sf")
+  (V32QI   "v16qi")
+  (V16HI   "v8hi")
+  (V16HF   "v8hf")
+  (V8SI    "v4si")
+  (V8SF    "v4sf")
+  (V4DI    "v2di")
+  (V4DF    "v2df")
+])
+
+;; Attribute to get the half mask MODE of a vector mode.
+(define_mode_attr HMASK [
+  (V16QI   "V8QI")
+  (V8HI    "V4HI")
+  (V8HF    "V4HI")
+  (V4SI    "V2SI")
+  (V4SF    "V2SI")
+  (V2DI    "DI")
+  (V2DF    "DI")
+  (V32QI   "V32QI")
+  (V16HI   "V8HI")
+  (V16HF   "V8HI")
+  (V8SI    "V4SI")
+  (V8SF    "V4SI")
+  (V4DI    "V2DI")
+  (V4DF    "V2DI")
+])
+
+;; Attribute to get the half suffix of a vector mode.
+(define_mode_attr halfx [
+  (V16QI   "bo")
+  (V8HI    "hq")
+  (V8HF    "hq")
+  (V4SI    "wp")
+  (V4SF    "wp")
+  (V32QI   "bx")
+  (V16HI   "ho")
+  (V16HF   "ho")
+  (V8SI    "wq")
+  (V8SF    "wq")
+  (V4DI    "dp")
+  (V4DF    "dp")
+])
+
+;; Attribute to get the quarter mode of a vector mode.
+(define_mode_attr QUART [
+  (V32QI   "V8QI")
+  (V16HI   "V4HI")
+  (V16HF   "V4HF")
+  (V8SI    "V2SI")
+  (V8SF    "V2SF")
+])
+
+;; Attribute to get the quarter mode of a vector mode.
+(define_mode_attr quartx [
+  (V32QI   "bo")
+  (V16HI   "hq")
+  (V16HF   "hq")
+  (V8SI    "wp")
+  (V8SF    "wp")
+])
+
+;; Attribute to get the chunk MODE of a vector mode.
+(define_mode_attr CHUNK [
+  (V8QI    "V8QI")
+  (V4HI    "V4HI")
+  (V4HF    "V4HF")
+  (V2SI    "V2SI")
+  (V2SF    "V2SF")
+  (V16QI   "V8QI")
+  (V8HI    "V4HI")
+  (V8HF    "V4HF")
+  (V4SI    "V2SI")
+  (V4SF    "V2SF")
+  (V32QI   "V8QI")
+  (V16HI   "V4HI")
+  (V16HF   "V4HF")
+  (V8SI    "V2SI")
+  (V8SF    "V2SF")
+])
+
+;; Attribute to get the chunk suffix of a vector mode.
+(define_mode_attr chunkx [
+  (V8QI    "bo")
+  (V4HI    "hq")
+  (V4HF    "hq")
+  (V2SI    "wp")
+  (V2SF    "wp")
+  (V16QI   "bo")
+  (V8HI    "hq")
+  (V8HF    "hq")
+  (V4SI    "wp")
+  (V4SF    "wp")
+  (V32QI   "bo")
+  (V16HI   "hq")
+  (V16HF   "hq")
+  (V8SI    "wp")
+  (V8SF    "wp")
+])
+
+;; Iterator for the 64-bit vector integer modes.
+(define_mode_iterator V64I [
+  V4HI V2SI
+])
+
+;; Iterator for the 128-bit vector integer modes.
+(define_mode_iterator V128I [
+  V8HI V4SI
+])
+
+;; Iterator for the 256-bit vector integer modes.
+(define_mode_iterator V256I [
+  V16HI V8SI
+])
+
+;; Iterator for the 64-bit vector FP modes.
+(define_mode_iterator V64F [
+  V4HF V2SF
+])
+
+;; Iterator for the 128-bit vector FP modes.
+(define_mode_iterator V128F [
+  V8HF V4SF
+])
+
+;; Iterator for the 256-bit vector FP modes.
+(define_mode_iterator V256F [
+  V16HF V8SF
 ])
 
 ;; Iterator for the vector SF modes.
