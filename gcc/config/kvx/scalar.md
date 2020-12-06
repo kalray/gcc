@@ -3,7 +3,7 @@
 (define_insn_and_split "kvx_joinp<mode>"
   [(set (match_operand:TI 0 "register_operand" "=r")
         (unspec:TI [(match_operand:FITGPR 1 "register_operand" "r")
-                    (match_operand:FITGPR 2 "register_operand" "r")] UNSPEC_JOINP))]
+                    (match_operand:FITGPR 2 "register_operand" "r")] UNSPEC_PAIR64))]
   ""
   "#"
   "reload_completed"
@@ -16,7 +16,265 @@
    (set_attr "length"         "8")]
 )
 
-;; HI
+
+;; SIDI (SI/DI)
+
+(define_insn "*addx2<suffix>"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (plus:SIDI (mult:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
+                              (const_int 2))
+                   (match_operand:SIDI 2 "register_s32_operand" "r,B32")))]
+  ""
+  "addx2<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
+
+(define_insn "*addx2<suffix>2"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (plus:SIDI (ashift:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
+                                (const_int 1))
+                   (match_operand:SIDI 2 "register_s32_operand" "r,B32")))]
+  ""
+  "addx2<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
+
+(define_insn "*addx4<suffix>"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (plus:SIDI (mult:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
+                              (const_int 4))
+                   (match_operand:SIDI 2 "register_s32_operand" "r,B32")))]
+  ""
+  "addx4<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
+
+(define_insn "*addx4<suffix>2"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (plus:SIDI (ashift:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
+                                (const_int 2))
+                   (match_operand:SIDI 2 "register_s32_operand" "r,B32")))]
+  ""
+  "addx4<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
+
+(define_insn "*addx8<suffix>"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (plus:SIDI (mult:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
+                              (const_int 8))
+                   (match_operand:SIDI 2 "register_s32_operand" "r,B32")))]
+  ""
+  "addx8<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
+
+(define_insn "*addx8<suffix>2"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (plus:SIDI (ashift:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
+                                (const_int 3))
+                   (match_operand:SIDI 2 "register_s32_operand" "r,B32")))]
+  ""
+  "addx8<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
+
+(define_insn "*addx16<suffix>"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (plus:SIDI (mult:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
+                              (const_int 16))
+                   (match_operand:SIDI 2 "register_s32_operand" "r,B32")))]
+  ""
+  "addx16<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
+
+(define_insn "*addx16<suffix>2"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (plus:SIDI (ashift:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
+                                (const_int 4))
+                   (match_operand:SIDI 2 "register_s32_operand" "r,B32")))]
+  ""
+  "addx16<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
+
+(define_insn "*sbfx2<suffix>"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (minus:SIDI (match_operand:SIDI 1 "register_s32_operand" "r,B32")
+                    (mult:SIDI (match_operand:SIDI 2 "register_operand" "r,r")
+                               (const_int 2))))]
+  ""
+  "sbfx2<suffix> %0 = %2, %1"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
+
+(define_insn "*sbfx2<suffix>2"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (minus:SIDI (match_operand:SIDI 1 "register_s32_operand" "r,B32")
+                    (ashift:SIDI (match_operand:SIDI 2 "register_operand" "r,r")
+                                 (const_int 1))))]
+  ""
+  "sbfx2<suffix> %0 = %2, %1"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
+
+(define_insn "*sbfx4<suffix>"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (minus:SIDI (match_operand:SIDI 1 "register_s32_operand" "r,B32")
+                    (mult:SIDI (match_operand:SIDI 2 "register_operand" "r,r")
+                               (const_int 4))))]
+  ""
+  "sbfx4<suffix> %0 = %2, %1"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
+
+(define_insn "*sbfx4<suffix>2"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (minus:SIDI (match_operand:SIDI 1 "register_s32_operand" "r,B32")
+                    (ashift:SIDI (match_operand:SIDI 2 "register_operand" "r,r")
+                                 (const_int 2))))]
+  ""
+  "sbfx4<suffix> %0 = %2, %1"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
+
+(define_insn "*sbfx8<suffix>"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (minus:SIDI (match_operand:SIDI 1 "register_s32_operand" "r,B32")
+                    (mult:SIDI (match_operand:SIDI 2 "register_operand" "r,r")
+                               (const_int 8))))]
+  ""
+  "sbfx8<suffix> %0 = %2, %1"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
+
+(define_insn "*sbfx8<suffix>2"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (minus:SIDI (match_operand:SIDI 1 "register_s32_operand" "r,B32")
+                    (ashift:SIDI (match_operand:SIDI 2 "register_operand" "r,r")
+                                 (const_int 3))))]
+  ""
+  "sbfx8<suffix> %0 = %2, %1"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
+
+(define_insn "*sbfx16<suffix>"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (minus:SIDI (match_operand:SIDI 1 "register_s32_operand" "r,B32")
+                    (mult:SIDI (match_operand:SIDI 2 "register_operand" "r,r")
+                               (const_int 16))))]
+  ""
+  "sbfx16<suffix> %0 = %2, %1"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
+
+(define_insn "*sbfx16<suffix>2"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (minus:SIDI (match_operand:SIDI 1 "register_s32_operand" "r,B32")
+                    (ashift:SIDI (match_operand:SIDI 2 "register_operand" "r,r")
+                                 (const_int 4))))]
+  ""
+  "sbfx16<suffix> %0 = %2, %1"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
+
+(define_insn "*land<suffix>"
+  [(set (match_operand:SI 0 "register_operand" "=r,r")
+        (and:SI (ne:SI (match_operand:SIDI 1 "register_operand" "%r,r") (const_int 0))
+                (ne:SI (match_operand:SIDI 2 "register_s32_operand" "r,B32") (const_int 0))))]
+  ""
+  "land<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
+
+(define_insn "*lnand<suffix>"
+  [(set (match_operand:SI 0 "register_operand" "=r,r")
+        (ior:SI (eq:SI (match_operand:SIDI 1 "register_operand" "%r,r") (const_int 0))
+                (eq:SI (match_operand:SIDI 2 "register_s32_operand" "r,B32") (const_int 0))))]
+  ""
+  "lnand<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
+
+(define_insn "*lor<suffix>"
+  [(set (match_operand:SI 0 "register_operand" "=r,r")
+        (ne:SI (ior:SIDI (match_operand:SIDI 1 "register_operand" "%r,r")
+                         (match_operand:SIDI 2 "register_s32_operand" "r,B32"))
+               (const_int 0)))]
+  ""
+  "lor<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
+
+(define_insn "*lnor<suffix>"
+  [(set (match_operand:SI 0 "register_operand" "=r,r")
+        (eq:SI (ior:SIDI (match_operand:SIDI 1 "register_operand" "%r,r")
+                         (match_operand:SIDI 2 "register_s32_operand" "r,B32"))
+               (const_int 0)))]
+  ""
+  "lnor<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
+
+(define_insn "*zxh_and"
+  [(set (match_operand:SI 0 "register_operand" "=r")
+        (and:SI (match_operand:SI 1 "register_operand" "r")
+                (const_int 65535) ))]
+  ""
+  "zxhd %0 = %1"
+  [(set_attr "type" "alu_lite")]
+)
+
+(define_insn "extv<mode>"
+  [(set (match_operand:SIDI 0 "register_operand" "=r")
+        (sign_extract:SIDI (match_operand:SIDI 1 "register_operand" "r")
+                           (match_operand:SIDI 2 "sixbits_unsigned_operand" "i")
+                           (match_operand:SIDI 3 "sixbits_unsigned_operand" "i")))]
+  ""
+  "extfs %0 = %1, %2+%3-1, %3"
+  [(set_attr "type" "alu_lite")]
+)
+
+(define_insn "extzv<mode>"
+  [(set (match_operand:SIDI 0 "register_operand" "=r")
+        (zero_extract:SIDI (match_operand:SIDI 1 "register_operand" "r")
+                           (match_operand:SIDI 2 "sixbits_unsigned_operand" "i")
+                           (match_operand:SIDI 3 "sixbits_unsigned_operand" "i")))]
+  ""
+  "extfz %0 = %1, %2+%3-1, %3"
+  [(set_attr "type" "alu_lite")]
+)
+
+(define_insn "insv<mode>"
+  [(set (zero_extract:SIDI (match_operand:SIDI 0 "register_operand" "+r")
+                           (match_operand:SIDI 1 "sixbits_unsigned_operand" "i")
+                           (match_operand:SIDI 2 "sixbits_unsigned_operand" "i"))
+        (match_operand:SIDI 3 "register_operand" "r"))]
+  ""
+  "insf %0 = %3, %1+%2-1, %2"
+  [(set_attr "type" "alu_lite")]
+)
 
 
 ;; SI
@@ -514,43 +772,43 @@
 )
 
 (define_insn "avgsi3_floor"
-  [(set (match_operand:SI 0 "register_operand" "=r,r,r")
-        (unspec:SI [(match_operand:SI 1 "register_operand" "r,r,r")
-                    (match_operand:SI 2 "register_s32_operand" "r,I10,I32")] UNSPEC_AVGW))]
+  [(set (match_operand:SI 0 "register_operand" "=r,r")
+        (unspec:SI [(match_operand:SI 1 "register_operand" "r,r")
+                    (match_operand:SI 2 "register_s32_operand" "r,B32")] UNSPEC_AVGW))]
   ""
   "avgw %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite,alu_lite_x")
-   (set_attr "length" "4,4,8")]
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "4,8")]
 )
 
 (define_insn "uavgsi3_floor"
-  [(set (match_operand:SI 0 "register_operand" "=r,r,r")
-        (unspec:SI [(match_operand:SI 1 "register_operand" "r,r,r")
-                    (match_operand:SI 2 "register_s32_operand" "r,I10,I32")] UNSPEC_AVGUW))]
+  [(set (match_operand:SI 0 "register_operand" "=r,r")
+        (unspec:SI [(match_operand:SI 1 "register_operand" "r,r")
+                    (match_operand:SI 2 "register_s32_operand" "r,B32")] UNSPEC_AVGUW))]
   ""
   "avguw %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite,alu_lite_x")
-   (set_attr "length" "4,4,8")]
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "4,8")]
 )
 
 (define_insn "avgsi3_ceil"
-  [(set (match_operand:SI 0 "register_operand" "=r,r,r")
-        (unspec:SI [(match_operand:SI 1 "register_operand" "r,r,r")
-                    (match_operand:SI 2 "register_s32_operand" "r,I10,I32")] UNSPEC_AVGRW))]
+  [(set (match_operand:SI 0 "register_operand" "=r,r")
+        (unspec:SI [(match_operand:SI 1 "register_operand" "r,r")
+                    (match_operand:SI 2 "register_s32_operand" "r,B32")] UNSPEC_AVGRW))]
   ""
   "avgrw %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite,alu_lite_x")
-   (set_attr "length" "4,4,8")]
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "4,8")]
 )
 
 (define_insn "uavgsi3_ceil"
-  [(set (match_operand:SI 0 "register_operand" "=r,r,r")
-        (unspec:SI [(match_operand:SI 1 "register_operand" "r,r,r")
-                    (match_operand:SI 2 "register_s32_operand" "r,I10,I32")] UNSPEC_AVGRUW))]
+  [(set (match_operand:SI 0 "register_operand" "=r,r")
+        (unspec:SI [(match_operand:SI 1 "register_operand" "r,r")
+                    (match_operand:SI 2 "register_s32_operand" "r,B32")] UNSPEC_AVGRUW))]
   ""
   "avgruw %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite,alu_lite_x")
-   (set_attr "length" "4,4,8")]
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "4,8")]
 )
 
 (define_insn "bswapsi2"
@@ -1191,6 +1449,24 @@
    (set_attr "length" "4")]
 )
 
+(define_insn "*set_<mode>"
+   [(set (match_operand:ALLP 0 "system_register_operand" "=RYY,RXX")
+         (match_operand:ALLP 1 "register_operand" "r,r"))]
+   ""
+   "set %0 = %1"
+  [(set_attr "type" "all,bcu")]
+)
+
+(define_insn "kvx_set"
+   [(set (match_operand:DI 0 "system_register_operand" "=RYY,RXX")
+         (unspec_volatile:DI [(match_operand:DI 1 "register_operand" "r,r")] UNSPEC_SET))
+    (set (match_operand:SI 2 "" "")
+         (unspec:SI [(match_dup 2)] UNSPEC_SYNC))]
+   ""
+   "set %0 = %1"
+  [(set_attr "type" "all,bcu")]
+)
+
 
 ;; TI
 
@@ -1264,12 +1540,32 @@
   [(set_attr "type" "mau_fpu")]
 )
 
+(define_insn "kvx_faddh"
+  [(set (match_operand:HF 0 "register_operand" "=r")
+        (unspec:HF [(match_operand:HF 1 "register_operand" "r")
+                    (match_operand:HF 2 "register_operand" "r")
+                    (match_operand 3 "" "")] UNSPEC_FADDH))]
+  ""
+  "faddhq%3 %0 = %1, %2"
+  [(set_attr "type" "mau_fpu")]
+)
+
 (define_insn "subhf3"
   [(set (match_operand:HF 0 "register_operand" "=r")
         (minus:HF (match_operand:HF 1 "register_operand" "r")
                   (match_operand:HF 2 "register_operand" "r")))]
   ""
   "fsbfhq %0 = %2, %1"
+  [(set_attr "type" "mau_fpu")]
+)
+
+(define_insn "kvx_fsbfh"
+  [(set (match_operand:HF 0 "register_operand" "=r")
+        (unspec:HF [(match_operand:HF 1 "register_operand" "r")
+                    (match_operand:HF 2 "register_operand" "r")
+                    (match_operand 3 "" "")] UNSPEC_FSBFH))]
+  ""
+  "fsbfhq%3 %0 = %1, %2"
   [(set_attr "type" "mau_fpu")]
 )
 
@@ -1282,12 +1578,32 @@
   [(set_attr "type" "mau_fpu")]
 )
 
+(define_insn "kvx_fmulh"
+  [(set (match_operand:HF 0 "register_operand" "=r")
+        (unspec:HF [(match_operand:HF 1 "register_operand" "r")
+                    (match_operand:HF 2 "register_operand" "r")
+                    (match_operand 3 "" "")] UNSPEC_FMULH))]
+  ""
+  "fmulhq%3 %0 = %1, %2"
+  [(set_attr "type" "mau_fpu")]
+)
+
 (define_insn "*fmulhw"
   [(set (match_operand:SF 0 "register_operand" "=r")
         (mult:SF (float_extend:SF (match_operand:HF 1 "register_operand" "r"))
                  (float_extend:SF (match_operand:HF 2 "register_operand" "r"))))]
   ""
   "fmulhw %0 = %1, %2"
+  [(set_attr "type" "mau_fpu")]
+)
+
+(define_insn "kvx_fmulhw"
+  [(set (match_operand:SF 0 "register_operand" "=r")
+        (unspec:SF [(match_operand:HF 1 "register_operand" "r")
+                    (match_operand:HF 2 "register_operand" "r")
+                    (match_operand 3 "" "")] UNSPEC_FMULHW))]
+  ""
+  "fmulhw%3 %0 = %1, %2"
   [(set_attr "type" "mau_fpu")]
 )
 
@@ -1320,6 +1636,17 @@
   [(set_attr "type" "mau_auxr_fpu")]
 )
 
+(define_insn "kvx_ffmah"
+  [(set (match_operand:HF 0 "register_operand" "=r")
+        (unspec:HF [(match_operand:HF 1 "register_operand" "r")
+                    (match_operand:HF 2 "register_operand" "r")
+                    (match_operand:HF 3 "register_operand" "0")
+                    (match_operand 4 "" "")] UNSPEC_FFMAH))]
+  ""
+  "ffmahq%4 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
 (define_insn "*ffmahw"
   [(set (match_operand:SF 0 "register_operand" "=r")
         (fma:SF  (float_extend:SF (match_operand:HF 1 "register_operand" "r"))
@@ -1330,6 +1657,17 @@
   [(set_attr "type" "mau_auxr_fpu")]
 )
 
+(define_insn "kvx_ffmahw"
+  [(set (match_operand:SF 0 "register_operand" "=r")
+        (unspec:SF [(match_operand:HF 1 "register_operand" "r")
+                    (match_operand:HF 2 "register_operand" "r")
+                    (match_operand:SF 3 "register_operand" "0")
+                    (match_operand 4 "" "")] UNSPEC_FFMAHW))]
+  ""
+  "ffmahw%4 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
 (define_insn "fnmahf4"
   [(set (match_operand:HF 0 "register_operand" "=r")
         (fma:HF  (neg:HF (match_operand:HF 1 "register_operand" "r"))
@@ -1337,6 +1675,17 @@
                  (match_operand:HF 3 "register_operand" "0")))]
   ""
   "ffmshq %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn "kvx_ffmsh"
+  [(set (match_operand:HF 0 "register_operand" "=r")
+        (unspec:HF [(match_operand:HF 1 "register_operand" "r")
+                    (match_operand:HF 2 "register_operand" "r")
+                    (match_operand:HF 3 "register_operand" "0")
+                    (match_operand 4 "" "")] UNSPEC_FFMSH))]
+  ""
+  "ffmshq%4 %0 = %1, %2"
   [(set_attr "type" "mau_auxr_fpu")]
 )
 
@@ -1357,6 +1706,17 @@
                 (match_operand:SF 3 "register_operand" "0")))]
   ""
   "ffmshw %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn "kvx_ffmshw"
+  [(set (match_operand:SF 0 "register_operand" "=r")
+        (unspec:SF [(match_operand:HF 1 "register_operand" "r")
+                    (match_operand:HF 2 "register_operand" "r")
+                    (match_operand:SF 3 "register_operand" "0")
+                    (match_operand 4 "" "")] UNSPEC_FFMSHW))]
+  ""
+  "ffmshw%4 %0 = %1, %2"
   [(set_attr "type" "mau_auxr_fpu")]
 )
 
@@ -2384,6 +2744,17 @@
    (use (match_dup 1))]
   ""
   "lws%2%m1 %0 = %1"
+  [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
+   (set_attr "length"                    "4,                       8,                      12")]
+)
+
+(define_insn "kvx_lhf"
+ [(set (match_operand:HF 0 "register_operand" "=r,r,r")
+       (unspec:HF [(match_operand:SF 1 "memory_operand" "a,b,m")
+                   (match_operand 2 "" "")] UNSPEC_LHF))
+   (use (match_dup 1))]
+  ""
+  "lhz%2%m1 %0 = %1"
   [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
    (set_attr "length"                    "4,                       8,                      12")]
 )
