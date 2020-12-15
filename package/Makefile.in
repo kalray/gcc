@@ -177,6 +177,11 @@ TARGET_CFLAGS += -fno-dwarf2-cfi-asm
 TARGET_CXXFLAGS += -fno-dwarf2-cfi-asm
 endif
 
+ifeq ($(BR2_kvx),y)
+TARGET_CFLAGS += -march=$(call qstrip,$(BR2_MARCH))
+TARGET_CXXFLAGS += -march=$(call qstrip,$(BR2_MARCH))
+endif
+
 ifeq ($(BR2_BINFMT_FLAT),y)
 TARGET_CFLAGS += $(if $($(PKG)_FLAT_STACKSIZE),-Wl$(comma)-elf2flt=-s$($(PKG)_FLAT_STACKSIZE),\
 	-Wl$(comma)-elf2flt)

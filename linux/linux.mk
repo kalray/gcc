@@ -342,6 +342,12 @@ define LINUX_KCONFIG_FIXUP_CMDS
 		$(call KCONFIG_ENABLE_OPT,CONFIG_ARC_PAGE_SIZE_16K))
 	$(if $(BR2_TARGET_ROOTFS_CPIO),
 		$(call KCONFIG_ENABLE_OPT,CONFIG_BLK_DEV_INITRD))
+	$(if $(BR2_kvx),
+		$(SED) '/CONFIG_KVX_SUBARCH_*/d' $(@D)/.config
+		$(if $(BR2_kvx_coolidge_v1),
+			$(call KCONFIG_ENABLE_OPT,CONFIG_KVX_SUBARCH_KV3_1))
+		$(if $(BR2_kvx_coolidge_v2),
+			$(call KCONFIG_ENABLE_OPT,CONFIG_KVX_SUBARCH_KV3_2)))
 	# As the kernel gets compiled before root filesystems are
 	# built, we create a fake cpio file. It'll be
 	# replaced later by the real cpio archive, and the kernel will be

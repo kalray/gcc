@@ -3,16 +3,34 @@ choice
 	help
 	  Specific CPU variant to use
 
-config BR2_kvx_coolidge
-	bool "coolidge"
+config BR2_KVX_COOLIDGE_V1
+	bool "Coolidge V1"
+
+config BR2_KVX_COOLIDGE_V2
+	bool "Coolidge V2"
 
 endchoice
 
 config BR2_ARCH
 	default "kvx"
 
+config BR2_MARCH
+	string
+	default "kv3-1" if BR2_KVX_COOLIDGE_V1
+	default "kv3-2" if BR2_KVX_COOLIDGE_V2
+
+config BR2_KVX_COOLIDGE_VERSION
+	string
+	default "V1" if BR2_KVX_COOLIDGE_V1
+	default "V2" if BR2_KVX_COOLIDGE_V2
+
 config BR2_ENDIAN
 	default "LITTLE"
 
 config BR2_READELF_ARCH_NAME
 	default "Kalray VLIW Processor"
+
+config BR2_GCC_TARGET_ARCH
+	string
+	default "kv3-1" if BR2_KVX_COOLIDGE_V1
+	default "kv3-2" if BR2_KVX_COOLIDGE_V2
