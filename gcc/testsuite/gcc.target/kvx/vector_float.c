@@ -124,12 +124,12 @@ k1_float32x2_fabs(float32x2_t a)
 float32x2_t __attribute__ ((noinline))
 k1_float32x2_faddcwc(float32x2_t a, float32x2_t b)
 {
-    return __builtin_kvx_faddcwc(a, b, ".rn");
+  return __builtin_kvx_faddwp (a, b, ".c.rn");
 }
 float32x2_t __attribute__ ((noinline))
 k1_float32x2_fsbfcwc(float32x2_t a, float32x2_t b)
 {
-    return __builtin_kvx_fsbfcwc(a, b, ".rn");
+  return __builtin_kvx_fsbfwp (a, b, ".c.rn");
 }
 float32x2_t __attribute__ ((noinline))
 k1_float32x2_fmulwc(float32x2_t a, float32x2_t b)
@@ -139,7 +139,7 @@ k1_float32x2_fmulwc(float32x2_t a, float32x2_t b)
 float32x2_t __attribute__ ((noinline))
 k1_float32x2_fmulcwc(float32x2_t a, float32x2_t b)
 {
-    return __builtin_kvx_fmulcwc(a, b, ".rn");
+  return __builtin_kvx_fmulwc (a, b, ".c.rn");
 }
 void __attribute__ ((noinline))
 k1_float32x2_axpyb(int n, float32_t a, float32_t b, float32x2_t x[], float32x2_t y[], float32x2_t z[])
@@ -261,12 +261,12 @@ k1_float32x4_fabs(float32x4_t a)
 float32x4_t __attribute__ ((noinline))
 k1_float32x4_faddcwcp(float32x4_t a, float32x4_t b)
 {
-    return __builtin_kvx_faddcwcp(a, b, ".rn");
+  return __builtin_kvx_faddwq (a, b, ".c.rn");
 }
 float32x4_t __attribute__ ((noinline))
 k1_float32x4_fsbfcwcp(float32x4_t a, float32x4_t b)
 {
-    return __builtin_kvx_fsbfcwcp(a, b, ".rn");
+  return __builtin_kvx_fsbfwq (a, b, ".c.rn");
 }
 float32x4_t __attribute__ ((noinline))
 k1_float32x4_fmulwcp(float32x4_t a, float32x4_t b)
@@ -276,7 +276,7 @@ k1_float32x4_fmulwcp(float32x4_t a, float32x4_t b)
 float32x4_t __attribute__ ((noinline))
 k1_float32x4_fmulcwcp(float32x4_t a, float32x4_t b)
 {
-    return __builtin_kvx_fmulcwcp(a, b, ".rn");
+  return __builtin_kvx_fmulwcp (a, b, ".c.rn");
 }
 void __attribute__ ((noinline))
 k1_float32x4_axpyb(int n, float32_t a, float32_t b, float32x4_t x[], float32x4_t y[], float32x4_t z[])
@@ -399,12 +399,12 @@ k1_float64x2_fabs(float64x2_t a)
 float64x2_t __attribute__ ((noinline))
 k1_float64x2_faddcdc(float64x2_t a, float64x2_t b)
 {
-    return __builtin_kvx_faddcdc(a, b, ".rn");
+  return __builtin_kvx_fadddp (a, b, ".c.rn");
 }
 float64x2_t __attribute__ ((noinline))
 k1_float64x2_fsbfcdc(float64x2_t a, float64x2_t b)
 {
-    return __builtin_kvx_fsbfcdc(a, b, ".rn");
+  return __builtin_kvx_fsbfdp (a, b, ".c.rn");
 }
 float64x2_t __attribute__ ((noinline))
 k1_float64x2_fmuldc(float64x2_t a, float64x2_t b)
@@ -414,7 +414,7 @@ k1_float64x2_fmuldc(float64x2_t a, float64x2_t b)
 float64x2_t __attribute__ ((noinline))
 k1_float64x2_fmulcdc(float64x2_t a, float64x2_t b)
 {
-    return __builtin_kvx_fmulcdc(a, b, ".rn");
+  return __builtin_kvx_fmuldc (a, b, ".c.rn");
 }
 void __attribute__ ((noinline))
 k1_float64x2_axpyb(int n, float64_t a, float64_t b, float64x2_t x[], float64x2_t y[], float64x2_t z[])
