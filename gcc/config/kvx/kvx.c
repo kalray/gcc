@@ -4291,12 +4291,6 @@ enum kvx_builtin
   KVX_BUILTIN_FADDDP,
   KVX_BUILTIN_FADDDQ,
 
-  KVX_BUILTIN_FADDCWC,
-  KVX_BUILTIN_FADDCWCP,
-  KVX_BUILTIN_FADDCWCQ,
-  KVX_BUILTIN_FADDCDC,
-  KVX_BUILTIN_FADDCDCP,
-
   KVX_BUILTIN_FSBFH,
   KVX_BUILTIN_FSBFHQ,
   KVX_BUILTIN_FSBFHO,
@@ -4308,12 +4302,6 @@ enum kvx_builtin
   KVX_BUILTIN_FSBFD,
   KVX_BUILTIN_FSBFDP,
   KVX_BUILTIN_FSBFDQ,
-
-  KVX_BUILTIN_FSBFCWC,
-  KVX_BUILTIN_FSBFCWCP,
-  KVX_BUILTIN_FSBFCWCQ,
-  KVX_BUILTIN_FSBFCDC,
-  KVX_BUILTIN_FSBFCDCP,
 
   KVX_BUILTIN_FMULH,
   KVX_BUILTIN_FMULHQ,
@@ -4332,14 +4320,8 @@ enum kvx_builtin
   KVX_BUILTIN_FMULWC,
   KVX_BUILTIN_FMULWCP,
   KVX_BUILTIN_FMULWCQ,
-  KVX_BUILTIN_FMULCWC,
-  KVX_BUILTIN_FMULCWCP,
-  KVX_BUILTIN_FMULCWCQ,
   KVX_BUILTIN_FMULDC,
   KVX_BUILTIN_FMULDCP,
-  KVX_BUILTIN_FMULCDC,
-  KVX_BUILTIN_FMULCDCP,
-  KVX_BUILTIN_FMM212W,
 
   KVX_BUILTIN_FFMAH,
   KVX_BUILTIN_FFMAHQ,
@@ -4352,9 +4334,14 @@ enum kvx_builtin
   KVX_BUILTIN_FFMAD,
   KVX_BUILTIN_FFMADP,
   KVX_BUILTIN_FFMADQ,
+
   KVX_BUILTIN_FFMAHW,
   KVX_BUILTIN_FFMAWD,
-  KVX_BUILTIN_FMMA212W,
+  KVX_BUILTIN_FFMAWC,
+  KVX_BUILTIN_FFMAWCP,
+  KVX_BUILTIN_FFMAWCQ,
+  KVX_BUILTIN_FFMADC,
+  KVX_BUILTIN_FFMADCP,
 
   KVX_BUILTIN_FFMSH,
   KVX_BUILTIN_FFMSHQ,
@@ -4367,9 +4354,45 @@ enum kvx_builtin
   KVX_BUILTIN_FFMSD,
   KVX_BUILTIN_FFMSDP,
   KVX_BUILTIN_FFMSDQ,
+
   KVX_BUILTIN_FFMSHW,
   KVX_BUILTIN_FFMSWD,
+  KVX_BUILTIN_FFMSWC,
+  KVX_BUILTIN_FFMSWCP,
+  KVX_BUILTIN_FFMSWCQ,
+  KVX_BUILTIN_FFMSDC,
+  KVX_BUILTIN_FFMSDCP,
+
+  KVX_BUILTIN_FMM212W,
+  KVX_BUILTIN_FMM222W,
+  KVX_BUILTIN_FMMA212W,
+  KVX_BUILTIN_FMMA222W,
   KVX_BUILTIN_FMMS212W,
+  KVX_BUILTIN_FMMS222W,
+
+  KVX_BUILTIN_FFDMAW,
+  KVX_BUILTIN_FFDMAWP,
+  KVX_BUILTIN_FFDMAWQ,
+
+  KVX_BUILTIN_FFDMSW,
+  KVX_BUILTIN_FFDMSWP,
+  KVX_BUILTIN_FFDMSWQ,
+
+  KVX_BUILTIN_FFDMDAW,
+  KVX_BUILTIN_FFDMDAWP,
+  KVX_BUILTIN_FFDMDAWQ,
+
+  KVX_BUILTIN_FFDMSAW,
+  KVX_BUILTIN_FFDMSAWP,
+  KVX_BUILTIN_FFDMSAWQ,
+
+  KVX_BUILTIN_FFDMDSW,
+  KVX_BUILTIN_FFDMDSWP,
+  KVX_BUILTIN_FFDMDSWQ,
+
+  KVX_BUILTIN_FFDMASW,
+  KVX_BUILTIN_FFDMASWP,
+  KVX_BUILTIN_FFDMASWQ,
 
   KVX_BUILTIN_FLOATW,
   KVX_BUILTIN_FLOATWP,
@@ -4666,7 +4689,9 @@ kvx_init_builtins (void)
 
 #define CARRY STRING
 #define SIMDCOND STRING
-#define ROUNDING STRING
+#define FLOATINGS STRING
+#define CONJUGATE STRING
+#define TRANSPOSE STRING
 #define SILENT STRING
 #define BYPASS STRING
 #define SCATTER STRING
@@ -5034,141 +5059,164 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (FABSDP, "fabsdp", FLOAT64X2, FLOAT64X2); // Vector
   ADD_KVX_BUILTIN (FABSDQ, "fabsdq", FLOAT64X4, FLOAT64X4); // Vector
 
-  ADD_KVX_BUILTIN (FRECW, "finvw", FLOAT32, FLOAT32, ROUNDING); // Deprecated
-  ADD_KVX_BUILTIN (FRECW, "frecw", FLOAT32, FLOAT32, ROUNDING); // Scalar
-  ADD_KVX_BUILTIN (FRECWP, "frecwp", FLOAT32X2, FLOAT32X2, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FRECWQ, "frecwq", FLOAT32X4, FLOAT32X4, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FRECWO, "frecwo", FLOAT32X8, FLOAT32X8, ROUNDING); // Vector
+  ADD_KVX_BUILTIN (FRECW, "finvw", FLOAT32, FLOAT32, FLOATINGS); // Deprecated
+  ADD_KVX_BUILTIN (FRECW, "frecw", FLOAT32, FLOAT32, FLOATINGS); // Scalar
+  ADD_KVX_BUILTIN (FRECWP, "frecwp", FLOAT32X2, FLOAT32X2, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FRECWQ, "frecwq", FLOAT32X4, FLOAT32X4, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FRECWO, "frecwo", FLOAT32X8, FLOAT32X8, FLOATINGS); // Vector
 
-  ADD_KVX_BUILTIN (FRSRW, "fisrw", FLOAT32, FLOAT32, ROUNDING); // Deprecated
-  ADD_KVX_BUILTIN (FRSRW, "frsrw", FLOAT32, FLOAT32, ROUNDING); // Scalar
-  ADD_KVX_BUILTIN (FRSRWP, "frsrwp", FLOAT32X2, FLOAT32X2, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FRSRWQ, "frsrwq", FLOAT32X4, FLOAT32X4, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FRSRWO, "frsrwo", FLOAT32X8, FLOAT32X8, ROUNDING); // Vector
+  ADD_KVX_BUILTIN (FRSRW, "fisrw", FLOAT32, FLOAT32, FLOATINGS); // Deprecated
+  ADD_KVX_BUILTIN (FRSRW, "frsrw", FLOAT32, FLOAT32, FLOATINGS); // Scalar
+  ADD_KVX_BUILTIN (FRSRWP, "frsrwp", FLOAT32X2, FLOAT32X2, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FRSRWQ, "frsrwq", FLOAT32X4, FLOAT32X4, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FRSRWO, "frsrwo", FLOAT32X8, FLOAT32X8, FLOATINGS); // Vector
 
-  ADD_KVX_BUILTIN (FADDH, "faddh", FLOAT16, FLOAT16, FLOAT16, ROUNDING); // Scalar
-  ADD_KVX_BUILTIN (FADDHQ, "faddhq", FLOAT16X4, FLOAT16X4, FLOAT16X4, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FADDHO, "faddho", FLOAT16X8, FLOAT16X8, FLOAT16X8, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FADDHX, "faddhx", FLOAT16X16, FLOAT16X16, FLOAT16X16, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FADDW, "faddw", FLOAT32, FLOAT32, FLOAT32, ROUNDING); // Scalar
-  ADD_KVX_BUILTIN (FADDWP, "faddwp", FLOAT32X2, FLOAT32X2, FLOAT32X2, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FADDWQ, "faddwq", FLOAT32X4, FLOAT32X4, FLOAT32X4, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FADDWO, "faddwo", FLOAT32X8, FLOAT32X8, FLOAT32X8, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FADDD, "faddd", FLOAT64, FLOAT64, FLOAT64, ROUNDING); // Scalar
-  ADD_KVX_BUILTIN (FADDDP, "fadddp", FLOAT64X2, FLOAT64X2, FLOAT64X2, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FADDDQ, "fadddq", FLOAT64X4, FLOAT64X4, FLOAT64X4, ROUNDING); // Vector
+  ADD_KVX_BUILTIN (FADDH, "faddh", FLOAT16, FLOAT16, FLOAT16, FLOATINGS); // Scalar
+  ADD_KVX_BUILTIN (FADDHQ, "faddhq", FLOAT16X4, FLOAT16X4, FLOAT16X4, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FADDHO, "faddho", FLOAT16X8, FLOAT16X8, FLOAT16X8, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FADDHX, "faddhx", FLOAT16X16, FLOAT16X16, FLOAT16X16, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FADDW, "faddw", FLOAT32, FLOAT32, FLOAT32, FLOATINGS); // Scalar
+  ADD_KVX_BUILTIN (FADDWP, "faddwp", FLOAT32X2, FLOAT32X2, FLOAT32X2, CONJUGATE); // Vector
+  ADD_KVX_BUILTIN (FADDWQ, "faddwq", FLOAT32X4, FLOAT32X4, FLOAT32X4, CONJUGATE); // Vector
+  ADD_KVX_BUILTIN (FADDWO, "faddwo", FLOAT32X8, FLOAT32X8, FLOAT32X8, CONJUGATE); // Vector
+  ADD_KVX_BUILTIN (FADDD, "faddd", FLOAT64, FLOAT64, FLOAT64, FLOATINGS); // Scalar
+  ADD_KVX_BUILTIN (FADDDP, "fadddp", FLOAT64X2, FLOAT64X2, FLOAT64X2, CONJUGATE); // Vector
+  ADD_KVX_BUILTIN (FADDDQ, "fadddq", FLOAT64X4, FLOAT64X4, FLOAT64X4, CONJUGATE); // Vector
 
-  ADD_KVX_BUILTIN (FADDCWC, "faddcwc", FLOAT32X2, FLOAT32X2, FLOAT32X2, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FADDCWCP, "faddcwcp", FLOAT32X4, FLOAT32X4, FLOAT32X4, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FADDCWCQ, "faddcwcq", FLOAT32X8, FLOAT32X8, FLOAT32X8, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FADDCDC, "faddcdc", FLOAT64X2, FLOAT64X2, FLOAT64X2, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FADDCDCP, "faddcdcp", FLOAT64X4, FLOAT64X4, FLOAT64X4, ROUNDING); // Vector
+  ADD_KVX_BUILTIN (FSBFH, "fsbfh", FLOAT16, FLOAT16, FLOAT16, FLOATINGS); // Scalar
+  ADD_KVX_BUILTIN (FSBFHQ, "fsbfhq", FLOAT16X4, FLOAT16X4, FLOAT16X4, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FSBFHO, "fsbfho", FLOAT16X8, FLOAT16X8, FLOAT16X8, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FSBFHX, "fsbfhx", FLOAT16X16, FLOAT16X16, FLOAT16X16, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FSBFW, "fsbfw", FLOAT32, FLOAT32, FLOAT32, FLOATINGS); // Scalar
+  ADD_KVX_BUILTIN (FSBFWP, "fsbfwp", FLOAT32X2, FLOAT32X2, FLOAT32X2, CONJUGATE); // Vector
+  ADD_KVX_BUILTIN (FSBFWQ, "fsbfwq", FLOAT32X4, FLOAT32X4, FLOAT32X4, CONJUGATE); // Vector
+  ADD_KVX_BUILTIN (FSBFWO, "fsbfwo", FLOAT32X8, FLOAT32X8, FLOAT32X8, CONJUGATE); // Vector
+  ADD_KVX_BUILTIN (FSBFD, "fsbfd", FLOAT64, FLOAT64, FLOAT64, FLOATINGS); // Scalar
+  ADD_KVX_BUILTIN (FSBFDP, "fsbfdp", FLOAT64X2, FLOAT64X2, FLOAT64X2, CONJUGATE); // Vector
+  ADD_KVX_BUILTIN (FSBFDQ, "fsbfdq", FLOAT64X4, FLOAT64X4, FLOAT64X4, CONJUGATE); // Vector
 
-  ADD_KVX_BUILTIN (FSBFH, "fsbfh", FLOAT16, FLOAT16, FLOAT16, ROUNDING); // Scalar
-  ADD_KVX_BUILTIN (FSBFHQ, "fsbfhq", FLOAT16X4, FLOAT16X4, FLOAT16X4, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FSBFHO, "fsbfho", FLOAT16X8, FLOAT16X8, FLOAT16X8, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FSBFHX, "fsbfhx", FLOAT16X16, FLOAT16X16, FLOAT16X16, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FSBFW, "fsbfw", FLOAT32, FLOAT32, FLOAT32, ROUNDING); // Scalar
-  ADD_KVX_BUILTIN (FSBFWP, "fsbfwp", FLOAT32X2, FLOAT32X2, FLOAT32X2, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FSBFWQ, "fsbfwq", FLOAT32X4, FLOAT32X4, FLOAT32X4, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FSBFWO, "fsbfwo", FLOAT32X8, FLOAT32X8, FLOAT32X8, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FSBFD, "fsbfd", FLOAT64, FLOAT64, FLOAT64, ROUNDING); // Scalar
-  ADD_KVX_BUILTIN (FSBFDP, "fsbfdp", FLOAT64X2, FLOAT64X2, FLOAT64X2, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FSBFDQ, "fsbfdq", FLOAT64X4, FLOAT64X4, FLOAT64X4, ROUNDING); // Vector
+  ADD_KVX_BUILTIN (FMULH, "fmulh", FLOAT16, FLOAT16, FLOAT16, FLOATINGS); // Scalar
+  ADD_KVX_BUILTIN (FMULHQ, "fmulhq", FLOAT16X4, FLOAT16X4, FLOAT16X4, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FMULHO, "fmulho", FLOAT16X8, FLOAT16X8, FLOAT16X8, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FMULHX, "fmulhx", FLOAT16X16, FLOAT16X16, FLOAT16X16, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FMULW, "fmulw", FLOAT32, FLOAT32, FLOAT32, FLOATINGS); // Scalar
+  ADD_KVX_BUILTIN (FMULWP, "fmulwp", FLOAT32X2, FLOAT32X2, FLOAT32X2, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FMULWQ, "fmulwq", FLOAT32X4, FLOAT32X4, FLOAT32X4, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FMULWO, "fmulwo", FLOAT32X8, FLOAT32X8, FLOAT32X8, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FMULD, "fmuld", FLOAT64, FLOAT64, FLOAT64, FLOATINGS); // Scalar
+  ADD_KVX_BUILTIN (FMULDP, "fmuldp", FLOAT64X2, FLOAT64X2, FLOAT64X2, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FMULDQ, "fmuldq", FLOAT64X4, FLOAT64X4, FLOAT64X4, FLOATINGS); // Vector
 
-  ADD_KVX_BUILTIN (FSBFCWC, "fsbfcwc", FLOAT32X2, FLOAT32X2, FLOAT32X2, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FSBFCWCP, "fsbfcwcp", FLOAT32X4, FLOAT32X4, FLOAT32X4, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FSBFCWCQ, "fsbfcwcq", FLOAT32X8, FLOAT32X8, FLOAT32X8, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FSBFCDC, "fsbfcdc", FLOAT64X2, FLOAT64X2, FLOAT64X2, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FSBFCDCP, "fsbfcdcp", FLOAT64X4, FLOAT64X4, FLOAT64X4, ROUNDING); // Vector
+  ADD_KVX_BUILTIN (FMULHW, "fmulhw", FLOAT32, FLOAT16, FLOAT16, FLOATINGS); // Scalar
+  ADD_KVX_BUILTIN (FMULWD, "fmulwd", FLOAT64, FLOAT32, FLOAT32, FLOATINGS); // Scalar
+  ADD_KVX_BUILTIN (FMULWC, "fmulwc", FLOAT32X2, FLOAT32X2, FLOAT32X2, CONJUGATE); // Vector
+  ADD_KVX_BUILTIN (FMULWCP, "fmulwcp", FLOAT32X4, FLOAT32X4, FLOAT32X4, CONJUGATE); // Vector
+  ADD_KVX_BUILTIN (FMULWCQ, "fmulwcq", FLOAT32X8, FLOAT32X8, FLOAT32X8, CONJUGATE); // Vector
+  ADD_KVX_BUILTIN (FMULDC, "fmuldc", FLOAT64X2, FLOAT64X2, FLOAT64X2, CONJUGATE); // Vector
+  ADD_KVX_BUILTIN (FMULDCP, "fmuldcp", FLOAT64X4, FLOAT64X4, FLOAT64X4, CONJUGATE); // Vector
 
-  ADD_KVX_BUILTIN (FMULH, "fmulh", FLOAT16, FLOAT16, FLOAT16, ROUNDING); // Scalar
-  ADD_KVX_BUILTIN (FMULHQ, "fmulhq", FLOAT16X4, FLOAT16X4, FLOAT16X4, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FMULHO, "fmulho", FLOAT16X8, FLOAT16X8, FLOAT16X8, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FMULHX, "fmulhx", FLOAT16X16, FLOAT16X16, FLOAT16X16, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FMULW, "fmulw", FLOAT32, FLOAT32, FLOAT32, ROUNDING); // Scalar
-  ADD_KVX_BUILTIN (FMULWP, "fmulwp", FLOAT32X2, FLOAT32X2, FLOAT32X2, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FMULWQ, "fmulwq", FLOAT32X4, FLOAT32X4, FLOAT32X4, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FMULWO, "fmulwo", FLOAT32X8, FLOAT32X8, FLOAT32X8, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FMULD, "fmuld", FLOAT64, FLOAT64, FLOAT64, ROUNDING); // Scalar
-  ADD_KVX_BUILTIN (FMULDP, "fmuldp", FLOAT64X2, FLOAT64X2, FLOAT64X2, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FMULDQ, "fmuldq", FLOAT64X4, FLOAT64X4, FLOAT64X4, ROUNDING); // Vector
+  ADD_KVX_BUILTIN (FFMAH, "ffmah", FLOAT16, FLOAT16, FLOAT16, FLOAT16, FLOATINGS); // Scalar
+  ADD_KVX_BUILTIN (FFMAHQ, "ffmahq", FLOAT16X4, FLOAT16X4, FLOAT16X4, FLOAT16X4, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FFMAHO, "ffmaho", FLOAT16X8, FLOAT16X8, FLOAT16X8, FLOAT16X8, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FFMAHX, "ffmahx", FLOAT16X16, FLOAT16X16, FLOAT16X16, FLOAT16X16, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FFMAW, "ffmaw", FLOAT32, FLOAT32, FLOAT32, FLOAT32, FLOATINGS); // Scalar
+  ADD_KVX_BUILTIN (FFMAWP, "ffmawp", FLOAT32X2, FLOAT32X2, FLOAT32X2, FLOAT32X2, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FFMAWQ, "ffmawq", FLOAT32X4, FLOAT32X4, FLOAT32X4, FLOAT32X4, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FFMAWO, "ffmawo", FLOAT32X8, FLOAT32X8, FLOAT32X8, FLOAT32X8, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FFMAD, "ffmad", FLOAT64, FLOAT64, FLOAT64, FLOAT64, FLOATINGS); // Scalar
+  ADD_KVX_BUILTIN (FFMADP, "ffmadp", FLOAT64X2, FLOAT64X2, FLOAT64X2, FLOAT64X2, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FFMADQ, "ffmadq", FLOAT64X4, FLOAT64X4, FLOAT64X4, FLOAT64X4, FLOATINGS); // Vector
 
-  ADD_KVX_BUILTIN (FMULHW, "fmulhw", FLOAT32, FLOAT16, FLOAT16, ROUNDING); // Scalar
-  ADD_KVX_BUILTIN (FMULWD, "fmulwd", FLOAT64, FLOAT32, FLOAT32, ROUNDING); // Scalar
-  ADD_KVX_BUILTIN (FMULWC, "fmulwc", FLOAT32X2, FLOAT32X2, FLOAT32X2, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FMULWCP, "fmulwcp", FLOAT32X4, FLOAT32X4, FLOAT32X4, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FMULWCQ, "fmulwcq", FLOAT32X8, FLOAT32X8, FLOAT32X8, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FMULCWC, "fmulcwc", FLOAT32X2, FLOAT32X2, FLOAT32X2, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FMULCWCP, "fmulcwcp", FLOAT32X4, FLOAT32X4, FLOAT32X4, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FMULCWCQ, "fmulcwcq", FLOAT32X8, FLOAT32X8, FLOAT32X8, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FMULDC, "fmuldc", FLOAT64X2, FLOAT64X2, FLOAT64X2, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FMULDCP, "fmuldcp", FLOAT64X4, FLOAT64X4, FLOAT64X4, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FMULCDC, "fmulcdc", FLOAT64X2, FLOAT64X2, FLOAT64X2, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FMULCDCP, "fmulcdcp", FLOAT64X4, FLOAT64X4, FLOAT64X4, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FMM212W, "fmm212w", FLOAT32X4, FLOAT32X2, FLOAT32X2, ROUNDING); // Vector
+  ADD_KVX_BUILTIN (FFMAHW, "ffmahw", FLOAT32, FLOAT16, FLOAT16, FLOAT32, FLOATINGS); // Scalar
+  ADD_KVX_BUILTIN (FFMAWD, "ffmawd", FLOAT64, FLOAT32, FLOAT32, FLOAT64, FLOATINGS); // Scalar
+  ADD_KVX_BUILTIN (FFMAWC, "ffmawc", FLOAT32X2, FLOAT32X2, FLOAT32X2, FLOAT32X2, CONJUGATE); // Vector
+  ADD_KVX_BUILTIN (FFMAWCP, "ffmawcp", FLOAT32X4, FLOAT32X4, FLOAT32X4, FLOAT32X4, CONJUGATE); // Vector
+  ADD_KVX_BUILTIN (FFMAWCQ, "ffmawcq", FLOAT32X8, FLOAT32X8, FLOAT32X8, FLOAT32X8, CONJUGATE); // Vector
+  ADD_KVX_BUILTIN (FFMADC, "ffmadc", FLOAT64X2, FLOAT64X2, FLOAT64X2, FLOAT64X2, CONJUGATE); // Vector
+  ADD_KVX_BUILTIN (FFMADCP, "ffmadcp", FLOAT64X4, FLOAT64X4, FLOAT64X4, FLOAT64X4, CONJUGATE); // Vector
 
-  ADD_KVX_BUILTIN (FFMAH, "ffmah", FLOAT16, FLOAT16, FLOAT16, FLOAT16, ROUNDING); // Scalar
-  ADD_KVX_BUILTIN (FFMAHQ, "ffmahq", FLOAT16X4, FLOAT16X4, FLOAT16X4, FLOAT16X4, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FFMAHO, "ffmaho", FLOAT16X8, FLOAT16X8, FLOAT16X8, FLOAT16X8, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FFMAHX, "ffmahx", FLOAT16X16, FLOAT16X16, FLOAT16X16, FLOAT16X16, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FFMAW, "ffmaw", FLOAT32, FLOAT32, FLOAT32, FLOAT32, ROUNDING); // Scalar
-  ADD_KVX_BUILTIN (FFMAWP, "ffmawp", FLOAT32X2, FLOAT32X2, FLOAT32X2, FLOAT32X2, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FFMAWQ, "ffmawq", FLOAT32X4, FLOAT32X4, FLOAT32X4, FLOAT32X4, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FFMAWO, "ffmawo", FLOAT32X8, FLOAT32X8, FLOAT32X8, FLOAT32X8, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FFMAD, "ffmad", FLOAT64, FLOAT64, FLOAT64, FLOAT64, ROUNDING); // Scalar
-  ADD_KVX_BUILTIN (FFMADP, "ffmadp", FLOAT64X2, FLOAT64X2, FLOAT64X2, FLOAT64X2, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FFMADQ, "ffmadq", FLOAT64X4, FLOAT64X4, FLOAT64X4, FLOAT64X4, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FFMAHW, "ffmahw", FLOAT32, FLOAT16, FLOAT16, FLOAT32, ROUNDING); // Scalar
-  ADD_KVX_BUILTIN (FFMAWD, "ffmawd", FLOAT64, FLOAT32, FLOAT32, FLOAT64, ROUNDING); // Scalar
-  ADD_KVX_BUILTIN (FMMA212W, "fmma212w", FLOAT32X4, FLOAT32X2, FLOAT32X2, FLOAT32X4, ROUNDING); // Vector
+  ADD_KVX_BUILTIN (FFMSH, "ffmsh", FLOAT16, FLOAT16, FLOAT16, FLOAT16, FLOATINGS); // Scalar
+  ADD_KVX_BUILTIN (FFMSHQ, "ffmshq", FLOAT16X4, FLOAT16X4, FLOAT16X4, FLOAT16X4, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FFMSHO, "ffmsho", FLOAT16X8, FLOAT16X8, FLOAT16X8, FLOAT16X8, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FFMSHX, "ffmshx", FLOAT16X16, FLOAT16X16, FLOAT16X16, FLOAT16X16, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FFMSW, "ffmsw", FLOAT32, FLOAT32, FLOAT32, FLOAT32, FLOATINGS); // Scalar
+  ADD_KVX_BUILTIN (FFMSWP, "ffmswp", FLOAT32X2, FLOAT32X2, FLOAT32X2, FLOAT32X2, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FFMSWQ, "ffmswq", FLOAT32X4, FLOAT32X4, FLOAT32X4, FLOAT32X4, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FFMSWO, "ffmswo", FLOAT32X8, FLOAT32X8, FLOAT32X8, FLOAT32X8, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FFMSD, "ffmsd", FLOAT64, FLOAT64, FLOAT64, FLOAT64, FLOATINGS); // Scalar
+  ADD_KVX_BUILTIN (FFMSDP, "ffmsdp", FLOAT64X2, FLOAT64X2, FLOAT64X2, FLOAT64X2, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FFMSDQ, "ffmsdq", FLOAT64X4, FLOAT64X4, FLOAT64X4, FLOAT64X4, FLOATINGS); // Vector
 
-  ADD_KVX_BUILTIN (FFMSH, "ffmsh", FLOAT16, FLOAT16, FLOAT16, FLOAT16, ROUNDING); // Scalar
-  ADD_KVX_BUILTIN (FFMSHQ, "ffmshq", FLOAT16X4, FLOAT16X4, FLOAT16X4, FLOAT16X4, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FFMSHO, "ffmsho", FLOAT16X8, FLOAT16X8, FLOAT16X8, FLOAT16X8, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FFMSHX, "ffmshx", FLOAT16X16, FLOAT16X16, FLOAT16X16, FLOAT16X16, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FFMSW, "ffmsw", FLOAT32, FLOAT32, FLOAT32, FLOAT32, ROUNDING); // Scalar
-  ADD_KVX_BUILTIN (FFMSWP, "ffmswp", FLOAT32X2, FLOAT32X2, FLOAT32X2, FLOAT32X2, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FFMSWQ, "ffmswq", FLOAT32X4, FLOAT32X4, FLOAT32X4, FLOAT32X4, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FFMSWO, "ffmswo", FLOAT32X8, FLOAT32X8, FLOAT32X8, FLOAT32X8, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FFMSD, "ffmsd", FLOAT64, FLOAT64, FLOAT64, FLOAT64, ROUNDING); // Scalar
-  ADD_KVX_BUILTIN (FFMSDP, "ffmsdp", FLOAT64X2, FLOAT64X2, FLOAT64X2, FLOAT64X2, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FFMSDQ, "ffmsdq", FLOAT64X4, FLOAT64X4, FLOAT64X4, FLOAT64X4, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FFMSHW, "ffmshw", FLOAT32, FLOAT16, FLOAT16, FLOAT32, ROUNDING); // Scalar
-  ADD_KVX_BUILTIN (FFMSWD, "ffmswd", FLOAT64, FLOAT32, FLOAT32, FLOAT64, ROUNDING); // Scalar
-  ADD_KVX_BUILTIN (FMMS212W, "fmms212w", FLOAT32X4, FLOAT32X2, FLOAT32X2, FLOAT32X4, ROUNDING); // Vector
+  ADD_KVX_BUILTIN (FFMSHW, "ffmshw", FLOAT32, FLOAT16, FLOAT16, FLOAT32, FLOATINGS); // Scalar
+  ADD_KVX_BUILTIN (FFMSWD, "ffmswd", FLOAT64, FLOAT32, FLOAT32, FLOAT64, FLOATINGS); // Scalar
+  ADD_KVX_BUILTIN (FFMSWC, "ffmswc", FLOAT32X2, FLOAT32X2, FLOAT32X2, FLOAT32X2, CONJUGATE); // Vector
+  ADD_KVX_BUILTIN (FFMSWCP, "ffmswcp", FLOAT32X4, FLOAT32X4, FLOAT32X4, FLOAT32X4, CONJUGATE); // Vector
+  ADD_KVX_BUILTIN (FFMSWCQ, "ffmswcq", FLOAT32X8, FLOAT32X8, FLOAT32X8, FLOAT32X8, CONJUGATE); // Vector
+  ADD_KVX_BUILTIN (FFMSDC, "ffmsdc", FLOAT64X2, FLOAT64X2, FLOAT64X2, FLOAT64X2, CONJUGATE); // Vector
+  ADD_KVX_BUILTIN (FFMSDCP, "ffmsdcp", FLOAT64X4, FLOAT64X4, FLOAT64X4, FLOAT64X4, CONJUGATE); // Vector
 
-  ADD_KVX_BUILTIN (FLOATW, "floatw", FLOAT32, INT32, UINT8, ROUNDING); // Scalar
-  ADD_KVX_BUILTIN (FLOATWP, "floatwp", FLOAT32X2, INT32X2, UINT8, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FLOATWQ, "floatwq", FLOAT32X4, INT32X4, UINT8, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FLOATWO, "floatwo", FLOAT32X8, INT32X8, UINT8, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FLOATD, "floatd", FLOAT64, INT64, UINT8, ROUNDING); // Scalar
-  ADD_KVX_BUILTIN (FLOATDP, "floatdp", FLOAT64X2, INT64X2, UINT8, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FLOATDQ, "floatdq", FLOAT64X4, INT64X4, UINT8, ROUNDING); // Vector
+  ADD_KVX_BUILTIN (FMM212W, "fmm212w", FLOAT32X4, FLOAT32X2, FLOAT32X2, TRANSPOSE); // Vector
+  ADD_KVX_BUILTIN (FMM222W, "fmm222w", FLOAT32X4, FLOAT32X4, FLOAT32X4, TRANSPOSE); // Vector
+  ADD_KVX_BUILTIN (FMMA212W, "fmma212w", FLOAT32X4, FLOAT32X2, FLOAT32X2, FLOAT32X4, TRANSPOSE); // Vector
+  ADD_KVX_BUILTIN (FMMA222W, "fmma222w", FLOAT32X4, FLOAT32X4, FLOAT32X4, FLOAT32X4, TRANSPOSE); // Vector
+  ADD_KVX_BUILTIN (FMMS212W, "fmms212w", FLOAT32X4, FLOAT32X2, FLOAT32X2, FLOAT32X4, TRANSPOSE); // Vector
+  ADD_KVX_BUILTIN (FMMS222W, "fmms222w", FLOAT32X4, FLOAT32X4, FLOAT32X4, FLOAT32X4, TRANSPOSE); // Vector
 
-  ADD_KVX_BUILTIN (FLOATUW, "floatuw", FLOAT32, UINT32, UINT8, ROUNDING); // Scalar
-  ADD_KVX_BUILTIN (FLOATUWP, "floatuwp", FLOAT32X2, UINT32X2, UINT8, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FLOATUWQ, "floatuwq", FLOAT32X4, UINT32X4, UINT8, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FLOATUWO, "floatuwo", FLOAT32X8, UINT32X8, UINT8, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FLOATUD, "floatud", FLOAT64, UINT64, UINT8, ROUNDING); // Scalar
-  ADD_KVX_BUILTIN (FLOATUDP, "floatudp", FLOAT64X2, UINT64X2, UINT8, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FLOATUDQ, "floatudq", FLOAT64X4, UINT64X4, UINT8, ROUNDING); // Vector
+  ADD_KVX_BUILTIN (FFDMAW, "ffdmaw", FLOAT32, FLOAT32X2, FLOAT32X2, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FFDMAWP, "ffdmawp", FLOAT32X2, FLOAT32X4, FLOAT32X4, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FFDMAWQ, "ffdmawq", FLOAT32X4, FLOAT32X8, FLOAT32X8, FLOATINGS); // Vector
 
-  ADD_KVX_BUILTIN (FIXEDW, "fixedw", INT32, FLOAT32, UINT8, ROUNDING); // Scalar
-  ADD_KVX_BUILTIN (FIXEDWP, "fixedwp", INT32X2, FLOAT32X2, UINT8, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FIXEDWQ, "fixedwq", INT32X4, FLOAT32X4, UINT8, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FIXEDWO, "fixedwo", INT32X8, FLOAT32X8, UINT8, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FIXEDD, "fixedd", INT64, FLOAT64, UINT8, ROUNDING); // Scalar
-  ADD_KVX_BUILTIN (FIXEDDP, "fixeddp", INT64X2, FLOAT64X2, UINT8, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FIXEDDQ, "fixeddq", INT64X4, FLOAT64X4, UINT8, ROUNDING); // Vector
+  ADD_KVX_BUILTIN (FFDMSW, "ffdmsw", FLOAT32, FLOAT32X2, FLOAT32X2, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FFDMSWP, "ffdmswp", FLOAT32X2, FLOAT32X4, FLOAT32X4, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FFDMSWQ, "ffdmswq", FLOAT32X4, FLOAT32X8, FLOAT32X8, FLOATINGS); // Vector
 
-  ADD_KVX_BUILTIN (FIXEDUW, "fixeduw", UINT32, FLOAT32, UINT8, ROUNDING); // Scalar
-  ADD_KVX_BUILTIN (FIXEDUWP, "fixeduwp", UINT32X2, FLOAT32X2, UINT8, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FIXEDUWQ, "fixeduwq", UINT32X4, FLOAT32X4, UINT8, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FIXEDUWO, "fixeduwo", UINT32X8, FLOAT32X8, UINT8, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FIXEDUD, "fixedud", UINT64, FLOAT64, UINT8, ROUNDING); // Scalar
-  ADD_KVX_BUILTIN (FIXEDUDP, "fixedudp", UINT64X2, FLOAT64X2, UINT8, ROUNDING); // Vector
-  ADD_KVX_BUILTIN (FIXEDUDQ, "fixedudq", UINT64X4, FLOAT64X4, UINT8, ROUNDING); // Vector
+  ADD_KVX_BUILTIN (FFDMDAW, "ffdmdaw", FLOAT32, FLOAT32X2, FLOAT32X2, FLOAT32, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FFDMDAWP, "ffdmdawp", FLOAT32X2, FLOAT32X4, FLOAT32X4, FLOAT32X2, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FFDMDAWQ, "ffdmdawq", FLOAT32X4, FLOAT32X8, FLOAT32X8, FLOAT32X4, FLOATINGS); // Vector
+
+  ADD_KVX_BUILTIN (FFDMSAW, "ffdmsaw", FLOAT32, FLOAT32X2, FLOAT32X2, FLOAT32, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FFDMSAWP, "ffdmsawp", FLOAT32X2, FLOAT32X4, FLOAT32X4, FLOAT32X2, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FFDMSAWQ, "ffdmsawq", FLOAT32X4, FLOAT32X8, FLOAT32X8, FLOAT32X4, FLOATINGS); // Vector
+
+  ADD_KVX_BUILTIN (FFDMDSW, "ffdmdsw", FLOAT32, FLOAT32X2, FLOAT32X2, FLOAT32, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FFDMDSWP, "ffdmdswp", FLOAT32X2, FLOAT32X4, FLOAT32X4, FLOAT32X2, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FFDMDSWQ, "ffdmdswq", FLOAT32X4, FLOAT32X8, FLOAT32X8, FLOAT32X4, FLOATINGS); // Vector
+
+  ADD_KVX_BUILTIN (FFDMASW, "ffdmasw", FLOAT32, FLOAT32X2, FLOAT32X2, FLOAT32, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FFDMASWP, "ffdmaswp", FLOAT32X2, FLOAT32X4, FLOAT32X4, FLOAT32X2, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FFDMASWQ, "ffdmaswq", FLOAT32X4, FLOAT32X8, FLOAT32X8, FLOAT32X4, FLOATINGS); // Vector
+
+  ADD_KVX_BUILTIN (FLOATW, "floatw", FLOAT32, INT32, UINT8, FLOATINGS); // Scalar
+  ADD_KVX_BUILTIN (FLOATWP, "floatwp", FLOAT32X2, INT32X2, UINT8, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FLOATWQ, "floatwq", FLOAT32X4, INT32X4, UINT8, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FLOATWO, "floatwo", FLOAT32X8, INT32X8, UINT8, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FLOATD, "floatd", FLOAT64, INT64, UINT8, FLOATINGS); // Scalar
+  ADD_KVX_BUILTIN (FLOATDP, "floatdp", FLOAT64X2, INT64X2, UINT8, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FLOATDQ, "floatdq", FLOAT64X4, INT64X4, UINT8, FLOATINGS); // Vector
+
+  ADD_KVX_BUILTIN (FLOATUW, "floatuw", FLOAT32, UINT32, UINT8, FLOATINGS); // Scalar
+  ADD_KVX_BUILTIN (FLOATUWP, "floatuwp", FLOAT32X2, UINT32X2, UINT8, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FLOATUWQ, "floatuwq", FLOAT32X4, UINT32X4, UINT8, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FLOATUWO, "floatuwo", FLOAT32X8, UINT32X8, UINT8, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FLOATUD, "floatud", FLOAT64, UINT64, UINT8, FLOATINGS); // Scalar
+  ADD_KVX_BUILTIN (FLOATUDP, "floatudp", FLOAT64X2, UINT64X2, UINT8, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FLOATUDQ, "floatudq", FLOAT64X4, UINT64X4, UINT8, FLOATINGS); // Vector
+
+  ADD_KVX_BUILTIN (FIXEDW, "fixedw", INT32, FLOAT32, UINT8, FLOATINGS); // Scalar
+  ADD_KVX_BUILTIN (FIXEDWP, "fixedwp", INT32X2, FLOAT32X2, UINT8, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FIXEDWQ, "fixedwq", INT32X4, FLOAT32X4, UINT8, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FIXEDWO, "fixedwo", INT32X8, FLOAT32X8, UINT8, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FIXEDD, "fixedd", INT64, FLOAT64, UINT8, FLOATINGS); // Scalar
+  ADD_KVX_BUILTIN (FIXEDDP, "fixeddp", INT64X2, FLOAT64X2, UINT8, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FIXEDDQ, "fixeddq", INT64X4, FLOAT64X4, UINT8, FLOATINGS); // Vector
+
+  ADD_KVX_BUILTIN (FIXEDUW, "fixeduw", UINT32, FLOAT32, UINT8, FLOATINGS); // Scalar
+  ADD_KVX_BUILTIN (FIXEDUWP, "fixeduwp", UINT32X2, FLOAT32X2, UINT8, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FIXEDUWQ, "fixeduwq", UINT32X4, FLOAT32X4, UINT8, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FIXEDUWO, "fixeduwo", UINT32X8, FLOAT32X8, UINT8, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FIXEDUD, "fixedud", UINT64, FLOAT64, UINT8, FLOATINGS); // Scalar
+  ADD_KVX_BUILTIN (FIXEDUDP, "fixedudp", UINT64X2, FLOAT64X2, UINT8, FLOATINGS); // Vector
+  ADD_KVX_BUILTIN (FIXEDUDQ, "fixedudq", UINT64X4, FLOAT64X4, UINT8, FLOATINGS); // Vector
 
   ADD_KVX_BUILTIN (FCONJWC, "fconjwc", FLOAT32X2, FLOAT32X2); // Vector
   ADD_KVX_BUILTIN (FCONJWCP, "fconjwcp", FLOAT32X4, FLOAT32X4); // Vector
@@ -5404,12 +5452,60 @@ build_silent_arg (tree arg, const char *name)
 }
 
 static rtx
-build_rounding_silent_arg (tree arg, const char *name)
+build_floatings_arg (tree arg, const char *name)
 {
   const char *modifier = tree_string_constant (arg);
   static const char *table[] = {
-    ".rn",  ".rn.s",  ".ru",  ".ru.s",	".rd", ".rd.s", ".rz", ".rz.s",
-    ".rna", ".rna.s", ".rnz", ".rnz.s", ".ro", ".ro.s", "",    ".s",
+    ".rn",  ".rn.s",  ".ru",  ".ru.s",
+    ".rd",  ".rd.s",  ".rz",  ".rz.s",
+    ".rna", ".rna.s", ".rnz", ".rnz.s",
+    ".ro",  ".ro.s",  "",    ".s",
+  };
+  for (int i = 0; i < (int) (sizeof (table) / sizeof (*table)); i++)
+    {
+      if (!strcmp (modifier, table[i]))
+	return gen_rtx_CONST_STRING (VOIDmode, table[i]);
+    }
+  error ("__builtin_kvx_%s modifier %s not recognized.", name, modifier);
+  return 0;
+}
+
+static rtx
+build_conjugate_arg (tree arg, const char *name)
+{
+  const char *modifier = tree_string_constant (arg);
+  static const char *table[] = {
+    ".c.rn",  ".c.rn.s",  ".c.ru",  ".c.ru.s",
+    ".c.rd",  ".c.rd.s",  ".c.rz",  ".c.rz.s",
+    ".c.rna", ".c.rna.s", ".c.rnz", ".c.rnz.s",
+    ".c.ro",  ".c.ro.s",  ".c",     ".c.s",
+    ".rn",    ".rn.s",    ".ru",    ".ru.s",
+    ".rd",    ".rd.s",    ".rz",    ".rz.s",
+    ".rna",   ".rna.s",   ".rnz",   ".rnz.s",
+    ".ro",    ".ro.s",    "",       ".s",
+  };
+  for (int i = 0; i < (int) (sizeof (table) / sizeof (*table)); i++)
+    {
+      if (!strcmp (modifier, table[i]))
+	return gen_rtx_CONST_STRING (VOIDmode, table[i]);
+    }
+  error ("__builtin_kvx_%s modifier %s not recognized.", name, modifier);
+  return 0;
+}
+
+static rtx
+build_transpose_arg (tree arg, const char *name)
+{
+  const char *modifier = tree_string_constant (arg);
+  static const char *table[] = {
+    ".t.rn",  ".t.rn.s",  ".t.ru",  ".t.ru.s",
+    ".t.rd",  ".t.rd.s",  ".t.rz",  ".t.rz.s",
+    ".t.rna", ".t.rna.s", ".t.rnz", ".t.rnz.s",
+    ".t.ro",  ".t.ro.s",  ".t",     ".t.s",
+    ".rn",    ".rn.s",    ".ru",    ".ru.s",
+    ".rd",    ".rd.s",    ".rz",    ".rz.s",
+    ".rna",   ".rna.s",   ".rnz",   ".rnz.s",
+    ".ro",    ".ro.s",    "",       ".s",
   };
   for (int i = 0; i < (int) (sizeof (table) / sizeof (*table)); i++)
     {
@@ -6076,11 +6172,11 @@ kvx_expand_builtin_alclr (rtx target, tree args, enum machine_mode mode)
     return target;                                                             \
   }
 
-#define KVX_EXPAND_BUILTIN_2_MODIFIERS(name, tmode, smode)                     \
+#define KVX_EXPAND_BUILTIN_2_MODIFIERS(validate, name, tmode, smode)           \
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
-    rtx arg2 = build_rounding_silent_arg (CALL_EXPR_ARG (args, 1), #name);     \
+    rtx arg2 = build_##validate##_arg (CALL_EXPR_ARG (args, 1), #name);        \
     arg1 = force_reg (smode, arg1);                                            \
     if (!target)                                                               \
       target = gen_reg_rtx (tmode);                                            \
@@ -6089,20 +6185,10 @@ kvx_expand_builtin_alclr (rtx target, tree args, enum machine_mode mode)
     emit_insn (gen_kvx_##name (target, arg1, arg2));                           \
     return target;                                                             \
   }
-
+#define KVX_EXPAND_BUILTIN_2_FLOATINGS(name, tmode, smode)                     \
+  KVX_EXPAND_BUILTIN_2_MODIFIERS(floatings, name, tmode, smode)
 #define KVX_EXPAND_BUILTIN_2_SILENT(name, tmode, smode)                        \
-  static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
-  {                                                                            \
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
-    rtx arg2 = build_silent_arg (CALL_EXPR_ARG (args, 1), #name);              \
-    arg1 = force_reg (smode, arg1);                                            \
-    if (!target)                                                               \
-      target = gen_reg_rtx (tmode);                                            \
-    else                                                                       \
-      target = force_reg (tmode, target);                                      \
-    emit_insn (gen_kvx_##name (target, arg1, arg2));                           \
-    return target;                                                             \
-  }
+  KVX_EXPAND_BUILTIN_2_MODIFIERS(silent, name, tmode, smode)
 
 #define KVX_EXPAND_BUILTIN_3_STANDARD(name, name2, tmode, smode)               \
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
@@ -6134,12 +6220,12 @@ kvx_expand_builtin_alclr (rtx target, tree args, enum machine_mode mode)
     return target;                                                             \
   }
 
-#define KVX_EXPAND_BUILTIN_3_MODIFIERS(name, tmode, smode)                     \
+#define KVX_EXPAND_BUILTIN_3_MODIFIERS(validate, name, tmode, smode)           \
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
-    rtx arg3 = build_rounding_silent_arg (CALL_EXPR_ARG (args, 2), #name);     \
+    rtx arg3 = build_##validate##_arg (CALL_EXPR_ARG (args, 2), #name);        \
     arg1 = force_reg (smode, arg1);                                            \
     arg2 = force_reg (smode, arg2);                                            \
     if (!target)                                                               \
@@ -6149,46 +6235,24 @@ kvx_expand_builtin_alclr (rtx target, tree args, enum machine_mode mode)
     emit_insn (gen_kvx_##name (target, arg1, arg2, arg3));                     \
     return target;                                                             \
   }
-
+#define KVX_EXPAND_BUILTIN_3_FLOATINGS(name, tmode, smode)                     \
+  KVX_EXPAND_BUILTIN_3_MODIFIERS(floatings, name, tmode, smode)
+#define KVX_EXPAND_BUILTIN_3_CONJUGATE(name, tmode, smode)                     \
+  KVX_EXPAND_BUILTIN_3_MODIFIERS(conjugate, name, tmode, smode)
+#define KVX_EXPAND_BUILTIN_3_TRANSPOSE(name, tmode, smode)                     \
+  KVX_EXPAND_BUILTIN_3_MODIFIERS(transpose, name, tmode, smode)
 #define KVX_EXPAND_BUILTIN_3_SILENT(name, mode, tmode, smode)                  \
-  static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
-  {                                                                            \
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
-    rtx arg3 = build_silent_arg (CALL_EXPR_ARG (args, 2), #name);              \
-    arg1 = force_reg (smode, arg1);                                            \
-    arg2 = force_reg (smode, arg2);                                            \
-    if (!target)                                                               \
-      target = gen_reg_rtx (tmode);                                            \
-    else                                                                       \
-      target = force_reg (tmode, target);                                      \
-    emit_insn (gen_kvx_##name (target, arg1, arg2, arg3));                     \
-    return target;                                                             \
-  }
-
+  KVX_EXPAND_BUILTIN_3_MODIFIERS(silent, name, tmode, smode)
 #define KVX_EXPAND_BUILTIN_3_CARRY(name, name2, tmode, smode)                  \
-  static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
-  {                                                                            \
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
-    rtx arg3 = build_carry_arg (CALL_EXPR_ARG (args, 2), #name);               \
-    arg1 = force_reg (smode, arg1);                                            \
-    arg2 = force_reg (smode, arg2);                                            \
-    if (!target)                                                               \
-      target = gen_reg_rtx (tmode);                                            \
-    else                                                                       \
-      target = force_reg (tmode, target);                                      \
-    emit_insn (gen_##name2 (target, arg1, arg2, arg3));                        \
-    return target;                                                             \
-  }
+  KVX_EXPAND_BUILTIN_3_MODIFIERS(carry, name, tmode, smode)
 
-#define KVX_EXPAND_BUILTIN_4_MODIFIERS(name, tmode, smode)                     \
+#define KVX_EXPAND_BUILTIN_4_MODIFIERS(validate, name, tmode, smode)           \
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
     rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));                        \
-    rtx arg4 = build_rounding_silent_arg (CALL_EXPR_ARG (args, 3), #name);     \
+    rtx arg4 = build_##validate##_arg (CALL_EXPR_ARG (args, 3), #name);        \
     arg1 = force_reg (smode, arg1);                                            \
     arg2 = force_reg (smode, arg2);                                            \
     arg3 = force_reg (tmode, arg3);                                            \
@@ -6199,22 +6263,12 @@ kvx_expand_builtin_alclr (rtx target, tree args, enum machine_mode mode)
     emit_insn (gen_kvx_##name (target, arg1, arg2, arg3, arg4));               \
     return target;                                                             \
   }
-
-#define KVX_EXPAND_BUILTIN_FCONVERT(name, tmode, smode)                        \
-  static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
-  {                                                                            \
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
-    rtx arg3 = build_rounding_silent_arg (CALL_EXPR_ARG (args, 2), #name);     \
-    arg2 = verify_const_uint_arg (arg2, 6, #name, "second");                   \
-    if (!target)                                                               \
-      target = gen_reg_rtx (tmode);                                            \
-    else                                                                       \
-      target = force_reg (tmode, target);                                      \
-    arg1 = force_reg (smode, arg1);                                            \
-    emit_insn (gen_kvx_##name (target, arg1, arg2, arg3));                     \
-    return target;                                                             \
-  }
+#define KVX_EXPAND_BUILTIN_4_FLOATINGS(name, tmode, smode)                     \
+  KVX_EXPAND_BUILTIN_4_MODIFIERS(floatings, name, tmode, smode)
+#define KVX_EXPAND_BUILTIN_4_CONJUGATE(name, tmode, smode)                     \
+  KVX_EXPAND_BUILTIN_4_MODIFIERS(conjugate, name, tmode, smode)
+#define KVX_EXPAND_BUILTIN_4_TRANSPOSE(name, tmode, smode)                     \
+  KVX_EXPAND_BUILTIN_4_MODIFIERS(transpose, name, tmode, smode)
 
 #define KVX_EXPAND_BUILTIN_SELECT(name, tmode, cmode)                          \
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
@@ -6232,6 +6286,22 @@ kvx_expand_builtin_alclr (rtx target, tree args, enum machine_mode mode)
     else                                                                       \
       target = force_reg (tmode, target);                                      \
     emit_insn (gen_kvx_##name (target, arg1, arg2, arg3, arg4));               \
+    return target;                                                             \
+  }
+
+#define KVX_EXPAND_BUILTIN_FCONVERT(name, tmode, smode)                        \
+  static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
+  {                                                                            \
+    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
+    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
+    rtx arg3 = build_floatings_arg (CALL_EXPR_ARG (args, 2), #name);           \
+    arg2 = verify_const_uint_arg (arg2, 6, #name, "second");                   \
+    if (!target)                                                               \
+      target = gen_reg_rtx (tmode);                                            \
+    else                                                                       \
+      target = force_reg (tmode, target);                                      \
+    arg1 = force_reg (smode, arg1);                                            \
+    emit_insn (gen_kvx_##name (target, arg1, arg2, arg3));                     \
     return target;                                                             \
   }
 
@@ -6582,107 +6652,130 @@ KVX_EXPAND_BUILTIN_2_STANDARD (fabsd, absdf2, DFmode, DFmode)
 KVX_EXPAND_BUILTIN_2_STANDARD (fabsdp, absv2df2, V2DFmode, V2DFmode)
 KVX_EXPAND_BUILTIN_2_STANDARD (fabsdq, absv4df2, V4DFmode, V4DFmode)
 
-KVX_EXPAND_BUILTIN_2_MODIFIERS (frecw, SFmode, SFmode)
-KVX_EXPAND_BUILTIN_2_MODIFIERS (frecwp, V2SFmode, V2SFmode)
-KVX_EXPAND_BUILTIN_2_MODIFIERS (frecwq, V4SFmode, V4SFmode)
-KVX_EXPAND_BUILTIN_2_MODIFIERS (frecwo, V8SFmode, V8SFmode)
+KVX_EXPAND_BUILTIN_2_FLOATINGS (frecw, SFmode, SFmode)
+KVX_EXPAND_BUILTIN_2_FLOATINGS (frecwp, V2SFmode, V2SFmode)
+KVX_EXPAND_BUILTIN_2_FLOATINGS (frecwq, V4SFmode, V4SFmode)
+KVX_EXPAND_BUILTIN_2_FLOATINGS (frecwo, V8SFmode, V8SFmode)
 
-KVX_EXPAND_BUILTIN_2_MODIFIERS (frsrw, SFmode, SFmode)
-KVX_EXPAND_BUILTIN_2_MODIFIERS (frsrwp, V2SFmode, V2SFmode)
-KVX_EXPAND_BUILTIN_2_MODIFIERS (frsrwq, V4SFmode, V4SFmode)
-KVX_EXPAND_BUILTIN_2_MODIFIERS (frsrwo, V8SFmode, V8SFmode)
+KVX_EXPAND_BUILTIN_2_FLOATINGS (frsrw, SFmode, SFmode)
+KVX_EXPAND_BUILTIN_2_FLOATINGS (frsrwp, V2SFmode, V2SFmode)
+KVX_EXPAND_BUILTIN_2_FLOATINGS (frsrwq, V4SFmode, V4SFmode)
+KVX_EXPAND_BUILTIN_2_FLOATINGS (frsrwo, V8SFmode, V8SFmode)
 
-KVX_EXPAND_BUILTIN_3_MODIFIERS (faddh, HFmode, HFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (faddhq, V4HFmode, V4HFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (faddho, V8HFmode, V8HFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (faddhx, V16HFmode, V16HFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (faddw, SFmode, SFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (faddwp, V2SFmode, V2SFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (faddwq, V4SFmode, V4SFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (faddwo, V8SFmode, V8SFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (faddd, DFmode, DFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fadddp, V2DFmode, V2DFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fadddq, V4DFmode, V4DFmode)
+KVX_EXPAND_BUILTIN_3_FLOATINGS (faddh, HFmode, HFmode)
+KVX_EXPAND_BUILTIN_3_FLOATINGS (faddhq, V4HFmode, V4HFmode)
+KVX_EXPAND_BUILTIN_3_FLOATINGS (faddho, V8HFmode, V8HFmode)
+KVX_EXPAND_BUILTIN_3_FLOATINGS (faddhx, V16HFmode, V16HFmode)
+KVX_EXPAND_BUILTIN_3_FLOATINGS (faddw, SFmode, SFmode)
+KVX_EXPAND_BUILTIN_3_CONJUGATE (faddwp, V2SFmode, V2SFmode)
+KVX_EXPAND_BUILTIN_3_CONJUGATE (faddwq, V4SFmode, V4SFmode)
+KVX_EXPAND_BUILTIN_3_CONJUGATE (faddwo, V8SFmode, V8SFmode)
+KVX_EXPAND_BUILTIN_3_FLOATINGS (faddd, DFmode, DFmode)
+KVX_EXPAND_BUILTIN_3_CONJUGATE (fadddp, V2DFmode, V2DFmode)
+KVX_EXPAND_BUILTIN_3_CONJUGATE (fadddq, V4DFmode, V4DFmode)
 
-KVX_EXPAND_BUILTIN_3_MODIFIERS (faddcwc, V2SFmode, V2SFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (faddcwcp, V4SFmode, V4SFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (faddcwcq, V8SFmode, V8SFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (faddcdc, V2DFmode, V2DFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (faddcdcp, V4DFmode, V4DFmode)
+KVX_EXPAND_BUILTIN_3_FLOATINGS (fsbfh, HFmode, HFmode)
+KVX_EXPAND_BUILTIN_3_FLOATINGS (fsbfhq, V4HFmode, V4HFmode)
+KVX_EXPAND_BUILTIN_3_FLOATINGS (fsbfho, V8HFmode, V8HFmode)
+KVX_EXPAND_BUILTIN_3_FLOATINGS (fsbfhx, V16HFmode, V16HFmode)
+KVX_EXPAND_BUILTIN_3_FLOATINGS (fsbfw, SFmode, SFmode)
+KVX_EXPAND_BUILTIN_3_CONJUGATE (fsbfwp, V2SFmode, V2SFmode)
+KVX_EXPAND_BUILTIN_3_CONJUGATE (fsbfwq, V4SFmode, V4SFmode)
+KVX_EXPAND_BUILTIN_3_CONJUGATE (fsbfwo, V8SFmode, V8SFmode)
+KVX_EXPAND_BUILTIN_3_FLOATINGS (fsbfd, DFmode, DFmode)
+KVX_EXPAND_BUILTIN_3_CONJUGATE (fsbfdp, V2DFmode, V2DFmode)
+KVX_EXPAND_BUILTIN_3_CONJUGATE (fsbfdq, V4DFmode, V4DFmode)
 
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fsbfh, HFmode, HFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fsbfhq, V4HFmode, V4HFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fsbfho, V8HFmode, V8HFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fsbfhx, V16HFmode, V16HFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fsbfw, SFmode, SFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fsbfwp, V2SFmode, V2SFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fsbfwq, V4SFmode, V4SFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fsbfwo, V8SFmode, V8SFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fsbfd, DFmode, DFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fsbfdp, V2DFmode, V2DFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fsbfdq, V4DFmode, V4DFmode)
+KVX_EXPAND_BUILTIN_3_FLOATINGS (fmulh, HFmode, HFmode)
+KVX_EXPAND_BUILTIN_3_FLOATINGS (fmulhq, V4HFmode, V4HFmode)
+KVX_EXPAND_BUILTIN_3_FLOATINGS (fmulho, V8HFmode, V8HFmode)
+KVX_EXPAND_BUILTIN_3_FLOATINGS (fmulhx, V16HFmode, V16HFmode)
+KVX_EXPAND_BUILTIN_3_FLOATINGS (fmulw, SFmode, SFmode)
+KVX_EXPAND_BUILTIN_3_FLOATINGS (fmulwp, V2SFmode, V2SFmode)
+KVX_EXPAND_BUILTIN_3_FLOATINGS (fmulwq, V4SFmode, V4SFmode)
+KVX_EXPAND_BUILTIN_3_FLOATINGS (fmulwo, V8SFmode, V8SFmode)
+KVX_EXPAND_BUILTIN_3_FLOATINGS (fmuld, DFmode, DFmode)
+KVX_EXPAND_BUILTIN_3_FLOATINGS (fmuldp, V2DFmode, V2DFmode)
+KVX_EXPAND_BUILTIN_3_FLOATINGS (fmuldq, V4DFmode, V4DFmode)
 
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fsbfcwc, V2SFmode, V2SFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fsbfcwcp, V4SFmode, V4SFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fsbfcwcq, V8SFmode, V8SFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fsbfcdc, V2DFmode, V2DFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fsbfcdcp, V4DFmode, V4DFmode)
+KVX_EXPAND_BUILTIN_3_FLOATINGS (fmulhw, SFmode, HFmode)
+KVX_EXPAND_BUILTIN_3_FLOATINGS (fmulwd, DFmode, SFmode)
+KVX_EXPAND_BUILTIN_3_CONJUGATE (fmulwc, V2SFmode, V2SFmode)
+KVX_EXPAND_BUILTIN_3_CONJUGATE (fmulwcp, V4SFmode, V4SFmode)
+KVX_EXPAND_BUILTIN_3_CONJUGATE (fmulwcq, V8SFmode, V8SFmode)
+KVX_EXPAND_BUILTIN_3_CONJUGATE (fmuldc, V2DFmode, V2DFmode)
+KVX_EXPAND_BUILTIN_3_CONJUGATE (fmuldcp, V4DFmode, V4DFmode)
 
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fmulh, HFmode, HFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fmulhq, V4HFmode, V4HFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fmulho, V8HFmode, V8HFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fmulhx, V16HFmode, V16HFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fmulw, SFmode, SFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fmulwp, V2SFmode, V2SFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fmulwq, V4SFmode, V4SFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fmulwo, V8SFmode, V8SFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fmuld, DFmode, DFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fmuldp, V2DFmode, V2DFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fmuldq, V4DFmode, V4DFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmah, HFmode, HFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmahq, V4HFmode, V4HFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmaho, V8HFmode, V8HFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmahx, V16HFmode, V16HFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmaw, SFmode, SFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmawp, V2SFmode, V2SFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmawq, V4SFmode, V4SFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmawo, V8SFmode, V8SFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmad, DFmode, DFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmadp, V2DFmode, V2DFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmadq, V4DFmode, V4DFmode)
 
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fmulhw, SFmode, HFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fmulwd, DFmode, SFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fmulwc, V2SFmode, V2SFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fmulwcp, V4SFmode, V4SFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fmulwcq, V8SFmode, V8SFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fmulcwc, V2SFmode, V2SFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fmulcwcp, V4SFmode, V4SFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fmulcwcq, V8SFmode, V8SFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fmuldc, V2DFmode, V2DFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fmuldcp, V4DFmode, V4DFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fmulcdc, V2DFmode, V2DFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fmulcdcp, V4DFmode, V4DFmode)
-KVX_EXPAND_BUILTIN_3_MODIFIERS (fmm212w, V4SFmode, V2SFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmahw, SFmode, HFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmawd, DFmode, SFmode)
+KVX_EXPAND_BUILTIN_4_CONJUGATE (ffmawc, V2SFmode, V2SFmode)
+KVX_EXPAND_BUILTIN_4_CONJUGATE (ffmawcp, V4SFmode, V4SFmode)
+KVX_EXPAND_BUILTIN_4_CONJUGATE (ffmawcq, V8SFmode, V8SFmode)
+KVX_EXPAND_BUILTIN_4_CONJUGATE (ffmadc, V2DFmode, V2DFmode)
+KVX_EXPAND_BUILTIN_4_CONJUGATE (ffmadcp, V4DFmode, V4DFmode)
 
-KVX_EXPAND_BUILTIN_4_MODIFIERS (ffmah, HFmode, HFmode)
-KVX_EXPAND_BUILTIN_4_MODIFIERS (ffmahq, V4HFmode, V4HFmode)
-KVX_EXPAND_BUILTIN_4_MODIFIERS (ffmaho, V8HFmode, V8HFmode)
-KVX_EXPAND_BUILTIN_4_MODIFIERS (ffmahx, V16HFmode, V16HFmode)
-KVX_EXPAND_BUILTIN_4_MODIFIERS (ffmaw, SFmode, SFmode)
-KVX_EXPAND_BUILTIN_4_MODIFIERS (ffmawp, V2SFmode, V2SFmode)
-KVX_EXPAND_BUILTIN_4_MODIFIERS (ffmawq, V4SFmode, V4SFmode)
-KVX_EXPAND_BUILTIN_4_MODIFIERS (ffmawo, V8SFmode, V8SFmode)
-KVX_EXPAND_BUILTIN_4_MODIFIERS (ffmad, DFmode, DFmode)
-KVX_EXPAND_BUILTIN_4_MODIFIERS (ffmadp, V2DFmode, V2DFmode)
-KVX_EXPAND_BUILTIN_4_MODIFIERS (ffmadq, V4DFmode, V4DFmode)
-KVX_EXPAND_BUILTIN_4_MODIFIERS (ffmahw, SFmode, HFmode)
-KVX_EXPAND_BUILTIN_4_MODIFIERS (ffmawd, DFmode, SFmode)
-KVX_EXPAND_BUILTIN_4_MODIFIERS (fmma212w, V4SFmode, V2SFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmsh, HFmode, HFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmshq, V4HFmode, V4HFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmsho, V8HFmode, V8HFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmshx, V16HFmode, V16HFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmsw, SFmode, SFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmswp, V2SFmode, V2SFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmswq, V4SFmode, V4SFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmswo, V8SFmode, V8SFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmsd, DFmode, DFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmsdp, V2DFmode, V2DFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmsdq, V4DFmode, V4DFmode)
 
-KVX_EXPAND_BUILTIN_4_MODIFIERS (ffmsh, HFmode, HFmode)
-KVX_EXPAND_BUILTIN_4_MODIFIERS (ffmshq, V4HFmode, V4HFmode)
-KVX_EXPAND_BUILTIN_4_MODIFIERS (ffmsho, V8HFmode, V8HFmode)
-KVX_EXPAND_BUILTIN_4_MODIFIERS (ffmshx, V16HFmode, V16HFmode)
-KVX_EXPAND_BUILTIN_4_MODIFIERS (ffmsw, SFmode, SFmode)
-KVX_EXPAND_BUILTIN_4_MODIFIERS (ffmswp, V2SFmode, V2SFmode)
-KVX_EXPAND_BUILTIN_4_MODIFIERS (ffmswq, V4SFmode, V4SFmode)
-KVX_EXPAND_BUILTIN_4_MODIFIERS (ffmswo, V8SFmode, V8SFmode)
-KVX_EXPAND_BUILTIN_4_MODIFIERS (ffmsd, DFmode, DFmode)
-KVX_EXPAND_BUILTIN_4_MODIFIERS (ffmsdp, V2DFmode, V2DFmode)
-KVX_EXPAND_BUILTIN_4_MODIFIERS (ffmsdq, V4DFmode, V4DFmode)
-KVX_EXPAND_BUILTIN_4_MODIFIERS (ffmshw, SFmode, HFmode)
-KVX_EXPAND_BUILTIN_4_MODIFIERS (ffmswd, DFmode, SFmode)
-KVX_EXPAND_BUILTIN_4_MODIFIERS (fmms212w, V4SFmode, V2SFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmshw, SFmode, HFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmswd, DFmode, SFmode)
+KVX_EXPAND_BUILTIN_4_CONJUGATE (ffmswc, V2SFmode, V2SFmode)
+KVX_EXPAND_BUILTIN_4_CONJUGATE (ffmswcp, V4SFmode, V4SFmode)
+KVX_EXPAND_BUILTIN_4_CONJUGATE (ffmswcq, V8SFmode, V8SFmode)
+KVX_EXPAND_BUILTIN_4_CONJUGATE (ffmsdc, V2DFmode, V2DFmode)
+KVX_EXPAND_BUILTIN_4_CONJUGATE (ffmsdcp, V4DFmode, V4DFmode)
+
+KVX_EXPAND_BUILTIN_3_FLOATINGS (fmm212w, V4SFmode, V2SFmode)
+KVX_EXPAND_BUILTIN_3_TRANSPOSE (fmm222w, V4SFmode, V4SFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (fmma212w, V4SFmode, V2SFmode)
+KVX_EXPAND_BUILTIN_4_TRANSPOSE (fmma222w, V4SFmode, V4SFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (fmms212w, V4SFmode, V2SFmode)
+KVX_EXPAND_BUILTIN_4_TRANSPOSE (fmms222w, V4SFmode, V4SFmode)
+
+KVX_EXPAND_BUILTIN_3_FLOATINGS (ffdmaw, SFmode, V2SFmode)
+KVX_EXPAND_BUILTIN_3_FLOATINGS (ffdmawp, V2SFmode, V4SFmode)
+KVX_EXPAND_BUILTIN_3_FLOATINGS (ffdmawq, V4SFmode, V8SFmode)
+
+KVX_EXPAND_BUILTIN_3_FLOATINGS (ffdmsw, SFmode, V2SFmode)
+KVX_EXPAND_BUILTIN_3_FLOATINGS (ffdmswp, V2SFmode, V4SFmode)
+KVX_EXPAND_BUILTIN_3_FLOATINGS (ffdmswq, V4SFmode, V8SFmode)
+
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffdmdaw, SFmode, V2SFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffdmdawp, V2SFmode, V4SFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffdmdawq, V4SFmode, V8SFmode)
+
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffdmsaw, SFmode, V2SFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffdmsawp, V2SFmode, V4SFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffdmsawq, V4SFmode, V8SFmode)
+
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffdmdsw, SFmode, V2SFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffdmdswp, V2SFmode, V4SFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffdmdswq, V4SFmode, V8SFmode)
+
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffdmasw, SFmode, V2SFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffdmaswp, V2SFmode, V4SFmode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (ffdmaswq, V4SFmode, V8SFmode)
 
 KVX_EXPAND_BUILTIN_FCONVERT (floatw, SFmode, SImode)
 KVX_EXPAND_BUILTIN_FCONVERT (floatwp, V2SFmode, V2SImode)
@@ -7630,12 +7723,6 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_FADDDP: return kvx_expand_builtin_fadddp (target, exp);
     case KVX_BUILTIN_FADDDQ: return kvx_expand_builtin_fadddq (target, exp);
 
-    case KVX_BUILTIN_FADDCWC: return kvx_expand_builtin_faddcwc (target, exp);
-    case KVX_BUILTIN_FADDCWCP: return kvx_expand_builtin_faddcwcp (target, exp);
-    case KVX_BUILTIN_FADDCWCQ: return kvx_expand_builtin_faddcwcq (target, exp);
-    case KVX_BUILTIN_FADDCDC: return kvx_expand_builtin_faddcdc (target, exp);
-    case KVX_BUILTIN_FADDCDCP: return kvx_expand_builtin_faddcdcp (target, exp);
-
     case KVX_BUILTIN_FSBFH: return kvx_expand_builtin_fsbfh (target, exp);
     case KVX_BUILTIN_FSBFHQ: return kvx_expand_builtin_fsbfhq (target, exp);
     case KVX_BUILTIN_FSBFHO: return kvx_expand_builtin_fsbfho (target, exp);
@@ -7647,12 +7734,6 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_FSBFD: return kvx_expand_builtin_fsbfd (target, exp);
     case KVX_BUILTIN_FSBFDP: return kvx_expand_builtin_fsbfdp (target, exp);
     case KVX_BUILTIN_FSBFDQ: return kvx_expand_builtin_fsbfdq (target, exp);
-
-    case KVX_BUILTIN_FSBFCWC: return kvx_expand_builtin_fsbfcwc (target, exp);
-    case KVX_BUILTIN_FSBFCWCP: return kvx_expand_builtin_fsbfcwcp (target, exp);
-    case KVX_BUILTIN_FSBFCWCQ: return kvx_expand_builtin_fsbfcwcq (target, exp);
-    case KVX_BUILTIN_FSBFCDC: return kvx_expand_builtin_fsbfcdc (target, exp);
-    case KVX_BUILTIN_FSBFCDCP: return kvx_expand_builtin_fsbfcdcp (target, exp);
 
     case KVX_BUILTIN_FMULH: return kvx_expand_builtin_fmulh (target, exp);
     case KVX_BUILTIN_FMULHQ: return kvx_expand_builtin_fmulhq (target, exp);
@@ -7671,14 +7752,8 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_FMULWC: return kvx_expand_builtin_fmulwc (target, exp);
     case KVX_BUILTIN_FMULWCP: return kvx_expand_builtin_fmulwcp (target, exp);
     case KVX_BUILTIN_FMULWCQ: return kvx_expand_builtin_fmulwcq (target, exp);
-    case KVX_BUILTIN_FMULCWC: return kvx_expand_builtin_fmulcwc (target, exp);
-    case KVX_BUILTIN_FMULCWCP: return kvx_expand_builtin_fmulcwcp (target, exp);
-    case KVX_BUILTIN_FMULCWCQ: return kvx_expand_builtin_fmulcwcq (target, exp);
     case KVX_BUILTIN_FMULDC: return kvx_expand_builtin_fmuldc (target, exp);
     case KVX_BUILTIN_FMULDCP: return kvx_expand_builtin_fmuldcp (target, exp);
-    case KVX_BUILTIN_FMULCDC: return kvx_expand_builtin_fmulcdc (target, exp);
-    case KVX_BUILTIN_FMULCDCP: return kvx_expand_builtin_fmulcdcp (target, exp);
-    case KVX_BUILTIN_FMM212W: return kvx_expand_builtin_fmm212w (target, exp);
 
     case KVX_BUILTIN_FFMAH: return kvx_expand_builtin_ffmah (target, exp);
     case KVX_BUILTIN_FFMAHQ: return kvx_expand_builtin_ffmahq (target, exp);
@@ -7691,9 +7766,14 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_FFMAD: return kvx_expand_builtin_ffmad (target, exp);
     case KVX_BUILTIN_FFMADP: return kvx_expand_builtin_ffmadp (target, exp);
     case KVX_BUILTIN_FFMADQ: return kvx_expand_builtin_ffmadq (target, exp);
+
     case KVX_BUILTIN_FFMAHW: return kvx_expand_builtin_ffmahw (target, exp);
     case KVX_BUILTIN_FFMAWD: return kvx_expand_builtin_ffmawd (target, exp);
-    case KVX_BUILTIN_FMMA212W: return kvx_expand_builtin_fmma212w (target, exp);
+    case KVX_BUILTIN_FFMAWC: return kvx_expand_builtin_ffmawc (target, exp);
+    case KVX_BUILTIN_FFMAWCP: return kvx_expand_builtin_ffmawcp (target, exp);
+    case KVX_BUILTIN_FFMAWCQ: return kvx_expand_builtin_ffmawcq (target, exp);
+    case KVX_BUILTIN_FFMADC: return kvx_expand_builtin_ffmadc (target, exp);
+    case KVX_BUILTIN_FFMADCP: return kvx_expand_builtin_ffmadcp (target, exp);
 
     case KVX_BUILTIN_FFMSH: return kvx_expand_builtin_ffmsh (target, exp);
     case KVX_BUILTIN_FFMSHQ: return kvx_expand_builtin_ffmshq (target, exp);
@@ -7706,9 +7786,45 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_FFMSD: return kvx_expand_builtin_ffmsd (target, exp);
     case KVX_BUILTIN_FFMSDP: return kvx_expand_builtin_ffmsdp (target, exp);
     case KVX_BUILTIN_FFMSDQ: return kvx_expand_builtin_ffmsdq (target, exp);
+
     case KVX_BUILTIN_FFMSHW: return kvx_expand_builtin_ffmshw (target, exp);
     case KVX_BUILTIN_FFMSWD: return kvx_expand_builtin_ffmswd (target, exp);
+    case KVX_BUILTIN_FFMSWC: return kvx_expand_builtin_ffmswc (target, exp);
+    case KVX_BUILTIN_FFMSWCP: return kvx_expand_builtin_ffmswcp (target, exp);
+    case KVX_BUILTIN_FFMSWCQ: return kvx_expand_builtin_ffmswcq (target, exp);
+    case KVX_BUILTIN_FFMSDC: return kvx_expand_builtin_ffmsdc (target, exp);
+    case KVX_BUILTIN_FFMSDCP: return kvx_expand_builtin_ffmsdcp (target, exp);
+
+    case KVX_BUILTIN_FMM212W: return kvx_expand_builtin_fmm212w (target, exp);
+    case KVX_BUILTIN_FMM222W: return kvx_expand_builtin_fmm222w (target, exp);
+    case KVX_BUILTIN_FMMA212W: return kvx_expand_builtin_fmma212w (target, exp);
+    case KVX_BUILTIN_FMMA222W: return kvx_expand_builtin_fmma222w (target, exp);
     case KVX_BUILTIN_FMMS212W: return kvx_expand_builtin_fmms212w (target, exp);
+    case KVX_BUILTIN_FMMS222W: return kvx_expand_builtin_fmms222w (target, exp);
+
+    case KVX_BUILTIN_FFDMAW: return kvx_expand_builtin_ffdmaw (target, exp);
+    case KVX_BUILTIN_FFDMAWP: return kvx_expand_builtin_ffdmawp (target, exp);
+    case KVX_BUILTIN_FFDMAWQ: return kvx_expand_builtin_ffdmawq (target, exp);
+
+    case KVX_BUILTIN_FFDMSW: return kvx_expand_builtin_ffdmsw (target, exp);
+    case KVX_BUILTIN_FFDMSWP: return kvx_expand_builtin_ffdmswp (target, exp);
+    case KVX_BUILTIN_FFDMSWQ: return kvx_expand_builtin_ffdmswq (target, exp);
+
+    case KVX_BUILTIN_FFDMDAW: return kvx_expand_builtin_ffdmdaw (target, exp);
+    case KVX_BUILTIN_FFDMDAWP: return kvx_expand_builtin_ffdmdawp (target, exp);
+    case KVX_BUILTIN_FFDMDAWQ: return kvx_expand_builtin_ffdmdawq (target, exp);
+
+    case KVX_BUILTIN_FFDMSAW: return kvx_expand_builtin_ffdmsaw (target, exp);
+    case KVX_BUILTIN_FFDMSAWP: return kvx_expand_builtin_ffdmsawp (target, exp);
+    case KVX_BUILTIN_FFDMSAWQ: return kvx_expand_builtin_ffdmsawq (target, exp);
+
+    case KVX_BUILTIN_FFDMDSW: return kvx_expand_builtin_ffdmdsw (target, exp);
+    case KVX_BUILTIN_FFDMDSWP: return kvx_expand_builtin_ffdmdswp (target, exp);
+    case KVX_BUILTIN_FFDMDSWQ: return kvx_expand_builtin_ffdmdswq (target, exp);
+
+    case KVX_BUILTIN_FFDMASW: return kvx_expand_builtin_ffdmasw (target, exp);
+    case KVX_BUILTIN_FFDMASWP: return kvx_expand_builtin_ffdmaswp (target, exp);
+    case KVX_BUILTIN_FFDMASWQ: return kvx_expand_builtin_ffdmaswq (target, exp);
 
     case KVX_BUILTIN_FLOATW: return kvx_expand_builtin_floatw (target, exp);
     case KVX_BUILTIN_FLOATWP: return kvx_expand_builtin_floatwp (target, exp);
