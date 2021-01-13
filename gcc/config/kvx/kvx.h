@@ -48,12 +48,14 @@ enum kvx_abi_type
 	  if (kvx_arch_name == KVX_ARCH_KV3_1)                                 \
 	    {                                                                  \
 	      builtin_assert ("machine=kv3-1");                                \
-	    builtin_define ("__kvxarch_kv3_1");                                \
+	      builtin_define ("__kvxarch_kv3_1");                              \
+	      builtin_define ("__kv3_1__");                                    \
 	    }                                                                  \
 	  if (kvx_arch_name == KVX_ARCH_KV3_2)                                 \
 	    {                                                                  \
 	      builtin_assert ("machine=kv3-2");                                \
-	    builtin_define ("__kvxarch_kv3_2");                                \
+	      builtin_define ("__kvxarch_kv3_2");                              \
+	      builtin_define ("__kv3_2__");                                    \
 	    }                                                                  \
 	  if (TARGET_STRICT_ALIGN)                                             \
 	    builtin_define ("__STRICT_ALIGN__");                               \
