@@ -534,4 +534,4 @@ uint64x2_t fixedudp(float64x2_t a) {
     return __builtin_kvx_fixedudp(a, 23, ".rn.s");
 }
 
-/* { dg-final { scan-assembler-times "faddwq \\\$r0r1" 8 } } */
+/* { dg-final { scan-assembler-times "faddwq \\\$r" 8 } } */
