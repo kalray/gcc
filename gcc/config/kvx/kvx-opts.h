@@ -27,4 +27,7 @@ enum kvx_arch_type
   KVX_ARCH_KV3_2
 };
 
+#define KV3_1 (kvx_arch_name == KVX_ARCH_KV3_1)
+#define KV3_2 (kvx_arch_name == KVX_ARCH_KV3_2)
+
 #endif
