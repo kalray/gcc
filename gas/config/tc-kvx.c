@@ -1788,47 +1788,12 @@ md_operand(expressionS *e)
 	}
       if (!pseudo_func[i].pseudo_relocs.has_no_arg) {
 	if (e->X_op != O_symbol)
-	  {
-	    as_bad ("Illegal combination of relocation functions");
-	    /* if (e->X_op != O_pseudo_fixup) */
-	    /*     { */
-	    /* 	  as_bad ("Not a symbolic expression"); */
-	    /* 	  goto err; */
-	    /*     } */
-	    /* if (i != FUNC_GOT_RELATIVE) */
-	    /* { */
-	    /*   as_bad ("Illegal combination of relocation functions"); */
-	    /*   goto err; */
-	    /* } */
-	    /* switch (S_GET_VALUE (e->X_op_symbol)) */
-	    /*     { */
-	    /*     case FUNC_FPTR_RELATIVE: */
-	    /* 	  i = FUNC_GOT_FPTR_RELATIVE; break; */
-	    /*     case FUNC_TP_RELATIVE: */
-	    /* 	  i = FUNC_GOT_TP_RELATIVE; break; */
-	    /*     case FUNC_DTP_INDEX: */
-	    /* 	  i = FUNC_GOT_DTP_INDEX_RELATIVE; break; */
-	    /*     case FUNC_DTP_LOAD_MODULE: */
-	    /* 	  i = FUNC_GOT_DTP_LOAD_MODULE_RELATIVE; break; */
-	    /*     default: */
-	    /* 	  as_bad ("Illegal combination of relocation functions"); */
-	    /* 	  goto err; */
-	    /*     } */
-	  }
+          as_fatal ("Illegal combination of relocation functions");
       }
       /* Make sure gas doesn't get rid of local symbols that are used
 	 in relocs.  */
       e->X_op = O_pseudo_fixup;
       e->X_op_symbol = pseudo_func[i].sym;
-      /*   break; */
-
-      /* default: */
-      /*   /\* name = input_line_pointer - 1; *\/ */
-      /*   /\* get_symbol_end (); *\/ */
-      /*   get_symbol_name (&name); */
-      /*   as_bad ("Unknown pseudo function `%s'", name); */
-      /*   goto err; */
-      /* } */
       break;
     default:
       break;
@@ -2270,7 +2235,7 @@ md_assemble(char *s)
             }
 
             if(syllables + immxcnt > KVXMAXBUNDLEWORDS){
-                as_bad("Bundle has too many syllables : %d instead of %d\n", syllables + immxcnt, KVXMAXBUNDLEWORDS);
+                as_fatal("Bundle has too many syllables : %d instead of %d\n", syllables + immxcnt, KVXMAXBUNDLEWORDS);
             }
 
             /* Check that resources are not oversubscribed.
@@ -2296,8 +2261,8 @@ md_assemble(char *s)
                   if (resources_used[(i * kv3_resource_max) + j] > resources[j]) {
                     int v = resources_used[(i * kv3_resource_max) + j];
                     free (resources_used);
-                    as_bad("Resource %s over-used in bundle: %d used, %d available",
-                           kv3_resource_names[j], v, resources[j]);
+                    as_fatal("Resource %s over-used in bundle: %d used, %d available",
+                            kv3_resource_names[j], v, resources[j]);
                   }
               }
               free (resources_used);
@@ -2330,11 +2295,8 @@ md_assemble(char *s)
                 }
             }
             if (entry != immxcnt){
-                as_bad("%d IMMX produced, only %d emitted.", immxcnt, entry);
+                as_fatal("%d IMMX produced, only %d emitted.", immxcnt, entry);
             }
-
-            // fprintf(stderr, "Emit %d + %d syllables\n", bundle_insncnt, immxcnt);
-
         }
 
         {
@@ -2818,7 +2780,7 @@ kvx_cons_fix_new(fragS *f, int where, int nbytes, expressionS *exp, bfd_reloc_co
       code = pf->pseudo_relocs.single;
 
       if (code == BFD_RELOC_UNUSED)
-        as_bad("Unsupported relocation");
+        as_fatal("Unsupported relocation");
     }
   else
     {
@@ -2841,8 +2803,7 @@ kvx_cons_fix_new(fragS *f, int where, int nbytes, expressionS *exp, bfd_reloc_co
           code = BFD_RELOC_64;
           break;
         default:
-          as_bad("unsupported BFD relocation size %u", nbytes);
-          code = BFD_RELOC_32;
+          as_fatal("unsupported BFD relocation size %u", nbytes);
           break;
         }
     }
@@ -3189,7 +3150,7 @@ kvx_type(int start ATTRIBUTE_UNUSED)
         ;
 #endif
     else
-        as_bad(_("unrecognized symbol type \"%s\""), typename);
+        as_fatal(_("unrecognized symbol type \"%s\""), typename);
 
     *input_line_pointer = c;
 
