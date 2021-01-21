@@ -114,9 +114,11 @@ gomp_sem_wait (gomp_sem_t *sem)
 
       if (count == 0)
 	{
-	  if ((uintptr_t) &MPPA_COS_THREAD_PER_CORE_LOG2
-	      != 0) /* yield if more than one thread per core */
+	  /* yield if more than one thread per core, else idle */
+	  if ((uintptr_t) &MPPA_COS_THREAD_PER_CORE_LOG2)
 	    mppa_cos_synchronization_wait (NULL);
+	  else
+	    mppa_cos_idle ();
 	}
       else
 	{
