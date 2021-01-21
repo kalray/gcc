@@ -73,9 +73,11 @@ gomp_mutex_lock (gomp_mutex_t *mutex)
   while (!(__builtin_kvx_alclrw ((void *) mutex) == 1ULL))
 #endif
     {
-      if ((uintptr_t) &MPPA_COS_THREAD_PER_CORE_LOG2
-	  != 0) /* yield if more than one thread per core */
+      /* yield if more than one thread per core, else idle */
+      if ((uintptr_t) &MPPA_COS_THREAD_PER_CORE_LOG2)
 	mppa_cos_synchronization_wait (NULL);
+      else
+	mppa_cos_idle ();
     }
   MPPA_COS_DINVAL ();
 }
