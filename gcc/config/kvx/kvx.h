@@ -9,6 +9,10 @@
 
 #include "kv3-registers.h"
 
+/* Support for a compile-time default arch.  The rules are:
+   --with-arch is ignored if -march is specified. */
+#define OPTION_DEFAULT_SPECS {"arch", "%{!march=*:-march=%(VALUE)}"},
+
 /* Which ABI to use.  */
 enum kvx_abi_type
 {
