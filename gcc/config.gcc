@@ -4023,6 +4023,21 @@ case "${target}" in
 		done
 		;;
 
+  kvx-*-*)
+    supported_defaults="arch"
+
+		case "${with_arch}" in
+		"" | kv3-1 | kv3-2)
+			# OK.
+			;;
+		*)
+			echo "--with-arch=${with_arch} is not supported.  The argument must be kv3-1 or kv3-2." 1>&2
+			exit 1
+			;;
+		esac
+
+    ;;
+
 	riscv*-*-*)
 		supported_defaults="abi arch tune"
 
