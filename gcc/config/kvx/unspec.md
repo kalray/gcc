@@ -64,6 +64,7 @@
         UNSPEC_AVGRUWO
         UNSPEC_XORD
         UNSPEC_SLLD
+        UNSPEC_SRLD
         UNSPEC_SRSW
         UNSPEC_SRSWP
         UNSPEC_SRSWQ
