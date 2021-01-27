@@ -146,6 +146,8 @@ extern void kvx_expand_vector_init (rtx target, rtx source);
 
 extern void kvx_expand_vec_perm_const (rtx target, rtx source1, rtx source2, rtx selector);
 
+extern rtx kvx_expand_chunk_shift (rtx target, rtx source1, rtx source2, int shift);
+
 extern void kvx_emit_pre_barrier (rtx, bool);
 extern void kvx_emit_post_barrier (rtx, bool);
 extern void kvx_expand_compare_and_swap (rtx op[]);

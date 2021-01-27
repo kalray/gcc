@@ -7821,6 +7821,7 @@ proc check_effective_target_vect_call_copysignf { } {
     return [check_cached_effective_target_indexed vect_call_copysignf {
       expr { [istarget i?86-*-*] || [istarget x86_64-*-*]
 	     || [istarget powerpc*-*-*]
+	     || [istarget kvx-*-*]
 	     || [istarget aarch64*-*-*] }}]
 }
 
@@ -8005,6 +8006,7 @@ proc check_effective_target_sync_int_128_runtime { } {
 
 proc check_effective_target_sync_long_long { } {
     if { [istarget i?86-*-*] || [istarget x86_64-*-*])
+	 || [istarget kvx-*-*]
 	 || [istarget aarch64*-*-*]
 	 || [istarget arm*-*-*]
 	 || [istarget alpha*-*-*]
@@ -8106,6 +8108,7 @@ proc check_effective_target_bswap { } {
       expr { [istarget aarch64*-*-*]
 	     || [istarget alpha*-*-*]
 	     || [istarget i?86-*-*] || [istarget x86_64-*-*]
+	     || [istarget kvx-*-*]
 	     || [istarget m68k-*-*]
 	     || [istarget powerpc*-*-*]
 	     || [istarget rs6000-*-*]
@@ -8128,6 +8131,7 @@ proc check_effective_target_sync_int_long { } {
       expr { [istarget ia64-*-*]
 	     || [istarget i?86-*-*] || [istarget x86_64-*-*]
 	     || [istarget aarch64*-*-*]
+	     || [istarget kvx-*-*]
 	     || [istarget alpha*-*-*] 
 	     || [istarget arm*-*-linux-*] 
 	     || [istarget arm*-*-uclinuxfdpiceabi] 
