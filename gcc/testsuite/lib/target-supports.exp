@@ -6278,6 +6278,7 @@ proc check_effective_target_vect_call_copysignf { } {
 	set et_vect_call_copysignf_saved($et_index) 0
 	if { [istarget i?86-*-*] || [istarget x86_64-*-*]
 	     || [istarget powerpc*-*-*]
+	     || [istarget kvx-*-*]
 	     || [istarget aarch64*-*-*] } {
 	   set et_vect_call_copysignf_saved($et_index) 1
 	}
@@ -6636,6 +6637,7 @@ proc check_effective_target_sync_int_128_runtime { } {
 
 proc check_effective_target_sync_long_long { } {
     if { [istarget i?86-*-*] || [istarget x86_64-*-*])
+	 || [istarget kvx-*-*]
 	 || [istarget aarch64*-*-*]
 	 || [istarget arm*-*-*]
 	 || [istarget alpha*-*-*]
@@ -6707,6 +6709,7 @@ proc check_effective_target_bswap { } {
     } else {
 	set et_bswap_saved 0
 	if { [istarget aarch64*-*-*]
+	     || [istarget kvx-*-*]
 	     || [istarget alpha*-*-*]
 	     || [istarget i?86-*-*] || [istarget x86_64-*-*]
 	     || [istarget m68k-*-*]
@@ -6794,6 +6797,7 @@ proc check_effective_target_sync_int_long { } {
         if { [istarget ia64-*-*]
 	     || [istarget i?86-*-*] || [istarget x86_64-*-*]
 	     || [istarget aarch64*-*-*]
+	     || [istarget kvx-*-*]
 	     || [istarget alpha*-*-*] 
 	     || [istarget arm*-*-linux-*] 
 	     || ([istarget arm*-*-*]
