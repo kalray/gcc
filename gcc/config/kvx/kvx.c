@@ -3228,10 +3228,7 @@ kvx_expand_chunk_insert(rtx target, rtx source, int index, machine_mode inner_mo
       {
 	rtx op1 = copy_to_mode_reg (inner_mode, XVECEXP (source, 0, index++));
 	rtx op2 = copy_to_mode_reg (inner_mode, XVECEXP (source, 0, index++));
-	rtx initx2a = gen_rtx_UNSPEC (chunk_mode, gen_rtvec (1, op1), UNSPEC_INITX2A);
-	rtx initx2b = gen_rtx_UNSPEC (chunk_mode, gen_rtvec (2, op2, target), UNSPEC_INITX2B);
-	emit_insn (gen_rtx_SET (target, initx2a));
-	emit_insn (gen_rtx_SET (target, initx2b));
+	emit_insn (gen_rtx_SET (target, gen_rtx_VEC_CONCAT (chunk_mode, op1, op2)));
       }
       break;
     case 2:
@@ -3602,6 +3599,36 @@ kvx_expand_vec_perm_const (rtx target, rtx source1, rtx source2, rtx selector)
     kvx_expand_vec_perm_const_emit (target, source1, NULL_RTX);
   else
     kvx_expand_vec_perm_const_emit (target, source1, source2);
+}
+
+/* Helper to implement vector cross-element right shift. Two source chunks are
+ * provided, with a NULL source2 in case the vacated bits must be cleared. */
+rtx
+kvx_expand_chunk_shift (rtx target, rtx source1, rtx source2, int shift)
+{
+  machine_mode mode = GET_MODE (target);
+  gcc_assert ((unsigned)shift < 64U);
+  if (shift == 0)
+    emit_move_insn (target, source1);
+  else
+    {
+      rtx op0 = simplify_gen_subreg (DImode, target, mode, 0);
+      rtx op1 = simplify_gen_subreg (DImode, source1, mode, 0);
+      if (source2 == NULL_RTX)
+	{
+	  emit_insn (gen_lshrdi3 (op0, op1, GEN_INT (shift)));
+	}
+      else
+	{
+	  rtx temp0 = gen_reg_rtx (DImode);
+	  rtx temp1 = gen_reg_rtx (DImode);
+	  rtx op2 = simplify_gen_subreg (DImode, source2, mode, 0);
+	  emit_insn (gen_ashldi3 (temp1, op2, GEN_INT (64 - shift)));
+	  emit_insn (gen_lshrdi3 (temp0, op1, GEN_INT (shift)));
+	  emit_insn (gen_iordi3 (op0, temp0, temp1));
+	}
+    }
+  return target;
 }
 
 /* Emit a barrier, that is appropriate for memory model MODEL, at the
@@ -4160,6 +4187,26 @@ enum kvx_builtin
   KVX_BUILTIN_CBSDP,
   KVX_BUILTIN_CBSDQ,
 
+  KVX_BUILTIN_SHIFTBO,
+  KVX_BUILTIN_SHIFTBX,
+  KVX_BUILTIN_SHIFTBV,
+  KVX_BUILTIN_SHIFTHQ,
+  KVX_BUILTIN_SHIFTHO,
+  KVX_BUILTIN_SHIFTHX,
+  KVX_BUILTIN_SHIFTWP,
+  KVX_BUILTIN_SHIFTWQ,
+  KVX_BUILTIN_SHIFTWO,
+  KVX_BUILTIN_SHIFTDP,
+  KVX_BUILTIN_SHIFTDQ,
+  KVX_BUILTIN_SHIFTFHQ,
+  KVX_BUILTIN_SHIFTFHO,
+  KVX_BUILTIN_SHIFTFHX,
+  KVX_BUILTIN_SHIFTFWP,
+  KVX_BUILTIN_SHIFTFWQ,
+  KVX_BUILTIN_SHIFTFWO,
+  KVX_BUILTIN_SHIFTFDP,
+  KVX_BUILTIN_SHIFTFDQ,
+
   KVX_BUILTIN_AWAIT,
   KVX_BUILTIN_BARRIER,
   KVX_BUILTIN_ACSWAPW,
@@ -4173,6 +4220,23 @@ enum kvx_builtin
   KVX_BUILTIN_DTOUCHL,
   KVX_BUILTIN_DZEROL,
   KVX_BUILTIN_FENCE,
+
+  KVX_BUILTIN_CONSBX,
+  KVX_BUILTIN_CONSBV,
+  KVX_BUILTIN_CONSHO,
+  KVX_BUILTIN_CONSHX,
+  KVX_BUILTIN_CONSWP,
+  KVX_BUILTIN_CONSWQ,
+  KVX_BUILTIN_CONSWO,
+  KVX_BUILTIN_CONSDP,
+  KVX_BUILTIN_CONSDQ,
+  KVX_BUILTIN_CONSFHO,
+  KVX_BUILTIN_CONSFHX,
+  KVX_BUILTIN_CONSFWP,
+  KVX_BUILTIN_CONSFWQ,
+  KVX_BUILTIN_CONSFWO,
+  KVX_BUILTIN_CONSFDP,
+  KVX_BUILTIN_CONSFDQ,
 
   KVX_BUILTIN_SELECTHQ,
   KVX_BUILTIN_SELECTHO,
@@ -4948,6 +5012,26 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (CBSDP, "cbsdp", UINT64X2, UINT64X2); // Vector
   ADD_KVX_BUILTIN (CBSDQ, "cbsdq", UINT64X4, UINT64X4); // Vector
 
+  ADD_KVX_BUILTIN (SHIFTBO, "shiftbo", INT8X8, INT8X8, INT32, INT8); // Vector
+  ADD_KVX_BUILTIN (SHIFTBX, "shiftbx", INT8X16, INT8X16, INT32, INT8); // Vector
+  ADD_KVX_BUILTIN (SHIFTBV, "shiftbv", INT8X32, INT8X32, INT32, INT8); // Vector
+  ADD_KVX_BUILTIN (SHIFTHQ, "shifthq", INT16X4, INT16X4, INT32, INT16); // Vector
+  ADD_KVX_BUILTIN (SHIFTHO, "shiftho", INT16X8, INT16X8, INT32, INT16); // Vector
+  ADD_KVX_BUILTIN (SHIFTHX, "shifthx", INT16X16, INT16X16, INT32, INT16); // Vector
+  ADD_KVX_BUILTIN (SHIFTWP, "shiftwp", INT32X2, INT32X2, INT32, INT32); // Vector
+  ADD_KVX_BUILTIN (SHIFTWQ, "shiftwq", INT32X4, INT32X4, INT32, INT32); // Vector
+  ADD_KVX_BUILTIN (SHIFTWO, "shiftwo", INT32X8, INT32X8, INT32, INT32); // Vector
+  ADD_KVX_BUILTIN (SHIFTDP, "shiftdp", INT64X2, INT64X2, INT32, INT64); // Vector
+  ADD_KVX_BUILTIN (SHIFTDQ, "shiftdq", INT64X4, INT64X4, INT32, INT64); // Vector
+  ADD_KVX_BUILTIN (SHIFTFHQ, "shiftfhq", FLOAT16X4, FLOAT16X4, INT32, FLOAT16); // Vector
+  ADD_KVX_BUILTIN (SHIFTFHO, "shiftfho", FLOAT16X8, FLOAT16X8, INT32, FLOAT16); // Vector
+  ADD_KVX_BUILTIN (SHIFTFHX, "shiftfhx", FLOAT16X16, FLOAT16X16, INT32, FLOAT16); // Vector
+  ADD_KVX_BUILTIN (SHIFTFWP, "shiftfwp", FLOAT32X2, FLOAT32X2, INT32, FLOAT32); // Vector
+  ADD_KVX_BUILTIN (SHIFTFWQ, "shiftfwq", FLOAT32X4, FLOAT32X4, INT32, FLOAT32); // Vector
+  ADD_KVX_BUILTIN (SHIFTFWO, "shiftfwo", FLOAT32X8, FLOAT32X8, INT32, FLOAT32); // Vector
+  ADD_KVX_BUILTIN (SHIFTFDP, "shiftfdp", FLOAT64X2, FLOAT64X2, INT32, FLOAT64); // Vector
+  ADD_KVX_BUILTIN (SHIFTFDQ, "shiftfdq", FLOAT64X4, FLOAT64X4, INT32, FLOAT64); // Vector
+
   ADD_KVX_BUILTIN (AWAIT, "await", VOID); // Control
   ADD_KVX_BUILTIN (BARRIER, "barrier", VOID); // Control
   ADD_KVX_BUILTIN (ACSWAPW, "acswapw", UINT32, VPTR, UINT32, UINT32); // Atomic
@@ -4963,6 +5047,23 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (DTOUCHL, "dtouchl", VOID, CVPTR); // Memory
   ADD_KVX_BUILTIN (DZEROL, "dzerol", VOID, VPTR); // Deprecated
   ADD_KVX_BUILTIN (FENCE, "fence", VOID); // Memory
+
+  ADD_KVX_BUILTIN (CONSBX, "consbx", INT8X16, INT8X8, INT8X8); // Vector
+  ADD_KVX_BUILTIN (CONSBV, "consbv", INT8X32, INT8X16, INT8X16); // Vector
+  ADD_KVX_BUILTIN (CONSHO, "consho", INT16X8, INT16X4, INT16X4); // Vector
+  ADD_KVX_BUILTIN (CONSHX, "conshx", INT16X16, INT16X8, INT16X8); // Vector
+  ADD_KVX_BUILTIN (CONSWP, "conswp", INT32X2, INT32, INT32); // Vector
+  ADD_KVX_BUILTIN (CONSWQ, "conswq", INT32X4, INT32X2, INT32X2); // Vector
+  ADD_KVX_BUILTIN (CONSWO, "conswo", INT32X8, INT32X4, INT32X4); // Vector
+  ADD_KVX_BUILTIN (CONSDP, "consdp", INT64X2, INT64, INT64); // Vector
+  ADD_KVX_BUILTIN (CONSDQ, "consdq", INT64X4, INT64X2, INT64X2); // Vector
+  ADD_KVX_BUILTIN (CONSFHO, "consfho", FLOAT16X8, FLOAT16X4, FLOAT16X4); // Vector
+  ADD_KVX_BUILTIN (CONSFHX, "consfhx", FLOAT16X16, FLOAT16X8, FLOAT16X8); // Vector
+  ADD_KVX_BUILTIN (CONSFWP, "consfwp", FLOAT32X2, FLOAT32, FLOAT32); // Vector
+  ADD_KVX_BUILTIN (CONSFWQ, "consfwq", FLOAT32X4, FLOAT32X2, FLOAT32X2); // Vector
+  ADD_KVX_BUILTIN (CONSFWO, "consfwo", FLOAT32X8, FLOAT32X4, FLOAT32X4); // Vector
+  ADD_KVX_BUILTIN (CONSFDP, "consfdp", FLOAT64X2, FLOAT64, FLOAT64); // Vector
+  ADD_KVX_BUILTIN (CONSFDQ, "consfdq", FLOAT64X4, FLOAT64X2, FLOAT64X2); // Vector
 
   ADD_KVX_BUILTIN (SELECTHQ, "selecthq", INT16X4, INT16X4, INT16X4, INT16X4, SIMDCOND); // Vector
   ADD_KVX_BUILTIN (SELECTHO, "selectho", INT16X8, INT16X8, INT16X8, INT16X8, SIMDCOND); // Vector
@@ -6270,6 +6371,25 @@ kvx_expand_builtin_alclr (rtx target, tree args, enum machine_mode mode)
 #define KVX_EXPAND_BUILTIN_4_TRANSPOSE(name, tmode, smode)                     \
   KVX_EXPAND_BUILTIN_4_MODIFIERS(transpose, name, tmode, smode)
 
+#define KVX_EXPAND_BUILTIN_SHIFT(name, tmode, smode)                           \
+  static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
+  {                                                                            \
+    int bits = __builtin_ctz (GET_MODE_NUNITS (tmode));                        \
+    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
+    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
+    rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));                        \
+    arg1 = force_reg (tmode, arg1);                                            \
+    arg2 = verify_const_uint_arg (arg2, bits, #name, "second");                \
+    if (arg3 != CONST0_RTX (smode))                                            \
+      arg3 = simplify_gen_subreg (smode, arg3, GET_MODE (arg3), 0);            \
+    if (!target)                                                               \
+      target = gen_reg_rtx (tmode);                                            \
+    else                                                                       \
+      target = force_reg (tmode, target);                                      \
+    emit_insn (gen_kvx_##name (target, arg1, arg2, arg3));                     \
+    return target;                                                             \
+  }
+
 #define KVX_EXPAND_BUILTIN_SELECT(name, tmode, cmode)                          \
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
@@ -6556,6 +6676,43 @@ KVX_EXPAND_BUILTIN_2_STANDARD (cbswo, popcountv8si2, V8SImode, V8SImode)
 KVX_EXPAND_BUILTIN_2_STANDARD (cbsd, popcountdi2, DImode, DImode)
 KVX_EXPAND_BUILTIN_2_STANDARD (cbsdp, popcountv2di2, V2DImode, V2DImode)
 KVX_EXPAND_BUILTIN_2_STANDARD (cbsdq, popcountv4di2, V4DImode, V4DImode)
+
+KVX_EXPAND_BUILTIN_3_STANDARD (consbx, kvx_consbx, V16QImode, V8QImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (consbv, kvx_consbv, V32QImode, V16QImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (consho, kvx_consho, V8HImode, V4HImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (conshx, kvx_conshx, V16HImode, V8HImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (conswp, kvx_conswp, V2SImode, SImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (conswq, kvx_conswq, V4SImode, V2SImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (conswo, kvx_conswo, V8SImode, V4SImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (consdp, kvx_consdp, V2DImode, DImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (consdq, kvx_consdq, V4DImode, V2DImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (consfho, kvx_consfho, V8HFmode, V4HFmode)
+KVX_EXPAND_BUILTIN_3_STANDARD (consfhx, kvx_consfhx, V16HFmode, V8HFmode)
+KVX_EXPAND_BUILTIN_3_STANDARD (consfwp, kvx_consfwp, V2SFmode, SFmode)
+KVX_EXPAND_BUILTIN_3_STANDARD (consfwq, kvx_consfwq, V4SFmode, V2SFmode)
+KVX_EXPAND_BUILTIN_3_STANDARD (consfwo, kvx_consfwo, V8SFmode, V4SFmode)
+KVX_EXPAND_BUILTIN_3_STANDARD (consfdp, kvx_consfdp, V2DFmode, DFmode)
+KVX_EXPAND_BUILTIN_3_STANDARD (consfdq, kvx_consfdq, V4DFmode, V2DFmode)
+
+KVX_EXPAND_BUILTIN_SHIFT (shiftbo, V8QImode, QImode)
+KVX_EXPAND_BUILTIN_SHIFT (shiftbx, V16QImode, QImode)
+KVX_EXPAND_BUILTIN_SHIFT (shiftbv, V32QImode, QImode)
+KVX_EXPAND_BUILTIN_SHIFT (shifthq, V4HImode, HImode)
+KVX_EXPAND_BUILTIN_SHIFT (shiftho, V8HImode, HImode)
+KVX_EXPAND_BUILTIN_SHIFT (shifthx, V16HImode, HImode)
+KVX_EXPAND_BUILTIN_SHIFT (shiftwp, V2SImode, SImode)
+KVX_EXPAND_BUILTIN_SHIFT (shiftwq, V4SImode, SImode)
+KVX_EXPAND_BUILTIN_SHIFT (shiftwo, V8SImode, SImode)
+KVX_EXPAND_BUILTIN_SHIFT (shiftdp, V2DImode, DImode)
+KVX_EXPAND_BUILTIN_SHIFT (shiftdq, V4DImode, DImode)
+KVX_EXPAND_BUILTIN_SHIFT (shiftfhq, V4HFmode, HFmode)
+KVX_EXPAND_BUILTIN_SHIFT (shiftfho, V8HFmode, HFmode)
+KVX_EXPAND_BUILTIN_SHIFT (shiftfhx, V16HFmode, HFmode)
+KVX_EXPAND_BUILTIN_SHIFT (shiftfwp, V2SFmode, SFmode)
+KVX_EXPAND_BUILTIN_SHIFT (shiftfwq, V4SFmode, SFmode)
+KVX_EXPAND_BUILTIN_SHIFT (shiftfwo, V8SFmode, SFmode)
+KVX_EXPAND_BUILTIN_SHIFT (shiftfdp, V2DFmode, DFmode)
+KVX_EXPAND_BUILTIN_SHIFT (shiftfdq, V4DFmode, DFmode)
 
 KVX_EXPAND_BUILTIN_SELECT (selecthq, V4HImode, V4HImode)
 KVX_EXPAND_BUILTIN_SELECT (selectho, V8HImode, V8HImode)
@@ -7592,6 +7749,26 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_CBSDP: return kvx_expand_builtin_cbsdp (target, exp);
     case KVX_BUILTIN_CBSDQ: return kvx_expand_builtin_cbsdq (target, exp);
 
+    case KVX_BUILTIN_SHIFTBO: return kvx_expand_builtin_shiftbo (target, exp);
+    case KVX_BUILTIN_SHIFTBX: return kvx_expand_builtin_shiftbx (target, exp);
+    case KVX_BUILTIN_SHIFTBV: return kvx_expand_builtin_shiftbv (target, exp);
+    case KVX_BUILTIN_SHIFTHQ: return kvx_expand_builtin_shifthq (target, exp);
+    case KVX_BUILTIN_SHIFTHO: return kvx_expand_builtin_shiftho (target, exp);
+    case KVX_BUILTIN_SHIFTHX: return kvx_expand_builtin_shifthx (target, exp);
+    case KVX_BUILTIN_SHIFTWP: return kvx_expand_builtin_shiftwp (target, exp);
+    case KVX_BUILTIN_SHIFTWQ: return kvx_expand_builtin_shiftwq (target, exp);
+    case KVX_BUILTIN_SHIFTWO: return kvx_expand_builtin_shiftwo (target, exp);
+    case KVX_BUILTIN_SHIFTDP: return kvx_expand_builtin_shiftdp (target, exp);
+    case KVX_BUILTIN_SHIFTDQ: return kvx_expand_builtin_shiftdq (target, exp);
+    case KVX_BUILTIN_SHIFTFHQ: return kvx_expand_builtin_shiftfhq (target, exp);
+    case KVX_BUILTIN_SHIFTFHO: return kvx_expand_builtin_shiftfho (target, exp);
+    case KVX_BUILTIN_SHIFTFHX: return kvx_expand_builtin_shiftfhx (target, exp);
+    case KVX_BUILTIN_SHIFTFWP: return kvx_expand_builtin_shiftfwp (target, exp);
+    case KVX_BUILTIN_SHIFTFWQ: return kvx_expand_builtin_shiftfwq (target, exp);
+    case KVX_BUILTIN_SHIFTFWO: return kvx_expand_builtin_shiftfwo (target, exp);
+    case KVX_BUILTIN_SHIFTFDP: return kvx_expand_builtin_shiftfdp (target, exp);
+    case KVX_BUILTIN_SHIFTFDQ: return kvx_expand_builtin_shiftfdq (target, exp);
+
     case KVX_BUILTIN_AWAIT: return kvx_expand_builtin_await (target, exp);
     case KVX_BUILTIN_BARRIER: return kvx_expand_builtin_barrier ();
     case KVX_BUILTIN_ACSWAPW: return kvx_expand_builtin_acswap (target, exp, SImode);
@@ -7605,6 +7782,23 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_DTOUCHL: return kvx_expand_builtin_dtouchl (target, exp);
     case KVX_BUILTIN_DZEROL: return kvx_expand_builtin_dzerol (target, exp);
     case KVX_BUILTIN_FENCE: return kvx_expand_builtin_fence ();
+
+    case KVX_BUILTIN_CONSBX: return kvx_expand_builtin_consbx (target, exp);
+    case KVX_BUILTIN_CONSBV: return kvx_expand_builtin_consbv (target, exp);
+    case KVX_BUILTIN_CONSHO: return kvx_expand_builtin_consho (target, exp);
+    case KVX_BUILTIN_CONSHX: return kvx_expand_builtin_conshx (target, exp);
+    case KVX_BUILTIN_CONSWP: return kvx_expand_builtin_conswp (target, exp);
+    case KVX_BUILTIN_CONSWQ: return kvx_expand_builtin_conswq (target, exp);
+    case KVX_BUILTIN_CONSWO: return kvx_expand_builtin_conswo (target, exp);
+    case KVX_BUILTIN_CONSDP: return kvx_expand_builtin_consdp (target, exp);
+    case KVX_BUILTIN_CONSDQ: return kvx_expand_builtin_consdq (target, exp);
+    case KVX_BUILTIN_CONSFHO: return kvx_expand_builtin_consfho (target, exp);
+    case KVX_BUILTIN_CONSFHX: return kvx_expand_builtin_consfhx (target, exp);
+    case KVX_BUILTIN_CONSFWP: return kvx_expand_builtin_consfwp (target, exp);
+    case KVX_BUILTIN_CONSFWQ: return kvx_expand_builtin_consfwq (target, exp);
+    case KVX_BUILTIN_CONSFWO: return kvx_expand_builtin_consfwo (target, exp);
+    case KVX_BUILTIN_CONSFDP: return kvx_expand_builtin_consfdp (target, exp);
+    case KVX_BUILTIN_CONSFDQ: return kvx_expand_builtin_consfdq (target, exp);
 
     case KVX_BUILTIN_SELECTHQ: return kvx_expand_builtin_selecthq (target, exp);
     case KVX_BUILTIN_SELECTHO: return kvx_expand_builtin_selectho (target, exp);
@@ -8062,6 +8256,7 @@ kv3_mau_lsu_double_port_bypass_p (rtx_insn *producer, rtx_insn *consumer)
 }
 
 static int kvx_sched2_max_uid;
+static int kvx_sched2_prev_uid;
 static short *kvx_sched2_insn_cycle;
 static unsigned char *kvx_sched2_insn_flags;
 #define KVX_SCHED2_INSN_HEAD 1
@@ -8069,7 +8264,6 @@ static unsigned char *kvx_sched2_insn_flags;
 #define KVX_SCHED2_INSN_STOP 4
 #define KVX_SCHED2_INSN_TAIL 8
 #define KVX_SCHED2_INSN_STALL 16
-static int kvx_sched2_prev_uid;
 static int kvx_sched2_verbose;
 
 static void
@@ -8314,6 +8508,7 @@ kvx_sched_init_global (FILE *file ATTRIBUTE_UNUSED,
     {
       /* Allocate here, deallocate in kvx_function_epilogue(). */
       kvx_sched2_max_uid = old_max_uid;
+      kvx_sched2_prev_uid = -1;
       kvx_sched2_insn_cycle = XNEWVEC (short, kvx_sched2_max_uid);
       memset (kvx_sched2_insn_cycle, -1, sizeof (short) * kvx_sched2_max_uid);
       kvx_sched2_insn_flags = XCNEWVEC (unsigned char, kvx_sched2_max_uid);
@@ -9934,6 +10129,7 @@ kvx_function_epilogue (FILE *file ATTRIBUTE_UNUSED,
 		       HOST_WIDE_INT size ATTRIBUTE_UNUSED)
 {
   kvx_sched2_max_uid = 0;
+  kvx_sched2_prev_uid = -1;
   XDELETEVEC (kvx_sched2_insn_cycle);
   XDELETEVEC (kvx_sched2_insn_flags);
   kvx_sched2_insn_cycle = 0;
