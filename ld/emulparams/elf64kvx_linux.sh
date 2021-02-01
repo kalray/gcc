@@ -1,5 +1,5 @@
 ARCH=kvx
-MACHINE=kv3-1:64
+MACHINE=
 
 # bundle with 1 nop insn
 NOP=0x00f0037f
