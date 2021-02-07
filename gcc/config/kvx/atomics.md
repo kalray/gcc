@@ -159,7 +159,7 @@
   [(match_operand:SI 0 "const_int_operand" "")] ;; model
   ""
 {
-  emit_insn (gen_fence (kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_fence (kvx_sync_reg_rtx));
   DONE;
 })
 
