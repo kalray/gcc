@@ -5806,7 +5806,7 @@ kvx_expand_builtin_waitit (rtx target, tree args)
   else
     target = force_reg (SImode, target);
 
-  emit_insn (gen_waitit (target, arg1, kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_waitit (target, arg1, kvx_sync_reg_rtx));
 
   return target;
 }
@@ -5851,7 +5851,7 @@ static rtx
 kvx_expand_builtin_await (rtx target ATTRIBUTE_UNUSED,
 			  tree args ATTRIBUTE_UNUSED)
 {
-  emit_insn (gen_await (kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_await (kvx_sync_reg_rtx));
 
   return NULL_RTX;
 }
@@ -5860,7 +5860,7 @@ static rtx
 kvx_expand_builtin_sleep (rtx target ATTRIBUTE_UNUSED,
 			  tree args ATTRIBUTE_UNUSED)
 {
-  emit_insn (gen_sleep (kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_sleep (kvx_sync_reg_rtx));
 
   return NULL_RTX;
 }
@@ -5869,7 +5869,7 @@ static rtx
 kvx_expand_builtin_stop (rtx target ATTRIBUTE_UNUSED,
 			 tree args ATTRIBUTE_UNUSED)
 {
-  emit_insn (gen_stop (kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_stop (kvx_sync_reg_rtx));
 
   return NULL_RTX;
 }
@@ -5880,7 +5880,7 @@ kvx_expand_builtin_syncgroup (rtx target ATTRIBUTE_UNUSED, tree args)
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   arg1 = force_reg (DImode, arg1);
 
-  emit_insn (gen_syncgroup (arg1, kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_syncgroup (arg1, kvx_sync_reg_rtx));
 
   return NULL_RTX;
 }
@@ -5888,7 +5888,7 @@ kvx_expand_builtin_syncgroup (rtx target ATTRIBUTE_UNUSED, tree args)
 static rtx
 kvx_expand_builtin_barrier (void)
 {
-  emit_insn (gen_barrier (kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_barrier (kvx_sync_reg_rtx));
 
   return NULL_RTX;
 }
@@ -5896,7 +5896,7 @@ kvx_expand_builtin_barrier (void)
 static rtx
 kvx_expand_builtin_dinval (void)
 {
-  emit_insn (gen_dinval (kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_dinval (kvx_sync_reg_rtx));
 
   return NULL_RTX;
 }
@@ -5904,7 +5904,7 @@ kvx_expand_builtin_dinval (void)
 static rtx
 kvx_expand_builtin_iinval (void)
 {
-  emit_insn (gen_iinval (kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_iinval (kvx_sync_reg_rtx));
 
   return NULL_RTX;
 }
@@ -5912,7 +5912,7 @@ kvx_expand_builtin_iinval (void)
 static rtx
 kvx_expand_builtin_tlbdinval (void)
 {
-  emit_insn (gen_tlbdinval (kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_tlbdinval (kvx_sync_reg_rtx));
 
   return NULL_RTX;
 }
@@ -5920,7 +5920,7 @@ kvx_expand_builtin_tlbdinval (void)
 static rtx
 kvx_expand_builtin_tlbiinval (void)
 {
-  emit_insn (gen_tlbiinval (kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_tlbiinval (kvx_sync_reg_rtx));
 
   return NULL_RTX;
 }
@@ -5928,7 +5928,7 @@ kvx_expand_builtin_tlbiinval (void)
 static rtx
 kvx_expand_builtin_tlbprobe (void)
 {
-  emit_insn (gen_tlbprobe (kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_tlbprobe (kvx_sync_reg_rtx));
 
   return NULL_RTX;
 }
@@ -5936,7 +5936,7 @@ kvx_expand_builtin_tlbprobe (void)
 static rtx
 kvx_expand_builtin_tlbread (void)
 {
-  emit_insn (gen_tlbread (kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_tlbread (kvx_sync_reg_rtx));
 
   return NULL_RTX;
 }
@@ -5944,7 +5944,7 @@ kvx_expand_builtin_tlbread (void)
 static rtx
 kvx_expand_builtin_tlbwrite (void)
 {
-  emit_insn (gen_tlbwrite (kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_tlbwrite (kvx_sync_reg_rtx));
 
   return NULL_RTX;
 }
@@ -6078,7 +6078,7 @@ kvx_expand_builtin_acswap (rtx target, tree args, enum machine_mode mode)
 static rtx
 kvx_expand_builtin_fence (void)
 {
-  emit_insn (gen_fence (kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_fence (kvx_sync_reg_rtx));
 
   return NULL_RTX;
 }
@@ -6087,9 +6087,20 @@ static rtx
 kvx_expand_builtin_dinvall (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  arg1 = gen_rtx_MEM (SImode, force_reg (Pmode, arg1));
+  arg1 = force_reg (Pmode, arg1);
 
-  emit_insn (gen_dinvall (arg1, kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_dinvall (arg1));
+
+  return target;
+}
+
+static rtx
+kvx_expand_builtin_iinvals (rtx target, tree args)
+{
+  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
+  arg1 = force_reg (Pmode, arg1);
+
+  emit_insn (gen_kvx_iinvals (arg1));
 
   return target;
 }
@@ -6100,7 +6111,7 @@ kvx_expand_builtin_dtouchl (rtx target, tree args)
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   arg1 = force_reg (Pmode, arg1);
 
-  emit_insn (gen_prefetch (arg1, const0_rtx, const0_rtx));
+  emit_insn (gen_kvx_dtouchl (arg1));
 
   return target;
 }
@@ -6109,20 +6120,9 @@ static rtx
 kvx_expand_builtin_dzerol (rtx target, tree args)
 {
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  arg1 = gen_rtx_MEM (SImode, force_reg (Pmode, arg1));
+  arg1 = force_reg (Pmode, arg1);
 
-  emit_insn (gen_dzerol (arg1, kvx_sync_reg_rtx));
-
-  return target;
-}
-
-static rtx
-kvx_expand_builtin_iinvals (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  arg1 = gen_rtx_MEM (SImode, force_reg (Pmode, arg1));
-
-  emit_insn (gen_iinvals (arg1, kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_dzerol (arg1));
 
   return target;
 }
