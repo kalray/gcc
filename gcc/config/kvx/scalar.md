@@ -177,9 +177,9 @@
 )
 
 (define_insn "*land<suffix>"
-  [(set (match_operand:SI 0 "register_operand" "=r,r")
-        (and:SI (ne:SI (match_operand:SIDI 1 "register_operand" "%r,r") (const_int 0))
-                (ne:SI (match_operand:SIDI 2 "register_s32_operand" "r,B32") (const_int 0))))]
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (and:SIDI (ne:SIDI (match_operand:SIDI 1 "register_operand" "%r,r") (const_int 0))
+                  (ne:SIDI (match_operand:SIDI 2 "register_s32_operand" "r,B32") (const_int 0))))]
   ""
   "land<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_lite,alu_lite_x")
@@ -187,9 +187,9 @@
 )
 
 (define_insn "*lnand<suffix>"
-  [(set (match_operand:SI 0 "register_operand" "=r,r")
-        (ior:SI (eq:SI (match_operand:SIDI 1 "register_operand" "%r,r") (const_int 0))
-                (eq:SI (match_operand:SIDI 2 "register_s32_operand" "r,B32") (const_int 0))))]
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (ior:SIDI (eq:SIDI (match_operand:SIDI 1 "register_operand" "%r,r") (const_int 0))
+                  (eq:SIDI (match_operand:SIDI 2 "register_s32_operand" "r,B32") (const_int 0))))]
   ""
   "lnand<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_lite,alu_lite_x")
@@ -197,10 +197,10 @@
 )
 
 (define_insn "*lor<suffix>"
-  [(set (match_operand:SI 0 "register_operand" "=r,r")
-        (ne:SI (ior:SIDI (match_operand:SIDI 1 "register_operand" "%r,r")
-                         (match_operand:SIDI 2 "register_s32_operand" "r,B32"))
-               (const_int 0)))]
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (ne:SIDI (ior:SIDI (match_operand:SIDI 1 "register_operand" "%r,r")
+                           (match_operand:SIDI 2 "register_s32_operand" "r,B32"))
+                 (const_int 0)))]
   ""
   "lor<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_lite,alu_lite_x")
@@ -208,10 +208,10 @@
 )
 
 (define_insn "*lnor<suffix>"
-  [(set (match_operand:SI 0 "register_operand" "=r,r")
-        (eq:SI (ior:SIDI (match_operand:SIDI 1 "register_operand" "%r,r")
-                         (match_operand:SIDI 2 "register_s32_operand" "r,B32"))
-               (const_int 0)))]
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (eq:SIDI (ior:SIDI (match_operand:SIDI 1 "register_operand" "%r,r")
+                           (match_operand:SIDI 2 "register_s32_operand" "r,B32"))
+                 (const_int 0)))]
   ""
   "lnor<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_lite,alu_lite_x")
