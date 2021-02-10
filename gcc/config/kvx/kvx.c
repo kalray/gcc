@@ -3188,6 +3188,9 @@ kvx_expand_chunk_splat (rtx target, rtx source, machine_mode inner_mode)
   machine_mode chunk_mode = GET_MODE (target);
   unsigned inner_size = GET_MODE_SIZE (inner_mode);
 
+  if (inner_size == 8)
+    return source;
+
   if (!REG_P (source) && !SUBREG_P (source))
     source = force_reg (inner_mode, source);
 
