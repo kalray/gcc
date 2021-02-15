@@ -10173,36 +10173,34 @@ kvx_invalid_within_doloop (const rtx_insn *insn)
   return NULL;
 }
 
-/* A callback for the hw-doloop pass.  Called when a loop we have discovered
-   turns out not to be optimizable; we have to split the loop_end pattern into
-   a subtract and a test.  */
+/* A callback for the hw-doloop pass.  Called when a candidate doloop turns out
+   not to be optimizable. The doloop_end pattern must be split into a decrement
+   of the loop counter and looping branch if not zero, assuming without reload.
+   In case of loop counter reload the doloop_end pattern was already split.  */
 
 static void
 hwloop_fail (hwloop_info loop)
 {
-  rtx test;
-  rtx_insn *insn = loop->loop_end;
-  int has_reload = (recog_memoized (insn) == CODE_FOR_loop_end_withreload);
+  if (recog_memoized (loop->loop_end) != CODE_FOR_doloop_end_si
+      && recog_memoized (loop->loop_end) != CODE_FOR_doloop_end_di)
+    return;
 
-  emit_insn_before (gen_addsi3 (loop->iter_reg, loop->iter_reg, constm1_rtx),
-		    loop->loop_end);
+  rtx (*gen_add) (rtx, rtx, rtx);
+  rtx (*gen_cbranch) (rtx, rtx, rtx, rtx);
+  machine_mode mode = GET_MODE (loop->iter_reg);
+  gen_add = (mode == SImode) ? gen_addsi3 : gen_adddi3;
+  gen_cbranch = (mode == SImode) ? gen_cbranchsi4 : gen_cbranchdi4;
 
-  /* Copy back the counter in the memory as reload has to be handled
-     by ourself */
-  if (has_reload)
-    {
-      rtx mem_dest = SET_DEST (XVECEXP (PATTERN (loop->loop_end), 0, 2));
-      emit_insn_before (gen_movsi (mem_dest, loop->iter_reg), loop->loop_end);
-    }
+  rtx decr = gen_add (loop->iter_reg, loop->iter_reg, constm1_rtx);
+  emit_insn_before (decr, loop->loop_end);
 
-  test = gen_rtx_NE (VOIDmode, loop->iter_reg, const0_rtx);
-  insn = emit_jump_insn_before (gen_cbranchsi4 (test, loop->iter_reg,
-						const0_rtx, loop->start_label),
-				loop->loop_end);
+  rtx test = gen_rtx_NE (VOIDmode, NULL_RTX, NULL_RTX);
+  rtx cbranch
+    = gen_cbranch (test, loop->iter_reg, const0_rtx, loop->start_label);
+  rtx_insn *jump_insn = emit_jump_insn_before (cbranch, loop->loop_end);
 
-  JUMP_LABEL (insn) = loop->start_label;
+  JUMP_LABEL (jump_insn) = loop->start_label;
   LABEL_NUSES (loop->start_label)++;
-
 
   delete_insn (loop->loop_end);
 }
@@ -10214,14 +10212,12 @@ hwloop_fail (hwloop_info loop)
 static rtx
 hwloop_pattern_reg (rtx_insn *insn)
 {
-  rtx reg;
-
   if (!JUMP_P (insn)
-      || (recog_memoized (insn) != CODE_FOR_loop_end
-	  && recog_memoized (insn) != CODE_FOR_loop_end_withreload))
+      || (recog_memoized (insn) != CODE_FOR_doloop_end_si
+	  && recog_memoized (insn) != CODE_FOR_doloop_end_di))
     return NULL_RTX;
 
-  reg = SET_DEST (XVECEXP (PATTERN (insn), 0, 1));
+  rtx reg = SET_DEST (XVECEXP (PATTERN (insn), 0, 1));
   if (!REG_P (reg))
     return NULL_RTX;
 
@@ -10233,30 +10229,15 @@ hwloop_optimize (hwloop_info loop)
 {
   int i;
   edge entry_edge;
-  basic_block entry_bb;
   rtx iter_reg;
   rtx_insn *insn;
   rtx_insn *seq, *entry_after;
-
-  if (!TARGET_HWLOOP)
-    {
-      if (dump_file)
-	fprintf (dump_file, ";; loop %d not hw optimised as opt disabled\n",
-		 loop->loop_no);
-      return false;
-    }
-
-  if (loop->depth > 1)
-    {
-      if (dump_file)
-	fprintf (dump_file, ";; loop %d is not innermost\n", loop->loop_no);
-      return false;
-    }
 
   if (loop->jumps_within)
     {
       if (dump_file)
 	fprintf (dump_file, ";; loop %d jumps within\n", loop->loop_no);
+      return false;
     }
 
   if (loop->jumps_outof)
@@ -10282,13 +10263,6 @@ hwloop_optimize (hwloop_info loop)
       return false;
     }
 
-  if (loop->has_call)
-    {
-      if (dump_file)
-	fprintf (dump_file, ";; loop %d has calls\n", loop->loop_no);
-      return false;
-    }
-
   if (loop->blocks.length () > 1)
     {
       if (dump_file)
@@ -10297,14 +10271,11 @@ hwloop_optimize (hwloop_info loop)
       return false;
     }
 
-  // FIXME AUTO: do we let asm in the loop ?
-
-  /* Scan all the blocks to make sure they don't use iter_reg.  */
-  /* FIXME AUTO: hwloop can still be used for branching. */
   if (loop->iter_reg_used || loop->iter_reg_used_outside)
     {
       if (dump_file)
-	fprintf (dump_file, ";; loop %d uses iterator\n", loop->loop_no);
+	fprintf (dump_file, ";; loop %d uses iterator register\n",
+		 loop->loop_no);
       return false;
     }
 
@@ -10335,19 +10306,14 @@ hwloop_optimize (hwloop_info loop)
   if (entry_edge == NULL)
     return false;
 
-  /* Place the zero_cost_loop_start instruction before the loop.  */
-  entry_bb = entry_edge->src;
+  loop->end_label = block_label (loop->successor);
 
   start_sequence ();
-  loop->end_label = gen_label_rtx ();
-
-  emit_label_after (loop->end_label, loop->loop_end);
-
-  insn = emit_insn (
-    gen_loop_start (loop->iter_reg, loop->iter_reg, loop->end_label));
-
+  insn = emit_insn (gen_kvx_loopdo (loop->iter_reg, loop->end_label));
   seq = get_insns ();
 
+  /* Place the zero_cost_loop_start instruction before the loop.  */
+  basic_block entry_bb = entry_edge->src;
   if (!single_succ_p (entry_bb) || vec_safe_length (loop->incoming) > 1)
     {
       basic_block new_bb;
@@ -10408,6 +10374,10 @@ kvx_reorg (void)
   if (optimize == 0)
     split_all_insns ();
 
+  /* Doloop optimization. */
+  if (optimize)
+    reorg_loops (true, &kvx_doloop_hooks);
+
   df_analyze ();
 
   if (optimize && flag_schedule_insns_after_reload)
@@ -10421,10 +10391,6 @@ kvx_reorg (void)
 
       timevar_pop (TV_SCHED2);
     }
-
-  /* Doloop optimization. */
-  if (optimize)
-    reorg_loops (false, &kvx_doloop_hooks);
 
   if (scheduling && !TARGET_BUNDLING)
     {
