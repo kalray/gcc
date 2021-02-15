@@ -1147,81 +1147,65 @@
 
 /********** Hardware loops **************/
 
-;; operand 0 is the loop count pseudo register
-;; operand 1 is the label to jump to at the top of the loop
-(define_expand "doloop_end"
-  [(parallel [(set (pc) (if_then_else
-                          (ne (match_operand:SI 0 "" "")
-                              (const_int 1))
-                          (label_ref (match_operand 1 "" ""))
-                          (pc)))
-              (set (match_dup 0)
-                   (plus:SI (match_dup 0)
-                            (const_int -1)))
-              (unspec [(const_int 0)] UNSPEC_LOOPDO_END)
-              (clobber (match_scratch:SI 2))])]
-  ""
-{
-  /* The loop optimizer doesn't check the predicates... */
-  if (GET_MODE (operands[0]) != SImode)
-    FAIL;
-  operands[2] = gen_rtx_SCRATCH (SImode);
-})
-
 ;; Here, we let a symbol even if there are only 17bits of immediate value.
 ;; FIXME AUTO: we should let gcc know operand 0 is unused after insn.
-(define_insn "loop_start"
-  [(set (pc)
-        (if_then_else (ne (match_operand:SI 1 "register_operand" "0")
-                          (const_int 1))
-                      (label_ref (match_operand 2 "" ""))
-                      (pc)))
-   (set (match_operand:SI 0 "register_operand" "=r")
-        (plus (match_dup 0)
-              (const_int -1)))
-   (unspec [(const_int 0)] UNSPEC_LOOPDO)]
+(define_insn "kvx_loopdo"
+  [(unspec_volatile [(match_operand 0 "register_operand" "r")
+                     (match_operand 1 "" "")] UNSPEC_LOOPDO)]
   ""
-  "loopdo %0, %2"
+  "loopdo %0, %1"
   [(set_attr "type" "all")
    (set_attr "length" "4")])
 
-;; jump_insn with output reloads: we must take care of our reloads.
-(define_insn_and_split "loop_end"
-  [(set (pc)
-        (if_then_else (ne (match_operand:SI 0 "shouldbe_register_operand" "+r,*m")
-                          (const_int 1))
-                      (label_ref (match_operand 1 "" ""))
-                      (pc)))
-   (set (match_dup 0)
-        (plus (match_dup 0)
-              (const_int -1)))
-   (unspec [(const_int 0)] UNSPEC_LOOPDO_END)
-   (clobber (match_scratch:SI 2 "=X,&r"))]
-  ""
-  " # HW loop end"
-  "&& memory_operand(operands[0], SImode)"
-   [(pc)]
-{
-  emit_move_insn (operands[2], operands[0]);
-  emit_jump_insn (gen_loop_end_withreload (operands[2], operands[1], operands[0]));
-  DONE;
-}
-  [(set_attr "length" "0")])
+;; operand 0 is the loop count pseudo register
+;; operand 1 is the label to jump to at the top of the loop
+(define_expand "doloop_end"
+  [(match_operand 0 "" "")
+   (match_operand 1 "" "")]
+  "TARGET_HWLOOP"
+  {
+    if (GET_MODE (operands[0]) == SImode)
+      emit_jump_insn (gen_doloop_end_si (operands[0], operands[1]));
+    else if (GET_MODE (operands[0]) == DImode)
+      emit_jump_insn (gen_doloop_end_di (operands[0], operands[1]));
+    else
+      FAIL;
+    DONE;
+  }
+)
 
-; reload can't make output reloads for jump insns, so we have to do this by hand.
-(define_insn "loop_end_withreload"
-  [(set (pc) (if_then_else (ne (match_operand:SI 0 "register_operand" "+&r,&r,&r")
-				(const_int 1))
-			   (label_ref (match_operand 1 "" ""))
-			   (pc)))
-   (set (match_dup 0) (plus:SI (match_dup 0) (const_int -1)))
-   (set (match_operand:SI 2 "memory_operand" "=a,b,m")
-	(plus:SI (match_dup 0) (const_int -1)))
-   (unspec [(const_int 0)] UNSPEC_LOOPDO_END)]
-  "reload_completed"
-  "# End of hwloop\n\tsd%m0 %0 = %2"
-  [(set_attr "type" "lsu_auxr_store, lsu_auxr_store_x, lsu_auxr_store_y")
-   (set_attr "length" "4, 8, 12")])
+(define_insn_and_split "doloop_end_<mode>"
+  [(set (pc)
+        (if_then_else
+          (ne (match_operand:SIDI 0 "shouldbe_register_operand" "+r,*m")
+              (const_int 1))
+          (label_ref (match_operand 1 "" ""))
+          (pc)))
+   (set (match_dup 0)
+        (plus:SIDI (match_dup 0)
+                   (const_int -1)))
+   (unspec [(const_int 0)] UNSPEC_LOOPDO_END)
+   (clobber (match_scratch:SIDI 2 "=X,&r"))]
+  ""
+  {
+    if (which_alternative != 0)
+      return "#";
+    return " # loopdo end";
+  }
+  "reload_completed && memory_operand(operands[0], VOIDmode)"
+  [(set (match_dup 2) (match_dup 0))
+   (set (match_dup 2)
+        (plus:SIDI (match_dup 2)
+                   (const_int -1)))
+   (set (match_dup 0) (match_dup 2))
+   (set (pc)
+        (if_then_else
+          (ne (match_dup 2)
+              (const_int 0))
+          (label_ref (match_dup 1))
+          (pc)))]
+  ""
+)
 
 /* ====================================================================== */
 /*                            Reload stuff                                */
