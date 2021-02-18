@@ -4127,13 +4127,13 @@ elfNN_kvx_size_dynamic_sections (bfd *output_bfd ATTRIBUTE_UNUSED,
 	  if (locals[i].got_refcount > 0)
 	    {
 	      unsigned got_type = locals[i].got_type;
-	      if (got_type & GOT_TLS_GD)
+	      if (got_type & (GOT_TLS_GD | GOT_TLS_LD))
 	      	{
 	      	  locals[i].got_offset = htab->root.sgot->size;
 	      	  htab->root.sgot->size += GOT_ENTRY_SIZE * 2;
 	      	}
 
-	      if (got_type & (GOT_NORMAL | GOT_TLS_IE | GOT_TLS_LD))
+	      if (got_type & (GOT_NORMAL | GOT_TLS_IE ))
 		{
 		  locals[i].got_offset = htab->root.sgot->size;
 		  htab->root.sgot->size += GOT_ENTRY_SIZE;
