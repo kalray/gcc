@@ -306,13 +306,13 @@
   switch (which_alternative)
     {
     case 0:
-      return "copy<ALLIF:sfx> %0 = %1";
+      return "copy<ALLIF:copyx> %0 = %1";
     case 1: case 2: case 3: case 16:
       return "make %0 = %1";
     case 4: case 5: case 6:
       return "s<ALLIF:lsusize>%m0 %0 = %1";
     case 7: case 8: case 9: case 10: case 11: case 12:
-      return "l<lsusize><lsusext>%C1%m1 %0 = %1";
+      return "l<lsusize><lsuzx>%C1%m1 %0 = %1";
     case 13:
       return "get %0 = %1";
     case 14:
@@ -780,11 +780,11 @@
 )
 
 ;; FIXME AUTO: add size info for 'reg[reg]' addressing (currently falling back to lsu.x)
-(define_insn "*l<mode><ANY_EXTEND:lsext>"
+(define_insn "*l<mode><ANY_EXTEND:lsux>"
    [(set (match_operand:DI 0 "register_operand"                 "=r,  r,  r,  r,  r,  r")
          (ANY_EXTEND:DI (match_operand:SHORT 1 "memory_operand" "Ca, Cb, Cm, Za, Zb, Zm")))]
    ""
-   "l<SHORT:lsusize><ANY_EXTEND:lsext>%C1%m1 %0 = %1"
+   "l<SHORT:lsusize><ANY_EXTEND:lsux>%C1%m1 %0 = %1"
 [(set_attr "length" "            4,               8,              12,                      4,                        8,                       12")
  (set_attr "type"   "lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_y, lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y")]
 )
@@ -1190,7 +1190,7 @@
   {
     if (which_alternative != 0)
       return "#";
-    return " # loopdo end";
+    return "# loopdo end";
   }
   "reload_completed && memory_operand(operands[0], VOIDmode)"
   [(set (match_dup 2) (match_dup 0))
