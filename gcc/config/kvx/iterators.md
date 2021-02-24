@@ -32,8 +32,8 @@
   (V4DF "o")
 ])
 
-;; Extension for LSU when applicable (mode narrower than a register).
-(define_mode_attr lsusext [
+;; Zero extension for LSU when applicable (mode narrower than a register).
+(define_mode_attr lsuzx [
   (QI "z")
   (HI "z")
   (HF "z")
@@ -68,8 +68,8 @@
 ;; Code iterator for sign/zero extension
 (define_code_iterator ANY_EXTEND [sign_extend zero_extend])
 
-;; Sign- or zero-extending data-op
-(define_code_attr lsext [
+;; Zero-extending or sign-extending load instruction.
+(define_code_attr lsux [
   (sign_extend "s")
   (zero_extend "z")
 ])
@@ -95,7 +95,7 @@
 (define_mode_iterator ALLIF [QI HI HF SI SF DI DF])
 
 ;; Attribute for ALLIF copies (COPYW, COPYD, COPYQ, COPYO).
-(define_mode_attr sfx [
+(define_mode_attr copyx [
   (QI "w")
   (HI "w")
   (HF "w")
@@ -417,6 +417,138 @@
   (V4DF    "V2DI")
 ])
 
+;; Attribute to get the wide MODE of a vector mode.
+(define_mode_attr WIDE [
+  (V8QI    "V8HI")
+  (V4HI    "V4SI")
+  (V4HF    "V4SF")
+  (V2SI    "V2DI")
+  (V2SF    "V2DF")
+  (V16QI   "V16HI")
+  (V8HI    "V8SI")
+  (V8HF    "V8SF")
+  (V4SI    "V4DI")
+  (V4SF    "V4DF")
+])
+
+;; Attribute to get the wide mode of a vector mode.
+(define_mode_attr wide [
+  (V8QI    "v8hi")
+  (V4HI    "v4si")
+  (V4HF    "v4sf")
+  (V2SI    "v2di")
+  (V2SF    "v2df")
+  (V16QI   "v16hi")
+  (V8HI    "v8si")
+  (V8HF    "v8sf")
+  (V4SI    "v4di")
+  (V4SF    "v4df")
+])
+
+;; Attribute to get the wide suffix of a vector mode.
+(define_mode_attr widex [
+  (V8QI    "ho")
+  (V4HI    "wq")
+  (V4HF    "wq")
+  (V2SI    "dp")
+  (V2SF    "dp")
+  (V16QI   "hx")
+  (V8HI    "wo")
+  (V8HF    "wo")
+  (V4SI    "dq")
+  (V4SF    "dq")
+])
+
+;; Attribute to get the widening suffix of a vector mode.
+(define_mode_attr widenx [
+  (V8QI    "bho")
+  (V4HI    "hwq")
+  (V4HF    "hwq")
+  (V2SI    "wdp")
+  (V2SF    "wdp")
+  (V16QI   "bhx")
+  (V8HI    "hwo")
+  (V8HF    "hwo")
+  (V4SI    "wdq")
+  (V4SF    "wdq")
+])
+
+;; Attribute to get the half wide MODE of a vector mode.
+(define_mode_attr HWIDE [
+  (V8QI    "V4HI")
+  (V4HI    "V2SI")
+  (V4HF    "V2SF")
+  (V2SI    "DI")
+  (V2SF    "DF")
+  (V16QI   "V8HI")
+  (V8HI    "V4SI")
+  (V8HF    "V4SF")
+  (V4SI    "V2DI")
+  (V4SF    "V2DF")
+])
+
+;; Attribute to get the half wide mode of a vector mode.
+(define_mode_attr hwide [
+  (V8QI    "v4hi")
+  (V4HI    "v2si")
+  (V4HF    "v2sf")
+  (V2SI    "di")
+  (V2SF    "df")
+  (V16QI   "v8hi")
+  (V8HI    "v4si")
+  (V8HF    "v4sf")
+  (V4SI    "v2di")
+  (V4SF    "v2df")
+])
+
+;; Attribute to get the half widening suffix of a vector mode.
+(define_mode_attr hwidenx [
+  (V8QI    "bhq")
+  (V4HI    "hwp")
+  (V4HF    "hwp")
+  (V2SI    "wd")
+  (V2SF    "wd")
+  (V16QI   "bho")
+  (V8HI    "hwq")
+  (V8HF    "hwq")
+  (V4SI    "wdp")
+  (V4SF    "wdp")
+])
+
+;; Attribute to get the trunc(ate) suffix of a vector mode.
+(define_mode_attr truncx [
+  (V8QI    "hbo")
+  (V4HI    "whq")
+  (V4HF    "whq")
+  (V2SI    "dwp")
+  (V2SF    "dwp")
+  (V16QI   "hbx")
+  (V8HI    "who")
+  (V8HF    "who")
+  (V4SI    "dwq")
+  (V4SF    "dwq")
+])
+
+;; Attribute to get the trunc(ate) attribute type of fnarrow<truncx>
+(define_mode_attr fnarrowt [
+  (V4HF    "alu_lite")
+  (V2SF    "alu_full")
+])
+
+;; Attribute to get the half trunc(ate) suffix of a vector mode.
+(define_mode_attr htruncx [
+  (V8QI    "hbq")
+  (V4HI    "whp")
+  (V4HF    "whp")
+  (V2SI    "dw")
+  (V2SF    "dw")
+  (V16QI   "hbo")
+  (V8HI    "whq")
+  (V8HF    "whq")
+  (V4SI    "dwp")
+  (V4SF    "dwp")
+])
+
 ;; Attribute to get the chunk MODE of a vector mode.
 (define_mode_attr CHUNK [
   (V8QI    "V8QI")
@@ -522,6 +654,16 @@
   V4HI V2SI
 ])
 
+;; Iterator for V8QI S64I
+(define_mode_iterator S64K [
+  V8QI V4HI V2SI
+])
+
+;; Iterator for S64K minus V2SI
+(define_mode_iterator S64L [
+  V8QI V4HI
+])
+
 ;; Iterator for the small elements 128-bit vector integer modes.
 (define_mode_iterator S128I [
   V8HI V4SI
@@ -530,6 +672,11 @@
 ;; Iterator for the non-byte 128-bit vector integer modes.
 (define_mode_iterator S128J [
   V8HI V4SI V2DI
+])
+
+;; Iterator for V16QI S128I
+(define_mode_iterator S128K [
+  V16QI V8HI V4SI
 ])
 
 ;; Iterator for the small elements 256-bit vector integer modes.

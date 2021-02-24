@@ -129,7 +129,7 @@ enum kvx_abi_type
 
 /* An integer expression for the size in bits of the largest integer machine
    mode that should actually be used.  */
-#define MAX_FIXED_MODE_SIZE 64
+#define MAX_FIXED_MODE_SIZE 256
 
 /* Make strings word-aligned so strcpy from constants will be faster.  */
 #define CONSTANT_ALIGNMENT(EXP, ALIGN)                                         \
