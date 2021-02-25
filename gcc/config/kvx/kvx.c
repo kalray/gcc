@@ -10706,25 +10706,26 @@ kvx_ok_for_quad_reg_p (rtx op)
 void
 kvx_split_128bits_move (rtx dst, rtx src, enum machine_mode mode)
 {
-  rtx lo_src = gen_lowpart (word_mode, src);
-  rtx hi_src = gen_highpart_mode (word_mode, mode, src);
+  gcc_assert (!(side_effects_p (src) || side_effects_p (dst)));
+  gcc_assert (mode == GET_MODE (src) || GET_MODE (src) == VOIDmode);
 
-  /* Avoid overwriting source by dest in case register ranges are
-     overlapping */
-  bool low_first = true;
+  rtx dst_lo = gen_lowpart (word_mode, dst);
+  rtx dst_hi = gen_highpart (word_mode, dst);
 
-  if (kvx_is_reg_subreg_p (dst) && kvx_is_reg_subreg_p (src))
-    low_first = kvx_regno_subregno (dst) < kvx_regno_subregno (src);
+  rtx src_lo = gen_lowpart (word_mode, src);
+  rtx src_hi = gen_highpart_mode (word_mode, mode, src);
 
-  if (low_first)
+  if (reg_overlap_mentioned_p (dst_lo, src_hi))
     {
-      emit_insn (gen_movdi (gen_lowpart (word_mode, dst), lo_src));
-      emit_insn (gen_movdi (gen_highpart (word_mode, dst), hi_src));
+      gcc_assert (!reg_overlap_mentioned_p (dst_hi, src_lo));
+
+      emit_insn (gen_movdi (dst_hi, src_hi));
+      emit_insn (gen_movdi (dst_lo, src_lo));
     }
   else
     {
-      emit_insn (gen_movdi (gen_highpart (word_mode, dst), hi_src));
-      emit_insn (gen_movdi (gen_lowpart (word_mode, dst), lo_src));
+      emit_insn (gen_movdi (dst_lo, src_lo));
+      emit_insn (gen_movdi (dst_hi, src_hi));
     }
 }
 
@@ -10733,20 +10734,24 @@ kvx_split_128bits_move (rtx dst, rtx src, enum machine_mode mode)
 void
 kvx_split_256bits_move (rtx dst, rtx src, enum machine_mode mode)
 {
-  /* Avoid overwriting source by dest in case register ranges are
-     overlapping */
-  bool low_first = true;
+  rtx dst_lo = simplify_gen_subreg (TImode, dst, mode, 0);
+  rtx dst_hi = simplify_gen_subreg (TImode, dst, mode, 16);
 
-  if (kvx_is_reg_subreg_p (dst) && kvx_is_reg_subreg_p (src))
-    low_first = kvx_regno_subregno (dst) < kvx_regno_subregno (src);
+  rtx src_lo = simplify_gen_subreg (TImode, src, mode, 0);
+  rtx src_hi = simplify_gen_subreg (TImode, src, mode, 16);
 
-  emit_insn (
-    gen_movti (simplify_gen_subreg (TImode, dst, mode, low_first ? 0 : 16),
-	       simplify_gen_subreg (TImode, src, mode, low_first ? 0 : 16)));
+  if (reg_overlap_mentioned_p (dst_lo, src_hi))
+    {
+      gcc_assert (!reg_overlap_mentioned_p (dst_hi, src_lo));
 
-  emit_insn (
-    gen_movti (simplify_gen_subreg (TImode, dst, mode, low_first ? 16 : 0),
-	       simplify_gen_subreg (TImode, src, mode, low_first ? 16 : 0)));
+      emit_insn (gen_movdi (dst_hi, src_hi));
+      emit_insn (gen_movdi (dst_lo, src_lo));
+    }
+  else
+    {
+      emit_insn (gen_movdi (dst_lo, src_lo));
+      emit_insn (gen_movdi (dst_hi, src_hi));
+    }
 }
 
 /* Returns TRUE if OP is a symbol and has the farcall attribute or if
