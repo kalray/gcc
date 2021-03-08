@@ -1772,7 +1772,7 @@
   {
     rtx tempsf = gen_reg_rtx (SFmode);
     emit_insn (gen_floatsisf2 (tempsf, operands[1]));
-    emit_insn (gen_truncsfhf2 (operands[1], tempsf));
+    emit_insn (gen_truncsfhf2 (operands[0], tempsf));
     DONE;
   }
 )
