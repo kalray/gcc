@@ -41,14 +41,25 @@
         (match_operand:ALL128 1 "general_operand" ""))]
   ""
   {
-    if (MEM_P(operands[0]))
+    // late splitting of mem will not be possible in the general case
+    if ((MEM_P (operands[0]) && !kvx_ok_for_paired_reg_p (operands[1]))
+        ||(MEM_P (operands[1]) && !kvx_ok_for_paired_reg_p (operands[0])))
+    {
+       gcc_assert (! reload_completed && !reload_in_progress);
+       rtx tmp = gen_reg_rtx(<MODE>mode);
+       emit_move_insn (tmp, operands[1]);
+       emit_move_insn (operands[0], tmp);
+       DONE;
+    }
+
+    if (MEM_P (operands[0]))
       operands[1] = force_reg (<MODE>mode, operands[1]);
   }
 )
 
 (define_insn_and_split "*mov<mode>_oddreg"
-  [(set (match_operand:ALL128 0 "nonimmediate_operand" "=r  , m")
-        (match_operand:ALL128 1 "general_operand"      " irm, r"))]
+  [(set (match_operand:ALL128 0 "register_operand" "=r")
+        (match_operand:ALL128 1 "nonmemory_operand" " ir"))]
   "(kvx_is_reg_subreg_p (operands[0]) && !kvx_ok_for_paired_reg_p (operands[0]))
     || (kvx_is_reg_subreg_p (operands[1]) && !kvx_ok_for_paired_reg_p (operands[1]))"
   "#"
@@ -117,14 +128,25 @@
         (match_operand:ALL256 1 "general_operand" ""))]
   ""
   {
-    if (MEM_P(operands[0]))
+    // late splitting of mem will not be possible in the general case
+    if ((MEM_P (operands[0]) && !kvx_ok_for_quad_reg_p (operands[1]))
+        || MEM_P (operands[1]) && !kvx_ok_for_quad_reg_p (operands[0]))
+    {
+      gcc_assert (! reload_completed && !reload_in_progress);
+      rtx tmp = gen_reg_rtx(<MODE>mode);
+      emit_move_insn (tmp, operands[1]);
+      emit_move_insn (operands[0], tmp);
+      DONE;
+    }
+
+    if (MEM_P (operands[0]))
       operands[1] = force_reg (<MODE>mode, operands[1]);
   }
 )
 
 (define_insn_and_split "*mov<mode>_misalign_reg"
-  [(set (match_operand:ALL256 0 "nonimmediate_operand" "=r,   m")
-        (match_operand:ALL256 1 "general_operand"      " irm, r"))]
+  [(set (match_operand:ALL256 0 "register_operand" "=r")
+        (match_operand:ALL256 1 "nonmemory_operand" "ir"))]
   "(kvx_is_reg_subreg_p (operands[0]) && !kvx_ok_for_quad_reg_p (operands[0]))
     || (kvx_is_reg_subreg_p (operands[1]) && !kvx_ok_for_quad_reg_p (operands[1]))"
   "#"
