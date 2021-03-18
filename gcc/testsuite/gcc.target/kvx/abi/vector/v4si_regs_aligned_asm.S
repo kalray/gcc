@@ -55,13 +55,13 @@ check_args_are_correct:
     ;;
     cb.deqz $r15, 1f
     ;;
-    ld $r16 = 0[$sp]
+    lwz $r16 = 0[$sp]
     ;;
     compd.eq $r16 = $r16, 12
     ;;
     cb.deqz $r16, 1f
     ;;
-    ld $r16 = 8[$sp]
+    lwz $r16 = 8[$sp]
     ;;
     compd.eq $r16 = $r16, 13
     ;;

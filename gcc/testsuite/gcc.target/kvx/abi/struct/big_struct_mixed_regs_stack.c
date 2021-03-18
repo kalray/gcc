@@ -4,7 +4,7 @@ struct does_not_fit_in_a_reg
   char f1_0;
   char f2_0;
   char f3_0;
-  int i4_0;	  // 64bit
+  int i4_0;       // 64bit
   long long l5_0; // 128bit
   long long l6_0; // 192bit
   long long l7_0; // 256bit
@@ -66,7 +66,7 @@ main (int argc, char **argv)
   // CHECK_RELATIVE r10:24 0x1112131415161718
   // CHECK_RELATIVE r10:32 0x4444444444444444
   // CHECK r11 5
-  // CHECK_STACK 0 6
+  // CHECK_STACK 0:4 6
 
   return !check_args_are_correct (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, a1011s01, 5, 6);
 }

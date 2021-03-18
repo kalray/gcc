@@ -36,10 +36,10 @@ main (int argc, char **argv)
   // CHECK r10 10
   // CHECK r11 11
 
-  // CHECK_STACK 0 12
-  // CHECK_STACK 8 13
-  // CHECK_STACK 16 14
-  // CHECK_STACK 24 15
+  // CHECK_STACK 0:4 12
+  // CHECK_STACK 8:4 13
+  // CHECK_STACK 16:4 14
+  // CHECK_STACK 24:4 15
   return !check_args_are_correct (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
 				  14, 15);
 }
