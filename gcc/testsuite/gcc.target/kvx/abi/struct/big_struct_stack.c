@@ -62,8 +62,8 @@ main (int argc, char **argv)
   // CHECK_RELATIVE_STACK 0:16 0x0304050607080910
   // CHECK_RELATIVE_STACK 0:24 0x1112131415161718
   // CHECK_RELATIVE_STACK 0:32 0x4444444444444444
-  // CHECK_STACK 8 5
-  // CHECK_STACK 16 6
+  // CHECK_STACK 8:4 5
+  // CHECK_STACK 16:4 6
 
   return !check_args_are_correct (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, s1234,
 				  5, 6);

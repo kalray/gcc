@@ -53,11 +53,11 @@ main (int argc, char **argv)
   // CHECK r9 9
   // CHECK r10 10
   // CHECK r11 0xAABBCCDDEEFF9911
-  // CHECK_STACK 0 0xbeefbeef12345678
-  // CHECK_STACK 8 12
-  // CHECK_STACK 16 13
-  // CHECK_STACK 24 14
-  // CHECK_STACK 32 15
+  // CHECK_STACK 0:8 0xbeefbeef12345678
+  // CHECK_STACK 8:4 12
+  // CHECK_STACK 16:4 13
+  // CHECK_STACK 24:4 14
+  // CHECK_STACK 32:4 15
 
   return !check_args_are_correct (a01, a23, 4, 5, 6, 7, 8, 9, 10, s01, 12, 13,
 				  14, 15);
