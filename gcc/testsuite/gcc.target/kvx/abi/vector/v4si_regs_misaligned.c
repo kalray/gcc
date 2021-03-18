@@ -41,10 +41,10 @@ main (int argc, char **argv)
   // CHECK r10 10
   // CHECK r11 11
 
-  // CHECK_STACK 0 0x0000000c0000000c
-  // CHECK_STACK 8 0x0000000d0000000d
-  // CHECK_STACK 16 14
-  // CHECK_STACK 24 15
+  // CHECK_STACK 0:8 0x0000000c0000000c
+  // CHECK_STACK 8:8 0x0000000d0000000d
+  // CHECK_STACK 16:4 14
+  // CHECK_STACK 24:4 15
   return !check_args_are_correct (0, v12, v34, 5, v67, 8, 9, 10, 11, s01, 14,
 				  15);
 }
