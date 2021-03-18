@@ -64,3 +64,10 @@ kvx_elf32_init_stub_bfd (struct bfd_link_info *info,
 bfd_boolean
 kvx_elf64_init_stub_bfd (struct bfd_link_info *info,
 			bfd *stub_bfd);
+
+bfd_boolean _bfd_kvx_elf_grok_prstatus (bfd *abfd, Elf_Internal_Note *note);
+
+bfd_boolean _bfd_kvx_elf_grok_psinfo (bfd *abfd, Elf_Internal_Note *note);
+
+#define elf_backend_grok_prstatus _bfd_kvx_elf_grok_prstatus
+#define elf_backend_grok_psinfo _bfd_kvx_elf_grok_psinfo

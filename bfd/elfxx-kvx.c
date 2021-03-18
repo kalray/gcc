@@ -159,3 +159,64 @@ _bfd_kvx_elf_resolve_relocation (bfd_reloc_code_real_type r_type ATTRIBUTE_UNUSE
 {
   return value;
 }
+
+bfd_boolean
+_bfd_kvx_elf_grok_prstatus (bfd *abfd, Elf_Internal_Note *note)
+{
+  int offset;
+  size_t size;
+
+  switch (note->descsz)
+    {
+    case 680: /* sizeof(struct elf_prstatus) on Linux/kvx.  */
+      /* pr_cursig */
+      elf_tdata (abfd)->core->signal = bfd_get_16 (abfd, note->descdata + 12);
+
+      /* pr_pid */
+      elf_tdata (abfd)->core->lwpid = bfd_get_32 (abfd, note->descdata + 32);
+
+      /* pr_reg */
+      offset = 112;
+      size = 560;
+      break;
+
+    default:
+      return FALSE;
+    }
+
+  /* Make a ".reg/999" section.  */
+  return _bfd_elfcore_make_pseudosection (abfd, ".reg", size,
+					  note->descpos + offset);
+}
+
+bfd_boolean
+_bfd_kvx_elf_grok_psinfo (bfd *abfd, Elf_Internal_Note *note)
+{
+  switch (note->descsz)
+    {
+    case 136: /* This is sizeof(struct elf_prpsinfo) on Linux/kvx.  */
+      elf_tdata (abfd)->core->pid = bfd_get_32 (abfd, note->descdata + 24);
+      elf_tdata (abfd)->core->program
+	= _bfd_elfcore_strndup (abfd, note->descdata + 40, 16);
+      elf_tdata (abfd)->core->command
+	= _bfd_elfcore_strndup (abfd, note->descdata + 56, 80);
+      break;
+
+    default:
+      return FALSE;
+    }
+
+  /* Note that for some reason, a spurious space is tacked
+     onto the end of the args in some (at least one anyway)
+     implementations, so strip it off if it exists.  */
+
+  {
+    char *command = elf_tdata (abfd)->core->command;
+    int n = strlen (command);
+
+    if (n > 0 && command[n - 1] == ' ')
+      command[n - 1] = 0;
+  }
+
+  return TRUE;
+}
