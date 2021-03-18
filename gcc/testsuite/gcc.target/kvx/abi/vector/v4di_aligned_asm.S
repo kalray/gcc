@@ -55,36 +55,6 @@ check_args_are_correct:
     ;;
     cb.deqz $r15, 1f
     ;;
-    ld $r16 = 0[$sp]
-    ;;
-    compd.eq $r16 = $r16, 123456
-    ;;
-    cb.deqz $r16, 1f
-    ;;
-    ld $r16 = 8[$sp]
-    ;;
-    compd.eq $r16 = $r16, 0xdead
-    ;;
-    cb.deqz $r16, 1f
-    ;;
-    ld $r16 = 16[$sp]
-    ;;
-    compd.eq $r16 = $r16, 0xbeef
-    ;;
-    cb.deqz $r16, 1f
-    ;;
-    ld $r16 = 24[$sp]
-    ;;
-    compd.eq $r16 = $r16, 0xcafe
-    ;;
-    cb.deqz $r16, 1f
-    ;;
-    ld $r16 = 32[$sp]
-    ;;
-    compd.eq $r16 = $r16, 0xbebe
-    ;;
-    cb.deqz $r16, 1f
-    ;;
     make $r0 = 0x0000000000000000
     ;;
     make $r1 = 0x0000000000000001
