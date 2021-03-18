@@ -7,23 +7,23 @@ check_args_are_correct:
     ;;
     cb.dnez $r16, 1f
     ;;
-    compd.eq $r15 = $r0, 0xabcdef9955555555
+    compd.eq $r15 = $r0, 0
     ;;
     cb.deqz $r15, 1f
     ;;
-    compd.eq $r15 = $r1, 0xdeadbeef12345678
+    compd.eq $r15 = $r1, 0x11CDEF9955555555
     ;;
     cb.deqz $r15, 1f
     ;;
-    compd.eq $r15 = $r2, 0xabcdef9955555555
+    compd.eq $r15 = $r2, 0x22adbeef12345678
     ;;
     cb.deqz $r15, 1f
     ;;
-    compd.eq $r15 = $r3, 0xdeadbeef12345678
+    compd.eq $r15 = $r3, 0x33CDEF9955555555
     ;;
     cb.deqz $r15, 1f
     ;;
-    compd.eq $r15 = $r4, 4
+    compd.eq $r15 = $r4, 0x44adbeef12345678
     ;;
     cb.deqz $r15, 1f
     ;;
@@ -35,19 +35,15 @@ check_args_are_correct:
     ;;
     cb.deqz $r15, 1f
     ;;
-    compd.eq $r15 = $r6, 6
-    ;;
-    cb.deqz $r15, 1f
-    ;;
     compd.eq $r15 = $r7, 7
     ;;
     cb.deqz $r15, 1f
     ;;
-    compd.eq $r15 = $r8, 8
+    compd.eq $r15 = $r8, 0x88CDEF9955555555
     ;;
     cb.deqz $r15, 1f
     ;;
-    compd.eq $r15 = $r9, 9
+    compd.eq $r15 = $r9, 0x99adbeef12345678
     ;;
     cb.deqz $r15, 1f
     ;;
@@ -59,51 +55,25 @@ check_args_are_correct:
     ;;
     cb.deqz $r15, 1f
     ;;
-    lwz $r16 = 0[$sp]
+    make $r0 = 0
     ;;
-    compd.eq $r16 = $r16, 12
+    make $r1 = 0x11CDEF9955555555
     ;;
-    cb.deqz $r16, 1f
+    make $r2 = 0x22adbeef12345678
     ;;
-    lwz $r16 = 8[$sp]
+    make $r3 = 0x33CDEF9955555555
     ;;
-    compd.eq $r16 = $r16, 13
-    ;;
-    cb.deqz $r16, 1f
-    ;;
-    lwz $r16 = 16[$sp]
-    ;;
-    compd.eq $r16 = $r16, 14
-    ;;
-    cb.deqz $r16, 1f
-    ;;
-    lwz $r16 = 24[$sp]
-    ;;
-    compd.eq $r16 = $r16, 15
-    ;;
-    cb.deqz $r16, 1f
-    ;;
-    make $r0 = 0xabcdef9955555555
-    ;;
-    make $r1 = 0xdeadbeef12345678
-    ;;
-    make $r2 = 0xabcdef9955555555
-    ;;
-    make $r3 = 0xdeadbeef12345678
-    ;;
-    make $r4 = 4
+    make $r4 = 0x44adbeef12345678
     ;;
     make $r5 = 5
     ;;
     make $r6 = 6
     ;;
-    make $r6 = 6
-    ;;
     make $r7 = 7
     ;;
-    make $r8 = 8
+    make $r8 = 0x88CDEF9955555555
     ;;
-    make $r9 = 9
+    make $r9 = 0x99adbeef12345678
     ;;
     make $r10 = 10
     ;;

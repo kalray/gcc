@@ -37,8 +37,8 @@ main (int argc, char **argv)
   // CHECK r10 0x0000000a0000000a
   // CHECK r11 0x0000000b0000000b
 
-  // CHECK_STACK 0 12
-  // CHECK_STACK 8 13
+  // CHECK_STACK 0:4 12
+  // CHECK_STACK 8:4 13
 
   return !check_args_are_correct (v01, v23, 4, 5, v67, v89, v1011, 12, 13);
 }

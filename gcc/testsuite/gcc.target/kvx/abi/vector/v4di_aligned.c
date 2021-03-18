@@ -37,11 +37,11 @@ main (int argc, char **argv)
   // CHECK r10 0x000000000000000A
   // CHECK r11 0x000000000000000B
 
-  // CHECK_STACK 0 123456
-  // CHECK_STACK 8 0xdead
-  // CHECK_STACK 16 0xbeef
-  // CHECK_STACK 24 0xcafe
-  // CHECK_STACK 32 0xbebe
+  // CHECK_STACK:8 0 123456
+  // CHECK_STACK:8 8 0xdead
+  // CHECK_STACK:8 16 0xbeef
+  // CHECK_STACK:8 24 0xcafe
+  // CHECK_STACK:8 32 0xbebe
 
   return !check_args_are_correct (v0123, v4567, v891011, 123456, vstack);
 }
