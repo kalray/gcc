@@ -9505,10 +9505,10 @@
 
 ;; KVX_LD, KVX_SD
 
-(define_insn "kvx_ld<SIMD64:lsvs>"
-  [(set (match_operand:SIMD64 0 "register_operand" "=r,r,r")
-        (unspec:SIMD64 [(match_operand:SIMD64 1 "memory_operand" "a,b,m")
-                        (match_operand 2 "" "")] UNSPEC_LD))
+(define_insn "kvx_ld<ALL64:lsvs>"
+  [(set (match_operand:ALL64 0 "register_operand" "=r,r,r")
+        (unspec:ALL64 [(match_operand:ALL64 1 "memory_operand" "a,b,m")
+                       (match_operand 2 "" "")] UNSPEC_LD))
    (use (match_dup 1))]
   ""
   "ld%2%m1 %0 = %1"
@@ -9516,9 +9516,9 @@
    (set_attr "length"                    "4,                       8,                      12")]
 )
 
-(define_insn "kvx_sd<SIMD64:lsvs>"
-  [(unspec_volatile:SIMD64 [(match_operand:SIMD64 0 "memory_operand" "a,b,m")
-                            (match_operand:SIMD64 1 "register_operand" "r,r,r")] UNSPEC_SD)
+(define_insn "kvx_sd<ALL64:lsvs>"
+  [(unspec_volatile:ALL64 [(match_operand:ALL64 0 "memory_operand" "a,b,m")
+                           (match_operand:ALL64 1 "register_operand" "r,r,r")] UNSPEC_SD)
    (clobber (match_dup 0))]
   ""
   "sd%m0 %0 = %1"
@@ -9528,10 +9528,10 @@
 
 ;; KVX_LQ, KVX_SQ
 
-(define_insn "kvx_lq<SIMD128:lsvs>"
-  [(set (match_operand:SIMD128 0 "register_operand" "=r,r,r")
-        (unspec:SIMD128 [(match_operand:SIMD128 1 "memory_operand" "a,b,m")
-                         (match_operand 2 "" "")] UNSPEC_LQ))
+(define_insn "kvx_lq<ALL128:lsvs>"
+  [(set (match_operand:ALL128 0 "register_operand" "=r,r,r")
+        (unspec:ALL128 [(match_operand:ALL128 1 "memory_operand" "a,b,m")
+                        (match_operand 2 "" "")] UNSPEC_LQ))
    (use (match_dup 1))]
   ""
   "lq%2%m1 %0 = %1"
@@ -9539,9 +9539,9 @@
    (set_attr "length"                    "4,                       8,                      12")]
 )
 
-(define_insn "kvx_sq<SIMD128:lsvs>"
-  [(unspec_volatile:SIMD128 [(match_operand:SIMD128 0 "memory_operand" "a,b,m")
-                             (match_operand:SIMD128 1 "register_operand" "r,r,r")] UNSPEC_SQ)
+(define_insn "kvx_sq<ALL128:lsvs>"
+  [(unspec_volatile:ALL128 [(match_operand:ALL128 0 "memory_operand" "a,b,m")
+                            (match_operand:ALL128 1 "register_operand" "r,r,r")] UNSPEC_SQ)
    (clobber (match_dup 0))]
   ""
   "sq%m0 %0 = %1"
@@ -9551,10 +9551,10 @@
 
 ;; KVX_LO, KVX_SO
 
-(define_insn "kvx_lo<SIMD256:lsvs>"
-  [(set (match_operand:SIMD256 0 "register_operand" "=r,r,r")
-        (unspec:SIMD256 [(match_operand:SIMD256 1 "memory_operand" "a,b,m")
-                         (match_operand 2 "" "")] UNSPEC_LO))
+(define_insn "kvx_lo<ALL256:lsvs>"
+  [(set (match_operand:ALL256 0 "register_operand" "=r,r,r")
+        (unspec:ALL256 [(match_operand:ALL256 1 "memory_operand" "a,b,m")
+                        (match_operand 2 "" "")] UNSPEC_LO))
    (use (match_dup 1))]
   ""
   "lo%2%m1 %0 = %1"
@@ -9562,9 +9562,9 @@
    (set_attr "length"                    "4,                       8,                      12")]
 )
 
-(define_insn "kvx_so<SIMD256:lsvs>"
-  [(unspec_volatile:SIMD256 [(match_operand:SIMD256 0 "memory_operand" "a,b,m")
-                             (match_operand:SIMD256 1 "register_operand" "r,r,r")] UNSPEC_SO)
+(define_insn "kvx_so<ALL256:lsvs>"
+  [(unspec_volatile:ALL256 [(match_operand:ALL256 0 "memory_operand" "a,b,m")
+                            (match_operand:ALL256 1 "register_operand" "r,r,r")] UNSPEC_SO)
    (clobber (match_dup 0))]
   ""
   "so%m0 %0 = %1"
@@ -9574,10 +9574,10 @@
 
 ;; KVX_LV, KVX_SV
 
-(define_insn "kvx_lv<SIMD256:lsvs>"
-  [(unspec_volatile:SIMD256 [(match_operand 0 "" "")
-                             (match_operand:SIMD256 1 "memory_operand" "a,b,m")
-                             (match_operand 2 "" "")] UNSPEC_LV)
+(define_insn "kvx_lv<ALL256:lsvs>"
+  [(unspec_volatile:ALL256 [(match_operand 0 "" "")
+                            (match_operand:ALL256 1 "memory_operand" "a,b,m")
+                            (match_operand 2 "" "")] UNSPEC_LV)
    (use (match_dup 1))]
   ""
   "lv%2%m1 $%0 = %1"
@@ -9585,9 +9585,9 @@
    (set_attr "length"               "4,                  8,                 12")]
 )
 
-(define_insn "kvx_sv<SIMD256:lsvs>"
-  [(unspec_volatile:SIMD256 [(match_operand:SIMD256 0 "memory_operand" "a,b,m")
-                             (match_operand 1 "" "")] UNSPEC_SV)
+(define_insn "kvx_sv<ALL256:lsvs>"
+  [(unspec_volatile:ALL256 [(match_operand:ALL256 0 "memory_operand" "a,b,m")
+                            (match_operand 1 "" "")] UNSPEC_SV)
    (clobber (match_dup 0))]
   ""
   "sv%m0 %0 = $%1"
@@ -9598,26 +9598,26 @@
 
 ;; KVX_MOVETO, KVX_MOVEFO, KVX_SWAPVO
 
-(define_insn "kvx_moveto<SIMD256:lsvs>"
-  [(unspec_volatile:SIMD256 [(match_operand 0 "" "")
-                             (match_operand:SIMD256 1 "register_operand" "r")] UNSPEC_MOVETO)]
+(define_insn "kvx_moveto<ALL256:lsvs>"
+  [(unspec_volatile:ALL256 [(match_operand 0 "" "")
+                            (match_operand:ALL256 1 "register_operand" "r")] UNSPEC_MOVETO)]
   ""
   "movetq $%0.lo = %x1, %y1\n\tmovetq $%0.hi = %z1, %t1"
   [(set_attr "type" "alu_lite_x2")]
 )
 
-(define_insn "kvx_movefo<SIMD256:lsvs>"
-  [(set (match_operand:SIMD256 0 "register_operand" "=r")
-        (unspec_volatile:SIMD256 [(match_operand 1 "" "")] UNSPEC_MOVEFO))]
+(define_insn "kvx_movefo<ALL256:lsvs>"
+  [(set (match_operand:ALL256 0 "register_operand" "=r")
+        (unspec_volatile:ALL256 [(match_operand 1 "" "")] UNSPEC_MOVEFO))]
   ""
   "movefo %0 = $%1"
   [(set_attr "type" "bcu_tiny_auxw_crrp")]
 )
 
-(define_insn "kvx_swapvo<SIMD256:lsvs>"
-  [(set (match_operand:SIMD256 0 "register_operand" "=r")
-        (unspec_volatile:SIMD256 [(match_operand 1 "" "")
-                                  (match_operand:SIMD256 2 "register_operand" "0")] UNSPEC_SWAPVO))]
+(define_insn "kvx_swapvo<ALL256:lsvs>"
+  [(set (match_operand:ALL256 0 "register_operand" "=r")
+        (unspec_volatile:ALL256 [(match_operand 1 "" "")
+                                 (match_operand:ALL256 2 "register_operand" "0")] UNSPEC_SWAPVO))]
   ""
   "movetq $%1.lo = %x0, %y0\n\tmovetq $%1.hi = %z0, %t0\n\tmovefo %0 = $%1"
   [(set_attr "type" "all")
@@ -9626,11 +9626,11 @@
 
 ;; KVX_ALIGNO, KVX_ALIGNV
 
-(define_insn "kvx_aligno<SIMD256:lsvs>"
-  [(set (match_operand:SIMD256 0 "register_operand" "=r,r")
-        (unspec_volatile:SIMD256 [(match_operand 1 "" "")
-                                  (match_operand 2 "" "")
-                                  (match_operand:SI 3 "sat_shift_operand" "r,U06")] UNSPEC_ALIGNO))]
+(define_insn "kvx_aligno<ALL256:lsvs>"
+  [(set (match_operand:ALL256 0 "register_operand" "=r,r")
+        (unspec_volatile:ALL256 [(match_operand 1 "" "")
+                                 (match_operand 2 "" "")
+                                 (match_operand:SI 3 "sat_shift_operand" "r,U06")] UNSPEC_ALIGNO))]
   ""
   "aligno %0 = $%1, $%2, %3"
   [(set_attr "type" "bcu_tiny_auxw_crrp,bcu_tiny_auxw_crrp")]
