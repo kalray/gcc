@@ -174,19 +174,19 @@ enum kvx_abi_type
       1, /* virtual FP */                                                      \
   }
 
-#define CALL_USED_REGISTERS                                                    \
-  {                                                                            \
-    KV3_ABI_REGULAR_CALL_USED_REGISTERS                                        \
-    1,	 /* sync */                                                            \
-      1, /* virtual FP */                                                      \
-  }
-
 #define CALL_REALLY_USED_REGISTERS                                             \
   {                                                                            \
     KV3_ABI_REGULAR_CALL_REALLY_USED_REGISTERS                                 \
     1,	 /* sync */                                                            \
       1, /* virtual FP */                                                      \
   }
+
+/* #define CALL_REALLY_USED_REGISTERS                                             \ */
+/*   {                                                                            \ */
+/*     KV3_ABI_REGULAR_CALL_REALLY_USED_REGISTERS                                 \ */
+/*     1,	 /\* sync *\/                                                            \ */
+/*       1, /\* virtual FP *\/                                                      \ */
+/*   } */
 
 #define PC_REGNUM KVX_PROGRAM_POINTER_REGNO
 
@@ -357,7 +357,7 @@ struct kvx_args
   /* Offset from ARG_POINTER_REGNUM to anonymous argument area, if any */
   int anonymous_arg_offset;
 
-  bool anonymous_arg_offset_valid;
+  //  bool anonymous_arg_offset_valid;
 };
 #endif
 

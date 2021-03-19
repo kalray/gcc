@@ -65,6 +65,8 @@ extern void gomp_sem_post (gomp_sem_t *sem);
 
 extern void gomp_sem_destroy (gomp_sem_t *sem);
 
+extern int gomp_sem_getcount (gomp_sem_t *sem);
+
 #else /* HAVE_BROKEN_POSIX_SEMAPHORES  */
 
 #ifdef HAVE_ATTRIBUTE_VISIBILITY
@@ -146,6 +148,15 @@ gomp_sem_post (gomp_sem_t *sem)
   __builtin_kvx_fence (); /* consistency before doorbell */
   mppa_cos_doorbell_all ();
   MPPA_COS_DINVAL ();
+}
+
+static inline int
+gomp_sem_getcount (gomp_sem_t *sem)
+{
+  int val;
+  if (sem_getvalue (sem, &val) < 0)
+    return -1;
+  return val;
 }
 
 static inline void
