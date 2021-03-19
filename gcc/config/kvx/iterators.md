@@ -271,6 +271,11 @@
 
 ;; Attribute for LSU and TCA builtin vector suffixes.
 (define_mode_attr lsvs [
+  (DI      "d")
+  (DF      "fd")
+  (SC      "fwc")
+  (TI      "t")
+  (OI      "o")
   (V8QI    "bo")
   (V4HI    "hq")
   (V4HF    "fhq")
