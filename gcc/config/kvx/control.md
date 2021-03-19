@@ -115,7 +115,7 @@
 
 ;; CMOVED
 
-(define_insn "*cmov<mode>.<FITGPR:mode>"
+(define_insn "*cmov<SIDI:mode>.<FITGPR:mode>"
   [(set (match_operand:FITGPR 0 "register_operand" "=r,r,r,r")
         (if_then_else:FITGPR (match_operator 2 "zero_comparison_operator"
                                                [(match_operand:SIDI 3 "register_operand" "r,r,r,r")
@@ -128,7 +128,7 @@
    (set_attr "length"      "4,       4,         8,        12")]
 )
 
-(define_insn "*cmov<mode>.<FITGPR:mode>.odd"
+(define_insn "*cmov<SIDI:mode>.<FITGPR:mode>.odd"
   [(set (match_operand:FITGPR 0 "register_operand" "=r,r,r,r")
         (if_then_else:FITGPR (ne (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r,r,r,r")
                                                     (const_int 1) (const_int 0))
@@ -141,7 +141,7 @@
    (set_attr "length"      "4,       4,         8,        12")]
 )
 
-(define_insn "*cmov<mode>.<FITGPR:mode>.even"
+(define_insn "*cmov<SIDI:mode>.<FITGPR:mode>.even"
   [(set (match_operand:FITGPR 0 "register_operand" "=r,r,r,r")
         (if_then_else:FITGPR (eq (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r,r,r,r")
                                                     (const_int 1) (const_int 0))
@@ -154,7 +154,7 @@
    (set_attr "length"      "4,       4,         8,        12")]
 )
 
-(define_insn "*cmov<mode>.<ALL128:mode>"
+(define_insn "*cmov<SIDI:mode>.<ALL128:mode>"
   [(set (match_operand:ALL128 0 "register_operand" "=r")
         (if_then_else:ALL128 (match_operator 2 "zero_comparison_operator"
                                                [(match_operand:SIDI 3 "register_operand" "r")
@@ -167,7 +167,7 @@
    (set_attr "length"         "8")]
 )
 
-(define_insn "*cmov<mode>.<ALL128:mode>.odd"
+(define_insn "*cmov<SIDI:mode>.<ALL128:mode>.odd"
   [(set (match_operand:ALL128 0 "register_operand" "=r")
         (if_then_else:ALL128 (ne (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r")
                                                     (const_int 1) (const_int 0))
@@ -180,7 +180,7 @@
    (set_attr "length"         "8")]
 )
 
-(define_insn "*cmov<mode>.<ALL128:mode>.even"
+(define_insn "*cmov<SIDI:mode>.<ALL128:mode>.even"
   [(set (match_operand:ALL128 0 "register_operand" "=r")
         (if_then_else:ALL128 (eq (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r")
                                                     (const_int 1) (const_int 0))
@@ -193,7 +193,7 @@
    (set_attr "length"         "8")]
 )
 
-(define_insn_and_split "*cmov<mode>.<ALL256:mode>"
+(define_insn_and_split "*cmov<SIDI:mode>.<ALL256:mode>"
   [(set (match_operand:ALL256 0 "register_operand" "=r")
         (if_then_else:ALL256 (match_operator 2 "zero_comparison_operator"
                                                 [(match_operand:SIDI 3 "register_operand" "r")
@@ -215,7 +215,7 @@
   [(set_attr "type" "alu_lite_x2")]
 )
 
-(define_insn_and_split "*cmov<mode>.<ALL256:mode>.odd"
+(define_insn_and_split "*cmov<SIDI:mode>.<ALL256:mode>.odd"
   [(set (match_operand:ALL256 0 "register_operand" "=r")
         (if_then_else:ALL256 (ne (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r")
                                                     (const_int 1) (const_int 0))
@@ -241,7 +241,7 @@
   [(set_attr "type" "alu_lite_x2")]
 )
 
-(define_insn_and_split "*cmov<mode>.<ALL256:mode>.even"
+(define_insn_and_split "*cmov<SIDI:mode>.<ALL256:mode>.even"
   [(set (match_operand:ALL256 0 "register_operand" "=r")
         (if_then_else:ALL256 (eq (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r")
                                                     (const_int 1) (const_int 0))
