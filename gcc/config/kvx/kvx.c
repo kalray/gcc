@@ -1205,12 +1205,6 @@ kvx_cannot_force_const_mem (enum machine_mode mode ATTRIBUTE_UNUSED,
 }
 
 static bool
-kvx_decimal_float_supported_p (void)
-{
-  return true;
-}
-
-static bool
 kvx_fixed_point_supported_p (void)
 {
   return false;
@@ -11329,9 +11323,6 @@ kvx_ctrapsi4 (void)
 
 #undef TARGET_LEGITIMATE_ADDRESS_P
 #define TARGET_LEGITIMATE_ADDRESS_P kvx_legitimate_address_p
-
-#undef TARGET_DECIMAL_FLOAT_SUPPORTED_P
-#define TARGET_DECIMAL_FLOAT_SUPPORTED_P kvx_decimal_float_supported_p
 
 #undef TARGET_FIXED_POINT_SUPPORTED_P
 #define TARGET_FIXED_POINT_SUPPORTED_P kvx_fixed_point_supported_p
