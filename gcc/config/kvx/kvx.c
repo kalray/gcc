@@ -10274,7 +10274,7 @@ kvx_asm_final_postscan_insn (FILE *file, rtx_insn *insn,
 		  if (kvx_sched2_insn_flags[uid] & KVX_SCHED2_INSN_STALL)
 		    stalled = "(stalled)";
 		  int cycle = kvx_sched2_insn_cycle[uid];
-		  fprintf (file, "\t;;\t(end cycle %d)%s\n", cycle, stalled);
+		  fprintf (file, "\t;;\t# (end cycle %d)%s\n", cycle, stalled);
 		}
 	    }
 	  else
