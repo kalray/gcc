@@ -5968,6 +5968,10 @@ add_stores (rtx loc, const_rtx expr, void *cuip)
   if (type == MO_CLOBBER)
     return;
 
+  /* Skip CLOBBER emited by sjlj */
+  if (GET_CODE (expr) == CLOBBER && loc == cfa_base_rtx)
+    return;
+
   mode2 = mode;
 
   if (REG_P (loc))
