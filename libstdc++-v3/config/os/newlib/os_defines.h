@@ -58,4 +58,12 @@
 
 #endif
 
+#if defined __CLUSTER_OS__
+
+#define _GLIBCXX_GTHREAD_USE_WEAK 0
+#define _GLIBCXX_HAVE_TLS 1
+#define _GLIBCXX_HAVE_CC_TLS 1
+
+#endif
+
 #endif
