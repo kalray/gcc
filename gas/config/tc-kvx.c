@@ -2560,6 +2560,23 @@ md_after_pass(void)		/* called from md_end */
 }
 #endif
 
+/* Return non-zero if the indicated VALUE has overflowed the maximum
+   range expressible by a signed number with the indicated number of
+   BITS.
+
+   This is from tc-aarch64.c
+*/
+
+static bfd_boolean
+signed_overflow (offsetT value, unsigned bits)
+{
+  offsetT lim;
+  if (bits >= sizeof (offsetT) * 8)
+    return FALSE;
+  lim = (offsetT) 1 << (bits - 1);
+  return (value < -lim || value >= lim);
+}
+
 /***************************************************/
 /*          ASSEMBLER FIXUP STUFF                  */
 /***************************************************/
@@ -2644,22 +2661,45 @@ md_apply_fix(fixS * fixP, valueT * valueP,
         md_number_to_chars(fixpos, image, fixP->fx_size);
         break;
 
-      case BFD_RELOC_KVX_S16_PCREL:
       case BFD_RELOC_KVX_PCREL17:
+	if (signed_overflow (value, 17 + 2))
+	  as_bad_where (fixP->fx_file, fixP->fx_line,
+			_ ("branch out of range"));
+	goto pcrel_common;
+
       case BFD_RELOC_KVX_PCREL27:
+	if (signed_overflow (value, 27 + 2))
+	  as_bad_where (fixP->fx_file, fixP->fx_line,
+			_ ("branch out of range"));
+	goto pcrel_common;
+
+      case BFD_RELOC_KVX_S16_PCREL:
+	if (signed_overflow (value, 16))
+	  as_bad_where (fixP->fx_file, fixP->fx_line,
+			_ ("signed16 PCREL value out of range"));
+	goto pcrel_common;
+
+      case BFD_RELOC_KVX_S43_PCREL_LO10:
+      case BFD_RELOC_KVX_S43_PCREL_UP27:
+      case BFD_RELOC_KVX_S43_PCREL_EX6:
+	if (signed_overflow (value, 10 + 27 + 6))
+	  as_bad_where (fixP->fx_file, fixP->fx_line,
+			_ ("signed43 PCREL value out of range"));
+	goto pcrel_common;
+
+      case BFD_RELOC_KVX_S37_PCREL_LO10:
+      case BFD_RELOC_KVX_S37_PCREL_UP27:
+	if (signed_overflow (value, 10 + 27))
+	  as_bad_where (fixP->fx_file, fixP->fx_line,
+			_ ("signed37 PCREL value out of range"));
+	goto pcrel_common;
 
       case BFD_RELOC_KVX_S64_PCREL_LO10:
       case BFD_RELOC_KVX_S64_PCREL_UP27:
       case BFD_RELOC_KVX_S64_PCREL_EX27:
 
-      case BFD_RELOC_KVX_S43_PCREL_LO10:
-      case BFD_RELOC_KVX_S43_PCREL_UP27:
-      case BFD_RELOC_KVX_S43_PCREL_EX6:
-
-      case BFD_RELOC_KVX_S37_PCREL_LO10:
-      case BFD_RELOC_KVX_S37_PCREL_UP27:
-
-        if (fixP->fx_pcrel || fixP->fx_addsy)
+      pcrel_common:
+	if (fixP->fx_pcrel || fixP->fx_addsy)
           return;
         value = (((value >> rel->howto->rightshift) << rel->howto->bitpos ) & rel->howto->dst_mask);
         image = (image & ~(rel->howto->dst_mask)) | value;
@@ -2680,28 +2720,42 @@ md_apply_fix(fixS * fixP, valueT * valueP,
 	/* Fallthrough */
 
       case BFD_RELOC_KVX_S32_UP27:
+
       case BFD_RELOC_KVX_S37_UP27:
+
       case BFD_RELOC_KVX_S43_UP27:
+
       case BFD_RELOC_KVX_S64_UP27:
       case BFD_RELOC_KVX_S64_EX27:
       case BFD_RELOC_KVX_S64_LO10:
+
       case BFD_RELOC_KVX_S43_TLS_LE_UP27:
       case BFD_RELOC_KVX_S43_TLS_LE_EX6:
+
       case BFD_RELOC_KVX_S37_TLS_LE_UP27:
+
       case BFD_RELOC_KVX_S37_GOTOFF_UP27:
+
       case BFD_RELOC_KVX_S43_GOTOFF_UP27:
       case BFD_RELOC_KVX_S43_GOTOFF_EX6:
+
       case BFD_RELOC_KVX_S43_GOT_UP27:
       case BFD_RELOC_KVX_S43_GOT_EX6:
+
       case BFD_RELOC_KVX_S37_GOT_UP27:
+
       case BFD_RELOC_KVX_S32_LO5:
       case BFD_RELOC_KVX_S37_LO10:
+
       case BFD_RELOC_KVX_S43_LO10:
       case BFD_RELOC_KVX_S43_EX6:
+
       case BFD_RELOC_KVX_S43_TLS_LE_LO10:
       case BFD_RELOC_KVX_S37_TLS_LE_LO10:
+
       case BFD_RELOC_KVX_S37_GOTOFF_LO10:
       case BFD_RELOC_KVX_S43_GOTOFF_LO10:
+
       case BFD_RELOC_KVX_S43_GOT_LO10:
       case BFD_RELOC_KVX_S37_GOT_LO10:
 
