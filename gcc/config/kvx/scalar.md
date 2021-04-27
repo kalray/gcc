@@ -2751,7 +2751,7 @@
 
 (define_insn "kvx_lhf"
  [(set (match_operand:HF 0 "register_operand" "=r,r,r")
-       (unspec:HF [(match_operand:SF 1 "memory_operand" "a,b,m")
+       (unspec:HF [(match_operand:HF 1 "memory_operand" "a,b,m")
                    (match_operand 2 "" "")] UNSPEC_LHF))
    (use (match_dup 1))]
   ""
