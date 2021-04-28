@@ -68,10 +68,16 @@
 ;; Code iterator for sign/zero extension
 (define_code_iterator ANY_EXTEND [sign_extend zero_extend])
 
-;; Zero-extending or sign-extending load instruction.
+;; Sign-extending or zero-extending sub-word load instructions.
 (define_code_attr lsux [
   (sign_extend "s")
   (zero_extend "z")
+])
+
+;; Sign-extending or zero-extending in integer instructions.
+(define_code_attr unsx [
+  (sign_extend "")
+  (zero_extend "u")
 ])
 
 ;; Iterator for all integer modes (up to 64-bit)
