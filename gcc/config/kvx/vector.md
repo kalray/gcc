@@ -923,16 +923,6 @@
 
 (define_insn "*addx2<suffix>"
   [(set (match_operand:S64I 0 "register_operand" "=r")
-        (plus:S64I (mult:S64I (match_operand:S64I 1 "register_operand" "r")
-                              (const_int 2))
-                   (match_operand:S64I 2 "nonmemory_operand" "r")))]
-  ""
-  "addx2<suffix> %0 = %1, %2"
-  [(set_attr "type" "alu_lite")]
-)
-
-(define_insn "*addx2<suffix>2"
-  [(set (match_operand:S64I 0 "register_operand" "=r")
         (plus:S64I (ashift:S64I (match_operand:S64I 1 "register_operand" "r")
                                 (const_int 1))
                    (match_operand:S64I 2 "nonmemory_operand" "r")))]
@@ -942,16 +932,6 @@
 )
 
 (define_insn "*addx4<suffix>"
-  [(set (match_operand:S64I 0 "register_operand" "=r")
-        (plus:S64I (mult:S64I (match_operand:S64I 1 "register_operand" "r")
-                              (const_int 4))
-                   (match_operand:S64I 2 "nonmemory_operand" "r")))]
-  ""
-  "addx4<suffix> %0 = %1, %2"
-  [(set_attr "type" "alu_lite")]
-)
-
-(define_insn "*addx4<suffix>2"
   [(set (match_operand:S64I 0 "register_operand" "=r")
         (plus:S64I (ashift:S64I (match_operand:S64I 1 "register_operand" "r")
                                 (const_int 2))
@@ -963,16 +943,6 @@
 
 (define_insn "*addx8<suffix>"
   [(set (match_operand:S64I 0 "register_operand" "=r")
-        (plus:S64I (mult:S64I (match_operand:S64I 1 "register_operand" "r")
-                              (const_int 8))
-                   (match_operand:S64I 2 "nonmemory_operand" "r")))]
-  ""
-  "addx8<suffix> %0 = %1, %2"
-  [(set_attr "type" "alu_lite")]
-)
-
-(define_insn "*addx8<suffix>2"
-  [(set (match_operand:S64I 0 "register_operand" "=r")
         (plus:S64I (ashift:S64I (match_operand:S64I 1 "register_operand" "r")
                                 (const_int 3))
                    (match_operand:S64I 2 "nonmemory_operand" "r")))]
@@ -982,16 +952,6 @@
 )
 
 (define_insn "*addx16<suffix>"
-  [(set (match_operand:S64I 0 "register_operand" "=r")
-        (plus:S64I (mult:S64I (match_operand:S64I 1 "register_operand" "r")
-                              (const_int 16))
-                   (match_operand:S64I 2 "nonmemory_operand" "r")))]
-  ""
-  "addx16<suffix> %0 = %1, %2"
-  [(set_attr "type" "alu_lite")]
-)
-
-(define_insn "*addx16<suffix>2"
   [(set (match_operand:S64I 0 "register_operand" "=r")
         (plus:S64I (ashift:S64I (match_operand:S64I 1 "register_operand" "r")
                                 (const_int 4))
@@ -1022,16 +982,6 @@
 (define_insn "*sbfx2<suffix>"
   [(set (match_operand:S64I 0 "register_operand" "=r")
         (minus:S64I (match_operand:S64I 1 "nonmemory_operand" "r")
-                    (mult:S64I (match_operand:S64I 2 "register_operand" "r")
-                               (const_int 2))))]
-  ""
-  "sbfx2<suffix> %0 = %2, %1"
-  [(set_attr "type" "alu_lite")]
-)
-
-(define_insn "*sbfx2<suffix>2"
-  [(set (match_operand:S64I 0 "register_operand" "=r")
-        (minus:S64I (match_operand:S64I 1 "nonmemory_operand" "r")
                     (ashift:S64I (match_operand:S64I 2 "register_operand" "r")
                                  (const_int 1))))]
   ""
@@ -1040,16 +990,6 @@
 )
 
 (define_insn "*sbfx4<suffix>"
-  [(set (match_operand:S64I 0 "register_operand" "=r")
-        (minus:S64I (match_operand:S64I 1 "nonmemory_operand" "r")
-                    (mult:S64I (match_operand:S64I 2 "register_operand" "r")
-                               (const_int 4))))]
-  ""
-  "sbfx4<suffix> %0 = %2, %1"
-  [(set_attr "type" "alu_lite")]
-)
-
-(define_insn "*sbfx4<suffix>2"
   [(set (match_operand:S64I 0 "register_operand" "=r")
         (minus:S64I (match_operand:S64I 1 "nonmemory_operand" "r")
                     (ashift:S64I (match_operand:S64I 2 "register_operand" "r")
@@ -1062,16 +1002,6 @@
 (define_insn "*sbfx8<suffix>"
   [(set (match_operand:S64I 0 "register_operand" "=r")
         (minus:S64I (match_operand:S64I 1 "nonmemory_operand" "r")
-                    (mult:S64I (match_operand:S64I 2 "register_operand" "r")
-                               (const_int 8))))]
-  ""
-  "sbfx8<suffix> %0 = %2, %1"
-  [(set_attr "type" "alu_lite")]
-)
-
-(define_insn "*sbfx8<suffix>2"
-  [(set (match_operand:S64I 0 "register_operand" "=r")
-        (minus:S64I (match_operand:S64I 1 "nonmemory_operand" "r")
                     (ashift:S64I (match_operand:S64I 2 "register_operand" "r")
                                  (const_int 3))))]
   ""
@@ -1080,16 +1010,6 @@
 )
 
 (define_insn "*sbfx16<suffix>"
-  [(set (match_operand:S64I 0 "register_operand" "=r")
-        (minus:S64I (match_operand:S64I 1 "nonmemory_operand" "r")
-                    (mult:S64I (match_operand:S64I 2 "register_operand" "r")
-                               (const_int 16))))]
-  ""
-  "sbfx16<suffix> %0 = %2, %1"
-  [(set_attr "type" "alu_lite")]
-)
-
-(define_insn "*sbfx16<suffix>2"
   [(set (match_operand:S64I 0 "register_operand" "=r")
         (minus:S64I (match_operand:S64I 1 "nonmemory_operand" "r")
                     (ashift:S64I (match_operand:S64I 2 "register_operand" "r")
@@ -2373,17 +2293,6 @@
 
 (define_insn "*addx2<suffix>"
   [(set (match_operand:S128J 0 "register_operand" "=r")
-        (plus:S128J (mult:S128J (match_operand:S128J 1 "register_operand" "r")
-                                (const_int 2))
-                    (match_operand:S128J 2 "nonmemory_operand" "r")))]
-  ""
-  "addx2<chunkx> %x0 = %x1, %x2\n\taddx2<chunkx> %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*addx2<suffix>2"
-  [(set (match_operand:S128J 0 "register_operand" "=r")
         (plus:S128J (ashift:S128J (match_operand:S128J 1 "register_operand" "r")
                                   (const_int 1))
                     (match_operand:S128J 2 "nonmemory_operand" "r")))]
@@ -2394,17 +2303,6 @@
 )
 
 (define_insn "*addx4<suffix>"
-  [(set (match_operand:S128J 0 "register_operand" "=r")
-        (plus:S128J (mult:S128J (match_operand:S128J 1 "register_operand" "r")
-                                (const_int 4))
-                    (match_operand:S128J 2 "nonmemory_operand" "r")))]
-  ""
-  "addx4<chunkx> %x0 = %x1, %x2\n\taddx4<chunkx> %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*addx4<suffix>2"
   [(set (match_operand:S128J 0 "register_operand" "=r")
         (plus:S128J (ashift:S128J (match_operand:S128J 1 "register_operand" "r")
                                   (const_int 2))
@@ -2417,17 +2315,6 @@
 
 (define_insn "*addx8<suffix>"
   [(set (match_operand:S128J 0 "register_operand" "=r")
-        (plus:S128J (mult:S128J (match_operand:S128J 1 "register_operand" "r")
-                                (const_int 8))
-                    (match_operand:S128J 2 "nonmemory_operand" "r")))]
-  ""
-  "addx8<chunkx> %x0 = %x1, %x2\n\taddx8<chunkx> %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*addx8<suffix>2"
-  [(set (match_operand:S128J 0 "register_operand" "=r")
         (plus:S128J (ashift:S128J (match_operand:S128J 1 "register_operand" "r")
                                   (const_int 3))
                     (match_operand:S128J 2 "nonmemory_operand" "r")))]
@@ -2438,17 +2325,6 @@
 )
 
 (define_insn "*addx16<suffix>"
-  [(set (match_operand:S128J 0 "register_operand" "=r")
-        (plus:S128J (mult:S128J (match_operand:S128J 1 "register_operand" "r")
-                                (const_int 16))
-                    (match_operand:S128J 2 "nonmemory_operand" "r")))]
-  ""
-  "addx16<chunkx> %x0 = %x1, %x2\n\taddx16<chunkx> %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*addx16<suffix>2"
   [(set (match_operand:S128J 0 "register_operand" "=r")
         (plus:S128J (ashift:S128J (match_operand:S128J 1 "register_operand" "r")
                                   (const_int 4))
@@ -2482,17 +2358,6 @@
 (define_insn "*sbfx2<suffix>"
   [(set (match_operand:S128J 0 "register_operand" "=r")
         (minus:S128J (match_operand:S128J 1 "nonmemory_operand" "r")
-                     (mult:S128J (match_operand:S128J 2 "register_operand" "r")
-                                 (const_int 2))))]
-  ""
-  "sbfx2<chunkx> %x0 = %x2, %x1\n\tsbfx2<chunkx> %y0 = %y2, %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*sbfx2<suffix>2"
-  [(set (match_operand:S128J 0 "register_operand" "=r")
-        (minus:S128J (match_operand:S128J 1 "nonmemory_operand" "r")
                      (ashift:S128J (match_operand:S128J 2 "register_operand" "r")
                                    (const_int 1))))]
   ""
@@ -2502,17 +2367,6 @@
 )
 
 (define_insn "*sbfx4<suffix>"
-  [(set (match_operand:S128J 0 "register_operand" "=r")
-        (minus:S128J (match_operand:S128J 1 "nonmemory_operand" "r")
-                     (mult:S128J (match_operand:S128J 2 "register_operand" "r")
-                                 (const_int 4))))]
-  ""
-  "sbfx4<chunkx> %x0 = %x2, %x1\n\tsbfx4<chunkx> %y0 = %y2, %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*sbfx4<suffix>2"
   [(set (match_operand:S128J 0 "register_operand" "=r")
         (minus:S128J (match_operand:S128J 1 "nonmemory_operand" "r")
                      (ashift:S128J (match_operand:S128J 2 "register_operand" "r")
@@ -2526,17 +2380,6 @@
 (define_insn "*sbfx8<suffix>"
   [(set (match_operand:S128J 0 "register_operand" "=r")
         (minus:S128J (match_operand:S128J 1 "nonmemory_operand" "r")
-                     (mult:S128J (match_operand:S128J 2 "register_operand" "r")
-                                 (const_int 8))))]
-  ""
-  "sbfx8<chunkx> %x0 = %x2, %x1\n\tsbfx8<chunkx> %y0 = %y2, %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*sbfx8<suffix>2"
-  [(set (match_operand:S128J 0 "register_operand" "=r")
-        (minus:S128J (match_operand:S128J 1 "nonmemory_operand" "r")
                      (ashift:S128J (match_operand:S128J 2 "register_operand" "r")
                                    (const_int 3))))]
   ""
@@ -2546,17 +2389,6 @@
 )
 
 (define_insn "*sbfx16<suffix>"
-  [(set (match_operand:S128J 0 "register_operand" "=r")
-        (minus:S128J (match_operand:S128J 1 "nonmemory_operand" "r")
-                     (mult:S128J (match_operand:S128J 2 "register_operand" "r")
-                                 (const_int 16))))]
-  ""
-  "sbfx16<chunkx> %x0 = %x2, %x1\n\tsbfx16<chunkx> %y0 = %y2, %y1"
-  [(set_attr "type" "alu_lite_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*sbfx16<suffix>2"
   [(set (match_operand:S128J 0 "register_operand" "=r")
         (minus:S128J (match_operand:S128J 1 "nonmemory_operand" "r")
                      (ashift:S128J (match_operand:S128J 2 "register_operand" "r")
@@ -3479,26 +3311,6 @@
 
 (define_insn_and_split "*addx2<suffix>"
   [(set (match_operand:S256J 0 "register_operand" "=r")
-        (plus:S256J (mult:S256J (match_operand:S256J 1 "register_operand" "r")
-                                (const_int 2))
-                    (match_operand:S256J 2 "nonmemory_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:<HALF> (match_dup 0) 0)
-        (plus:<HALF> (mult:<HALF> (subreg:<HALF> (match_dup 1) 0)
-                                  (const_int 2))
-                     (subreg:<HALF> (match_dup 2) 0)))
-   (set (subreg:<HALF> (match_dup 0) 16)
-        (plus:<HALF> (mult:<HALF> (subreg:<HALF> (match_dup 1) 16)
-                                  (const_int 2))
-                     (subreg:<HALF> (match_dup 2) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*addx2<suffix>2"
-  [(set (match_operand:S256J 0 "register_operand" "=r")
         (plus:S256J (ashift:S256J (match_operand:S256J 1 "register_operand" "r")
                                   (const_int 1))
                     (match_operand:S256J 2 "nonmemory_operand" "r")))]
@@ -3518,26 +3330,6 @@
 )
 
 (define_insn_and_split "*addx4<suffix>"
-  [(set (match_operand:S256J 0 "register_operand" "=r")
-        (plus:S256J (mult:S256J (match_operand:S256J 1 "register_operand" "r")
-                                (const_int 4))
-                    (match_operand:S256J 2 "nonmemory_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:<HALF> (match_dup 0) 0)
-        (plus:<HALF> (mult:<HALF> (subreg:<HALF> (match_dup 1) 0)
-                                  (const_int 4))
-                     (subreg:<HALF> (match_dup 2) 0)))
-   (set (subreg:<HALF> (match_dup 0) 16)
-        (plus:<HALF> (mult:<HALF> (subreg:<HALF> (match_dup 1) 16)
-                                  (const_int 4))
-                     (subreg:<HALF> (match_dup 2) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*addx4<suffix>2"
   [(set (match_operand:S256J 0 "register_operand" "=r")
         (plus:S256J (ashift:S256J (match_operand:S256J 1 "register_operand" "r")
                                   (const_int 2))
@@ -3559,26 +3351,6 @@
 
 (define_insn_and_split "*addx8<suffix>"
   [(set (match_operand:S256J 0 "register_operand" "=r")
-        (plus:S256J (mult:S256J (match_operand:S256J 1 "register_operand" "r")
-                                (const_int 8))
-                    (match_operand:S256J 2 "nonmemory_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:<HALF> (match_dup 0) 0)
-        (plus:<HALF> (mult:<HALF> (subreg:<HALF> (match_dup 1) 0)
-                                  (const_int 8))
-                     (subreg:<HALF> (match_dup 2) 0)))
-   (set (subreg:<HALF> (match_dup 0) 16)
-        (plus:<HALF> (mult:<HALF> (subreg:<HALF> (match_dup 1) 16)
-                                  (const_int 8))
-                     (subreg:<HALF> (match_dup 2) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*addx8<suffix>2"
-  [(set (match_operand:S256J 0 "register_operand" "=r")
         (plus:S256J (ashift:S256J (match_operand:S256J 1 "register_operand" "r")
                                   (const_int 3))
                     (match_operand:S256J 2 "nonmemory_operand" "r")))]
@@ -3598,26 +3370,6 @@
 )
 
 (define_insn_and_split "*addx16<suffix>"
-  [(set (match_operand:S256J 0 "register_operand" "=r")
-        (plus:S256J (mult:S256J (match_operand:S256J 1 "register_operand" "r")
-                                (const_int 16))
-                    (match_operand:S256J 2 "nonmemory_operand" "r")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:<HALF> (match_dup 0) 0)
-        (plus:<HALF> (mult:<HALF> (subreg:<HALF> (match_dup 1) 0)
-                                  (const_int 16))
-                     (subreg:<HALF> (match_dup 2) 0)))
-   (set (subreg:<HALF> (match_dup 0) 16)
-        (plus:<HALF> (mult:<HALF> (subreg:<HALF> (match_dup 1) 16)
-                                  (const_int 16))
-                     (subreg:<HALF> (match_dup 2) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*addx16<suffix>2"
   [(set (match_operand:S256J 0 "register_operand" "=r")
         (plus:S256J (ashift:S256J (match_operand:S256J 1 "register_operand" "r")
                                   (const_int 4))
@@ -3670,26 +3422,6 @@
 (define_insn_and_split "*sbfx2<suffix>"
   [(set (match_operand:S256J 0 "register_operand" "=r")
         (minus:S256J (match_operand:S256J 1 "nonmemory_operand" "r")
-                     (mult:S256J (match_operand:S256J 2 "register_operand" "r")
-                                 (const_int 2))))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:<HALF> (match_dup 0) 0)
-        (minus:<HALF> (subreg:<HALF> (match_dup 1) 0)
-                      (mult:<HALF> (subreg:<HALF> (match_dup 2) 0)
-                                   (const_int 2))))
-   (set (subreg:<HALF> (match_dup 0) 16)
-        (minus:<HALF> (subreg:<HALF> (match_dup 1) 16)
-                      (mult:<HALF> (subreg:<HALF> (match_dup 2) 16)
-                                   (const_int 2))))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*sbfx2<suffix>2"
-  [(set (match_operand:S256J 0 "register_operand" "=r")
-        (minus:S256J (match_operand:S256J 1 "nonmemory_operand" "r")
                      (ashift:S256J (match_operand:S256J 2 "register_operand" "r")
                                    (const_int 1))))]
   ""
@@ -3708,26 +3440,6 @@
 )
 
 (define_insn_and_split "*sbfx4<suffix>"
-  [(set (match_operand:S256J 0 "register_operand" "=r")
-        (minus:S256J (match_operand:S256J 1 "nonmemory_operand" "r")
-                     (mult:S256J (match_operand:S256J 2 "register_operand" "r")
-                                 (const_int 4))))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:<HALF> (match_dup 0) 0)
-        (minus:<HALF> (subreg:<HALF> (match_dup 1) 0)
-                      (mult:<HALF> (subreg:<HALF> (match_dup 2) 0)
-                                   (const_int 4))))
-   (set (subreg:<HALF> (match_dup 0) 16)
-        (minus:<HALF> (subreg:<HALF> (match_dup 1) 16)
-                      (mult:<HALF> (subreg:<HALF> (match_dup 2) 16)
-                                   (const_int 4))))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*sbfx4<suffix>2"
   [(set (match_operand:S256J 0 "register_operand" "=r")
         (minus:S256J (match_operand:S256J 1 "nonmemory_operand" "r")
                      (ashift:S256J (match_operand:S256J 2 "register_operand" "r")
@@ -3750,26 +3462,6 @@
 (define_insn_and_split "*sbfx8<suffix>"
   [(set (match_operand:S256J 0 "register_operand" "=r")
         (minus:S256J (match_operand:S256J 1 "nonmemory_operand" "r")
-                     (mult:S256J (match_operand:S256J 2 "register_operand" "r")
-                                 (const_int 8))))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:<HALF> (match_dup 0) 0)
-        (minus:<HALF> (subreg:<HALF> (match_dup 1) 0)
-                      (mult:<HALF> (subreg:<HALF> (match_dup 2) 0)
-                                   (const_int 8))))
-   (set (subreg:<HALF> (match_dup 0) 16)
-        (minus:<HALF> (subreg:<HALF> (match_dup 1) 16)
-                      (mult:<HALF> (subreg:<HALF> (match_dup 2) 16)
-                                   (const_int 8))))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*sbfx8<suffix>2"
-  [(set (match_operand:S256J 0 "register_operand" "=r")
-        (minus:S256J (match_operand:S256J 1 "nonmemory_operand" "r")
                      (ashift:S256J (match_operand:S256J 2 "register_operand" "r")
                                    (const_int 3))))]
   ""
@@ -3788,26 +3480,6 @@
 )
 
 (define_insn_and_split "*sbfx16<suffix>"
-  [(set (match_operand:S256J 0 "register_operand" "=r")
-        (minus:S256J (match_operand:S256J 1 "nonmemory_operand" "r")
-                     (mult:S256J (match_operand:S256J 2 "register_operand" "r")
-                                 (const_int 16))))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:<HALF> (match_dup 0) 0)
-        (minus:<HALF> (subreg:<HALF> (match_dup 1) 0)
-                      (mult:<HALF> (subreg:<HALF> (match_dup 2) 0)
-                                   (const_int 16))))
-   (set (subreg:<HALF> (match_dup 0) 16)
-        (minus:<HALF> (subreg:<HALF> (match_dup 1) 16)
-                      (mult:<HALF> (subreg:<HALF> (match_dup 2) 16)
-                                   (const_int 16))))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn_and_split "*sbfx16<suffix>2"
   [(set (match_operand:S256J 0 "register_operand" "=r")
         (minus:S256J (match_operand:S256J 1 "nonmemory_operand" "r")
                      (ashift:S256J (match_operand:S256J 2 "register_operand" "r")
