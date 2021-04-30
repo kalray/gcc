@@ -16,6 +16,7 @@
 // <http://www.gnu.org/licenses/>.
 //
 // { dg-do run { target c++11 } }
+// { dg-skip-if "Disabled on KVX until bug in simulator fixed" { "kvx-*-*" } { "*" } { "" } }
 
 #include <unordered_set>
 
