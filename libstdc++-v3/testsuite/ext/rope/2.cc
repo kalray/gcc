@@ -15,6 +15,7 @@
 // with this library; see the file COPYING3.  If not see
 // <http://www.gnu.org/licenses/>.
 
+// { dg-skip-if "Disabled on KVX until bug in simulator fixed" { "kvx-*-*" } { "*" } { "" } }
 // rope (SGI extension)
 
 #include <ext/rope>
