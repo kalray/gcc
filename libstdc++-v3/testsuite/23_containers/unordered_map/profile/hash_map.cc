@@ -1,4 +1,5 @@
 // { dg-options "-Wno-deprecated" }
+// { dg-skip-if "Disabled on KVX until bug in simulator fixed" { "kvx-*-*" } { "*" } { "" } }
 /* testing the gcc instrumented */
 
 #include <ext/hash_map>
