@@ -1,4 +1,5 @@
 // { dg-do run { target c++11 } }
+// { dg-skip-if "Disabled on KVX until bug in simulator fixed" { "kvx-*-*" } { "*" } { "" } }
 /* testing the gcc instrumented */
 
 #include <unordered_map>
