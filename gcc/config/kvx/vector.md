@@ -921,6 +921,25 @@
   [(set_attr "type" "alu_lite")]
 )
 
+(define_insn_and_split "usadd<mode>3"
+  [(set (match_operand:S64I 0 "register_operand" "=r")
+        (us_plus:S64I (match_operand:S64I 1 "register_operand" "r")
+                      (match_operand:S64I 2 "register_operand" "r")))
+  (clobber (match_scratch:S64I 3 "=&r"))
+  (clobber (match_scratch:S64I 4 "=&r"))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (match_dup 3)
+        (plus:S64I (match_dup 1) (match_dup 2)))
+   (set (match_dup 4)
+        (ltu:S64I (match_dup 3) (match_dup 1)))
+   (set (match_dup 0)
+        (ior:S64I (match_dup 3) (match_dup 4)))]
+  ""
+  [(set_attr "type" "alu_lite")]
+)
+
 (define_insn "*addx2<suffix>"
   [(set (match_operand:S64I 0 "register_operand" "=r")
         (plus:S64I (ashift:S64I (match_operand:S64I 1 "register_operand" "r")
@@ -976,6 +995,25 @@
                        (match_operand:S64I 2 "register_operand" "r")))]
   ""
   "sbfs<suffix> %0 = %2, %1"
+  [(set_attr "type" "alu_lite")]
+)
+
+(define_insn_and_split "ussub<mode>3"
+  [(set (match_operand:S64I 0 "register_operand" "=r")
+        (us_minus:S64I (match_operand:S64I 1 "register_operand" "r")
+                       (match_operand:S64I 2 "register_operand" "r")))
+  (clobber (match_scratch:S64I 3 "=&r"))
+  (clobber (match_scratch:S64I 4 "=&r"))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (match_dup 3)
+        (minus:S64I (match_dup 1) (match_dup 2)))
+   (set (match_dup 4)
+        (leu:S64I (match_dup 3) (match_dup 1)))
+   (set (match_dup 0)
+        (and:S64I (match_dup 3) (match_dup 4)))]
+  ""
   [(set_attr "type" "alu_lite")]
 )
 
@@ -1174,6 +1212,28 @@
   "sls<suffix>s %0 = %1, %2"
   [(set_attr "type" "alu_lite,alu_lite")
    (set_attr "length" "     4,       4")]
+)
+
+(define_insn_and_split "usashl<mode>3"
+  [(set (match_operand:S64I 0 "register_operand" "=r,r")
+        (us_ashift:S64I (match_operand:S64I 1 "register_operand" "r,r")
+                        (match_operand:SI 2 "sat_shift_operand" "r,U06")))
+  (clobber (match_scratch:S64I 3 "=&r,&r"))
+  (clobber (match_scratch:S64I 4 "=&r,&r"))
+  (clobber (match_scratch:S64I 5 "=&r,&r"))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (match_dup 3)
+        (ashift:S64I (match_dup 1) (match_dup 2)))
+   (set (match_dup 4)
+        (lshiftrt:S64I (match_dup 3) (match_dup 2)))
+   (set (match_dup 5)
+        (ne:S64I (match_dup 4) (match_dup 1)))
+   (set (match_dup 0)
+        (ior:S64I (match_dup 3) (match_dup 5)))]
+  ""
+  [(set_attr "type" "alu_lite,alu_lite")]
 )
 
 (define_insn "ashr<mode>3"
@@ -2027,6 +2087,28 @@
    (set_attr "length" "        8,          8")]
 )
 
+(define_insn_and_split "usashl<mode>3"
+  [(set (match_operand:S128I 0 "register_operand" "=r,r")
+        (us_ashift:S128I (match_operand:S128I 1 "register_operand" "r,r")
+                         (match_operand:SI 2 "sat_shift_operand" "r,U06")))
+  (clobber (match_scratch:S128I 3 "=&r,&r"))
+  (clobber (match_scratch:S128I 4 "=&r,&r"))
+  (clobber (match_scratch:S128I 5 "=&r,&r"))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (match_dup 3)
+        (ashift:S128I (match_dup 1) (match_dup 2)))
+   (set (match_dup 4)
+        (lshiftrt:S128I (match_dup 3) (match_dup 2)))
+   (set (match_dup 5)
+        (ne:S128I (match_dup 4) (match_dup 1)))
+   (set (match_dup 0)
+        (ior:S128I (match_dup 3) (match_dup 5)))]
+  ""
+  [(set_attr "type" "alu_lite_x2,alu_lite_x2")]
+)
+
 (define_insn "ashr<mode>3"
   [(set (match_operand:S128I 0 "register_operand" "=r,r")
         (ashiftrt:S128I (match_operand:S128I 1 "register_operand" "r,r")
@@ -2291,6 +2373,25 @@
    (set_attr "length"         "8")]
 )
 
+(define_insn_and_split "usadd<mode>3"
+  [(set (match_operand:S128J 0 "register_operand" "=r")
+        (us_plus:S128J (match_operand:S128J 1 "register_operand" "r")
+                       (match_operand:S128J 2 "register_operand" "r")))
+  (clobber (match_scratch:S128J 3 "=&r"))
+  (clobber (match_scratch:S128J 4 "=&r"))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (match_dup 3)
+        (plus:S128J (match_dup 1) (match_dup 2)))
+   (set (match_dup 4)
+        (ltu:S128J (match_dup 3) (match_dup 1)))
+   (set (match_dup 0)
+        (ior:S128J (match_dup 3) (match_dup 4)))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
 (define_insn "*addx2<suffix>"
   [(set (match_operand:S128J 0 "register_operand" "=r")
         (plus:S128J (ashift:S128J (match_operand:S128J 1 "register_operand" "r")
@@ -2353,6 +2454,25 @@
   "sbfs<chunkx> %x0 = %x2, %x1\n\tsbfs<chunkx> %y0 = %y2, %y1"
   [(set_attr "type" "alu_lite_x2")
    (set_attr "length"         "8")]
+)
+
+(define_insn_and_split "ussub<mode>3"
+  [(set (match_operand:S128J 0 "register_operand" "=r")
+        (us_minus:S128J (match_operand:S128J 1 "register_operand" "r")
+                        (match_operand:S128J 2 "register_operand" "r")))
+  (clobber (match_scratch:S128J 3 "=&r"))
+  (clobber (match_scratch:S128J 4 "=&r"))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (match_dup 3)
+        (minus:S128J (match_dup 1) (match_dup 2)))
+   (set (match_dup 4)
+        (leu:S128J (match_dup 3) (match_dup 1)))
+   (set (match_dup 0)
+        (and:S128J (match_dup 3) (match_dup 4)))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
 )
 
 (define_insn "*sbfx2<suffix>"
@@ -3032,6 +3152,35 @@
    (set_attr "length" "        8,          8")]
 )
 
+(define_insn_and_split "usashlv2di3"
+  [(set (match_operand:V2DI 0 "register_operand" "=r,r")
+        (us_ashift:V2DI (match_operand:V2DI 1 "register_operand" "r,r")
+                        (match_operand:SI 2 "sat_shift_operand" "r,U06")))
+   (clobber (match_scratch:V2DI 3 "=&r,&r"))
+   (clobber (match_scratch:V2DI 4 "=&r,&r"))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (match_dup 0)
+        (ashift:V2DI (match_dup 1) (match_dup 2)))
+   (set (match_dup 3)
+        (lshiftrt:V2DI (match_dup 0) (match_dup 2)))
+   (set (match_dup 4)
+        (ne:V2DI (match_dup 3) (match_dup 1)))
+   (set (subreg:DI (match_dup 0) 0)
+        (if_then_else:DI 
+            (ne (subreg:DI (match_dup 4) 0) (const_int 0))
+            (const_int -1)
+            (subreg:DI (match_dup 0) 0)))
+   (set (subreg:DI (match_dup 0) 8)
+        (if_then_else:DI 
+            (ne (subreg:DI (match_dup 4) 8) (const_int 0))
+            (const_int -1)
+            (subreg:DI (match_dup 0) 8)))]
+  ""
+  [(set_attr "type" "alu_lite_x2,alu_lite_x2")]
+)
+
 (define_insn "ashrv2di3"
   [(set (match_operand:V2DI 0 "register_operand" "=r,r")
         (ashiftrt:V2DI (match_operand:V2DI 1 "register_operand" "r,r")
@@ -3133,6 +3282,34 @@
         operands[2] = operands[3];
       }
   }
+  [(set_attr "type" "alu_lite_x2,alu_lite_x2")]
+)
+
+(define_insn_and_split "usashl<mode>3"
+  [(set (match_operand:S256I 0 "register_operand" "=r,r")
+        (us_ashift:S256I (match_operand:S256I 1 "register_operand" "r,r")
+                         (match_operand:SI 2 "sat_shift_operand" "r,U06")))
+  (clobber (match_scratch:S256I 3 "=&r,&r"))
+  (clobber (match_scratch:S256I 4 "=&r,&r"))
+  (clobber (match_scratch:S256I 5 "=&r,&r"))
+  (clobber (match_scratch:SI 6 "=&r,X"))
+  (clobber (match_scratch:SI 7 "=&r,X"))]
+  ""
+  "#"
+  "reload_completed"
+  [(parallel [
+     (set (match_dup 3)
+         (ashift:S256I (match_dup 1) (match_dup 2)))
+     (clobber (match_dup 6))])
+   (parallel [
+    (set (match_dup 4)
+         (lshiftrt:S256I (match_dup 3) (match_dup 2)))
+    (clobber (match_dup 7))])
+   (set (match_dup 5)
+        (ne:S256I (match_dup 4) (match_dup 1)))
+   (set (match_dup 0)
+        (ior:S256I (match_dup 3) (match_dup 5)))]
+  ""
   [(set_attr "type" "alu_lite_x2,alu_lite_x2")]
 )
 
@@ -3309,6 +3486,25 @@
   [(set_attr "type" "alu_lite_x2")]
 )
 
+(define_insn_and_split "usadd<mode>3"
+  [(set (match_operand:S256J 0 "register_operand" "=r")
+        (us_plus:S256J (match_operand:S256J 1 "register_operand" "r")
+                       (match_operand:S256J 2 "nonmemory_operand" "r")))
+  (clobber (match_scratch:S256J 3 "=&r"))
+  (clobber (match_scratch:S256J 4 "=&r"))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (match_dup 3)
+        (plus:S256J (match_dup 1) (match_dup 2)))
+   (set (match_dup 4)
+        (ltu:S256J (match_dup 3) (match_dup 1)))
+   (set (match_dup 0)
+        (ior:S256J (match_dup 3) (match_dup 4)))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
 (define_insn_and_split "*addx2<suffix>"
   [(set (match_operand:S256J 0 "register_operand" "=r")
         (plus:S256J (ashift:S256J (match_operand:S256J 1 "register_operand" "r")
@@ -3415,6 +3611,25 @@
    (set (subreg:<HALF> (match_dup 0) 16)
         (ss_minus:<HALF> (subreg:<HALF> (match_dup 1) 16)
                          (subreg:<HALF> (match_dup 2) 16)))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn_and_split "ussub<mode>3"
+  [(set (match_operand:S256J 0 "register_operand" "=r")
+        (us_minus:S256J (match_operand:S256J 1 "nonmemory_operand" "r")
+                        (match_operand:S256J 2 "register_operand" "r")))
+  (clobber (match_scratch:S256J 3 "=&r"))
+  (clobber (match_scratch:S256J 4 "=&r"))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (match_dup 3)
+        (minus:S256J (match_dup 1) (match_dup 2)))
+   (set (match_dup 4)
+        (leu:S256J (match_dup 3) (match_dup 1)))
+   (set (match_dup 0)
+        (and:S256J (match_dup 3) (match_dup 4)))]
   ""
   [(set_attr "type" "alu_lite_x2")]
 )
@@ -4400,6 +4615,51 @@
         operands[2] = operands[3];
       }
   }
+  [(set_attr "type" "alu_lite_x2,alu_lite_x2")]
+)
+
+(define_insn_and_split "usashlv4di3"
+  [(set (match_operand:V4DI 0 "register_operand" "=r,r")
+        (us_ashift:V4DI (match_operand:V4DI 1 "register_operand" "r,r")
+                        (match_operand:SI 2 "sat_shift_operand" "r,U06")))
+   (clobber (match_scratch:V4DI 3 "=&r,&r"))
+   (clobber (match_scratch:V4DI 4 "=&r,&r"))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V2DI (match_dup 0) 0)
+        (ashift:V2DI (subreg:V2DI (match_dup 1) 0) (match_dup 2)))
+   (set (subreg:V2DI (match_dup 0) 16)
+        (ashift:V2DI (subreg:V2DI (match_dup 1) 16) (match_dup 2)))
+   (set (subreg:V2DI (match_dup 3) 0)
+        (lshiftrt:V2DI (subreg:V2DI (match_dup 0) 0) (match_dup 2)))
+   (set (subreg:V2DI (match_dup 3) 16)
+        (lshiftrt:V2DI (subreg:V2DI (match_dup 0) 16) (match_dup 2)))
+   (set (subreg:V2DI (match_dup 4) 0)
+        (ne:V2DI (subreg:V2DI (match_dup 3) 0) (subreg:V2DI (match_dup 1) 0)))
+   (set (subreg:V2DI (match_dup 4) 16)
+        (ne:V2DI (subreg:V2DI (match_dup 3) 16) (subreg:V2DI (match_dup 1) 16)))
+   (set (subreg:DI (match_dup 0) 0)
+        (if_then_else:DI 
+            (ne (subreg:DI (match_dup 4) 0) (const_int 0))
+            (const_int -1)
+            (subreg:DI (match_dup 0) 0)))
+   (set (subreg:DI (match_dup 0) 8)
+        (if_then_else:DI 
+            (ne (subreg:DI (match_dup 4) 8) (const_int 0))
+            (const_int -1)
+            (subreg:DI (match_dup 0) 8)))
+   (set (subreg:DI (match_dup 0) 16)
+        (if_then_else:DI 
+            (ne (subreg:DI (match_dup 4) 16) (const_int 0))
+            (const_int -1)
+            (subreg:DI (match_dup 0) 16)))
+   (set (subreg:DI (match_dup 0) 24)
+        (if_then_else:DI 
+            (ne (subreg:DI (match_dup 4) 24) (const_int 0))
+            (const_int -1)
+            (subreg:DI (match_dup 0) 24)))]
+  ""
   [(set_attr "type" "alu_lite_x2,alu_lite_x2")]
 )
 
