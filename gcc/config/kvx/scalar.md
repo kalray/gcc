@@ -214,6 +214,29 @@
    (set_attr "length" "4,       8")]
 )
 
+(define_insn_and_split "usaddsi3"
+  [(set (match_operand:SI 0 "register_operand" "=r")
+        (us_plus:SI (match_operand:SI 1 "register_operand" "r")
+                    (match_operand:SI 2 "register_operand" "r")))
+  (clobber (match_scratch:SI 3 "=&r"))]
+  ""
+  "#"
+  ""
+  [(set (match_dup 0)
+        (plus:SI (match_dup 1) (match_dup 2)))
+   (set (match_dup 3)
+        (ltu:SI (match_dup 0) (match_dup 1)))
+   (set (match_dup 0)
+        (if_then_else:SI 
+            (ne (match_dup 3) (const_int 0))
+            (const_int -1)
+            (match_dup 0)))]
+  {
+    if (GET_CODE (operands[3]) == SCRATCH)
+      operands[3] = gen_reg_rtx (SImode);
+  }
+)
+
 (define_insn "subsi3"
   [(set (match_operand:SI 0 "register_operand" "=r,r,r")
         (minus:SI (match_operand:SI 1 "kvx_r_s10_s37_s64_operand" "r,I10,i")
@@ -254,6 +277,29 @@
   "sbfsw %0 = %2, %1"
   [(set_attr "type"   "alu_lite,alu_lite_x")
    (set_attr "length" "4,       8")]
+)
+
+(define_insn_and_split "ussubsi3"
+  [(set (match_operand:SI 0 "register_operand" "=r")
+        (us_minus:SI (match_operand:SI 1 "register_operand" "r")
+                    (match_operand:SI 2 "register_operand" "r")))
+  (clobber (match_scratch:SI 3 "=&r"))]
+  ""
+  "#"
+  ""
+  [(set (match_dup 0)
+        (minus:SI (match_dup 1) (match_dup 2)))
+   (set (match_dup 3)
+        (ltu:SI (match_dup 1) (match_dup 2)))
+   (set (match_dup 0)
+        (if_then_else:SI 
+            (ne (match_dup 3) (const_int 0))
+            (const_int 0)
+            (match_dup 0)))]
+  {
+    if (GET_CODE (operands[3]) == SCRATCH)
+      operands[3] = gen_reg_rtx (SImode);
+  }
 )
 
 (define_insn "mulsi3"
@@ -614,6 +660,34 @@
    (set_attr "length" "     4,       4")]
 )
 
+(define_insn_and_split "usashlsi3"
+  [(set (match_operand:SI 0 "register_operand" "=r,r")
+        (us_ashift:SI (match_operand:SI 1 "register_operand" "r,r")
+                      (match_operand:SI 2 "sat_shift_operand" "r,U06")))
+  (clobber (match_scratch:SI 3 "=&r,&r"))
+  (clobber (match_scratch:SI 4 "=&r,&r"))]
+  ""
+  "#"
+  ""
+  [(set (match_dup 0)
+        (ashift:SI (match_dup 1) (match_dup 2)))
+   (set (match_dup 3)
+        (lshiftrt:SI (match_dup 0) (match_dup 2)))
+   (set (match_dup 4)
+        (ne:SI (match_dup 3) (match_dup 1)))
+   (set (match_dup 0)
+        (if_then_else:SI 
+            (ne (match_dup 4) (const_int 0))
+            (const_int -1)
+            (match_dup 0)))]
+  {
+    if (GET_CODE (operands[3]) == SCRATCH)
+      operands[3] = gen_reg_rtx (SImode);
+    if (GET_CODE (operands[4]) == SCRATCH)
+      operands[4] = gen_reg_rtx (SImode);
+  }
+)
+
 (define_insn "ashrsi3"
   [(set (match_operand:SI 0 "register_operand" "=r,r")
         (ashiftrt:SI (match_operand:SI 1 "register_operand" "r,r")
@@ -924,6 +998,29 @@
    (set_attr "length" "4,4,8,12")]
 )
 
+(define_insn_and_split "usadddi3"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (us_plus:DI (match_operand:DI 1 "register_operand" "r")
+                    (match_operand:DI 2 "register_operand" "r")))
+  (clobber (match_scratch:DI 3 "=&r"))]
+  ""
+  "#"
+  ""
+  [(set (match_dup 0)
+        (plus:DI (match_dup 1) (match_dup 2)))
+   (set (match_dup 3)
+        (ltu:DI (match_dup 0) (match_dup 1)))
+   (set (match_dup 0)
+        (if_then_else:DI 
+            (ne (match_dup 3) (const_int 0))
+            (const_int -1)
+            (match_dup 0)))]
+  {
+    if (GET_CODE (operands[3]) == SCRATCH)
+      operands[3] = gen_reg_rtx (DImode);
+  }
+)
+
 (define_insn "subdi3"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
         (minus:DI (match_operand:DI 1 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")
@@ -1055,6 +1152,29 @@
   "sbfsd %0 = %2, %1"
   [(set_attr "type" "alu_lite,alu_lite,alu_lite_x,alu_lite_y")
    (set_attr "length" "4,4,8,12")]
+)
+
+(define_insn_and_split "ussubdi3"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (us_minus:DI (match_operand:DI 1 "register_operand" "r")
+                    (match_operand:DI 2 "register_operand" "r")))
+  (clobber (match_scratch:DI 3 "=&r"))]
+  ""
+  "#"
+  ""
+  [(set (match_dup 0)
+        (minus:DI (match_dup 1) (match_dup 2)))
+   (set (match_dup 3)
+        (ltu:DI (match_dup 1) (match_dup 2)))
+   (set (match_dup 0)
+        (if_then_else:DI 
+            (ne (match_dup 3) (const_int 0))
+            (const_int 0)
+            (match_dup 0)))]
+  {
+    if (GET_CODE (operands[3]) == SCRATCH)
+      operands[3] = gen_reg_rtx (DImode);
+  }
 )
 
 (define_insn "muldi3"
@@ -1373,6 +1493,34 @@
   "slsd %0 = %1, %2"
   [(set_attr "type" "alu_lite,alu_lite")
    (set_attr "length" "     4,       4")]
+)
+
+(define_insn_and_split "usashldi3"
+  [(set (match_operand:DI 0 "register_operand" "=r,r")
+        (us_ashift:DI (match_operand:DI 1 "register_operand" "r,r")
+                      (match_operand:SI 2 "sat_shift_operand" "r,U06")))
+  (clobber (match_scratch:DI 3 "=&r,&r"))
+  (clobber (match_scratch:DI 4 "=&r,&r"))]
+  ""
+  "#"
+  ""
+  [(set (match_dup 0)
+        (ashift:DI (match_dup 1) (match_dup 2)))
+   (set (match_dup 3)
+        (lshiftrt:DI (match_dup 0) (match_dup 2)))
+   (set (match_dup 4)
+        (ne:DI (match_dup 3) (match_dup 1)))
+   (set (match_dup 0)
+        (if_then_else:DI 
+            (ne (match_dup 4) (const_int 0))
+            (const_int -1)
+            (match_dup 0)))]
+  {
+    if (GET_CODE (operands[3]) == SCRATCH)
+      operands[3] = gen_reg_rtx (DImode);
+    if (GET_CODE (operands[4]) == SCRATCH)
+      operands[4] = gen_reg_rtx (DImode);
+  }
 )
 
 (define_insn "ashrdi3"
