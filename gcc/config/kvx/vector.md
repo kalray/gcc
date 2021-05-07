@@ -511,7 +511,8 @@
                         (match_operand:DI 3 "register_operand" "r")] UNSPEC_SBMM8XY))]
   ""
   "sbmm8 %x0 = %x1, %2\n\tsbmm8 %y0 = %y1, %3"
-  [(set_attr "type" "alu_lite_x2")]
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length" "8")]
 )
 
 
@@ -1893,10 +1894,10 @@
   ""
   {
     const char *xstr = XSTR (operands[2], 0);
-    if (xstr[1] == 'z')
-      emit_insn (gen_kvx_zx<widenx> (operands[0], operands[1]));
-    else if (xstr[1] == 's')
+    if (!*xstr)
       emit_insn (gen_kvx_sx<widenx> (operands[0], operands[1]));
+    else if (xstr[1] == 'z')
+      emit_insn (gen_kvx_zx<widenx> (operands[0], operands[1]));
     else if (xstr[1] == 'q')
       emit_insn (gen_kvx_qx<widenx> (operands[0], operands[1]));
     else
@@ -2205,10 +2206,10 @@
   ""
   {
     const char *xstr = XSTR (operands[2], 0);
-    if (xstr[1] == 'z')
-      emit_insn (gen_kvx_zxwdp (operands[0], operands[1]));
-    else if (xstr[1] == 's')
+    if (!*xstr)
       emit_insn (gen_kvx_sxwdp (operands[0], operands[1]));
+    else if (xstr[1] == 'z')
+      emit_insn (gen_kvx_zxwdp (operands[0], operands[1]));
     else if (xstr[1] == 'q')
       emit_insn (gen_kvx_qxwdp (operands[0], operands[1]));
     else
@@ -3661,10 +3662,10 @@
   ""
   {
     const char *xstr = XSTR (operands[2], 0);
-    if (xstr[1] == 'z')
-      emit_insn (gen_kvx_zx<widenx> (operands[0], operands[1]));
-    else if (xstr[1] == 's')
+    if (!*xstr)
       emit_insn (gen_kvx_sx<widenx> (operands[0], operands[1]));
+    else if (xstr[1] == 'z')
+      emit_insn (gen_kvx_zx<widenx> (operands[0], operands[1]));
     else if (xstr[1] == 'q')
       emit_insn (gen_kvx_qx<widenx> (operands[0], operands[1]));
     else
@@ -6355,9 +6356,22 @@
                     (match_operand 3 "" "")] UNSPEC_FFDMAW))]
   ""
   {
-    emit_insn (gen_kvx_fdot2w (operands[0], operands[1], operands[2], operands[3]));
-    DONE;
+    if (KV3_1)
+      {
+        emit_insn (gen_kvx_fdot2w (operands[0], operands[1], operands[2], operands[3]));
+        DONE;
+      }
   }
+)
+
+(define_insn "*kvx_ffdmaw"
+  [(set (match_operand:SF 0 "register_operand" "=r")
+        (unspec:SF [(match_operand:V2SF 1 "register_operand" "r")
+                    (match_operand:V2SF 2 "register_operand" "r")
+                    (match_operand 3 "" "")] UNSPEC_FFDMAW))]
+  "KV3_2"
+  "ffdmaw%3 %0 = %1, %2"
+  [(set_attr "type" "mau_fpu")]
 )
 
 (define_expand "kvx_ffdmsw"
@@ -6367,11 +6381,24 @@
                     (match_operand 3 "" "")] UNSPEC_FFDMSW))]
   ""
   {
-    rtx fconj = gen_reg_rtx (V2SFmode);
-    emit_insn (gen_kvx_fconjwc (fconj, operands[1]));
-    emit_insn (gen_kvx_ffdmaw (operands[0], fconj, operands[2], operands[3]));
-    DONE;
+    if (KV3_1)
+      {
+        rtx fconj = gen_reg_rtx (V2SFmode);
+        emit_insn (gen_kvx_fconjwc (fconj, operands[1]));
+        emit_insn (gen_kvx_ffdmaw (operands[0], fconj, operands[2], operands[3]));
+        DONE;
+      }
   }
+)
+
+(define_insn "*kvx_ffdmsw"
+  [(set (match_operand:SF 0 "register_operand" "=r")
+        (unspec:SF [(match_operand:V2SF 1 "register_operand" "r")
+                    (match_operand:V2SF 2 "register_operand" "r")
+                    (match_operand 3 "" "")] UNSPEC_FFDMSW))]
+  "KV3_2"
+  "ffdmsw%3 %0 = %1, %2"
+  [(set_attr "type" "mau_fpu")]
 )
 
 (define_expand "kvx_ffdmdaw"
@@ -6382,11 +6409,25 @@
                     (match_operand 4 "" "")] UNSPEC_FFDMDAW))]
   ""
   {
-    rtx ffdma = gen_reg_rtx (SFmode);
-    emit_insn (gen_kvx_ffdmaw (ffdma, operands[1], operands[2], operands[4]));
-    emit_insn (gen_kvx_faddw (operands[0], ffdma, operands[3], operands[4]));
-    DONE;
+    if (KV3_1)
+      {
+        rtx ffdma = gen_reg_rtx (SFmode);
+        emit_insn (gen_kvx_ffdmaw (ffdma, operands[1], operands[2], operands[4]));
+        emit_insn (gen_kvx_faddw (operands[0], ffdma, operands[3], operands[4]));
+        DONE;
+      }
   }
+)
+
+(define_insn "*kvx_ffdmdaw"
+  [(set (match_operand:SF 0 "register_operand" "=r")
+        (unspec:SF [(match_operand:V2SF 1 "register_operand" "r")
+                    (match_operand:V2SF 2 "register_operand" "r")
+                    (match_operand:SF 3 "register_operand" "0")
+                    (match_operand 4 "" "")] UNSPEC_FFDMDAW))]
+  "KV3_2"
+  "ffdmdaw%4 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
 )
 
 (define_expand "kvx_ffdmsaw"
@@ -6397,13 +6438,27 @@
                     (match_operand 4 "" "")] UNSPEC_FFDMSAW))]
   ""
   {
-    rtx ffdmaw = gen_reg_rtx (SFmode);
-    rtx fconj = gen_reg_rtx (V2SFmode);
-    emit_insn (gen_kvx_fconjwc (fconj, operands[1]));
-    emit_insn (gen_kvx_ffdmaw (ffdmaw, fconj, operands[2], operands[4]));
-    emit_insn (gen_kvx_fsbfw (operands[0], ffdmaw, operands[3], operands[4]));
-    DONE;
+    if (KV3_1)
+      {
+        rtx ffdmaw = gen_reg_rtx (SFmode);
+        rtx fconj = gen_reg_rtx (V2SFmode);
+        emit_insn (gen_kvx_fconjwc (fconj, operands[1]));
+        emit_insn (gen_kvx_ffdmaw (ffdmaw, fconj, operands[2], operands[4]));
+        emit_insn (gen_kvx_fsbfw (operands[0], ffdmaw, operands[3], operands[4]));
+        DONE;
+      }
   }
+)
+
+(define_insn "*kvx_ffdmsaw"
+  [(set (match_operand:SF 0 "register_operand" "=r")
+        (unspec:SF [(match_operand:V2SF 1 "register_operand" "r")
+                    (match_operand:V2SF 2 "register_operand" "r")
+                    (match_operand:SF 3 "register_operand" "0")
+                    (match_operand 4 "" "")] UNSPEC_FFDMSAW))]
+  "KV3_2"
+  "ffdmsaw%4 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
 )
 
 (define_expand "kvx_ffdmdsw"
@@ -6414,11 +6469,25 @@
                     (match_operand 4 "" "")] UNSPEC_FFDMDSW))]
   ""
   {
-    rtx ffdma = gen_reg_rtx (SFmode);
-    emit_insn (gen_kvx_ffdmaw (ffdma, operands[1], operands[2], operands[4]));
-    emit_insn (gen_kvx_fsbfw (operands[0], ffdma, operands[3], operands[4]));
-    DONE;
+    if (KV3_1)
+      {
+        rtx ffdma = gen_reg_rtx (SFmode);
+        emit_insn (gen_kvx_ffdmaw (ffdma, operands[1], operands[2], operands[4]));
+        emit_insn (gen_kvx_fsbfw (operands[0], ffdma, operands[3], operands[4]));
+        DONE;
+      }
   }
+)
+
+(define_insn "*kvx_ffdmdsw"
+  [(set (match_operand:SF 0 "register_operand" "=r")
+        (unspec:SF [(match_operand:V2SF 1 "register_operand" "r")
+                    (match_operand:V2SF 2 "register_operand" "r")
+                    (match_operand:SF 3 "register_operand" "0")
+                    (match_operand 4 "" "")] UNSPEC_FFDMDSW))]
+  "KV3_2"
+  "ffdmdsw%4 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
 )
 
 (define_expand "kvx_ffdmasw"
@@ -6429,13 +6498,27 @@
                     (match_operand 4 "" "")] UNSPEC_FFDMASW))]
   ""
   {
-    rtx ffdmaw = gen_reg_rtx (SFmode);
-    rtx fconj = gen_reg_rtx (V2SFmode);
-    emit_insn (gen_kvx_fconjwc (fconj, operands[1]));
-    emit_insn (gen_kvx_ffdmaw (ffdmaw, fconj, operands[2], operands[4]));
-    emit_insn (gen_kvx_faddw (operands[0], ffdmaw, operands[3], operands[4]));
-    DONE;
+    if (KV3_1)
+      {
+        rtx ffdmaw = gen_reg_rtx (SFmode);
+        rtx fconj = gen_reg_rtx (V2SFmode);
+        emit_insn (gen_kvx_fconjwc (fconj, operands[1]));
+        emit_insn (gen_kvx_ffdmaw (ffdmaw, fconj, operands[2], operands[4]));
+        emit_insn (gen_kvx_faddw (operands[0], ffdmaw, operands[3], operands[4]));
+        DONE;
+      }
   }
+)
+
+(define_insn "*kvx_ffdmasw"
+  [(set (match_operand:SF 0 "register_operand" "=r")
+        (unspec:SF [(match_operand:V2SF 1 "register_operand" "r")
+                    (match_operand:V2SF 2 "register_operand" "r")
+                    (match_operand:SF 3 "register_operand" "0")
+                    (match_operand 4 "" "")] UNSPEC_FFDMASW))]
+  "KV3_2"
+  "ffdmasw%4 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
 )
 
 (define_insn "kvx_fmulwc"
@@ -6456,11 +6539,25 @@
                       (match_operand 4 "" "")] UNSPEC_FFMAWC))]
   ""
   {
-    rtx product = gen_reg_rtx (V2SFmode);
-    emit_insn (gen_kvx_fmulwc (product, operands[2], operands[1], operands[4]));
-    emit_insn (gen_kvx_faddwp (operands[0], product, operands[3], operands[4]));
-    DONE;
+    if (KV3_1)
+      {
+        rtx product = gen_reg_rtx (V2SFmode);
+        emit_insn (gen_kvx_fmulwc (product, operands[2], operands[1], operands[4]));
+        emit_insn (gen_kvx_faddwp (operands[0], product, operands[3], operands[4]));
+        DONE;
+      }
   }
+)
+
+(define_insn "*kvx_ffmawc"
+  [(set (match_operand:V2SF 0 "register_operand" "=r")
+        (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")
+                      (match_operand:V2SF 2 "register_operand" "r")
+                      (match_operand:V2SF 3 "register_operand" "0")
+                      (match_operand 4 "" "")] UNSPEC_FFMAWC))]
+  "KV3_2"
+  "ffmawc%4 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
 )
 
 (define_expand "kvx_ffmswc"
@@ -6471,11 +6568,25 @@
                       (match_operand 4 "" "")] UNSPEC_FFMSWC))]
   ""
   {
-    rtx product = gen_reg_rtx (V2SFmode);
-    emit_insn (gen_kvx_fmulwc (product, operands[2], operands[1], operands[4]));
-    emit_insn (gen_kvx_fsbfwp (operands[0], product, operands[3], operands[4]));
-    DONE;
+    if (KV3_1)
+      {
+        rtx product = gen_reg_rtx (V2SFmode);
+        emit_insn (gen_kvx_fmulwc (product, operands[2], operands[1], operands[4]));
+        emit_insn (gen_kvx_fsbfwp (operands[0], product, operands[3], operands[4]));
+        DONE;
+      }
   }
+)
+
+(define_insn "*kvx_ffmswc"
+  [(set (match_operand:V2SF 0 "register_operand" "=r")
+        (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")
+                      (match_operand:V2SF 2 "register_operand" "r")
+                      (match_operand:V2SF 3 "register_operand" "0")
+                      (match_operand 4 "" "")] UNSPEC_FFMSWC))]
+  "KV3_2"
+  "ffmswc%4 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
 )
 
 (define_insn "floatv2siv2sf2"
@@ -6657,6 +6768,14 @@
   [(set_attr "type" "alu_lite")]
 )
 
+(define_insn "kvx_fconjwc"
+  [(set (match_operand:V2SF 0 "register_operand" "=r")
+        (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")] UNSPEC_FCONJWC))]
+  ""
+  "fnegd %0 = %1"
+  [(set_attr "type" "alu_lite")]
+)
+
 (define_insn "kvx_fmm212w"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (unspec:V4SF [(match_operand:V2SF 1 "register_operand" "r")
@@ -6687,14 +6806,6 @@
   ""
   "fmms212w%4 %0 = %1, %2"
   [(set_attr "type" "mau_auxr_fpu")]
-)
-
-(define_insn "kvx_fconjwc"
-  [(set (match_operand:V2SF 0 "register_operand" "=r")
-        (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")] UNSPEC_FCONJWC))]
-  ""
-  "fnegd %0 = %1"
-  [(set_attr "type" "alu_lite")]
 )
 
 (define_insn "kvx_consfwp"
@@ -7495,28 +7606,55 @@
                       (match_operand 3 "" "")] UNSPEC_FMM222W))]
   ""
   {
-    rtx modifiers = operands[3];
-    const char *xstr = XSTR (modifiers, 0);
-    bool transpose = xstr && xstr[0] == '.' && xstr[1] == 't';
-    if (transpose)
+    if (KV3_1)
       {
-        modifiers = gen_rtx_CONST_STRING (VOIDmode, xstr + 2);
-        rtx operands1 = gen_reg_rtx (V4SFmode);
-        rtx operands2 = gen_reg_rtx (V4SFmode);
-        emit_insn (gen_kvx_fmt22w (operands1, operands[1]));
-        emit_insn (gen_kvx_fmt22w (operands2, operands[2]));
-        operands[1] = operands1;
-        operands[2] = operands2;
+        rtx modifiers = operands[3];
+        const char *xstr = XSTR (modifiers, 0);
+        bool matlayout = xstr && xstr[0] == '.' &&
+          (xstr[1] == 'n' || xstr[1] == 't') &&
+          (xstr[2] == 'n' || xstr[2] == 't');
+        if (matlayout)
+          {
+            if (xstr[1] == 'n')
+              {
+                rtx operand_1 = gen_reg_rtx (V4SFmode);
+                emit_insn (gen_kvx_fmt22w (operand_1, operands[1]));
+                operands[1] = operand_1;
+              }
+            if (xstr[2] == 't')
+              {
+                rtx operand_2 = gen_reg_rtx (V4SFmode);
+                emit_insn (gen_kvx_fmt22w (operand_2, operands[2]));
+                operands[2] = operand_2;
+              }
+            modifiers = gen_rtx_CONST_STRING (VOIDmode, xstr + 3);
+          }
+        else
+          {
+            rtx operand_1 = gen_reg_rtx (V4SFmode);
+            emit_insn (gen_kvx_fmt22w (operand_1, operands[1]));
+            operands[1] = operand_1;
+          }
+        rtx accum = gen_reg_rtx (V4SFmode);
+        rtx opnd1_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 0);
+        rtx opnd2_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 0);
+        emit_insn (gen_kvx_fmm212w (accum, opnd1_0, opnd2_0, modifiers));
+        rtx opnd1_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 8);
+        rtx opnd2_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 8);
+        emit_insn (gen_kvx_fmma212w (operands[0], opnd1_1, opnd2_1, accum, modifiers));
+        DONE;
       }
-    rtx accum = gen_reg_rtx (V4SFmode);
-    rtx opnd1_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 0);
-    rtx opnd2_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 0);
-    emit_insn (gen_kvx_fmm212w (accum, opnd1_0, opnd2_0, modifiers));
-    rtx opnd1_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 8);
-    rtx opnd2_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 8);
-    emit_insn (gen_kvx_fmma212w (operands[0], opnd1_1, opnd2_1, accum, modifiers));
-    DONE;
   }
+)
+
+(define_insn "*kvx_fmm222w"
+  [(set (match_operand:V4SF 0 "register_operand" "=r")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
+                      (match_operand:V4SF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FMM222W))]
+  "KV3_2"
+  "fmm222w%3 %0 = %1, %2"
+  [(set_attr "type" "mau_fpu")]
 )
 
 (define_expand "kvx_fmma222w"
@@ -7527,28 +7665,56 @@
                       (match_operand 4 "" "")] UNSPEC_FMMA222W))]
   ""
   {
-    rtx modifiers = operands[4];
-    const char *xstr = XSTR (modifiers, 0);
-    bool transpose = xstr && xstr[0] == '.' && xstr[1] == 't';
-    if (transpose)
+    if (KV3_1)
       {
-        modifiers = gen_rtx_CONST_STRING (VOIDmode, xstr + 2);
-        rtx operands1 = gen_reg_rtx (V4SFmode);
-        rtx operands2 = gen_reg_rtx (V4SFmode);
-        emit_insn (gen_kvx_fmt22w (operands1, operands[1]));
-        emit_insn (gen_kvx_fmt22w (operands2, operands[2]));
-        operands[1] = operands1;
-        operands[2] = operands2;
+        rtx modifiers = operands[4];
+        const char *xstr = XSTR (modifiers, 0);
+        bool matlayout = xstr && xstr[0] == '.' &&
+          (xstr[1] == 'n' || xstr[1] == 't') &&
+          (xstr[2] == 'n' || xstr[2] == 't');
+        if (matlayout)
+          {
+            if (xstr[1] == 'n')
+              {
+                rtx operand_1 = gen_reg_rtx (V4SFmode);
+                emit_insn (gen_kvx_fmt22w (operand_1, operands[1]));
+                operands[1] = operand_1;
+              }
+            if (xstr[2] == 't')
+              {
+                rtx operand_2 = gen_reg_rtx (V4SFmode);
+                emit_insn (gen_kvx_fmt22w (operand_2, operands[2]));
+                operands[2] = operand_2;
+              }
+            modifiers = gen_rtx_CONST_STRING (VOIDmode, xstr + 3);
+          }
+        else
+          {
+            rtx operand_1 = gen_reg_rtx (V4SFmode);
+            emit_insn (gen_kvx_fmt22w (operand_1, operands[1]));
+            operands[1] = operand_1;
+          }
+        rtx accum = gen_reg_rtx (V4SFmode);
+        rtx opnd1_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 0);
+        rtx opnd2_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 0);
+        emit_insn (gen_kvx_fmma212w (accum, opnd1_0, opnd2_0, operands[3], modifiers));
+        rtx opnd1_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 8);
+        rtx opnd2_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 8);
+        emit_insn (gen_kvx_fmma212w (operands[0], opnd1_1, opnd2_1, accum, modifiers));
+        DONE;
       }
-    rtx accum = gen_reg_rtx (V4SFmode);
-    rtx opnd1_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 0);
-    rtx opnd2_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 0);
-    emit_insn (gen_kvx_fmma212w (accum, opnd1_0, opnd2_0, operands[3], modifiers));
-    rtx opnd1_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 8);
-    rtx opnd2_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 8);
-    emit_insn (gen_kvx_fmma212w (operands[0], opnd1_1, opnd2_1, accum, modifiers));
-    DONE;
   }
+)
+
+(define_insn "*kvx_fmma222w"
+  [(set (match_operand:V4SF 0 "register_operand" "=r")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
+                      (match_operand:V4SF 2 "register_operand" "r")
+                      (match_operand:V4SF 3 "register_operand" "0")
+                      (match_operand 4 "" "")] UNSPEC_FMMA222W))]
+  "KV3_2"
+  "fmma222w%4 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
 )
 
 (define_expand "kvx_fmms222w"
@@ -7559,28 +7725,56 @@
                       (match_operand 4 "" "")] UNSPEC_FMMS222W))]
   ""
   {
-    rtx modifiers = operands[4];
-    const char *xstr = XSTR (modifiers, 0);
-    bool transpose = xstr && xstr[0] == '.' && xstr[1] == 't';
-    if (transpose)
+    if (KV3_1)
       {
-        modifiers = gen_rtx_CONST_STRING (VOIDmode, xstr + 2);
-        rtx operands1 = gen_reg_rtx (V4SFmode);
-        rtx operands2 = gen_reg_rtx (V4SFmode);
-        emit_insn (gen_kvx_fmt22w (operands1, operands[1]));
-        emit_insn (gen_kvx_fmt22w (operands2, operands[2]));
-        operands[1] = operands1;
-        operands[2] = operands2;
+        rtx modifiers = operands[4];
+        const char *xstr = XSTR (modifiers, 0);
+        bool matlayout = xstr && xstr[0] == '.' &&
+          (xstr[1] == 'n' || xstr[1] == 't') &&
+          (xstr[2] == 'n' || xstr[2] == 't');
+        if (matlayout)
+          {
+            if (xstr[1] == 'n')
+              {
+                rtx operand_1 = gen_reg_rtx (V4SFmode);
+                emit_insn (gen_kvx_fmt22w (operand_1, operands[1]));
+                operands[1] = operand_1;
+              }
+            if (xstr[2] == 't')
+              {
+                rtx operand_2 = gen_reg_rtx (V4SFmode);
+                emit_insn (gen_kvx_fmt22w (operand_2, operands[2]));
+                operands[2] = operand_2;
+              }
+            modifiers = gen_rtx_CONST_STRING (VOIDmode, xstr + 3);
+          }
+        else
+          {
+            rtx operand_1 = gen_reg_rtx (V4SFmode);
+            emit_insn (gen_kvx_fmt22w (operand_1, operands[1]));
+            operands[1] = operand_1;
+          }
+        rtx accum = gen_reg_rtx (V4SFmode);
+        rtx opnd1_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 0);
+        rtx opnd2_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 0);
+        emit_insn (gen_kvx_fmms212w (accum, opnd1_0, opnd2_0, operands[3], modifiers));
+        rtx opnd1_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 8);
+        rtx opnd2_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 8);
+        emit_insn (gen_kvx_fmms212w (operands[0], opnd1_1, opnd2_1, accum, modifiers));
+        DONE;
       }
-    rtx accum = gen_reg_rtx (V4SFmode);
-    rtx opnd1_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 0);
-    rtx opnd2_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 0);
-    emit_insn (gen_kvx_fmms212w (accum, opnd1_0, opnd2_0, operands[3], modifiers));
-    rtx opnd1_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 8);
-    rtx opnd2_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 8);
-    emit_insn (gen_kvx_fmms212w (operands[0], opnd1_1, opnd2_1, accum, modifiers));
-    DONE;
   }
+)
+
+(define_insn "*kvx_fmms222w"
+  [(set (match_operand:V4SF 0 "register_operand" "=r")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
+                      (match_operand:V4SF 2 "register_operand" "r")
+                      (match_operand:V4SF 3 "register_operand" "0")
+                      (match_operand 4 "" "")] UNSPEC_FMMS222W))]
+  "KV3_2"
+  "fmms222w%4 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
 )
 
 (define_expand "kvx_ffdmawp"
@@ -7590,15 +7784,28 @@
                       (match_operand 3 "" "")] UNSPEC_FFDMAWP))]
   ""
   {
-    rtx accum = gen_reg_rtx (V2SFmode);
-    rtx opnd1_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 0);
-    rtx opnd2_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 0);
-    emit_insn (gen_kvx_fmulwp (accum, opnd1_0, opnd2_0, operands[3]));
-    rtx opnd1_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 8);
-    rtx opnd2_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 8);
-    emit_insn (gen_kvx_ffmawp (operands[0], opnd1_1, opnd2_1, accum, operands[3]));
-    DONE;
+    if (KV3_1)
+      {
+        rtx accum = gen_reg_rtx (V2SFmode);
+        rtx opnd1_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 0);
+        rtx opnd2_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 0);
+        emit_insn (gen_kvx_fmulwp (accum, opnd1_0, opnd2_0, operands[3]));
+        rtx opnd1_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 8);
+        rtx opnd2_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 8);
+        emit_insn (gen_kvx_ffmawp (operands[0], opnd1_1, opnd2_1, accum, operands[3]));
+        DONE;
+      }
   }
+)
+
+(define_insn "*kvx_ffdmawp"
+  [(set (match_operand:V2SF 0 "register_operand" "=r")
+        (unspec:V2SF [(match_operand:V4SF 1 "register_operand" "r")
+                      (match_operand:V4SF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FFDMAWP))]
+  "KV3_2"
+  "ffdmawp%3 %0 = %1, %2"
+  [(set_attr "type" "mau_fpu")]
 )
 
 (define_expand "kvx_ffdmswp"
@@ -7608,15 +7815,28 @@
                       (match_operand 3 "" "")] UNSPEC_FFDMSWP))]
   ""
   {
-    rtx accum = gen_reg_rtx (V2SFmode);
-    rtx opnd1_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 0);
-    rtx opnd2_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 0);
-    emit_insn (gen_kvx_fmulwp (accum, opnd1_0, opnd2_0, operands[3]));
-    rtx opnd1_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 8);
-    rtx opnd2_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 8);
-    emit_insn (gen_kvx_ffmswp (operands[0], opnd1_1, opnd2_1, accum, operands[3]));
-    DONE;
+    if (KV3_1)
+      {
+        rtx accum = gen_reg_rtx (V2SFmode);
+        rtx opnd1_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 0);
+        rtx opnd2_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 0);
+        emit_insn (gen_kvx_fmulwp (accum, opnd1_0, opnd2_0, operands[3]));
+        rtx opnd1_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 8);
+        rtx opnd2_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 8);
+        emit_insn (gen_kvx_ffmswp (operands[0], opnd1_1, opnd2_1, accum, operands[3]));
+        DONE;
+      }
   }
+)
+
+(define_insn "*kvx_ffdmswp"
+  [(set (match_operand:V2SF 0 "register_operand" "=r")
+        (unspec:V2SF [(match_operand:V4SF 1 "register_operand" "r")
+                      (match_operand:V4SF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FFDMSWP))]
+  "KV3_2"
+  "ffdmswp%3 %0 = %1, %2"
+  [(set_attr "type" "mau_fpu")]
 )
 
 (define_expand "kvx_ffdmdawp"
@@ -7627,15 +7847,29 @@
                       (match_operand 4 "" "")] UNSPEC_FFDMDAWP))]
   ""
   {
-    rtx accum = gen_reg_rtx (V2SFmode);
-    rtx opnd1_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 0);
-    rtx opnd2_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 0);
-    emit_insn (gen_kvx_ffmawp (accum, opnd1_0, opnd2_0, operands[3], operands[4]));
-    rtx opnd1_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 8);
-    rtx opnd2_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 8);
-    emit_insn (gen_kvx_ffmawp (operands[0], opnd1_1, opnd2_1, accum, operands[4]));
-    DONE;
+    if (KV3_1)
+      {
+        rtx accum = gen_reg_rtx (V2SFmode);
+        rtx opnd1_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 0);
+        rtx opnd2_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 0);
+        emit_insn (gen_kvx_ffmawp (accum, opnd1_0, opnd2_0, operands[3], operands[4]));
+        rtx opnd1_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 8);
+        rtx opnd2_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 8);
+        emit_insn (gen_kvx_ffmawp (operands[0], opnd1_1, opnd2_1, accum, operands[4]));
+        DONE;
+      }
   }
+)
+
+(define_insn "*kvx_ffdmdawp"
+  [(set (match_operand:V2SF 0 "register_operand" "=r")
+        (unspec:V2SF [(match_operand:V4SF 1 "register_operand" "r")
+                      (match_operand:V4SF 2 "register_operand" "r")
+                      (match_operand:V2SF 3 "register_operand" "0")
+                      (match_operand 4 "" "")] UNSPEC_FFDMDAWP))]
+  "KV3_2"
+  "ffdmdawp%4 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
 )
 
 (define_expand "kvx_ffdmsawp"
@@ -7646,15 +7880,29 @@
                       (match_operand 4 "" "")] UNSPEC_FFDMSAWP))]
   ""
   {
-    rtx accum = gen_reg_rtx (V2SFmode);
-    rtx opnd1_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 0);
-    rtx opnd2_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 0);
-    emit_insn (gen_kvx_ffmswp (accum, opnd1_0, opnd2_0, operands[3], operands[4]));
-    rtx opnd1_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 8);
-    rtx opnd2_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 8);
-    emit_insn (gen_kvx_ffmawp (operands[0], opnd1_1, opnd2_1, accum, operands[4]));
-    DONE;
+    if (KV3_1)
+      {
+        rtx accum = gen_reg_rtx (V2SFmode);
+        rtx opnd1_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 0);
+        rtx opnd2_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 0);
+        emit_insn (gen_kvx_ffmswp (accum, opnd1_0, opnd2_0, operands[3], operands[4]));
+        rtx opnd1_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 8);
+        rtx opnd2_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 8);
+        emit_insn (gen_kvx_ffmawp (operands[0], opnd1_1, opnd2_1, accum, operands[4]));
+        DONE;
+      }
   }
+)
+
+(define_insn "*kvx_ffdmsawp"
+  [(set (match_operand:V2SF 0 "register_operand" "=r")
+        (unspec:V2SF [(match_operand:V4SF 1 "register_operand" "r")
+                      (match_operand:V4SF 2 "register_operand" "r")
+                      (match_operand:V2SF 3 "register_operand" "0")
+                      (match_operand 4 "" "")] UNSPEC_FFDMSAWP))]
+  "KV3_2"
+  "ffdmsawp%4 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
 )
 
 (define_expand "kvx_ffdmdswp"
@@ -7665,15 +7913,29 @@
                       (match_operand 4 "" "")] UNSPEC_FFDMDSWP))]
   ""
   {
-    rtx accum = gen_reg_rtx (V2SFmode);
-    rtx opnd1_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 0);
-    rtx opnd2_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 0);
-    emit_insn (gen_kvx_ffmswp (accum, opnd1_0, opnd2_0, operands[3], operands[4]));
-    rtx opnd1_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 8);
-    rtx opnd2_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 8);
-    emit_insn (gen_kvx_ffmswp (operands[0], opnd1_1, opnd2_1, accum, operands[4]));
-    DONE;
+    if (KV3_1)
+      {
+        rtx accum = gen_reg_rtx (V2SFmode);
+        rtx opnd1_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 0);
+        rtx opnd2_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 0);
+        emit_insn (gen_kvx_ffmswp (accum, opnd1_0, opnd2_0, operands[3], operands[4]));
+        rtx opnd1_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 8);
+        rtx opnd2_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 8);
+        emit_insn (gen_kvx_ffmswp (operands[0], opnd1_1, opnd2_1, accum, operands[4]));
+        DONE;
+      }
   }
+)
+
+(define_insn "*kvx_ffdmdswp"
+  [(set (match_operand:V2SF 0 "register_operand" "=r")
+        (unspec:V2SF [(match_operand:V4SF 1 "register_operand" "r")
+                      (match_operand:V4SF 2 "register_operand" "r")
+                      (match_operand:V2SF 3 "register_operand" "0")
+                      (match_operand 4 "" "")] UNSPEC_FFDMDSWP))]
+  "KV3_2"
+  "ffdmdswp%4 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
 )
 
 (define_expand "kvx_ffdmaswp"
@@ -7684,32 +7946,54 @@
                       (match_operand 4 "" "")] UNSPEC_FFDMASWP))]
   ""
   {
-    rtx accum = gen_reg_rtx (V2SFmode);
-    rtx opnd1_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 0);
-    rtx opnd2_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 0);
-    emit_insn (gen_kvx_ffmawp (accum, opnd1_0, opnd2_0, operands[3], operands[4]));
-    rtx opnd1_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 8);
-    rtx opnd2_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 8);
-    emit_insn (gen_kvx_ffmswp (operands[0], opnd1_1, opnd2_1, accum, operands[4]));
-    DONE;
+    if (KV3_1)
+      {
+        rtx accum = gen_reg_rtx (V2SFmode);
+        rtx opnd1_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 0);
+        rtx opnd2_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 0);
+        emit_insn (gen_kvx_ffmawp (accum, opnd1_0, opnd2_0, operands[3], operands[4]));
+        rtx opnd1_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 8);
+        rtx opnd2_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 8);
+        emit_insn (gen_kvx_ffmswp (operands[0], opnd1_1, opnd2_1, accum, operands[4]));
+        DONE;
+      }
   }
 )
 
-(define_insn "kvx_fmulwcp"
-  [(set (match_operand:V4SF 0 "register_operand" "=r")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
+(define_insn "*kvx_ffdmaswp"
+  [(set (match_operand:V2SF 0 "register_operand" "=r")
+        (unspec:V2SF [(match_operand:V4SF 1 "register_operand" "r")
                       (match_operand:V4SF 2 "register_operand" "r")
-                      (match_operand 3 "" "")] UNSPEC_FMULWCP))]
-  ""
-  "#"
+                      (match_operand:V2SF 3 "register_operand" "0")
+                      (match_operand 4 "" "")] UNSPEC_FFDMASWP))]
+  "KV3_2"
+  "ffdmaswp%4 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
 )
 
-(define_split
+(define_expand "kvx_fmulwcp"
   [(set (match_operand:V4SF 0 "register_operand" "")
         (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "")
                       (match_operand:V4SF 2 "register_operand" "")
                       (match_operand 3 "" "")] UNSPEC_FMULWCP))]
-  "KV3_1 && reload_completed"
+  ""
+  {
+    if (KV3_1)
+      emit_insn (gen_kvx_fmulwcp_1 (operands[0], operands[1], operands[2], operands[3]));
+    if (KV3_2)
+      emit_insn (gen_kvx_fmulwcp_2 (operands[0], operands[1], operands[2], operands[3]));
+    DONE;
+  }
+)
+
+(define_insn_and_split "kvx_fmulwcp_1"
+  [(set (match_operand:V4SF 0 "register_operand" "=r")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
+                      (match_operand:V4SF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FMULWCP))]
+  "KV3_1"
+  "#"
+  "&& reload_completed"
   [(set (subreg:V2SF (match_dup 0) 0)
         (unspec:V2SF [(subreg:V2SF (match_dup 1) 0)
                       (subreg:V2SF (match_dup 2) 0)
@@ -7721,6 +8005,16 @@
   ""
 )
 
+(define_insn "kvx_fmulwcp_2"
+  [(set (match_operand:V4SF 0 "register_operand" "=r")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
+                      (match_operand:V4SF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FMULWCP))]
+  "KV3_2"
+  "fmulwcp%3 %0 = %1, %2"
+  [(set_attr "type" "mau_fpu")]
+)
+
 (define_expand "kvx_ffmawcp"
   [(set (match_operand:V4SF 0 "register_operand" "")
         (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "")
@@ -7729,18 +8023,32 @@
                       (match_operand 4 "" "")] UNSPEC_FFMAWCP))]
   ""
   {
-    for (int i = 0; i < 2; i++)
+    if (KV3_1)
       {
-        rtx product = gen_reg_rtx (V2SFmode);
-        rtx opnd0 = gen_rtx_SUBREG (V2SFmode, operands[0], i*8);
-        rtx opnd1 = gen_rtx_SUBREG (V2SFmode, operands[1], i*8);
-        rtx opnd2 = gen_rtx_SUBREG (V2SFmode, operands[2], i*8);
-        rtx opnd3 = gen_rtx_SUBREG (V2SFmode, operands[3], i*8);
-        emit_insn (gen_kvx_fmulwc (product, opnd2, opnd1, operands[4]));
-        emit_insn (gen_kvx_faddwp (opnd0, product, opnd3, operands[4]));
+        for (int i = 0; i < 2; i++)
+          {
+            rtx product = gen_reg_rtx (V2SFmode);
+            rtx opnd0 = gen_rtx_SUBREG (V2SFmode, operands[0], i*8);
+            rtx opnd1 = gen_rtx_SUBREG (V2SFmode, operands[1], i*8);
+            rtx opnd2 = gen_rtx_SUBREG (V2SFmode, operands[2], i*8);
+            rtx opnd3 = gen_rtx_SUBREG (V2SFmode, operands[3], i*8);
+            emit_insn (gen_kvx_fmulwc (product, opnd2, opnd1, operands[4]));
+            emit_insn (gen_kvx_faddwp (opnd0, product, opnd3, operands[4]));
+          }
+        DONE;
       }
-    DONE;
   }
+)
+
+(define_insn "*kvx_ffmawcp"
+  [(set (match_operand:V4SF 0 "register_operand" "=r")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
+                      (match_operand:V4SF 2 "register_operand" "r")
+                      (match_operand:V4SF 3 "register_operand" "0")
+                      (match_operand 4 "" "")] UNSPEC_FFMAWCP))]
+  "KV3_2"
+  "ffmawcp%4 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
 )
 
 (define_expand "kvx_ffmswcp"
@@ -7751,18 +8059,32 @@
                       (match_operand 4 "" "")] UNSPEC_FFMSWCP))]
   ""
   {
-    for (int i = 0; i < 2; i++)
+    if (KV3_1)
       {
-        rtx product = gen_reg_rtx (V2SFmode);
-        rtx opnd0 = gen_rtx_SUBREG (V2SFmode, operands[0], i*8);
-        rtx opnd1 = gen_rtx_SUBREG (V2SFmode, operands[1], i*8);
-        rtx opnd2 = gen_rtx_SUBREG (V2SFmode, operands[2], i*8);
-        rtx opnd3 = gen_rtx_SUBREG (V2SFmode, operands[3], i*8);
-        emit_insn (gen_kvx_fmulwc (product, opnd2, opnd1, operands[4]));
-        emit_insn (gen_kvx_fsbfwp (opnd0, product, opnd3, operands[4]));
+        for (int i = 0; i < 2; i++)
+          {
+            rtx product = gen_reg_rtx (V2SFmode);
+            rtx opnd0 = gen_rtx_SUBREG (V2SFmode, operands[0], i*8);
+            rtx opnd1 = gen_rtx_SUBREG (V2SFmode, operands[1], i*8);
+            rtx opnd2 = gen_rtx_SUBREG (V2SFmode, operands[2], i*8);
+            rtx opnd3 = gen_rtx_SUBREG (V2SFmode, operands[3], i*8);
+            emit_insn (gen_kvx_fmulwc (product, opnd2, opnd1, operands[4]));
+            emit_insn (gen_kvx_fsbfwp (opnd0, product, opnd3, operands[4]));
+          }
+        DONE;
       }
-    DONE;
   }
+)
+
+(define_insn "*kvx_ffmswcp"
+  [(set (match_operand:V4SF 0 "register_operand" "=r")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
+                      (match_operand:V4SF 2 "register_operand" "r")
+                      (match_operand:V4SF 3 "register_operand" "0")
+                      (match_operand 4 "" "")] UNSPEC_FFMSWCP))]
+  "KV3_2"
+  "ffmswcp%4 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
 )
 
 (define_insn "addv4sf3"
@@ -9376,22 +9698,35 @@
                       (match_operand 3 "" "")] UNSPEC_FFDMAWQ))]
   ""
   {
-    rtx accum = gen_reg_rtx (V4SFmode);
-    rtx opnd1_0 = gen_rtx_SUBREG (V4SFmode, operands[1], 0);
-    rtx opnd2_0 = gen_rtx_SUBREG (V4SFmode, operands[2], 0);
-    emit_insn (gen_kvx_fmulwq (accum, opnd1_0, opnd2_0, operands[3]));
-    rtx opnd0_0 = gen_rtx_SUBREG (V2SFmode, operands[0], 0);
-    rtx opnd0_1 = gen_rtx_SUBREG (V2SFmode, operands[0], 8);
-    rtx opnd1_1_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 16);
-    rtx opnd1_1_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 24);
-    rtx opnd2_1_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 16);
-    rtx opnd2_1_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 24);
-    rtx accum_0 = gen_rtx_SUBREG (V2SFmode, accum, 0);
-    rtx accum_1 = gen_rtx_SUBREG (V2SFmode, accum, 8);
-    emit_insn (gen_kvx_ffmawp (opnd0_0, opnd1_1_0, opnd2_1_0, accum_0, operands[3]));
-    emit_insn (gen_kvx_ffmawp (opnd0_1, opnd1_1_1, opnd2_1_1, accum_1, operands[3]));
-    DONE;
+    if (KV3_1)
+      {
+        rtx accum = gen_reg_rtx (V4SFmode);
+        rtx opnd1_0 = gen_rtx_SUBREG (V4SFmode, operands[1], 0);
+        rtx opnd2_0 = gen_rtx_SUBREG (V4SFmode, operands[2], 0);
+        emit_insn (gen_kvx_fmulwq (accum, opnd1_0, opnd2_0, operands[3]));
+        rtx opnd0_0 = gen_rtx_SUBREG (V2SFmode, operands[0], 0);
+        rtx opnd0_1 = gen_rtx_SUBREG (V2SFmode, operands[0], 8);
+        rtx opnd1_1_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 16);
+        rtx opnd1_1_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 24);
+        rtx opnd2_1_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 16);
+        rtx opnd2_1_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 24);
+        rtx accum_0 = gen_rtx_SUBREG (V2SFmode, accum, 0);
+        rtx accum_1 = gen_rtx_SUBREG (V2SFmode, accum, 8);
+        emit_insn (gen_kvx_ffmawp (opnd0_0, opnd1_1_0, opnd2_1_0, accum_0, operands[3]));
+        emit_insn (gen_kvx_ffmawp (opnd0_1, opnd1_1_1, opnd2_1_1, accum_1, operands[3]));
+        DONE;
+      }
   }
+)
+
+(define_insn "*kvx_ffdmawq"
+  [(set (match_operand:V4SF 0 "register_operand" "=r")
+        (unspec:V4SF [(match_operand:V8SF 1 "register_operand" "r")
+                      (match_operand:V8SF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FFDMAWQ))]
+  "KV3_2"
+  "ffdmawq%3 %0 = %1, %2"
+  [(set_attr "type" "mau_fpu")]
 )
 
 (define_expand "kvx_ffdmswq"
@@ -9401,22 +9736,35 @@
                       (match_operand 3 "" "")] UNSPEC_FFDMSWQ))]
   ""
   {
-    rtx accum = gen_reg_rtx (V4SFmode);
-    rtx opnd1_0 = gen_rtx_SUBREG (V4SFmode, operands[1], 0);
-    rtx opnd2_0 = gen_rtx_SUBREG (V4SFmode, operands[2], 0);
-    emit_insn (gen_kvx_fmulwq (accum, opnd1_0, opnd2_0, operands[3]));
-    rtx opnd0_0 = gen_rtx_SUBREG (V2SFmode, operands[0], 0);
-    rtx opnd0_1 = gen_rtx_SUBREG (V2SFmode, operands[0], 8);
-    rtx opnd1_1_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 16);
-    rtx opnd1_1_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 24);
-    rtx opnd2_1_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 16);
-    rtx opnd2_1_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 24);
-    rtx accum_0 = gen_rtx_SUBREG (V2SFmode, accum, 0);
-    rtx accum_1 = gen_rtx_SUBREG (V2SFmode, accum, 8);
-    emit_insn (gen_kvx_ffmswp (opnd0_0, opnd1_1_0, opnd2_1_0, accum_0, operands[3]));
-    emit_insn (gen_kvx_ffmswp (opnd0_1, opnd1_1_1, opnd2_1_1, accum_1, operands[3]));
-    DONE;
+    if (KV3_1)
+      {
+        rtx accum = gen_reg_rtx (V4SFmode);
+        rtx opnd1_0 = gen_rtx_SUBREG (V4SFmode, operands[1], 0);
+        rtx opnd2_0 = gen_rtx_SUBREG (V4SFmode, operands[2], 0);
+        emit_insn (gen_kvx_fmulwq (accum, opnd1_0, opnd2_0, operands[3]));
+        rtx opnd0_0 = gen_rtx_SUBREG (V2SFmode, operands[0], 0);
+        rtx opnd0_1 = gen_rtx_SUBREG (V2SFmode, operands[0], 8);
+        rtx opnd1_1_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 16);
+        rtx opnd1_1_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 24);
+        rtx opnd2_1_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 16);
+        rtx opnd2_1_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 24);
+        rtx accum_0 = gen_rtx_SUBREG (V2SFmode, accum, 0);
+        rtx accum_1 = gen_rtx_SUBREG (V2SFmode, accum, 8);
+        emit_insn (gen_kvx_ffmswp (opnd0_0, opnd1_1_0, opnd2_1_0, accum_0, operands[3]));
+        emit_insn (gen_kvx_ffmswp (opnd0_1, opnd1_1_1, opnd2_1_1, accum_1, operands[3]));
+        DONE;
+      }
   }
+)
+
+(define_insn "*kvx_ffdmswq"
+  [(set (match_operand:V4SF 0 "register_operand" "=r")
+        (unspec:V4SF [(match_operand:V8SF 1 "register_operand" "r")
+                      (match_operand:V8SF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FFDMSWQ))]
+  "KV3_2"
+  "ffdmswq%3 %0 = %1, %2"
+  [(set_attr "type" "mau_fpu")]
 )
 
 (define_expand "kvx_ffdmdawq"
@@ -9427,26 +9775,40 @@
                       (match_operand 4 "" "")] UNSPEC_FFDMDAWQ))]
   ""
   {
-    rtx accum_0 = gen_reg_rtx (V2SFmode);
-    rtx accum_1 = gen_reg_rtx (V2SFmode);
-    rtx opnd1_0_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 0);
-    rtx opnd1_0_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 8);
-    rtx opnd2_0_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 0);
-    rtx opnd2_0_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 8);
-    rtx opnd3_0 = gen_rtx_SUBREG (V2SFmode, operands[3], 0);
-    rtx opnd3_1 = gen_rtx_SUBREG (V2SFmode, operands[3], 8);
-    emit_insn (gen_kvx_ffmawp (accum_0, opnd1_0_0, opnd2_0_0, opnd3_0, operands[4]));
-    emit_insn (gen_kvx_ffmawp (accum_1, opnd1_0_1, opnd2_0_1, opnd3_1, operands[4]));
-    rtx opnd0_0 = gen_rtx_SUBREG (V2SFmode, operands[0], 0);
-    rtx opnd0_1 = gen_rtx_SUBREG (V2SFmode, operands[0], 8);
-    rtx opnd1_1_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 16);
-    rtx opnd1_1_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 24);
-    rtx opnd2_1_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 16);
-    rtx opnd2_1_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 24);
-    emit_insn (gen_kvx_ffmawp (opnd0_0, opnd1_1_0, opnd2_1_0, accum_0, operands[4]));
-    emit_insn (gen_kvx_ffmawp (opnd0_1, opnd1_1_1, opnd2_1_1, accum_1, operands[4]));
-    DONE;
+    if (KV3_1)
+      {
+        rtx accum_0 = gen_reg_rtx (V2SFmode);
+        rtx accum_1 = gen_reg_rtx (V2SFmode);
+        rtx opnd1_0_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 0);
+        rtx opnd1_0_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 8);
+        rtx opnd2_0_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 0);
+        rtx opnd2_0_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 8);
+        rtx opnd3_0 = gen_rtx_SUBREG (V2SFmode, operands[3], 0);
+        rtx opnd3_1 = gen_rtx_SUBREG (V2SFmode, operands[3], 8);
+        emit_insn (gen_kvx_ffmawp (accum_0, opnd1_0_0, opnd2_0_0, opnd3_0, operands[4]));
+        emit_insn (gen_kvx_ffmawp (accum_1, opnd1_0_1, opnd2_0_1, opnd3_1, operands[4]));
+        rtx opnd0_0 = gen_rtx_SUBREG (V2SFmode, operands[0], 0);
+        rtx opnd0_1 = gen_rtx_SUBREG (V2SFmode, operands[0], 8);
+        rtx opnd1_1_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 16);
+        rtx opnd1_1_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 24);
+        rtx opnd2_1_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 16);
+        rtx opnd2_1_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 24);
+        emit_insn (gen_kvx_ffmawp (opnd0_0, opnd1_1_0, opnd2_1_0, accum_0, operands[4]));
+        emit_insn (gen_kvx_ffmawp (opnd0_1, opnd1_1_1, opnd2_1_1, accum_1, operands[4]));
+        DONE;
+      }
   }
+)
+
+(define_insn "*kvx_ffdmdawq"
+  [(set (match_operand:V4SF 0 "register_operand" "=r")
+        (unspec:V4SF [(match_operand:V8SF 1 "register_operand" "r")
+                      (match_operand:V8SF 2 "register_operand" "r")
+                      (match_operand:V4SF 3 "register_operand" "0")
+                      (match_operand 4 "" "")] UNSPEC_FFDMDAWQ))]
+  "KV3_2"
+  "ffdmdawq%4 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
 )
 
 (define_expand "kvx_ffdmsawq"
@@ -9457,26 +9819,40 @@
                       (match_operand 4 "" "")] UNSPEC_FFDMSAWQ))]
   ""
   {
-    rtx accum_0 = gen_reg_rtx (V2SFmode);
-    rtx accum_1 = gen_reg_rtx (V2SFmode);
-    rtx opnd1_0_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 0);
-    rtx opnd1_0_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 8);
-    rtx opnd2_0_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 0);
-    rtx opnd2_0_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 8);
-    rtx opnd3_0 = gen_rtx_SUBREG (V2SFmode, operands[3], 0);
-    rtx opnd3_1 = gen_rtx_SUBREG (V2SFmode, operands[3], 8);
-    emit_insn (gen_kvx_ffmswp (accum_0, opnd1_0_0, opnd2_0_0, opnd3_0, operands[4]));
-    emit_insn (gen_kvx_ffmswp (accum_1, opnd1_0_1, opnd2_0_1, opnd3_1, operands[4]));
-    rtx opnd0_0 = gen_rtx_SUBREG (V2SFmode, operands[0], 0);
-    rtx opnd0_1 = gen_rtx_SUBREG (V2SFmode, operands[0], 8);
-    rtx opnd1_1_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 16);
-    rtx opnd1_1_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 24);
-    rtx opnd2_1_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 16);
-    rtx opnd2_1_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 24);
-    emit_insn (gen_kvx_ffmawp (opnd0_0, opnd1_1_0, opnd2_1_0, accum_0, operands[4]));
-    emit_insn (gen_kvx_ffmawp (opnd0_1, opnd1_1_1, opnd2_1_1, accum_1, operands[4]));
-    DONE;
+    if (KV3_1)
+      {
+        rtx accum_0 = gen_reg_rtx (V2SFmode);
+        rtx accum_1 = gen_reg_rtx (V2SFmode);
+        rtx opnd1_0_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 0);
+        rtx opnd1_0_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 8);
+        rtx opnd2_0_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 0);
+        rtx opnd2_0_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 8);
+        rtx opnd3_0 = gen_rtx_SUBREG (V2SFmode, operands[3], 0);
+        rtx opnd3_1 = gen_rtx_SUBREG (V2SFmode, operands[3], 8);
+        emit_insn (gen_kvx_ffmswp (accum_0, opnd1_0_0, opnd2_0_0, opnd3_0, operands[4]));
+        emit_insn (gen_kvx_ffmswp (accum_1, opnd1_0_1, opnd2_0_1, opnd3_1, operands[4]));
+        rtx opnd0_0 = gen_rtx_SUBREG (V2SFmode, operands[0], 0);
+        rtx opnd0_1 = gen_rtx_SUBREG (V2SFmode, operands[0], 8);
+        rtx opnd1_1_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 16);
+        rtx opnd1_1_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 24);
+        rtx opnd2_1_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 16);
+        rtx opnd2_1_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 24);
+        emit_insn (gen_kvx_ffmawp (opnd0_0, opnd1_1_0, opnd2_1_0, accum_0, operands[4]));
+        emit_insn (gen_kvx_ffmawp (opnd0_1, opnd1_1_1, opnd2_1_1, accum_1, operands[4]));
+        DONE;
+      }
   }
+)
+
+(define_insn "*kvx_ffdmsawq"
+  [(set (match_operand:V4SF 0 "register_operand" "=r")
+        (unspec:V4SF [(match_operand:V8SF 1 "register_operand" "r")
+                      (match_operand:V8SF 2 "register_operand" "r")
+                      (match_operand:V4SF 3 "register_operand" "0")
+                      (match_operand 4 "" "")] UNSPEC_FFDMSAWQ))]
+  "KV3_2"
+  "ffdmsawq%4 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
 )
 
 (define_expand "kvx_ffdmdswq"
@@ -9487,26 +9863,40 @@
                       (match_operand 4 "" "")] UNSPEC_FFDMDSWQ))]
   ""
   {
-    rtx accum_0 = gen_reg_rtx (V2SFmode);
-    rtx accum_1 = gen_reg_rtx (V2SFmode);
-    rtx opnd1_0_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 0);
-    rtx opnd1_0_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 8);
-    rtx opnd2_0_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 0);
-    rtx opnd2_0_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 8);
-    rtx opnd3_0 = gen_rtx_SUBREG (V2SFmode, operands[3], 0);
-    rtx opnd3_1 = gen_rtx_SUBREG (V2SFmode, operands[3], 8);
-    emit_insn (gen_kvx_ffmswp (accum_0, opnd1_0_0, opnd2_0_0, opnd3_0, operands[4]));
-    emit_insn (gen_kvx_ffmswp (accum_1, opnd1_0_1, opnd2_0_1, opnd3_1, operands[4]));
-    rtx opnd0_0 = gen_rtx_SUBREG (V2SFmode, operands[0], 0);
-    rtx opnd0_1 = gen_rtx_SUBREG (V2SFmode, operands[0], 8);
-    rtx opnd1_1_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 16);
-    rtx opnd1_1_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 24);
-    rtx opnd2_1_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 16);
-    rtx opnd2_1_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 24);
-    emit_insn (gen_kvx_ffmswp (opnd0_0, opnd1_1_0, opnd2_1_0, accum_0, operands[4]));
-    emit_insn (gen_kvx_ffmswp (opnd0_1, opnd1_1_1, opnd2_1_1, accum_1, operands[4]));
-    DONE;
+    if (KV3_1)
+      {
+        rtx accum_0 = gen_reg_rtx (V2SFmode);
+        rtx accum_1 = gen_reg_rtx (V2SFmode);
+        rtx opnd1_0_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 0);
+        rtx opnd1_0_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 8);
+        rtx opnd2_0_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 0);
+        rtx opnd2_0_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 8);
+        rtx opnd3_0 = gen_rtx_SUBREG (V2SFmode, operands[3], 0);
+        rtx opnd3_1 = gen_rtx_SUBREG (V2SFmode, operands[3], 8);
+        emit_insn (gen_kvx_ffmswp (accum_0, opnd1_0_0, opnd2_0_0, opnd3_0, operands[4]));
+        emit_insn (gen_kvx_ffmswp (accum_1, opnd1_0_1, opnd2_0_1, opnd3_1, operands[4]));
+        rtx opnd0_0 = gen_rtx_SUBREG (V2SFmode, operands[0], 0);
+        rtx opnd0_1 = gen_rtx_SUBREG (V2SFmode, operands[0], 8);
+        rtx opnd1_1_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 16);
+        rtx opnd1_1_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 24);
+        rtx opnd2_1_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 16);
+        rtx opnd2_1_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 24);
+        emit_insn (gen_kvx_ffmswp (opnd0_0, opnd1_1_0, opnd2_1_0, accum_0, operands[4]));
+        emit_insn (gen_kvx_ffmswp (opnd0_1, opnd1_1_1, opnd2_1_1, accum_1, operands[4]));
+        DONE;
+      }
   }
+)
+
+(define_insn "*kvx_ffdmdswq"
+  [(set (match_operand:V4SF 0 "register_operand" "=r")
+        (unspec:V4SF [(match_operand:V8SF 1 "register_operand" "r")
+                      (match_operand:V8SF 2 "register_operand" "r")
+                      (match_operand:V4SF 3 "register_operand" "0")
+                      (match_operand 4 "" "")] UNSPEC_FFDMDSWQ))]
+  "KV3_2"
+  "ffdmdswq%4 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
 )
 
 (define_expand "kvx_ffdmaswq"
@@ -9517,26 +9907,40 @@
                       (match_operand 4 "" "")] UNSPEC_FFDMASWQ))]
   ""
   {
-    rtx accum_0 = gen_reg_rtx (V2SFmode);
-    rtx accum_1 = gen_reg_rtx (V2SFmode);
-    rtx opnd1_0_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 0);
-    rtx opnd1_0_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 8);
-    rtx opnd2_0_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 0);
-    rtx opnd2_0_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 8);
-    rtx opnd3_0 = gen_rtx_SUBREG (V2SFmode, operands[3], 0);
-    rtx opnd3_1 = gen_rtx_SUBREG (V2SFmode, operands[3], 8);
-    emit_insn (gen_kvx_ffmawp (accum_0, opnd1_0_0, opnd2_0_0, opnd3_0, operands[4]));
-    emit_insn (gen_kvx_ffmawp (accum_1, opnd1_0_1, opnd2_0_1, opnd3_1, operands[4]));
-    rtx opnd0_0 = gen_rtx_SUBREG (V2SFmode, operands[0], 0);
-    rtx opnd0_1 = gen_rtx_SUBREG (V2SFmode, operands[0], 8);
-    rtx opnd1_1_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 16);
-    rtx opnd1_1_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 24);
-    rtx opnd2_1_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 16);
-    rtx opnd2_1_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 24);
-    emit_insn (gen_kvx_ffmswp (opnd0_0, opnd1_1_0, opnd2_1_0, accum_0, operands[4]));
-    emit_insn (gen_kvx_ffmswp (opnd0_1, opnd1_1_1, opnd2_1_1, accum_1, operands[4]));
-    DONE;
+    if (KV3_1)
+      {
+        rtx accum_0 = gen_reg_rtx (V2SFmode);
+        rtx accum_1 = gen_reg_rtx (V2SFmode);
+        rtx opnd1_0_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 0);
+        rtx opnd1_0_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 8);
+        rtx opnd2_0_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 0);
+        rtx opnd2_0_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 8);
+        rtx opnd3_0 = gen_rtx_SUBREG (V2SFmode, operands[3], 0);
+        rtx opnd3_1 = gen_rtx_SUBREG (V2SFmode, operands[3], 8);
+        emit_insn (gen_kvx_ffmawp (accum_0, opnd1_0_0, opnd2_0_0, opnd3_0, operands[4]));
+        emit_insn (gen_kvx_ffmawp (accum_1, opnd1_0_1, opnd2_0_1, opnd3_1, operands[4]));
+        rtx opnd0_0 = gen_rtx_SUBREG (V2SFmode, operands[0], 0);
+        rtx opnd0_1 = gen_rtx_SUBREG (V2SFmode, operands[0], 8);
+        rtx opnd1_1_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 16);
+        rtx opnd1_1_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 24);
+        rtx opnd2_1_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 16);
+        rtx opnd2_1_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 24);
+        emit_insn (gen_kvx_ffmswp (opnd0_0, opnd1_1_0, opnd2_1_0, accum_0, operands[4]));
+        emit_insn (gen_kvx_ffmswp (opnd0_1, opnd1_1_1, opnd2_1_1, accum_1, operands[4]));
+        DONE;
+      }
   }
+)
+
+(define_insn "*kvx_ffdmaswq"
+  [(set (match_operand:V4SF 0 "register_operand" "=r")
+        (unspec:V4SF [(match_operand:V8SF 1 "register_operand" "r")
+                      (match_operand:V8SF 2 "register_operand" "r")
+                      (match_operand:V4SF 3 "register_operand" "0")
+                      (match_operand 4 "" "")] UNSPEC_FFDMASWQ))]
+  "KV3_2"
+  "ffdmaswq%4 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
 )
 
 (define_insn "kvx_fmulwcq"
@@ -9573,6 +9977,23 @@
   ""
 )
 
+(define_split
+  [(set (match_operand:V8SF 0 "register_operand" "")
+        (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "")
+                      (match_operand:V8SF 2 "register_operand" "")
+                      (match_operand 3 "" "")] UNSPEC_FMULWCQ))]
+  "KV3_2 && reload_completed"
+  [(set (subreg:V4SF (match_dup 0) 0)
+        (unspec:V4SF [(subreg:V4SF (match_dup 1) 0)
+                      (subreg:V4SF (match_dup 2) 0)
+                      (match_dup 3)] UNSPEC_FMULWCP))
+   (set (subreg:V4SF (match_dup 0) 16)
+        (unspec:V4SF [(subreg:V4SF (match_dup 1) 16)
+                      (subreg:V4SF (match_dup 2) 16)
+                      (match_dup 3)] UNSPEC_FMULWCP))]
+  ""
+)
+
 (define_expand "kvx_ffmawcq"
   [(set (match_operand:V8SF 0 "register_operand" "")
         (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "")
@@ -9581,18 +10002,44 @@
                       (match_operand 4 "" "")] UNSPEC_FFMAWCQ))]
   ""
   {
-    for (int i = 0; i < 4; i++)
+    if (KV3_1)
       {
-        rtx product = gen_reg_rtx (V2SFmode);
-        rtx opnd0 = gen_rtx_SUBREG (V2SFmode, operands[0], i*8);
-        rtx opnd1 = gen_rtx_SUBREG (V2SFmode, operands[1], i*8);
-        rtx opnd2 = gen_rtx_SUBREG (V2SFmode, operands[2], i*8);
-        rtx opnd3 = gen_rtx_SUBREG (V2SFmode, operands[3], i*8);
-        emit_insn (gen_kvx_fmulwc (product, opnd2, opnd1, operands[4]));
-        emit_insn (gen_kvx_faddwp (opnd0, product, opnd3, operands[4]));
+        for (int i = 0; i < 4; i++)
+          {
+            rtx product = gen_reg_rtx (V2SFmode);
+            rtx opnd0 = gen_rtx_SUBREG (V2SFmode, operands[0], i*8);
+            rtx opnd1 = gen_rtx_SUBREG (V2SFmode, operands[1], i*8);
+            rtx opnd2 = gen_rtx_SUBREG (V2SFmode, operands[2], i*8);
+            rtx opnd3 = gen_rtx_SUBREG (V2SFmode, operands[3], i*8);
+            emit_insn (gen_kvx_fmulwc (product, opnd2, opnd1, operands[4]));
+            emit_insn (gen_kvx_faddwp (opnd0, product, opnd3, operands[4]));
+          }
+        DONE;
       }
-    DONE;
   }
+)
+
+(define_insn_and_split "*kvx_ffmawcq"
+  [(set (match_operand:V8SF 0 "register_operand" "=r")
+        (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "r")
+                      (match_operand:V8SF 2 "register_operand" "r")
+                      (match_operand:V8SF 3 "register_operand" "0")
+                      (match_operand 4 "" "")] UNSPEC_FFMAWCQ))]
+  "KV3_2"
+  "#"
+  "&& reload_completed"
+  [(set (subreg:V4SF (match_dup 0) 0)
+        (unspec:V4SF [(subreg:V4SF (match_dup 1) 0)
+                      (subreg:V4SF (match_dup 2) 0)
+                      (subreg:V4SF (match_dup 3) 0)
+                      (match_dup 4)] UNSPEC_FFMAWCP))
+   (set (subreg:V4SF (match_dup 0) 16)
+        (unspec:V4SF [(subreg:V4SF (match_dup 1) 16)
+                      (subreg:V4SF (match_dup 2) 16)
+                      (subreg:V4SF (match_dup 3) 16)
+                      (match_dup 4)] UNSPEC_FFMAWCP))]
+  ""
+  [(set_attr "type" "mau_auxr_fpu")]
 )
 
 (define_expand "kvx_ffmswcq"
@@ -9603,18 +10050,44 @@
                       (match_operand 4 "" "")] UNSPEC_FFMSWCQ))]
   ""
   {
-    for (int i = 0; i < 4; i++)
+    if (KV3_1)
       {
-        rtx product = gen_reg_rtx (V2SFmode);
-        rtx opnd0 = gen_rtx_SUBREG (V2SFmode, operands[0], i*8);
-        rtx opnd1 = gen_rtx_SUBREG (V2SFmode, operands[1], i*8);
-        rtx opnd2 = gen_rtx_SUBREG (V2SFmode, operands[2], i*8);
-        rtx opnd3 = gen_rtx_SUBREG (V2SFmode, operands[3], i*8);
-        emit_insn (gen_kvx_fmulwc (product, opnd2, opnd1, operands[4]));
-        emit_insn (gen_kvx_fsbfwp (opnd0, product, opnd3, operands[4]));
+        for (int i = 0; i < 4; i++)
+          {
+            rtx product = gen_reg_rtx (V2SFmode);
+            rtx opnd0 = gen_rtx_SUBREG (V2SFmode, operands[0], i*8);
+            rtx opnd1 = gen_rtx_SUBREG (V2SFmode, operands[1], i*8);
+            rtx opnd2 = gen_rtx_SUBREG (V2SFmode, operands[2], i*8);
+            rtx opnd3 = gen_rtx_SUBREG (V2SFmode, operands[3], i*8);
+            emit_insn (gen_kvx_fmulwc (product, opnd2, opnd1, operands[4]));
+            emit_insn (gen_kvx_fsbfwp (opnd0, product, opnd3, operands[4]));
+          }
+        DONE;
       }
-    DONE;
   }
+)
+
+(define_insn_and_split "*kvx_ffmswcq"
+  [(set (match_operand:V8SF 0 "register_operand" "=r")
+        (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "r")
+                      (match_operand:V8SF 2 "register_operand" "r")
+                      (match_operand:V8SF 3 "register_operand" "0")
+                      (match_operand 4 "" "")] UNSPEC_FFMSWCQ))]
+  "KV3_2"
+  "#"
+  "&& reload_completed"
+  [(set (subreg:V4SF (match_dup 0) 0)
+        (unspec:V4SF [(subreg:V4SF (match_dup 1) 0)
+                      (subreg:V4SF (match_dup 2) 0)
+                      (subreg:V4SF (match_dup 3) 0)
+                      (match_dup 4)] UNSPEC_FFMSWCP))
+   (set (subreg:V4SF (match_dup 0) 16)
+        (unspec:V4SF [(subreg:V4SF (match_dup 1) 16)
+                      (subreg:V4SF (match_dup 2) 16)
+                      (subreg:V4SF (match_dup 3) 16)
+                      (match_dup 4)] UNSPEC_FFMSWCP))]
+  ""
+  [(set_attr "type" "mau_auxr_fpu")]
 )
 
 (define_insn_and_split "addv8sf3"
@@ -10977,10 +11450,10 @@
 
 ;; KVX_LD, KVX_SD
 
-(define_insn "kvx_ld<ALL64:lsvs>"
-  [(set (match_operand:ALL64 0 "register_operand" "=r,r,r")
-        (unspec:ALL64 [(match_operand:ALL64 1 "memory_operand" "a,b,m")
-                       (match_operand 2 "" "")] UNSPEC_LD))
+(define_insn "kvx_l<SIMD64:lsvs>"
+  [(set (match_operand:SIMD64 0 "register_operand" "=r,r,r")
+        (unspec:SIMD64 [(match_operand:SIMD64 1 "memory_operand" "a,b,m")
+                        (match_operand 2 "" "")] UNSPEC_LD))
    (use (match_dup 1))]
   ""
   "ld%2%m1 %0 = %1"
@@ -10988,9 +11461,9 @@
    (set_attr "length"                    "4,                       8,                      12")]
 )
 
-(define_insn "kvx_sd<ALL64:lsvs>"
-  [(unspec_volatile:ALL64 [(match_operand:ALL64 0 "memory_operand" "a,b,m")
-                           (match_operand:ALL64 1 "register_operand" "r,r,r")] UNSPEC_SD)
+(define_insn "kvx_s<SIMD64:lsvs>"
+  [(unspec_volatile:SIMD64 [(match_operand:SIMD64 0 "memory_operand" "a,b,m")
+                            (match_operand:SIMD64 1 "register_operand" "r,r,r")] UNSPEC_SD)
    (clobber (match_dup 0))]
   ""
   "sd%m0 %0 = %1"
@@ -11000,10 +11473,10 @@
 
 ;; KVX_LQ, KVX_SQ
 
-(define_insn "kvx_lq<ALL128:lsvs>"
-  [(set (match_operand:ALL128 0 "register_operand" "=r,r,r")
-        (unspec:ALL128 [(match_operand:ALL128 1 "memory_operand" "a,b,m")
-                        (match_operand 2 "" "")] UNSPEC_LQ))
+(define_insn "kvx_l<SIMD128:lsvs>"
+  [(set (match_operand:SIMD128 0 "register_operand" "=r,r,r")
+        (unspec:SIMD128 [(match_operand:SIMD128 1 "memory_operand" "a,b,m")
+                         (match_operand 2 "" "")] UNSPEC_LQ))
    (use (match_dup 1))]
   ""
   "lq%2%m1 %0 = %1"
@@ -11011,9 +11484,9 @@
    (set_attr "length"                    "4,                       8,                      12")]
 )
 
-(define_insn "kvx_sq<ALL128:lsvs>"
-  [(unspec_volatile:ALL128 [(match_operand:ALL128 0 "memory_operand" "a,b,m")
-                            (match_operand:ALL128 1 "register_operand" "r,r,r")] UNSPEC_SQ)
+(define_insn "kvx_s<SIMD128:lsvs>"
+  [(unspec_volatile:SIMD128 [(match_operand:SIMD128 0 "memory_operand" "a,b,m")
+                             (match_operand:SIMD128 1 "register_operand" "r,r,r")] UNSPEC_SQ)
    (clobber (match_dup 0))]
   ""
   "sq%m0 %0 = %1"
@@ -11023,10 +11496,10 @@
 
 ;; KVX_LO, KVX_SO
 
-(define_insn "kvx_lo<ALL256:lsvs>"
-  [(set (match_operand:ALL256 0 "register_operand" "=r,r,r")
-        (unspec:ALL256 [(match_operand:ALL256 1 "memory_operand" "a,b,m")
-                        (match_operand 2 "" "")] UNSPEC_LO))
+(define_insn "kvx_l<SIMD256:lsvs>"
+  [(set (match_operand:SIMD256 0 "register_operand" "=r,r,r")
+        (unspec:SIMD256 [(match_operand:SIMD256 1 "memory_operand" "a,b,m")
+                         (match_operand 2 "" "")] UNSPEC_LO))
    (use (match_dup 1))]
   ""
   "lo%2%m1 %0 = %1"
@@ -11034,9 +11507,9 @@
    (set_attr "length"                    "4,                       8,                      12")]
 )
 
-(define_insn "kvx_so<ALL256:lsvs>"
-  [(unspec_volatile:ALL256 [(match_operand:ALL256 0 "memory_operand" "a,b,m")
-                            (match_operand:ALL256 1 "register_operand" "r,r,r")] UNSPEC_SO)
+(define_insn "kvx_s<SIMD256:lsvs>"
+  [(unspec_volatile:SIMD256 [(match_operand:SIMD256 0 "memory_operand" "a,b,m")
+                             (match_operand:SIMD256 1 "register_operand" "r,r,r")] UNSPEC_SO)
    (clobber (match_dup 0))]
   ""
   "so%m0 %0 = %1"
