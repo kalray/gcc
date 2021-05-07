@@ -45,8 +45,8 @@
         UNSPEC_ACSWAP
         UNSPEC_ALADD
 
-        UNSPEC_ADDD
-        UNSPEC_SBFD
+        UNSPEC_ADDCD
+        UNSPEC_SBFCD
 
         UNSPEC_AVGW
         UNSPEC_AVGWP
@@ -83,14 +83,13 @@
         UNSPEC_SLLD
         UNSPEC_SRLD
         UNSPEC_SRAD
-        UNSPEC_SRSW
-        UNSPEC_SRSD
+        UNSPEC_SRS32
         UNSPEC_SRS64
         UNSPEC_SRS128
         UNSPEC_SRS256
 
-        UNSPEC_V128
-        UNSPEC_V256
+        UNSPEC_DUP128
+        UNSPEC_DUP256
         UNSPEC_INSF
         UNSPEC_EXTFS
         UNSPEC_EXTFZ
