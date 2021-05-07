@@ -1,5 +1,369 @@
 ;; SIDI (SI/DI)
 
+(define_insn_and_split "usadd<mode>3"
+  [(set (match_operand:SIDI 0 "register_operand" "=r")
+        (us_plus:SIDI (match_operand:SIDI 1 "register_operand" "r")
+                      (match_operand:SIDI 2 "register_operand" "r")))
+   (clobber (match_scratch:SIDI 3 "=&r"))]
+  ""
+  "#"
+  ""
+  [(set (match_dup 0)
+        (plus:SIDI (match_dup 1) (match_dup 2)))
+   (set (match_dup 3)
+        (ltu:SIDI (match_dup 0) (match_dup 1)))
+   (set (match_dup 0)
+        (if_then_else:SIDI 
+            (ne (match_dup 3) (const_int 0))
+            (const_int -1)
+            (match_dup 0)))]
+  {
+    if (GET_CODE (operands[3]) == SCRATCH)
+      operands[3] = gen_reg_rtx (<MODE>mode);
+  }
+)
+
+(define_expand "kvx_add<suffix>"
+  [(match_operand:SIDI 0 "register_operand" "")
+   (match_operand:SIDI 1 "register_operand" "")
+   (match_operand:SIDI 2 "register_operand" "")
+   (match_operand 3 "" "")]
+  ""
+  {
+    const char *xstr = XSTR (operands[3], 0);
+    if (!*xstr)
+      emit_insn (gen_add<mode>3 (operands[0], operands[1], operands[2]));
+    else if (xstr[1] == 's')
+      emit_insn (gen_ssadd<mode>3 (operands[0], operands[1], operands[2]));
+    else if (xstr[1] == 'u')
+      emit_insn (gen_usadd<mode>3 (operands[0], operands[1], operands[2]));
+    else
+      gcc_unreachable ();
+    DONE;
+  }
+)
+
+(define_insn_and_split "ussub<mode>3"
+  [(set (match_operand:SIDI 0 "register_operand" "=r")
+        (us_minus:SIDI (match_operand:SIDI 1 "register_operand" "r")
+                       (match_operand:SIDI 2 "register_operand" "r")))
+   (clobber (match_scratch:SIDI 3 "=&r"))]
+  ""
+  "#"
+  ""
+  [(set (match_dup 0)
+        (minus:SIDI (match_dup 1) (match_dup 2)))
+   (set (match_dup 3)
+        (ltu:SIDI (match_dup 1) (match_dup 2)))
+   (set (match_dup 0)
+        (if_then_else:SIDI 
+            (ne (match_dup 3) (const_int 0))
+            (const_int 0)
+            (match_dup 0)))]
+  {
+    if (GET_CODE (operands[3]) == SCRATCH)
+      operands[3] = gen_reg_rtx (<MODE>mode);
+  }
+)
+
+(define_expand "kvx_sbf<suffix>"
+  [(match_operand:SIDI 0 "register_operand" "")
+   (match_operand:SIDI 1 "register_operand" "")
+   (match_operand:SIDI 2 "register_operand" "")
+   (match_operand 3 "" "")]
+  ""
+  {
+    const char *xstr = XSTR (operands[3], 0);
+    if (!*xstr)
+      emit_insn (gen_sub<mode>3 (operands[0], operands[2], operands[1]));
+    else if (xstr[1] == 's')
+      emit_insn (gen_sssub<mode>3 (operands[0], operands[2], operands[1]));
+    else if (xstr[1] == 'u')
+      emit_insn (gen_ussub<mode>3 (operands[0], operands[2], operands[1]));
+    else
+      gcc_unreachable ();
+    DONE;
+  }
+)
+
+(define_insn "ashl<mode>3"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (ashift:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
+                     (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
+  ""
+  "sll<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_tiny,alu_tiny")
+   (set_attr "length" "     4,       4")]
+)
+
+(define_insn "ssashl<mode>3"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (ss_ashift:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
+                        (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
+  ""
+  "sls<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite")
+   (set_attr "length" "     4,       4")]
+)
+
+(define_insn_and_split "usashl<mode>3"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (us_ashift:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
+                        (match_operand:SI 2 "sat_shift_operand" "r,U06")))
+   (clobber (match_scratch:SIDI 3 "=&r,&r"))
+   (clobber (match_scratch:SIDI 4 "=&r,&r"))]
+  ""
+  "#"
+  ""
+  [(set (match_dup 0)
+        (ashift:SIDI (match_dup 1) (match_dup 2)))
+   (set (match_dup 3)
+        (lshiftrt:SIDI (match_dup 0) (match_dup 2)))
+   (set (match_dup 4)
+        (ne:SIDI (match_dup 3) (match_dup 1)))
+   (set (match_dup 0)
+        (if_then_else:SIDI 
+            (ne (match_dup 4) (const_int 0))
+            (const_int -1)
+            (match_dup 0)))]
+  {
+    if (GET_CODE (operands[3]) == SCRATCH)
+      operands[3] = gen_reg_rtx (<MODE>mode);
+    if (GET_CODE (operands[4]) == SCRATCH)
+      operands[4] = gen_reg_rtx (<MODE>mode);
+  }
+)
+
+(define_expand "kvx_shl<suffix>"
+  [(match_operand:SIDI 0 "register_operand" "")
+   (match_operand:SIDI 1 "register_operand" "")
+   (match_operand:SI 2 "register_operand" "")
+   (match_operand 3 "" "")]
+  ""
+  {
+    operands[2] = force_reg (SImode, operands[2]);
+    const char *xstr = XSTR (operands[3], 0);
+    if (!*xstr)
+      emit_insn (gen_ashl<mode>3 (operands[0], operands[1], operands[2]));
+    else if (xstr[1] == 's')
+      emit_insn (gen_ssashl<mode>3 (operands[0], operands[1], operands[2]));
+    else if (xstr[1] == 'u')
+      emit_insn (gen_usashl<mode>3 (operands[0], operands[1], operands[2]));
+    else if (xstr[1] == 'r')
+      emit_insn (gen_rotl<mode>3 (operands[0], operands[1], operands[2]));
+    else
+      gcc_unreachable ();
+    DONE;
+  }
+)
+
+(define_insn "ashr<mode>3"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (ashiftrt:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
+                       (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
+  ""
+  "sra<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_tiny,alu_tiny")
+   (set_attr "length" "     4,       4")]
+)
+
+(define_insn "lshr<mode>3"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (lshiftrt:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
+                       (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
+  ""
+  "srl<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_tiny,alu_tiny")
+   (set_attr "length" "     4,       4")]
+)
+
+(define_insn "kvx_srs<suffix>"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (unspec:SIDI [(match_operand:SIDI 1 "register_operand" "r,r")
+                      (match_operand:SI 2 "sat_shift_operand" "r,U06")] UNSPEC_SRS32))]
+  ""
+  "srs<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite")
+   (set_attr "length" "     4,       4")]
+)
+
+(define_expand "kvx_shr<suffix>"
+  [(match_operand:SIDI 0 "register_operand" "")
+   (match_operand:SIDI 1 "register_operand" "")
+   (match_operand:SI 2 "register_operand" "")
+   (match_operand 3 "" "")]
+  ""
+  {
+    operands[2] = force_reg (SImode, operands[2]);
+    const char *xstr = XSTR (operands[3], 0);
+    if (!*xstr)
+      emit_insn (gen_lshr<mode>3 (operands[0], operands[1], operands[2]));
+    else if (xstr[1] == 'a' && !xstr[2])
+      emit_insn (gen_ashr<mode>3 (operands[0], operands[1], operands[2]));
+    else if (xstr[1] == 'a' && xstr[2] == 'r')
+      emit_insn (gen_kvx_srs<suffix> (operands[0], operands[1], operands[2]));
+    else if (xstr[1] == 'r')
+      emit_insn (gen_rotr<mode>3 (operands[0], operands[1], operands[2]));
+    else
+      gcc_unreachable ();
+    DONE;
+  }
+)
+
+(define_insn "neg<mode>2"
+  [(set (match_operand:SIDI 0 "register_operand" "=r")
+        (neg:SIDI (match_operand:SIDI 1 "register_operand" "r")))]
+  ""
+  "neg<suffix> %0 = %1"
+  [(set_attr "type" "alu_tiny")]
+)
+
+(define_insn "ssneg<mode>2"
+  [(set (match_operand:SIDI 0 "register_operand" "=r")
+        (ss_neg:SIDI (match_operand:SIDI 1 "register_operand" "r")))]
+  ""
+  "sbfs<suffix> %0 = %1, 0"
+  [(set_attr "type" "alu_lite_x")
+   (set_attr "length"        "8")]
+)
+
+(define_expand "kvx_neg<suffix>"
+  [(match_operand:SIDI 0 "register_operand" "")
+   (match_operand:SIDI 1 "register_operand" "")
+   (match_operand 2 "" "")]
+  ""
+  {
+    const char *xstr = XSTR (operands[2], 0);
+    if (!*xstr)
+      emit_insn (gen_neg<mode>2 (operands[0], operands[1]));
+    else if (xstr[1] == 's')
+      emit_insn (gen_ssneg<mode>2 (operands[0], operands[1]));
+    else
+      gcc_unreachable ();
+    DONE;
+  }
+)
+
+(define_insn "abs<mode>2"
+  [(set (match_operand:SIDI 0 "register_operand" "=r")
+        (abs:SIDI (match_operand:SIDI 1 "register_operand" "r")))]
+  ""
+  "abs<suffix> %0 = %1"
+  [(set_attr "type" "alu_lite")]
+)
+
+(define_insn_and_split "ssabs<mode>2"
+  [(set (match_operand:SIDI 0 "register_operand" "=r")
+        (ss_abs:SIDI (match_operand:SIDI 1 "register_operand" "r")))]
+  ""
+  "#"
+  ""
+  [(set (match_dup 0)
+        (ss_neg:SIDI (match_dup 1)))
+   (set (match_dup 0)
+        (abs:SIDI (match_dup 0)))]
+  ""
+)
+
+(define_expand "kvx_abs<suffix>"
+  [(match_operand:SIDI 0 "register_operand" "")
+   (match_operand:SIDI 1 "register_operand" "")
+   (match_operand 2 "" "")]
+  ""
+  {
+    const char *xstr = XSTR (operands[2], 0);
+    if (!*xstr)
+      emit_insn (gen_abs<mode>2 (operands[0], operands[1]));
+    else if (xstr[1] == 's')
+      emit_insn (gen_ssabs<mode>2 (operands[0], operands[1]));
+    else
+      gcc_unreachable ();
+    DONE;
+  }
+)
+
+(define_insn "abdsi3"
+  [(set (match_operand:SI 0 "register_operand" "=r,r,r")
+        (abs:SI (minus:SI (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i")
+                          (match_operand:SI 1 "register_operand" "r,r,r"))))]
+  ""
+  "abdw %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite,alu_lite_x")
+   (set_attr "length" "4,4,8")]
+)
+
+(define_insn "abddi3"
+  [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
+        (abs:DI (minus:DI (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")
+                          (match_operand:DI 1 "register_operand" "r,r,r,r"))))]
+  ""
+  "abdd %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite,alu_lite_x,alu_lite_y")
+   (set_attr "length" "4,4,8,12")]
+)
+
+(define_insn_and_split "ssabd<mode>3"
+  [(set (match_operand:SIDI 0 "register_operand" "=r")
+        (ss_abs:SIDI (minus:SIDI (match_operand:SIDI 1 "register_operand" "r")
+                                 (match_operand:SIDI 2 "register_operand" "r"))))
+   (clobber (match_scratch:SIDI 3 "=&r"))
+   (clobber (match_scratch:SIDI 4 "=&r"))]
+  ""
+  "#"
+  ""
+  [(set (match_dup 3)
+        (ss_minus:SIDI (match_dup 1) (match_dup 2)))
+   (set (match_dup 4)
+        (ss_minus:SIDI (match_dup 2) (match_dup 1)))
+   (set (match_dup 0)
+        (smax:SIDI (match_dup 3) (match_dup 4)))]
+  {
+    if (GET_CODE (operands[3]) == SCRATCH)
+      operands[3] = gen_reg_rtx (<MODE>mode);
+    if (GET_CODE (operands[4]) == SCRATCH)
+      operands[4] = gen_reg_rtx (<MODE>mode);
+  }
+)
+
+(define_expand "kvx_abd<suffix>"
+  [(match_operand:SIDI 0 "register_operand" "")
+   (match_operand:SIDI 1 "register_operand" "")
+   (match_operand:SIDI 2 "register_operand" "")
+   (match_operand 3 "" "")]
+  ""
+  {
+    const char *xstr = XSTR (operands[3], 0);
+    if (!*xstr)
+      emit_insn (gen_abd<mode>3 (operands[0], operands[1], operands[2]));
+    else if (xstr[1] == 's')
+      emit_insn (gen_ssabd<mode>3 (operands[0], operands[1], operands[2]));
+    else
+      gcc_unreachable ();
+    DONE;
+  }
+)
+
+(define_expand "kvx_bitcnt<suffix>"
+  [(match_operand:SIDI 0 "register_operand" "")
+   (match_operand:SIDI 1 "register_operand" "")
+   (match_operand 2 "" "")]
+  ""
+  {
+    const char *xstr = XSTR (operands[2], 0);
+    if (!*xstr)
+      emit_insn (gen_popcount<mode>2 (operands[0], operands[1]));
+    else if (xstr[1] == 'l' && xstr[2] == 'z')
+      emit_insn (gen_clz<mode>2 (operands[0], operands[1]));
+    else if (xstr[1] == 'l' && xstr[2] == 's')
+      emit_insn (gen_clrsb<mode>2 (operands[0], operands[1]));
+    else if (xstr[1] == 't')
+      emit_insn (gen_ctz<mode>2 (operands[0], operands[1]));
+    else
+      gcc_unreachable ();
+    DONE;
+  }
+)
+
 (define_insn "*addx2<suffix>"
   [(set (match_operand:SIDI 0 "register_operand" "=r,r")
         (plus:SIDI (ashift:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
@@ -214,29 +578,6 @@
    (set_attr "length" "4,       8")]
 )
 
-(define_insn_and_split "usaddsi3"
-  [(set (match_operand:SI 0 "register_operand" "=r")
-        (us_plus:SI (match_operand:SI 1 "register_operand" "r")
-                    (match_operand:SI 2 "register_operand" "r")))
-  (clobber (match_scratch:SI 3 "=&r"))]
-  ""
-  "#"
-  ""
-  [(set (match_dup 0)
-        (plus:SI (match_dup 1) (match_dup 2)))
-   (set (match_dup 3)
-        (ltu:SI (match_dup 0) (match_dup 1)))
-   (set (match_dup 0)
-        (if_then_else:SI 
-            (ne (match_dup 3) (const_int 0))
-            (const_int -1)
-            (match_dup 0)))]
-  {
-    if (GET_CODE (operands[3]) == SCRATCH)
-      operands[3] = gen_reg_rtx (SImode);
-  }
-)
-
 (define_insn "subsi3"
   [(set (match_operand:SI 0 "register_operand" "=r,r,r")
         (minus:SI (match_operand:SI 1 "kvx_r_s10_s37_s64_operand" "r,I10,i")
@@ -277,29 +618,6 @@
   "sbfsw %0 = %2, %1"
   [(set_attr "type"   "alu_lite,alu_lite_x")
    (set_attr "length" "4,       8")]
-)
-
-(define_insn_and_split "ussubsi3"
-  [(set (match_operand:SI 0 "register_operand" "=r")
-        (us_minus:SI (match_operand:SI 1 "register_operand" "r")
-                    (match_operand:SI 2 "register_operand" "r")))
-  (clobber (match_scratch:SI 3 "=&r"))]
-  ""
-  "#"
-  ""
-  [(set (match_dup 0)
-        (minus:SI (match_dup 1) (match_dup 2)))
-   (set (match_dup 3)
-        (ltu:SI (match_dup 1) (match_dup 2)))
-   (set (match_dup 0)
-        (if_then_else:SI 
-            (ne (match_dup 3) (const_int 0))
-            (const_int 0)
-            (match_dup 0)))]
-  {
-    if (GET_CODE (operands[3]) == SCRATCH)
-      operands[3] = gen_reg_rtx (SImode);
-  }
 )
 
 (define_insn "mulsi3"
@@ -640,84 +958,6 @@
    (set_attr "length" "4,       4,       8")]
 )
 
-(define_insn "ashlsi3"
-  [(set (match_operand:SI 0 "register_operand" "=r,r")
-        (ashift:SI (match_operand:SI 1 "register_operand" "r,r")
-                   (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
-  ""
-  "sllw %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny")
-   (set_attr "length" "     4,       4")]
-)
-
-(define_insn "ssashlsi3"
-  [(set (match_operand:SI 0 "register_operand" "=r,r")
-        (ss_ashift:SI (match_operand:SI 1 "register_operand" "r,r")
-                      (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
-  ""
-  "slsw %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite")
-   (set_attr "length" "     4,       4")]
-)
-
-(define_insn_and_split "usashlsi3"
-  [(set (match_operand:SI 0 "register_operand" "=r,r")
-        (us_ashift:SI (match_operand:SI 1 "register_operand" "r,r")
-                      (match_operand:SI 2 "sat_shift_operand" "r,U06")))
-  (clobber (match_scratch:SI 3 "=&r,&r"))
-  (clobber (match_scratch:SI 4 "=&r,&r"))]
-  ""
-  "#"
-  ""
-  [(set (match_dup 0)
-        (ashift:SI (match_dup 1) (match_dup 2)))
-   (set (match_dup 3)
-        (lshiftrt:SI (match_dup 0) (match_dup 2)))
-   (set (match_dup 4)
-        (ne:SI (match_dup 3) (match_dup 1)))
-   (set (match_dup 0)
-        (if_then_else:SI 
-            (ne (match_dup 4) (const_int 0))
-            (const_int -1)
-            (match_dup 0)))]
-  {
-    if (GET_CODE (operands[3]) == SCRATCH)
-      operands[3] = gen_reg_rtx (SImode);
-    if (GET_CODE (operands[4]) == SCRATCH)
-      operands[4] = gen_reg_rtx (SImode);
-  }
-)
-
-(define_insn "ashrsi3"
-  [(set (match_operand:SI 0 "register_operand" "=r,r")
-        (ashiftrt:SI (match_operand:SI 1 "register_operand" "r,r")
-                     (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
-  ""
-  "sraw %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny")
-   (set_attr "length" "     4,       4")]
-)
-
-(define_insn "lshrsi3"
-  [(set (match_operand:SI 0 "register_operand" "=r,r")
-        (lshiftrt:SI (match_operand:SI 1 "register_operand" "r,r")
-                     (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
-  ""
-  "srlw %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny")
-   (set_attr "length" "     4,       4")]
-)
-
-(define_insn "kvx_srsw"
-  [(set (match_operand:SI 0 "register_operand" "=r,r")
-        (unspec:SI [(match_operand:SI 1 "register_operand" "r,r")
-                    (match_operand:SI 2 "sat_shift_operand" "r,U06")] UNSPEC_SRSW))]
-  ""
-  "srsw %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite")
-   (set_attr "length" "     4,       4")]
-)
-
 (define_insn "rotlsi3"
   [(set (match_operand:SI 0 "register_operand" "=r,r")
         (rotate:SI (match_operand:SI 1 "register_operand" "r,r")
@@ -748,22 +988,22 @@
    (set_attr "length" "4,8")]
 )
 
-(define_insn "uavgsi3_floor"
-  [(set (match_operand:SI 0 "register_operand" "=r,r")
-        (unspec:SI [(match_operand:SI 1 "register_operand" "r,r")
-                    (match_operand:SI 2 "register_s32_operand" "r,B32")] UNSPEC_AVGUW))]
-  ""
-  "avguw %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite_x")
-   (set_attr "length" "4,8")]
-)
-
 (define_insn "avgsi3_ceil"
   [(set (match_operand:SI 0 "register_operand" "=r,r")
         (unspec:SI [(match_operand:SI 1 "register_operand" "r,r")
                     (match_operand:SI 2 "register_s32_operand" "r,B32")] UNSPEC_AVGRW))]
   ""
   "avgrw %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "4,8")]
+)
+
+(define_insn "uavgsi3_floor"
+  [(set (match_operand:SI 0 "register_operand" "=r,r")
+        (unspec:SI [(match_operand:SI 1 "register_operand" "r,r")
+                    (match_operand:SI 2 "register_s32_operand" "r,B32")] UNSPEC_AVGUW))]
+  ""
+  "avguw %0 = %1, %2"
   [(set_attr "type" "alu_lite,alu_lite_x")
    (set_attr "length" "4,8")]
 )
@@ -778,6 +1018,28 @@
    (set_attr "length" "4,8")]
 )
 
+(define_expand "kvx_avgw"
+  [(match_operand:SI 0 "register_operand" "")
+   (match_operand:SI 1 "register_operand" "")
+   (match_operand:SI 2 "register_s32_operand" "")
+   (match_operand 3 "" "")]
+  ""
+  {
+    const char *xstr = XSTR (operands[3], 0);
+    if (!*xstr)
+      emit_insn (gen_avgsi3_floor (operands[0], operands[1], operands[2]));
+    else if (xstr[1] == 'r' && !xstr[2])
+      emit_insn (gen_avgsi3_ceil (operands[0], operands[1], operands[2]));
+    else if (xstr[1] == 'u' && !xstr[2])
+      emit_insn (gen_uavgsi3_floor (operands[0], operands[1], operands[2]));
+    else if (xstr[1] == 'r' && xstr[2] == 'u')
+      emit_insn (gen_uavgsi3_ceil (operands[0], operands[1], operands[2]));
+    else
+      gcc_unreachable ();
+    DONE;
+  }
+)
+
 (define_insn "bswapsi2"
   [(set (match_operand:SI 0 "register_operand" "=r")
         (bswap:SI (match_operand:SI 1 "register_operand" "r")))]
@@ -785,32 +1047,6 @@
   "sbmm8 %0 = %1, 0x01020408"
   [(set_attr "type" "alu_lite_x")
    (set_attr "length"        "8")]
-)
-
-(define_insn "negsi2"
-  [(set (match_operand:SI 0 "register_operand" "=r")
-        (neg:SI (match_operand:SI 1 "register_operand" "r")))]
-  ""
-  "negw %0 = %1"
-  [(set_attr "type" "alu_tiny")]
-)
-
-(define_insn "abssi2"
-  [(set (match_operand:SI 0 "register_operand" "=r")
-        (abs:SI (match_operand:SI 1 "register_operand" "r")))]
-  ""
-  "absw %0 = %1"
-  [(set_attr "type" "alu_lite")]
-)
-
-(define_insn "kvx_abdw"
-  [(set (match_operand:SI 0 "register_operand" "=r,r,r")
-        (abs:SI (minus:SI (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i")
-                          (match_operand:SI 1 "register_operand" "r,r,r"))))]
-  ""
-  "abdw %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite,alu_lite_x")
-   (set_attr "length" "4,4,8")]
 )
 
 (define_insn "clrsbsi2"
@@ -977,17 +1213,6 @@
    (set_attr "length" "     4,         8")]
 )
 
-;; for use by addd with carry
-(define_insn "kvx_addd"
-  [(set (match_operand:DI 0 "register_operand" "=r")
-        (unspec_volatile:DI [(match_operand:DI 1 "register_operand" "r")
-                             (match_operand:DI 2 "register_operand" "r")
-                             (match_operand 3 "" "")] UNSPEC_ADDD))]
-  ""
-  "addd%3 %0 = %1, %2"
-  [(set_attr "type" "alu_full")]
-)
-
 (define_insn "ssadddi3"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
         (ss_plus:DI (match_operand:DI 1 "register_operand" "r,r,r,r")
@@ -998,27 +1223,14 @@
    (set_attr "length" "4,4,8,12")]
 )
 
-(define_insn_and_split "usadddi3"
+(define_insn "kvx_addcd"
   [(set (match_operand:DI 0 "register_operand" "=r")
-        (us_plus:DI (match_operand:DI 1 "register_operand" "r")
-                    (match_operand:DI 2 "register_operand" "r")))
-  (clobber (match_scratch:DI 3 "=&r"))]
+        (unspec_volatile:DI [(match_operand:DI 1 "register_operand" "r")
+                             (match_operand:DI 2 "register_operand" "r")
+                             (match_operand 3 "" "")] UNSPEC_ADDCD))]
   ""
-  "#"
-  ""
-  [(set (match_dup 0)
-        (plus:DI (match_dup 1) (match_dup 2)))
-   (set (match_dup 3)
-        (ltu:DI (match_dup 0) (match_dup 1)))
-   (set (match_dup 0)
-        (if_then_else:DI 
-            (ne (match_dup 3) (const_int 0))
-            (const_int -1)
-            (match_dup 0)))]
-  {
-    if (GET_CODE (operands[3]) == SCRATCH)
-      operands[3] = gen_reg_rtx (DImode);
-  }
+  "addd%3 %0 = %1, %2"
+  [(set_attr "type" "alu_full")]
 )
 
 (define_insn "subdi3"
@@ -1133,17 +1345,6 @@
    (set_attr "length" "     4,         8")]
 )
 
-;; for use by sbfd with carry
-(define_insn "kvx_sbfd"
-  [(set (match_operand:DI 0 "register_operand" "=r")
-        (unspec_volatile:DI [(match_operand:DI 1 "register_operand" "r")
-                             (match_operand:DI 2 "register_operand" "r")
-                             (match_operand 3 "" "")] UNSPEC_SBFD))]
-  ""
-  "sbfd%3 %0 = %1, %2"
-  [(set_attr "type" "alu_full")]
-)
-
 (define_insn "sssubdi3"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
         (ss_minus:DI (match_operand:DI 1 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")
@@ -1154,27 +1355,14 @@
    (set_attr "length" "4,4,8,12")]
 )
 
-(define_insn_and_split "ussubdi3"
+(define_insn "kvx_sbfcd"
   [(set (match_operand:DI 0 "register_operand" "=r")
-        (us_minus:DI (match_operand:DI 1 "register_operand" "r")
-                    (match_operand:DI 2 "register_operand" "r")))
-  (clobber (match_scratch:DI 3 "=&r"))]
+        (unspec_volatile:DI [(match_operand:DI 1 "register_operand" "r")
+                             (match_operand:DI 2 "register_operand" "r")
+                             (match_operand 3 "" "")] UNSPEC_SBFCD))]
   ""
-  "#"
-  ""
-  [(set (match_dup 0)
-        (minus:DI (match_dup 1) (match_dup 2)))
-   (set (match_dup 3)
-        (ltu:DI (match_dup 1) (match_dup 2)))
-   (set (match_dup 0)
-        (if_then_else:DI 
-            (ne (match_dup 3) (const_int 0))
-            (const_int 0)
-            (match_dup 0)))]
-  {
-    if (GET_CODE (operands[3]) == SCRATCH)
-      operands[3] = gen_reg_rtx (DImode);
-  }
+  "sbfd%3 %0 = %1, %2"
+  [(set_attr "type" "alu_full")]
 )
 
 (define_insn "muldi3"
@@ -1475,82 +1663,52 @@
    (set_attr "length" "4,4,8,12")]
 )
 
-(define_insn "ashldi3"
-  [(set (match_operand:DI 0 "register_operand" "=r,r")
-        (ashift:DI (match_operand:DI 1 "register_operand" "r,r")
-                   (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
-  ""
-  "slld %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny")
-   (set_attr "length" "     4,       4")]
-)
-
-(define_insn "ssashldi3"
-  [(set (match_operand:DI 0 "register_operand" "=r,r")
-        (ss_ashift:DI (match_operand:DI 1 "register_operand" "r,r")
-                      (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
-  ""
-  "slsd %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite")
-   (set_attr "length" "     4,       4")]
-)
-
-(define_insn_and_split "usashldi3"
-  [(set (match_operand:DI 0 "register_operand" "=r,r")
-        (us_ashift:DI (match_operand:DI 1 "register_operand" "r,r")
-                      (match_operand:SI 2 "sat_shift_operand" "r,U06")))
-  (clobber (match_scratch:DI 3 "=&r,&r"))
-  (clobber (match_scratch:DI 4 "=&r,&r"))]
+(define_insn_and_split "rotldi3"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (rotate:DI (match_operand:DI 1 "register_operand" "r")
+                   (match_operand:SI 2 "register_operand" "r")))
+   (clobber (match_scratch:SI 3 "=&r"))
+   (clobber (match_scratch:DI 4 "=&r"))
+   (clobber (match_scratch:DI 5 "=&r"))]
   ""
   "#"
   ""
-  [(set (match_dup 0)
-        (ashift:DI (match_dup 1) (match_dup 2)))
-   (set (match_dup 3)
-        (lshiftrt:DI (match_dup 0) (match_dup 2)))
-   (set (match_dup 4)
-        (ne:DI (match_dup 3) (match_dup 1)))
-   (set (match_dup 0)
-        (if_then_else:DI 
-            (ne (match_dup 4) (const_int 0))
-            (const_int -1)
-            (match_dup 0)))]
+  [(set (match_dup 3) (neg:SI (match_dup 2)))
+   (set (match_dup 4) (ashift:DI (match_dup 1) (match_dup 2)))
+   (set (match_dup 5) (lshiftrt:DI (match_dup 1) (match_dup 3)))
+   (set (match_dup 0) (ior:DI (match_dup 4) (match_dup 5)))]
   {
     if (GET_CODE (operands[3]) == SCRATCH)
-      operands[3] = gen_reg_rtx (DImode);
+      operands[3] = gen_reg_rtx (SImode);
     if (GET_CODE (operands[4]) == SCRATCH)
       operands[4] = gen_reg_rtx (DImode);
+    if (GET_CODE (operands[5]) == SCRATCH)
+      operands[5] = gen_reg_rtx (DImode);
   }
 )
 
-(define_insn "ashrdi3"
-  [(set (match_operand:DI 0 "register_operand" "=r,r")
-        (ashiftrt:DI (match_operand:DI 1 "register_operand" "r,r")
-                     (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
+(define_insn_and_split "rotrdi3"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (rotatert:DI (match_operand:DI 1 "register_operand" "r")
+                     (match_operand:SI 2 "register_operand" "r")))
+   (clobber (match_scratch:SI 3 "=&r"))
+   (clobber (match_scratch:DI 4 "=&r"))
+   (clobber (match_scratch:DI 5 "=&r"))]
   ""
-  "srad %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny")
-   (set_attr "length" "     4,       4")]
-)
-
-(define_insn "lshrdi3"
-  [(set (match_operand:DI 0 "register_operand" "=r,r")
-        (lshiftrt:DI (match_operand:DI 1 "register_operand" "r,r")
-                     (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
+  "#"
   ""
-  "srld %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny")
-   (set_attr "length" "     4,       4")]
-)
-
-(define_insn "kvx_srsd"
-  [(set (match_operand:DI 0 "register_operand" "=r,r")
-        (unspec:DI [(match_operand:DI 1 "register_operand" "r,r")
-                    (match_operand:SI 2 "sat_shift_operand" "r,U06")] UNSPEC_SRSD))]
-  ""
-  "srsd %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite")
-   (set_attr "length" "     4,       4")]
+  [(set (match_dup 3) (neg:SI (match_dup 2)))
+   (set (match_dup 4) (lshiftrt:DI (match_dup 1) (match_dup 2)))
+   (set (match_dup 5) (ashift:DI (match_dup 1) (match_dup 3)))
+   (set (match_dup 0) (ior:DI (match_dup 4) (match_dup 5)))]
+  {
+    if (GET_CODE (operands[3]) == SCRATCH)
+      operands[3] = gen_reg_rtx (SImode);
+    if (GET_CODE (operands[4]) == SCRATCH)
+      operands[4] = gen_reg_rtx (DImode);
+    if (GET_CODE (operands[5]) == SCRATCH)
+      operands[5] = gen_reg_rtx (DImode);
+  }
 )
 
 (define_insn "bswapdi2"
@@ -1560,32 +1718,6 @@
   "sbmm8 %0 = %1, 0x0102040810204080"
   [(set_attr "type" "alu_lite_y")
    (set_attr "length"       "12")]
-)
-
-(define_insn "negdi2"
-  [(set (match_operand:DI 0 "register_operand" "=r")
-        (neg:DI (match_operand:DI 1 "register_operand" "r")))]
-  ""
-  "negd %0 = %1"
-  [(set_attr "type" "alu_tiny")]
-)
-
-(define_insn "absdi2"
-  [(set (match_operand:DI 0 "register_operand" "=r")
-        (abs:DI (match_operand:DI 1 "register_operand" "r")))]
-  ""
-  "absd %0 = %1"
-  [(set_attr "type" "alu_lite")]
-)
-
-(define_insn "kvx_abdd"
-  [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
-        (abs:DI (minus:DI (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")
-                          (match_operand:DI 1 "register_operand" "r,r,r,r"))))]
-  ""
-  "abdd %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite,alu_lite_x,alu_lite_y")
-   (set_attr "length" "4,4,8,12")]
 )
 
 (define_insn "clrsbdi2"
@@ -1693,8 +1825,8 @@
     rtx hi_2 = simplify_gen_subreg (DImode, operands[2], TImode, 8);
     rtx ci = gen_rtx_CONST_STRING (VOIDmode, ".ci");
     rtx c = gen_rtx_CONST_STRING (VOIDmode, ".c");
-    emit_insn (gen_kvx_addd (lo_0, lo_1, lo_2, ci));
-    emit_insn (gen_kvx_addd (hi_0, hi_1, hi_2, c));
+    emit_insn (gen_kvx_addcd (lo_0, lo_1, lo_2, ci));
+    emit_insn (gen_kvx_addcd (hi_0, hi_1, hi_2, c));
     DONE;
   }
 )
@@ -1713,8 +1845,8 @@
     rtx hi_2 = simplify_gen_subreg (DImode, operands[2], TImode, 8);
     rtx ci = gen_rtx_CONST_STRING (VOIDmode, ".ci");
     rtx c = gen_rtx_CONST_STRING (VOIDmode, ".c");
-    emit_insn (gen_kvx_sbfd (lo_0, lo_2, lo_1, ci));
-    emit_insn (gen_kvx_sbfd (hi_0, hi_2, hi_1, c));
+    emit_insn (gen_kvx_sbfcd (lo_0, lo_2, lo_1, ci));
+    emit_insn (gen_kvx_sbfcd (hi_0, hi_2, hi_1, c));
     DONE;
   }
 )
