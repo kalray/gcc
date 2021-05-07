@@ -1229,7 +1229,7 @@
                              (match_operand:DI 2 "register_operand" "r")
                              (match_operand 3 "" "")] UNSPEC_ADDCD))]
   ""
-  "addd%3 %0 = %1, %2"
+  "addcd%3 %0 = %1, %2"
   [(set_attr "type" "alu_full")]
 )
 
@@ -1361,7 +1361,7 @@
                              (match_operand:DI 2 "register_operand" "r")
                              (match_operand 3 "" "")] UNSPEC_SBFCD))]
   ""
-  "sbfd%3 %0 = %1, %2"
+  "sbfcd%3 %0 = %1, %2"
   [(set_attr "type" "alu_full")]
 )
 
@@ -1823,8 +1823,8 @@
     rtx hi_1 = simplify_gen_subreg (DImode, operands[1], TImode, 8);
     rtx lo_2 = simplify_gen_subreg (DImode, operands[2], TImode, 0);
     rtx hi_2 = simplify_gen_subreg (DImode, operands[2], TImode, 8);
-    rtx ci = gen_rtx_CONST_STRING (VOIDmode, ".ci");
-    rtx c = gen_rtx_CONST_STRING (VOIDmode, ".c");
+    rtx ci = gen_rtx_CONST_STRING (VOIDmode, ".i");
+    rtx c = gen_rtx_CONST_STRING (VOIDmode, "");
     emit_insn (gen_kvx_addcd (lo_0, lo_1, lo_2, ci));
     emit_insn (gen_kvx_addcd (hi_0, hi_1, hi_2, c));
     DONE;
@@ -1843,8 +1843,8 @@
     rtx hi_1 = simplify_gen_subreg (DImode, operands[1], TImode, 8);
     rtx lo_2 = simplify_gen_subreg (DImode, operands[2], TImode, 0);
     rtx hi_2 = simplify_gen_subreg (DImode, operands[2], TImode, 8);
-    rtx ci = gen_rtx_CONST_STRING (VOIDmode, ".ci");
-    rtx c = gen_rtx_CONST_STRING (VOIDmode, ".c");
+    rtx ci = gen_rtx_CONST_STRING (VOIDmode, ".i");
+    rtx c = gen_rtx_CONST_STRING (VOIDmode, "");
     emit_insn (gen_kvx_sbfcd (lo_0, lo_2, lo_1, ci));
     emit_insn (gen_kvx_sbfcd (hi_0, hi_2, hi_1, c));
     DONE;
