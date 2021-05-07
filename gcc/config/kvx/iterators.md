@@ -274,7 +274,7 @@
   (DI      "d")
   (DF      "fd")
   (SC      "fwc")
-  (TI      "t")
+  (TI      "q")
   (OI      "o")
   (V8QI    "bo")
   (V4HI    "hq")
