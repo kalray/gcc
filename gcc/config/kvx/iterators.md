@@ -680,8 +680,13 @@
   V8HI V4SI
 ])
 
+;; Iterator for V8HI V2DI
+(define_mode_iterator V128I [
+  V8HI V2DI
+])
+
 ;; Iterator for the non-byte 128-bit vector integer modes.
-(define_mode_iterator S128J [
+(define_mode_iterator V128J [
   V8HI V4SI V2DI
 ])
 
@@ -695,8 +700,13 @@
   V16HI V8SI
 ])
 
+;; Iterator for V16HI V4DI
+(define_mode_iterator V256I [
+  V16HI V4DI
+])
+
 ;; Iterator for the non-byte 256-bit vector integer modes.
-(define_mode_iterator S256J [
+(define_mode_iterator V256J [
   V16HI V8SI V4DI
 ])
 
@@ -710,9 +720,19 @@
   V8HF V4SF
 ])
 
+;; Iterator for all the 128-bit vector FP modes.
+(define_mode_iterator V128F [
+  V8HF V4SF V2DF
+])
+
 ;; Iterator for the small elements 256-bit vector FP modes.
 (define_mode_iterator S256F [
   V16HF V8SF
+])
+
+;; Iterator for all the 256-bit vector FP modes.
+(define_mode_iterator V256F [
+  V16HF V8SF V4DF
 ])
 
 ;; Iterator for V8QI S64I S64F
