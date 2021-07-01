@@ -3565,7 +3565,8 @@ kvx_expand_vec_perm_const_emit (rtx target, rtx source1, rtx source2)
 	  if (constant)
 	    {
 	      rtx tmp = gen_reg_rtx (DImode);
-	      rtx source = orig >= nwords? source2: source1;
+	      rtx source
+		= force_reg (vector_mode, orig >= nwords ? source2 : source1);
 	      int offset = orig >= nwords? orig - nwords: orig;
 	      rtx op1 = simplify_gen_subreg (DImode, source, vector_mode, offset*UNITS_PER_WORD);
 	      rtx op2 = force_reg (DImode, GEN_INT (constant));
