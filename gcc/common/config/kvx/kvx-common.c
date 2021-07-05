@@ -50,7 +50,7 @@ kvx_option_default_params (void)
     set_default_param_value (PARAM_L1_CACHE_LINE_SIZE, 32);
     set_default_param_value (PARAM_L2_CACHE_SIZE, 1024);
     set_default_param_value (PARAM_IPA_CP_EVAL_THRESHOLD, 400);
-    set_default_param_value (PARAM_MAX_INLINE_INSNS_AUTO, 40); /* Default value */
+    set_default_param_value (PARAM_MAX_INLINE_INSNS_AUTO, 90);
     set_default_param_value (PARAM_MAX_COMPLETELY_PEELED_INSNS, 400);
     set_default_param_value (PARAM_MAX_PEELED_INSNS, 400);
 }
