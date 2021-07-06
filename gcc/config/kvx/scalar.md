@@ -2146,7 +2146,7 @@
     emit_insn (gen_floatdidf2 (tempdf, operands[1]));
     rtx tempsf = gen_reg_rtx (SFmode);
     emit_insn (gen_truncdfsf2 (tempsf, tempdf));
-    emit_insn (gen_truncsfhf2 (operands[1], tempsf));
+    emit_insn (gen_truncsfhf2 (operands[0], tempsf));
     DONE;
   }
 )
@@ -2158,7 +2158,7 @@
   {
     rtx tempsf = gen_reg_rtx (SFmode);
     emit_insn (gen_floatunssisf2 (tempsf, operands[1]));
-    emit_insn (gen_truncsfhf2 (operands[1], tempsf));
+    emit_insn (gen_truncsfhf2 (operands[0], tempsf));
     DONE;
   }
 )
@@ -2172,7 +2172,7 @@
     emit_insn (gen_floatunsdidf2 (tempdf, operands[1]));
     rtx tempsf = gen_reg_rtx (SFmode);
     emit_insn (gen_truncdfsf2 (tempsf, tempdf));
-    emit_insn (gen_truncsfhf2 (operands[1], tempsf));
+    emit_insn (gen_truncsfhf2 (operands[0], tempsf));
     DONE;
   }
 )
