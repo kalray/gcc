@@ -6289,8 +6289,8 @@
 
 (define_insn "kvx_fwiden<widenx>"
   [(set (match_operand:<WIDE> 0 "register_operand" "=r")
-        (unspec:<WIDE> [(match_operand:S64F 1 "register_operand" "")
-                        (match_operand:S64F 2 "" "")] UNSPEC_FWIDEN64))]
+        (unspec:<WIDE> [(match_operand:S64F 1 "register_operand" "r")
+                        (match_operand 2 "" "")] UNSPEC_FWIDEN64))]
   ""
   "fwidenl<hwidenx>%2 %x0 = %1\n\tfwidenm<hwidenx>%2 %y0 = %1"
   [(set_attr "type" "alu_lite_x2")
