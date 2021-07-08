@@ -161,6 +161,8 @@ extern int kvx_has_tls_reference (rtx x);
 extern bool kvx_float_fits_bits (const REAL_VALUE_TYPE *r, unsigned bitsz,
 				 enum machine_mode mode);
 
+extern bool kvx_subreg_const_vector_p (rtx);
+
 extern poly_int64 kvx_initial_elimination_offset (int, int);
 
 char *kvx_ctrapsi4 (void);

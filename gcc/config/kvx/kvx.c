@@ -10780,6 +10780,13 @@ kvx_split_128bits_move (rtx dst, rtx src, enum machine_mode mode)
     }
 }
 
+/* Returns TRUE of OP is a SUBREG of a CONST_VECTOR */
+bool
+kvx_subreg_const_vector_p (rtx op)
+{
+  return SUBREG_P (op) && (GET_CODE (XEXP (op, 0)) == CONST_VECTOR);
+}
+
 /* Split a 256bit move op in mode MODE from SRC to DST in 2 smaller
    128bit moves */
 void
