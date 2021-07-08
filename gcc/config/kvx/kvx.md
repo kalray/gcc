@@ -237,20 +237,6 @@
    "
 )
 
-(define_insn_and_split "*mov_quad_immediate"
-    [(set (match_operand:TI 0 "register_operand" "=r")
-          (match_operand:TI 1 "immediate_operand" "i" ))]
-  ""
-  "#"
-  "&& reload_completed"
-  [(const_int 0)]
-  {
-   /* We can't have 128bits immediate values, split it */
-   kvx_split_128bits_move (operands[0], operands[1], TImode);
-   DONE;
-  }
-)
-
 ;; Split what would end-up in a single copyq insn in 2 copyd.
 ;; Both copyd use 1 TINY each instead of the MAU used by copyq
 ;; at the cost of an extra word in .text.
