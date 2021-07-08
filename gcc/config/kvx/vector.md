@@ -109,7 +109,7 @@
 
 (define_insn_and_split "*mov<mode>_immediate"
     [(set (match_operand:ALL128 0 "register_operand" "=r")
-          (match_operand:ALL128 1 "immediate_operand" "i" ))]
+          (match_operand:ALL128 1 "vec_or_scalar_immediate_operand" "i" ))]
   ""
   "#"
   "&& reload_completed"
@@ -196,7 +196,7 @@
 
 (define_insn_and_split "*mov<mode>_immediate"
     [(set (match_operand:ALL256 0 "register_operand" "=r")
-          (match_operand:ALL256 1 "immediate_operand" "i" ))]
+          (match_operand:ALL256 1 "vec_or_scalar_immediate_operand" "i" ))]
   ""
   "#"
   "&& reload_completed"
