@@ -1758,53 +1758,53 @@
 )
 
 
-;; S64L (V8QI V4HI)
+;; V4HI
 
-(define_insn_and_split "rotl<mode>3"
-  [(set (match_operand:S64L 0 "register_operand" "=r")
-        (rotate:S64L (match_operand:S64L 1 "register_operand" "r")
+(define_insn_and_split "rotlv4hi3"
+  [(set (match_operand:V4HI 0 "register_operand" "=r")
+        (rotate:V4HI (match_operand:V4HI 1 "register_operand" "r")
                      (match_operand:SI 2 "register_operand" "r")))
    (clobber (match_scratch:SI 3 "=&r"))
-   (clobber (match_scratch:S64L 4 "=&r"))
-   (clobber (match_scratch:S64L 5 "=&r"))]
+   (clobber (match_scratch:V4HI 4 "=&r"))
+   (clobber (match_scratch:V4HI 5 "=&r"))]
   ""
   "#"
   ""
   [(set (match_dup 3) (neg:SI (match_dup 2)))
-   (set (match_dup 4) (ashift:S64L (match_dup 1) (match_dup 2)))
-   (set (match_dup 5) (lshiftrt:S64L (match_dup 1) (match_dup 3)))
-   (set (match_dup 0) (ior:S64L (match_dup 4) (match_dup 5)))]
+   (set (match_dup 4) (ashift:V4HI (match_dup 1) (match_dup 2)))
+   (set (match_dup 5) (lshiftrt:V4HI (match_dup 1) (match_dup 3)))
+   (set (match_dup 0) (ior:V4HI (match_dup 4) (match_dup 5)))]
   {
     if (GET_CODE (operands[3]) == SCRATCH)
       operands[3] = gen_reg_rtx (SImode);
     if (GET_CODE (operands[4]) == SCRATCH)
-      operands[4] = gen_reg_rtx (<MODE>mode);
+      operands[4] = gen_reg_rtx (V4HImode);
     if (GET_CODE (operands[5]) == SCRATCH)
-      operands[5] = gen_reg_rtx (<MODE>mode);
+      operands[5] = gen_reg_rtx (V4HImode);
   }
 )
 
-(define_insn_and_split "rotr<mode>3"
-  [(set (match_operand:S64L 0 "register_operand" "=r")
-        (rotatert:S64L (match_operand:S64L 1 "register_operand" "r")
+(define_insn_and_split "rotrv4hi3"
+  [(set (match_operand:V4HI 0 "register_operand" "=r")
+        (rotatert:V4HI (match_operand:V4HI 1 "register_operand" "r")
                        (match_operand:SI 2 "register_operand" "r")))
    (clobber (match_scratch:SI 3 "=&r"))
-   (clobber (match_scratch:S64L 4 "=&r"))
-   (clobber (match_scratch:S64L 5 "=&r"))]
+   (clobber (match_scratch:V4HI 4 "=&r"))
+   (clobber (match_scratch:V4HI 5 "=&r"))]
   ""
   "#"
   ""
   [(set (match_dup 3) (neg:SI (match_dup 2)))
-   (set (match_dup 4) (lshiftrt:S64L (match_dup 1) (match_dup 2)))
-   (set (match_dup 5) (ashift:S64L (match_dup 1) (match_dup 3)))
-   (set (match_dup 0) (ior:S64L (match_dup 4) (match_dup 5)))]
+   (set (match_dup 4) (lshiftrt:V4HI (match_dup 1) (match_dup 2)))
+   (set (match_dup 5) (ashift:V4HI (match_dup 1) (match_dup 3)))
+   (set (match_dup 0) (ior:V4HI (match_dup 4) (match_dup 5)))]
   {
     if (GET_CODE (operands[3]) == SCRATCH)
       operands[3] = gen_reg_rtx (SImode);
     if (GET_CODE (operands[4]) == SCRATCH)
-      operands[4] = gen_reg_rtx (<MODE>mode);
+      operands[4] = gen_reg_rtx (V4HImode);
     if (GET_CODE (operands[5]) == SCRATCH)
-      operands[5] = gen_reg_rtx (<MODE>mode);
+      operands[5] = gen_reg_rtx (V4HImode);
   }
 )
 
