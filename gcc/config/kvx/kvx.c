@@ -5661,8 +5661,7 @@ build_floatings_arg (tree arg, const char *name)
 {
   const char *modifier = tree_string_constant (arg);
   static const char *table[] = {
-    "", ".rn",  ".ru",  ".rd",  ".rz",  ".ro",
-    ".s", ".rn.s",  ".ru.s", ".rd.s",  ".rz.s", ".ro.s",
+    "", ".rn", ".ru", ".rd", ".rz", ".s", ".rn.s", ".ru.s", ".rd.s", ".rz.s",
   };
   for (int i = 0; i < (int) (sizeof (table) / sizeof (*table)); i++)
     {
@@ -5678,10 +5677,9 @@ build_conjugate_arg (tree arg, const char *name)
 {
   const char *modifier = tree_string_constant (arg);
   static const char *table[] = {
-    "", ".rn",  ".ru",  ".rd",  ".rz",  ".ro",
-    ".s", ".rn.s",  ".ru.s", ".rd.s",  ".rz.s", ".ro.s",
-    ".c", ".c.rn",  ".c.ru",  ".c.rd",  ".c.rz",  ".c.ro",
-    ".c.s", ".c.rn.s",  ".c.ru.s", ".c.rd.s",  ".c.rz.s", ".c.ro.s",
+    "",	     ".rn",   ".ru",	 ".rd",	    ".rz",     ".s",	  ".rn.s",
+    ".ru.s", ".rd.s", ".rz.s",	 ".c",	    ".c.rn",   ".c.ru",	  ".c.rd",
+    ".c.rz", ".c.s",  ".c.rn.s", ".c.ru.s", ".c.rd.s", ".c.rz.s",
   };
   for (int i = 0; i < (int) (sizeof (table) / sizeof (*table)); i++)
     {
@@ -5697,14 +5695,13 @@ build_transpose_arg (tree arg, const char *name)
 {
   const char *modifier = tree_string_constant (arg);
   static const char *table[] = {
-    "", ".rn",  ".ru",  ".rd",  ".rz",  ".ro",
-    ".s", ".rn.s",  ".ru.s", ".rd.s",  ".rz.s", ".ro.s",
-    ".tn", ".tn.rn",  ".tn.ru",  ".tn.rd",  ".tn.rz",  ".tn.ro",
-    ".tn.s", ".tn.rn.s",  ".tn.ru.s", ".tn.rd.s",  ".tn.rz.s", ".tn.ro.s",
-    ".nt", ".nt.rn",  ".nt.ru",  ".nt.rd",  ".nt.rz",  ".nt.ro",
-    ".nt.s", ".nt.rn.s",  ".nt.ru.s", ".nt.rd.s",  ".nt.rz.s", ".nt.ro.s",
-    ".tt", ".tt.rn",  ".tt.ru",  ".tt.rd",  ".tt.rz",  ".tt.ro",
-    ".tt.s", ".tt.rn.s",  ".tt.ru.s", ".tt.rd.s",  ".tt.rz.s", ".tt.ro.s",
+    "",		".rn",	    ".ru",	".rd",	    ".rz",	".s",
+    ".rn.s",	".ru.s",    ".rd.s",	".rz.s",    ".tn",	".tn.rn",
+    ".tn.ru",	".tn.rd",   ".tn.rz",	".tn.s",    ".tn.rn.s", ".tn.ru.s",
+    ".tn.rd.s", ".tn.rz.s", ".nt",	".nt.rn",   ".nt.ru",	".nt.rd",
+    ".nt.rz",	".nt.s",    ".nt.rn.s", ".nt.ru.s", ".nt.rd.s", ".nt.rz.s",
+    ".tt",	".tt.rn",   ".tt.ru",	".tt.rd",   ".tt.rz",	".tt.s",
+    ".tt.rn.s", ".tt.ru.s", ".tt.rd.s", ".tt.rz.s",
   };
   // Skip the leading ".nn" if any, it is the default.
   if (!strncmp(modifier, ".nn", 3))
