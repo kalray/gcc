@@ -129,13 +129,6 @@ enum kvx_abi_type
    mode that should actually be used.  */
 #define MAX_FIXED_MODE_SIZE 256
 
-/* Make strings word-aligned so strcpy from constants will be faster.  */
-/* #define TARGET_CONSTANT_ALIGNMENT(EXP, ALIGN)				\ */
-/*    ((TREE_CODE (EXP) == STRING_CST				\ */
-/*      && !optimize_size						\ */
-/*      && (ALIGN) < BITS_PER_WORD )	\ */
-/*     ? BITS_PER_WORD : (ALIGN)) */
-
 /* Align definitions of arrays, unions and structures so that
    initializations and copies can be made more efficient.  This is not
    ABI-changing, so it only affects places where we can see the
@@ -197,20 +190,7 @@ enum kvx_abi_type
 
 #define PC_REGNUM KVX_PROGRAM_POINTER_REGNO
 
-// FIXME AUTO: Check modes tieable is correct. Float part seems suspicious.
-/* #define MODES_TIEABLE_P(MODE1, MODE2) \ */
-/*     (GET_MODE_CLASS (MODE1) == GET_MODE_CLASS (MODE2)) */
-
-// This looks a bit problematic for mode with different sizes. A float
-// is hardly accessed without a copy when changing its mode.
-
-/* ((mode1 == mode2)					   \ */
-/*     || ((!VECTOR_MODE_P (mode1) && !VECTOR_MODE_P (mode2)) \ */
-/* 	&& ((INTEGRAL_MODE_P (mode1) && INTEGRAL_MODE_P (mode2))	\ */
-/* 	    || (FLOAT_MODE_P (mode1) && FLOAT_MODE_P (mode2))))) */
-
 /* The number of distinct register classes, defined as follows: */
-
 #define N_REG_CLASSES (int) LIM_REG_CLASSES
 
 /* Provide the GENERAL_REGS definitions */
@@ -307,20 +287,6 @@ enum kvx_abi_type
    when math is done in the SSE registers (and vice versa). */
 #define PREFERRED_RELOAD_CLASS(X, CLASS) CLASS
 
-/* A C expression for the maximum number of consecutive registers of
-   class class needed to hold a value of mode mode.
-
-   This is closely related to the macro HARD_REGNO_NREGS. In fact, the
-   value of the macro CLASS_MAX_NREGS (class, mode) should be the
-   maximum value of HARD_REGNO_NREGS (regno, mode) for all regno
-   values in the class class.
-
-   This macro helps control the handling of multiple-word values in
-   the reload pass. */
-// #define CLASS_MAX_NREGS(CLASS, MODE) HARD_REGNO_NREGS(0, MODE)
-/*#define CLASS_MAX_NREGS(CLASS, MODE) (HARD_REGNO_NREGS(0, MODE) / (CLASS ==
- * PGR_REGS ? 2 : 1))*/
-
 /* ********** Frame Layout ********** */
 
 #define STACK_GROWS_DOWNWARD 1
@@ -352,11 +318,8 @@ enum kvx_abi_type
 #define ELIMINABLE_REGS                                                        \
   {                                                                            \
     {FRAME_POINTER_REGNUM, STACK_POINTER_REGNUM},                              \
-      {FRAME_POINTER_REGNUM, HARD_FRAME_POINTER_REGNUM},                       \
+    {FRAME_POINTER_REGNUM, HARD_FRAME_POINTER_REGNUM},		               \
   }
-
-// {ARG_POINTER_REGNUM, STACK_POINTER_REGNUM},
-// {ARG_POINTER_REGNUM, FRAME_POINTER_REGNUM},
 
 #define INITIAL_ELIMINATION_OFFSET(FROM, TO, OFFSET)                           \
   (OFFSET) = kvx_initial_elimination_offset (FROM, TO)
