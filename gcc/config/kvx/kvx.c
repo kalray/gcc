@@ -10852,19 +10852,6 @@ kvx_profile_hook (void)
 }
 #endif
 
-/* MAYBE FIXME */
-/* bool */
-/* kvx_is_farcall_p (rtx op) */
-/* { */
-/*   bool farcall = KVX_FARCALL; */
-/*   if (!farcall && (GET_CODE(XEXP(op, 0)) == SYMBOL_REF */
-/* 		   && SYMBOL_REF_FUNCTION_P(XEXP(op, 0)) */
-/* 		   && SYMBOL_REF_DECL(XEXP(op,0)) != NULL_TREE)) */
-/*     farcall = lookup_attribute ("farcall", DECL_ATTRIBUTES(SYMBOL_REF_DECL(XEXP(op,0)))) != NULL; */
-
-/*   return farcall; */
-/* } */
-
 static HOST_WIDE_INT
 kvx_constant_alignment (const_tree exp, HOST_WIDE_INT align)
 {
