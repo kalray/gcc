@@ -10355,14 +10355,6 @@ hwloop_optimize (hwloop_info loop)
   else if (entry_bb != ENTRY_BLOCK_PTR_FOR_FN (cfun))
     {
       entry_after = BB_END (entry_bb);
-      /* while (DEBUG_INSN_P (entry_after) */
-      /*        || (NOTE_P (entry_after) */
-      /*            && NOTE_KIND (entry_after) != NOTE_INSN_BASIC_BLOCK */
-      /* 		 /\* Make sure we don't split a call and its corresponding */
-      /* 		    CALL_ARG_LOCATION note.  *\/ */
-      /*            && NOTE_KIND (entry_after) != NOTE_INSN_CALL_ARG_LOCATION)) */
-      /*   entry_after = PREV_INSN (entry_after); */
-
       emit_insn_after (seq, entry_after);
     }
   else
