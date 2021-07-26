@@ -2860,6 +2860,39 @@ kvx_get_predicate_mode (enum machine_mode mode)
   return mode;
 }
 
+/* Emulate V<n>QI comparisons by expanding them to V4HI comparisons. */
+static rtx
+kvx_emulate_vxqi_comparison(rtx pred, enum rtx_code cmp_code, rtx left, rtx right)
+{
+  rtx oddmask = gen_reg_rtx (DImode);
+  machine_mode cmp_mode = GET_MODE (left);
+  unsigned mode_size = GET_MODE_SIZE (cmp_mode).to_constant ();
+  emit_insn (gen_rtx_SET (oddmask, GEN_INT (0xFF00FF00FF00FF00)));
+  for (unsigned offset = 0; offset < mode_size; offset += UNITS_PER_WORD)
+    {
+      rtx rightc = simplify_gen_subreg (V4HImode, right, cmp_mode, offset);
+      rtx leftc = simplify_gen_subreg (V4HImode, left, cmp_mode, offset);
+      rtx predc = simplify_gen_subreg (V4HImode, pred, cmp_mode, offset);
+      rtx righto = CONST0_RTX (V4HImode), righte = CONST0_RTX (V4HImode);
+      if (!const_zero_operand (right, cmp_mode))
+	{
+	  righto = gen_reg_rtx (V4HImode), righte = gen_reg_rtx (V4HImode);
+	  emit_insn (gen_rtx_SET (righto, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, rightc, oddmask), UNSPEC_QXOBHQ)));
+	  emit_insn (gen_rtx_SET (righte, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, rightc), UNSPEC_QXEBHQ)));
+	}
+      rtx lefto = gen_reg_rtx (V4HImode), lefte = gen_reg_rtx (V4HImode);
+      emit_insn (gen_rtx_SET (lefto, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, leftc, oddmask), UNSPEC_QXOBHQ)));
+      emit_insn (gen_rtx_SET (lefte, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, leftc), UNSPEC_QXEBHQ)));
+      rtx predo = gen_reg_rtx (V4HImode), prede = gen_reg_rtx (V4HImode);
+      kvx_lower_comparison (predo, cmp_code, lefto, righto);
+      kvx_lower_comparison (prede, cmp_code, lefte, righte);
+      emit_insn (gen_rtx_SET (predo, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, predo, oddmask), UNSPEC_QXOBHQ)));
+      emit_insn (gen_rtx_SET (prede, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, prede), UNSPEC_ZXOBHQ)));
+      emit_insn (gen_rtx_SET (predc, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, predo, prede), UNSPEC_OROEBO)));
+    }
+  return pred;
+}
+
 /* Emit the compare insn and return the predicate register if lowering occurred.
  * Lowering occurs if the comparison is not between scalar integer and zero.
  * In case of floating-point lowering, the left and right operand may be swapped.
@@ -2877,6 +2910,9 @@ kvx_lower_comparison (rtx pred, enum rtx_code cmp_code, rtx left, rtx right)
 
   if (pred == NULL_RTX)
     pred = gen_reg_rtx (kvx_get_predicate_mode (cmp_mode));
+
+  if (VECTOR_MODE_P (cmp_mode) && GET_MODE_INNER (cmp_mode) == QImode)
+    return kvx_emulate_vxqi_comparison (pred, cmp_code, left,right);
 
   machine_mode pred_mode = GET_MODE (pred);
   rtx cmp = gen_rtx_fmt_ee (cmp_code, pred_mode, left, right);
@@ -2938,6 +2974,45 @@ kvx_lower_comparison (rtx pred, enum rtx_code cmp_code, rtx left, rtx right)
   return pred;
 }
 
+/* Emulate V<n>QI cond moves by expanding them to V4HI cond moves. */
+static void
+kvx_emulate_vxqi_simplecond_move(rtx pred, enum rtx_code cmp_code, rtx src, rtx dst)
+{
+  rtx oddmask = gen_reg_rtx (DImode);
+  machine_mode mode = GET_MODE (dst);
+  rtx const0_v4hi_rtx = CONST0_RTX (V4HImode);
+  unsigned mode_size = GET_MODE_SIZE (mode).to_constant ();
+  emit_insn (gen_rtx_SET (oddmask, GEN_INT (0xFF00FF00FF00FF00)));
+  for (unsigned offset = 0; offset < mode_size; offset += UNITS_PER_WORD)
+    {
+      rtx srcc = simplify_gen_subreg (V4HImode, src, mode, offset);
+      rtx dstc = simplify_gen_subreg (V4HImode, dst, mode, offset);
+      rtx predc = simplify_gen_subreg (V4HImode, pred, mode, offset);
+
+      rtx srco = gen_reg_rtx (V4HImode), srce = gen_reg_rtx (V4HImode);
+      emit_insn (gen_rtx_SET (srco, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, srcc, oddmask), UNSPEC_QXOBHQ)));
+      emit_insn (gen_rtx_SET (srce, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, srcc), UNSPEC_QXEBHQ)));
+
+      rtx predo = gen_reg_rtx (V4HImode), prede = gen_reg_rtx (V4HImode);
+      emit_insn (gen_rtx_SET (predo, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, predc, oddmask), UNSPEC_QXOBHQ)));
+      emit_insn (gen_rtx_SET (prede, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, predc), UNSPEC_QXEBHQ)));
+
+      rtx cmpo = gen_rtx_fmt_ee (cmp_code, VOIDmode, predo, const0_v4hi_rtx);
+      rtx cmpe = gen_rtx_fmt_ee (cmp_code, VOIDmode, prede, const0_v4hi_rtx);
+
+      rtx dsto = gen_reg_rtx (V4HImode), dste = gen_reg_rtx (V4HImode);
+      emit_insn (gen_rtx_SET (dsto, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, dstc, oddmask), UNSPEC_QXOBHQ)));
+      emit_insn (gen_rtx_SET (dste, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, dstc), UNSPEC_QXEBHQ)));
+
+      emit_insn (gen_rtx_SET (dsto, gen_rtx_IF_THEN_ELSE (V4HImode, cmpo, srco, dsto)));
+      emit_insn (gen_rtx_SET (dste, gen_rtx_IF_THEN_ELSE (V4HImode, cmpe, srce, dste)));
+
+      emit_insn (gen_rtx_SET (dsto, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, dsto, oddmask), UNSPEC_QXOBHQ)));
+      emit_insn (gen_rtx_SET (dste, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, dste), UNSPEC_ZXOBHQ)));
+      emit_insn (gen_rtx_SET (dstc, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, dsto, dste), UNSPEC_OROEBO)));
+    }
+}
+
 void
 kvx_expand_conditional_move (rtx target, rtx select1, rtx select2,
 			     rtx cmp, rtx left, rtx right)
@@ -2950,10 +3025,10 @@ kvx_expand_conditional_move (rtx target, rtx select1, rtx select2,
 
   if (VECTOR_MODE_P (mode))
     {
-      rtx const0_rtx_mode = CONST0_RTX (mode);
-      rtx constm1_rtx_mode = CONSTM1_RTX (mode);
-      vector_true_false = (select1 == constm1_rtx_mode)
-	                  && (select2 == const0_rtx_mode);
+      rtx const0_mode_rtx = CONST0_RTX (mode);
+      rtx constm1_mode_rtx = CONSTM1_RTX (mode);
+      vector_true_false = (select1 == constm1_mode_rtx)
+			  && (select2 == const0_mode_rtx);
     }
 
   if (vector_true_false)
@@ -2999,10 +3074,14 @@ kvx_expand_conditional_move (rtx target, rtx select1, rtx select2,
     {
       emit_insn (gen_rtx_SET (dst, pred));
     }
+  else if (VECTOR_MODE_P (cmp_mode) && GET_MODE_INNER (cmp_mode) == QImode)
+    {
+      kvx_emulate_vxqi_simplecond_move(pred, cmp_code, src, dst);
+    }
   else
     {
-      rtx const0_rtx_pred_mode = CONST0_RTX (pred_mode);
-      rtx cmp0 = gen_rtx_fmt_ee (cmp_code, VOIDmode, pred, const0_rtx_pred_mode);
+      rtx const0_pred_mode_rtx = CONST0_RTX (pred_mode);
+      rtx cmp0 = gen_rtx_fmt_ee (cmp_code, VOIDmode, pred, const0_pred_mode_rtx);
       emit_insn (gen_rtx_SET (dst, gen_rtx_IF_THEN_ELSE (mode, cmp0, src, dst)));
     }
 
@@ -3020,10 +3099,10 @@ kvx_expand_masked_move (rtx target, rtx select1, rtx select2, rtx mask)
 
   if (VECTOR_MODE_P (mode))
     {
-      rtx const0_rtx_mode = CONST0_RTX (mode);
-      rtx constm1_rtx_mode = CONSTM1_RTX (mode);
-      vector_true_false = (select1 == constm1_rtx_mode)
-	                  && (select2 == const0_rtx_mode);
+      rtx const0_mode_rtx = CONST0_RTX (mode);
+      rtx constm1_mode_rtx = CONSTM1_RTX (mode);
+      vector_true_false = (select1 == constm1_mode_rtx)
+			  && (select2 == const0_mode_rtx);
     }
 
   if (vector_true_false)
@@ -3056,11 +3135,15 @@ kvx_expand_masked_move (rtx target, rtx select1, rtx select2, rtx mask)
     {
       emit_insn (gen_rtx_SET (dst, mask));
     }
+  else if (VECTOR_MODE_P (mode) && GET_MODE_INNER (mode) == QImode)
+    {
+      kvx_emulate_vxqi_simplecond_move(mask, cmp_code, src, dst);
+    }
   else
     {
       machine_mode mask_mode = GET_MODE (mask);
-      rtx const0_rtx_mask_mode = CONST0_RTX (mask_mode);
-      rtx cmp0 = gen_rtx_fmt_ee (cmp_code, VOIDmode, mask, const0_rtx_mask_mode);
+      rtx const0_mask_mode_rtx = CONST0_RTX (mask_mode);
+      rtx cmp0 = gen_rtx_fmt_ee (cmp_code, VOIDmode, mask, const0_mask_mode_rtx);
       emit_insn (gen_rtx_SET (dst, gen_rtx_IF_THEN_ELSE (mode, cmp0, src, dst)));
     }
 
@@ -3483,7 +3566,7 @@ kvx_expand_vec_perm_const_emit_insf (rtx target, rtx source1, rtx source2,
   int shift = __builtin_ctzll (constanti);
   int count = __builtin_popcountll (constanti);
   HOST_WIDE_INT maski = (-1ULL >> __builtin_clzll (constanti)) & (constant0 << shift);
- 
+
   // For speed we prevent the generation of extract as SBMM8 is faster.
   //if (optimize_insn_for_speed_p () && (shift & 7))
     //return NULL_RTX;
@@ -3570,8 +3653,7 @@ kvx_expand_vec_perm_const_emit (rtx target, rtx source1, rtx source2)
 	  if (constant)
 	    {
 	      rtx tmp = gen_reg_rtx (DImode);
-	      rtx source
-		= force_reg (vector_mode, orig >= nwords ? source2 : source1);
+	      rtx source = force_reg (vector_mode, orig >= nwords ? source2 : source1);
 	      int offset = orig >= nwords? orig - nwords: orig;
 	      rtx op1 = simplify_gen_subreg (DImode, source, vector_mode, offset*UNITS_PER_WORD);
 	      rtx op2 = force_reg (DImode, GEN_INT (constant));
@@ -4000,6 +4082,9 @@ enum kvx_builtin
   KVX_BUILTIN_ADDCD,
   KVX_BUILTIN_SBFCD,
 
+  KVX_BUILTIN_ADDBO,
+  KVX_BUILTIN_ADDBX,
+  KVX_BUILTIN_ADDBV,
   KVX_BUILTIN_ADDHQ,
   KVX_BUILTIN_ADDHO,
   KVX_BUILTIN_ADDHX,
@@ -4011,6 +4096,9 @@ enum kvx_builtin
   KVX_BUILTIN_ADDDP,
   KVX_BUILTIN_ADDDQ,
 
+  KVX_BUILTIN_SBFBO,
+  KVX_BUILTIN_SBFBX,
+  KVX_BUILTIN_SBFBV,
   KVX_BUILTIN_SBFHQ,
   KVX_BUILTIN_SBFHO,
   KVX_BUILTIN_SBFHX,
@@ -4022,6 +4110,9 @@ enum kvx_builtin
   KVX_BUILTIN_SBFDP,
   KVX_BUILTIN_SBFDQ,
 
+  KVX_BUILTIN_NEGBO,
+  KVX_BUILTIN_NEGBX,
+  KVX_BUILTIN_NEGBV,
   KVX_BUILTIN_NEGHQ,
   KVX_BUILTIN_NEGHO,
   KVX_BUILTIN_NEGHX,
@@ -4033,6 +4124,9 @@ enum kvx_builtin
   KVX_BUILTIN_NEGDP,
   KVX_BUILTIN_NEGDQ,
 
+  KVX_BUILTIN_ABSBO,
+  KVX_BUILTIN_ABSBX,
+  KVX_BUILTIN_ABSBV,
   KVX_BUILTIN_ABSHQ,
   KVX_BUILTIN_ABSHO,
   KVX_BUILTIN_ABSHX,
@@ -4044,6 +4138,9 @@ enum kvx_builtin
   KVX_BUILTIN_ABSDP,
   KVX_BUILTIN_ABSDQ,
 
+  KVX_BUILTIN_ABDBO,
+  KVX_BUILTIN_ABDBX,
+  KVX_BUILTIN_ABDBV,
   KVX_BUILTIN_ABDHQ,
   KVX_BUILTIN_ABDHO,
   KVX_BUILTIN_ABDHX,
@@ -4055,6 +4152,9 @@ enum kvx_builtin
   KVX_BUILTIN_ABDDP,
   KVX_BUILTIN_ABDDQ,
 
+  KVX_BUILTIN_AVGBO,
+  KVX_BUILTIN_AVGBX,
+  KVX_BUILTIN_AVGBV,
   KVX_BUILTIN_AVGHQ,
   KVX_BUILTIN_AVGHO,
   KVX_BUILTIN_AVGHX,
@@ -4078,6 +4178,9 @@ enum kvx_builtin
   KVX_BUILTIN_MSBFXWDP,
   KVX_BUILTIN_MSBFXWDQ,
 
+  KVX_BUILTIN_MINBO,
+  KVX_BUILTIN_MINBX,
+  KVX_BUILTIN_MINBV,
   KVX_BUILTIN_MINHQ,
   KVX_BUILTIN_MINHO,
   KVX_BUILTIN_MINHX,
@@ -4089,6 +4192,9 @@ enum kvx_builtin
   KVX_BUILTIN_MINDP,
   KVX_BUILTIN_MINDQ,
 
+  KVX_BUILTIN_MAXBO,
+  KVX_BUILTIN_MAXBX,
+  KVX_BUILTIN_MAXBV,
   KVX_BUILTIN_MAXHQ,
   KVX_BUILTIN_MAXHO,
   KVX_BUILTIN_MAXHX,
@@ -4100,6 +4206,9 @@ enum kvx_builtin
   KVX_BUILTIN_MAXDP,
   KVX_BUILTIN_MAXDQ,
 
+  KVX_BUILTIN_MINUBO,
+  KVX_BUILTIN_MINUBX,
+  KVX_BUILTIN_MINUBV,
   KVX_BUILTIN_MINUHQ,
   KVX_BUILTIN_MINUHO,
   KVX_BUILTIN_MINUHX,
@@ -4111,6 +4220,9 @@ enum kvx_builtin
   KVX_BUILTIN_MINUDP,
   KVX_BUILTIN_MINUDQ,
 
+  KVX_BUILTIN_MAXUBO,
+  KVX_BUILTIN_MAXUBX,
+  KVX_BUILTIN_MAXUBV,
   KVX_BUILTIN_MAXUHQ,
   KVX_BUILTIN_MAXUHO,
   KVX_BUILTIN_MAXUHX,
@@ -4122,6 +4234,9 @@ enum kvx_builtin
   KVX_BUILTIN_MAXUDP,
   KVX_BUILTIN_MAXUDQ,
 
+  KVX_BUILTIN_SHLBOS,
+  KVX_BUILTIN_SHLBXS,
+  KVX_BUILTIN_SHLBVS,
   KVX_BUILTIN_SHLHQS,
   KVX_BUILTIN_SHLHOS,
   KVX_BUILTIN_SHLHXS,
@@ -4133,6 +4248,9 @@ enum kvx_builtin
   KVX_BUILTIN_SHLDPS,
   KVX_BUILTIN_SHLDQS,
 
+  KVX_BUILTIN_SHRBOS,
+  KVX_BUILTIN_SHRBXS,
+  KVX_BUILTIN_SHRBVS,
   KVX_BUILTIN_SHRHQS,
   KVX_BUILTIN_SHRHOS,
   KVX_BUILTIN_SHRHXS,
@@ -4224,6 +4342,9 @@ enum kvx_builtin
   KVX_BUILTIN_CATFDP,
   KVX_BUILTIN_CATFDQ,
 
+  KVX_BUILTIN_SELECTBO,
+  KVX_BUILTIN_SELECTBX,
+  KVX_BUILTIN_SELECTBV,
   KVX_BUILTIN_SELECTHQ,
   KVX_BUILTIN_SELECTHO,
   KVX_BUILTIN_SELECTHX,
@@ -4762,6 +4883,9 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (ADDCD, "addcd", UINT64, UINT64, UINT64, CARRY); // Scalar
   ADD_KVX_BUILTIN (SBFCD, "sbfcd", UINT64, UINT64, UINT64, CARRY); // Scalar
 
+  ADD_KVX_BUILTIN (ADDBO, "addbo", INT8X8, INT8X8, INT8X8, SATURATE); // Vector
+  ADD_KVX_BUILTIN (ADDBX, "addbx", INT8X16, INT8X16, INT8X16, SATURATE); // Vector
+  ADD_KVX_BUILTIN (ADDBV, "addbv", INT8X32, INT8X32, INT8X32, SATURATE); // Vector
   ADD_KVX_BUILTIN (ADDHQ, "addhq", INT16X4, INT16X4, INT16X4, SATURATE); // Vector
   ADD_KVX_BUILTIN (ADDHO, "addho", INT16X8, INT16X8, INT16X8, SATURATE); // Vector
   ADD_KVX_BUILTIN (ADDHX, "addhx", INT16X16, INT16X16, INT16X16, SATURATE); // Vector
@@ -4773,6 +4897,9 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (ADDDP, "adddp", INT64X2, INT64X2, INT64X2, SATURATE); // Vector
   ADD_KVX_BUILTIN (ADDDQ, "adddq", INT64X4, INT64X4, INT64X4, SATURATE); // Vector
 
+  ADD_KVX_BUILTIN (SBFBO, "sbfbo", INT8X8, INT8X8, INT8X8, SATURATE); // Vector
+  ADD_KVX_BUILTIN (SBFBX, "sbfbx", INT8X16, INT8X16, INT8X16, SATURATE); // Vector
+  ADD_KVX_BUILTIN (SBFBV, "sbfbv", INT8X32, INT8X32, INT8X32, SATURATE); // Vector
   ADD_KVX_BUILTIN (SBFHQ, "sbfhq", INT16X4, INT16X4, INT16X4, SATURATE); // Vector
   ADD_KVX_BUILTIN (SBFHO, "sbfho", INT16X8, INT16X8, INT16X8, SATURATE); // Vector
   ADD_KVX_BUILTIN (SBFHX, "sbfhx", INT16X16, INT16X16, INT16X16, SATURATE); // Vector
@@ -4784,6 +4911,9 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (SBFDP, "sbfdp", INT64X2, INT64X2, INT64X2, SATURATE); // Vector
   ADD_KVX_BUILTIN (SBFDQ, "sbfdq", INT64X4, INT64X4, INT64X4, SATURATE); // Vector
 
+  ADD_KVX_BUILTIN (NEGBO, "negbo", INT8X8, INT8X8, SIGNEDSAT);	// Vector
+  ADD_KVX_BUILTIN (NEGBX, "negbx", INT8X16, INT8X16, SIGNEDSAT);	// Vector
+  ADD_KVX_BUILTIN (NEGBV, "negbv", INT8X32, INT8X32, SIGNEDSAT);	// Vector
   ADD_KVX_BUILTIN (NEGHQ, "neghq", INT16X4, INT16X4, SIGNEDSAT);	// Vector
   ADD_KVX_BUILTIN (NEGHO, "negho", INT16X8, INT16X8, SIGNEDSAT);	// Vector
   ADD_KVX_BUILTIN (NEGHX, "neghx", INT16X16, INT16X16, SIGNEDSAT); // Vector
@@ -4795,6 +4925,9 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (NEGDP, "negdp", INT64X2, INT64X2, SIGNEDSAT);	// Vector
   ADD_KVX_BUILTIN (NEGDQ, "negdq", INT64X4, INT64X4, SIGNEDSAT);	// Vector
 
+  ADD_KVX_BUILTIN (ABSBO, "absbo", INT8X8, INT8X8, SIGNEDSAT);	// Vector
+  ADD_KVX_BUILTIN (ABSBX, "absbx", INT8X16, INT8X16, SIGNEDSAT);	// Vector
+  ADD_KVX_BUILTIN (ABSBV, "absbv", INT8X32, INT8X32, SIGNEDSAT);	// Vector
   ADD_KVX_BUILTIN (ABSHQ, "abshq", INT16X4, INT16X4, SIGNEDSAT);	// Vector
   ADD_KVX_BUILTIN (ABSHO, "absho", INT16X8, INT16X8, SIGNEDSAT);	// Vector
   ADD_KVX_BUILTIN (ABSHX, "abshx", INT16X16, INT16X16, SIGNEDSAT); // Vector
@@ -4806,6 +4939,9 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (ABSDP, "absdp", INT64X2, INT64X2, SIGNEDSAT);	// Vector
   ADD_KVX_BUILTIN (ABSDQ, "absdq", INT64X4, INT64X4, SIGNEDSAT);	// Vector
 
+  ADD_KVX_BUILTIN (ABDBO, "abdbo", INT8X8, INT8X8, INT8X8, SIGNEDSAT); // Vector
+  ADD_KVX_BUILTIN (ABDBX, "abdbx", INT8X16, INT8X16, INT8X16, SIGNEDSAT); // Vector
+  ADD_KVX_BUILTIN (ABDBV, "abdbv", INT8X32, INT8X32, INT8X32, SIGNEDSAT); // Vector
   ADD_KVX_BUILTIN (ABDHQ, "abdhq", INT16X4, INT16X4, INT16X4, SIGNEDSAT); // Vector
   ADD_KVX_BUILTIN (ABDHO, "abdho", INT16X8, INT16X8, INT16X8, SIGNEDSAT); // Vector
   ADD_KVX_BUILTIN (ABDHX, "abdhx", INT16X16, INT16X16, INT16X16, SIGNEDSAT); // Vector
@@ -4817,6 +4953,9 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (ABDDP, "abddp", INT64X2, INT64X2, INT64X2, SIGNEDSAT); // Vector
   ADD_KVX_BUILTIN (ABDDQ, "abddq", INT64X4, INT64X4, INT64X4, SIGNEDSAT); // Vector
 
+  ADD_KVX_BUILTIN (AVGBO, "avgbo", INT8X8, INT8X8, INT8X8, AVERAGE); // Vector
+  ADD_KVX_BUILTIN (AVGBX, "avgbx", INT8X16, INT8X16, INT8X16, AVERAGE); // Vector
+  ADD_KVX_BUILTIN (AVGBV, "avgbv", INT8X32, INT8X32, INT8X32, AVERAGE); // Vector
   ADD_KVX_BUILTIN (AVGHQ, "avghq", INT16X4, INT16X4, INT16X4, AVERAGE); // Vector
   ADD_KVX_BUILTIN (AVGHO, "avgho", INT16X8, INT16X8, INT16X8, AVERAGE); // Vector
   ADD_KVX_BUILTIN (AVGHX, "avghx", INT16X16, INT16X16, INT16X16, AVERAGE); // Vector
@@ -4840,6 +4979,9 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (MSBFXWDP, "msbfxwdp", INT64X2, INT32X2, INT32X2, INT64X2, EXTENDMUL); // Vector
   ADD_KVX_BUILTIN (MSBFXWDQ, "msbfxwdq", INT64X4, INT32X4, INT32X4, INT64X4, EXTENDMUL); // Vector
 
+  ADD_KVX_BUILTIN (MINBO, "minbo", INT8X8, INT8X8, INT8X8); // Vector
+  ADD_KVX_BUILTIN (MINBX, "minbx", INT8X16, INT8X16, INT8X16); // Vector
+  ADD_KVX_BUILTIN (MINBV, "minbv", INT8X32, INT8X32, INT8X32); // Vector
   ADD_KVX_BUILTIN (MINHQ, "minhq", INT16X4, INT16X4, INT16X4); // Vector
   ADD_KVX_BUILTIN (MINHO, "minho", INT16X8, INT16X8, INT16X8); // Vector
   ADD_KVX_BUILTIN (MINHX, "minhx", INT16X16, INT16X16, INT16X16); // Vector
@@ -4851,6 +4993,9 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (MINDP, "mindp", INT64X2, INT64X2, INT64X2); // Vector
   ADD_KVX_BUILTIN (MINDQ, "mindq", INT64X4, INT64X4, INT64X4); // Vector
 
+  ADD_KVX_BUILTIN (MAXBO, "maxbo", INT8X8, INT8X8, INT8X8); // Vector
+  ADD_KVX_BUILTIN (MAXBX, "maxbx", INT8X16, INT8X16, INT8X16); // Vector
+  ADD_KVX_BUILTIN (MAXBV, "maxbv", INT8X32, INT8X32, INT8X32); // Vector
   ADD_KVX_BUILTIN (MAXHQ, "maxhq", INT16X4, INT16X4, INT16X4); // Vector
   ADD_KVX_BUILTIN (MAXHO, "maxho", INT16X8, INT16X8, INT16X8); // Vector
   ADD_KVX_BUILTIN (MAXHX, "maxhx", INT16X16, INT16X16, INT16X16); // Vector
@@ -4862,6 +5007,9 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (MAXDP, "maxdp", INT64X2, INT64X2, INT64X2); // Vector
   ADD_KVX_BUILTIN (MAXDQ, "maxdq", INT64X4, INT64X4, INT64X4); // Vector
 
+  ADD_KVX_BUILTIN (MINUBO, "minubo", INT8X8, INT8X8, INT8X8); // Vector
+  ADD_KVX_BUILTIN (MINUBX, "minubx", INT8X16, INT8X16, INT8X16); // Vector
+  ADD_KVX_BUILTIN (MINUBV, "minubv", INT8X32, INT8X32, INT8X32); // Vector
   ADD_KVX_BUILTIN (MINUHQ, "minuhq", INT16X4, INT16X4, INT16X4); // Vector
   ADD_KVX_BUILTIN (MINUHO, "minuho", INT16X8, INT16X8, INT16X8); // Vector
   ADD_KVX_BUILTIN (MINUHX, "minuhx", INT16X16, INT16X16, INT16X16); // Vector
@@ -4873,6 +5021,9 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (MINUDP, "minudp", INT64X2, INT64X2, INT64X2); // Vector
   ADD_KVX_BUILTIN (MINUDQ, "minudq", INT64X4, INT64X4, INT64X4); // Vector
 
+  ADD_KVX_BUILTIN (MAXUBO, "maxubo", INT8X8, INT8X8, INT8X8); // Vector
+  ADD_KVX_BUILTIN (MAXUBX, "maxubx", INT8X16, INT8X16, INT8X16); // Vector
+  ADD_KVX_BUILTIN (MAXUBV, "maxubv", INT8X32, INT8X32, INT8X32); // Vector
   ADD_KVX_BUILTIN (MAXUHQ, "maxuhq", INT16X4, INT16X4, INT16X4); // Vector
   ADD_KVX_BUILTIN (MAXUHO, "maxuho", INT16X8, INT16X8, INT16X8); // Vector
   ADD_KVX_BUILTIN (MAXUHX, "maxuhx", INT16X16, INT16X16, INT16X16); // Vector
@@ -4884,6 +5035,9 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (MAXUDP, "maxudp", INT64X2, INT64X2, INT64X2); // Vector
   ADD_KVX_BUILTIN (MAXUDQ, "maxudq", INT64X4, INT64X4, INT64X4); // Vector
 
+  ADD_KVX_BUILTIN (SHLBOS, "shlbos", INT8X8, INT8X8, UINT32, SHIFTLEFT); // Vector
+  ADD_KVX_BUILTIN (SHLBXS, "shlbxs", INT8X16, INT8X16, UINT32, SHIFTLEFT); // Vector
+  ADD_KVX_BUILTIN (SHLBVS, "shlbvs", INT8X32, INT8X32, UINT32, SHIFTLEFT); // Vector
   ADD_KVX_BUILTIN (SHLHQS, "shlhqs", INT16X4, INT16X4, UINT32, SHIFTLEFT); // Vector
   ADD_KVX_BUILTIN (SHLHOS, "shlhos", INT16X8, INT16X8, UINT32, SHIFTLEFT); // Vector
   ADD_KVX_BUILTIN (SHLHXS, "shlhxs", INT16X16, INT16X16, UINT32, SHIFTLEFT); // Vector
@@ -4895,6 +5049,9 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (SHLDPS, "shldps", INT64X2, INT64X2, UINT32, SHIFTLEFT); // Vector
   ADD_KVX_BUILTIN (SHLDQS, "shldqs", INT64X4, INT64X4, UINT32, SHIFTLEFT); // Vector
 
+  ADD_KVX_BUILTIN (SHRBOS, "shrbos", INT8X8, INT8X8, UINT32, SHIFTRIGHT); // Vector
+  ADD_KVX_BUILTIN (SHRBXS, "shrbxs", INT8X16, INT8X16, UINT32, SHIFTRIGHT); // Vector
+  ADD_KVX_BUILTIN (SHRBVS, "shrbvs", INT8X32, INT8X32, UINT32, SHIFTRIGHT); // Vector
   ADD_KVX_BUILTIN (SHRHQS, "shrhqs", INT16X4, INT16X4, UINT32, SHIFTRIGHT); // Vector
   ADD_KVX_BUILTIN (SHRHOS, "shrhos", INT16X8, INT16X8, UINT32, SHIFTRIGHT); // Vector
   ADD_KVX_BUILTIN (SHRHXS, "shrhxs", INT16X16, INT16X16, UINT32, SHIFTRIGHT); // Vector
@@ -4987,6 +5144,10 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (CATFWO, "catfwo", FLOAT32X8, FLOAT32X4, FLOAT32X4); // Vector
   ADD_KVX_BUILTIN (CATFDP, "catfdp", FLOAT64X2, FLOAT64, FLOAT64); // Vector
   ADD_KVX_BUILTIN (CATFDQ, "catfdq", FLOAT64X4, FLOAT64X2, FLOAT64X2); // Vector
+
+  ADD_KVX_BUILTIN (SELECTBO, "selectbo", INT8X8, INT8X8, INT8X8, INT8X8, SIMDCOND); // Vector
+  ADD_KVX_BUILTIN (SELECTBX, "selectbx", INT8X16, INT8X16, INT8X16, INT8X16, SIMDCOND); // Vector
+  ADD_KVX_BUILTIN (SELECTBV, "selectbv", INT8X32, INT8X32, INT8X32, INT8X32, SIMDCOND); // Vector
   ADD_KVX_BUILTIN (SELECTHQ, "selecthq", INT16X4, INT16X4, INT16X4, INT16X4, SIMDCOND); // Vector
   ADD_KVX_BUILTIN (SELECTHO, "selectho", INT16X8, INT16X8, INT16X8, INT16X8, SIMDCOND); // Vector
   ADD_KVX_BUILTIN (SELECTHX, "selecthx", INT16X16, INT16X16, INT16X16, INT16X16, SIMDCOND); // Vector
@@ -6547,6 +6708,9 @@ kvx_expand_builtin_alclr (rtx target, tree args, enum machine_mode mode)
 KVX_EXPAND_BUILTIN_3_CARRY (addcd, DImode, DImode)
 KVX_EXPAND_BUILTIN_3_CARRY (sbfcd, DImode, DImode)
 
+KVX_EXPAND_BUILTIN_3_SATURATE (addbo, V8QImode, V8QImode)
+KVX_EXPAND_BUILTIN_3_SATURATE (addbx, V16QImode, V16QImode)
+KVX_EXPAND_BUILTIN_3_SATURATE (addbv, V32QImode, V32QImode)
 KVX_EXPAND_BUILTIN_3_SATURATE (addhq, V4HImode, V4HImode)
 KVX_EXPAND_BUILTIN_3_SATURATE (addho, V8HImode, V8HImode)
 KVX_EXPAND_BUILTIN_3_SATURATE (addhx, V16HImode, V16HImode)
@@ -6558,6 +6722,9 @@ KVX_EXPAND_BUILTIN_3_SATURATE (addd, DImode, DImode)
 KVX_EXPAND_BUILTIN_3_SATURATE (adddp, V2DImode, V2DImode)
 KVX_EXPAND_BUILTIN_3_SATURATE (adddq, V4DImode, V4DImode)
 
+KVX_EXPAND_BUILTIN_3_SATURATE (sbfbo, V8QImode, V8QImode)
+KVX_EXPAND_BUILTIN_3_SATURATE (sbfbx, V16QImode, V16QImode)
+KVX_EXPAND_BUILTIN_3_SATURATE (sbfbv, V32QImode, V32QImode)
 KVX_EXPAND_BUILTIN_3_SATURATE (sbfhq, V4HImode, V4HImode)
 KVX_EXPAND_BUILTIN_3_SATURATE (sbfho, V8HImode, V8HImode)
 KVX_EXPAND_BUILTIN_3_SATURATE (sbfhx, V16HImode, V16HImode)
@@ -6569,6 +6736,9 @@ KVX_EXPAND_BUILTIN_3_SATURATE (sbfd, DImode, DImode)
 KVX_EXPAND_BUILTIN_3_SATURATE (sbfdp, V2DImode, V2DImode)
 KVX_EXPAND_BUILTIN_3_SATURATE (sbfdq, V4DImode, V4DImode)
 
+KVX_EXPAND_BUILTIN_2_SIGNEDSAT (negbo, V8QImode, V8QImode)
+KVX_EXPAND_BUILTIN_2_SIGNEDSAT (negbx, V16QImode, V16QImode)
+KVX_EXPAND_BUILTIN_2_SIGNEDSAT (negbv, V32QImode, V32QImode)
 KVX_EXPAND_BUILTIN_2_SIGNEDSAT (neghq, V4HImode, V4HImode)
 KVX_EXPAND_BUILTIN_2_SIGNEDSAT (negho, V8HImode, V8HImode)
 KVX_EXPAND_BUILTIN_2_SIGNEDSAT (neghx, V16HImode, V16HImode)
@@ -6580,6 +6750,9 @@ KVX_EXPAND_BUILTIN_2_SIGNEDSAT (negd, DImode, DImode)
 KVX_EXPAND_BUILTIN_2_SIGNEDSAT (negdp, V2DImode, V2DImode)
 KVX_EXPAND_BUILTIN_2_SIGNEDSAT (negdq, V4DImode, V4DImode)
 
+KVX_EXPAND_BUILTIN_2_SIGNEDSAT (absbo, V8QImode, V8QImode)
+KVX_EXPAND_BUILTIN_2_SIGNEDSAT (absbx, V16QImode, V16QImode)
+KVX_EXPAND_BUILTIN_2_SIGNEDSAT (absbv, V32QImode, V32QImode)
 KVX_EXPAND_BUILTIN_2_SIGNEDSAT (abshq, V4HImode, V4HImode)
 KVX_EXPAND_BUILTIN_2_SIGNEDSAT (absho, V8HImode, V8HImode)
 KVX_EXPAND_BUILTIN_2_SIGNEDSAT (abshx, V16HImode, V16HImode)
@@ -6591,6 +6764,9 @@ KVX_EXPAND_BUILTIN_2_SIGNEDSAT (absd, DImode, DImode)
 KVX_EXPAND_BUILTIN_2_SIGNEDSAT (absdp, V2DImode, V2DImode)
 KVX_EXPAND_BUILTIN_2_SIGNEDSAT (absdq, V4DImode, V4DImode)
 
+KVX_EXPAND_BUILTIN_3_SIGNEDSAT (abdbo, V8QImode, V8QImode)
+KVX_EXPAND_BUILTIN_3_SIGNEDSAT (abdbx, V16QImode, V16QImode)
+KVX_EXPAND_BUILTIN_3_SIGNEDSAT (abdbv, V32QImode, V32QImode)
 KVX_EXPAND_BUILTIN_3_SIGNEDSAT (abdhq, V4HImode, V4HImode)
 KVX_EXPAND_BUILTIN_3_SIGNEDSAT (abdho, V8HImode, V8HImode)
 KVX_EXPAND_BUILTIN_3_SIGNEDSAT (abdhx, V16HImode, V16HImode)
@@ -6602,6 +6778,9 @@ KVX_EXPAND_BUILTIN_3_SIGNEDSAT (abdd, DImode, DImode)
 KVX_EXPAND_BUILTIN_3_SIGNEDSAT (abddp, V2DImode, V2DImode)
 KVX_EXPAND_BUILTIN_3_SIGNEDSAT (abddq, V4DImode, V4DImode)
 
+KVX_EXPAND_BUILTIN_3_AVERAGE (avgbo, V8QImode, V8QImode)
+KVX_EXPAND_BUILTIN_3_AVERAGE (avgbx, V16QImode, V16QImode)
+KVX_EXPAND_BUILTIN_3_AVERAGE (avgbv, V32QImode, V32QImode)
 KVX_EXPAND_BUILTIN_3_AVERAGE (avghq, V4HImode, V4HImode)
 KVX_EXPAND_BUILTIN_3_AVERAGE (avgho, V8HImode, V8HImode)
 KVX_EXPAND_BUILTIN_3_AVERAGE (avghx, V16HImode, V16HImode)
@@ -6625,6 +6804,9 @@ KVX_EXPAND_BUILTIN_4_EXTENDMUL (msbfxhwo, V8SImode, V8HImode)
 KVX_EXPAND_BUILTIN_4_EXTENDMUL (msbfxwdp, V2DImode, V2SImode)
 KVX_EXPAND_BUILTIN_4_EXTENDMUL (msbfxwdq, V4DImode, V4SImode)
 
+KVX_EXPAND_BUILTIN_3_STANDARD (minbo, sminv8qi3, V8QImode, V8QImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (minbx, sminv16qi3, V16QImode, V16QImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (minbv, sminv32qi3, V32QImode, V32QImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (minhq, sminv4hi3, V4HImode, V4HImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (minho, sminv8hi3, V8HImode, V8HImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (minhx, sminv16hi3, V16HImode, V16HImode)
@@ -6636,6 +6818,9 @@ KVX_EXPAND_BUILTIN_3_STANDARD (mind, smindi3, DImode, DImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (mindp, sminv2di3, V2DImode, V2DImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (mindq, sminv4di3, V4DImode, V4DImode)
 
+KVX_EXPAND_BUILTIN_3_STANDARD (maxbo, smaxv8qi3, V8QImode, V8QImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (maxbx, smaxv16qi3, V16QImode, V16QImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (maxbv, smaxv32qi3, V32QImode, V32QImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (maxhq, smaxv4hi3, V4HImode, V4HImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (maxho, smaxv8hi3, V8HImode, V8HImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (maxhx, smaxv16hi3, V16HImode, V16HImode)
@@ -6647,6 +6832,9 @@ KVX_EXPAND_BUILTIN_3_STANDARD (maxd, smaxdi3, DImode, DImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (maxdp, smaxv2di3, V2DImode, V2DImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (maxdq, smaxv4di3, V4DImode, V4DImode)
 
+KVX_EXPAND_BUILTIN_3_STANDARD (minubo, uminv8qi3, V8QImode, V8QImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (minubx, uminv16qi3, V16QImode, V16QImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (minubv, uminv32qi3, V32QImode, V32QImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (minuhq, uminv4hi3, V4HImode, V4HImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (minuho, uminv8hi3, V8HImode, V8HImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (minuhx, uminv16hi3, V16HImode, V16HImode)
@@ -6658,6 +6846,9 @@ KVX_EXPAND_BUILTIN_3_STANDARD (minud, umindi3, DImode, DImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (minudp, uminv2di3, V2DImode, V2DImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (minudq, uminv4di3, V4DImode, V4DImode)
 
+KVX_EXPAND_BUILTIN_3_STANDARD (maxubo, umaxv8qi3, V8QImode, V8QImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (maxubx, umaxv16qi3, V16QImode, V16QImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (maxubv, umaxv32qi3, V32QImode, V32QImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (maxuhq, umaxv4hi3, V4HImode, V4HImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (maxuho, umaxv8hi3, V8HImode, V8HImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (maxuhx, umaxv16hi3, V16HImode, V16HImode)
@@ -6669,6 +6860,9 @@ KVX_EXPAND_BUILTIN_3_STANDARD (maxud, umaxdi3, DImode, DImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (maxudp, umaxv2di3, V2DImode, V2DImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (maxudq, umaxv4di3, V4DImode, V4DImode)
 
+KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shlbos, V8QImode, SImode)
+KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shlbxs, V16QImode, SImode)
+KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shlbvs, V32QImode, SImode)
 KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shlhqs, V4HImode, SImode)
 KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shlhos, V8HImode, SImode)
 KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shlhxs, V16HImode, SImode)
@@ -6680,6 +6874,9 @@ KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shld, DImode, SImode)
 KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shldps, V2DImode, SImode)
 KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shldqs, V4DImode, SImode)
 
+KVX_EXPAND_BUILTIN_3_SHIFTRIGHT (shrbos, V8QImode, SImode)
+KVX_EXPAND_BUILTIN_3_SHIFTRIGHT (shrbxs, V16QImode, SImode)
+KVX_EXPAND_BUILTIN_3_SHIFTRIGHT (shrbvs, V32QImode, SImode)
 KVX_EXPAND_BUILTIN_3_SHIFTRIGHT (shrhqs, V4HImode, SImode)
 KVX_EXPAND_BUILTIN_3_SHIFTRIGHT (shrhos, V8HImode, SImode)
 KVX_EXPAND_BUILTIN_3_SHIFTRIGHT (shrhxs, V16HImode, SImode)
@@ -6757,6 +6954,9 @@ KVX_EXPAND_BUILTIN_3_STANDARD (catfwo, kvx_catfwo, V8SFmode, V4SFmode)
 KVX_EXPAND_BUILTIN_3_STANDARD (catfdp, kvx_catfdp, V2DFmode, DFmode)
 KVX_EXPAND_BUILTIN_3_STANDARD (catfdq, kvx_catfdq, V4DFmode, V2DFmode)
 
+KVX_EXPAND_BUILTIN_SELECT (selectbo, V8QImode, V8QImode)
+KVX_EXPAND_BUILTIN_SELECT (selectbx, V16QImode, V16QImode)
+KVX_EXPAND_BUILTIN_SELECT (selectbv, V32QImode, V32QImode)
 KVX_EXPAND_BUILTIN_SELECT (selecthq, V4HImode, V4HImode)
 KVX_EXPAND_BUILTIN_SELECT (selectho, V8HImode, V8HImode)
 KVX_EXPAND_BUILTIN_SELECT (selecthx, V16HImode, V16HImode)
@@ -7547,6 +7747,9 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_ADDCD: return kvx_expand_builtin_addcd (target, exp);
     case KVX_BUILTIN_SBFCD: return kvx_expand_builtin_sbfcd (target, exp);
 
+    case KVX_BUILTIN_ADDBO: return kvx_expand_builtin_addbo (target, exp);
+    case KVX_BUILTIN_ADDBX: return kvx_expand_builtin_addbx (target, exp);
+    case KVX_BUILTIN_ADDBV: return kvx_expand_builtin_addbv (target, exp);
     case KVX_BUILTIN_ADDHQ: return kvx_expand_builtin_addhq (target, exp);
     case KVX_BUILTIN_ADDHO: return kvx_expand_builtin_addho (target, exp);
     case KVX_BUILTIN_ADDHX: return kvx_expand_builtin_addhx (target, exp);
@@ -7558,6 +7761,9 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_ADDDP: return kvx_expand_builtin_adddp (target, exp);
     case KVX_BUILTIN_ADDDQ: return kvx_expand_builtin_adddq (target, exp);
 
+    case KVX_BUILTIN_SBFBO: return kvx_expand_builtin_sbfbo (target, exp);
+    case KVX_BUILTIN_SBFBX: return kvx_expand_builtin_sbfbx (target, exp);
+    case KVX_BUILTIN_SBFBV: return kvx_expand_builtin_sbfbv (target, exp);
     case KVX_BUILTIN_SBFHQ: return kvx_expand_builtin_sbfhq (target, exp);
     case KVX_BUILTIN_SBFHO: return kvx_expand_builtin_sbfho (target, exp);
     case KVX_BUILTIN_SBFHX: return kvx_expand_builtin_sbfhx (target, exp);
@@ -7569,6 +7775,9 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_SBFDP: return kvx_expand_builtin_sbfdp (target, exp);
     case KVX_BUILTIN_SBFDQ: return kvx_expand_builtin_sbfdq (target, exp);
 
+    case KVX_BUILTIN_NEGBO: return kvx_expand_builtin_negbo (target, exp);
+    case KVX_BUILTIN_NEGBX: return kvx_expand_builtin_negbx (target, exp);
+    case KVX_BUILTIN_NEGBV: return kvx_expand_builtin_negbv (target, exp);
     case KVX_BUILTIN_NEGHQ: return kvx_expand_builtin_neghq (target, exp);
     case KVX_BUILTIN_NEGHO: return kvx_expand_builtin_negho (target, exp);
     case KVX_BUILTIN_NEGHX: return kvx_expand_builtin_neghx (target, exp);
@@ -7580,6 +7789,9 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_NEGDP: return kvx_expand_builtin_negdp (target, exp);
     case KVX_BUILTIN_NEGDQ: return kvx_expand_builtin_negdq (target, exp);
 
+    case KVX_BUILTIN_ABSBO: return kvx_expand_builtin_absbo (target, exp);
+    case KVX_BUILTIN_ABSBX: return kvx_expand_builtin_absbx (target, exp);
+    case KVX_BUILTIN_ABSBV: return kvx_expand_builtin_absbv (target, exp);
     case KVX_BUILTIN_ABSHQ: return kvx_expand_builtin_abshq (target, exp);
     case KVX_BUILTIN_ABSHO: return kvx_expand_builtin_absho (target, exp);
     case KVX_BUILTIN_ABSHX: return kvx_expand_builtin_abshx (target, exp);
@@ -7591,6 +7803,9 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_ABSDP: return kvx_expand_builtin_absdp (target, exp);
     case KVX_BUILTIN_ABSDQ: return kvx_expand_builtin_absdq (target, exp);
 
+    case KVX_BUILTIN_ABDBO: return kvx_expand_builtin_abdbo (target, exp);
+    case KVX_BUILTIN_ABDBX: return kvx_expand_builtin_abdbx (target, exp);
+    case KVX_BUILTIN_ABDBV: return kvx_expand_builtin_abdbv (target, exp);
     case KVX_BUILTIN_ABDHQ: return kvx_expand_builtin_abdhq (target, exp);
     case KVX_BUILTIN_ABDHO: return kvx_expand_builtin_abdho (target, exp);
     case KVX_BUILTIN_ABDHX: return kvx_expand_builtin_abdhx (target, exp);
@@ -7602,6 +7817,9 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_ABDDP: return kvx_expand_builtin_abddp (target, exp);
     case KVX_BUILTIN_ABDDQ: return kvx_expand_builtin_abddq (target, exp);
 
+    case KVX_BUILTIN_AVGBO: return kvx_expand_builtin_avgbo (target, exp);
+    case KVX_BUILTIN_AVGBX: return kvx_expand_builtin_avgbx (target, exp);
+    case KVX_BUILTIN_AVGBV: return kvx_expand_builtin_avgbv (target, exp);
     case KVX_BUILTIN_AVGHQ: return kvx_expand_builtin_avghq (target, exp);
     case KVX_BUILTIN_AVGHO: return kvx_expand_builtin_avgho (target, exp);
     case KVX_BUILTIN_AVGHX: return kvx_expand_builtin_avghx (target, exp);
@@ -7625,6 +7843,9 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_MSBFXWDP: return kvx_expand_builtin_msbfxwdp (target, exp);
     case KVX_BUILTIN_MSBFXWDQ: return kvx_expand_builtin_msbfxwdq (target, exp);
 
+    case KVX_BUILTIN_MINBO: return kvx_expand_builtin_minbo (target, exp);
+    case KVX_BUILTIN_MINBX: return kvx_expand_builtin_minbx (target, exp);
+    case KVX_BUILTIN_MINBV: return kvx_expand_builtin_minbv (target, exp);
     case KVX_BUILTIN_MINHQ: return kvx_expand_builtin_minhq (target, exp);
     case KVX_BUILTIN_MINHO: return kvx_expand_builtin_minho (target, exp);
     case KVX_BUILTIN_MINHX: return kvx_expand_builtin_minhx (target, exp);
@@ -7636,6 +7857,9 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_MINDP: return kvx_expand_builtin_mindp (target, exp);
     case KVX_BUILTIN_MINDQ: return kvx_expand_builtin_mindq (target, exp);
 
+    case KVX_BUILTIN_MAXBO: return kvx_expand_builtin_maxbo (target, exp);
+    case KVX_BUILTIN_MAXBX: return kvx_expand_builtin_maxbx (target, exp);
+    case KVX_BUILTIN_MAXBV: return kvx_expand_builtin_maxbv (target, exp);
     case KVX_BUILTIN_MAXHQ: return kvx_expand_builtin_maxhq (target, exp);
     case KVX_BUILTIN_MAXHO: return kvx_expand_builtin_maxho (target, exp);
     case KVX_BUILTIN_MAXHX: return kvx_expand_builtin_maxhx (target, exp);
@@ -7647,6 +7871,9 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_MAXDP: return kvx_expand_builtin_maxdp (target, exp);
     case KVX_BUILTIN_MAXDQ: return kvx_expand_builtin_maxdq (target, exp);
 
+    case KVX_BUILTIN_MINUBO: return kvx_expand_builtin_minubo (target, exp);
+    case KVX_BUILTIN_MINUBX: return kvx_expand_builtin_minubx (target, exp);
+    case KVX_BUILTIN_MINUBV: return kvx_expand_builtin_minubv (target, exp);
     case KVX_BUILTIN_MINUHQ: return kvx_expand_builtin_minuhq (target, exp);
     case KVX_BUILTIN_MINUHO: return kvx_expand_builtin_minuho (target, exp);
     case KVX_BUILTIN_MINUHX: return kvx_expand_builtin_minuhx (target, exp);
@@ -7658,6 +7885,9 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_MINUDP: return kvx_expand_builtin_minudp (target, exp);
     case KVX_BUILTIN_MINUDQ: return kvx_expand_builtin_minudq (target, exp);
 
+    case KVX_BUILTIN_MAXUBO: return kvx_expand_builtin_maxubo (target, exp);
+    case KVX_BUILTIN_MAXUBX: return kvx_expand_builtin_maxubx (target, exp);
+    case KVX_BUILTIN_MAXUBV: return kvx_expand_builtin_maxubv (target, exp);
     case KVX_BUILTIN_MAXUHQ: return kvx_expand_builtin_maxuhq (target, exp);
     case KVX_BUILTIN_MAXUHO: return kvx_expand_builtin_maxuho (target, exp);
     case KVX_BUILTIN_MAXUHX: return kvx_expand_builtin_maxuhx (target, exp);
@@ -7669,6 +7899,9 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_MAXUDP: return kvx_expand_builtin_maxudp (target, exp);
     case KVX_BUILTIN_MAXUDQ: return kvx_expand_builtin_maxudq (target, exp);
 
+    case KVX_BUILTIN_SHLBOS: return kvx_expand_builtin_shlbos (target, exp);
+    case KVX_BUILTIN_SHLBXS: return kvx_expand_builtin_shlbxs (target, exp);
+    case KVX_BUILTIN_SHLBVS: return kvx_expand_builtin_shlbvs (target, exp);
     case KVX_BUILTIN_SHLHQS: return kvx_expand_builtin_shlhqs (target, exp);
     case KVX_BUILTIN_SHLHOS: return kvx_expand_builtin_shlhos (target, exp);
     case KVX_BUILTIN_SHLHXS: return kvx_expand_builtin_shlhxs (target, exp);
@@ -7680,6 +7913,9 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_SHLDPS: return kvx_expand_builtin_shldps (target, exp);
     case KVX_BUILTIN_SHLDQS: return kvx_expand_builtin_shldqs (target, exp);
 
+    case KVX_BUILTIN_SHRBOS: return kvx_expand_builtin_shrbos (target, exp);
+    case KVX_BUILTIN_SHRBXS: return kvx_expand_builtin_shrbxs (target, exp);
+    case KVX_BUILTIN_SHRBVS: return kvx_expand_builtin_shrbvs (target, exp);
     case KVX_BUILTIN_SHRHQS: return kvx_expand_builtin_shrhqs (target, exp);
     case KVX_BUILTIN_SHRHOS: return kvx_expand_builtin_shrhos (target, exp);
     case KVX_BUILTIN_SHRHXS: return kvx_expand_builtin_shrhxs (target, exp);
@@ -7771,6 +8007,9 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_CATFDP: return kvx_expand_builtin_catfdp (target, exp);
     case KVX_BUILTIN_CATFDQ: return kvx_expand_builtin_catfdq (target, exp);
 
+    case KVX_BUILTIN_SELECTBO: return kvx_expand_builtin_selectbo (target, exp);
+    case KVX_BUILTIN_SELECTBX: return kvx_expand_builtin_selectbx (target, exp);
+    case KVX_BUILTIN_SELECTBV: return kvx_expand_builtin_selectbv (target, exp);
     case KVX_BUILTIN_SELECTHQ: return kvx_expand_builtin_selecthq (target, exp);
     case KVX_BUILTIN_SELECTHO: return kvx_expand_builtin_selectho (target, exp);
     case KVX_BUILTIN_SELECTHX: return kvx_expand_builtin_selecthx (target, exp);

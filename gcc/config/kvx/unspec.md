@@ -81,6 +81,7 @@
         UNSPEC_FNARROW64
         UNSPEC_ZXWD
         UNSPEC_SXWD
+        UNSPEC_ADDD
         UNSPEC_ANDD
         UNSPEC_XORD
         UNSPEC_SLLD
@@ -90,6 +91,11 @@
         UNSPEC_SRS64
         UNSPEC_SRS128
         UNSPEC_SRS256
+        UNSPEC_ZXOBHQ
+        UNSPEC_ZXEBHQ
+        UNSPEC_QXOBHQ
+        UNSPEC_QXEBHQ
+        UNSPEC_OROEBO
 
         UNSPEC_DUP128
         UNSPEC_DUP256
