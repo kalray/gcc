@@ -65,7 +65,7 @@
   (V4DF "")
 ])
 
-;; Code iterator for sign/zero extension
+;; Code iterator for sign/zero extension.
 (define_code_iterator ANY_EXTEND [sign_extend zero_extend])
 
 ;; Sign-extending or zero-extending sub-word load instructions.
@@ -78,6 +78,143 @@
 (define_code_attr unsx [
   (sign_extend "")
   (zero_extend "u")
+])
+
+;; Unary arithmetic code iterator for expanding V*QI patterns.
+(define_code_iterator UNARITH [
+  neg
+  ss_neg
+  ;;us_neg
+  abs
+  ss_abs
+])
+
+;; Binary arithmetic code iterator for expanding V*QI patterns.
+(define_code_iterator BINARITH [
+  plus
+  ss_plus
+  us_plus
+  minus
+  ss_minus
+  us_minus
+  ;; mult
+  smin
+  smax
+  umin
+  umax
+])
+
+;; Binary shift left code iterator for expanding V*QI patterns.
+(define_code_iterator BINSHL [
+  ashift
+  ss_ashift
+  us_ashift
+  ;; rotate
+])
+
+;; Binary shift right code iterator for expanding V*QI patterns.
+(define_code_iterator BINSHR [
+  lshiftrt
+  ashiftrt
+  ;; rotatert
+])
+
+;; Code attribute for mapping code to prefix of pattern name.
+(define_code_attr prefix [
+  (neg "neg")
+  (ss_neg "ssneg")
+  (abs "abs")
+  (ss_abs "ssabs")
+  (plus "add")
+  (ss_plus "ssadd")
+  (us_plus "usadd")
+  (minus "sub")
+  (ss_minus "sssub")
+  (us_minus "ussub")
+  (smin "smin")
+  (smax "smax")
+  (umin "umin")
+  (umax "umax")
+  (ashift "ashl")
+  (ss_ashift "ssashl")
+  (us_ashift "usashl")
+  (rotate "rotl")
+  (ashiftrt "ashr")
+  (lshiftrt "lshr")
+  (rotatert "rotr")
+])
+
+;; Code attribute for setting the 8 lsbs of 16-bit lanes.
+(define_code_attr set8lsb [
+  (neg "false")
+  (ss_neg "true")
+  (abs "false")
+  (ss_abs "true")
+  (plus "false")
+  (ss_plus "true")
+  (us_plus "true")
+  (minus "false")
+  (ss_minus "true")
+  (us_minus "true")
+  (smin "false")
+  (smax "false")
+  (umin "false")
+  (umax "false")
+  (ashift "false")
+  (ss_ashift "true")
+  (us_ashift "true")
+  (rotate "true")
+])
+
+;; Code attribute for setting the 8 msbs of 16-bit lanes.
+(define_code_attr set8msb [
+  (lshiftrt "false")
+  (ashiftrt "true")
+  (rotatert "true")
+])
+
+;; Code iterator to generate the "abd<>3" and "ssabd<>3" templates.
+(define_code_iterator ABS [
+  abs
+  ss_abs
+])
+
+;; Code attribute for the "abd<>3" and "ssabd<>3" templates.
+(define_code_attr abd [
+  (abs "abd")
+  (ss_abs "ssabd")
+])
+
+;; Int iterator for the AVG operators of V*QI patterns.
+(define_int_iterator UNSPEC_AVG [
+  UNSPEC_AVGWP
+  UNSPEC_AVGUWP
+  UNSPEC_AVGRWP
+  UNSPEC_AVGRUWP
+])
+
+;; Int attribute for the AVG prefix of V*QI patterns.
+(define_int_attr avgpre [
+  (UNSPEC_AVGWP "avg")
+  (UNSPEC_AVGUWP "uavg")
+  (UNSPEC_AVGRWP "avg")
+  (UNSPEC_AVGRUWP "uavg")
+])
+
+;; Int attribute for the AVG postfix of V*QI patterns.
+(define_int_attr avgpost [
+  (UNSPEC_AVGWP "3_floor")
+  (UNSPEC_AVGUWP "3_floor")
+  (UNSPEC_AVGRWP "3_ceil")
+  (UNSPEC_AVGRUWP "3_ceil")
+])
+
+;; Int attribute for the AVG rounding of V*QI patterns.
+(define_int_attr avground [
+  (UNSPEC_AVGWP "false")
+  (UNSPEC_AVGUWP "false")
+  (UNSPEC_AVGRWP "true")
+  (UNSPEC_AVGRUWP "true")
 ])
 
 ;; Iterator for all integer modes (up to 64-bit)
@@ -211,18 +348,11 @@
   V32QI V16HI V16HF V8SI V4DI V8SF V4DF
 ])
 
-;; Iterator for all SIMD modes that have a compare (no V*QI).
+;; Iterator for all SIMD modes that have a compare.
 (define_mode_iterator SIMDCMP [
-  V4HI V4HF V2SI V2SF
-  V8HI V8HF V4SI V2DI V4SF V2DF
-  V16HI V16HF V8SI V4DI V8SF V4DF
-])
-
-;; Duplicate of SIMDCMP for double iteration in vcond and vcondu SPNs.
-(define_mode_iterator SIMDCMP2 [
-  V4HI V4HF V2SI V2SF
-  V8HI V8HF V4SI V2DI V4SF V2DF
-  V16HI V16HF V8SI V4DI V8SF V4DF
+  V8QI V4HI V4HF V2SI V2SF
+  V16QI V8HI V8HF V4SI V2DI V4SF V2DF
+  V32QI V16HI V16HF V8SI V4DI V8SF V4DF
 ])
 
 ;; Iterator for all the SIMD modes.
@@ -768,5 +898,12 @@
   V2SF
   V4SF
   V8SF
+])
+
+;; Iterator for the vector QI modes.
+(define_mode_iterator VXQI [
+  V8QI
+  V16QI
+  V32QI
 ])
 
