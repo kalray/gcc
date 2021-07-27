@@ -1,6 +1,7 @@
 
 (define_c_enum "unspec"
   [     
+        UNSPEC_EFFECT
         UNSPEC_ATOMIC_OP
         UNSPEC_AWAIT
         UNSPEC_BARRIER
@@ -34,7 +35,6 @@
         UNSPEC_SLLHPS
         UNSPEC_SRAHPS
         UNSPEC_LANDHP
-        UNSPEC_SYNC
         UNSPEC_WAITIT
         UNSPEC_WFXL
         UNSPEC_WFXM

@@ -170,22 +170,16 @@ enum kvx_abi_type
 #define FIXED_REGISTERS                                                        \
   {                                                                            \
     KV3_ABI_REGULAR_FIXED_REGISTERS                                            \
-    1,	 /* sync */                                                            \
-      1, /* virtual FP */                                                      \
   }
 
 #define CALL_USED_REGISTERS                                                    \
   {                                                                            \
     KV3_ABI_REGULAR_CALL_USED_REGISTERS                                        \
-    1,	 /* sync */                                                            \
-      1, /* virtual FP */                                                      \
   }
 
 #define CALL_REALLY_USED_REGISTERS                                             \
   {                                                                            \
     KV3_ABI_REGULAR_CALL_REALLY_USED_REGISTERS                                 \
-    1,	 /* sync */                                                            \
-      1, /* virtual FP */                                                      \
   }
 
 #define PC_REGNUM KVX_PROGRAM_POINTER_REGNO
@@ -597,7 +591,6 @@ extern void kvx_profile_hook (void);
 #define REGISTER_NAMES                                                         \
   {                                                                            \
     KV3_REGISTER_NAMES                                                         \
-    ".sync.", ".virtual-fp.",                                                  \
   }
 
 /* If defined, a C initializer for an array of structures containing a
@@ -798,7 +791,6 @@ extern void kvx_profile_hook (void);
 
 #ifndef IN_LIBGCC2
 
-extern GTY (()) rtx kvx_sync_reg_rtx;
 extern GTY (()) rtx kvx_link_reg_rtx;
 
 #endif
