@@ -131,7 +131,6 @@
 
 static bool scheduling = false;
 
-rtx kvx_sync_reg_rtx;
 rtx kvx_link_reg_rtx;
 
 /* Which arch are we scheduling for */
@@ -893,7 +892,6 @@ kvx_legitimate_address_p (machine_mode mode, rtx x, bool strict)
 static void
 kvx_conditional_register_usage (void)
 {
-  kvx_sync_reg_rtx = gen_rtx_REG (SImode, KV3_SYNC_REG_REGNO);
   kvx_link_reg_rtx = gen_rtx_REG (Pmode, KV3_RETURN_POINTER_REGNO);
 }
 
@@ -5953,7 +5951,7 @@ kvx_expand_builtin_get (rtx target, tree args)
   if (regno == KV3_PCR_REGNO)
     emit_move_insn (target, sys_reg);
   else
-    emit_insn (gen_kvx_get (target, sys_reg, kvx_sync_reg_rtx));
+    emit_insn (gen_kvx_get (target, sys_reg));
 
   return target;
 }
@@ -5968,7 +5966,7 @@ kvx_expand_builtin_set (rtx target ATTRIBUTE_UNUSED, tree args)
   int regno = verify_sfr_regno(INTVAL (arg1), "set", "first");
   rtx sys_reg = gen_rtx_REG (DImode, regno);
 
-  emit_insn (gen_kvx_set (sys_reg, arg2, kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_set (sys_reg, arg2));
 
   return NULL_RTX;
 }
@@ -5983,7 +5981,7 @@ kvx_expand_builtin_wfxl (rtx target ATTRIBUTE_UNUSED, tree args)
   int regno = verify_sfr_regno(INTVAL (arg1), "wfxl", "first");
   rtx sys_reg = gen_rtx_REG (DImode, regno);
 
-  emit_insn (gen_kvx_wfxl (sys_reg, arg2, kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_wfxl (sys_reg, arg2));
 
   return NULL_RTX;
 }
@@ -5998,7 +5996,7 @@ kvx_expand_builtin_wfxm (rtx target ATTRIBUTE_UNUSED, tree args)
   int regno = verify_sfr_regno(INTVAL (arg1), "wfxm", "first");
   rtx sys_reg = gen_rtx_REG (DImode, regno);
 
-  emit_insn (gen_kvx_wfxm (sys_reg, arg2, kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_wfxm (sys_reg, arg2));
 
   return NULL_RTX;
 }
@@ -6014,7 +6012,7 @@ kvx_expand_builtin_waitit (rtx target, tree args)
   else
     target = force_reg (SImode, target);
 
-  emit_insn (gen_kvx_waitit (target, arg1, kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_waitit (target, arg1));
 
   return target;
 }
@@ -6059,7 +6057,7 @@ static rtx
 kvx_expand_builtin_await (rtx target ATTRIBUTE_UNUSED,
 			  tree args ATTRIBUTE_UNUSED)
 {
-  emit_insn (gen_kvx_await (kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_await ());
 
   return NULL_RTX;
 }
@@ -6068,7 +6066,7 @@ static rtx
 kvx_expand_builtin_sleep (rtx target ATTRIBUTE_UNUSED,
 			  tree args ATTRIBUTE_UNUSED)
 {
-  emit_insn (gen_kvx_sleep (kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_sleep ());
 
   return NULL_RTX;
 }
@@ -6077,7 +6075,7 @@ static rtx
 kvx_expand_builtin_stop (rtx target ATTRIBUTE_UNUSED,
 			 tree args ATTRIBUTE_UNUSED)
 {
-  emit_insn (gen_kvx_stop (kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_stop ());
 
   return NULL_RTX;
 }
@@ -6088,7 +6086,7 @@ kvx_expand_builtin_syncgroup (rtx target ATTRIBUTE_UNUSED, tree args)
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   arg1 = force_reg (DImode, arg1);
 
-  emit_insn (gen_kvx_syncgroup (arg1, kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_syncgroup (arg1));
 
   return NULL_RTX;
 }
@@ -6096,7 +6094,7 @@ kvx_expand_builtin_syncgroup (rtx target ATTRIBUTE_UNUSED, tree args)
 static rtx
 kvx_expand_builtin_barrier (void)
 {
-  emit_insn (gen_kvx_barrier (kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_barrier ());
 
   return NULL_RTX;
 }
@@ -6104,7 +6102,7 @@ kvx_expand_builtin_barrier (void)
 static rtx
 kvx_expand_builtin_dinval (void)
 {
-  emit_insn (gen_kvx_dinval (kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_dinval ());
 
   return NULL_RTX;
 }
@@ -6112,7 +6110,7 @@ kvx_expand_builtin_dinval (void)
 static rtx
 kvx_expand_builtin_iinval (void)
 {
-  emit_insn (gen_kvx_iinval (kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_iinval ());
 
   return NULL_RTX;
 }
@@ -6120,7 +6118,7 @@ kvx_expand_builtin_iinval (void)
 static rtx
 kvx_expand_builtin_tlbdinval (void)
 {
-  emit_insn (gen_kvx_tlbdinval (kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_tlbdinval ());
 
   return NULL_RTX;
 }
@@ -6128,7 +6126,7 @@ kvx_expand_builtin_tlbdinval (void)
 static rtx
 kvx_expand_builtin_tlbiinval (void)
 {
-  emit_insn (gen_kvx_tlbiinval (kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_tlbiinval ());
 
   return NULL_RTX;
 }
@@ -6136,7 +6134,7 @@ kvx_expand_builtin_tlbiinval (void)
 static rtx
 kvx_expand_builtin_tlbprobe (void)
 {
-  emit_insn (gen_kvx_tlbprobe (kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_tlbprobe ());
 
   return NULL_RTX;
 }
@@ -6144,7 +6142,7 @@ kvx_expand_builtin_tlbprobe (void)
 static rtx
 kvx_expand_builtin_tlbread (void)
 {
-  emit_insn (gen_kvx_tlbread (kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_tlbread ());
 
   return NULL_RTX;
 }
@@ -6152,7 +6150,7 @@ kvx_expand_builtin_tlbread (void)
 static rtx
 kvx_expand_builtin_tlbwrite (void)
 {
-  emit_insn (gen_kvx_tlbwrite (kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_tlbwrite ());
 
   return NULL_RTX;
 }
@@ -6286,7 +6284,7 @@ kvx_expand_builtin_acswap (rtx target, tree args, enum machine_mode mode)
 static rtx
 kvx_expand_builtin_fence (void)
 {
-  emit_insn (gen_kvx_fence (kvx_sync_reg_rtx));
+  emit_insn (gen_kvx_fence ());
 
   return NULL_RTX;
 }
@@ -8433,10 +8431,6 @@ kvx_sched_adjust_cost (rtx_insn *insn, int dep_type, rtx_insn *dep_insn,
 	}
     }
 
-  if (!cost && reg_mentioned_p (kvx_sync_reg_rtx, insn)
-      && reg_mentioned_p (kvx_sync_reg_rtx, dep_insn))
-    cost = 1;
-
   return cost;
 }
 
@@ -8453,30 +8447,11 @@ kvx_sched_adjust_priority (rtx_insn *insn, int priority)
 static void
 kvx_sched_dependencies_evaluation_hook (rtx_insn *head, rtx_insn *tail)
 {
-  rtx_insn *insn, *insn2, *next_tail, *last_sync = head;
-
-  next_tail = NEXT_INSN (tail);
-
-  for (insn = head; insn != next_tail; insn = NEXT_INSN (insn))
-    if (INSN_P (insn))
-      {
-	int sync = reg_mentioned_p (kvx_sync_reg_rtx, insn);
-
-	if (sync)
-	  {
-	    for (insn2 = last_sync; insn2 != insn; insn2 = NEXT_INSN (insn2))
-	      if (INSN_P (insn2))
-		{
-		  add_dependence (insn, insn2, REG_DEP_TRUE);
-		}
-	    last_sync = insn;
-	  }
-      }
-
-  if (last_sync != head)
-    for (insn2 = last_sync; insn2 != next_tail; insn2 = NEXT_INSN (insn2))
-      if (INSN_P (insn2))
-	add_dependence (insn2, last_sync, REG_DEP_TRUE);
+  rtx_insn *next_tail = NEXT_INSN (tail);
+  for (rtx_insn *insn = head; insn != next_tail; insn = NEXT_INSN (insn))
+    {
+      // Place holder, do nothing for now.
+    }
 }
 
 static void
@@ -9199,7 +9174,7 @@ kvx_scan_insn_registers_1 (rtx *x, void *data)
   if (REG_P (*x))
     {
       /* Must be a real hard registers */
-      gcc_assert (REGNO (*x) <= KV3_MDS_REGISTERS);
+      gcc_assert (REGNO (*x) < KV3_MDS_REGISTERS);
 
       if (regs->set_dest)
 	SET_HARD_REG_BIT (regs->defs, REGNO (*x));
