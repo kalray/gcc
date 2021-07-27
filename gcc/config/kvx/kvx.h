@@ -776,7 +776,7 @@ extern void kvx_profile_hook (void);
     comp;                                                                      \
   })
 
-#define TARGETS_SUPPORTS_WIDE_INT 1
+#define TARGET_SUPPORTS_WIDE_INT 1
 
 /* Address spaces
 
