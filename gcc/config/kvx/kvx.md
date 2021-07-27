@@ -401,9 +401,7 @@
 
 (define_insn "kvx_get"
    [(set (match_operand:DI 0 "register_operand" "=r")
-         (unspec_volatile:DI [(match_operand:DI 1 "system_register_operand" "RXX")] UNSPEC_GET))
-    (set (match_operand:SI 2 "" "")
-         (unspec:SI [(match_dup 2)] UNSPEC_SYNC))]
+         (unspec_volatile:DI [(match_operand:DI 1 "system_register_operand" "RXX")] UNSPEC_GET))]
    ""
    "get %0 = %1"
 [(set_attr "type" "bcu_get")]
@@ -411,9 +409,7 @@
 
 (define_insn "kvx_wfxl"
    [(set (match_operand:DI 0 "system_register_operand" "=RYY,RXX")
-         (unspec_volatile:DI [(match_operand:DI 1 "register_operand" "r,r")] UNSPEC_WFXL))
-    (set (match_operand:DI 2 "" "")
-         (unspec:DI [(match_dup 2)] UNSPEC_SYNC))]
+         (unspec_volatile:DI [(match_operand:DI 1 "register_operand" "r,r")] UNSPEC_WFXL))]
    ""
    "wfxl %0, %1"
   [(set_attr "type" "all,bcu")]
@@ -421,56 +417,45 @@
 
 (define_insn "kvx_wfxm"
    [(set (match_operand:DI 0 "system_register_operand" "=RYY,RXX")
-         (unspec_volatile:DI [(match_operand:DI 1 "register_operand" "r,r")] UNSPEC_WFXM))
-    (set (match_operand:DI 2 "" "")
-         (unspec:DI [(match_dup 2)] UNSPEC_SYNC))]
+         (unspec_volatile:DI [(match_operand:DI 1 "register_operand" "r,r")] UNSPEC_WFXM))]
    ""
    "wfxm %0, %1"
   [(set_attr "type" "all,bcu")]
 )
 
 (define_insn "kvx_syncgroup"
-   [(unspec [(match_operand:DI 0 "register_operand" "r")] UNSPEC_SYNCGROUP)
-    (clobber (mem:BLK (scratch)))
-    (set (match_operand:DI 1 "" "")
-         (unspec:DI [(match_dup 1)] UNSPEC_SYNC))]
-   ""
-   "syncgroup %0"
+  [(unspec [(match_operand:DI 0 "register_operand" "r")] UNSPEC_SYNCGROUP)
+   (clobber (mem:BLK (scratch)))
+   (set (reg:DI KV3_IPE_REGNO)
+        (unspec:DI [(reg:DI KV3_IPE_REGNO)] UNSPEC_EFFECT))]
+  ""
+  "syncgroup %0"
   [(set_attr "type" "bcu")]
 )
 
 (define_insn "kvx_await"
-   [(unspec_volatile [(const_int 0)] UNSPEC_AWAIT)
-    (set (match_operand:SI 0 "" "")
-         (unspec:SI [(match_dup 0)] UNSPEC_SYNC))]
+   [(unspec_volatile [(const_int 0)] UNSPEC_AWAIT)]
    ""
    "await"
 [(set_attr "type" "all")]
 )
 
 (define_insn "kvx_barrier"
-   [(unspec_volatile [(const_int 0)] UNSPEC_BARRIER)
-    (clobber (mem:BLK (scratch)))
-    (set (match_operand:SI 0 "" "")
-         (unspec:SI [(match_dup 0)] UNSPEC_SYNC))]
+   [(unspec_volatile [(const_int 0)] UNSPEC_BARRIER)]
    ""
    "barrier"
 [(set_attr "type" "all")]
 )
 
 (define_insn "kvx_sleep"
-   [(unspec_volatile [(const_int 0)] UNSPEC_SLEEP)
-    (set (match_operand:SI 0 "" "")
-         (unspec:SI [(match_dup 0)] UNSPEC_SYNC))]
+   [(unspec_volatile [(const_int 0)] UNSPEC_SLEEP)]
    ""
    "sleep"
 [(set_attr "type" "all")]
 )
 
 (define_insn "kvx_stop"
-   [(unspec_volatile [(const_int 0)] UNSPEC_STOP)
-    (set (match_operand:SI 0 "" "")
-         (unspec:SI [(match_dup 0)] UNSPEC_SYNC))]
+   [(unspec_volatile [(const_int 0)] UNSPEC_STOP)]
    ""
    "stop"
 [(set_attr "type" "all")]
@@ -478,9 +463,7 @@
 
 (define_insn "kvx_waitit"
    [(set (match_operand:SI 0 "register_operand" "=r")
-         (unspec_volatile:SI [(match_operand:SI 1 "register_operand" "0")] UNSPEC_WAITIT))
-    (set (match_operand:SI 2 "" "")
-         (unspec:SI [(match_dup 2)] UNSPEC_SYNC))]
+         (unspec_volatile:SI [(match_operand:SI 1 "register_operand" "0")] UNSPEC_WAITIT))]
    ""
    "waitit %0"
   [(set_attr "type" "bcu_get")]
@@ -505,112 +488,37 @@
 [(set_attr "type" "bcu")]
 )
 
-(define_insn "scall_<mode>"
-   [(set (reg:SI 0)
-         (call
-	    (mem:SI (unspec:SI [(match_operand 0 "immediate_operand" "i")] UNSPEC_SCALL))
-	    (const_int 0)))
-    (use (reg:SI 0))
-    (use (reg:SI 1))
-    (use (reg:SI 2))
-    (use (reg:SI 3))
-    (use (reg:SI 4))
-    (use (reg:SI 5))
-    (use (reg:SI 6))
-    (use (reg:SI 7))
-    (clobber (match_operand:P 1 "system_register_operand" "=RXX")) /* LINK_REG */
-    (clobber (mem:BLK (scratch)))
-    (set (match_operand:SI 2 "" "")
-         (unspec:SI [(match_dup 2)] UNSPEC_SYNC))]
-   ""
-   "scall %0"
-[(set_attr "type" "all")]
-)
-
-(define_insn "mos_dinval_scall"
-   [(unspec_volatile:SI [(const_int 1026)] UNSPEC_SCALL)
-    (clobber (reg:SI 0))
-    (clobber (reg:SI 1))
-    (clobber (reg:SI 2))
-    (clobber (reg:SI 3))
-    (clobber (reg:SI 4))
-    (clobber (reg:SI 5))
-    (clobber (reg:SI 6))
-    (clobber (reg:SI 7))
-    (clobber (reg:SI 8))
-    (clobber (reg:SI 9))
-    (clobber (reg:SI 11))
-    (clobber (reg:SI 32))
-    (clobber (reg:SI 33))
-    (clobber (reg:SI 34))
-    (clobber (reg:SI 35))
-    (clobber (mem:BLK (scratch)))]
-    ""
-   "scall 1056"
- [(set_attr "type" "all")
-  ]
- )
-
-(define_insn "mos_dflush_scall"
-   [(unspec_volatile:SI [(const_int 1027)] UNSPEC_SCALL)
-    (clobber (reg:SI 0))
-    (clobber (reg:SI 1))
-    (clobber (reg:SI 2))
-    (clobber (reg:SI 3))
-    (clobber (reg:SI 4))
-    (clobber (reg:SI 5))
-    (clobber (reg:SI 6))
-    (clobber (reg:SI 7))
-    (clobber (reg:SI 8))
-    (clobber (reg:SI 9))
-    (clobber (reg:SI 11))
-    (clobber (reg:SI 32))
-    (clobber (reg:SI 33))
-    (clobber (reg:SI 34))
-    (clobber (reg:SI 35))
-    (clobber (mem:BLK (scratch)))]
-    ""
-   "scall 1065"
-  [(set_attr "type" "all")]
-)
-
 (define_insn "kvx_fence"
-  [(unspec_volatile [(const_int 0)] UNSPEC_FENCE)
-   (clobber (mem:BLK (scratch)))
-   (set (match_operand:SI 0 "" "")
-        (unspec:SI [(match_dup 0)] UNSPEC_SYNC))]
+  [(unspec [(const_int 0)] UNSPEC_FENCE)
+   (clobber (mem:BLK (scratch)))]
   ""
   "fence"
   [(set_attr "type" "lsu")]
 )
 
 (define_insn "kvx_dinval"
-  [(unspec_volatile [(const_int 0)] UNSPEC_DINVAL)
-   (clobber (mem:BLK (scratch)))
-   (set (match_operand:SI 0 "" "")
-        (unspec:SI [(match_dup 0)] UNSPEC_SYNC))]
+  [(unspec [(const_int 0)] UNSPEC_DINVAL)
+   (clobber (mem:BLK (scratch)))]
   ""
   "dinval"
   [(set_attr "type" "lsu")]
 )
 
-(define_insn "kvx_iinval"
-  [(unspec_volatile [(const_int 0)] UNSPEC_IINVAL)
-   (clobber (mem:BLK (scratch)))
-   (set (match_operand:SI 0 "" "")
-        (unspec:SI [(match_dup 0)] UNSPEC_SYNC))]
-  ""
-  "iinval"
-  [(set_attr "type" "lsu")]
-)
-
 (define_insn "kvx_dinvall"
-  [(unspec_volatile [(match_operand 0 "noxsaddr_operand" "Aa,Ab,p")] UNSPEC_DINVALL)
+  [(unspec [(match_operand 0 "noxsaddr_operand" "Aa,Ab,p")] UNSPEC_DINVALL)
    (clobber (mem:BLK (scratch)))]
   ""
   "dinvall%m0 %a0"
   [(set_attr "length" "4,     8,    12")
    (set_attr "type" "lsu, lsu_x, lsu_y")]
+)
+
+(define_insn "kvx_iinval"
+  [(unspec_volatile [(const_int 0)] UNSPEC_IINVAL)
+   (clobber (mem:BLK (scratch)))]
+  ""
+  "iinval"
+  [(set_attr "type" "lsu")]
 )
 
 (define_insn "kvx_iinvals"
@@ -643,7 +551,7 @@
 )
 
 (define_expand "kvx_dzerol"
-  [(unspec_volatile [(match_operand 0 "noxsaddr_operand" "")] UNSPEC_DZEROL)
+  [(unspec [(match_operand 0 "noxsaddr_operand" "")] UNSPEC_DZEROL)
    (clobber (mem:BLK (scratch)))]
   ""
   {
@@ -666,7 +574,7 @@
 )
 
 (define_insn "kvx_dzerol_1"
-  [(unspec_volatile [(match_operand 0 "noxsaddr_operand" "Aa,Ab,p")] UNSPEC_DZEROL)
+  [(unspec [(match_operand 0 "noxsaddr_operand" "Aa,Ab,p")] UNSPEC_DZEROL)
    (clobber (mem:BLK (scratch)))]
   "KV3_1"
   "dzerol%m0 %a0"
@@ -676,9 +584,7 @@
 
 (define_insn "kvx_tlbdinval"
   [(unspec_volatile [(const_int 0)] UNSPEC_TLBDINVAL)
-   (clobber (mem:BLK (scratch)))
-   (set (match_operand:SI 0 "" "")
-        (unspec:SI [(match_dup 0)] UNSPEC_SYNC))]
+   (clobber (mem:BLK (scratch)))]
   ""
   "tlbdinval"
   [(set_attr "type" "all")]
@@ -686,29 +592,21 @@
 
 (define_insn "kvx_tlbiinval"
   [(unspec_volatile [(const_int 0)] UNSPEC_TLBIINVAL)
-   (clobber (mem:BLK (scratch)))
-   (set (match_operand:SI 0 "" "")
-        (unspec:SI [(match_dup 0)] UNSPEC_SYNC))]
+   (clobber (mem:BLK (scratch)))]
   ""
   "tlbiinval"
   [(set_attr "type" "all")]
 )
 
 (define_insn "kvx_tlbprobe"
-  [(unspec_volatile [(const_int 0)] UNSPEC_TLBPROBE)
-   (clobber (mem:BLK (scratch)))
-   (set (match_operand:SI 0 "" "")
-        (unspec_volatile [(match_dup 0)] UNSPEC_SYNC))]
+  [(unspec_volatile [(const_int 0)] UNSPEC_TLBPROBE)]
   ""
   "tlbprobe"
   [(set_attr "type" "all")]
 )
 
 (define_insn "kvx_tlbread"
-  [(unspec_volatile [(const_int 0)] UNSPEC_TLBREAD)
-   (clobber (mem:BLK (scratch)))
-   (set (match_operand:SI 0 "" "")
-         (unspec:SI [(match_dup 0)] UNSPEC_SYNC))]
+  [(unspec_volatile [(const_int 0)] UNSPEC_TLBREAD)]
   ""
   "tlbread"
   [(set_attr "type" "all")]
@@ -716,9 +614,7 @@
 
 (define_insn "kvx_tlbwrite"
   [(unspec_volatile [(const_int 0)] UNSPEC_TLBWRITE)
-   (clobber (mem:BLK (scratch)))
-   (set (match_operand:SI 0 "" "")
-         (unspec:SI [(match_dup 0)] UNSPEC_SYNC))]
+   (clobber (mem:BLK (scratch)))]
   ""
   "tlbwrite"
   [(set_attr "type" "all")]
@@ -728,8 +624,8 @@
   [(clobber (mem:BLK (scratch)))]
   ""
   {
-    emit_insn (gen_kvx_dinval (kvx_sync_reg_rtx));
-    emit_insn (gen_kvx_fence (kvx_sync_reg_rtx));
+    emit_insn (gen_kvx_dinval ());
+    emit_insn (gen_kvx_fence ());
   }
 )
 

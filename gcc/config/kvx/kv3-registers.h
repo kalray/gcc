@@ -47,26 +47,23 @@ enum reg_class {
 #define KV3_SFR_LAST_REGNO 255
 
 #define KV3_MDS_REGISTERS 256
-#define KV3_SYNC_REG_REGNO (KV3_MDS_REGISTERS + 0)
-#define KV3_FRAME_POINTER_VIRT_REGNO (KV3_MDS_REGISTERS + 1)
-#define FIRST_PSEUDO_REGISTER (KV3_MDS_REGISTERS + 2)
+#define FIRST_PSEUDO_REGISTER (KV3_MDS_REGISTERS)
+#define KV3_FRAME_POINTER_VIRT_REGNO (KV3_SFR_FIRST_REGNO + 63)
 
 #define REG_CLASS_CONTENTS { \
-  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x0 }, /* NO_REGS */ \
-  { 0xffffffff, 0xffffffff, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x2 }, /* GPR_REGS */ \
-  { 0xffffffff, 0xffffffff, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x0 }, /* PGR_REGS */ \
-  { 0xffffffff, 0xffffffff, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x0 }, /* QGR_REGS */ \
-  { 0x00000000, 0x00000000, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0x1 }, /* SFR_REGS */ \
-  { 0x00000000, 0x00000000, 0x10000002, 0x00000000, 0x000000f0, 0x0000003f, 0x00000010, 0x00000000, 0x0 }, /* AIB_REGS */ \
-  { 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0x3 }, /* ALL_REGS */ \
+  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, }, /* NO_REGS */ \
+  { 0xffffffff, 0xffffffff, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, }, /* GPR_REGS */ \
+  { 0xffffffff, 0xffffffff, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, }, /* PGR_REGS */ \
+  { 0xffffffff, 0xffffffff, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, }, /* QGR_REGS */ \
+  { 0x00000000, 0x00000000, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, }, /* SFR_REGS */ \
+  { 0x00000000, 0x00000000, 0x10000002, 0x00000000, 0x000000f0, 0x0000003f, 0x00000010, 0x00000000, }, /* AIB_REGS */ \
+  { 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, }, /* ALL_REGS */ \
 }
 
 #define REGNO_REG_CLASS(REGNO) ( \
   (((REGNO) <= KV3_GPR_LAST_REGNO)? GPR_REGS: \
-    (((REGNO) >= KV3_SFR_FIRST_REGNO && (REGNO) <= KV3_SFR_LAST_REGNO)? SFR_REGS: \
-      ((REGNO) == KV3_SYNC_REG_REGNO? SFR_REGS: \
-        ((REGNO) == KV3_FRAME_POINTER_VIRT_REGNO? GPR_REGS: \
-          NO_REGS)))))
+    (((REGNO) <= KV3_SFR_LAST_REGNO)? SFR_REGS: \
+      NO_REGS)))
 
 #define KV3_REGISTER_NAMES \
 	"r0",	"r1",	"r2",	"r3",	"r4",	"r5",	"r6",	"r7", \

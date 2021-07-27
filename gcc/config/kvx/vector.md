@@ -11446,8 +11446,8 @@
 )
 
 (define_insn "kvx_s<SIMD64:lsvs>"
-  [(unspec_volatile:SIMD64 [(match_operand:SIMD64 0 "memory_operand" "a,b,m")
-                            (match_operand:SIMD64 1 "register_operand" "r,r,r")] UNSPEC_SD)
+  [(unspec:SIMD64 [(match_operand:SIMD64 0 "memory_operand" "a,b,m")
+                   (match_operand:SIMD64 1 "register_operand" "r,r,r")] UNSPEC_SD)
    (clobber (match_dup 0))]
   ""
   "sd%m0 %0 = %1"
@@ -11469,8 +11469,8 @@
 )
 
 (define_insn "kvx_s<SIMD128:lsvs>"
-  [(unspec_volatile:SIMD128 [(match_operand:SIMD128 0 "memory_operand" "a,b,m")
-                             (match_operand:SIMD128 1 "register_operand" "r,r,r")] UNSPEC_SQ)
+  [(unspec:SIMD128 [(match_operand:SIMD128 0 "memory_operand" "a,b,m")
+                    (match_operand:SIMD128 1 "register_operand" "r,r,r")] UNSPEC_SQ)
    (clobber (match_dup 0))]
   ""
   "sq%m0 %0 = %1"
@@ -11492,8 +11492,8 @@
 )
 
 (define_insn "kvx_s<SIMD256:lsvs>"
-  [(unspec_volatile:SIMD256 [(match_operand:SIMD256 0 "memory_operand" "a,b,m")
-                             (match_operand:SIMD256 1 "register_operand" "r,r,r")] UNSPEC_SO)
+  [(unspec:SIMD256 [(match_operand:SIMD256 0 "memory_operand" "a,b,m")
+                    (match_operand:SIMD256 1 "register_operand" "r,r,r")] UNSPEC_SO)
    (clobber (match_dup 0))]
   ""
   "so%m0 %0 = %1"

@@ -1225,9 +1225,11 @@
 
 (define_insn "kvx_addcd"
   [(set (match_operand:DI 0 "register_operand" "=r")
-        (unspec_volatile:DI [(match_operand:DI 1 "register_operand" "r")
-                             (match_operand:DI 2 "register_operand" "r")
-                             (match_operand 3 "" "")] UNSPEC_ADDCD))]
+        (unspec:DI [(match_operand:DI 1 "register_operand" "r")
+                    (match_operand:DI 2 "register_operand" "r")
+                    (match_operand 3 "" "")] UNSPEC_ADDCD))
+   (set (reg:DI KV3_CS_REGNO)
+        (unspec:DI [(reg:DI KV3_CS_REGNO)] UNSPEC_EFFECT))]
   ""
   "addcd%3 %0 = %1, %2"
   [(set_attr "type" "alu_full")]
@@ -1357,9 +1359,11 @@
 
 (define_insn "kvx_sbfcd"
   [(set (match_operand:DI 0 "register_operand" "=r")
-        (unspec_volatile:DI [(match_operand:DI 1 "register_operand" "r")
-                             (match_operand:DI 2 "register_operand" "r")
-                             (match_operand 3 "" "")] UNSPEC_SBFCD))]
+        (unspec:DI [(match_operand:DI 1 "register_operand" "r")
+                    (match_operand:DI 2 "register_operand" "r")
+                    (match_operand 3 "" "")] UNSPEC_SBFCD))
+   (set (reg:DI KV3_CS_REGNO)
+        (unspec:DI [(reg:DI KV3_CS_REGNO)] UNSPEC_EFFECT))]
   ""
   "sbfcd%3 %0 = %1, %2"
   [(set_attr "type" "alu_full")]
@@ -1800,9 +1804,7 @@
 
 (define_insn "kvx_set"
    [(set (match_operand:DI 0 "system_register_operand" "=RYY,RXX")
-         (unspec_volatile:DI [(match_operand:DI 1 "register_operand" "r,r")] UNSPEC_SET))
-    (set (match_operand:SI 2 "" "")
-         (unspec:SI [(match_dup 2)] UNSPEC_SYNC))]
+         (unspec_volatile:DI [(match_operand:DI 1 "register_operand" "r,r")] UNSPEC_SET))]
    ""
    "set %0 = %1"
   [(set_attr "type" "all,bcu")]

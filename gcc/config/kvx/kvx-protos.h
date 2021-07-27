@@ -183,7 +183,6 @@ enum kvx_symbol_type
   SYMBOL_TLSLE
 };
 
-extern GTY (()) rtx kvx_sync_reg_rtx;
 extern GTY (()) rtx kvx_link_reg_rtx;
 
 #endif
