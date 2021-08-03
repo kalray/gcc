@@ -512,12 +512,10 @@ extern void kvx_profile_hook (void);
 
 #define NO_FUNCTION_CSE 1
 
-#define MEMORY_MOVE_COST(mode, class, in) (in ? 6 : 4)
-
-#define BRANCH_COST(speed, predictable) 4
+#define BRANCH_COST(speed, predictable) 6
 
 /* Set MAX_CONDITIONAL_EXECUTE to 2*BRANCH_COST */
-#define MAX_CONDITIONAL_EXECUTE 8
+#define MAX_CONDITIONAL_EXECUTE 12
 
 /* ********** PIC ********** */
 
