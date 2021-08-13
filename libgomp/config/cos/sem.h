@@ -123,11 +123,11 @@ gomp_sem_wait (gomp_sem_t *sem)
       else
 	{
 #if (__SIZEOF_PTRDIFF_T__ == 8)
-	  c.ret = __builtin_kvx_acswapd ((void *) ptr, count - 1, count);
+	  c = __builtin_kvx_acswapd ((void *) ptr, count - 1, count);
 #else
-	  c.ret = __builtin_kvx_acswapw ((void *) ptr, count - 1, count);
+	  c = __builtin_kvx_acswapw ((void *) ptr, count - 1, count);
 #endif
-	  if (c.test == 1)
+	  if (c)
 	    break;
 	}
     }
