@@ -471,7 +471,7 @@
 
 (define_insn "trap"
 [(trap_if (const_int 1) (const_int 0))]
-"kvx_have_stack_checking()"
+""
 "errop"
 [(set_attr "type" "all")]
 )
