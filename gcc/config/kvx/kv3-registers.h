@@ -79,8 +79,8 @@ enum reg_class {
 	"pm3",	"pmsa",	"tcr",	"t0v",	"t1v",	"t0r",	"t1r",	"wdv", \
 	"wdr",	"ile",	"ill",	"ilr",	"mmc",	"tel",	"teh",	"ixc", \
 	"syo",	"hto",	"ito",	"do",	"mo",	"pso",	"res38",	"res39", \
-	"dc",	"dba0",	"dba1",	"dwa0",	"dwa1",	"mes",	"ws",	"res47", \
-	"res48",	"res49",	"res50",	"res51",	"res52",	"res53",	"res54",	"res55", \
+	"dc",	"dba0",	"dba1",	"dwa0",	"dwa1",	"mes",	"ws",	"dc0", \
+	"dc1",	"dc2",	"dc3",	"dba2",	"dba3",	"dwa2",	"dwa3",	"res55", \
 	"res56",	"res57",	"res58",	"res59",	"res60",	"res61",	"res62",	"res63", \
 	"spc_pl0",	"spc_pl1",	"spc_pl2",	"spc_pl3",	"sps_pl0",	"sps_pl1",	"sps_pl2",	"sps_pl3", \
 	"ea_pl0",	"ea_pl1",	"ea_pl2",	"ea_pl3",	"ev_pl0",	"ev_pl1",	"ev_pl2",	"ev_pl3", \
