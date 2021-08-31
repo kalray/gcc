@@ -1,5 +1,4 @@
-LIB2ADD += $(srcdir)/config/kvx/divmod.c \
-  $(srcdir)/config/kvx/divf64.c $(srcdir)/config/kvx/divf32.c
+LIB2ADD += $(srcdir)/config/kvx/divmod.c
 
 crtcxa.o: $(srcdir)/config/kvx/crtcxa.c
 	$(crt_compile) -c $<
