@@ -365,7 +365,7 @@ int print_insn_kvx (bfd_vma memaddr, struct disassemble_info *info){
   static int insncount = 0;
   kv3opc_t *op = NULL;             /* operation table index */
   insn_t *insn;                   /* the instruction       */
-  char *fmtp;
+  const char *fmtp;
   kv3opc_t *opc_table = NULL;
   int          *kvx_regfiles = NULL;
   kvx_Register  *kvx_registers = NULL;
@@ -508,7 +508,7 @@ int print_insn_kvx (bfd_vma memaddr, struct disassemble_info *info){
               int bf_nb = op->format[i]->bitfields;
               int width = op->format[i]->width;
               int type  = op->format[i]->type;
-              char *type_name  = op->format[i]->tname;
+              const char *type_name  = op->format[i]->tname;
               int flags = op->format[i]->flags;
               int shift = op->format[i]->shift;
               int bias = op->format[i]->bias;
