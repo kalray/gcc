@@ -278,19 +278,19 @@ kvx_float32x4_fsdivwq(float32x4_t a, float32x4_t b)
     return __builtin_kvx_fsdivwq(a, b, ".s");
 }
 float64x4_t __attribute__ ((noinline))
-kvx_float32x4_fmulwdq(float32x4_t a, float32x4_t b)
+kvx_float32x4_fmulxwdq(float32x4_t a, float32x4_t b)
 {
-    return __builtin_kvx_fmulwdq(a, b, ".rn");
+    return __builtin_kvx_fmulxwdq(a, b, ".rn");
 }
 float64x4_t __attribute__ ((noinline))
-kvx_float32x4_ffmawdq(float32x4_t a, float32x4_t b, float64x4_t c)
+kvx_float32x4_ffmaxwdq(float32x4_t a, float32x4_t b, float64x4_t c)
 {
-    return __builtin_kvx_ffmawdq(a, b, c, ".rn");
+    return __builtin_kvx_ffmaxwdq(a, b, c, ".rn");
 }
 float64x4_t __attribute__ ((noinline))
-kvx_float32x4_ffmswdq(float32x4_t a, float32x4_t b, float64x4_t c)
+kvx_float32x4_ffmsxwdq(float32x4_t a, float32x4_t b, float64x4_t c)
 {
-    return __builtin_kvx_ffmswdq(a, b, c, ".rn");
+    return __builtin_kvx_ffmsxwdq(a, b, c, ".rn");
 }
 float64x4_t __attribute__ ((noinline))
 kvx_float32x4_fwidenwdq(float32x4_t a)
@@ -391,9 +391,9 @@ kvx_float32x4_shift(float32x4_t a, float32_t b)
 }
 float32x4_t __attribute ((noinline))
 kvx_float32x4_consfwq(float32x2_t a, float32x2_t b) {
-    return __builtin_kvx_consfwq(a, b);
+    return __builtin_kvx_catfwq(a, b);
 }
 float32x4_t __attribute ((noinline))
 kvx_float32x4_sconsfwq(float32x2_t a, float32x2_t b) {
-    return __builtin_kvx_consfwq(b, a);
+    return __builtin_kvx_catfwq(b, a);
 }
