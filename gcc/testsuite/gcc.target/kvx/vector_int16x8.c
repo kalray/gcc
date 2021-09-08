@@ -485,12 +485,12 @@ kvx_int16x8_shr3_a(int16x8_t a)
 int16x8_t __attribute ((noinline))
 kvx_int16x8_shrs_ar(int16x8_t a, int16_t b)
 {
-    return __builtin_kvx_shrhos(a, b, ".ar");
+    return __builtin_kvx_shrhos(a, b, ".as");
 }
 int16x8_t __attribute ((noinline))
 kvx_int16x8_shr7_ar(int16x8_t a)
 {
-    return __builtin_kvx_shrhos(a, 7, ".ar");
+    return __builtin_kvx_shrhos(a, 7, ".as");
 }
 int16x8_t __attribute ((noinline))
 kvx_int16x8_shrs_r(int16x8_t a, int16_t b)
@@ -523,49 +523,49 @@ kvx_int16x8_avg_ru(int16x8_t a, int16x8_t b)
     return __builtin_kvx_avgho(a, b, ".ru");
 }
 int32x8_t __attribute__ ((noinline))
-kvx_int16x8_mul_(int16x8_t a, int16x8_t b)
+kvx_int16x8_mulx_(int16x8_t a, int16x8_t b)
 {
-    return __builtin_kvx_mulhwo(a, b, 0);
+    return __builtin_kvx_mulxhwo(a, b, 0);
 }
 int32x8_t __attribute__ ((noinline))
-kvx_int16x8_mul_u(int16x8_t a, int16x8_t b)
+kvx_int16x8_mulx_u(int16x8_t a, int16x8_t b)
 {
-    return __builtin_kvx_mulhwo(a, b, ".u");
+    return __builtin_kvx_mulxhwo(a, b, ".u");
 }
 int32x8_t __attribute__ ((noinline))
-kvx_int16x8_mul_su(int16x8_t a, int16x8_t b)
+kvx_int16x8_mulx_su(int16x8_t a, int16x8_t b)
 {
-    return __builtin_kvx_mulhwo(a, b, ".su");
+    return __builtin_kvx_mulxhwo(a, b, ".su");
 }
 int32x8_t __attribute__ ((noinline))
-kvx_int16x8_madd_(int16x8_t a, int16x8_t b, int32x8_t c)
+kvx_int16x8_maddx_(int16x8_t a, int16x8_t b, int32x8_t c)
 {
-    return __builtin_kvx_maddhwo(a, b, c, 0);
+    return __builtin_kvx_maddxhwo(a, b, c, 0);
 }
 int32x8_t __attribute__ ((noinline))
-kvx_int16x8_madd_u(int16x8_t a, int16x8_t b, int32x8_t c)
+kvx_int16x8_maddx_u(int16x8_t a, int16x8_t b, int32x8_t c)
 {
-    return __builtin_kvx_maddhwo(a, b, c, ".u");
+    return __builtin_kvx_maddxhwo(a, b, c, ".u");
 }
 int32x8_t __attribute__ ((noinline))
-kvx_int16x8_madd_su(int16x8_t a, int16x8_t b, int32x8_t c)
+kvx_int16x8_maddx_su(int16x8_t a, int16x8_t b, int32x8_t c)
 {
-    return __builtin_kvx_maddhwo(a, b, c, ".su");
+    return __builtin_kvx_maddxhwo(a, b, c, ".su");
 }
 int32x8_t __attribute__ ((noinline))
-kvx_int16x8_msbf_(int16x8_t a, int16x8_t b, int32x8_t c)
+kvx_int16x8_msbfx_(int16x8_t a, int16x8_t b, int32x8_t c)
 {
-    return __builtin_kvx_msbfhwo(a, b, c, 0);
+    return __builtin_kvx_msbfxhwo(a, b, c, 0);
 }
 int32x8_t __attribute__ ((noinline))
-kvx_int16x8_msbf_u(int16x8_t a, int16x8_t b, int32x8_t c)
+kvx_int16x8_msbfx_u(int16x8_t a, int16x8_t b, int32x8_t c)
 {
-    return __builtin_kvx_msbfhwo(a, b, c, ".u");
+    return __builtin_kvx_msbfxhwo(a, b, c, ".u");
 }
 int32x8_t __attribute__ ((noinline))
-kvx_int16x8_msbf_su(int16x8_t a, int16x8_t b, int32x8_t c)
+kvx_int16x8_msbfx_su(int16x8_t a, int16x8_t b, int32x8_t c)
 {
-    return __builtin_kvx_msbfhwo(a, b, c, ".su");
+    return __builtin_kvx_msbfxhwo(a, b, c, ".su");
 }
 int32x8_t __attribute__ ((noinline))
 kvx_int16x8_sxhwo(int16x8_t a)
@@ -614,9 +614,9 @@ kvx_int16x8_shift(int16x8_t a, int16_t b)
 }
 int16x8_t __attribute ((noinline))
 kvx_int16x8_consho(int16x4_t a, int16x4_t b) {
-    return __builtin_kvx_consho(a, b);
+    return __builtin_kvx_catho(a, b);
 }
 int16x8_t __attribute ((noinline))
 kvx_int16x8_sconsho(int16x4_t a, int16x4_t b) {
-    return __builtin_kvx_consho(b, a);
+    return __builtin_kvx_catho(b, a);
 }
