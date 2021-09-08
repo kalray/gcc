@@ -485,12 +485,12 @@ kvx_int64x2_shr3_a(int64x2_t a)
 int64x2_t __attribute ((noinline))
 kvx_int64x2_shrs_ar(int64x2_t a, int64_t b)
 {
-    return __builtin_kvx_shrdps(a, b, ".ar");
+    return __builtin_kvx_shrdps(a, b, ".as");
 }
 int64x2_t __attribute ((noinline))
 kvx_int64x2_shr7_ar(int64x2_t a)
 {
-    return __builtin_kvx_shrdps(a, 7, ".ar");
+    return __builtin_kvx_shrdps(a, 7, ".as");
 }
 int64x2_t __attribute ((noinline))
 kvx_int64x2_shrs_r(int64x2_t a, int64_t b)
@@ -534,9 +534,9 @@ kvx_int64x2_shift(int64x2_t a, int64_t b)
 }
 int64x2_t __attribute ((noinline))
 kvx_int64x2_consdp(int64_t a, int64_t b) {
-    return __builtin_kvx_consdp(a, b);
+    return __builtin_kvx_catdp(a, b);
 }
 int64x2_t __attribute ((noinline))
 kvx_int64x2_sconsdp(int64_t a, int64_t b) {
-    return __builtin_kvx_consdp(b, a);
+    return __builtin_kvx_catdp(b, a);
 }

@@ -485,12 +485,12 @@ kvx_int16x16_shr3_a(int16x16_t a)
 int16x16_t __attribute ((noinline))
 kvx_int16x16_shrs_ar(int16x16_t a, int16_t b)
 {
-    return __builtin_kvx_shrhxs(a, b, ".ar");
+    return __builtin_kvx_shrhxs(a, b, ".as");
 }
 int16x16_t __attribute ((noinline))
 kvx_int16x16_shr7_ar(int16x16_t a)
 {
-    return __builtin_kvx_shrhxs(a, 7, ".ar");
+    return __builtin_kvx_shrhxs(a, 7, ".as");
 }
 int16x16_t __attribute ((noinline))
 kvx_int16x16_shrs_r(int16x16_t a, int16_t b)

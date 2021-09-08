@@ -485,12 +485,12 @@ kvx_int64x4_shr3_a(int64x4_t a)
 int64x4_t __attribute ((noinline))
 kvx_int64x4_shrs_ar(int64x4_t a, int64_t b)
 {
-    return __builtin_kvx_shrdqs(a, b, ".ar");
+    return __builtin_kvx_shrdqs(a, b, ".as");
 }
 int64x4_t __attribute ((noinline))
 kvx_int64x4_shr7_ar(int64x4_t a)
 {
-    return __builtin_kvx_shrdqs(a, 7, ".ar");
+    return __builtin_kvx_shrdqs(a, 7, ".as");
 }
 int64x4_t __attribute ((noinline))
 kvx_int64x4_shrs_r(int64x4_t a, int64_t b)

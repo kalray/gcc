@@ -82,7 +82,7 @@ double k1_ffmad_kvx_builtin(double a, double b, double c) {
 /* { dg-final { scan-assembler-times "ffmad.rn.s \\\$r0 = \\\$r1, \\\$r2" 1 } } */
 
 double k1_ffmawd_kvx_builtin(double a, float b, float c) {
-  return __builtin_kvx_ffmawd(b, c, a, ".rn.s");
+  return __builtin_kvx_ffmaxwd(b, c, a, ".rn.s");
 }
 /* { dg-final { scan-assembler-times "ffmawd.rn.s \\\$r0 = \\\$r1, \\\$r2" 1 } } */
 
@@ -98,7 +98,7 @@ double k1_ffmsd_kvx_builtin(double a, double b, double c) {
 /* { dg-final { scan-assembler-times "ffmsd.rn.s \\\$r0 = \\\$r1, \\\$r2" 1 } } */
 
 double k1_ffmswd_kvx_builtin(double a, float b, float c) {
-  return __builtin_kvx_ffmswd(b, c, a, ".rn.s");
+  return __builtin_kvx_ffmsxwd(b, c, a, ".rn.s");
 }
 /* { dg-final { scan-assembler-times "ffmswd.rn.s \\\$r0 = \\\$r1, \\\$r2" 1 } } */
 
