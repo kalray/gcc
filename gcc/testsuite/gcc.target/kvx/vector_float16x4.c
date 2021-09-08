@@ -200,19 +200,19 @@ kvx_float16x4_nez(float16x4_t a)
     return a != 0.0;
 }
 float32x4_t __attribute__ ((noinline))
-kvx_float16x4_fmulhwq(float16x4_t a, float16x4_t b)
+kvx_float16x4_fmulxhwq(float16x4_t a, float16x4_t b)
 {
-    return __builtin_kvx_fmulhwq(a, b, ".rn");
+    return __builtin_kvx_fmulxhwq(a, b, ".rn");
 }
 float32x4_t __attribute__ ((noinline))
-kvx_float16x4_ffmahwq(float16x4_t a, float16x4_t b, float32x4_t c)
+kvx_float16x4_ffmaxhwq(float16x4_t a, float16x4_t b, float32x4_t c)
 {
-    return __builtin_kvx_ffmahwq(a, b, c, ".rn");
+    return __builtin_kvx_ffmaxhwq(a, b, c, ".rn");
 }
 float32x4_t __attribute__ ((noinline))
-kvx_float16x4_ffmshwq(float16x4_t a, float16x4_t b, float32x4_t c)
+kvx_float16x4_ffmsxhwq(float16x4_t a, float16x4_t b, float32x4_t c)
 {
-    return __builtin_kvx_ffmshwq(a, b, c, ".rn");
+    return __builtin_kvx_ffmsxhwq(a, b, c, ".rn");
 }
 float32x4_t __attribute__ ((noinline))
 kvx_float16x4_fwidenhwq(float16x4_t a)

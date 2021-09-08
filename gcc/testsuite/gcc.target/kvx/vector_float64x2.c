@@ -279,9 +279,9 @@ kvx_float64x2_shift(float64x2_t a, float64_t b)
 }
 float64x2_t __attribute ((noinline))
 kvx_float64x2_consfdp(float64_t a, float64_t b) {
-    return __builtin_kvx_consfdp(a, b);
+    return __builtin_kvx_catfdp(a, b);
 }
 float64x2_t __attribute ((noinline))
 kvx_float64x2_sconsfdp(float64_t a, float64_t b) {
-    return __builtin_kvx_consfdp(b, a);
+    return __builtin_kvx_catfdp(b, a);
 }

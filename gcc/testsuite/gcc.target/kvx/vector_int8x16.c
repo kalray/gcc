@@ -329,9 +329,9 @@ kvx_int8x16_shift(int8x16_t a, int8_t b)
 }
 int8x16_t __attribute ((noinline))
 kvx_int8x16_consbx(int8x8_t a, int8x8_t b) {
-    return __builtin_kvx_consbx(a, b);
+    return __builtin_kvx_catbx(a, b);
 }
 int8x16_t __attribute ((noinline))
 kvx_int8x16_sconsbx(int8x8_t a, int8x8_t b) {
-    return __builtin_kvx_consbx(b, a);
+    return __builtin_kvx_catbx(b, a);
 }

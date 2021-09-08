@@ -485,12 +485,12 @@ kvx_int32x2_shr3_a(int32x2_t a)
 int32x2_t __attribute ((noinline))
 kvx_int32x2_shrs_ar(int32x2_t a, int32_t b)
 {
-    return __builtin_kvx_shrwps(a, b, ".ar");
+    return __builtin_kvx_shrwps(a, b, ".as");
 }
 int32x2_t __attribute ((noinline))
 kvx_int32x2_shr7_ar(int32x2_t a)
 {
-    return __builtin_kvx_shrwps(a, 7, ".ar");
+    return __builtin_kvx_shrwps(a, 7, ".as");
 }
 int32x2_t __attribute ((noinline))
 kvx_int32x2_shrs_r(int32x2_t a, int32_t b)
@@ -543,49 +543,49 @@ kvx_int32x2_avg_ru(int32x2_t a, int32x2_t b)
     return __builtin_kvx_avgwp(a, b, ".ru");
 }
 int64x2_t __attribute__ ((noinline))
-kvx_int32x2_mul_(int32x2_t a, int32x2_t b)
+kvx_int32x2_mulx_(int32x2_t a, int32x2_t b)
 {
-    return __builtin_kvx_mulwdp(a, b, 0);
+    return __builtin_kvx_mulxwdp(a, b, 0);
 }
 int64x2_t __attribute__ ((noinline))
-kvx_int32x2_mul_u(int32x2_t a, int32x2_t b)
+kvx_int32x2_mulx_u(int32x2_t a, int32x2_t b)
 {
-    return __builtin_kvx_mulwdp(a, b, ".u");
+    return __builtin_kvx_mulxwdp(a, b, ".u");
 }
 int64x2_t __attribute__ ((noinline))
-kvx_int32x2_mul_su(int32x2_t a, int32x2_t b)
+kvx_int32x2_mulx_su(int32x2_t a, int32x2_t b)
 {
-    return __builtin_kvx_mulwdp(a, b, ".su");
+    return __builtin_kvx_mulxwdp(a, b, ".su");
 }
 int64x2_t __attribute__ ((noinline))
-kvx_int32x2_madd_(int32x2_t a, int32x2_t b, int64x2_t c)
+kvx_int32x2_maddx_(int32x2_t a, int32x2_t b, int64x2_t c)
 {
-    return __builtin_kvx_maddwdp(a, b, c, 0);
+    return __builtin_kvx_maddxwdp(a, b, c, 0);
 }
 int64x2_t __attribute__ ((noinline))
-kvx_int32x2_madd_u(int32x2_t a, int32x2_t b, int64x2_t c)
+kvx_int32x2_maddx_u(int32x2_t a, int32x2_t b, int64x2_t c)
 {
-    return __builtin_kvx_maddwdp(a, b, c, ".u");
+    return __builtin_kvx_maddxwdp(a, b, c, ".u");
 }
 int64x2_t __attribute__ ((noinline))
-kvx_int32x2_madd_su(int32x2_t a, int32x2_t b, int64x2_t c)
+kvx_int32x2_maddx_su(int32x2_t a, int32x2_t b, int64x2_t c)
 {
-    return __builtin_kvx_maddwdp(a, b, c, ".su");
+    return __builtin_kvx_maddxwdp(a, b, c, ".su");
 }
 int64x2_t __attribute__ ((noinline))
-kvx_int32x2_msbf_(int32x2_t a, int32x2_t b, int64x2_t c)
+kvx_int32x2_msbfx_(int32x2_t a, int32x2_t b, int64x2_t c)
 {
-    return __builtin_kvx_msbfwdp(a, b, c, 0);
+    return __builtin_kvx_msbfxwdp(a, b, c, 0);
 }
 int64x2_t __attribute__ ((noinline))
-kvx_int32x2_msbf_u(int32x2_t a, int32x2_t b, int64x2_t c)
+kvx_int32x2_msbfx_u(int32x2_t a, int32x2_t b, int64x2_t c)
 {
-    return __builtin_kvx_msbfwdp(a, b, c, ".u");
+    return __builtin_kvx_msbfxwdp(a, b, c, ".u");
 }
 int64x2_t __attribute__ ((noinline))
-kvx_int32x2_msbf_su(int32x2_t a, int32x2_t b, int64x2_t c)
+kvx_int32x2_msbfx_su(int32x2_t a, int32x2_t b, int64x2_t c)
 {
-    return __builtin_kvx_msbfwdp(a, b, c, ".su");
+    return __builtin_kvx_msbfxwdp(a, b, c, ".su");
 }
 int64x2_t __attribute__ ((noinline))
 kvx_int32x2_sxwdp(int32x2_t a)
@@ -634,9 +634,9 @@ kvx_int32x2_shift(int32x2_t a, int32_t b)
 }
 int32x2_t __attribute ((noinline))
 kvx_int32x2_conswp(int32_t a, int32_t b) {
-    return __builtin_kvx_conswp(a, b);
+    return __builtin_kvx_catwp(a, b);
 }
 int32x2_t __attribute ((noinline))
 kvx_int32x2_sconswp(int32_t a, int32_t b) {
-    return __builtin_kvx_conswp(b, a);
+    return __builtin_kvx_catwp(b, a);
 }

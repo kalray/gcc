@@ -440,12 +440,12 @@ kvx_int64_shr3_a(int64_t a)
 int64_t __attribute ((noinline))
 kvx_int64_shrs_ar(int64_t a, int64_t b)
 {
-    return __builtin_kvx_shrd(a, b, ".ar");
+    return __builtin_kvx_shrd(a, b, ".as");
 }
 int64_t __attribute ((noinline))
 kvx_int64_shr7_ar(int64_t a)
 {
-    return __builtin_kvx_shrd(a, 7, ".ar");
+    return __builtin_kvx_shrd(a, 7, ".as");
 }
 int64_t __attribute ((noinline))
 kvx_int64_shrs_r(int64_t a, int64_t b)
