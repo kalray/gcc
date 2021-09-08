@@ -485,12 +485,12 @@ kvx_int32x8_shr3_a(int32x8_t a)
 int32x8_t __attribute ((noinline))
 kvx_int32x8_shrs_ar(int32x8_t a, int32_t b)
 {
-    return __builtin_kvx_shrwos(a, b, ".ar");
+    return __builtin_kvx_shrwos(a, b, ".as");
 }
 int32x8_t __attribute ((noinline))
 kvx_int32x8_shr7_ar(int32x8_t a)
 {
-    return __builtin_kvx_shrwos(a, 7, ".ar");
+    return __builtin_kvx_shrwos(a, 7, ".as");
 }
 int32x8_t __attribute ((noinline))
 kvx_int32x8_shrs_r(int32x8_t a, int32_t b)
