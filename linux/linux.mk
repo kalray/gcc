@@ -344,9 +344,9 @@ define LINUX_KCONFIG_FIXUP_CMDS
 		$(call KCONFIG_ENABLE_OPT,CONFIG_BLK_DEV_INITRD))
 	$(if $(BR2_kvx),
 		$(SED) '/CONFIG_KVX_SUBARCH_*/d' $(@D)/.config
-		$(if $(BR2_kvx_coolidge_v1),
+		$(if $(BR2_KVX_COOLIDGE_V1),
 			$(call KCONFIG_ENABLE_OPT,CONFIG_KVX_SUBARCH_KV3_1))
-		$(if $(BR2_kvx_coolidge_v2),
+		$(if $(BR2_KVX_COOLIDGE_V2),
 			$(call KCONFIG_ENABLE_OPT,CONFIG_KVX_SUBARCH_KV3_2)))
 	# As the kernel gets compiled before root filesystems are
 	# built, we create a fake cpio file. It'll be
