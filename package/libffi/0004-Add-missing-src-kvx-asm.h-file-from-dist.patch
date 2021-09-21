@@ -1,0 +1,27 @@
+From 7f00a7b890a91f87ab484a944e86ce5310ac0b1c Mon Sep 17 00:00:00 2001
+From: Jules Maselbas <jmaselbas@kalray.eu>
+Date: Tue, 21 Sep 2021 17:37:33 +0200
+Subject: [PATCH] Add missing "src/kvx/asm.h" file from dist
+
+The file "src/kvx/asm.h" is missing from the libffi-3.4.2 tarball.
+
+Signed-off-by: Jules Maselbas <jmaselbas@kalray.eu>
+---
+ src/kvx/asm.h | 5 +++++
+ 1 file changed, 5 insertions(+)
+ create mode 100644 src/kvx/asm.h
+
+diff --git a/src/kvx/asm.h b/src/kvx/asm.h
+new file mode 100644
+index 0000000..4edba41
+--- /dev/null
++++ b/src/kvx/asm.h
+@@ -0,0 +1,5 @@
++/* args are passed on registers from r0 up to r11 => 12*8 bytes */
++#define REG_ARGS_SIZE (12*8)
++#define KVX_REGISTER_SIZE (8)
++#define KVX_ABI_SLOT_SIZE (KVX_REGISTER_SIZE)
++#define KVX_ABI_MAX_AGGREGATE_IN_REG_SIZE (4*KVX_ABI_SLOT_SIZE)
+-- 
+2.17.1
+
