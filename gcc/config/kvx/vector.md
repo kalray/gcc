@@ -356,15 +356,15 @@
 
 ;; Vector Init Helpers
 
-(define_insn "*initx2a"
+(define_insn "kvx_init0<lsvs>"
   [(set (match_operand:SIMD32X2 0 "register_operand" "=r")
         (unspec:SIMD32X2 [(match_operand:<INNER> 1 "register_operand" "r")] UNSPEC_INITX2A))]
   ""
-  "insf %0 = %1, 31, 0"
-  [(set_attr "type" "alu_lite")]
+  "zxwd %0 = %1"
+  [(set_attr "type" "alu_tiny")]
 )
 
-(define_insn "*initx2b"
+(define_insn "kvx_init1<lsvs>"
   [(set (match_operand:SIMD32X2 0 "register_operand" "+r")
         (unspec:SIMD32X2 [(match_operand:<INNER> 1 "register_operand" "r")
                           (match_dup 0)] UNSPEC_INITX2B))]
@@ -373,15 +373,15 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "*initx4a"
+(define_insn "kvx_init0<lsvs>"
   [(set (match_operand:SIMD16X4 0 "register_operand" "=r")
         (unspec:SIMD16X4 [(match_operand:<INNER> 1 "register_operand" "r")] UNSPEC_INITX4A))]
   ""
-  "insf %0 = %1, 15, 0"
+  "zxhd %0 = %1"
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "*initx4b"
+(define_insn "kvx_init1<lsvs>"
   [(set (match_operand:SIMD16X4 0 "register_operand" "+r")
         (unspec:SIMD16X4 [(match_operand:<INNER> 1 "register_operand" "r")
                           (match_dup 0)] UNSPEC_INITX4B))]
@@ -390,7 +390,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "*initx4c"
+(define_insn "kvx_init2<lsvs>"
   [(set (match_operand:SIMD16X4 0 "register_operand" "+r")
         (unspec:SIMD16X4 [(match_operand:<INNER> 1 "register_operand" "r")
                           (match_dup 0)] UNSPEC_INITX4C))]
@@ -399,7 +399,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "*initx4d"
+(define_insn "kvx_init3<lsvs>"
   [(set (match_operand:SIMD16X4 0 "register_operand" "+r")
         (unspec:SIMD16X4 [(match_operand:<INNER> 1 "register_operand" "r")
                           (match_dup 0)] UNSPEC_INITX4D))]
@@ -408,15 +408,15 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "*initx8a"
+(define_insn "kvx_init0<lsvs>"
   [(set (match_operand:SIMD8X8 0 "register_operand" "=r")
         (unspec:SIMD8X8 [(match_operand:<INNER> 1 "register_operand" "r")] UNSPEC_INITX8A))]
   ""
-  "insf %0 = %1, 7, 0"
-  [(set_attr "type" "alu_lite")]
+  "zxbd %0 = %1"
+  [(set_attr "type" "alu_tiny")]
 )
 
-(define_insn "*initx8b"
+(define_insn "kvx_init1<lsvs>"
   [(set (match_operand:SIMD8X8 0 "register_operand" "+r")
         (unspec:SIMD8X8 [(match_operand:<INNER> 1 "register_operand" "r")
                          (match_dup 0)] UNSPEC_INITX8B))]
@@ -425,7 +425,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "*initx8c"
+(define_insn "kvx_init2<lsvs>"
   [(set (match_operand:SIMD8X8 0 "register_operand" "+r")
         (unspec:SIMD8X8 [(match_operand:<INNER> 1 "register_operand" "r")
                          (match_dup 0)] UNSPEC_INITX8C))]
@@ -434,7 +434,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "*initx8d"
+(define_insn "kvx_init3<lsvs>"
   [(set (match_operand:SIMD8X8 0 "register_operand" "+r")
         (unspec:SIMD8X8 [(match_operand:<INNER> 1 "register_operand" "r")
                          (match_dup 0)] UNSPEC_INITX8D))]
@@ -443,7 +443,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "*initx8e"
+(define_insn "kvx_init4<lsvs>"
   [(set (match_operand:SIMD8X8 0 "register_operand" "+r")
         (unspec:SIMD8X8 [(match_operand:<INNER> 1 "register_operand" "r")
                          (match_dup 0)] UNSPEC_INITX8E))]
@@ -452,7 +452,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "*initx8f"
+(define_insn "kvx_init5<lsvs>"
   [(set (match_operand:SIMD8X8 0 "register_operand" "+r")
         (unspec:SIMD8X8 [(match_operand:<INNER> 1 "register_operand" "r")
                          (match_dup 0)] UNSPEC_INITX8F))]
@@ -461,7 +461,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "*initx8g"
+(define_insn "kvx_init6<lsvs>"
   [(set (match_operand:SIMD8X8 0 "register_operand" "+r")
         (unspec:SIMD8X8 [(match_operand:<INNER> 1 "register_operand" "r")
                          (match_dup 0)] UNSPEC_INITX8G))]
@@ -470,7 +470,7 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "*initx8h"
+(define_insn "kvx_init7<lsvs>"
   [(set (match_operand:SIMD8X8 0 "register_operand" "+r")
         (unspec:SIMD8X8 [(match_operand:<INNER> 1 "register_operand" "r")
                          (match_dup 0)] UNSPEC_INITX8H))]
@@ -1448,6 +1448,154 @@
 )
 
 
+;; VWQI
+
+(define_expand "kvx_widen<widenx>"
+  [(match_operand:<WIDE> 0 "register_operand" "")
+   (match_operand:VWQI 1 "register_operand" "")
+   (match_operand 2 "" "")]
+  ""
+  {
+    const char *xstr = XSTR (operands[2], 0);
+    if (!*xstr)
+      emit_insn (gen_kvx_sx<widenx> (operands[0], operands[1]));
+    else if (xstr[1] == 'z')
+      emit_insn (gen_kvx_zx<widenx> (operands[0], operands[1]));
+    else if (xstr[1] == 'q')
+      emit_insn (gen_kvx_qx<widenx> (operands[0], operands[1]));
+    else
+      gcc_unreachable ();
+    DONE;
+  }
+)
+
+(define_expand "kvx_narrow<truncx>"
+  [(match_operand:VWQI 0 "register_operand" "")
+   (match_operand:<WIDE> 1 "register_operand" "")
+   (match_operand 2 "" "")]
+  ""
+  {
+    const char *xstr = XSTR (operands[2], 0);
+    if (!*xstr)
+      emit_insn (gen_kvx_trunc<truncx> (operands[0], operands[1]));
+    else if (xstr[1] == 'q')
+      emit_insn (gen_kvx_fract<truncx> (operands[0], operands[1]));
+    else if (xstr[1] == 's')
+      emit_insn (gen_kvx_sat<truncx> (operands[0], operands[1]));
+    else if (xstr[1] == 'u')
+      emit_insn (gen_kvx_satu<truncx> (operands[0], operands[1]));
+    else
+      gcc_unreachable ();
+    DONE;
+  }
+)
+
+
+;; VWXI
+
+(define_expand "kvx_mulx<widenx>"
+  [(match_operand:<WIDE> 0 "register_operand" "")
+   (match_operand:VWXI 1 "register_operand" "")
+   (match_operand:VWXI 2 "register_operand" "")
+   (match_operand 3 "" "")]
+  ""
+  {
+    const char *xstr = XSTR (operands[3], 0);
+    if (!*xstr)
+      emit_insn (gen_kvx_mul<widenx> (operands[0], operands[1], operands[2]));
+    else if (xstr[1] == 'u')
+      emit_insn (gen_kvx_mulu<widenx> (operands[0], operands[1], operands[2]));
+    else if (xstr[1] == 's')
+      emit_insn (gen_kvx_mulsu<widenx> (operands[0], operands[1], operands[2]));
+    else
+      gcc_unreachable ();
+    DONE;
+  }
+)
+
+(define_expand "kvx_maddx<widenx>"
+  [(match_operand:<WIDE> 0 "register_operand" "")
+   (match_operand:VWXI 1 "register_operand" "")
+   (match_operand:VWXI 2 "register_operand" "")
+   (match_operand:<WIDE> 3 "register_operand" "")
+   (match_operand 4 "" "")]
+  ""
+  {
+    const char *xstr = XSTR (operands[4], 0);
+    if (!*xstr)
+      emit_insn (gen_kvx_madd<widenx> (operands[0], operands[1], operands[2], operands[3]));
+    else if (xstr[1] == 'u')
+      emit_insn (gen_kvx_maddu<widenx> (operands[0], operands[1], operands[2], operands[3]));
+    else if (xstr[1] == 's')
+      emit_insn (gen_kvx_maddsu<widenx> (operands[0], operands[1], operands[2], operands[3]));
+    else
+      gcc_unreachable ();
+    DONE;
+  }
+)
+
+(define_expand "kvx_msbfx<widenx>"
+  [(match_operand:<WIDE> 0 "register_operand" "")
+   (match_operand:VWXI 1 "register_operand" "")
+   (match_operand:VWXI 2 "register_operand" "")
+   (match_operand:<WIDE> 3 "register_operand" "")
+   (match_operand 4 "" "")]
+  ""
+  {
+    const char *xstr = XSTR (operands[4], 0);
+    if (!*xstr)
+      emit_insn (gen_kvx_msbf<widenx> (operands[0], operands[1], operands[2], operands[3]));
+    else if (xstr[1] == 'u')
+      emit_insn (gen_kvx_msbfu<widenx> (operands[0], operands[1], operands[2], operands[3]));
+    else if (xstr[1] == 's')
+      emit_insn (gen_kvx_msbfsu<widenx> (operands[0], operands[1], operands[2], operands[3]));
+    else
+      gcc_unreachable ();
+    DONE;
+  }
+)
+
+(define_expand "kvx_widen<widenx>"
+  [(match_operand:<WIDE> 0 "register_operand" "")
+   (match_operand:VWXI 1 "register_operand" "")
+   (match_operand 2 "" "")]
+  ""
+  {
+    const char *xstr = XSTR (operands[2], 0);
+    if (!*xstr)
+      emit_insn (gen_kvx_sx<widenx> (operands[0], operands[1]));
+    else if (xstr[1] == 'z')
+      emit_insn (gen_kvx_zx<widenx> (operands[0], operands[1]));
+    else if (xstr[1] == 'q')
+      emit_insn (gen_kvx_qx<widenx> (operands[0], operands[1]));
+    else
+      gcc_unreachable ();
+    DONE;
+  }
+)
+
+(define_expand "kvx_narrow<truncx>"
+  [(match_operand:VWXI 0 "register_operand" "")
+   (match_operand:<WIDE> 1 "register_operand" "")
+   (match_operand 2 "" "")]
+  ""
+  {
+    const char *xstr = XSTR (operands[2], 0);
+    if (!*xstr)
+      emit_insn (gen_kvx_trunc<truncx> (operands[0], operands[1]));
+    else if (xstr[1] == 'q')
+      emit_insn (gen_kvx_fract<truncx> (operands[0], operands[1]));
+    else if (xstr[1] == 's')
+      emit_insn (gen_kvx_sat<truncx> (operands[0], operands[1]));
+    else if (xstr[1] == 'u')
+      emit_insn (gen_kvx_satu<truncx> (operands[0], operands[1]));
+    else
+      gcc_unreachable ();
+    DONE;
+  }
+)
+
+
 ;; S64I (V4HI V2SI)
 
 (define_insn "*compn<suffix>"
@@ -2232,26 +2380,6 @@
   [(set_attr "type" "mau")]
 )
 
-(define_expand "kvx_mulx<widenx>"
-  [(match_operand:<WIDE> 0 "register_operand" "")
-   (match_operand:S64I 1 "register_operand" "")
-   (match_operand:S64I 2 "register_operand" "")
-   (match_operand 3 "" "")]
-  ""
-  {
-    const char *xstr = XSTR (operands[3], 0);
-    if (!*xstr)
-      emit_insn (gen_kvx_mul<widenx> (operands[0], operands[1], operands[2]));
-    else if (xstr[1] == 'u')
-      emit_insn (gen_kvx_mulu<widenx> (operands[0], operands[1], operands[2]));
-    else if (xstr[1] == 's')
-      emit_insn (gen_kvx_mulsu<widenx> (operands[0], operands[1], operands[2]));
-    else
-      gcc_unreachable ();
-    DONE;
-  }
-)
-
 (define_insn "kvx_madd<widenx>"
   [(set (match_operand:<WIDE> 0 "register_operand" "=r")
         (plus:<WIDE> (mult:<WIDE> (sign_extend:<WIDE> (match_operand:S64I 1 "register_operand" "r"))
@@ -2282,27 +2410,6 @@
   [(set_attr "type" "mau_auxr")]
 )
 
-(define_expand "kvx_maddx<widenx>"
-  [(match_operand:<WIDE> 0 "register_operand" "")
-   (match_operand:S64I 1 "register_operand" "")
-   (match_operand:S64I 2 "register_operand" "")
-   (match_operand:<WIDE> 3 "register_operand" "")
-   (match_operand 4 "" "")]
-  ""
-  {
-    const char *xstr = XSTR (operands[4], 0);
-    if (!*xstr)
-      emit_insn (gen_kvx_madd<widenx> (operands[0], operands[1], operands[2], operands[3]));
-    else if (xstr[1] == 'u')
-      emit_insn (gen_kvx_maddu<widenx> (operands[0], operands[1], operands[2], operands[3]));
-    else if (xstr[1] == 's')
-      emit_insn (gen_kvx_maddsu<widenx> (operands[0], operands[1], operands[2], operands[3]));
-    else
-      gcc_unreachable ();
-    DONE;
-  }
-)
-
 (define_insn "kvx_msbf<widenx>"
   [(set (match_operand:<WIDE> 0 "register_operand" "=r")
         (minus:<WIDE> (match_operand:<WIDE> 3 "register_operand" "0")
@@ -2331,27 +2438,6 @@
   ""
   "msbfsu<widenx> %0 = %1, %2"
   [(set_attr "type" "mau_auxr")]
-)
-
-(define_expand "kvx_msbfx<widenx>"
-  [(match_operand:<WIDE> 0 "register_operand" "")
-   (match_operand:S64I 1 "register_operand" "")
-   (match_operand:S64I 2 "register_operand" "")
-   (match_operand:<WIDE> 3 "register_operand" "")
-   (match_operand 4 "" "")]
-  ""
-  {
-    const char *xstr = XSTR (operands[4], 0);
-    if (!*xstr)
-      emit_insn (gen_kvx_msbf<widenx> (operands[0], operands[1], operands[2], operands[3]));
-    else if (xstr[1] == 'u')
-      emit_insn (gen_kvx_msbfu<widenx> (operands[0], operands[1], operands[2], operands[3]));
-    else if (xstr[1] == 's')
-      emit_insn (gen_kvx_msbfsu<widenx> (operands[0], operands[1], operands[2], operands[3]));
-    else
-      gcc_unreachable ();
-    DONE;
-  }
 )
 
 
@@ -2418,25 +2504,6 @@
   ""
   "sbmm8 %x0 = %1, %2\n\tsbmm8 %y0 = %1, %3"
   [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_expand "kvx_widen<widenx>"
-  [(match_operand:<WIDE> 0 "register_operand" "")
-   (match_operand:S64L 1 "register_operand" "")
-   (match_operand 2 "" "")]
-  ""
-  {
-    const char *xstr = XSTR (operands[2], 0);
-    if (!*xstr)
-      emit_insn (gen_kvx_sx<widenx> (operands[0], operands[1]));
-    else if (xstr[1] == 'z')
-      emit_insn (gen_kvx_zx<widenx> (operands[0], operands[1]));
-    else if (xstr[1] == 'q')
-      emit_insn (gen_kvx_qx<widenx> (operands[0], operands[1]));
-    else
-      gcc_unreachable ();
-    DONE;
-  }
 )
 
 (define_expand "kvx_trunc<truncx>"
@@ -2551,27 +2618,6 @@
     emit_insn (gen_rtx_SET (lower, gen_rtx_SMAX (<WIDE>mode, operands[1], zero_chunk)));
     emit_insn (gen_rtx_SET (upper, gen_rtx_SMIN (<WIDE>mode, lower, maxval_chunk)));
     emit_insn (gen_kvx_trunc<truncx> (operands[0], upper));
-    DONE;
-  }
-)
-
-(define_expand "kvx_narrow<truncx>"
-  [(match_operand:S64L 0 "register_operand" "")
-   (match_operand:<WIDE> 1 "register_operand" "")
-   (match_operand 2 "" "")]
-  ""
-  {
-    const char *xstr = XSTR (operands[2], 0);
-    if (!*xstr)
-      emit_insn (gen_kvx_trunc<truncx> (operands[0], operands[1]));
-    else if (xstr[1] == 'q')
-      emit_insn (gen_kvx_fract<truncx> (operands[0], operands[1]));
-    else if (xstr[1] == 's')
-      emit_insn (gen_kvx_sat<truncx> (operands[0], operands[1]));
-    else if (xstr[1] == 'u')
-      emit_insn (gen_kvx_satu<truncx> (operands[0], operands[1]));
-    else
-      gcc_unreachable ();
     DONE;
   }
 )
@@ -2735,6 +2781,15 @@
   [(set_attr "type" "alu_lite")]
 )
 
+(define_insn "kvx_zipwp"
+  [(set (match_operand:V2SI 0 "register_operand" "=r")
+        (vec_concat:V2SI (match_operand:SI 1 "register_operand" "0")
+                         (match_operand:SI 2 "register_operand" "r")))]
+  ""
+  "insf %0 = %2, 63, 32"
+  [(set_attr "type" "alu_lite")]
+)
+
 (define_insn "kvx_zxwdp"
   [(set (match_operand:V2DI 0 "register_operand" "=r")
         (unspec:V2DI [(match_operand:V2SI 1 "register_operand" "r")] UNSPEC_ZXWDP))]
@@ -2778,25 +2833,6 @@
   ""
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
-)
-
-(define_expand "kvx_widenwdp"
-  [(match_operand:V2DI 0 "register_operand" "")
-   (match_operand:V2SI 1 "register_operand" "")
-   (match_operand 2 "" "")]
-  ""
-  {
-    const char *xstr = XSTR (operands[2], 0);
-    if (!*xstr)
-      emit_insn (gen_kvx_sxwdp (operands[0], operands[1]));
-    else if (xstr[1] == 'z')
-      emit_insn (gen_kvx_zxwdp (operands[0], operands[1]));
-    else if (xstr[1] == 'q')
-      emit_insn (gen_kvx_qxwdp (operands[0], operands[1]));
-    else
-      gcc_unreachable ();
-    DONE;
-  }
 )
 
 (define_expand "kvx_truncdwp"
@@ -2863,27 +2899,6 @@
     emit_insn (gen_kvx_satumdw (op0_m, op1_m));
     rtx xord = gen_rtx_UNSPEC (V2SImode, gen_rtvec (2, op0_l, op0_m), UNSPEC_XORD);
     emit_insn (gen_rtx_SET (operands[0], xord));
-    DONE;
-  }
-)
-
-(define_expand "kvx_narrowdwp"
-  [(match_operand:V2SI 0 "register_operand" "")
-   (match_operand:V2DI 1 "register_operand" "")
-   (match_operand 2 "" "")]
-  ""
-  {
-    const char *xstr = XSTR (operands[2], 0);
-    if (!*xstr)
-      emit_insn (gen_kvx_truncdwp (operands[0], operands[1]));
-    else if (xstr[1] == 'q')
-      emit_insn (gen_kvx_fractdwp (operands[0], operands[1]));
-    else if (xstr[1] == 's')
-      emit_insn (gen_kvx_satdwp (operands[0], operands[1]));
-    else if (xstr[1] == 'u')
-      emit_insn (gen_kvx_satudwp (operands[0], operands[1]));
-    else
-      gcc_unreachable ();
     DONE;
   }
 )
@@ -3234,26 +3249,6 @@
   [(set_attr "type" "mau")]
 )
 
-(define_expand "kvx_mulx<widenx>"
-  [(match_operand:<WIDE> 0 "register_operand" "")
-   (match_operand:S128I 1 "register_operand" "")
-   (match_operand:S128I 2 "register_operand" "")
-   (match_operand 3 "" "")]
-  ""
-  {
-    const char *xstr = XSTR (operands[3], 0);
-    if (!*xstr)
-      emit_insn (gen_kvx_mul<widenx> (operands[0], operands[1], operands[2]));
-    else if (xstr[1] == 'u')
-      emit_insn (gen_kvx_mulu<widenx> (operands[0], operands[1], operands[2]));
-    else if (xstr[1] == 's')
-      emit_insn (gen_kvx_mulsu<widenx> (operands[0], operands[1], operands[2]));
-    else
-      gcc_unreachable ();
-    DONE;
-  }
-)
-
 (define_insn_and_split "kvx_madd<widenx>"
   [(set (match_operand:<WIDE> 0 "register_operand" "=&r")
         (plus:<WIDE> (mult:<WIDE> (sign_extend:<WIDE> (match_operand:S128I 1 "register_operand" "r"))
@@ -3314,27 +3309,6 @@
   [(set_attr "type" "mau_auxr")]
 )
 
-(define_expand "kvx_maddx<widenx>"
-  [(match_operand:<WIDE> 0 "register_operand" "")
-   (match_operand:S128I 1 "register_operand" "")
-   (match_operand:S128I 2 "register_operand" "")
-   (match_operand:<WIDE> 3 "register_operand" "")
-   (match_operand 4 "" "")]
-  ""
-  {
-    const char *xstr = XSTR (operands[4], 0);
-    if (!*xstr)
-      emit_insn (gen_kvx_madd<widenx> (operands[0], operands[1], operands[2], operands[3]));
-    else if (xstr[1] == 'u')
-      emit_insn (gen_kvx_maddu<widenx> (operands[0], operands[1], operands[2], operands[3]));
-    else if (xstr[1] == 's')
-      emit_insn (gen_kvx_maddsu<widenx> (operands[0], operands[1], operands[2], operands[3]));
-    else
-      gcc_unreachable ();
-    DONE;
-  }
-)
-
 (define_insn_and_split "kvx_msbf<widenx>"
   [(set (match_operand:<WIDE> 0 "register_operand" "=&r")
         (minus:<WIDE> (match_operand:<WIDE> 3 "register_operand" "0")
@@ -3393,27 +3367,6 @@
                                      (zero_extend:<HWIDE> (subreg:<HALF> (match_dup 2) 8)))))]
   ""
   [(set_attr "type" "mau_auxr")]
-)
-
-(define_expand "kvx_msbfx<widenx>"
-  [(match_operand:<WIDE> 0 "register_operand" "")
-   (match_operand:S128I 1 "register_operand" "")
-   (match_operand:S128I 2 "register_operand" "")
-   (match_operand:<WIDE> 3 "register_operand" "")
-   (match_operand 4 "" "")]
-  ""
-  {
-    const char *xstr = XSTR (operands[4], 0);
-    if (!*xstr)
-      emit_insn (gen_kvx_msbf<widenx> (operands[0], operands[1], operands[2], operands[3]));
-    else if (xstr[1] == 'u')
-      emit_insn (gen_kvx_msbfu<widenx> (operands[0], operands[1], operands[2], operands[3]));
-    else if (xstr[1] == 's')
-      emit_insn (gen_kvx_msbfsu<widenx> (operands[0], operands[1], operands[2], operands[3]));
-    else
-      gcc_unreachable ();
-    DONE;
-  }
 )
 
 
@@ -4253,25 +4206,6 @@
   }
 )
 
-(define_expand "kvx_widen<widenx>"
-  [(match_operand:<WIDE> 0 "register_operand" "")
-   (match_operand:S128K 1 "register_operand" "")
-   (match_operand 2 "" "")]
-  ""
-  {
-    const char *xstr = XSTR (operands[2], 0);
-    if (!*xstr)
-      emit_insn (gen_kvx_sx<widenx> (operands[0], operands[1]));
-    else if (xstr[1] == 'z')
-      emit_insn (gen_kvx_zx<widenx> (operands[0], operands[1]));
-    else if (xstr[1] == 'q')
-      emit_insn (gen_kvx_qx<widenx> (operands[0], operands[1]));
-    else
-      gcc_unreachable ();
-    DONE;
-  }
-)
-
 (define_expand "kvx_trunc<truncx>"
   [(match_operand:S128K 0 "register_operand")
    (match_operand:<WIDE> 1 "register_operand")]
@@ -4328,27 +4262,6 @@
     rtx op0_m = gen_rtx_SUBREG (<HALF>mode, operands[0], 8);
     emit_insn (gen_kvx_satu<htruncx> (op0_l, op1_l));
     emit_insn (gen_kvx_satu<htruncx> (op0_m, op1_m));
-    DONE;
-  }
-)
-
-(define_expand "kvx_narrow<truncx>"
-  [(match_operand:S128K 0 "register_operand" "")
-   (match_operand:<WIDE> 1 "register_operand" "")
-   (match_operand 2 "" "")]
-  ""
-  {
-    const char *xstr = XSTR (operands[2], 0);
-    if (!*xstr)
-      emit_insn (gen_kvx_trunc<truncx> (operands[0], operands[1]));
-    else if (xstr[1] == 'q')
-      emit_insn (gen_kvx_fract<truncx> (operands[0], operands[1]));
-    else if (xstr[1] == 's')
-      emit_insn (gen_kvx_sat<truncx> (operands[0], operands[1]));
-    else if (xstr[1] == 'u')
-      emit_insn (gen_kvx_satu<truncx> (operands[0], operands[1]));
-    else
-      gcc_unreachable ();
     DONE;
   }
 )
