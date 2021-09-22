@@ -907,3 +907,15 @@
   V32QI
 ])
 
+;; Iterator for the widening QI vector modes.
+(define_mode_iterator VWQI [
+  V8QI
+  V16QI
+])
+
+;; Iterator for the widening integer vector modes.
+(define_mode_iterator VWXI [
+  V4HI V2SI
+  V8HI V4SI
+])
+
