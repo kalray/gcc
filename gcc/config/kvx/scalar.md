@@ -1616,14 +1616,32 @@
    (set_attr "length" "4,4,8,12")]
 )
 
-(define_insn "muldi3"
+(define_expand "muldi3"
+  [(set (match_operand:DI 0 "register_operand" "")
+        (mult:DI (match_operand:DI 1 "register_operand" "")
+                 (match_operand:DI 2 "register_s32_operand" "")))]
+  ""
+  ""
+)
+
+(define_insn "*muldi3_1"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
         (mult:DI (match_operand:DI 1 "register_operand" "r,r,r,r")
                  (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")))]
-  ""
+  "KV3_1"
   "muld %0 = %1, %2"
   [(set_attr "type" "mau, mau, mau_x, mau_y")
    (set_attr "length" "4, 4, 8, 12")]
+)
+
+(define_insn "*muldi3_2"
+  [(set (match_operand:DI 0 "register_operand" "=r,r")
+        (mult:DI (match_operand:DI 1 "register_operand" "r,r")
+                 (match_operand:DI 2 "register_s32_operand" "r,B32")))]
+  "KV3_2"
+  "muld %0 = %1, %2"
+  [(set_attr "type" "mau, mau_x")
+   (set_attr "length" "4,     8")]
 )
 
 (define_expand "divdi3"
