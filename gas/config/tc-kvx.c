@@ -1143,13 +1143,25 @@ match_operands(const kv3opc_t * op, const expressionS * tok,
                                 && (((tok).X_add_number) <= kvx_regfiles[KVX_REGFILE_LAST_XWR]))
 #define IS_KVX_REGFILE_XMR(tok) ((((tok).X_add_number) >= kvx_regfiles[KVX_REGFILE_FIRST_XMR]) \
                                 && (((tok).X_add_number) <= kvx_regfiles[KVX_REGFILE_LAST_XMR]))
+#define IS_KVX_REGFILE_X2R(tok) ((((tok).X_add_number) >= kvx_regfiles[KVX_REGFILE_FIRST_X2R]) \
+                                && (((tok).X_add_number) <= kvx_regfiles[KVX_REGFILE_LAST_X2R]))
+#define IS_KVX_REGFILE_X4R(tok) ((((tok).X_add_number) >= kvx_regfiles[KVX_REGFILE_FIRST_X4R]) \
+                                && (((tok).X_add_number) <= kvx_regfiles[KVX_REGFILE_LAST_X4R]))
+#define IS_KVX_REGFILE_X8R(tok) ((((tok).X_add_number) >= kvx_regfiles[KVX_REGFILE_FIRST_X8R]) \
+                                && (((tok).X_add_number) <= kvx_regfiles[KVX_REGFILE_LAST_X8R]))
+#define IS_KVX_REGFILE_X16R(tok) ((((tok).X_add_number) >= kvx_regfiles[KVX_REGFILE_FIRST_X16R]) \
+                                && (((tok).X_add_number) <= kvx_regfiles[KVX_REGFILE_LAST_X16R]))
+#define IS_KVX_REGFILE_X32R(tok) ((((tok).X_add_number) >= kvx_regfiles[KVX_REGFILE_FIRST_X32R]) \
+                                && (((tok).X_add_number) <= kvx_regfiles[KVX_REGFILE_LAST_X32R]))
+#define IS_KVX_REGFILE_X64R(tok) ((((tok).X_add_number) >= kvx_regfiles[KVX_REGFILE_FIRST_X64R]) \
+                                && (((tok).X_add_number) <= kvx_regfiles[KVX_REGFILE_LAST_X64R]))
 
-#define MATCH_KVX_REGFILE(tok,is_regfile)                                \
-    if (((tok).X_op == O_register) && (is_regfile(tok))) {                \
-      break;                                                                \
-    }                                                                        \
-    else {                                                                \
-      return MATCH_NOT_FOUND;                                                \
+#define MATCH_KVX_REGFILE(tok,is_regfile) \
+    if (((tok).X_op == O_register) && (is_regfile(tok))) { \
+      break; \
+    } \
+    else { \
+      return MATCH_NOT_FOUND; \
     }
 
     /* Now check for compatiblility of each operand. */
@@ -1236,6 +1248,18 @@ match_operands(const kv3opc_t * op, const expressionS * tok,
                 MATCH_KVX_REGFILE(tok[jj],IS_KVX_REGFILE_XWR)
             case RegClass_kv3_matrixReg:
                 MATCH_KVX_REGFILE(tok[jj],IS_KVX_REGFILE_XMR)
+            case RegClass_kv3_buffer2Reg:
+                MATCH_KVX_REGFILE(tok[jj],IS_KVX_REGFILE_X2R)
+            case RegClass_kv3_buffer4Reg:
+                MATCH_KVX_REGFILE(tok[jj],IS_KVX_REGFILE_X4R)
+            case RegClass_kv3_buffer8Reg:
+                MATCH_KVX_REGFILE(tok[jj],IS_KVX_REGFILE_X8R)
+            case RegClass_kv3_buffer16Reg:
+                MATCH_KVX_REGFILE(tok[jj],IS_KVX_REGFILE_X16R)
+            case RegClass_kv3_buffer32Reg:
+                MATCH_KVX_REGFILE(tok[jj],IS_KVX_REGFILE_X32R)
+            case RegClass_kv3_buffer64Reg:
+                MATCH_KVX_REGFILE(tok[jj],IS_KVX_REGFILE_X64R)
 
             case Immediate_kv3_pcrel17:
             case Immediate_kv3_pcrel27:
@@ -1320,6 +1344,12 @@ match_operands(const kv3opc_t * op, const expressionS * tok,
 #undef IS_KVX_REGFILE_XVR
 #undef IS_KVX_REGFILE_XWR
 #undef IS_KVX_REGFILE_XMR
+#undef IS_KVX_REGFILE_X2R
+#undef IS_KVX_REGFILE_X4R
+#undef IS_KVX_REGFILE_X8R
+#undef IS_KVX_REGFILE_X16R
+#undef IS_KVX_REGFILE_X32R
+#undef IS_KVX_REGFILE_X64R
 #undef MATCH_KVX_REGFILE
 }
 

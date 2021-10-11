@@ -605,6 +605,24 @@ int print_insn_kvx (bfd_vma memaddr, struct disassemble_info *info){
                   case RegClass_kv3_matrixReg:
                       KVX_PRINT_REG(KVX_REGFILE_DEC_XMR,value)
                       break;
+                  case RegClass_kv3_buffer2Reg:
+                      KVX_PRINT_REG(KVX_REGFILE_DEC_X2R,value)
+                      break;
+                  case RegClass_kv3_buffer4Reg:
+                      KVX_PRINT_REG(KVX_REGFILE_DEC_X4R,value)
+                      break;
+                  case RegClass_kv3_buffer8Reg:
+                      KVX_PRINT_REG(KVX_REGFILE_DEC_X8R,value)
+                      break;
+                  case RegClass_kv3_buffer16Reg:
+                      KVX_PRINT_REG(KVX_REGFILE_DEC_X16R,value)
+                      break;
+                  case RegClass_kv3_buffer32Reg:
+                      KVX_PRINT_REG(KVX_REGFILE_DEC_X32R,value)
+                      break;
+                  case RegClass_kv3_buffer64Reg:
+                      KVX_PRINT_REG(KVX_REGFILE_DEC_X64R,value)
+                      break;
 
                   case Immediate_kv3_brknumber:
                   case Immediate_kv3_sysnumber:
