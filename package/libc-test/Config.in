@@ -1,0 +1,22 @@
+config BR2_PACKAGE_LIBC_TEST
+	bool "libc-test"
+	select BR2_PACKAGE_MAKE
+	select BR2_PACKAGE_BINUTILS
+	select BR2_PACKAGE_BINUTILS_TARGET
+	help
+	  Enabling this option will compile and install the libc-test suite.
+	  libc-test is a libc-agnostic test suite for standard C libraries.
+	  libc-test is also the official test suite for the musl libc.
+
+	  The test suite will be installed into
+	  /usr/lib/libc-test directory. To run the test suite
+	  enter the /usr/lib/libc-test/ directory and type
+	  "make run".
+
+	  See /usr/lib/libc-test/README for additional
+	  information.
+
+	  This is not needed at all for normal builds, so you can
+	  safely say no if you do not plan to dig into your C library.
+
+	  http://nsz.repo.hu/git/?p=libc-test

@@ -1,0 +1,34 @@
+From 4a44b172a1e7d885e70ff2d4dce0506316007207 Mon Sep 17 00:00:00 2001
+From: Jonathan Borne <jborne@kalray.eu>
+Date: Fri, 3 Dec 2021 17:06:17 +0100
+Subject: [PATCH] Clean report files before run
+
+---
+ Makefile | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index cf2ab2b..d0a2d30 100644
+--- a/Makefile
++++ b/Makefile
+@@ -117,12 +117,14 @@ api/main.OBJS:=$(api.OBJS)
+ $(api.OBJS):$(B)/common/options.h
+ $(api.OBJS):CFLAGS+=-pedantic-errors -Werror -Wno-unused -D_XOPEN_SOURCE=700
+ 
+-all run: $(B)/REPORT
+-	grep FAIL $< || echo PASS
++all run: cleanrep $(B)/REPORT
++	grep FAIL $(word 2,$^) || echo PASS
+ clean:
+ 	rm -f $(OBJS) $(BINS) $(LIBS) $(B)/common/libtest.a $(B)/common/runtest.exe $(B)/common/options.h $(B)/*/*.err
+-cleanall: clean
++cleanrep:
+ 	rm -f $(B)/REPORT $(B)/*/REPORT
++cleanall: clean cleanrep
++
+ $(B)/REPORT:
+ 	cat $^ >$@
+ 
+-- 
+2.17.1
+
