@@ -360,14 +360,14 @@ kvx_debug_frame_info (struct kvx_frame_info *fi)
 
 #define DFI_SEP fprintf (dump_file, " +------------------------------+    \n")
 
-#define DFI_FIELD(f, sz, bottom, decorate_up, decorate_down)                   \
-  fprintf (dump_file,                                                          \
-	   " |                              | %d/%d %s  \n"                    \
-	   " |%30s|                              \n"                           \
-	   " |size: %24d| %d/%d  %s\n",                                        \
-	   (bottom) + (sz) -UNITS_PER_WORD,                                    \
-	   fi->frame_size - ((bottom) + (sz) -UNITS_PER_WORD), decorate_up, f, \
-	   (sz), (bottom), fi->frame_size - (bottom), decorate_down)
+#define DFI_FIELD(f, size, bottom, decorate_up, decorate_down)                   \
+  fprintf (dump_file,                                                            \
+	   " |                              | %d/%d %s  \n"                      \
+	   " |%30s|                              \n"                             \
+	   " |size: %24d| %d/%d  %s\n",                                          \
+	   (bottom) + (size) -UNITS_PER_WORD,                                    \
+	   fi->frame_size - ((bottom) + (size) -UNITS_PER_WORD), decorate_up, f, \
+	   (size), (bottom), fi->frame_size - (bottom), decorate_down)
 
   DFI_SEP;
   if (cfun->stdarg && crtl->args.info.next_arg_reg < KV3_ARG_REG_SLOTS)
@@ -974,6 +974,22 @@ kvx_get_arg_info (struct kvx_arg_info *info, cumulative_args_t cum_v,
   return gen_rtx_REG (mode, KV3_ARGUMENT_POINTER_REGNO + info->first_reg);
 }
 
+/* Implements TARGET_PROMOTE_FUNCTION_MODE.  */
+static machine_mode
+kvx_promote_function_mode (const_tree type ATTRIBUTE_UNUSED, machine_mode mode,
+			   int *punsignedp, const_tree, int for_return)
+{
+  if (for_return)
+    if (GET_MODE_CLASS (mode) == MODE_INT
+	&& GET_MODE_SIZE (mode).to_constant () < UNITS_PER_WORD)
+      {
+	mode = word_mode;
+	*punsignedp = 1;
+      }
+
+  return mode;
+}
+
 /* Implements TARGET_FUNCTION_ARG.
    Returns a reg rtx pointing at first argument register to be
    used for given argument or NULL_RTX if argument must be stacked
@@ -1028,22 +1044,22 @@ kvx_function_arg_advance (cumulative_args_t cum_v, enum machine_mode mode,
     }
 }
 
+/* Implements TARGET_FUNCTION_VALUE.  */
 static rtx
-kvx_function_value (const_tree ret_type, const_tree func ATTRIBUTE_UNUSED,
-		    bool outgoing ATTRIBUTE_UNUSED)
+kvx_function_value (const_tree ret_type, const_tree func, bool outgoing)
 {
+  int unsignedp = TYPE_UNSIGNED (ret_type);
   enum machine_mode mode = TYPE_MODE (ret_type);
+  HOST_WIDE_INT size = int_size_in_bytes (ret_type);
 
-  if (mode == BLKmode
-      && ((int_size_in_bytes (ret_type) * BITS_PER_UNIT)
-	  > (LONG_LONG_TYPE_SIZE)))
+  mode = promote_function_mode (ret_type, mode, &unsignedp, func, 1);
+
+  if (mode == BLKmode && (size * BITS_PER_UNIT > LONG_LONG_TYPE_SIZE))
     {
-      int nexps
-	= (int_size_in_bytes (ret_type) + UNITS_PER_WORD - 1) / UNITS_PER_WORD;
-      int i;
-
+      int nexps = (size + UNITS_PER_WORD - 1) / UNITS_PER_WORD;
       rtx ret = gen_rtx_PARALLEL (BLKmode, rtvec_alloc (nexps));
-      for (i = 0; i < nexps; i++)
+
+      for (int i = 0; i < nexps; i++)
 	XVECEXP (ret, 0, i)
 	  = gen_rtx_EXPR_LIST (VOIDmode,
 			       gen_rtx_REG (DImode,
@@ -1051,29 +1067,29 @@ kvx_function_value (const_tree ret_type, const_tree func ATTRIBUTE_UNUSED,
 			       GEN_INT (i * UNITS_PER_WORD));
       return ret;
     }
-  else
-    return gen_rtx_REG (TYPE_MODE (ret_type), KV3_ARGUMENT_POINTER_REGNO);
+
+  return gen_rtx_REG (mode, KV3_ARGUMENT_POINTER_REGNO);
 }
 
-/* Implements TARGET_RETURN_IN_MSB */
+/* Implements TARGET_RETURN_IN_MSB.  */
 static bool
 kvx_return_in_msb (const_tree type ATTRIBUTE_UNUSED)
 {
   return false;
 }
 
-/* Implements TARGET_RETURN_IN_MEMORY */
+/* Implements TARGET_RETURN_IN_MEMORY.  */
 static bool
 kvx_return_in_memory (const_tree type, const_tree fntype ATTRIBUTE_UNUSED)
 {
-  HOST_WIDE_INT sz = int_size_in_bytes (type);
+  HOST_WIDE_INT size = int_size_in_bytes (type);
 
   /* Return value can use up to 4 registers (256bits). Larger values
    * or variable sized type must be returned in memory. */
-  return (sz > (4 * UNITS_PER_WORD) || sz < 0);
+  return (size > (4 * UNITS_PER_WORD) || size < 0);
 }
 
-/* Implements TARGET_STRUCT_VALUE_RTX */
+/* Implements TARGET_STRUCT_VALUE_RTX.  */
 static rtx
 kvx_struct_value_rtx (tree fndecl ATTRIBUTE_UNUSED,
 		      int incoming ATTRIBUTE_UNUSED)
@@ -1257,6 +1273,16 @@ kvx_libgcc_floating_mode_supported_p (scalar_float_mode mode)
   return (mode == HFmode
 	  ? true
 	  : default_libgcc_floating_mode_supported_p (mode));
+}
+
+static const char *
+kvx_mangle_type (const_tree type)
+{
+  /* Half-precision float.  */
+  if (TREE_CODE (type) == REAL_TYPE && TYPE_PRECISION (type) == 16)
+    return "Dh";
+
+  return NULL;
 }
 
 static enum flt_eval_method
@@ -10567,21 +10593,21 @@ kvx_legitimize_address (rtx x, rtx oldx ATTRIBUTE_UNUSED,
   return x;
 }
 
-/* Implements TARGET_ADDR_SPACE_POINTER_MODE */
+/* Implements TARGET_ADDR_SPACE_POINTER_MODE.  */
 static scalar_int_mode
 kvx_addr_space_pointer_mode (addr_space_t address_space ATTRIBUTE_UNUSED)
 {
   return ptr_mode;
 }
 
-/* Implements TARGET_ADDR_SPACE_ADDRESS_MODE */
+/* Implements TARGET_ADDR_SPACE_ADDRESS_MODE.  */
 static scalar_int_mode
 kvx_addr_space_address_mode (addr_space_t address_space ATTRIBUTE_UNUSED)
 {
   return Pmode;
 }
 
-/* Implements TARGET_ADDR_SPACE_LEGITIMATE_ADDRESS_P */
+/* Implements TARGET_ADDR_SPACE_LEGITIMATE_ADDRESS_P.  */
 static bool
 kvx_addr_space_legitimate_address_p (machine_mode mode, rtx exp, bool strict,
 				     addr_space_t as ATTRIBUTE_UNUSED)
@@ -10601,7 +10627,7 @@ kvx_addr_space_legitimate_address_p (machine_mode mode, rtx exp, bool strict,
     }
 }
 
-/* Implements TARGET_ADDR_SPACE_LEGITIMIZE_ADDRESS */
+/* Implements TARGET_ADDR_SPACE_LEGITIMIZE_ADDRESS.  */
 static rtx
 kvx_addr_space_legitimize_address (rtx x, rtx oldx, machine_mode mode,
 				   addr_space_t as)
@@ -10612,7 +10638,7 @@ kvx_addr_space_legitimize_address (rtx x, rtx oldx, machine_mode mode,
   return kvx_legitimize_address (x, oldx, mode);
 }
 
-/* Implements TARGET_ADDR_SPACE_SUBSET_P */
+/* Implements TARGET_ADDR_SPACE_SUBSET_P.  */
 static bool
 kvx_addr_space_subset_p (addr_space_t subset ATTRIBUTE_UNUSED,
 			 addr_space_t superset ATTRIBUTE_UNUSED)
@@ -10621,7 +10647,7 @@ kvx_addr_space_subset_p (addr_space_t subset ATTRIBUTE_UNUSED,
   return true;
 }
 
-/* Implements TARGET_ADDR_SPACE_CONVERT */
+/* Implements TARGET_ADDR_SPACE_CONVERT.  */
 static rtx
 kvx_addr_space_convert (rtx op, tree from_type, tree to_type ATTRIBUTE_UNUSED)
 {
@@ -11386,6 +11412,9 @@ kvx_ctrapsi4 (void)
 #undef TARGET_FUNCTION_VALUE
 #define TARGET_FUNCTION_VALUE kvx_function_value
 
+#undef TARGET_OMIT_STRUCT_RETURN_REG
+#define TARGET_OMIT_STRUCT_RETURN_REG true
+
 #undef TARGET_RETURN_IN_MSB
 #define TARGET_RETURN_IN_MSB kvx_return_in_msb
 
@@ -11426,6 +11455,9 @@ kvx_ctrapsi4 (void)
 #define TARGET_LIBGCC_FLOATING_MODE_SUPPORTED_P                                \
   kvx_libgcc_floating_mode_supported_p
 
+#undef TARGET_MANGLE_TYPE
+#define TARGET_MANGLE_TYPE kvx_mangle_type
+
 #undef TARGET_C_EXCESS_PRECISION
 #define TARGET_C_EXCESS_PRECISION kvx_excess_precision
 
@@ -11435,6 +11467,9 @@ kvx_ctrapsi4 (void)
 
 #undef TARGET_VECTORIZE_PREFERRED_SIMD_MODE
 #define TARGET_VECTORIZE_PREFERRED_SIMD_MODE kvx_vectorize_preferred_simd_mode
+
+#undef TARGET_PROMOTE_FUNCTION_MODE
+#define TARGET_PROMOTE_FUNCTION_MODE kvx_promote_function_mode
 
 #undef TARGET_PROMOTE_PROTOTYPES
 #define TARGET_PROMOTE_PROTOTYPES hook_bool_const_tree_true
