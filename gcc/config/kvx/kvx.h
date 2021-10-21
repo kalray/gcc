@@ -97,15 +97,14 @@ enum kvx_abi_type
 
 #define UNITS_PER_WORD 8
 
+#define POINTERS_EXTEND_UNSIGNED 1
+
 #define PROMOTE_MODE(MODE, UNSIGNEDP, TYPE)                                    \
   if (GET_MODE_CLASS (MODE) == MODE_INT                                        \
       && GET_MODE_SIZE (MODE) < UNITS_PER_WORD)                                \
     {                                                                          \
-      if ((MODE) == QImode || (MODE) == HImode || (MODE) == SImode)            \
-	{                                                                      \
-	  (MODE) = DImode;                                                     \
-	  (UNSIGNEDP) = 1;                                                     \
-	}                                                                      \
+      (MODE) = word_mode;                                                      \
+      (UNSIGNEDP) = 1;                                                         \
     }
 
 /* We handle the alignment of automatic variables in kvx_compute_frame_info */
