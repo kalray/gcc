@@ -2890,10 +2890,8 @@ kvx_get_predicate_mode (enum machine_mode mode)
 static rtx
 kvx_emulate_vxqi_comparison(rtx pred, enum rtx_code cmp_code, rtx left, rtx right)
 {
-  rtx oddmask = gen_reg_rtx (DImode);
   machine_mode cmp_mode = GET_MODE (left);
   unsigned mode_size = GET_MODE_SIZE (cmp_mode).to_constant ();
-  emit_insn (gen_rtx_SET (oddmask, GEN_INT (0xFF00FF00FF00FF00)));
   for (unsigned offset = 0; offset < mode_size; offset += UNITS_PER_WORD)
     {
       rtx rightc = simplify_gen_subreg (V4HImode, right, cmp_mode, offset);
@@ -2903,16 +2901,16 @@ kvx_emulate_vxqi_comparison(rtx pred, enum rtx_code cmp_code, rtx left, rtx righ
       if (!const_zero_operand (right, cmp_mode))
 	{
 	  righto = gen_reg_rtx (V4HImode), righte = gen_reg_rtx (V4HImode);
-	  emit_insn (gen_rtx_SET (righto, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, rightc, oddmask), UNSPEC_QXOBHQ)));
+	  emit_insn (gen_rtx_SET (righto, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, rightc), UNSPEC_QXOBHQ)));
 	  emit_insn (gen_rtx_SET (righte, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, rightc), UNSPEC_QXEBHQ)));
 	}
       rtx lefto = gen_reg_rtx (V4HImode), lefte = gen_reg_rtx (V4HImode);
-      emit_insn (gen_rtx_SET (lefto, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, leftc, oddmask), UNSPEC_QXOBHQ)));
+      emit_insn (gen_rtx_SET (lefto, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, leftc), UNSPEC_QXOBHQ)));
       emit_insn (gen_rtx_SET (lefte, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, leftc), UNSPEC_QXEBHQ)));
       rtx predo = gen_reg_rtx (V4HImode), prede = gen_reg_rtx (V4HImode);
       kvx_lower_comparison (predo, cmp_code, lefto, righto);
       kvx_lower_comparison (prede, cmp_code, lefte, righte);
-      emit_insn (gen_rtx_SET (predo, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, predo, oddmask), UNSPEC_QXOBHQ)));
+      emit_insn (gen_rtx_SET (predo, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, predo), UNSPEC_QXOBHQ)));
       emit_insn (gen_rtx_SET (prede, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, prede), UNSPEC_ZXOBHQ)));
       emit_insn (gen_rtx_SET (predc, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, predo, prede), UNSPEC_OROEBO)));
     }
@@ -3004,11 +3002,9 @@ kvx_lower_comparison (rtx pred, enum rtx_code cmp_code, rtx left, rtx right)
 static void
 kvx_emulate_vxqi_simplecond_move(rtx pred, enum rtx_code cmp_code, rtx src, rtx dst)
 {
-  rtx oddmask = gen_reg_rtx (DImode);
   machine_mode mode = GET_MODE (dst);
   rtx const0_v4hi_rtx = CONST0_RTX (V4HImode);
   unsigned mode_size = GET_MODE_SIZE (mode).to_constant ();
-  emit_insn (gen_rtx_SET (oddmask, GEN_INT (0xFF00FF00FF00FF00)));
   for (unsigned offset = 0; offset < mode_size; offset += UNITS_PER_WORD)
     {
       rtx srcc = simplify_gen_subreg (V4HImode, src, mode, offset);
@@ -3016,24 +3012,24 @@ kvx_emulate_vxqi_simplecond_move(rtx pred, enum rtx_code cmp_code, rtx src, rtx 
       rtx predc = simplify_gen_subreg (V4HImode, pred, mode, offset);
 
       rtx srco = gen_reg_rtx (V4HImode), srce = gen_reg_rtx (V4HImode);
-      emit_insn (gen_rtx_SET (srco, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, srcc, oddmask), UNSPEC_QXOBHQ)));
+      emit_insn (gen_rtx_SET (srco, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, srcc), UNSPEC_QXOBHQ)));
       emit_insn (gen_rtx_SET (srce, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, srcc), UNSPEC_QXEBHQ)));
 
       rtx predo = gen_reg_rtx (V4HImode), prede = gen_reg_rtx (V4HImode);
-      emit_insn (gen_rtx_SET (predo, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, predc, oddmask), UNSPEC_QXOBHQ)));
+      emit_insn (gen_rtx_SET (predo, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, predc), UNSPEC_QXOBHQ)));
       emit_insn (gen_rtx_SET (prede, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, predc), UNSPEC_QXEBHQ)));
 
       rtx cmpo = gen_rtx_fmt_ee (cmp_code, VOIDmode, predo, const0_v4hi_rtx);
       rtx cmpe = gen_rtx_fmt_ee (cmp_code, VOIDmode, prede, const0_v4hi_rtx);
 
       rtx dsto = gen_reg_rtx (V4HImode), dste = gen_reg_rtx (V4HImode);
-      emit_insn (gen_rtx_SET (dsto, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, dstc, oddmask), UNSPEC_QXOBHQ)));
+      emit_insn (gen_rtx_SET (dsto, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, dstc), UNSPEC_QXOBHQ)));
       emit_insn (gen_rtx_SET (dste, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, dstc), UNSPEC_QXEBHQ)));
 
       emit_insn (gen_rtx_SET (dsto, gen_rtx_IF_THEN_ELSE (V4HImode, cmpo, srco, dsto)));
       emit_insn (gen_rtx_SET (dste, gen_rtx_IF_THEN_ELSE (V4HImode, cmpe, srce, dste)));
 
-      emit_insn (gen_rtx_SET (dsto, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, dsto, oddmask), UNSPEC_QXOBHQ)));
+      emit_insn (gen_rtx_SET (dsto, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, dsto), UNSPEC_QXOBHQ)));
       emit_insn (gen_rtx_SET (dste, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, dste), UNSPEC_ZXOBHQ)));
       emit_insn (gen_rtx_SET (dstc, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, dsto, dste), UNSPEC_OROEBO)));
     }
