@@ -51,15 +51,10 @@
   ""
   "#"
   ""
-  [(set (match_dup 0)
-        (minus:SIDI (match_dup 1) (match_dup 2)))
-   (set (match_dup 3)
-        (ltu:SIDI (match_dup 1) (match_dup 2)))
+  [(set (match_dup 3)
+        (umin:SIDI (match_dup 1) (match_dup 2)))
    (set (match_dup 0)
-        (if_then_else:SIDI 
-            (ne (match_dup 3) (const_int 0))
-            (const_int 0)
-            (match_dup 0)))]
+        (minus:SIDI (match_dup 1) (match_dup 3)))]
   {
     if (GET_CODE (operands[3]) == SCRATCH)
       operands[3] = gen_reg_rtx (<MODE>mode);
@@ -545,7 +540,6 @@
   [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x")
    (set_attr "length" "4,4,8")]
 )
-
 ;; zero-extend version of addsi3
 (define_insn "*addsi3_zext"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r")
@@ -566,7 +560,6 @@
   [(set_attr "type"   "alu_lite,alu_lite_x")
    (set_attr "length" "4,       8")]
 )
-
 ;; zero extend version of ssaddsi3
 (define_insn "*ssaddsi3_zext"
   [(set (match_operand:DI 0 "register_operand" "=r,r")
@@ -587,7 +580,6 @@
   [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x")
    (set_attr "length" "4,4,8")]
 )
-
 ;; zero-extend version of subsi3
 (define_insn "*subsi3_zext"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r")
@@ -608,7 +600,6 @@
   [(set_attr "type"   "alu_lite,alu_lite_x")
    (set_attr "length" "4,       8")]
 )
-
 ;; zero extend version of sssubsi3
 (define_insn "*sssubsi3_zext"
   [(set (match_operand:DI 0 "register_operand" "=r,r")
@@ -629,7 +620,6 @@
   [(set_attr "type" "mau, mau_x")
    (set_attr "length" "4, 8")]
 )
-
 ;; zero extend version of mulsi3
 (define_insn "*mulsi3_zext"
   [(set (match_operand:DI 0 "register_operand" "=r,r")
@@ -690,6 +680,16 @@
   "maddw %0 = %1, %2"
   [(set_attr "type" "mau_auxr")]
 )
+;; zero-extend version of maddsisi4
+(define_insn "*maddsisi4_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (zero_extend:DI (plus:SI (mult:SI (match_operand:SI 1 "register_operand" "r")
+                                          (match_operand:SI 2 "register_operand" "r"))
+                                 (match_operand:SI 3 "register_operand" "0"))))]
+  ""
+  "maddw %0 = %1, %2"
+  [(set_attr "type" "mau_auxr")]
+)
 
 (define_insn "maddsidi4"
   [(set (match_operand:DI 0 "register_operand" "=r")
@@ -726,6 +726,16 @@
         (minus:SI (match_operand:SI 3 "register_operand" "0")
                   (mult:SI (match_operand:SI 1 "register_operand" "r")
                            (match_operand:SI 2 "register_operand" "r"))))]
+  ""
+  "msbfw %0 = %1, %2"
+  [(set_attr "type" "mau_auxr")]
+)
+;; zero-extend version of msubsisi4
+(define_insn "*msubsisi4_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (zero_extend:DI (minus:SI (match_operand:SI 3 "register_operand" "0")
+                                  (mult:SI (match_operand:SI 1 "register_operand" "r")
+                                           (match_operand:SI 2 "register_operand" "r")))))]
   ""
   "msbfw %0 = %1, %2"
   [(set_attr "type" "mau_auxr")]
@@ -770,7 +780,6 @@
   [(set_attr "type"   "alu_tiny,alu_tiny,alu_tiny_x")
    (set_attr "length" "4,       4,       8")]
 )
-
 ;; zero-extend version of sminsi3
 (define_insn "*sminsi3_zext"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r")
@@ -791,7 +800,6 @@
   [(set_attr "type"   "alu_tiny,alu_tiny,alu_tiny_x")
    (set_attr "length" "4,       4,       8")]
 )
-
 ;; zero-extend version of smaxsi3
 (define_insn "*smaxsi3_zext"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r")
@@ -812,7 +820,6 @@
   [(set_attr "type"   "alu_tiny,alu_tiny,alu_tiny_x")
    (set_attr "length" "4,       4,       8")]
 )
-
 ;; zero-extend version of uminsi3
 (define_insn "*uminsi3_zext"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r")
@@ -833,7 +840,6 @@
   [(set_attr "type"   "alu_tiny,alu_tiny,alu_tiny_x")
    (set_attr "length" "4,       4,       8")]
 )
-
 ;; zero-extend version of umaxsi3
 (define_insn "*umaxsi3_zext"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r")
@@ -854,9 +860,8 @@
   [(set_attr "type"   "alu_tiny,alu_tiny,alu_tiny_x")
    (set_attr "length" "4,       4,       8")]
 )
-
 ;; zero-extend version of andsi3
-(define_insn "*andsi3__zext"
+(define_insn "*andsi3_zext"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r")
         (zero_extend:DI (and:SI (match_operand:SI 1 "register_operand" "r,r,r")
                                 (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i"))))]
@@ -875,11 +880,31 @@
   [(set_attr "type"   "alu_tiny,alu_tiny,alu_tiny_x")
    (set_attr "length" "4,       4,       8")]
 )
+;; zero-extend version of *nandw
+(define_insn "*nandw_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r,r,r")
+        (zero_extend:DI (ior:SI (not:SI (match_operand:SI 1 "register_operand" "r,r,r"))
+                                (not:SI (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i")))))]
+  ""
+  "nandw %0 = %1, %2"
+  [(set_attr "type"   "alu_tiny,alu_tiny,alu_tiny_x")
+   (set_attr "length" "4,       4,       8")]
+)
 
 (define_insn "*andnw"
   [(set (match_operand:SI 0 "register_operand" "=r,r,r")
         (and:SI (not:SI (match_operand:SI 1 "register_operand" "r,r,r"))
                 (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i")))]
+  ""
+  "andnw %0 = %1, %2"
+  [(set_attr "type"   "alu_tiny,alu_tiny,alu_tiny_x")
+   (set_attr "length" "4,       4,       8")]
+)
+;; zero-extend version of *andnw
+(define_insn "*andnw_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r,r,r")
+        (zero_extend:DI (and:SI (not:SI (match_operand:SI 1 "register_operand" "r,r,r"))
+                                (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i"))))]
   ""
   "andnw %0 = %1, %2"
   [(set_attr "type"   "alu_tiny,alu_tiny,alu_tiny_x")
@@ -895,7 +920,6 @@
   [(set_attr "type"   "alu_tiny,alu_tiny,alu_tiny_x")
    (set_attr "length" "4,       4,       8")]
 )
-
 ;; zero-extend version of iorsi3
 (define_insn "*iorsi3_zext"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r")
@@ -916,11 +940,31 @@
   [(set_attr "type"   "alu_tiny,alu_tiny,alu_tiny_x")
    (set_attr "length" "4,       4,       8")]
 )
+;; zero-extend version of *norw
+(define_insn "*norw_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r,r,r")
+        (zero_extend:DI (and:SI (not:SI (match_operand:SI 1 "register_operand" "r,r,r"))
+                                (not:SI (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i")))))]
+  ""
+  "norw %0 = %1, %2"
+  [(set_attr "type"   "alu_tiny,alu_tiny,alu_tiny_x")
+   (set_attr "length" "4,       4,       8")]
+)
 
 (define_insn "*ornw"
   [(set (match_operand:SI 0 "register_operand" "=r,r,r")
         (ior:SI (not:SI (match_operand:SI 1 "register_operand" "r,r,r"))
                 (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i")))]
+  ""
+  "ornw %0 = %1, %2"
+  [(set_attr "type"   "alu_tiny,alu_tiny,alu_tiny_x")
+   (set_attr "length" "4,       4,       8")]
+)
+;; zero-extend version of *ornw
+(define_insn "*ornw_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r,r,r")
+        (zero_extend:DI (ior:SI (not:SI (match_operand:SI 1 "register_operand" "r,r,r"))
+                                (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i"))))]
   ""
   "ornw %0 = %1, %2"
   [(set_attr "type"   "alu_tiny,alu_tiny,alu_tiny_x")
@@ -936,7 +980,6 @@
   [(set_attr "type"   "alu_tiny,alu_tiny,alu_tiny_x")
    (set_attr "length" "4,       4,       8")]
 )
-
 ;; zero-extend version of xorsi3
 (define_insn "*xorsi3_zext"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r")
@@ -957,11 +1000,86 @@
   [(set_attr "type"   "alu_tiny,alu_tiny,alu_tiny_x")
    (set_attr "length" "4,       4,       8")]
 )
+;; zero-extend version of *nxorw
+(define_insn "*nxorw_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r,r,r")
+        (zero_extend:DI (not:SI (xor:SI (match_operand:SI 1 "register_operand" "r,r,r")
+                                        (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i")))))]
+  ""
+  "nxorw %0 = %1, %2"
+  [(set_attr "type"   "alu_tiny,alu_tiny,alu_tiny_x")
+   (set_attr "length" "4,       4,       8")]
+)
+
+;; zero-extend version of ashlsi3
+(define_insn "*ashlsi3_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r,r")
+        (zero_extend:DI (ashift:SI (match_operand:SI 1 "register_operand" "r,r")
+                                   (match_operand:SI 2 "sat_shift_operand" "r,U06"))))]
+  ""
+  "sllw %0 = %1, %2"
+  [(set_attr "type" "alu_tiny,alu_tiny")
+   (set_attr "length" "     4,       4")]
+)
+
+;; zero-extend version of ssashlsi3
+(define_insn "*ssashlsi3_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r,r")
+        (zero_extend:DI (ss_ashift:SI (match_operand:SI 1 "register_operand" "r,r")
+                                      (match_operand:SI 2 "sat_shift_operand" "r,U06"))))]
+  ""
+  "slsw %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite")
+   (set_attr "length" "     4,       4")]
+)
+
+;; zero-extend version of ashrsi3
+(define_insn "*ashrsi3_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r,r")
+        (zero_extend:DI (ashiftrt:SI (match_operand:SI 1 "register_operand" "r,r")
+                                     (match_operand:SI 2 "sat_shift_operand" "r,U06"))))]
+  ""
+  "sraw %0 = %1, %2"
+  [(set_attr "type" "alu_tiny,alu_tiny")
+   (set_attr "length" "     4,       4")]
+)
+
+;; zero-extend version of lshrsi3
+(define_insn "*lshrsi3_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r,r")
+        (zero_extend:DI (lshiftrt:SI (match_operand:SI 1 "register_operand" "r,r")
+                                     (match_operand:SI 2 "sat_shift_operand" "r,U06"))))]
+  ""
+  "srlw %0 = %1, %2"
+  [(set_attr "type" "alu_tiny,alu_tiny")
+   (set_attr "length" "     4,       4")]
+)
+
+;; zero-extend version of sshrsi3
+(define_insn "*sshrsi3_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r,r")
+        (zero_extend:DI (unspec:SI [(match_operand:SI 1 "register_operand" "r,r")
+                                    (match_operand:SI 2 "sat_shift_operand" "r,U06")] UNSPEC_SRS32)))]
+  ""
+  "srsw %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite")
+   (set_attr "length" "     4,       4")]
+)
 
 (define_insn "rotlsi3"
   [(set (match_operand:SI 0 "register_operand" "=r,r")
         (rotate:SI (match_operand:SI 1 "register_operand" "r,r")
                    (match_operand:SI 2 "rotate_operand" "r,U05")))]
+  ""
+  "rolw %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite")
+   (set_attr "length" "     4,       4")]
+)
+;; zero-extend version of rotlsi3
+(define_insn "*rotlsi3_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r,r")
+        (zero_extend:DI (rotate:SI (match_operand:SI 1 "register_operand" "r,r")
+                                   (match_operand:SI 2 "rotate_operand" "r,U05"))))]
   ""
   "rolw %0 = %1, %2"
   [(set_attr "type" "alu_lite,alu_lite")
@@ -977,11 +1095,31 @@
   [(set_attr "type" "alu_lite,alu_lite")
    (set_attr "length" "     4,       4")]
 )
+;; zero-extend version of rotrsi3
+(define_insn "*rotrsi3_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r,r")
+        (zero_extend:DI (rotatert:SI (match_operand:SI 1 "register_operand" "r,r")
+                                     (match_operand:SI 2 "rotate_operand" "r,U05"))))]
+  ""
+  "rorw %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite")
+   (set_attr "length" "     4,       4")]
+)
 
 (define_insn "avgsi3_floor"
   [(set (match_operand:SI 0 "register_operand" "=r,r")
         (unspec:SI [(match_operand:SI 1 "register_operand" "r,r")
                     (match_operand:SI 2 "register_s32_operand" "r,B32")] UNSPEC_AVGW))]
+  ""
+  "avgw %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "4,8")]
+)
+;; zero-extend version of avgsi3_floor
+(define_insn "*avgsi3_floor_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r,r")
+        (zero_extend:DI (unspec:SI [(match_operand:SI 1 "register_operand" "r,r")
+                                    (match_operand:SI 2 "register_s32_operand" "r,B32")] UNSPEC_AVGW)))]
   ""
   "avgw %0 = %1, %2"
   [(set_attr "type" "alu_lite,alu_lite_x")
@@ -997,6 +1135,16 @@
   [(set_attr "type" "alu_lite,alu_lite_x")
    (set_attr "length" "4,8")]
 )
+;; zero-extend version of avgsi3_ceil
+(define_insn "*avgsi3_ceil_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r,r")
+        (zero_extend:DI (unspec:SI [(match_operand:SI 1 "register_operand" "r,r")
+                                    (match_operand:SI 2 "register_s32_operand" "r,B32")] UNSPEC_AVGRW)))]
+  ""
+  "avgrw %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "4,8")]
+)
 
 (define_insn "uavgsi3_floor"
   [(set (match_operand:SI 0 "register_operand" "=r,r")
@@ -1007,11 +1155,31 @@
   [(set_attr "type" "alu_lite,alu_lite_x")
    (set_attr "length" "4,8")]
 )
+;; zero-extend version of uavgsi3_floor
+(define_insn "*uavgsi3_floor_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r,r")
+        (zero_extend:DI (unspec:SI [(match_operand:SI 1 "register_operand" "r,r")
+                                    (match_operand:SI 2 "register_s32_operand" "r,B32")] UNSPEC_AVGUW)))]
+  ""
+  "avguw %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "4,8")]
+)
 
 (define_insn "uavgsi3_ceil"
   [(set (match_operand:SI 0 "register_operand" "=r,r")
         (unspec:SI [(match_operand:SI 1 "register_operand" "r,r")
                     (match_operand:SI 2 "register_s32_operand" "r,B32")] UNSPEC_AVGRUW))]
+  ""
+  "avgruw %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "4,8")]
+)
+;; zero-extend version of uavgsi3_ceil
+(define_insn "*uavgsi3_ceil_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r,r")
+        (zero_extend:DI (unspec:SI [(match_operand:SI 1 "register_operand" "r,r")
+                                    (match_operand:SI 2 "register_s32_operand" "r,B32")] UNSPEC_AVGRUW)))]
   ""
   "avgruw %0 = %1, %2"
   [(set_attr "type" "alu_lite,alu_lite_x")
@@ -1048,10 +1216,55 @@
   [(set_attr "type" "alu_lite_x")
    (set_attr "length"        "8")]
 )
+;; zero-extend version of bswapsi2
+(define_insn "*bswapsi2_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (zero_extend:DI (bswap:SI (match_operand:SI 1 "register_operand" "r"))))]
+  ""
+  "sbmm8 %0 = %1, 0x01020408"
+  [(set_attr "type" "alu_lite_x")
+   (set_attr "length"        "8")]
+)
+
+;; zero-extend version of negsi2
+(define_insn "*negsi2_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (zero_extend:DI (neg:SI (match_operand:SI 1 "register_operand" "r"))))]
+  ""
+  "negw %0 = %1"
+  [(set_attr "type" "alu_tiny")]
+)
+
+;; zero-extend version of ssnegsi2
+(define_insn "*ssnegsi2_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (zero_extend:DI (ss_neg:SI (match_operand:SI 1 "register_operand" "r"))))]
+  ""
+  "sbfsw %0 = %1, 0"
+  [(set_attr "type" "alu_lite_x")
+   (set_attr "length"        "8")]
+)
+
+;; zero-extend version of abssi2
+(define_insn "*abssi2_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (zero_extend:DI (abs:SI (match_operand:SI 1 "register_operand" "r"))))]
+  ""
+  "absw %0 = %1"
+  [(set_attr "type" "alu_lite")]
+)
 
 (define_insn "clrsbsi2"
   [(set (match_operand:SI 0 "register_operand" "=r")
         (clrsb:SI (match_operand:SI 1 "register_operand" "r")))]
+  ""
+  "clsw %0 = %1"
+  [(set_attr "type" "alu_lite")]
+)
+;; zero-extend version of clrsbsi2
+(define_insn "*clrsbsi2_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (zero_extend:DI (clrsb:SI (match_operand:SI 1 "register_operand" "r"))))]
   ""
   "clsw %0 = %1"
   [(set_attr "type" "alu_lite")]
@@ -1064,10 +1277,26 @@
   "clzw %0 = %1"
   [(set_attr "type" "alu_lite")]
 )
+;; zero-extend version of clzsi2
+(define_insn "*clzsi2_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (zero_extend:DI (clz:SI (match_operand:SI 1 "register_operand" "r"))))]
+  ""
+  "clzw %0 = %1"
+  [(set_attr "type" "alu_lite")]
+)
 
 (define_insn "ctzsi2"
   [(set (match_operand:SI 0 "register_operand" "=r")
         (ctz:SI (match_operand:SI 1 "register_operand" "r")))]
+  ""
+  "ctzw %0 = %1"
+  [(set_attr "type" "alu_lite")]
+)
+;; zero-extend version of ctzsi2
+(define_insn "*ctzsi2_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (zero_extend:DI (ctz:SI (match_operand:SI 1 "register_operand" "r"))))]
   ""
   "ctzw %0 = %1"
   [(set_attr "type" "alu_lite")]
@@ -1080,10 +1309,26 @@
   "cbsw %0 = %1"
   [(set_attr "type" "alu_lite")]
 )
+;; zero-extend version of popcountsi2
+(define_insn "*popcountsi2_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (zero_extend:DI (popcount:SI (match_operand:SI 1 "register_operand" "r"))))]
+  ""
+  "cbsw %0 = %1"
+  [(set_attr "type" "alu_lite")]
+)
 
 (define_insn "one_cmplsi2"
   [(set (match_operand:SI 0 "register_operand" "=r")
         (not:SI (match_operand:SI 1 "register_operand" "r")))]
+  ""
+  "notw %0 = %1"
+  [(set_attr "type" "alu_tiny")]
+)
+;; zero-extend version of one_cmplsi2
+(define_insn "*one_cmplsi2_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (zero_extend:DI (not:SI (match_operand:SI 1 "register_operand" "r"))))]
   ""
   "notw %0 = %1"
   [(set_attr "type" "alu_tiny")]
@@ -2531,12 +2776,30 @@
   "fixedw.rz %0 = %1, 0"
   [(set_attr "type" "mau_fpu")]
 )
+;; zero-extend version of fix_truncsfsi2
+(define_insn "*fix_truncsfsi2_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (zero_extend:DI (fix:SI (match_operand:SF 1 "register_operand" "r"))))]
+  ""
+  "fixedw.rz %0 = %1, 0"
+  [(set_attr "type" "mau_fpu")]
+)
 
 (define_insn "kvx_fixedw"
   [(set (match_operand:SI 0 "register_operand" "=r")
         (unspec:SI [(match_operand:SF 1 "register_operand" "r")
                     (match_operand:SI 2 "sixbits_unsigned_operand" "i")
                     (match_operand 3 "" "")] UNSPEC_FIXEDW))]
+  ""
+  "fixedw%3 %0 = %1, %2"
+  [(set_attr "type" "mau_fpu")]
+)
+;; zero-extend version of kvx_fixedw
+(define_insn "*kvx_fixedw_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (zero_extend:DI (unspec:SI [(match_operand:SF 1 "register_operand" "r")
+                                    (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                                    (match_operand 3 "" "")] UNSPEC_FIXEDW)))]
   ""
   "fixedw%3 %0 = %1, %2"
   [(set_attr "type" "mau_fpu")]
@@ -2549,12 +2812,30 @@
   "fixeduw.rz %0 = %1, 0"
   [(set_attr "type" "mau_fpu")]
 )
+;; zero-extend version of fixuns_truncsfsi2
+(define_insn "*fixuns_truncsfsi2_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (zero_extend:DI (unsigned_fix:SI (match_operand:SF 1 "register_operand" "r"))))]
+  ""
+  "fixeduw.rz %0 = %1, 0"
+  [(set_attr "type" "mau_fpu")]
+)
 
 (define_insn "kvx_fixeduw"
   [(set (match_operand:SI 0 "register_operand" "=r")
         (unspec:SI [(match_operand:SF 1 "register_operand" "r")
                     (match_operand:SI 2 "sixbits_unsigned_operand" "i")
                     (match_operand 3 "" "")] UNSPEC_FIXEDUW))]
+  ""
+  "fixeduw%3 %0 = %1, %2"
+  [(set_attr "type" "mau_fpu")]
+)
+;; zero-extend version of kvx_fixeduw
+(define_insn "*kvx_fixeduw_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (zero_extend:DI (unspec:SI [(match_operand:SF 1 "register_operand" "r")
+                                    (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                                    (match_operand 3 "" "")] UNSPEC_FIXEDUW)))]
   ""
   "fixeduw%3 %0 = %1, %2"
   [(set_attr "type" "mau_fpu")]
