@@ -792,4 +792,6 @@ extern void kvx_profile_hook (void);
 
 extern GTY (()) rtx kvx_link_reg_rtx;
 
+extern GTY (()) rtx kvx_divmod_zero;
+
 #endif
