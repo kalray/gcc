@@ -531,6 +531,18 @@
 
 ;; SI
 
+(define_insn "kvx_selectw"
+  [(set (match_operand:SI 0 "register_operand" "=r")
+        (unspec:SI [(match_operand:SI 1 "register_operand" "r")
+                    (match_operand:SI 2 "register_operand" "0")
+                    (match_operand:SI 3 "register_operand" "r")
+                    (match_operand 4 "" "")] UNSPEC_SELECT32))]
+  ""
+  "cmoved%4 %3? %0 = %1"
+  [(set_attr "type" "alu_lite")
+   (set_attr "length"      "4")]
+)
+
 (define_insn "addsi3"
   [(set (match_operand:SI 0 "register_operand" "=r,r,r")
         (plus:SI (match_operand:SI 1 "register_operand" "r,r,r")
@@ -661,12 +673,219 @@
 (define_expand "divsi3"
   [(set (match_operand:SI 0 "register_operand" "")
         (div:SI (match_operand:SI 1 "register_operand" "")
-                (match_operand 2 "poweroftwo_6bits_immediate_operand" "")))]
+                (match_operand 2 "nonmemory_operand" "")))]
   ""
   {
-    HOST_WIDE_INT constant = INTVAL (operands[2]);
-    operands[2] = gen_rtx_CONST_INT (VOIDmode, __builtin_ctzll (constant));
-    emit_insn (gen_sshrsi3 (operands[0], operands[1], operands[2]));
+    if (poweroftwo_6bits_operand (operands[2], SImode))
+      {
+        HOST_WIDE_INT constant = INTVAL (operands[2]);
+        operands[2] = gen_rtx_CONST_INT (VOIDmode, __builtin_ctzll (constant));
+        emit_insn (gen_sshrsi3 (operands[0], operands[1], operands[2]));
+      }
+    else
+      {
+        operands[2] = force_reg (SImode, operands[2]);
+        rtx absa = gen_reg_rtx (SImode);
+        emit_insn (gen_abssi2 (absa, operands[1]));
+        rtx absb = gen_reg_rtx (SImode);
+        emit_insn (gen_abssi2 (absb, operands[2]));
+        rtx sign = gen_reg_rtx (SImode);
+        emit_insn (gen_xorsi3 (sign, operands[1], operands[2]));
+        emit_insn (gen_udivsi3 (operands[0], absa, absb));
+        rtx negated = gen_reg_rtx (SImode);
+        emit_insn (gen_negsi2 (negated, operands[0]));
+        rtx wltz = gen_rtx_CONST_STRING (VOIDmode, ".wltz");
+        emit_insn (gen_kvx_selectw (operands[0], negated, operands[0], sign, wltz));
+      }
+    DONE;
+  }
+)
+
+(define_expand "modsi3"
+  [(set (match_operand:SI 0 "register_operand" "")
+        (mod:SI (match_operand:SI 1 "register_operand" "")
+                (match_operand 2 "nonmemory_operand" "")))]
+  ""
+  {
+    if (poweroftwo_6bits_operand (operands[2], SImode))
+      {
+        HOST_WIDE_INT constant = INTVAL (operands[2]);
+        operands[2] = gen_rtx_CONST_INT (VOIDmode, __builtin_ctzll (constant));
+        rtx quo = gen_reg_rtx (SImode);
+        emit_insn (gen_sshrsi3 (quo, operands[1], operands[2]));
+        rtx temp = gen_reg_rtx (SImode);
+        emit_insn (gen_ashlsi3 (temp, quo, operands[2]));
+        emit_insn (gen_subsi3 (operands[0], operands[1], temp));
+      }
+    else
+      {
+        operands[2] = force_reg (SImode, operands[2]);
+        rtx absa = gen_reg_rtx (SImode);
+        emit_insn (gen_abssi2 (absa, operands[1]));
+        rtx absb = gen_reg_rtx (SImode);
+        emit_insn (gen_abssi2 (absb, operands[2]));
+        emit_insn (gen_umodsi3 (operands[0], absa, absb));
+        rtx negated = gen_reg_rtx (SImode);
+        emit_insn (gen_negsi2 (negated, operands[0]));
+        rtx wltz = gen_rtx_CONST_STRING (VOIDmode, ".wltz");
+        emit_insn (gen_kvx_selectw (operands[0], negated, operands[0], operands[1], wltz));
+      }
+    DONE;
+  }
+)
+
+(define_expand "udivsi3"
+  [(set (match_operand:SI 0 "register_operand" "")
+        (udiv:SI (match_operand:SI 1 "register_operand" "")
+                 (match_operand 2 "nonmemory_operand" "")))]
+  ""
+  {
+    if (poweroftwo_6bits_operand (operands[2], SImode))
+      {
+        HOST_WIDE_INT constant = INTVAL (operands[2]);
+        operands[2] = gen_rtx_CONST_INT (VOIDmode, __builtin_ctzll (constant));
+        emit_insn (gen_lshrsi3 (operands[0], operands[1], operands[2]));
+      }
+    else if (optimize_size)
+      {
+        rtx dest = emit_library_call_value (gen_rtx_SYMBOL_REF (Pmode, "__udivsi3"),
+                                            operands[0], LCT_CONST, SImode,
+                                            operands[1], SImode, operands[2], SImode);
+        if (dest != operands[0])
+          emit_move_insn (operands[0], dest);
+      }
+    else
+      {
+        operands[2] = force_reg (SImode, operands[2]);
+        rtx rns = gen_rtx_CONST_STRING (VOIDmode, ".rn.s");
+    // float floatb = (float)b;
+        rtx floatb = gen_reg_rtx (SFmode);
+        emit_insn (gen_kvx_floatuw (floatb, operands[2], const0_rtx, rns));
+    // float floatrec =  __builtin_kvx_frecw(floatb, ".rn.s");
+        rtx floatrec = gen_reg_rtx (SFmode);
+        emit_insn (gen_kvx_frecw (floatrec, floatb, rns));
+    // if ((b & (long)kvx_divmod_zero) == 0) __builtin_trap();
+        rtx divnez = gen_label_rtx ();
+        rtx pointer = gen_reg_rtx (Pmode);
+        rtx notrap = gen_reg_rtx (SImode);
+        emit_insn (gen_rtx_SET (pointer, kvx_divmod_zero));
+        emit_insn (gen_rtx_SET (notrap, gen_rtx_SUBREG (SImode, pointer, 0)));
+        emit_insn (gen_iorsi3 (notrap, operands[2], notrap));
+        profile_probability probnez = profile_probability::guessed_always ();
+        emit_cmp_and_jump_insns (notrap, const0_rtx, NE, NULL, SImode, 0, divnez, probnez);
+        expand_builtin_trap ();
+        emit_label (divnez);
+    // double doublerec = (double)floatrec;
+        rtx doublerec = gen_reg_rtx (DFmode);
+        rtx s = gen_rtx_CONST_STRING (VOIDmode, ".s");
+        emit_insn (gen_kvx_fwidenwd (doublerec, floatrec, s));
+    // double alpha = __builtin_kvx_ffmsxwd(floatrec, floatb, 1.0, ".rn.s");
+        rtx alpha = gen_reg_rtx (DFmode);
+        rtx onedf = copy_to_mode_reg (DFmode, const_double_from_real_value (dconst1, DFmode));
+        emit_insn (gen_kvx_ffmsxwd (alpha, floatrec, floatb, onedf, rns));
+    // double beta = __builtin_kvx_ffmad(alpha, doublerec, doublerec, ".rn.s");
+        rtx beta = gen_reg_rtx (DFmode);
+        emit_insn (gen_kvx_ffmad (beta, alpha, doublerec, doublerec, rns));
+    // double doublea = (double)a;
+        rtx doublea = gen_reg_rtx (DFmode);
+        rtx extenda = gen_reg_rtx (DImode);
+        emit_insn (gen_rtx_SET (extenda, gen_rtx_ZERO_EXTEND (DImode, operands[1])));
+        emit_insn (gen_kvx_floatud (doublea, extenda, const0_rtx, rns));
+    // double gamma = __builtin_kvx_fmuld(doublea, beta, ".rn.s");
+        rtx gamma = gen_reg_rtx (DFmode);
+        emit_insn (gen_kvx_fmuld (gamma, doublea, beta, rns));
+    // uint32_t quo = __builtin_kvx_fixedud(gamma, 0, ".rn.s");
+        rtx quo = gen_reg_rtx (SImode);
+        emit_insn (gen_kvx_fixedud (gen_rtx_SUBREG (DImode, quo, 0), gamma, const0_rtx, rns));
+    // int32_t rem = a - quo*b;
+        rtx rem = gen_reg_rtx (SImode);
+        emit_insn (gen_msubsisi4 (rem, quo, operands[2], operands[1]));
+    // uint32_t cond = rem >> 31;
+        rtx cond = gen_reg_rtx (SImode);
+        emit_insn (gen_ashrsi3 (cond, rem, GEN_INT (31)));
+    // uint32_t res = quo + cond;
+        emit_insn (gen_addsi3 (operands[0], quo, cond));
+    // return res;
+      }
+    DONE;
+  }
+)
+
+(define_expand "umodsi3"
+  [(set (match_operand:SI 0 "register_operand" "")
+        (umod:SI (match_operand:SI 1 "register_operand" "")
+                 (match_operand 2 "nonmemory_operand" "")))]
+  ""
+  {
+    if (poweroftwo_6bits_operand (operands[2], SImode))
+      {
+        HOST_WIDE_INT constant = INTVAL (operands[2]);
+        operands[2] = gen_rtx_CONST_INT (VOIDmode, constant - 1ULL);
+        emit_insn (gen_andsi3 (operands[0], operands[1], operands[2]));
+      }
+    else if (optimize_size)
+      {
+        rtx dest = emit_library_call_value (gen_rtx_SYMBOL_REF (Pmode, "__umodsi3"),
+                                            operands[0], LCT_CONST, SImode,
+                                            operands[1], SImode, operands[2], SImode);
+        if (dest != operands[0])
+          emit_move_insn (operands[0], dest);
+      }
+    else
+      {
+        operands[2] = force_reg (SImode, operands[2]);
+        rtx rns = gen_rtx_CONST_STRING (VOIDmode, ".rn.s");
+    // float floatb = (float)b;
+        rtx floatb = gen_reg_rtx (SFmode);
+        emit_insn (gen_kvx_floatuw (floatb, operands[2], const0_rtx, rns));
+    // float floatrec =  __builtin_kvx_frecw(floatb, ".rn.s");
+        rtx floatrec = gen_reg_rtx (SFmode);
+        emit_insn (gen_kvx_frecw (floatrec, floatb, rns));
+    // if ((b & (long)kvx_divmod_zero) == 0) __builtin_trap();
+        rtx divnez = gen_label_rtx ();
+        rtx pointer = gen_reg_rtx (Pmode);
+        rtx notrap = gen_reg_rtx (SImode);
+        emit_insn (gen_rtx_SET (pointer, kvx_divmod_zero));
+        emit_insn (gen_rtx_SET (notrap, gen_rtx_SUBREG (SImode, pointer, 0)));
+        emit_insn (gen_iorsi3 (notrap, operands[2], notrap));
+        profile_probability probnez = profile_probability::guessed_always ();
+        emit_cmp_and_jump_insns (notrap, const0_rtx, NE, NULL, SImode, 0, divnez, probnez);
+        expand_builtin_trap ();
+        emit_label (divnez);
+    // double doublerec = (double)floatrec;
+        rtx doublerec = gen_reg_rtx (DFmode);
+        rtx s = gen_rtx_CONST_STRING (VOIDmode, ".s");
+        emit_insn (gen_kvx_fwidenwd (doublerec, floatrec, s));
+    // double alpha = __builtin_kvx_ffmsxwd(floatrec, floatb, 1.0, ".rn.s");
+        rtx alpha = gen_reg_rtx (DFmode);
+        rtx onedf = copy_to_mode_reg (DFmode, const_double_from_real_value (dconst1, DFmode));
+        emit_insn (gen_kvx_ffmsxwd (alpha, floatrec, floatb, onedf, rns));
+    // double beta = __builtin_kvx_ffmad(alpha, doublerec, doublerec, ".rn.s");
+        rtx beta = gen_reg_rtx (DFmode);
+        emit_insn (gen_kvx_ffmad (beta, alpha, doublerec, doublerec, rns));
+    // double doublea = (double)a;
+        rtx doublea = gen_reg_rtx (DFmode);
+        rtx extenda = gen_reg_rtx (DImode);
+        emit_insn (gen_rtx_SET (extenda, gen_rtx_ZERO_EXTEND (DImode, operands[1])));
+        emit_insn (gen_kvx_floatud (doublea, extenda, const0_rtx, rns));
+    // double gamma = __builtin_kvx_fmuld(doublea, beta, ".rn.s");
+        rtx gamma = gen_reg_rtx (DFmode);
+        emit_insn (gen_kvx_fmuld (gamma, doublea, beta, rns));
+    // uint32_t quo = __builtin_kvx_fixedud(gamma, 0, ".rn.s");
+        rtx quo = gen_reg_rtx (SImode);
+        emit_insn (gen_kvx_fixedud (gen_rtx_SUBREG (DImode, quo, 0), gamma, const0_rtx, rns));
+    // int32_t rem = a - quo*b;
+        rtx rem = gen_reg_rtx (SImode);
+        emit_insn (gen_msubsisi4 (rem, quo, operands[2], operands[1]));
+    // uint32_t cond = rem >> 31;
+        rtx cond = gen_reg_rtx (SImode);
+        emit_insn (gen_ashrsi3 (cond, rem, GEN_INT (31)));
+    // uint32_t res = rem + (b & cond);
+        rtx temp = gen_reg_rtx (SImode);
+        emit_insn (gen_andsi3 (temp, operands[2], cond));
+        emit_insn (gen_addsi3 (operands[0], rem, temp));
+    // return res;
+      }
     DONE;
   }
 )
@@ -1346,6 +1565,18 @@
 
 ;; DI
 
+(define_insn "kvx_selectd"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (unspec:DI [(match_operand:DI 1 "register_operand" "r")
+                    (match_operand:DI 2 "register_operand" "0")
+                    (match_operand:DI 3 "register_operand" "r")
+                    (match_operand 4 "" "")] UNSPEC_SELECT64))]
+  ""
+  "cmoved%4 %3? %0 = %1"
+  [(set_attr "type" "alu_lite")
+   (set_attr "length"      "4")]
+)
+
 (define_insn "adddi3"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
         (plus:DI (match_operand:DI 1 "register_operand" "r,r,r,r")
@@ -1627,12 +1858,257 @@
 (define_expand "divdi3"
   [(set (match_operand:DI 0 "register_operand" "")
         (div:DI (match_operand:DI 1 "register_operand" "")
-                (match_operand 2 "poweroftwo_6bits_immediate_operand" "")))]
+                (match_operand 2 "nonmemory_operand" "")))]
   ""
   {
-    HOST_WIDE_INT constant = INTVAL (operands[2]);
-    operands[2] = gen_rtx_CONST_INT (VOIDmode, __builtin_ctzll (constant));
-    emit_insn (gen_sshrdi3 (operands[0], operands[1], operands[2]));
+    if (poweroftwo_6bits_operand (operands[2], DImode))
+      {
+        HOST_WIDE_INT constant = INTVAL (operands[2]);
+        operands[2] = gen_rtx_CONST_INT (VOIDmode, __builtin_ctzll (constant));
+        emit_insn (gen_sshrdi3 (operands[0], operands[1], operands[2]));
+      }
+    else
+      {
+        operands[2] = force_reg (DImode, operands[2]);
+        rtx absa = gen_reg_rtx (DImode);
+        emit_insn (gen_absdi2 (absa, operands[1]));
+        rtx absb = gen_reg_rtx (DImode);
+        emit_insn (gen_absdi2 (absb, operands[2]));
+        rtx sign = gen_reg_rtx (DImode);
+        emit_insn (gen_xordi3 (sign, operands[1], operands[2]));
+        emit_insn (gen_udivdi3 (operands[0], absa, absb));
+        rtx negated = gen_reg_rtx (DImode);
+        emit_insn (gen_negdi2 (negated, operands[0]));
+        rtx dltz = gen_rtx_CONST_STRING (VOIDmode, ".dltz");
+        emit_insn (gen_kvx_selectd (operands[0], negated, operands[0], sign, dltz));
+      }
+    DONE;
+  }
+)
+
+(define_expand "moddi3"
+  [(set (match_operand:DI 0 "register_operand" "")
+        (mod:DI (match_operand:DI 1 "register_operand" "")
+                (match_operand 2 "nonmemory_operand" "")))]
+  ""
+  {
+    if (poweroftwo_6bits_operand (operands[2], DImode))
+      {
+        HOST_WIDE_INT constant = INTVAL (operands[2]);
+        operands[2] = gen_rtx_CONST_INT (VOIDmode, __builtin_ctzll (constant));
+        rtx quo = gen_reg_rtx (DImode);
+        emit_insn (gen_sshrdi3 (quo, operands[1], operands[2]));
+        rtx temp = gen_reg_rtx (DImode);
+        emit_insn (gen_ashldi3 (temp, quo, operands[2]));
+        emit_insn (gen_subdi3 (operands[0], operands[1], temp));
+      }
+    else
+      {
+        operands[2] = force_reg (DImode, operands[2]);
+        rtx absa = gen_reg_rtx (DImode);
+        emit_insn (gen_absdi2 (absa, operands[1]));
+        rtx absb = gen_reg_rtx (DImode);
+        emit_insn (gen_absdi2 (absb, operands[2]));
+        emit_insn (gen_umoddi3 (operands[0], absa, absb));
+        rtx negated = gen_reg_rtx (DImode);
+        emit_insn (gen_negdi2 (negated, operands[0]));
+        rtx dltz = gen_rtx_CONST_STRING (VOIDmode, ".dltz");
+        emit_insn (gen_kvx_selectd (operands[0], negated, operands[0], operands[1], dltz));
+      }
+    DONE;
+  }
+)
+
+(define_expand "udivdi3"
+  [(set (match_operand:DI 0 "register_operand" "")
+        (udiv:DI (match_operand:DI 1 "register_operand" "")
+                 (match_operand 2 "nonmemory_operand" "")))]
+  ""
+  {
+    if (poweroftwo_6bits_operand (operands[2], DImode))
+      {
+        HOST_WIDE_INT constant = INTVAL (operands[2]);
+        operands[2] = gen_rtx_CONST_INT (VOIDmode, __builtin_ctzll (constant));
+        emit_insn (gen_lshrdi3 (operands[0], operands[1], operands[2]));
+      }
+    else if (optimize_size)
+      {
+        rtx dest = emit_library_call_value (gen_rtx_SYMBOL_REF (Pmode, "__udivdi3"),
+                                            operands[0], LCT_CONST, DImode,
+                                            operands[1], DImode, operands[2], DImode);
+        if (dest != operands[0])
+          emit_move_insn (operands[0], dest);
+      }
+    else
+      {
+        operands[2] = force_reg (DImode, operands[2]);
+        rtx rns = gen_rtx_CONST_STRING (VOIDmode, ".rn.s");
+    // double doublea = (double)a;
+        rtx doublea = gen_reg_rtx (DFmode);
+        emit_insn (gen_kvx_floatud (doublea, operands[1], const0_rtx, rns));
+    // double doubleb = (double)b;
+        rtx doubleb = gen_reg_rtx (DFmode);
+        emit_insn (gen_kvx_floatud (doubleb, operands[2], const0_rtx, rns));
+    // float floatb = (float)doubleb;
+        rtx floatb = gen_reg_rtx (SFmode);
+        emit_insn (gen_kvx_fnarrowdw (floatb, doubleb, rns));
+    // float floatrec = __builtin_kvx_frecw(floatb, ".rn.s");
+        rtx floatrec = gen_reg_rtx (SFmode);
+        emit_insn (gen_kvx_frecw (floatrec, floatb, rns));
+    // if ((b & (long)kvx_divmod_zero) == 0) __builtin_trap();
+        rtx divnez = gen_label_rtx ();
+        rtx pointer = gen_reg_rtx (Pmode);
+        rtx notrap = gen_reg_rtx (DImode);
+        emit_insn (gen_rtx_SET (pointer, kvx_divmod_zero));
+        emit_insn (gen_rtx_SET (notrap, gen_rtx_SUBREG (DImode, pointer, 0)));
+        emit_insn (gen_iordi3 (notrap, operands[2], notrap));
+        profile_probability probnez = profile_probability::guessed_always ();
+        emit_cmp_and_jump_insns (notrap, const0_rtx, NE, NULL, DImode, 0, divnez, probnez);
+        expand_builtin_trap ();
+        emit_label (divnez);
+    // double doublerec = (double)floatrec;
+        rtx doublerec = gen_reg_rtx (DFmode);
+        rtx s = gen_rtx_CONST_STRING (VOIDmode, ".s");
+        emit_insn (gen_kvx_fwidenwd (doublerec, floatrec, s));
+    // uint64_t q0 = __builtin_kvx_fixedud(doublerec * doublea, 0, ".rn.s");
+        rtx q0 = gen_reg_rtx (DImode);
+        rtx doublerec_doublea = gen_reg_rtx (DFmode);
+        emit_insn (gen_kvx_fmuld (doublerec_doublea, doublerec, doublea, rns));
+        emit_insn (gen_kvx_fixedud (q0, doublerec_doublea, const0_rtx, rns));
+    // int64_t a1 = a - q0 * b;
+        rtx a1 = gen_reg_rtx (DImode);
+        emit_insn (gen_msubdidi4 (a1, q0, operands[2], operands[1]));
+    // double alpha = __builtin_kvx_ffmsd(doubleb, doublerec, 1.0, ".rn.s");
+        rtx alpha = gen_reg_rtx (DFmode);
+        rtx onedf = copy_to_mode_reg (DFmode, const_double_from_real_value (dconst1, DFmode));
+        emit_insn (gen_kvx_ffmsd (alpha, doubleb, doublerec, onedf, rns));
+    // double beta = __builtin_kvx_ffmad(alpha, doublerec, doublerec, ".rn.s");
+        rtx beta = gen_reg_rtx (DFmode);
+        emit_insn (gen_kvx_ffmad (beta, alpha, doublerec, doublerec, rns));
+    // double gamma = __builtin_kvx_fmuld(beta, (double)a1, ".rn.s");
+        rtx gamma = gen_reg_rtx (DFmode);
+        rtx doublea1 = gen_reg_rtx (DFmode);
+        emit_insn (gen_kvx_floatd (doublea1, a1, const0_rtx, rns));
+        emit_insn (gen_kvx_fmuld (gamma, doublea1, beta, rns));
+    // int64_t q1 = __builtin_kvx_fixedd(gamma, 0, ".rn.s");
+        rtx q1 = gen_reg_rtx (DImode);
+        emit_insn (gen_kvx_fixedd (q1, gamma, const0_rtx, rns));
+    // int64_t rem = a1 - q1 * b;
+        rtx rem = gen_reg_rtx (DImode);
+        emit_insn (gen_msubdidi4 (rem, q1, operands[2], a1));
+    // uint64_t quo = q0 + q1;
+        rtx quo = gen_reg_rtx (DImode);
+        emit_insn (gen_adddi3 (quo, q0, q1));
+    // uint64_t cond = rem >> 63;
+        rtx cond = gen_reg_rtx (DImode);
+        emit_insn (gen_ashrdi3 (cond, rem, GEN_INT (63)));
+    // uint64_t res = quo + cond;
+        rtx res = gen_reg_rtx (DImode);
+        emit_insn (gen_adddi3 (res, quo, cond));
+    // return a < b? 0: res;
+        rtx comp = gen_reg_rtx (DImode);
+        rtx dnez = gen_rtx_CONST_STRING (VOIDmode, ".dnez");
+        emit_insn (gen_cstoredi4 (comp, gen_rtx_LTU (DImode, operands[1], operands[2]), operands[1], operands[2]));
+        emit_insn (gen_kvx_selectd (operands[0], copy_to_mode_reg (DImode, const0_rtx), res, comp, dnez));
+      }
+    DONE;
+  }
+)
+
+(define_expand "umoddi3"
+  [(set (match_operand:DI 0 "register_operand" "")
+        (umod:DI (match_operand:DI 1 "register_operand" "")
+                 (match_operand 2 "nonmemory_operand" "")))]
+  ""
+  {
+    if (poweroftwo_6bits_operand (operands[2], DImode))
+      {
+        HOST_WIDE_INT constant = INTVAL (operands[2]);
+        operands[2] = gen_rtx_CONST_INT (VOIDmode, constant - 1ULL);
+        emit_insn (gen_anddi3 (operands[0], operands[1], operands[2]));
+      }
+    else if (optimize_size)
+      {
+        rtx dest = emit_library_call_value (gen_rtx_SYMBOL_REF (Pmode, "__umoddi3"),
+                                            operands[0], LCT_CONST, DImode,
+                                            operands[1], DImode, operands[2], DImode);
+        if (dest != operands[0])
+          emit_move_insn (operands[0], dest);
+      }
+    else
+      {
+        operands[2] = force_reg (DImode, operands[2]);
+        rtx rns = gen_rtx_CONST_STRING (VOIDmode, ".rn.s");
+    // double doublea = (double)a;
+        rtx doublea = gen_reg_rtx (DFmode);
+        emit_insn (gen_kvx_floatud (doublea, operands[1], const0_rtx, rns));
+    // double doubleb = (double)b;
+        rtx doubleb = gen_reg_rtx (DFmode);
+        emit_insn (gen_kvx_floatud (doubleb, operands[2], const0_rtx, rns));
+    // float floatb = (float)doubleb;
+        rtx floatb = gen_reg_rtx (SFmode);
+        emit_insn (gen_kvx_fnarrowdw (floatb, doubleb, rns));
+    // float floatrec = __builtin_kvx_frecw(floatb, ".rn.s");
+        rtx floatrec = gen_reg_rtx (SFmode);
+        emit_insn (gen_kvx_frecw (floatrec, floatb, rns));
+    // if ((b & (long)kvx_divmod_zero) == 0) __builtin_trap();
+        rtx divnez = gen_label_rtx ();
+        rtx pointer = gen_reg_rtx (Pmode);
+        rtx notrap = gen_reg_rtx (DImode);
+        emit_insn (gen_rtx_SET (pointer, kvx_divmod_zero));
+        emit_insn (gen_rtx_SET (notrap, gen_rtx_SUBREG (DImode, pointer, 0)));
+        emit_insn (gen_iordi3 (notrap, operands[2], notrap));
+        profile_probability probnez = profile_probability::guessed_always ();
+        emit_cmp_and_jump_insns (notrap, const0_rtx, NE, NULL, DImode, 0, divnez, probnez);
+        expand_builtin_trap ();
+        emit_label (divnez);
+    // double doublerec = (double)floatrec;
+        rtx doublerec = gen_reg_rtx (DFmode);
+        rtx s = gen_rtx_CONST_STRING (VOIDmode, ".s");
+        emit_insn (gen_kvx_fwidenwd (doublerec, floatrec, s));
+    // uint64_t q0 = __builtin_kvx_fixedud(doublerec * doublea, 0, ".rn.s");
+        rtx q0 = gen_reg_rtx (DImode);
+        rtx doublerec_doublea = gen_reg_rtx (DFmode);
+        emit_insn (gen_kvx_fmuld (doublerec_doublea, doublerec, doublea, rns));
+        emit_insn (gen_kvx_fixedud (q0, doublerec_doublea, const0_rtx, rns));
+    // int64_t a1 = a - q0 * b;
+        rtx a1 = gen_reg_rtx (DImode);
+        emit_insn (gen_msubdidi4 (a1, q0, operands[2], operands[1]));
+    // double alpha = __builtin_kvx_ffmsd(doubleb, doublerec, 1.0, ".rn.s");
+        rtx alpha = gen_reg_rtx (DFmode);
+        rtx onedf = copy_to_mode_reg (DFmode, const_double_from_real_value (dconst1, DFmode));
+        emit_insn (gen_kvx_ffmsd (alpha, doubleb, doublerec, onedf, rns));
+    // double beta = __builtin_kvx_ffmad(alpha, doublerec, doublerec, ".rn.s");
+        rtx beta = gen_reg_rtx (DFmode);
+        emit_insn (gen_kvx_ffmad (beta, alpha, doublerec, doublerec, rns));
+    // double gamma = __builtin_kvx_fmuld(beta, (double)a1, ".rn.s");
+        rtx gamma = gen_reg_rtx (DFmode);
+        rtx doublea1 = gen_reg_rtx (DFmode);
+        emit_insn (gen_kvx_floatd (doublea1, a1, const0_rtx, rns));
+        emit_insn (gen_kvx_fmuld (gamma, doublea1, beta, rns));
+    // int64_t q1 = __builtin_kvx_fixedd(gamma, 0, ".rn.s");
+        rtx q1 = gen_reg_rtx (DImode);
+        emit_insn (gen_kvx_fixedd (q1, gamma, const0_rtx, rns));
+    // int64_t rem = a1 - q1 * b;
+        rtx rem = gen_reg_rtx (DImode);
+        emit_insn (gen_msubdidi4 (rem, q1, operands[2], a1));
+    // uint64_t quo = q0 + q1;
+        rtx quo = gen_reg_rtx (DImode);
+        emit_insn (gen_adddi3 (quo, q0, q1));
+    // uint64_t cond = rem >> 63;
+        rtx cond = gen_reg_rtx (DImode);
+        emit_insn (gen_ashrdi3 (cond, rem, GEN_INT (63)));
+    // uint64_t res = rem + (b & cond);
+        rtx res = gen_reg_rtx (DImode);
+        rtx temp = gen_reg_rtx (DImode);
+        emit_insn (gen_anddi3 (temp, operands[2], cond));
+        emit_insn (gen_adddi3 (res, rem, temp));
+    // return a < b? a: res;
+        rtx comp = gen_reg_rtx (DImode);
+        rtx dnez = gen_rtx_CONST_STRING (VOIDmode, ".dnez");
+        emit_insn (gen_cstoredi4 (comp, gen_rtx_LTU (DImode, operands[1], operands[2]), operands[1], operands[2]));
+        emit_insn (gen_kvx_selectd (operands[0], operands[1], res, comp, dnez));
+      }
     DONE;
   }
 )
@@ -2432,19 +2908,14 @@
   [(set_attr "type" "alu_lite")]
 )
 
-(define_insn "kvx_fwidenlhw"
+(define_insn "kvx_fwidenhw"
   [(set (match_operand:SF 0 "register_operand" "=r")
-        (unspec:SF [(match_operand:SI 1 "register_operand" "r")] UNSPEC_FWIDENLHW))]
+        (unspec:SF [(match_operand:HF 1 "register_operand" "r")
+                    (match_operand 2 "" "")] UNSPEC_FWIDEN16))]
   ""
-  "fwidenlhw %0 = %1"
-[(set_attr "type" "alu_lite")])
-
-(define_insn "kvx_fwidenmhw"
-  [(set (match_operand:SF 0 "register_operand" "=r")
-        (unspec:SF [(match_operand:SI 1 "register_operand" "r")] UNSPEC_FWIDENMHW))]
-  ""
-  "fwidenmhw %0 = %1"
-[(set_attr "type" "alu_lite")])
+  "fwidenlhw%2 %0 = %1"
+  [(set_attr "type" "alu_lite")]
+)
 
 (define_expand "extendhfdf2"
   [(set (match_operand:DF 0 "register_operand" "")
@@ -2850,10 +3321,11 @@
 )
 
 (define_insn "kvx_fnarrowwh"
-  [(set (match_operand:HI 0 "register_operand" "=r")
-        (unspec:HI [(match_operand:SF 1 "register_operand" "r")] UNSPEC_FNARROWWH))]
+  [(set (match_operand:HF 0 "register_operand" "=r")
+        (unspec:HF [(match_operand:SF 1 "register_operand" "r")
+                    (match_operand 2 "" "")] UNSPEC_FNARROW16))]
   ""
-  "fnarrowwh %0 = %1"
+  "fnarrowwh%2 %0 = %1"
   [(set_attr "type" "alu_lite")]
 )
 
@@ -2862,6 +3334,15 @@
         (float_extend:DF (match_operand:SF 1 "register_operand" "r")))]
   ""
   "fwidenlwd %0 = %1"
+  [(set_attr "type" "alu_lite")]
+)
+
+(define_insn "kvx_fwidenwd"
+  [(set (match_operand:DF 0 "register_operand" "=r")
+        (unspec:DF [(match_operand:SF 1 "register_operand" "r")
+                    (match_operand 2 "" "")] UNSPEC_FWIDEN32))]
+  ""
+  "fwidenlwd%2 %0 = %1"
   [(set_attr "type" "alu_lite")]
 )
 
@@ -3256,6 +3737,15 @@
         (float_truncate:SF (match_operand:DF 1 "register_operand" "r")))]
   ""
   "fnarrowdw %0 = %1"
+  [(set_attr "type" "alu_full")]
+)
+
+(define_insn "kvx_fnarrowdw"
+  [(set (match_operand:SF 0 "register_operand" "=r")
+        (unspec:SF [(match_operand:DF 1 "register_operand" "r")
+                    (match_operand 2 "" "")] UNSPEC_FNARROW32))]
+  ""
+  "fnarrowdw%2 %0 = %1"
   [(set_attr "type" "alu_full")]
 )
 
