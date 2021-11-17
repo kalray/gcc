@@ -43,6 +43,10 @@ fsched2-dates
 Target Report Mask(SCHED2_DATES)
 Display sched2 schedule dates in assembly output (active by default)
 
+fdivmod0-trap
+Target Report Mask(DIVMOD0_TRAP)
+Trigger trap in case of integer division/modulus by zero (active by default).
+
 fstrict-align
 Target Report Mask(STRICT_ALIGN)
 Do not generate misaligned memory accesses 
