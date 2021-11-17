@@ -4646,6 +4646,16 @@
    (set_attr "length" "        8,          8")]
 )
 
+(define_insn "kvx_stsudp"
+  [(set (match_operand:V2DI 0 "register_operand" "=r")
+        (unspec:V2DI [(match_operand:V2DI 1 "register_operand" "r")
+                      (match_operand:V2DI 2 "register_operand" "r")] UNSPEC_STSUDP))]
+  ""
+  "stsud %x0 = %x1, %x2\n\tstsud %y0 = %y1, %y2"
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
 
 ;; S256I (V16HI V8SI)
 

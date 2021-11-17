@@ -21,6 +21,8 @@ along with GCC; see the file COPYING3.  If not see
 #ifndef KVX_PROTOS_H
 #define KVX_PROTOS_H
 
+void expand_builtin_trap (void);
+
 #ifdef HAVE_ATTR_arch
 extern enum attr_arch kvx_arch_schedule;
 #endif
@@ -184,6 +186,8 @@ enum kvx_symbol_type
 };
 
 extern GTY (()) rtx kvx_link_reg_rtx;
+
+extern GTY (()) rtx kvx_divmod_zero;
 
 #endif
 #endif
