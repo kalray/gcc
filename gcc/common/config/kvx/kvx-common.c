@@ -59,6 +59,6 @@ static const struct default_options kvx_option_optimization_table[] =
 #undef TARGET_EXCEPT_UNWIND_INFO
 #define TARGET_EXCEPT_UNWIND_INFO sjlj_except_unwind_info
 #undef TARGET_DEFAULT_TARGET_FLAGS
-#define TARGET_DEFAULT_TARGET_FLAGS (MASK_HWLOOP | MASK_SCHED2_DATES)
+#define TARGET_DEFAULT_TARGET_FLAGS (MASK_HWLOOP | MASK_SCHED2_DATES | MASK_DIVMOD0_TRAP)
 
 struct gcc_targetm_common targetm_common = TARGETM_COMMON_INITIALIZER;

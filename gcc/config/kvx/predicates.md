@@ -51,7 +51,7 @@
   return (INTVAL (op) >= 0 && INTVAL (op) < (1<<6));
 })
 
-(define_predicate "poweroftwo_6bits_immediate_operand"
+(define_predicate "poweroftwo_6bits_operand"
   (match_code "const_int")
 {
   return (__builtin_popcountll (INTVAL (op)) == 1)
@@ -82,8 +82,8 @@
   bool farcall = kvx_is_farcall_p (op);
 
   return  !farcall && (GET_CODE (XEXP (op, 0)) == LABEL_REF
-		       || (GET_CODE (XEXP (op, 0)) == SYMBOL_REF
-			   && !SYMBOL_REF_WEAK (XEXP (op, 0))));
+                       || (GET_CODE (XEXP (op, 0)) == SYMBOL_REF
+                             && !SYMBOL_REF_WEAK (XEXP (op, 0))));
 })
 
 ;; Integer comparison operators against integer zero.
@@ -124,20 +124,17 @@
 {
   rtx base, offset;
   split_const (op, &base, &offset);
-
   /* Allow for (const (plus (sym) (const_int offset))) */
   switch (GET_CODE (base))
     {
     case SYMBOL_REF:
       /* TLS symbols are not constant.  */
       // if (SYMBOL_REF_TLS_MODEL (op))
-      // 	return false;
+      //   return false;
       return true;
-
     case LABEL_REF:
       /* For certain code models, the code is near as well.  */
       return true;
-
     case UNSPEC:
       if (XINT (base, 1) == UNSPEC_GOTOFF
           || XINT (base, 1) == UNSPEC_GOT
@@ -147,13 +144,11 @@
           || XINT (base, 1) == UNSPEC_TLS_IE
           || XINT (base, 1) == UNSPEC_TLS_LE
           || XINT (base, 1) == UNSPEC_PCREL)
-	  return true;
+          return true;
       break;
-
     default:
-	gcc_unreachable ();
+        gcc_unreachable ();
     }
-
   return false;
 })
 
@@ -175,7 +170,7 @@
   (match_code "reg,subreg,mem")
 {
   return ((reload_in_progress || reload_completed)
-	  ? general_operand : register_operand) (op, mode);
+          ? general_operand : register_operand) (op, mode);
 })
 
 (define_predicate "system_register_operand"
