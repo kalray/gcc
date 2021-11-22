@@ -1103,7 +1103,7 @@ match_operands(const kv3opc_t * op, const expressionS * tok,
     /* Now check for compatiblility of each operand. */
     for (jj = 0; jj < ntok; jj++) {
         int operand_type = op->format[jj]->type;
-        char *operand_type_name = op->format[jj]->tname;
+        const char *operand_type_name = op->format[jj]->tname;
         // int has_relocation = (op->format[jj]->reloc_nb > 0);
         int is_immediate = (op->format[jj]->reg_nb == 0);
 
@@ -1292,7 +1292,7 @@ find_format(const kv3opc_t * opcode,
         const expressionS * tok,
         int ntok)
 {
-    char *name = opcode->as_op;
+    const char *name = opcode->as_op;
     const kv3opc_t *t = opcode;
 
     while (STREQ(name, t->as_op)){
@@ -1864,12 +1864,12 @@ insn_syntax(kv3opc_t *op, char *buf, int buf_size)
 {
   int chars = snprintf(buf, buf_size, "%s ",op->as_op);
   int i;
-  char *fmtp = op->fmtstring;
+  const char *fmtp = op->fmtstring;
   char ch = 0;
 
   for (i = 0; op->format[i]; i++) {
     int type  = op->format[i]->type;
-    char *type_name  = op->format[i]->tname;
+    const char *type_name  = op->format[i]->tname;
     int flags = op->format[i]->flags;
     int width = op->format[i]->width;
 
@@ -2390,12 +2390,13 @@ static int kvxop_compar(const void *a, const void *b)
 /*    INITIALIZE ASSEMBLER                          */
 /***************************************************/
 
-
-static void
-print_hash(const char *key,  __attribute__((unused)) PTR val){
-  printf("%s\n", key);
+static int
+print_hash(void **slot, void *arg ATTRIBUTE_UNUSED)
+{
+  string_tuple_t *tuple = *((string_tuple_t **) slot);
+  printf("%s\n", tuple->key);
+  return 0;
 }
- 
 
 void
 md_begin()
@@ -2428,16 +2429,14 @@ md_begin()
     {
         kv3opc_t *op;
         const char *name = 0;
-        const char *retval = 0;
         for (op = kvx_core_info->optab; !(STREQ("", op->as_op)) ; op++) {
             /* enter in hash table if this is a new name */
 
             if (!(STREQ(name, op->as_op))) {
                 name = op->as_op;
-                retval = str_hash_insert(kvx_opcode_hash, name, (PTR) op, 0);
-                if (retval)
-                    as_fatal("internal error: can't hash opcode `%s': %s",
-                            name, retval);
+                if(str_hash_insert(kvx_opcode_hash, name, (PTR) op, 0)) {
+                    as_fatal("internal error: can't hash opcode `%s'", name);
+                }
             }
         }
     }

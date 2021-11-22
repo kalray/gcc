@@ -1046,7 +1046,7 @@ elfNN_kvx_setup_section_lists (bfd *output_bfd,
   struct elf_kvx_link_hash_table *htab =
     elf_kvx_hash_table (info);
 
-  if (!is_elf_hash_table (htab))
+  if (!is_elf_hash_table ((const struct bfd_link_hash_table *)htab))
     return 0;
 
   /* Count the number of input BFDs and find the top input section id.  */
