@@ -131,6 +131,9 @@ typedef struct {
 typedef void (*print_insn_t)(kv3opc_t *op);
 static print_insn_t print_insn = NULL;
 
+/* Set to TRUE when we assemble instructions.  */
+static bool assembling_insn = false;
+
 typedef enum {MATCH_NOT_FOUND=0, MATCH_FOUND=1} match_operands_code;
 
 #define NOIMMX -1
@@ -175,7 +178,12 @@ kvx_target_format (void)
 /*             Local Variables                      */
 /****************************************************/
 
-static htab_t *kvx_opcode_hash;
+/* The hash table of instruction opcodes.  */
+static htab_t kvx_opcode_hash;
+
+/* The hash table of register symbols.  */
+static htab_t kvx_reg_hash;
+
 
 /****************************************************/
 /*  ASSEMBLER Pseudo-ops.  Some of this just        */
@@ -714,6 +722,36 @@ struct option md_longopts[] =
 };
 
 size_t md_longopts_size = sizeof (md_longopts);
+
+/* This function is called from the function 'expression', it attempts
+   to parse special names (in our case register names).  It fills in
+   the expression with the identified register.  It returns true if
+   it is a register and false otherwise.  */
+
+bool
+kvx_parse_name (const char *name,
+		struct expressionS *e)
+{
+  struct symbol *sym;
+
+  if (!assembling_insn) {
+    return false;
+  }
+
+  if (e->X_op == O_symbol
+      && e->X_md == O_absent) {
+    return false;
+  }
+
+  sym = str_hash_find (kvx_reg_hash, name);
+  if (sym) {
+    e->X_op = O_register;
+    e->X_add_number = S_GET_VALUE (sym);
+    return true;
+  }
+
+  return false;
+}
 
 int md_parse_option(int c, const char *arg ATTRIBUTE_UNUSED) {
   int i;
@@ -2333,6 +2371,8 @@ md_assemble(char *s)
 
     t += i;
 
+    assembling_insn = true;
+
     /* parse arguments             */
     if ((ntok = tokenize_arguments(t, tok, tok_begins, KVXMAXOPERANDS)) < 0) {
       if(error_str != NULL) {
@@ -2347,6 +2387,7 @@ md_assemble(char *s)
     inside_bundle = 1;
     /* build an instruction record */
     assemble_tokens(opname, tok, ntok);
+    assembling_insn = false;
 }
 
 static void
@@ -2398,6 +2439,16 @@ print_hash(void **slot, void *arg ATTRIBUTE_UNUSED)
   return 0;
 }
 
+static void
+declare_register (const char *name, int number)
+{
+  symbolS *regS = symbol_create (name, reg_section,
+				 &zero_address_frag, number);
+
+  if (str_hash_insert (kvx_reg_hash, S_GET_NAME (regS), regS, 0) != NULL)
+    as_fatal (_("duplicate %s"), name);
+}
+
 void
 md_begin()
 {
@@ -2406,10 +2457,13 @@ md_begin()
 
 
     /*
-     * alias register names with symbols
+     * Declare register names with symbols
      */
+
+    kvx_reg_hash = str_htab_create();
+
     for(i = 0; i < kvx_regfiles[KVX_REGFILE_REGISTERS]; i++) {
-      symbol_table_insert(symbol_create(kvx_registers[i].name, reg_section, i, &zero_address_frag));
+      declare_register (kvx_registers[i].name, i);
     }
 
     /* Sort optab, so that identical mnemonics appear consecutively */
@@ -2465,33 +2519,32 @@ md_begin()
     bfd_set_section_alignment(bss_section, 2);        /* -- 4 bytes */
     subseg_set(text_section, 0);
 
-    symbolS *gotoff_sym = symbol_create (".<gotoff>", undefined_section, 0,
-                                         &zero_address_frag);
-    symbolS *got_sym = symbol_create (".<got>", undefined_section, 0,
-                                      &zero_address_frag);
-    symbolS *plt_sym = symbol_create (".<plt>", undefined_section, 0,
-                                      &zero_address_frag);
+    symbolS *gotoff_sym = symbol_create (".<gotoff>", undefined_section,
+                                         &zero_address_frag, 0);
+    symbolS *got_sym = symbol_create (".<got>", undefined_section,
+                                      &zero_address_frag, 0);
+    symbolS *plt_sym = symbol_create (".<plt>", undefined_section,
+                                      &zero_address_frag, 0);
     /* symbolS *tprel_sym = symbol_create (".<tprel>", undefined_section, 0, */
     /*                                     &zero_address_frag); */
-    symbolS *tlsgd_sym = symbol_create (".<tlsgd>", undefined_section, 0,
-                                        &zero_address_frag);
-    symbolS *tlsie_sym = symbol_create (".<tlsie>", undefined_section, 0,
-                                        &zero_address_frag);
-    symbolS *tlsle_sym = symbol_create (".<tlsle>", undefined_section, 0,
-                                        &zero_address_frag);
-    symbolS *tlsld_sym = symbol_create (".<tlsld>", undefined_section, 0,
-                                        &zero_address_frag);
-    symbolS *dtpoff_sym = symbol_create (".<dtpoff>", undefined_section, 0,
-                                        &zero_address_frag);
-    symbolS *plt64_sym = symbol_create (".<plt64>", undefined_section, 0,
-					&zero_address_frag);
-    symbolS *gotaddr_sym = symbol_create (".<gotaddr>", undefined_section, 0,
-					  &zero_address_frag);
-    symbolS *pcrel16_sym = symbol_create (".<pcrel16>", undefined_section, 0,
-					  &zero_address_frag);
-    symbolS *pcrel_sym = symbol_create (".<pcrel>", undefined_section, 0,
-					  &zero_address_frag);
-
+    symbolS *tlsgd_sym = symbol_create (".<tlsgd>", undefined_section,
+                                        &zero_address_frag, 0);
+    symbolS *tlsie_sym = symbol_create (".<tlsie>", undefined_section,
+                                        &zero_address_frag, 0);
+    symbolS *tlsle_sym = symbol_create (".<tlsle>", undefined_section,
+                                        &zero_address_frag, 0);
+    symbolS *tlsld_sym = symbol_create (".<tlsld>", undefined_section,
+                                        &zero_address_frag, 0);
+    symbolS *dtpoff_sym = symbol_create (".<dtpoff>", undefined_section,
+                                        &zero_address_frag, 0);
+    symbolS *plt64_sym = symbol_create (".<plt64>", undefined_section,
+					&zero_address_frag, 0);
+    symbolS *gotaddr_sym = symbol_create (".<gotaddr>", undefined_section,
+					  &zero_address_frag, 0);
+    symbolS *pcrel16_sym = symbol_create (".<pcrel16>", undefined_section,
+					  &zero_address_frag, 0);
+    symbolS *pcrel_sym = symbol_create (".<pcrel>", undefined_section,
+					  &zero_address_frag, 0);
 
     for (i = 0; i < NELEMS (pseudo_func); ++i) {
       symbolS *sym;

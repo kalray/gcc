@@ -144,6 +144,11 @@ extern int kvx_force_reloc_sub_same (struct fix *, segT);
 #define TC_FIX_ADJUSTABLE(fixP) \
   (! symbol_used_in_reloc_p ((fixP)->fx_addsy) && tc_fix_adjustable (fixP))
 
+/* This hook is required to parse register names as operands.  */
+extern bool kvx_parse_name (const char *, struct expressionS *);
+#define md_parse_name(name, exp, m, c) kvx_parse_name (name, exp)
+
+
 extern void kvx_validate_fix (struct fix *);
 #define TC_VALIDATE_FIX(fix,seg,skip)	kvx_validate_fix (fix)
 
