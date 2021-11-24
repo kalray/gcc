@@ -28,7 +28,7 @@ config BR2_ENDIAN
 	default "LITTLE"
 
 config BR2_READELF_ARCH_NAME
-	default "Kalray VLIW Processor"
+	default "Kalray VLIW core of the MPPA processor family"
 
 config BR2_GCC_TARGET_ARCH
 	string
