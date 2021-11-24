@@ -85,6 +85,8 @@ int is_constant_expression(expressionS*);
 #define LISTING_LHS_CONT_LINES 100
 #define md_start_line_hook kvx_md_start_line_hook
 extern void kvx_md_start_line_hook (void);
+#define md_emit_single_noop kvx_emit_single_noop()
+extern void kvx_emit_single_noop (void);
 
 /* Values passed to md_apply_fix3 don't include the symbol value.  */
 #define MD_APPLY_SYM_VALUE(FIX) 0

@@ -3106,6 +3106,29 @@ kvx_frob_label(symbolS * sym) {
     }
 }
 
+/* Emit single bundle nop. This is needed by .nop asm directive
+ * Have to manage end of bundle done usually by start_line_hook
+ * using BE pseudo op
+ */
+void
+kvx_emit_single_noop(void) {
+     char *nop;
+     char *end_of_bundle;
+
+     if (asprintf (&nop, "nop") < 0)
+	  as_fatal ("%s", xstrerror (errno));
+
+     if (asprintf (&end_of_bundle, "be") < 0)
+	  as_fatal ("%s", xstrerror (errno));
+
+     char *saved_ilp = input_line_pointer;
+     md_assemble (nop);
+     md_assemble (end_of_bundle);
+     input_line_pointer = saved_ilp;
+     free (nop);
+     free (end_of_bundle);
+}
+
 /*  edit out some syntactic sugar that confuses GAS       */
 /*  input_line_pointer is guaranteed to point to the      */
 /*  the current line but may include text from following  */
