@@ -355,9 +355,6 @@
 #define EM_LOONGARCH	258	/* LoongArch */
 #define EM_KF32		259	/* ChipON KungFu32 */
 
-/* The number has been attributed officially but we are still waiting for publication */
-#define EM_KVX          256     /* Kalray VLIW core of the MPPA processor family */
-
 /* If it is necessary to assign new unofficial EM_* values, please pick large
    random numbers (0x8523, 0xa7f2, etc.) to minimize the chances of collision
    with official or non-GNU unofficial values.
