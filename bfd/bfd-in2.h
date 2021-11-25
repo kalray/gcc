@@ -5596,6 +5596,7 @@ by these enumerators; make sure they are all synced.";  */
   BFD_RELOC_KVX_S43_TLS_LE_LO10,
   BFD_RELOC_KVX_S43_TLS_LE_UP27,
   BFD_RELOC_KVX_S43_TLS_LE_EX6,
+  BFD_RELOC_KVX_8,
 
 /* KVX pseudo relocation code to mark the end of the KVX
 relocation enumerators that have direct mapping to ELF reloc codes.

@@ -1069,6 +1069,19 @@ static reloc_howto_type elf_kvx_howto_table[] =
 	 0x0,				/* src_mask */
 	 0x3f,			/* dst_mask */
 	 false),			/* pc_offset */
+  HOWTO (R_KVX_8,			/* type */
+	 0,				/* rightshift */
+	 0,				/* size (0 = byte, 1 = short, 2 = long, 3 = invalid, 4 = 64bits, 8 = 128bits) */
+	 8,				/* bitsize */
+	 false,				/* pc_relative */
+	 0,				/* bitpos (bit field offset) */
+	 complain_overflow_unsigned,	/* complain_on_overflow */
+	 bfd_elf_generic_reloc,		/* special_function */
+	 "R_KVX_8",			/* name */
+	 false,				/* partial_inplace */
+	 0x0,				/* src_mask */
+	 0xff,			/* dst_mask */
+	 false),			/* pc_offset */
   EMPTY_HOWTO(0),
 };
 

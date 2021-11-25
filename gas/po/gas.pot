@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: bug-binutils@gnu.org\n"
-"POT-Creation-Date: 2021-11-19 14:05+0100\n"
+"POT-Creation-Date: 2021-11-25 12:18+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1088,7 +1088,7 @@ msgstr ""
 msgid "symbol type \"%s\" is supported only by GNU targets"
 msgstr ""
 
-#: config/obj-elf.c:2418 config/tc-kvx.c:3665
+#: config/obj-elf.c:2418 config/tc-kvx.c:3283
 #, c-format
 msgid "unrecognized symbol type \"%s\""
 msgstr ""
@@ -2097,7 +2097,8 @@ msgid "branch target not word aligned"
 msgstr ""
 
 #: config/tc-aarch64.c:8274 config/tc-arm.c:925 config/tc-arm.c:29836
-#: config/tc-mips.c:16069 config/tc-mips.c:16085 config/tc-mips.c:16175
+#: config/tc-kvx.c:2721 config/tc-kvx.c:2727 config/tc-mips.c:16069
+#: config/tc-mips.c:16085 config/tc-mips.c:16175
 msgid "branch out of range"
 msgstr ""
 
@@ -2619,17 +2620,17 @@ msgstr ""
 #: config/tc-crx.c:516 config/tc-crx.c:538 config/tc-crx.c:549
 #: config/tc-dlx.c:289 config/tc-hppa.c:8246 config/tc-i386.c:3071
 #: config/tc-i386.c:3123 config/tc-ia64.c:5380 config/tc-ia64.c:7418
-#: config/tc-ia64.c:7477 config/tc-m68k.c:4574 config/tc-m68k.c:4586
-#: config/tc-mips.c:3700 config/tc-mips.c:3733 config/tc-mips.c:3759
-#: config/tc-nds32.c:3439 config/tc-nios2.c:3624 config/tc-nios2.c:3629
-#: config/tc-nios2.c:3635 config/tc-ns32k.c:1906 config/tc-ppc.c:1708
-#: config/tc-ppc.c:1746 config/tc-ppc.c:1785 config/tc-ppc.c:1824
-#: config/tc-ppc.c:1842 config/tc-pru.c:1569 config/tc-pru.c:1573
-#: config/tc-s390.c:538 config/tc-s390.c:576 config/tc-sparc.c:961
-#: config/tc-sparc.c:993 config/tc-tic30.c:121 config/tc-tic30.c:131
-#: config/tc-tic30.c:141 config/tc-tic30.c:151 config/tc-tic4x.c:1215
-#: config/tc-tilegx.c:316 config/tc-tilepro.c:252 config/tc-vax.c:965
-#: config/tc-vax.c:970 ecoff.c:1582
+#: config/tc-ia64.c:7477 config/tc-kvx.c:2449 config/tc-m68k.c:4574
+#: config/tc-m68k.c:4586 config/tc-mips.c:3700 config/tc-mips.c:3733
+#: config/tc-mips.c:3759 config/tc-nds32.c:3439 config/tc-nios2.c:3624
+#: config/tc-nios2.c:3629 config/tc-nios2.c:3635 config/tc-ns32k.c:1906
+#: config/tc-ppc.c:1708 config/tc-ppc.c:1746 config/tc-ppc.c:1785
+#: config/tc-ppc.c:1824 config/tc-ppc.c:1842 config/tc-pru.c:1569
+#: config/tc-pru.c:1573 config/tc-s390.c:538 config/tc-s390.c:576
+#: config/tc-sparc.c:961 config/tc-sparc.c:993 config/tc-tic30.c:121
+#: config/tc-tic30.c:131 config/tc-tic30.c:141 config/tc-tic30.c:151
+#: config/tc-tic4x.c:1215 config/tc-tilegx.c:316 config/tc-tilepro.c:252
+#: config/tc-vax.c:965 config/tc-vax.c:970 ecoff.c:1582
 #, c-format
 msgid "duplicate %s"
 msgstr ""
@@ -2832,12 +2833,11 @@ msgstr ""
 #: config/tc-h8300.c:87 config/tc-h8300.c:97 config/tc-h8300.c:107
 #: config/tc-h8300.c:117 config/tc-h8300.c:128 config/tc-h8300.c:242
 #: config/tc-hppa.c:6820 config/tc-hppa.c:6826 config/tc-hppa.c:6832
-#: config/tc-hppa.c:6838 config/tc-hppa.c:8225 config/tc-kvx.c:2498
-#: config/tc-kvx.c:2514 config/tc-kvx.c:2517 config/tc-kvx.c:2524
-#: config/tc-kvx.c:2527 config/tc-lm32.c:197 config/tc-mips.c:3690
-#: config/tc-mips.c:4187 config/tc-mn10300.c:935 config/tc-mn10300.c:940
-#: config/tc-mn10300.c:2440 config/tc-riscv.c:1221 config/tc-riscv.c:3878
-#: config/tc-xc16x.c:79 config/tc-xc16x.c:86 config/tc-xc16x.c:93
+#: config/tc-hppa.c:6838 config/tc-hppa.c:8225 config/tc-kvx.c:2420
+#: config/tc-lm32.c:197 config/tc-mips.c:3690 config/tc-mips.c:4187
+#: config/tc-mn10300.c:935 config/tc-mn10300.c:940 config/tc-mn10300.c:2440
+#: config/tc-riscv.c:1221 config/tc-riscv.c:3878 config/tc-xc16x.c:79
+#: config/tc-xc16x.c:86 config/tc-xc16x.c:93
 msgid "could not set architecture and machine"
 msgstr ""
 

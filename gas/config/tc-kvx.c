@@ -2700,6 +2700,7 @@ md_apply_fix(fixS * fixP, valueT * valueP,
   if (fixP->fx_done) {
     switch (fixP->fx_r_type)
       {
+      case BFD_RELOC_8:
       case BFD_RELOC_16:
       case BFD_RELOC_32:
       case BFD_RELOC_64:
@@ -2847,6 +2848,7 @@ kvx_validate_sub_fix(fixS *fixP)
 
     switch (fixP->fx_r_type)
     {
+        case BFD_RELOC_8:
         case BFD_RELOC_16:
         case BFD_RELOC_32:
             if (fixP->fx_addsy != NULL)
@@ -2892,10 +2894,6 @@ kvx_cons_fix_new(fragS *f, int where, int nbytes, expressionS *exp, bfd_reloc_co
     {
       switch (nbytes)
         {
-          /* [SC] We have no relocation for BFD_RELOC_8, but accept it
-           * here in case we can later eliminate the fixup (in md_apply_fix).
-           * This is required to pass the gas test forward.s.
-           */
         case 1:
           code = BFD_RELOC_8;
           break;

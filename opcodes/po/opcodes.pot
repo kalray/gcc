@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: bug-binutils@gnu.org\n"
-"POT-Creation-Date: 2021-11-19 11:00+0100\n"
+"POT-Creation-Date: 2021-11-25 12:18+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -26,7 +26,7 @@ msgid "specified register cannot be written to"
 msgstr ""
 
 #. Invalid option.
-#: aarch64-dis.c:94 arc-dis.c:802 arm-dis.c:11652
+#: aarch64-dis.c:94 arc-dis.c:802 arm-dis.c:11652 kv3-dis.c:330
 #, c-format
 msgid "unrecognised disassembler option: %s"
 msgstr ""
@@ -75,7 +75,7 @@ msgid ""
 msgstr ""
 
 #: aarch64-dis.c:3610 arc-dis.c:1551 arc-dis.c:1572 arc-dis.c:1575
-#: mips-dis.c:2807 mips-dis.c:2817 mips-dis.c:2820 nfp-dis.c:2981
+#: kv3-dis.c:713 mips-dis.c:2807 mips-dis.c:2817 mips-dis.c:2820 nfp-dis.c:2981
 #: riscv-dis.c:655
 #, c-format
 msgid "\n"
@@ -1443,6 +1443,37 @@ msgstr ""
 #: iq2000-desc.c:2127
 #, c-format
 msgid "internal error: iq2000_cgen_cpu_open: no endianness specified"
+msgstr ""
+
+#: kv3-dis.c:700
+#, c-format
+msgid ""
+"\n"
+"The following KVX specific disassembler options are supported for use\n"
+"with the -M switch (multiple options should be separated by commas):\n"
+msgstr ""
+
+#: kv3-dis.c:704
+#, c-format
+msgid ""
+"\n"
+"  pretty               Print 32-bit words in natural order corresponding to "
+"re-ordered instruction.\n"
+msgstr ""
+
+#: kv3-dis.c:707
+#, c-format
+msgid ""
+"\n"
+"  compact-assembly     Do not emit a new line between bundles of "
+"instructions.\n"
+msgstr ""
+
+#: kv3-dis.c:710
+#, c-format
+msgid ""
+"\n"
+"  no-compact-assembly  Emit a new line between bundles of instructions.\n"
 msgstr ""
 
 #: lm32-asm.c:166

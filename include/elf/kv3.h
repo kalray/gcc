@@ -107,6 +107,7 @@ START_RELOC_NUMBERS (elf_kvx_reloc_type)
     RELOC_NUMBER (R_KVX_S43_TLS_LE_LO10,                      79)
     RELOC_NUMBER (R_KVX_S43_TLS_LE_UP27,                      80)
     RELOC_NUMBER (R_KVX_S43_TLS_LE_EX6,                       81)
+    RELOC_NUMBER (R_KVX_8,                                    82)
 END_RELOC_NUMBERS (R_KVX_end)
 
 #include "kv3_elfids.h"

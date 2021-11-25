@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: bug-binutils@gnu.org\n"
-"POT-Creation-Date: 2021-11-19 11:48+0100\n"
+"POT-Creation-Date: 2021-11-25 12:18+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -99,7 +99,7 @@ msgstr ""
 #: elfxx-ia64.c:324 elfxx-riscv.c:970 elfxx-sparc.c:589 elfxx-sparc.c:639
 #: elfxx-tilegx.c:907 elfxx-tilegx.c:947 elfnn-aarch64.c:2215
 #: elfnn-aarch64.c:2313 elfnn-ia64.c:214 elfnn-ia64.c:3820
-#: ../../bfd/elfnn-kvx.c:178 ../../bfd/elfnn-kvx.c:269
+#: ../../bfd/elfnn-kvx.c:176 ../../bfd/elfnn-kvx.c:268
 #, c-format
 msgid "%pB: unsupported relocation type %#x"
 msgstr ""
@@ -950,7 +950,7 @@ msgstr ""
 #: elf32-m68k.c:3929 elf32-s390.c:3080 elf32-sh.c:3671 elf32-tilepro.c:3275
 #: elf32-xtensa.c:3024 elf64-s390.c:3029 elf64-x86-64.c:4085 elfxx-sparc.c:2917
 #: elfxx-sparc.c:3814 elfxx-tilegx.c:3665 elfnn-aarch64.c:5501
-#: elfnn-aarch64.c:7104 ../../bfd/elfnn-kvx.c:2857
+#: elfnn-aarch64.c:7104 ../../bfd/elfnn-kvx.c:2801
 #, c-format
 msgid "%pB(%pA+%#<PRIx64>): unresolvable %s relocation against symbol `%s'"
 msgstr ""
@@ -973,7 +973,7 @@ msgid "internal error: suspicious relocation type used in shared library"
 msgstr ""
 
 #: elf-m10300.c:2650 elf32-avr.c:2486 elf32-frv.c:5621 elf64-ia64-vms.c:365
-#: elfxx-sparc.c:2684 reloc.c:8464 reloc16.c:155 elfnn-ia64.c:365
+#: elfxx-sparc.c:2684 reloc.c:8466 reloc16.c:155 elfnn-ia64.c:365
 msgid "%P%F: --relax and -r may not be used together\n"
 msgstr ""
 
@@ -1589,14 +1589,14 @@ msgstr ""
 
 #: elf32-arm.c:4822 elf32-arm.c:6968 elf32-csky.c:3400 elf32-hppa.c:582
 #: elf32-m68hc1x.c:164 elf32-metag.c:1180 elf32-nios2.c:2201 elf64-ppc.c:3827
-#: elf64-ppc.c:13638 elfnn-aarch64.c:3187 ../../bfd/elfnn-kvx.c:955
+#: elf64-ppc.c:13638 elfnn-aarch64.c:3187 ../../bfd/elfnn-kvx.c:908
 #, c-format
 msgid "%pB: cannot create stub entry %s"
 msgstr ""
 
 #: elf32-arm.c:5043 elf32-csky.c:3742 elf32-hppa.c:732 elf32-m68hc11.c:422
 #: elf32-m68hc12.c:542 elf32-metag.c:3345 elf32-nios2.c:2494 elf64-ppc.c:11473
-#: elfnn-aarch64.c:3256 ../../bfd/elfnn-kvx.c:990
+#: elfnn-aarch64.c:3256 ../../bfd/elfnn-kvx.c:943
 msgid ""
 "%F%P: Could not assign '%pA' to an output section. Retry without --enable-"
 "non-contiguous-regions.\n"
@@ -1818,29 +1818,29 @@ msgid "%pB(%pA+%#<PRIx64>): %s relocation against SEC_MERGE section"
 msgstr ""
 
 #: elf32-arm.c:13321 elf32-m68k.c:3966 elf32-xtensa.c:2762 elfnn-aarch64.c:6831
-#: ../../bfd/elfnn-kvx.c:2653
+#: ../../bfd/elfnn-kvx.c:2597
 #, c-format
 msgid "%pB(%pA+%#<PRIx64>): %s used with TLS symbol %s"
 msgstr ""
 
 #: elf32-arm.c:13323 elf32-m68k.c:3968 elf32-xtensa.c:2764 elfnn-aarch64.c:6833
-#: ../../bfd/elfnn-kvx.c:2655
+#: ../../bfd/elfnn-kvx.c:2599
 #, c-format
 msgid "%pB(%pA+%#<PRIx64>): %s used with non-TLS symbol %s"
 msgstr ""
 
 #: elf32-arm.c:13406 elf32-tic6x.c:2649 elfnn-aarch64.c:7168
-#: ../../bfd/elfnn-kvx.c:2882
+#: ../../bfd/elfnn-kvx.c:2826
 msgid "out of range"
 msgstr ""
 
 #: elf32-arm.c:13410 elf32-nios2.c:4516 elf32-pru.c:936 elf32-tic6x.c:2653
-#: elfnn-aarch64.c:7172 ../../bfd/elfnn-kvx.c:2886
+#: elfnn-aarch64.c:7172 ../../bfd/elfnn-kvx.c:2830
 msgid "unsupported relocation"
 msgstr ""
 
 #: elf32-arm.c:13418 elf32-nios2.c:4526 elf32-pru.c:946 elf32-tic6x.c:2661
-#: elfnn-aarch64.c:7180 ../../bfd/elfnn-kvx.c:2894
+#: elfnn-aarch64.c:7180 ../../bfd/elfnn-kvx.c:2838
 msgid "unknown error"
 msgstr ""
 
@@ -2081,7 +2081,7 @@ msgstr ""
 #: elf32-arm.c:15285 elf32-arm.c:15419 elf32-i386.c:1524 elf32-s390.c:923
 #: elf32-tic6x.c:2724 elf32-tilepro.c:1435 elf32-xtensa.c:1094 elf64-s390.c:845
 #: elf64-x86-64.c:1900 elfxx-sparc.c:1386 elfxx-tilegx.c:1662
-#: elfnn-aarch64.c:7608 ../../bfd/elfnn-kvx.c:3329 elfnn-riscv.c:660
+#: elfnn-aarch64.c:7608 ../../bfd/elfnn-kvx.c:3272 elfnn-riscv.c:660
 #, c-format
 msgid "%pB: bad symbol index: %d"
 msgstr ""
@@ -3124,7 +3124,7 @@ msgstr ""
 msgid "%pB: unmatched OMIT_FP in %pA"
 msgstr ""
 
-#: elf32-nds32.c:13143 elfxx-mips.c:13407 reloc.c:8690
+#: elf32-nds32.c:13143 elfxx-mips.c:13407 reloc.c:8692
 #, c-format
 msgid "%X%P: %pB(%pA): relocation \"%pR\" goes out of range\n"
 msgstr ""
@@ -3928,7 +3928,7 @@ msgid "warning: %pB and %pB differ in whether code is compiled for DSBT"
 msgstr ""
 
 #: elf32-tilepro.c:3627 elfxx-tilegx.c:4017 elfxx-x86.c:1397
-#: elfnn-aarch64.c:9711 ../../bfd/elfnn-kvx.c:4829 elfnn-riscv.c:3253
+#: elfnn-aarch64.c:9711 ../../bfd/elfnn-kvx.c:4658 elfnn-riscv.c:3253
 #, c-format
 msgid "discarded output section: `%pA'"
 msgstr ""
@@ -5404,17 +5404,17 @@ msgid ""
 "consider using `-Ttext-segment=...'"
 msgstr ""
 
-#: elfxx-mips.c:13316 reloc.c:8612
+#: elfxx-mips.c:13316 reloc.c:8614
 #, c-format
 msgid "%X%P: %pB(%pA): error: relocation for offset %V has no value\n"
 msgstr ""
 
-#: elfxx-mips.c:13417 reloc.c:8700
+#: elfxx-mips.c:13417 reloc.c:8702
 #, c-format
 msgid "%X%P: %pB(%pA): relocation \"%pR\" is not supported\n"
 msgstr ""
 
-#: elfxx-mips.c:13426 reloc.c:8709
+#: elfxx-mips.c:13426 reloc.c:8711
 #, c-format
 msgid "%X%P: %pB(%pA): relocation \"%pR\" returns an unrecognized value %x\n"
 msgstr ""
@@ -6442,17 +6442,17 @@ msgstr ""
 msgid "Partition[%d] length = 0x%.8lx (%ld)\n"
 msgstr ""
 
-#: reloc.c:8511
+#: reloc.c:8513
 msgid "INPUT_SECTION_FLAGS are not supported"
 msgstr ""
 
-#: reloc.c:8771
+#: reloc.c:8773
 #, c-format
 msgid "%pB: unrecognized relocation type %#x in section `%pA'"
 msgstr ""
 
 #. PR 21803: Suggest the most likely cause of this error.
-#: reloc.c:8775
+#: reloc.c:8777
 #, c-format
 msgid "is this version of the linker - %s - out of date ?"
 msgstr ""
@@ -8654,7 +8654,7 @@ msgstr ""
 msgid "%pB: conditional branch to undefined symbol `%s' not allowed"
 msgstr ""
 
-#: elfnn-aarch64.c:5992 ../../bfd/elfnn-kvx.c:2459
+#: elfnn-aarch64.c:5992 ../../bfd/elfnn-kvx.c:2407
 #, c-format
 msgid ""
 "%pB: local symbol descriptor table be NULL when applying relocation %s "
@@ -8683,59 +8683,59 @@ msgid ""
 "%pB: relocation %s against `%s' can not be used when making a shared object"
 msgstr ""
 
-#: ../../bfd/elfnn-kvx.c:2196
+#: ../../bfd/elfnn-kvx.c:2144
 #, c-format
-msgid "%pB(%pA+%#<PRIx64>): unresolvable %s relocation in section `%pA'"
+msgid "%pB(%pA+%#<PRIx64>): unresolvable %s relocation in section `%s'"
 msgstr ""
 
-#: ../../bfd/elfnn-kvx.c:2933
+#: ../../bfd/elfnn-kvx.c:2877
 #, c-format
 msgid "%s: Bad ELF id: `%d'"
 msgstr ""
 
-#: ../../bfd/elfnn-kvx.c:2989
+#: ../../bfd/elfnn-kvx.c:2933
 #, c-format
 msgid "%s: compiled as 32-bit object and %s is 64-bit"
 msgstr ""
 
-#: ../../bfd/elfnn-kvx.c:2992
+#: ../../bfd/elfnn-kvx.c:2936
 #, c-format
 msgid "%s: compiled as 64-bit object and %s is 32-bit"
 msgstr ""
 
-#: ../../bfd/elfnn-kvx.c:2994
+#: ../../bfd/elfnn-kvx.c:2938
 #, c-format
 msgid "%s: object size does not match that of target %s"
 msgstr ""
 
 #. Ignore init flag - it may not be set, despite the flags field
 #. containing valid data.
-#: ../../bfd/elfnn-kvx.c:3082
+#: ../../bfd/elfnn-kvx.c:3026
 #, c-format
 msgid "Private flags = 0x%lx : "
 msgstr ""
 
-#: ../../bfd/elfnn-kvx.c:3086
+#: ../../bfd/elfnn-kvx.c:3030
 #, c-format
 msgid "Coolidge (kv3) V1 64 bits"
 msgstr ""
 
-#: ../../bfd/elfnn-kvx.c:3088
+#: ../../bfd/elfnn-kvx.c:3032
 #, c-format
 msgid "Coolidge (kv3) V2 64 bits"
 msgstr ""
 
-#: ../../bfd/elfnn-kvx.c:3093
+#: ../../bfd/elfnn-kvx.c:3037
 #, c-format
 msgid "Coolidge (kv3) V1 32 bits"
 msgstr ""
 
-#: ../../bfd/elfnn-kvx.c:3095
+#: ../../bfd/elfnn-kvx.c:3039
 #, c-format
 msgid "Coolidge (kv3) V2 32 bits"
 msgstr ""
 
-#: ../../bfd/elfnn-kvx.c:3943
+#: ../../bfd/elfnn-kvx.c:3878
 #, c-format
 msgid "relocation against `%s' has faulty GOT type "
 msgstr ""

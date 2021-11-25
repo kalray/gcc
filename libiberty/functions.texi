@@ -165,7 +165,7 @@ not recommended.
 
 @end deftypefn
 
-@c make-temp-file.c:95
+@c make-temp-file.c:93
 @deftypefn Replacement const char* choose_tmpdir ()
 
 Returns a pointer to a directory path suitable for creating temporary
@@ -192,7 +192,7 @@ Concatenate zero or more of strings and return the result in freshly
 
 @end deftypefn
 
-@c argv.c:495
+@c argv.c:498
 @deftypefn Extension int countargv (char * const *@var{argv})
 
 Return the number of elements in @var{argv}.
@@ -726,7 +726,7 @@ relative prefix can be found, return @code{NULL}.
 
 @end deftypefn
 
-@c make-temp-file.c:173
+@c make-temp-file.c:170
 @deftypefn Replacement char* make_temp_file (const char *@var{suffix})
 
 Return a temporary file name (as a string) or @code{NULL} if unable to
