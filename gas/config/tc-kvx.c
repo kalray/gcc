@@ -284,10 +284,11 @@ const pseudo_typeS md_pseudo_table[] =
 
 struct kvx_pseudo_relocs {
   enum {
+        S32_LO5_UP27,
         S37_LO10_UP27,
         S43_LO10_UP27_EX6,
         S64_LO10_UP27_EX27,
-	S16,
+        S16,
         S32,
         S64,
   } reloc_type;
@@ -298,15 +299,15 @@ struct kvx_pseudo_relocs {
      Enum values should match the kvx_arch_size var set by -m32
   */
   enum {
-	PSEUDO_ALL = 0,
-	PSEUDO_32_ONLY = 32,
-	PSEUDO_64_ONLY = 64,
+        PSEUDO_ALL = 0,
+        PSEUDO_32_ONLY = 32,
+        PSEUDO_64_ONLY = 64,
   } avail_modes;
 
   /* set to 1 when pseudo func does not take an argument */
   int has_no_arg;
 
-  bfd_reloc_code_real_type reloc_lo10, reloc_up27, reloc_ex;
+  bfd_reloc_code_real_type reloc_lo5, reloc_lo10, reloc_up27, reloc_ex;
   bfd_reloc_code_real_type single;
   kvx_reloc_t *kreloc;
 };
@@ -322,6 +323,19 @@ struct pseudo_func_s
 static struct pseudo_func_s pseudo_func[] =
   {
    // reloc pseudo functions:
+   {
+    .name = "signed32",
+    .pseudo_relocs =
+    {
+     .avail_modes = PSEUDO_ALL,
+     .bitsize = 32,
+     .reloc_type = S32_LO5_UP27,
+     .reloc_lo5 = BFD_RELOC_KVX_S32_LO5,
+     .reloc_up27 = BFD_RELOC_KVX_S32_UP27,
+     .single = BFD_RELOC_UNUSED,
+     .kreloc = &kv3_signed32_reloc,
+    }
+   },
    {
     .name = "gotoff",
     .pseudo_relocs =
@@ -730,7 +744,7 @@ size_t md_longopts_size = sizeof (md_longopts);
 
 bool
 kvx_parse_name (const char *name,
-		struct expressionS *e)
+                struct expressionS *e)
 {
   struct symbol *sym;
 
@@ -889,11 +903,11 @@ kvx_get_pseudo_func2(symbolS *sym, kvxbfield *opnd) {
     if (sym == pseudo_func[i].sym) {
       int relidx;
       for(relidx=0; relidx < opnd->reloc_nb; relidx++) {
-	if(opnd->relocs[relidx] == pseudo_func[i].pseudo_relocs.kreloc
+        if(opnd->relocs[relidx] == pseudo_func[i].pseudo_relocs.kreloc
            && (kvx_arch_size == (int) pseudo_func[i].pseudo_relocs.avail_modes
-	       || pseudo_func[i].pseudo_relocs.avail_modes == PSEUDO_ALL)) {
-	  return &pseudo_func[i];
-	}
+               || pseudo_func[i].pseudo_relocs.avail_modes == PSEUDO_ALL)) {
+          return &pseudo_func[i];
+        }
       }
     }
 
@@ -1068,7 +1082,7 @@ has_relocation_of_size(const kvxbfield *opnd) {
          OK. We don't currently have several relocations for such insns */
     case KVX_REL_PC:
       if (opnd->reloc_nb == 1)
-	return 1;
+        return 1;
       break;
 
       /* These relocations should be handled elsewhere with pseudo functions */
@@ -1161,15 +1175,7 @@ match_operands(const kv3opc_t * op, const expressionS * tok,
             }
           }
           if (tok[jj].X_op == O_pseudo_fixup) {
-            int i;
-            for (i = 0; i < NELEMS(pseudo_func); i++){
-              if (tok[jj].X_op_symbol == pseudo_func[i].sym){
-                if (kvx_get_pseudo_func2(pseudo_func[i].sym, op->format[jj]) != NULL) {
-                  break;
-                }
-              }
-            }
-            if (i == NELEMS(pseudo_func)) {
+            if (kvx_get_pseudo_func2(tok[jj].X_op_symbol, op->format[jj]) == NULL) {
               return MATCH_NOT_FOUND;
             }
           }
@@ -1185,10 +1191,10 @@ match_operands(const kv3opc_t * op, const expressionS * tok,
                 MATCH_KVX_REGFILE(tok[jj],IS_KVX_REGFILE_QGR)
             case RegClass_kv3_systemReg:
             case RegClass_v2_systemReg:
-		 if( ! allow_all_sfr ) {
-		      /* If option all-sfr not set, doest not match systemReg for SET/GET/WFX: used only for HW validation. */
-		      return MATCH_NOT_FOUND;
-		 }
+                if( ! allow_all_sfr ) {
+                    /* If option all-sfr not set, doest not match systemReg for SET/GET/WFX: used only for HW validation. */
+                    return MATCH_NOT_FOUND;
+                }
                  /* fallthrough */
             case RegClass_kv3_aloneReg:
             case RegClass_v2_aloneReg:
@@ -1199,8 +1205,8 @@ match_operands(const kv3opc_t * op, const expressionS * tok,
             case RegClass_v2_onlygetReg:
             case RegClass_kv3_onlysetReg:
             case RegClass_v2_onlysetReg:
-	    case RegClass_kv3_onlyswapReg:
-	    case RegClass_v2_onlyswapReg:
+            case RegClass_kv3_onlyswapReg:
+            case RegClass_v2_onlyswapReg:
                 MATCH_KVX_REGFILE(tok[jj],IS_KVX_REGFILE_SFR)
             case RegClass_kv3_coproReg:
             case RegClass_kv3_coproReg0M4:
@@ -1408,13 +1414,29 @@ insert_operand(kvxinsn_t * insn,
               insn->len -= 1;
               incr_immxcnt();
               immx_ready = 1;
+            } else if (pf->pseudo_relocs.reloc_type == S32_LO5_UP27) {
+              insn->fixup[insn->nfixups].reloc = pf->pseudo_relocs.reloc_lo5;
+              insn->fixup[insn->nfixups].exp = reloc_arg;
+              insn->fixup[insn->nfixups].where = 0;
+              insn->nfixups++;
+
+              insn->immx0 = immxcnt;
+              immxbuf[immxcnt].words[0] = 0;
+              immxbuf[immxcnt].fixup[0].reloc = pf->pseudo_relocs.reloc_up27;
+              immxbuf[immxcnt].fixup[0].exp = reloc_arg;
+              immxbuf[immxcnt].fixup[0].where = 0;
+              immxbuf[immxcnt].nfixups = 1;
+              immxbuf[immxcnt].len = 1;
+
+              insn->len -= 1;
+              incr_immxcnt();
+              immx_ready = 1;
             } else if (pf->pseudo_relocs.reloc_type == S16) {
               insn->fixup[insn->nfixups].reloc = pf->pseudo_relocs.single;
               insn->fixup[insn->nfixups].exp = reloc_arg;
               insn->fixup[insn->nfixups].where = 0;
               insn->nfixups++;
-
-	    } else {
+            } else {
               as_fatal ("Unexpected fixup");
             }
 
@@ -1714,11 +1736,11 @@ emit_insn (kvxinsn_t *insn, int insn_pos, int stopflag)
       insn->fixup[i].exp.X_add_number += insn_pos * 4;
 
     fixS* fixup = fix_new_exp(frag_now,
-			      f - frag_now->fr_literal + insn->fixup[i].where,
+                              f - frag_now->fr_literal + insn->fixup[i].where,
                               size,
-			      &(insn->fixup[i].exp),
-			      pcrel,
-			      insn->fixup[i].reloc);
+                              &(insn->fixup[i].exp),
+                              pcrel,
+                              insn->fixup[i].reloc);
     /*
      * Set this bit so that large value can still be
      * handled. Without it, assembler will fail in fixup_segment
@@ -1797,39 +1819,39 @@ md_operand(expressionS *e)
       /* pseudo_type = 0; */
       ch = *++input_line_pointer;
       for (i = 0; i < NELEMS (pseudo_func); ++i)
-	if (pseudo_func[i].name && pseudo_func[i].name[0] == ch)
-	  {
-	    len = strlen (pseudo_func[i].name);
-	    if (strncmp (pseudo_func[i].name + 1,
-			 input_line_pointer + 1, len - 1) == 0
-		&& !is_part_of_name (input_line_pointer[len]))
-	      {
-		input_line_pointer += len;
-		break;
-	      }
-	  }
+        if (pseudo_func[i].name && pseudo_func[i].name[0] == ch)
+          {
+            len = strlen (pseudo_func[i].name);
+            if (strncmp (pseudo_func[i].name + 1,
+                         input_line_pointer + 1, len - 1) == 0
+                && !is_part_of_name (input_line_pointer[len]))
+              {
+                input_line_pointer += len;
+                break;
+              }
+          }
       SKIP_WHITESPACE ();
       if (*input_line_pointer != '(')
-	{
-	  as_bad ("Expected '('");
-	  goto err;
-	}
+        {
+          as_bad ("Expected '('");
+          goto err;
+        }
       /* Skip '('.  */
       ++input_line_pointer;
       if (!pseudo_func[i].pseudo_relocs.has_no_arg) {
-	expression (e);
+        expression (e);
       }
       if (*input_line_pointer++ != ')')
-	{
-	  as_bad ("Missing ')'");
-	  goto err;
-	}
+        {
+          as_bad ("Missing ')'");
+          goto err;
+        }
       if (!pseudo_func[i].pseudo_relocs.has_no_arg) {
-	if (e->X_op != O_symbol)
+        if (e->X_op != O_symbol)
           as_fatal ("Illegal combination of relocation functions");
       }
       /* Make sure gas doesn't get rid of local symbols that are used
-	 in relocs.  */
+         in relocs.  */
       e->X_op = O_pseudo_fixup;
       e->X_op_symbol = pseudo_func[i].sym;
       break;
@@ -2313,9 +2335,9 @@ md_assemble(char *s)
 
             /* The ordering of the insns has been set correctly in bundle_insn. */
             for (entry = 0; entry < bundle_insncnt; entry++) {
-		emit_insn (bundle_insn[entry], entry,
-			   (entry == (bundle_insncnt + immxcnt - 1)));
-		bundle_insn[entry]->written = 1;
+                emit_insn (bundle_insn[entry], entry,
+                           (entry == (bundle_insncnt + immxcnt - 1)));
+                bundle_insn[entry]->written = 1;
             }
 
             // Emit immx, ordering them by EXU tags, 0 to 3
@@ -2324,10 +2346,10 @@ md_assemble(char *s)
                 for (j = 0; j < immxcnt; j++) {
                       if(kv3_exunum2_fld(immxbuf[j].words[0]) == tag){
                             assert(immxbuf[j].written == 0);
-			    int insn_pos = bundle_insncnt + entry;
-			    emit_insn (&(immxbuf[j]), insn_pos,
-				       (entry == (immxcnt - 1)));
-			    immxbuf[j].written = 1;
+                            int insn_pos = bundle_insncnt + entry;
+                            emit_insn (&(immxbuf[j]), insn_pos,
+                                       (entry == (immxcnt - 1)));
+                            immxbuf[j].written = 1;
                             entry++;
                       }
                 }
@@ -2443,7 +2465,7 @@ static void
 declare_register (const char *name, int number)
 {
   symbolS *regS = symbol_create (name, reg_section,
-				 &zero_address_frag, number);
+                                 &zero_address_frag, number);
 
   if (str_hash_insert (kvx_reg_hash, S_GET_NAME (regS), regS, 0) != NULL)
     as_fatal (_("duplicate %s"), name);
@@ -2536,15 +2558,17 @@ md_begin()
     symbolS *tlsld_sym = symbol_create (".<tlsld>", undefined_section,
                                         &zero_address_frag, 0);
     symbolS *dtpoff_sym = symbol_create (".<dtpoff>", undefined_section,
-                                        &zero_address_frag, 0);
+                                         &zero_address_frag, 0);
     symbolS *plt64_sym = symbol_create (".<plt64>", undefined_section,
-					&zero_address_frag, 0);
+                                        &zero_address_frag, 0);
     symbolS *gotaddr_sym = symbol_create (".<gotaddr>", undefined_section,
-					  &zero_address_frag, 0);
+                                          &zero_address_frag, 0);
     symbolS *pcrel16_sym = symbol_create (".<pcrel16>", undefined_section,
-					  &zero_address_frag, 0);
+                                          &zero_address_frag, 0);
     symbolS *pcrel_sym = symbol_create (".<pcrel>", undefined_section,
-					  &zero_address_frag, 0);
+                                        &zero_address_frag, 0);
+    symbolS *signed32_sym = symbol_create (".<signed32>", undefined_section,
+                                           &zero_address_frag, 0);
 
     for (i = 0; i < NELEMS (pseudo_func); ++i) {
       symbolS *sym;
@@ -2565,16 +2589,18 @@ md_begin()
       } else if (!strcmp(pseudo_func[i].name, "tlsie")) {
         sym = tlsie_sym;
       } else if (!strcmp(pseudo_func[i].name, "plt64")) {
-	sym = plt64_sym;
+        sym = plt64_sym;
       } else if (!strcmp(pseudo_func[i].name, "pcrel16")) {
-	sym = pcrel16_sym;
+        sym = pcrel16_sym;
       } else if (!strcmp(pseudo_func[i].name, "pcrel")) {
-	sym = pcrel_sym;
+        sym = pcrel_sym;
       } else if (!strcmp(pseudo_func[i].name, "gotaddr")) {
-	sym = gotaddr_sym;
+        sym = gotaddr_sym;
+      } else if (!strcmp(pseudo_func[i].name, "signed32")) {
+        sym = signed32_sym;
       } else {
-	as_fatal("internal error: Unknown pseudo func `%s'",
-		 pseudo_func[i].name);
+        as_fatal("internal error: Unknown pseudo func `%s'",
+                 pseudo_func[i].name);
       }
 
       pseudo_func[i].sym = sym;
@@ -2668,26 +2694,26 @@ md_apply_fix(fixS * fixP, valueT * valueP,
         case BFD_RELOC_KVX_S43_TLS_LE_UP27 :
         case BFD_RELOC_KVX_S43_TLS_LE_LO10:
 
-	case BFD_RELOC_KVX_S37_TLS_GD_LO10:
-	case BFD_RELOC_KVX_S37_TLS_GD_UP27:
+        case BFD_RELOC_KVX_S37_TLS_GD_LO10:
+        case BFD_RELOC_KVX_S37_TLS_GD_UP27:
 
-	case BFD_RELOC_KVX_S43_TLS_GD_LO10:
-	case BFD_RELOC_KVX_S43_TLS_GD_UP27:
-	case BFD_RELOC_KVX_S43_TLS_GD_EX6:
+        case BFD_RELOC_KVX_S43_TLS_GD_LO10:
+        case BFD_RELOC_KVX_S43_TLS_GD_UP27:
+        case BFD_RELOC_KVX_S43_TLS_GD_EX6:
 
-	case BFD_RELOC_KVX_S37_TLS_IE_LO10:
-	case BFD_RELOC_KVX_S37_TLS_IE_UP27:
+        case BFD_RELOC_KVX_S37_TLS_IE_LO10:
+        case BFD_RELOC_KVX_S37_TLS_IE_UP27:
 
-	case BFD_RELOC_KVX_S43_TLS_IE_LO10:
-	case BFD_RELOC_KVX_S43_TLS_IE_UP27:
-	case BFD_RELOC_KVX_S43_TLS_IE_EX6:
+        case BFD_RELOC_KVX_S43_TLS_IE_LO10:
+        case BFD_RELOC_KVX_S43_TLS_IE_UP27:
+        case BFD_RELOC_KVX_S43_TLS_IE_EX6:
 
-	case BFD_RELOC_KVX_S37_TLS_LD_LO10:
-	case BFD_RELOC_KVX_S37_TLS_LD_UP27:
+        case BFD_RELOC_KVX_S37_TLS_LD_LO10:
+        case BFD_RELOC_KVX_S37_TLS_LD_UP27:
 
-	case BFD_RELOC_KVX_S43_TLS_LD_LO10:
-	case BFD_RELOC_KVX_S43_TLS_LD_UP27:
-	case BFD_RELOC_KVX_S43_TLS_LD_EX6:
+        case BFD_RELOC_KVX_S43_TLS_LD_LO10:
+        case BFD_RELOC_KVX_S43_TLS_LD_UP27:
+        case BFD_RELOC_KVX_S43_TLS_LD_EX6:
 
           S_SET_THREAD_LOCAL (fixP->fx_addsy);
           break;
@@ -2715,44 +2741,44 @@ md_apply_fix(fixS * fixP, valueT * valueP,
         break;
 
       case BFD_RELOC_KVX_PCREL17:
-	if (signed_overflow (value, 17 + 2))
-	  as_bad_where (fixP->fx_file, fixP->fx_line,
-			_ ("branch out of range"));
-	goto pcrel_common;
+        if (signed_overflow (value, 17 + 2))
+          as_bad_where (fixP->fx_file, fixP->fx_line,
+                        _ ("branch out of range"));
+        goto pcrel_common;
 
       case BFD_RELOC_KVX_PCREL27:
-	if (signed_overflow (value, 27 + 2))
-	  as_bad_where (fixP->fx_file, fixP->fx_line,
-			_ ("branch out of range"));
-	goto pcrel_common;
+        if (signed_overflow (value, 27 + 2))
+          as_bad_where (fixP->fx_file, fixP->fx_line,
+                        _ ("branch out of range"));
+        goto pcrel_common;
 
       case BFD_RELOC_KVX_S16_PCREL:
-	if (signed_overflow (value, 16))
-	  as_bad_where (fixP->fx_file, fixP->fx_line,
-			_ ("signed16 PCREL value out of range"));
-	goto pcrel_common;
+        if (signed_overflow (value, 16))
+          as_bad_where (fixP->fx_file, fixP->fx_line,
+                        _ ("signed16 PCREL value out of range"));
+        goto pcrel_common;
 
       case BFD_RELOC_KVX_S43_PCREL_LO10:
       case BFD_RELOC_KVX_S43_PCREL_UP27:
       case BFD_RELOC_KVX_S43_PCREL_EX6:
-	if (signed_overflow (value, 10 + 27 + 6))
-	  as_bad_where (fixP->fx_file, fixP->fx_line,
-			_ ("signed43 PCREL value out of range"));
-	goto pcrel_common;
+        if (signed_overflow (value, 10 + 27 + 6))
+          as_bad_where (fixP->fx_file, fixP->fx_line,
+                        _ ("signed43 PCREL value out of range"));
+        goto pcrel_common;
 
       case BFD_RELOC_KVX_S37_PCREL_LO10:
       case BFD_RELOC_KVX_S37_PCREL_UP27:
-	if (signed_overflow (value, 10 + 27))
-	  as_bad_where (fixP->fx_file, fixP->fx_line,
-			_ ("signed37 PCREL value out of range"));
-	goto pcrel_common;
+        if (signed_overflow (value, 10 + 27))
+          as_bad_where (fixP->fx_file, fixP->fx_line,
+                        _ ("signed37 PCREL value out of range"));
+        goto pcrel_common;
 
       case BFD_RELOC_KVX_S64_PCREL_LO10:
       case BFD_RELOC_KVX_S64_PCREL_UP27:
       case BFD_RELOC_KVX_S64_PCREL_EX27:
 
       pcrel_common:
-	if (fixP->fx_pcrel || fixP->fx_addsy)
+        if (fixP->fx_pcrel || fixP->fx_addsy)
           return;
         value = (((value >> rel->howto->rightshift) << rel->howto->bitpos ) & rel->howto->dst_mask);
         image = (image & ~(rel->howto->dst_mask)) | value;
@@ -2769,8 +2795,8 @@ md_apply_fix(fixS * fixP, valueT * valueP,
 
       case BFD_RELOC_KVX_S37_GOTADDR_LO10:
       case BFD_RELOC_KVX_S37_GOTADDR_UP27:
-	value = 0;
-	/* Fallthrough */
+        value = 0;
+        /* Fallthrough */
 
       case BFD_RELOC_KVX_S32_UP27:
 
@@ -3113,10 +3139,10 @@ kvx_emit_single_noop(void) {
      char *end_of_bundle;
 
      if (asprintf (&nop, "nop") < 0)
-	  as_fatal ("%s", xstrerror (errno));
+          as_fatal ("%s", xstrerror (errno));
 
      if (asprintf (&end_of_bundle, "be") < 0)
-	  as_fatal ("%s", xstrerror (errno));
+          as_fatal ("%s", xstrerror (errno));
 
      char *saved_ilp = input_line_pointer;
      md_assemble (nop);
@@ -3663,7 +3689,7 @@ kvx_unwind(int r)
         input_line_pointer++;
 
 #define KVXGETCONST(i) (((i)<ntok) ? \
-		       kvx_get_constant(tok[(i)]) :  \
+                        kvx_get_constant(tok[(i)]) :  \
                         (as_warn("too few operands"), 0))
 
     switch ((enum unwrecord) r)
