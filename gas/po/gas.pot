@@ -10025,9 +10025,16 @@ msgstr ""
 msgid "missing `.end'"
 msgstr ""
 
-#. we'll need this for reading floating point constants
-#: config/tc-kvx.c:3121
-msgid "floating-point literals are not supported"
+#: config/tc-kvx.c:2733
+msgid "signed16 PCREL value out of range"
+msgstr ""
+
+#: config/tc-kvx.c:2741
+msgid "signed43 PCREL value out of range"
+msgstr ""
+
+#: config/tc-kvx.c:2748
+msgid "signed37 PCREL value out of range"
 msgstr ""
 
 #: config/tc-m32c.c:141

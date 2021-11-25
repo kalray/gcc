@@ -3058,8 +3058,7 @@ md_atof(int type ATTRIBUTE_UNUSED,
         char *litp ATTRIBUTE_UNUSED,
         int *sizep ATTRIBUTE_UNUSED)
 {
-    /* we'll need this for reading floating point constants */
-    return _("floating-point literals are not supported");
+  return ieee_md_atof (type, litp, sizep, TARGET_BYTES_BIG_ENDIAN);
 }
 
 /*
