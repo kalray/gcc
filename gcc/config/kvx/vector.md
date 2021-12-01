@@ -130,7 +130,7 @@
   {
     // late splitting of mem will not be possible in the general case
     if ((MEM_P (operands[0]) && !kvx_ok_for_quad_reg_p (operands[1]))
-        || MEM_P (operands[1]) && !kvx_ok_for_quad_reg_p (operands[0]))
+        || (MEM_P (operands[1]) && !kvx_ok_for_quad_reg_p (operands[0])))
     {
       gcc_assert (! reload_completed && !reload_in_progress);
       rtx tmp = gen_reg_rtx(<MODE>mode);
@@ -2473,12 +2473,12 @@
   ""
   {
     operands[2] = gen_reg_rtx (DImode);
-    rtx valuev8qi_l = GEN_INT (0x0008000400020001);
-    rtx valuev4hi_l = GEN_INT (0x0000080400000201);
+    rtx valuev8qi_l ATTRIBUTE_UNUSED = GEN_INT (0x0008000400020001);
+    rtx valuev4hi_l ATTRIBUTE_UNUSED = GEN_INT (0x0000080400000201);
     emit_insn (gen_rtx_SET (operands[2], value<mode>_l));
     operands[3] = gen_reg_rtx (DImode);
-    rtx valuev8qi_m = GEN_INT (0x0080004000200010);
-    rtx valuev4hi_m = GEN_INT (0x0000804000002010);
+    rtx valuev8qi_m ATTRIBUTE_UNUSED = GEN_INT (0x0080004000200010);
+    rtx valuev4hi_m ATTRIBUTE_UNUSED = GEN_INT (0x0000804000002010);
     emit_insn (gen_rtx_SET (operands[3], value<mode>_m));
   }
 )
@@ -2510,12 +2510,12 @@
   ""
   {
     operands[2] = gen_reg_rtx (DImode);
-    rtx valuev8qi_l = GEN_INT (0x0800040002000100);
-    rtx valuev4hi_l = GEN_INT (0x0804000002010000);
+    rtx valuev8qi_l ATTRIBUTE_UNUSED = GEN_INT (0x0800040002000100);
+    rtx valuev4hi_l ATTRIBUTE_UNUSED = GEN_INT (0x0804000002010000);
     emit_insn (gen_rtx_SET (operands[2], value<mode>_l));
     operands[3] = gen_reg_rtx (DImode);
-    rtx valuev8qi_m = GEN_INT (0x8000400020001000);
-    rtx valuev4hi_m = GEN_INT (0x8040000020100000);
+    rtx valuev8qi_m ATTRIBUTE_UNUSED = GEN_INT (0x8000400020001000);
+    rtx valuev4hi_m ATTRIBUTE_UNUSED = GEN_INT (0x8040000020100000);
     emit_insn (gen_rtx_SET (operands[3], value<mode>_m));
   }
 )
@@ -2541,12 +2541,12 @@
   ""
   {
     operands[2] = gen_reg_rtx (DImode);
-    rtx valuev8qi_l = GEN_INT (0x0000000040100401);
-    rtx valuev4hi_l = GEN_INT (0x0000000020100201);
+    rtx valuev8qi_l ATTRIBUTE_UNUSED = GEN_INT (0x0000000040100401);
+    rtx valuev4hi_l ATTRIBUTE_UNUSED = GEN_INT (0x0000000020100201);
     emit_insn (gen_rtx_SET (operands[2], value<mode>_l));
     operands[3] = gen_reg_rtx (DImode);
-    rtx valuev8qi_m = GEN_INT (0x4010040100000000);
-    rtx valuev4hi_m = GEN_INT (0x2010020100000000);
+    rtx valuev8qi_m ATTRIBUTE_UNUSED = GEN_INT (0x4010040100000000);
+    rtx valuev4hi_m ATTRIBUTE_UNUSED = GEN_INT (0x2010020100000000);
     emit_insn (gen_rtx_SET (operands[3], value<mode>_m));
     operands[4] = gen_rtx_SCRATCH (<WIDE>mode);
   }
@@ -2581,12 +2581,12 @@
   ""
   {
     operands[2] = gen_reg_rtx (DImode);
-    rtx valuev8qi_l = GEN_INT (0x0000000080200802);
-    rtx valuev4hi_l = GEN_INT (0x0000000080400804);
+    rtx valuev8qi_l ATTRIBUTE_UNUSED = GEN_INT (0x0000000080200802);
+    rtx valuev4hi_l ATTRIBUTE_UNUSED = GEN_INT (0x0000000080400804);
     emit_insn (gen_rtx_SET (operands[2], value<mode>_l));
     operands[3] = gen_reg_rtx (DImode);
-    rtx valuev8qi_m = GEN_INT (0x8020080200000000);
-    rtx valuev4hi_m = GEN_INT (0x8040080400000000);
+    rtx valuev8qi_m ATTRIBUTE_UNUSED = GEN_INT (0x8020080200000000);
+    rtx valuev4hi_m ATTRIBUTE_UNUSED = GEN_INT (0x8040080400000000);
     emit_insn (gen_rtx_SET (operands[3], value<mode>_m));
     operands[4] = gen_rtx_SCRATCH (<WIDE>mode);
   }
@@ -2632,10 +2632,10 @@
     rtx zero = gen_reg_rtx (<HWIDE>mode);
     rtx lower = gen_reg_rtx (<WIDE>mode);
     rtx upper = gen_reg_rtx (<WIDE>mode);
-    rtx maxvalv4hi = gen_rtx_CONST_VECTOR (V4HImode,
+    rtx maxvalv4hi ATTRIBUTE_UNUSED = gen_rtx_CONST_VECTOR (V4HImode,
                                            gen_rtvec (4, GEN_INT (0xFF), GEN_INT (0xFF),
                                                          GEN_INT (0xFF), GEN_INT (0xFF)));
-    rtx maxvalv2si = gen_rtx_CONST_VECTOR (V2SImode,
+    rtx maxvalv2si ATTRIBUTE_UNUSED = gen_rtx_CONST_VECTOR (V2SImode,
                                            gen_rtvec (2, GEN_INT (0xFFFF), GEN_INT (0xFFFF)));
     rtx zero_chunk = gen_rtx_UNSPEC (<WIDE>mode, gen_rtvec (1, zero), UNSPEC_DUP128);
     rtx maxval_chunk = gen_rtx_UNSPEC (<WIDE>mode, gen_rtvec (1, maxval<hwide>), UNSPEC_DUP128);
