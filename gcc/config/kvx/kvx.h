@@ -171,12 +171,13 @@ enum kvx_abi_type
     KV3_ABI_REGULAR_FIXED_REGISTERS                                            \
   }
 
-#define CALL_USED_REGISTERS                                                    \
+/*#define CALL_USED_REGISTERS						\
   {                                                                            \
     KV3_ABI_REGULAR_CALL_USED_REGISTERS                                        \
   }
+*/
 
-#define CALL_REALLY_USED_REGISTERS                                             \
+#define CALL_REALLY_USED_REGISTERS					\
   {                                                                            \
     KV3_ABI_REGULAR_CALL_REALLY_USED_REGISTERS                                 \
   }
@@ -358,6 +359,7 @@ struct kvx_args
 
 #define INIT_CUMULATIVE_ARGS(CUM, FNTYPE, LIBNAME, FNDECL, N_NAMED_ARGS)       \
   kvx_init_cumulative_args (&CUM, FNTYPE, LIBNAME, FNDECL, N_NAMED_ARGS)
+  
 
 /* A C expression that is nonzero if regno is the number of a hard
    register in which function arguments are sometimes passed. This
