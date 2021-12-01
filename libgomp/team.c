@@ -300,7 +300,7 @@ gomp_free_thread (void *arg __attribute__((unused)))
 #ifdef __CLUSTER_OS__
       if (thr->pthreads)
         {
-          team_free(thr->pthreads);
+          free(thr->pthreads);
           thr->pthreads = NULL;
         }
       thr->nthreads = 0;

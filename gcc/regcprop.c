@@ -835,7 +835,7 @@ copyprop_hardreg_forward_1 (basic_block bb, struct value_data *vd)
           rtx note;
           for (note = CALL_INSN_FUNCTION_USAGE (insn); note;
                note = XEXP (note, 1))
-              note_stores (XEXP (note, 0), kill_clobbered_value, vd);
+              note_pattern_stores (XEXP (note, 0), kill_clobbered_value, vd);
       }
 
       /* Kill all auto-incremented values.  */

@@ -171,6 +171,7 @@ char *kvx_ctrapsi4 (void);
  */
 enum kvx_symbol_type
 {
+  SYMBOL_UNKNOWN,
   LABEL_PCREL_ABSOLUTE,
   LABEL_ABSOLUTE,
   SYMBOL_ABSOLUTE,
