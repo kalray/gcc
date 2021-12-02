@@ -190,6 +190,17 @@ So instead we use the macro below and test it against specific values.  */
 # endif /* GNUC >= 3.0 */
 #endif /* ATTRIBUTE_PURE */
 
+/* Prior to GCC 7, the C++ frontend
+   couldn't parse attributes placed after the identifier name, and now
+   the entire compiler is built with C++.  */
+#ifndef ATTRIBUTE_FALLTHROUGH
+#if (GCC_VERSION >= 7000)
+#  define ATTRIBUTE_FALLTHROUGH __attribute__((fallthrough))
+#else
+#define ATTRIBUTE_FALLTHROUGH
+#endif /* GNUC >= 7 */
+#endif /* ATTRIBUTE_FALLTHROUGH */
+
 /* Use ATTRIBUTE_PRINTF when the format specifier must not be NULL.
    This was the case for the `printf' format attribute by itself
    before GCC 3.3, but as of 3.3 we need to add the `nonnull'
