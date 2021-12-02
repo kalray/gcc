@@ -3758,7 +3758,7 @@ kvx_emit_pre_barrier (rtx model, bool move)
       if (move) {
 	break;
       }
-      __attribute__((fallthrough));
+      ATTRIBUTE_FALLTHROUGH;
     case MEMMODEL_RELEASE:
     case MEMMODEL_SEQ_CST:
       emit_insn (gen_mem_thread_fence (model));
@@ -3787,7 +3787,7 @@ kvx_emit_post_barrier (rtx model, bool move)
       if (move) {
 	break;
       }
-      __attribute__((fallthrough));
+      ATTRIBUTE_FALLTHROUGH;
     case MEMMODEL_ACQUIRE:
     case MEMMODEL_CONSUME:
     case MEMMODEL_SEQ_CST:
@@ -10209,7 +10209,7 @@ kvx_rtx_costs (rtx x, machine_mode mode, int outer_code,
 	  *total = kvx_type_tiny_cost (nwords, 0);
 	  goto return_true;
 	}
-      __attribute__((fallthrough));
+      ATTRIBUTE_FALLTHROUGH;
       
     case MOD:
     case UDIV:
