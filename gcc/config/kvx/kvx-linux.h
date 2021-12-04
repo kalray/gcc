@@ -24,6 +24,12 @@
 #undef MUSL_DYNAMIC_LINKER64
 #define MUSL_DYNAMIC_LINKER64 "/lib/ld-musl-kvx.so.1"
 
+/* Needed for dso_handle defined libgcc/crtstuff.c
+ * configure option --enable-__cxa_atexit is applicable to host and not target.
+ * Since gcc 10
+ */
+#define DEFAULT_USE_CXA_ATEXIT 2
+
 #define TARGET_OS_CPP_BUILTINS()                                               \
   do                                                                           \
     {                                                                          \
