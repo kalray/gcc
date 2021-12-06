@@ -883,6 +883,7 @@ attribute_hidden void
 goacc_runtime_initialize (void)
 {
   gomp_mutex_init (&acc_device_lock);
+  gomp_mutex_init (&acc_init_state_lock);
 
 #if !(defined HAVE_TLS || defined USE_EMUTLS)
   pthread_key_create (&goacc_tls_key, NULL);
