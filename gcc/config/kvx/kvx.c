@@ -1459,6 +1459,8 @@ kvx_float_to_half_as_int (unsigned fbits)
 	    >> (126 - val));               // div by 2^(1-(exp-127+15)) and >> 13 | exp=0
 }
 
+static bool kvx_print_offset_zero;
+
 void
 kvx_print_operand (FILE *file, rtx x, int code)
 {
@@ -1479,6 +1481,7 @@ kvx_print_operand (FILE *file, rtx x, int code)
   bool swap_compare = false;
   int addr_space = 0;
 
+  kvx_print_offset_zero = true;
   switch (code)
     {
     case 0:
@@ -1535,6 +1538,10 @@ kvx_print_operand (FILE *file, rtx x, int code)
 
     case 'S':
       swap_compare = true;
+      break;
+
+    case 'O':
+      kvx_print_offset_zero = false;
       break;
 
     case 'T':
@@ -1807,13 +1814,16 @@ kvx_regname (rtx x)
 }
 
 void
-kvx_print_operand_address (FILE *file, rtx x)
+kvx_print_operand_address (FILE *file, machine_mode /*mode*/, rtx x)
 {
   switch (GET_CODE (x))
     {
     case REG:
     case SUBREG:
-      fprintf (file, "0[$%s]", kvx_regname (x));
+      if (kvx_print_offset_zero)
+	fprintf (file, "0[$%s]", kvx_regname (x));
+      else
+	fprintf (file, "[$%s]", kvx_regname (x));
       break;
 
     case PLUS:
@@ -1850,6 +1860,28 @@ kvx_print_operand_address (FILE *file, rtx x)
     }
 }
 
+bool
+kvx_print_punct_valid_p (unsigned char code)
+{
+  return code == ';';
+}
+
+/* Return true for the .xs addressing modes, else false. */
+static bool
+kvx_mode_dependent_address_p (const_rtx addr,
+			      addr_space_t space ATTRIBUTE_UNUSED)
+{
+  const_rtx x = addr;
+
+  // Same logic as .xs addressing mode in kvx_print_operand
+  if (GET_CODE (x) == PLUS && GET_CODE (XEXP (x, 0)) == MULT
+      && GET_CODE (XEXP (XEXP (x, 0), 1)) == CONST_INT
+      && INTVAL (XEXP (XEXP (x, 0), 1)) > HOST_WIDE_INT_1)
+    return true;
+
+  return false;
+}
+
 /* Functions to save and restore machine-specific function data.  */
 static struct machine_function *
 kvx_init_machine_status (void)
@@ -1871,12 +1903,6 @@ kvx_init_expanders (void)
     kvx_divmod_zero = const0_rtx;
   else
     kvx_divmod_zero = const1_rtx;
-}
-
-bool
-kvx_print_punct_valid_p (unsigned char code)
-{
-  return code == ';';
 }
 
 /* Handle an attribute requiring a FUNCTION_DECL;
@@ -4033,7 +4059,7 @@ kvx_expand_atomic_op (enum rtx_code code, rtx target, bool after, rtx mem,
   if (target && after)
     emit_move_insn (op_res_copy, op_res);
 
-  /* Update memory with op result iff memory hasn't been modifyed
+  /* Update memory with op result iff memory hasn't been modified
   since, i.e: if CURR_MEM_VAL == MEM; then update MEM with
   NEW_MEM_VAL; else try again */
   emit_insn (mode == SImode ? gen_acswapw (tmp, mem) : gen_acswapd (tmp, mem));
@@ -4071,7 +4097,6 @@ kvx_expand_atomic_test_and_set (rtx operands[])
   rtx fini = gen_label_rtx ();
   rtx pos = gen_reg_rtx (Pmode);
   rtx offset = gen_reg_rtx (Pmode);
-  rtx memsi;
   rtx tmp = gen_reg_rtx (TImode);
   rtx val = gen_lowpart (SImode, (gen_highpart (DImode, tmp)));
   rtx newval = gen_lowpart (SImode, (gen_lowpart (DImode, tmp)));
@@ -4099,11 +4124,18 @@ kvx_expand_atomic_test_and_set (rtx operands[])
   /* load the word containing the byte to test-and-set
     - if MEM is already of the form offset[addr]: load OFFSET[addr]
     - else: load OFFSET[MEM] */
+  rtx addr = NULL_RTX;
   if (GET_CODE (XEXP (mem, 0)) == PLUS)
-    memsi = gen_rtx_MEM (SImode,
-			 gen_rtx_PLUS (Pmode, XEXP (XEXP (mem, 0), 0), offset));
+    addr = gen_rtx_PLUS (Pmode, XEXP (XEXP (mem, 0), 0), offset);
   else
-    memsi = gen_rtx_MEM (SImode, gen_rtx_PLUS (Pmode, XEXP (mem, 0), offset));
+    addr = gen_rtx_PLUS (Pmode, XEXP (mem, 0), offset);
+  if (KV3_2)
+    {
+      rtx temp = gen_reg_rtx (Pmode);
+      emit_move_insn (temp, addr);
+      addr = temp;
+    }
+  rtx memsi = gen_rtx_MEM (SImode, addr);
 
   /* POS = (POS*BITS_PER_UNIT) */
   gen3 = Pmode == SImode ? gen_mulsi3 : gen_muldi3;
@@ -4626,6 +4658,19 @@ kvx_has_10bit_immediate_p (rtx x)
   if (GET_CODE (x) == PLUS && GET_CODE (XEXP (x, 1)) == CONST_INT
       && REG_P (XEXP (x, 0)))
     return IN_RANGE (INTVAL (XEXP (x, 1)), -512, 511);
+
+  return false;
+}
+
+bool
+kvx_has_27bit_immediate_p (rtx x)
+{
+  if (MEM_P (x))
+    x = XEXP (x, 0);
+
+  if (GET_CODE (x) == PLUS && GET_CODE (XEXP (x, 1)) == CONST_INT
+      && REG_P (XEXP (x, 0)))
+    return IN_RANGE (INTVAL (XEXP (x, 1)), -(1LL << 26), (1LL << 26) - 1);
 
   return false;
 }
@@ -6408,22 +6453,6 @@ kvx_reassociation_width (unsigned int opc, machine_mode mode)
   return res;
 }
 
-/* Return true for the .xs addressing modes, else false. */
-static bool
-kvx_mode_dependent_address_p (const_rtx addr,
-			      addr_space_t space ATTRIBUTE_UNUSED)
-{
-  const_rtx x = addr;
-
-  // Same logic as .xs addressing mode in kvx_print_operand
-  if (GET_CODE (x) == PLUS && GET_CODE (XEXP (x, 0)) == MULT
-      && GET_CODE (XEXP (XEXP (x, 0), 1)) == CONST_INT
-      && INTVAL (XEXP (XEXP (x, 0), 1)) > HOST_WIDE_INT_1)
-    return true;
-
-  return false;
-}
-
 bool
 kvx_float_fits_bits (const REAL_VALUE_TYPE *r, unsigned bitsz,
 		     enum machine_mode mode)
@@ -6895,6 +6924,15 @@ kvx_ctrapsi4 (void)
 
 #undef TARGET_INVALID_WITHIN_DOLOOP
 #define TARGET_INVALID_WITHIN_DOLOOP kvx_invalid_within_doloop
+
+#undef TARGET_PRINT_OPERAND
+#define TARGET_PRINT_OPERAND kvx_print_operand
+
+#undef TARGET_PRINT_OPERAND_ADDRESS
+#define TARGET_PRINT_OPERAND_ADDRESS kvx_print_operand_address
+
+#undef TARGET_PRINT_OPERAND_PUNCT_VALID_P
+#define TARGET_PRINT_OPERAND_PUNCT_VALID_P kvx_print_punct_valid_p
 
 #undef TARGET_MODE_DEPENDENT_ADDRESS_P
 #define TARGET_MODE_DEPENDENT_ADDRESS_P kvx_mode_dependent_address_p

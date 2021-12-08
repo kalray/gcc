@@ -118,6 +118,16 @@
   (and (match_code "mem")
        (match_test "kvx_has_37bit_immediate_p (op)")))
 
+(define_memory_constraint "c"
+  "Memory operands with pointer register"
+  (and (match_code "mem")
+       (match_test "REG_P (XEXP (op, 0))")))
+
+(define_memory_constraint "d"
+  "Memory operands with 27-bit immediates"
+  (and (match_code "mem")
+       (match_test "kvx_has_27bit_immediate_p (op)")))
+
 (define_memory_constraint "u"
   "Uncached memory operands"
   (and (match_code "mem")
