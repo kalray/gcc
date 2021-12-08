@@ -105,6 +105,7 @@ extern void kvx_make_256bit_const (rtx dst, rtx src);
 
 extern bool kvx_has_10bit_imm_or_register_p (rtx x);
 extern bool kvx_has_10bit_immediate_p (rtx x);
+extern bool kvx_has_27bit_immediate_p (rtx x);
 extern bool kvx_has_37bit_immediate_p (rtx x);
 extern bool kvx_has_64bit_immediate_p (rtx x);
 
