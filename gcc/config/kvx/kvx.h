@@ -680,47 +680,6 @@ extern void kvx_profile_hook (void);
    SImode or HImode. */
 #define FUNCTION_MODE Pmode
 
-/* A C compound statement to output to stdio stream stream the
-   assembler syntax for an instruction operand x. x is an RTL
-   expression.
-
-   code is a value that can be used to specify one of several ways of
-   printing the operand. It is used when identical operands must be
-   printed differently depending on the context. code comes from the
-   `%' specification that was used to request printing of the
-   operand. If the specification was just `%digit' then code is 0; if
-   the specification was `%ltr digit' then code is the ASCII code for
-   ltr.
-
-   If x is a register, this macro should print the register's
-   name. The names can be found in an array reg_names whose type is
-   char *[]. reg_names is initialized from REGISTER_NAMES.
-
-   When the machine description has a specification `%punct' (a `%'
-   followed by a punctuation character), this macro is called with a
-   null pointer for x and the punctuation character for code. */
-#undef PRINT_OPERAND
-#define PRINT_OPERAND kvx_print_operand
-
-/* A C compound statement to output to stdio stream stream the
-   assembler syntax for an instruction operand that is a memory
-   reference whose address is x. x is an RTL expression.
-
-   On some machines, the syntax for a symbolic address depends on the
-   section that the address refers to. On these machines, define the
-   hook TARGET_ENCODE_SECTION_INFO to store the information into the
-   symbol_ref, and then check for it here. See Assembler Format. */
-#undef PRINT_OPERAND_ADDRESS
-#define PRINT_OPERAND_ADDRESS kvx_print_operand_address
-
-/* A C expression which evaluates to true if code is a valid
-   punctuation character for use in the PRINT_OPERAND macro. If
-   PRINT_OPERAND_PUNCT_VALID_P is not defined, it means that no
-   punctuation characters (except for the standard one, `%') are used
-   in this way. */
-#undef PRINT_OPERAND_PUNCT_VALID_P
-#define PRINT_OPERAND_PUNCT_VALID_P kvx_print_punct_valid_p
-
 /* Macros to check the range of integers that fit into HOST_WIDE_INT. */
 #define SIGNED_INT_FITS_N_BITS(imm, N)                                         \
   ((HOST_WIDE_INT) (imm) < ((HOST_WIDE_INT) 1 << ((N) -1))                     \
