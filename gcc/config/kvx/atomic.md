@@ -25,105 +25,110 @@
 (define_expand "atomic_compare_and_swap<mode>"
   [(match_operand:SI 0 "register_operand" "")   ;; bool output
    (match_operand:SIDI 1 "register_operand" "") ;; val output before CAS
-   (match_operand:SIDI 2 "memory_operand" "")   ;; memory
+   (match_operand:SIDI 2 "mematomic_operand" "");; memory
    (match_operand:SIDI 3 "register_operand" "") ;; expected
    (match_operand:SIDI 4 "register_operand" "") ;; desired
    (match_operand:SI 5 "const_int_operand")     ;; is_weak
    (match_operand:SI 6 "const_int_operand")     ;; model success
    (match_operand:SI 7 "const_int_operand")]    ;; model failure
   ""
-{
-  kvx_expand_compare_and_swap (operands);
-  DONE;
-})
+  {
+    kvx_expand_compare_and_swap (operands);
+    DONE;
+  }
+)
 
 ;; Atomic load operation with memory model semantics.
 (define_expand "atomic_load<mode>"
   [(match_operand:AI 0 "register_operand" "")   ;; val output
-   (match_operand:AI 1 "memory_operand" "")     ;; memory
+   (match_operand:AI 1 "mematomic_operand" "")  ;; memory
    (match_operand:SI 2 "const_int_operand" "")] ;; model
   ""
-{
-  kvx_emit_pre_barrier(operands[2], true);
-
-  switch (<MODE>mode) {
-    case E_TImode: emit_insn (gen_lqu (operands[0], operands[1]));  break;
-    case E_DImode: emit_insn (gen_ldu (operands[0], operands[1]));  break;
-    case E_SImode: emit_insn (gen_lwzu (operands[0], operands[1])); break;
-    case E_HImode: emit_insn (gen_lhzu (operands[0], operands[1])); break;
-    case E_QImode: emit_insn (gen_lbzu (operands[0], operands[1])); break;
-    default: gcc_unreachable ();
-    }
-
-  kvx_emit_post_barrier(operands[2], true);
-  DONE;
-})
+  {
+    kvx_emit_pre_barrier(operands[2], true);
+    switch (<MODE>mode) {
+      case E_TImode: emit_insn (gen_lqu (operands[0], operands[1]));  break;
+      case E_DImode: emit_insn (gen_ldu (operands[0], operands[1]));  break;
+      case E_SImode: emit_insn (gen_lwzu (operands[0], operands[1])); break;
+      case E_HImode: emit_insn (gen_lhzu (operands[0], operands[1])); break;
+      case E_QImode: emit_insn (gen_lbzu (operands[0], operands[1])); break;
+      default: gcc_unreachable ();
+      }
+    kvx_emit_post_barrier(operands[2], true);
+    DONE;
+  }
+)
 
 ;; Atomic store operation with memory model semantics.
 (define_expand "atomic_store<mode>"
-  [(match_operand:AI 0 "memory_operand" "")     ;; memory
+  [(match_operand:AI 0 "mematomic_operand" "")  ;; memory
    (match_operand:AI 1 "register_operand" "")   ;; val to write
    (match_operand:SI 2 "const_int_operand" "")] ;; model
   ""
-{
-  kvx_emit_pre_barrier(operands[2], true);
-  emit_move_insn (operands[0], operands[1]);
-  kvx_emit_post_barrier(operands[2], true);
-  DONE;
-})
+  {
+    kvx_emit_pre_barrier(operands[2], true);
+    emit_move_insn (operands[0], operands[1]);
+    kvx_emit_post_barrier(operands[2], true);
+    DONE;
+  }
+)
 
 ;; Atomic exchange operation with memory model semantics.
 (define_expand "atomic_exchange<mode>"
   [(match_operand:SIDI 0 "register_operand" "") ;; val output (memory content)
-   (match_operand:SIDI 1 "memory_operand" "")   ;; memory
+   (match_operand:SIDI 1 "mematomic_operand" "");; memory
    (match_operand:SIDI 2 "register_operand" "") ;; new value
    (match_operand:SI 3 "const_int_operand" "")] ;; model
   ""
-{
-  kvx_expand_atomic_op (SET, operands[0], false, operands[1], operands[2], operands[3]);
-  DONE;
-})
+  {
+    kvx_expand_atomic_op (SET, operands[0], false, operands[1], operands[2], operands[3]);
+    DONE;
+  }
+)
 
 ;; Atomic operation (add, sub, or, and, xor, nand) on memory with memory
 ;; model semantics.
 (define_expand "atomic_<atomic_optab><mode>"
-  [(set (match_operand:SIDI 0 "register_operand" "+r")                            ;; op result
+  [(set (match_operand:SIDI 0 "register_operand" "+r")                               ;; op result
     (unspec_volatile:SIDI
-      [(atomic_op:SIDI (match_dup 0) (match_operand:SIDI 1 "memory_operand" "r")) ;; op1, op2
-       (match_operand:SI 2 "const_int_operand")] UNSPEC_ATOMIC_OP))]              ;; model
+      [(atomic_op:SIDI (match_dup 0) (match_operand:SIDI 1 "mematomic_operand" "r")) ;; op1, op2
+       (match_operand:SI 2 "const_int_operand")] UNSPEC_ATOMIC_OP))]                 ;; model
   ""
-{
-  kvx_expand_atomic_op (<CODE>, NULL_RTX, false, operands[0], operands[1], operands[2]);
-  DONE;
-})
+  {
+    kvx_expand_atomic_op (<CODE>, NULL_RTX, false, operands[0], operands[1], operands[2]);
+    DONE;
+  }
+)
 
 ;; Atomic operation (add, sub, or, and, xor, nand) on memory with memory
 ;; model semantics, return the original value.
 (define_expand "atomic_fetch_<atomic_optab><mode>"
  [(match_operand:SIDI 0 "register_operand" "")   ;; output (memory content before op)
   (atomic_op:SIDI
-   (match_operand:SIDI 1 "memory_operand" "")    ;; op1, op result
+   (match_operand:SIDI 1 "mematomic_operand" "") ;; op1, op result
    (match_operand:SIDI 2 "register_operand" "")) ;; op2
   (match_operand:SI 3 "const_int_operand")]      ;; model
   ""
-{
-  kvx_expand_atomic_op (<CODE>, operands[0], false, operands[1], operands[2], operands[3]);
-  DONE;
-})
+  {
+    kvx_expand_atomic_op (<CODE>, operands[0], false, operands[1], operands[2], operands[3]);
+    DONE;
+  }
+)
 
 ;; Atomic operation (add, sub, or, and, xor, nand) on memory with memory
 ;; model semantics, perform the operation then return the result.
 (define_expand "atomic_<atomic_optab>_fetch<mode>"
  [(match_operand:SIDI 0 "register_operand" "")   ;; output (op result)
   (atomic_op:SIDI
-   (match_operand:SIDI 1 "memory_operand" "")    ;; op1, op result
+   (match_operand:SIDI 1 "mematomic_operand" "") ;; op1, op result
    (match_operand:SIDI 2 "register_operand" "")) ;; op2
   (match_operand:SI 3 "const_int_operand")]      ;; model
   ""
-{
-  kvx_expand_atomic_op (<CODE>, operands[0], true, operands[1], operands[2], operands[3]);
-  DONE;
-})
+  {
+    kvx_expand_atomic_op (<CODE>, operands[0], true, operands[1], operands[2], operands[3]);
+    DONE;
+  }
+)
 
 ;; TO GO FURTHER: atomic_exchange<mode> and
 ;; atomic_*<atomic_optab>*<mode> patterns above can also be
@@ -134,13 +139,14 @@
 ;; semantics.
 (define_expand "atomic_test_and_set"
  [(match_operand:QI 0 "register_operand" "")   ;; output (memory content)
-  (match_operand:QI 1 "memory_operand" "")     ;; memory
+  (match_operand:QI 1 "mematomic_operand" "")  ;; memory
   (match_operand:SI 2 "const_int_operand" "")] ;; model
   ""
-{
-  kvx_expand_atomic_test_and_set (operands);
-  DONE;
-})
+  {
+    kvx_expand_atomic_test_and_set (operands);
+    DONE;
+  }
+)
 
 ;; Atomic bitwise operation on memory with memory model semantics,
 ;; return the original value of the specified bit.
@@ -158,58 +164,120 @@
 (define_expand "mem_thread_fence"
   [(match_operand:SI 0 "const_int_operand" "")] ;; model
   ""
-{
-  emit_insn (gen_kvx_fence ());
-  DONE;
-})
+  {
+    emit_insn (gen_kvx_fence ());
+    DONE;
+  }
+)
 
 ;; Signal fence with memory model semantics.
 (define_expand "mem_signal_fence"
   [(match_operand:SI 0 "const_int_operand" "")] ;; model
   ""
-{
-  /* KVX memory model is strong enough not to require any
-     barrier in order to synchronize a thread with itself. */
-  DONE;
-})
+  {
+    /* KVX memory model is strong enough not to require any
+       barrier in order to synchronize a thread with itself. */
+    DONE;
+  }
+)
 
 
 ;; KVX's builtins
 
 ;; Compare and Swap
-(define_insn "acswap<lsusize>"
+(define_expand "acswap<lsusize>"
+  [(parallel
+  [(set (match_operand:TI 0 "register_operand" "")
+     (unspec_volatile:TI [(match_operand:SIDI 1 "mematomic_operand" "")] UNSPEC_ACSWAP))
+   (set (match_dup 1)
+     (unspec:SIDI [(match_dup 1) (match_dup 0)] UNSPEC_ACSWAP))]
+  )]
+  ""
+  ""
+)
+
+(define_insn "*acswap<lsusize>_1"
   [(set (match_operand:TI 0 "register_operand" "+r,r")
-    (unspec_volatile:TI [(match_operand:SIDI 1 "memory_operand" "+a,b")] UNSPEC_ACSWAP))
+    (unspec_volatile:TI [(match_operand:SIDI 1 "mematomic_operand" "+a,b")] UNSPEC_ACSWAP))
    (set (match_dup 1)
     (unspec:SIDI [(match_dup 1) (match_dup 0)] UNSPEC_ACSWAP))]
-   ""
-   "acswap<lsusize>%X1 %1 = %0"
+  "KV3_1"
+  "acswap<lsusize>%X1 %1 = %0"
   [(set_attr "length" "4,8")
-   (set_attr "type" "lsu_auxr_auxw_atomic,lsu_auxr_auxw_atomic_x")])
+   (set_attr "type" "lsu_auxr_auxw_atomic,lsu_auxr_auxw_atomic_x")]
+)
 
-;; TO GO FURTHER: acswap has a variant which directly takes a
-;; register_operand as operand 1. It is not implemented yet.
+(define_insn "*acswap<lsusize>_2"
+  [(set (match_operand:TI 0 "register_operand" "+r,r")
+    (unspec_volatile:TI [(match_operand:SIDI 1 "mematomic_operand" "+c,d")] UNSPEC_ACSWAP))
+   (set (match_dup 1)
+    (unspec:SIDI [(match_dup 1) (match_dup 0)] UNSPEC_ACSWAP))]
+  "KV3_2"
+  "acswap<lsusize>%X1 %O1 = %0"
+  [(set_attr "length" "4,8")
+   (set_attr "type" "lsu_auxr_auxw_atomic,lsu_auxr_auxw_atomic_x")]
+)
 
 ;; Fetch and Add
-(define_insn "aladd<lsusize>"
-  [(set (match_operand:SIDI 0 "register_operand" "=r,r,r")
-    (unspec_volatile:SIDI [(match_operand:SIDI 1 "memory_operand" "+a,b,m")] UNSPEC_ALADD))
+(define_expand "aladd<lsusize>"
+  [(parallel
+  [(set (match_operand:SIDI 0 "register_operand" "")
+     (unspec_volatile:SIDI [(match_operand:SIDI 1 "mematomic_operand" "")] UNSPEC_ALADD))
    (set (match_dup 1)
-    (plus:SIDI (match_dup 1)
-               (match_operand:SIDI 2 "nonmemory_operand" "0,0,0")))]
-   ""
-   "aladd<lsusize>%X1 %1 = %0"
+     (plus:SIDI (match_dup 1)
+                (match_operand:SIDI 2 "nonmemory_operand" "")))]
+  )]
+  ""
+  ""
+)
+
+(define_insn "*aladd<lsusize>_1"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r,r")
+     (unspec_volatile:SIDI [(match_operand:SIDI 1 "mematomic_operand" "+a,b,m")] UNSPEC_ALADD))
+   (set (match_dup 1)
+     (plus:SIDI (match_dup 1)
+                (match_operand:SIDI 2 "nonmemory_operand" "0,0,0")))]
+  "KV3_1"
+  "aladd<lsusize>%X1 %1 = %0"
   [(set_attr "length" "4,8,12")
-   (set_attr "type" "lsu_auxr_auxw_atomic,lsu_auxr_auxw_atomic_x,lsu_auxr_auxw_atomic_y")])
+   (set_attr "type" "lsu_auxr_auxw_atomic,lsu_auxr_auxw_atomic_x,lsu_auxr_auxw_atomic_y")]
+)
+
+(define_insn "*aladd<lsusize>_2"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+     (unspec_volatile:SIDI [(match_operand:SIDI 1 "mematomic_operand" "+c,d")] UNSPEC_ALADD))
+   (set (match_dup 1)
+     (plus:SIDI (match_dup 1)
+                (match_operand:SIDI 2 "nonmemory_operand" "0,0")))]
+  "KV3_2"
+  "aladd<lsusize>%X1 %O1 = %0"
+  [(set_attr "length" "4,8")
+   (set_attr "type" "lsu_auxr_auxw_atomic,lsu_auxr_auxw_atomic_x")]
+)
 
 ;; Load and Clear
-(define_insn "alclr<lsusize>"
-  [(set (match_operand:SIDI 0 "register_operand" "=r,r,r")
-    (unspec_volatile:SIDI [(match_operand:SIDI 1 "memory_operand" "a,b,m")] UNSPEC_ALCLR))]
-   ""
-   "alclr<lsusize>%X1 %0 = %1"
-  [(set_attr "length" "4,8,12")
-   (set_attr "type" "lsu_auxw_atomic,lsu_auxw_atomic_x,lsu_auxw_atomic_y")])
+(define_expand "alclr<lsusize>"
+  [(set (match_operand:SIDI 0 "register_operand" "")
+    (unspec_volatile:SIDI [(match_operand:SIDI 1 "mematomic_operand" "")] UNSPEC_ALCLR))]
+  ""
+  ""
+)
 
-;; TODO: acswap, aladd, and alclr insns have 'lsucond' variants which
-;; are not supported here yet.
+(define_insn "*alclr<lsusize>_1"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r,r")
+     (unspec_volatile:SIDI [(match_operand:SIDI 1 "mematomic_operand" "a,b,m")] UNSPEC_ALCLR))]
+  "KV3_1"
+  "alclr<lsusize>%X1 %0 = %1"
+  [(set_attr "length" "4,8,12")
+   (set_attr "type" "lsu_auxw_atomic,lsu_auxw_atomic_x,lsu_auxw_atomic_y")]
+)
+
+(define_insn "*alclr<lsusize>_2"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+     (unspec_volatile:SIDI [(match_operand:SIDI 1 "mematomic_operand" "c,d")] UNSPEC_ALCLR))]
+  "KV3_2"
+  "alclr<lsusize>%X1 %0 = %O1"
+  [(set_attr "length" "4,8")
+   (set_attr "type" "lsu_auxw_atomic,lsu_auxw_atomic_x")]
+)
+

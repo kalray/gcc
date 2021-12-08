@@ -159,12 +159,22 @@
 ;; Reject memory addresses that use the .xs addressing mode.
 ;; Here .xs addressing may appear as (plus (ashift (reg) (const_int)) (reg)).
 ;; In that cases addresses will be rejected by address_operand().
-(define_predicate "noxsaddr_operand"
-  (match_test "address_operand (op, VOIDmode)")
+(define_special_predicate "noxsaddr_operand"
+  (match_test "address_operand (op, mode)")
 {
   if (GET_CODE (op) == PLUS && GET_CODE (XEXP (op, 0)) == MULT)
     return false;
   return true;
+})
+
+;; Used to filter the addressing mode of atomic instruction memory operand.
+(define_special_predicate "mematomic_operand"
+  (match_code "mem")
+{
+  if (KV3_2)
+    return indirect_operand (op, mode)
+           || kvx_has_27bit_immediate_p (op);
+  return memory_operand (op, mode);
 })
 
 ;; Used for hw loop pattern where we have an output reload in a jump insn.
