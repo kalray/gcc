@@ -1041,7 +1041,10 @@ kvx_asm_output_mi_thunk (FILE *file ATTRIBUTE_UNUSED,
 			 HOST_WIDE_INT vcall_offset ATTRIBUTE_UNUSED,
 			 tree function ATTRIBUTE_UNUSED)
 {
+  const char *fnname = IDENTIFIER_POINTER (DECL_ASSEMBLER_NAME (thunk_fndecl));
   rtx xops[1];
+
+  assemble_start_function (thunk_fndecl, fnname);
   if (!TARGET_32)
     {
       if (delta)
@@ -1071,6 +1074,8 @@ kvx_asm_output_mi_thunk (FILE *file ATTRIBUTE_UNUSED,
     }
   xops[0] = XEXP (DECL_RTL (function), 0);
   output_asm_insn ("goto\t%0\n\t;;", xops);
+
+  assemble_end_function (thunk_fndecl, fnname);
 }
 
 static bool
