@@ -6102,7 +6102,7 @@ static int
 kvx_memory_move_cost (machine_mode mode, reg_class_t rclass ATTRIBUTE_UNUSED,
 		      bool in)
 {
-  // In-cache laod altency is 3 cycles.
+  // Assume in-cache load latency is 3 cycles.
   int penalty = in ? (3 - 1) : 0;
   int cost = kvx_type_lsu_cost (1, penalty);
 
@@ -6779,160 +6779,177 @@ kvx_float_fits_bits (const REAL_VALUE_TYPE *r, unsigned bitsz,
   return SIGNED_INT_FITS_N_BITS (value, bitsz);
 }
 
-/* Returns a pattern suitable for copyq asm insn with the paired
-   register SRCREG correctly split in 2 separate register reference:
-   $r0r1 => "copyq %0 = $r0, $r1" if optimising for size.  Returns "#"
-   if it is not the case to force the insn to be split in 2 copyd
-   insns at the cost of an extra instruction.
- */
-const char *
-kvx_asm_pat_copyq (rtx srcreg)
-{
-  static char templ[128];
-
-  /* The single-word copyq will be split in 2 copyd */
-  if (!optimize_size)
-    return "#";
-
-  snprintf (templ, sizeof (templ), "copyq %%0 = $r%d, $r%d", REGNO (srcreg),
-	    REGNO (srcreg) + 1);
-  return templ;
-}
-
-/* Returns the pattern for copyo when optimizing for code size or
-   forces a split by returning #
- */
-const char *
-kvx_asm_pat_copyo (void)
-{
-  if (!optimize_size)
-    return "#";
-  return "copyo %0 = %1";
-}
-
-/* Returns TRUE if OP is a REG (directly or through a SUBREG) */
+/* Returns TRUE if OP is a hard (sub)register misaligned on ALIGN.  */
 bool
-kvx_is_reg_subreg_p (rtx op)
-{
-  return REG_P (op) || (SUBREG_P (op) && REG_P (SUBREG_REG (op)));
-}
-
-/* Returns the regno associated with the REG or SUBREG in OP */
-unsigned int
-kvx_regno_subregno (rtx op)
+kvx_hardreg_misaligned_p (rtx op, int align)
 {
   if (REG_P (op))
-    return REGNO (op);
-  else
-    return REGNO (SUBREG_REG (op));
+    {
+      if (!HARD_REGISTER_P (op))
+	return false;
+
+      if (REGNO (op) % align == 0)
+	return false;
+
+      return true;
+    }
+  else if (SUBREG_P (op) && REG_P (SUBREG_REG (op)))
+    {
+      if (!HARD_REGISTER_P (SUBREG_REG (op)))
+	return false;
+
+      unsigned wordno = SUBREG_BYTE (op) / UNITS_PER_WORD;
+      if ((REGNO (SUBREG_REG (op)) + wordno) % align == 0)
+	return false;
+
+      return true;
+    }
+
+  return false;
 }
 
-/* Returns TRUE if OP is a pseudo REG (directly or through a SUBREG)
- */
-static bool
-kvx_is_pseudo_reg_subreg_p (rtx op)
-{
-  return ((REG_P (op) && !HARD_REGISTER_P (op))
-	  || (SUBREG_P (op) && REG_P (SUBREG_REG (op))
-	      && !HARD_REGISTER_P (SUBREG_REG (op))));
-}
-
-/* Returns TRUE if OP is a hard (sub)register aligned on ALIGN or a
- * pseudo (sub)register, FALSE for all other cases. */
-static bool
-kvx_check_align_reg (rtx op, int align)
-{
-  if (!kvx_is_reg_subreg_p (op))
-    return false;
-  if (kvx_is_pseudo_reg_subreg_p (op))
-    return true;
-
-  const bool aligned_reg = REG_P (op) && REGNO (op) % align == 0;
-
-  const bool aligned_subreg
-    = SUBREG_P (op) && REG_P (SUBREG_REG (op))
-      && (REGNO (SUBREG_REG (op)) + SUBREG_BYTE (op) / UNITS_PER_WORD) % align
-	   == 0;
-
-  return aligned_reg || aligned_subreg;
-}
-
-/* Returns TRUE if OP is an even hard (sub)register or a pseudo
- * (sub)register, FALSE for all other cases. It is used to check
- * correct alignement for some SIMD insn or 128bits load/store */
-bool
-kvx_ok_for_paired_reg_p (rtx op)
-{
-  return kvx_check_align_reg (op, 2);
-}
-
-/* Returns TRUE if OP is a hard (sub)register quad aligned or a pseudo
- * (sub)register, FALSE for all other cases. It is used to check
- * correct alignement for some SIMD insn or 256bits load/store */
-bool
-kvx_ok_for_quad_reg_p (rtx op)
-{
-  return kvx_check_align_reg (op, 4);
-}
-
-/* Split a 128bit move op in mode MODE from SRC to DST in 2 smaller
-   64bit moves */
+/* Split a 128-bit register move into 64-bit moves.  */
 void
-kvx_split_128bits_move (rtx dst, rtx src, enum machine_mode mode)
+kvx_split_128bits_move (rtx dst, rtx src)
 {
-  gcc_assert (!(side_effects_p (src) || side_effects_p (dst)));
-  gcc_assert (mode == GET_MODE (src) || GET_MODE (src) == VOIDmode);
-
-  rtx dst_lo = gen_lowpart (word_mode, dst);
-  rtx dst_hi = gen_highpart (word_mode, dst);
-
-  rtx src_lo = gen_lowpart (word_mode, src);
-  rtx src_hi = gen_highpart_mode (word_mode, mode, src);
-
-  if (reg_overlap_mentioned_p (dst_lo, src_hi))
+  enum machine_mode mode = GET_MODE (dst);
+  rtx dst_0 = simplify_gen_subreg (DImode, dst, mode, 0);
+  rtx dst_1 = simplify_gen_subreg (DImode, dst, mode, 8);
+  rtx src_0 = simplify_gen_subreg (DImode, src, mode, 0);
+  rtx src_1 = simplify_gen_subreg (DImode, src, mode, 8);
+  if (!reg_overlap_mentioned_p (dst, src)
+      || reg_or_subregno (dst) < reg_or_subregno (src))
     {
-      gcc_assert (!reg_overlap_mentioned_p (dst_hi, src_lo));
-
-      emit_insn (gen_movdi (dst_hi, src_hi));
-      emit_insn (gen_movdi (dst_lo, src_lo));
+      emit_insn (gen_movdi (dst_0, src_0));
+      emit_insn (gen_movdi (dst_1, src_1));
     }
   else
     {
-      emit_insn (gen_movdi (dst_lo, src_lo));
-      emit_insn (gen_movdi (dst_hi, src_hi));
+      emit_insn (gen_movdi (dst_1, src_1));
+      emit_insn (gen_movdi (dst_0, src_0));
     }
 }
 
-/* Returns TRUE of OP is a SUBREG of a CONST_VECTOR */
-bool
-kvx_subreg_const_vector_p (rtx op)
-{
-  return SUBREG_P (op) && (GET_CODE (XEXP (op, 0)) == CONST_VECTOR);
-}
-
-/* Split a 256bit move op in mode MODE from SRC to DST in 2 smaller
-   128bit moves */
+/* Split a 256-bit register move into 64-bit moves.  */
 void
-kvx_split_256bits_move (rtx dst, rtx src, enum machine_mode mode)
+kvx_split_256bits_move (rtx dst, rtx src)
 {
-  rtx dst_lo = simplify_gen_subreg (TImode, dst, mode, 0);
-  rtx dst_hi = simplify_gen_subreg (TImode, dst, mode, 16);
-
-  rtx src_lo = simplify_gen_subreg (TImode, src, mode, 0);
-  rtx src_hi = simplify_gen_subreg (TImode, src, mode, 16);
-
-  if (reg_overlap_mentioned_p (dst_lo, src_hi))
+  enum machine_mode mode = GET_MODE (dst);
+  rtx dst_0 = simplify_gen_subreg (DImode, dst, mode, 0);
+  rtx dst_1 = simplify_gen_subreg (DImode, dst, mode, 8);
+  rtx dst_2 = simplify_gen_subreg (DImode, dst, mode, 16);
+  rtx dst_3 = simplify_gen_subreg (DImode, dst, mode, 24);
+  rtx src_0 = simplify_gen_subreg (DImode, src, mode, 0);
+  rtx src_1 = simplify_gen_subreg (DImode, src, mode, 8);
+  rtx src_2 = simplify_gen_subreg (DImode, src, mode, 16);
+  rtx src_3 = simplify_gen_subreg (DImode, src, mode, 24);
+  if (!reg_overlap_mentioned_p (dst, src)
+      || reg_or_subregno (dst) < reg_or_subregno (src))
     {
-      gcc_assert (!reg_overlap_mentioned_p (dst_hi, src_lo));
-
-      emit_insn (gen_movdi (dst_hi, src_hi));
-      emit_insn (gen_movdi (dst_lo, src_lo));
+      emit_insn (gen_movdi (dst_0, src_0));
+      emit_insn (gen_movdi (dst_1, src_1));
+      emit_insn (gen_movdi (dst_2, src_2));
+      emit_insn (gen_movdi (dst_3, src_3));
     }
   else
     {
-      emit_insn (gen_movdi (dst_lo, src_lo));
-      emit_insn (gen_movdi (dst_hi, src_hi));
+      emit_insn (gen_movdi (dst_3, src_3));
+      emit_insn (gen_movdi (dst_2, src_2));
+      emit_insn (gen_movdi (dst_1, src_1));
+      emit_insn (gen_movdi (dst_0, src_0));
     }
+}
+
+/* Make a 128bit constant from SRC into DST in DI chunks.  */
+void
+kvx_make_128bit_const (rtx dst, rtx src)
+{
+  int nunits = 0;
+  HOST_WIDE_INT value_0 = 0, value_1 = 0;
+
+  switch (GET_CODE (src))
+    {
+    case CONST_INT:
+      value_0 = INTVAL (src);
+      value_1 = value_0 < 0 ? HOST_WIDE_INT_M1 : HOST_WIDE_INT_0;
+      break;
+    case CONST_WIDE_INT:
+      nunits = CONST_WIDE_INT_NUNITS (src);
+      if (nunits > 0)
+	value_0 = CONST_WIDE_INT_ELT (src, 0);
+      if (nunits > 1)
+	value_1 = CONST_WIDE_INT_ELT (src, 1);
+      else
+	value_1 = value_0 < 0 ? HOST_WIDE_INT_M1 : HOST_WIDE_INT_0;
+      break;
+    case CONST_VECTOR:
+      value_0 = kvx_const_vector_value (src, 0);
+      value_1 = kvx_const_vector_value (src, 1);
+      break;
+    default:
+      gcc_unreachable ();
+    }
+
+  enum machine_mode mode = GET_MODE (dst);
+  rtx dst_0 = simplify_gen_subreg (DImode, dst, mode, 0);
+  rtx dst_1 = simplify_gen_subreg (DImode, dst, mode, 8);
+
+  emit_insn (gen_movdi (dst_0, GEN_INT (value_0)));
+  emit_insn (gen_movdi (dst_1, GEN_INT (value_1)));
+}
+
+/* Make a 256bit constant from SRC into DST in DI chunks.  */
+void
+kvx_make_256bit_const (rtx dst, rtx src)
+{
+  int nunits = 0;
+  HOST_WIDE_INT value_0 = 0, value_1 = 0, value_2 = 0, value_3 = 0;
+
+  switch (GET_CODE (src))
+    {
+    case CONST_INT:
+      value_0 = INTVAL (src);
+      value_1 = value_0 < 0 ? HOST_WIDE_INT_M1 : HOST_WIDE_INT_0;
+      value_2 = value_1 < 0 ? HOST_WIDE_INT_M1 : HOST_WIDE_INT_0;
+      value_3 = value_2 < 0 ? HOST_WIDE_INT_M1 : HOST_WIDE_INT_0;
+      break;
+    case CONST_WIDE_INT:
+      nunits = CONST_WIDE_INT_NUNITS (src);
+      if (nunits > 0)
+	value_0 = CONST_WIDE_INT_ELT (src, 0);
+      if (nunits > 1)
+	value_1 = CONST_WIDE_INT_ELT (src, 1);
+      else
+	value_1 = value_0 < 0 ? HOST_WIDE_INT_M1 : HOST_WIDE_INT_0;
+      if (nunits > 2)
+	value_2 = CONST_WIDE_INT_ELT (src, 2);
+      else
+	value_2 = value_1 < 0 ? HOST_WIDE_INT_M1 : HOST_WIDE_INT_0;
+      if (nunits > 3)
+	value_3 = CONST_WIDE_INT_ELT (src, 3);
+      else
+	value_3 = value_2 < 0 ? HOST_WIDE_INT_M1 : HOST_WIDE_INT_0;
+      break;
+    case CONST_VECTOR:
+      value_0 = kvx_const_vector_value (src, 0);
+      value_1 = kvx_const_vector_value (src, 1);
+      value_2 = kvx_const_vector_value (src, 2);
+      value_3 = kvx_const_vector_value (src, 3);
+      break;
+    default:
+      gcc_unreachable ();
+    }
+
+  enum machine_mode mode = GET_MODE (dst);
+  rtx dst_0 = simplify_gen_subreg (DImode, dst, mode, 0);
+  rtx dst_1 = simplify_gen_subreg (DImode, dst, mode, 8);
+  rtx dst_2 = simplify_gen_subreg (DImode, dst, mode, 16);
+  rtx dst_3 = simplify_gen_subreg (DImode, dst, mode, 24);
+
+  emit_insn (gen_movdi (dst_0, GEN_INT (value_0)));
+  emit_insn (gen_movdi (dst_1, GEN_INT (value_1)));
+  emit_insn (gen_movdi (dst_2, GEN_INT (value_2)));
+  emit_insn (gen_movdi (dst_3, GEN_INT (value_3)));
 }
 
 /* Returns TRUE if OP is a symbol and has the farcall attribute or if
