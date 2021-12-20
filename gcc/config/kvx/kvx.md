@@ -234,52 +234,6 @@
    "
 )
 
-;; Split what would end-up in a single copyq insn in 2 copyd.
-;; Both copyd use 1 TINY each instead of the MAU used by copyq
-;; at the cost of an extra word in .text.
-(define_split
-  [(set (match_operand:TI 0 "register_operand" "")
-        (match_operand:TI 1 "register_operand" ""))]
-  "!optimize_size && reload_completed"
-  [(const_int 0)]
-  {
-    kvx_split_128bits_move (operands[0], operands[1], TImode);
-    DONE;
-  }
-)
-
-;; This should be used only for argument passing in registers r0-r11
-;; where no register alignement is enforced (eg. a TI can be moved in
-;; r3 and r4)
-(define_insn_and_split "*mov_quad_oddreg"
-    [(set (match_operand:TI 0 "register_operand" "=r")
-          (match_operand:TI 1 "nonmemory_operand"  " ir" ))]
- "(kvx_is_reg_subreg_p (operands[0]) && !kvx_ok_for_paired_reg_p (operands[0]))
-   || (kvx_is_reg_subreg_p (operands[1]) && !kvx_ok_for_paired_reg_p (operands[1]))"
-  "#"
-  "&& reload_completed"
-  [(const_int 0)]
-  {
-   /* This should only happen during function argument preparation */
-   kvx_split_128bits_move (operands[0], operands[1], TImode);
-   DONE;
-  }
-)
-
-;; Split what would end-up in a single copyo insn in 2 copyq (that
-;; will end up as 4 copyd). All copyd use 1 TINY each instead of the
-;; LSU used by copyo at the cost of 3 extra words in .text.
-(define_split
-  [(set (match_operand:OI 0 "register_operand" "")
-         (match_operand:OI 1 "register_operand" ""))]
-  "!optimize_size && reload_completed"
-  [(const_int 0)]
-  {
-    kvx_split_256bits_move (operands[0], operands[1], OImode);
-    DONE;
-  }
-)
-
 ;; FIXME AUTO: refine set insn to bundle it when possible. T7808
 (define_insn "*mov<mode>_all"
     [(set (match_operand:ALLIF 0 "nonimmediate_operand" "=r, r,           r,  r, a, b, m, r , r , r , r , r , r , r,  RXX, r, r")
@@ -320,7 +274,7 @@
 (define_insn "add_pcrel_<mode>"
   [(set (match_operand:P 0 "register_operand" "=r")
         (const:P (plus:P (pc)
-                         (unspec:P [(match_operand 1 "symbolic_operand" "" )
+                         (unspec:P [(match_operand 1 "symbolic_operand" "")
                                     (pc)] UNSPEC_PCREL))))
 ]
  ""

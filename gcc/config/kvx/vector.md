@@ -13,7 +13,7 @@
 (define_insn "*mov<mode>"
   [(set (match_operand:SIMD64 0 "nonimmediate_operand" "=r, r, r, r, r, r, r,a,b,m,  r,  r,r")
         (match_operand:SIMD64 1 "general_operand"       "r,Ca,Cb,Cm,Za,Zb,Zm,r,r,r,v16,v43,i"))]
-  "(!immediate_operand(operands[1], <MODE>mode) || !memory_operand(operands[0], <MODE>mode))"
+  "(!immediate_operand (operands[1], <MODE>mode) || !memory_operand (operands[0], <MODE>mode))"
   {
     switch (which_alternative)
       {
@@ -41,46 +41,43 @@
         (match_operand:ALL128 1 "general_operand" ""))]
   ""
   {
-    // late splitting of mem will not be possible in the general case
-    if ((MEM_P (operands[0]) && !kvx_ok_for_paired_reg_p (operands[1]))
-        ||(MEM_P (operands[1]) && !kvx_ok_for_paired_reg_p (operands[0])))
-    {
-       gcc_assert (! reload_completed && !reload_in_progress);
-       rtx tmp = gen_reg_rtx(<MODE>mode);
-       emit_move_insn (tmp, operands[1]);
-       emit_move_insn (operands[0], tmp);
-       DONE;
-    }
+    bool misaligned_0 = kvx_hardreg_misaligned_p (operands[0], 2);
+    bool misaligned_1 = kvx_hardreg_misaligned_p (operands[1], 2);
+    if (misaligned_0 && MEM_P (operands[1]) || misaligned_1 && MEM_P (operands[0]))
+      {
+        rtx temp = gen_reg_rtx (<MODE>mode);
+        emit_insn (gen_rtx_SET (temp, operands[1]));
+        emit_insn (gen_rtx_SET (operands[0], temp));
+        DONE;
+      }
 
     if (MEM_P (operands[0]))
       operands[1] = force_reg (<MODE>mode, operands[1]);
   }
 )
 
-(define_insn_and_split "*mov<mode>_oddreg"
+(define_insn_and_split "*copy<mode>"
   [(set (match_operand:ALL128 0 "register_operand" "=r")
-        (match_operand:ALL128 1 "nonmemory_operand" " ir"))]
-  "(kvx_is_reg_subreg_p (operands[0]) && !kvx_ok_for_paired_reg_p (operands[0]))
-    || (kvx_is_reg_subreg_p (operands[1]) && !kvx_ok_for_paired_reg_p (operands[1]))"
+        (match_operand:ALL128 1 "register_operand" "r"))]
+  "kvx_hardreg_misaligned_p (operands[0], 2) || kvx_hardreg_misaligned_p (operands[1], 2)"
   "#"
   "&& reload_completed"
   [(const_int 0)]
   {
-    /* This should only happen during function argument preparation */
-    kvx_split_128bits_move (operands[0], operands[1], <MODE>mode);
+    kvx_split_128bits_move (operands[0], operands[1]);
     DONE;
   }
 )
 
 (define_insn "*mov<mode>"
-  [(set (match_operand:ALL128 0 "kvx_nonimmediate_operand_pair" "=r, r, r, r, r, r, r,a,b,m")
-        (match_operand:ALL128 1 "kvx_nonimmediate_operand_pair" " r,Ca,Cb,Cm,Za,Zb,Zm,r,r,r"))]
-  "(!immediate_operand(operands[1], <MODE>mode) || !memory_operand(operands[0], <MODE>mode))"
+  [(set (match_operand:ALL128 0 "nonimmediate_operand" "=r, r, r, r, r, r, r,a,b,m")
+        (match_operand:ALL128 1 "nonimmediate_operand"  "r,Ca,Cb,Cm,Za,Zb,Zm,r,r,r"))]
+  "!kvx_hardreg_misaligned_p (operands[0], 2) && !kvx_hardreg_misaligned_p (operands[1], 2)"
   {
     switch (which_alternative)
       {
       case 0:
-        return kvx_asm_pat_copyq (operands[1]);
+        return "#";
       case 1: case 2: case 3: case 4: case 5: case 6:
         return "lq%C1%m1 %0 = %1";
       case 7: case 8: case 9:
@@ -89,33 +86,30 @@
         gcc_unreachable ();
       }
   }
-  [(set_attr "type" "mau,lsu_auxw_load,lsu_auxw_load_x,lsu_auxw_load_y,lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y,lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
-   (set_attr "length" "4,             4,             8,             12,                     4,                       8,                      12,             4,               8,              12")]
+  [(set_attr "type" "alu_tiny_x2,lsu_auxw_load,lsu_auxw_load_x,lsu_auxw_load_y,lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y,lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
+   (set_attr "length"         "8,             4,             8,             12,                     4,                       8,                      12,             4,               8,              12")]
 )
 
-;; Split what would end-up in a copyq in 2 copyd.
-;; copyd uses 1 TINY each instead of the MAU used by copyq
-;; at the cost of an extra word on insn
 (define_split
   [(set (match_operand:ALL128 0 "register_operand" "")
-         (match_operand:ALL128 1 "register_operand" ""))]
-  "!optimize_size && reload_completed"
+        (match_operand:ALL128 1 "register_operand" ""))]
+  "reload_completed"
   [(const_int 0)]
   {
-    kvx_split_128bits_move (operands[0], operands[1], <MODE>mode);
+    kvx_split_128bits_move (operands[0], operands[1]);
     DONE;
   }
 )
 
-(define_insn_and_split "*mov<mode>_immediate"
+(define_insn_and_split "*make<mode>"
     [(set (match_operand:ALL128 0 "register_operand" "=r")
-          (match_operand:ALL128 1 "vec_or_scalar_immediate_operand" "i" ))]
+          (match_operand:ALL128 1 "immediate_operand" "i"))]
   ""
   "#"
-  "&& reload_completed"
+  "reload_completed"
   [(const_int 0)]
   {
-    kvx_split_128bits_move (operands[0], operands[1], <MODE>mode);
+    kvx_make_128bit_const (operands[0], operands[1]);
     DONE;
   }
 )
@@ -128,46 +122,43 @@
         (match_operand:ALL256 1 "general_operand" ""))]
   ""
   {
-    // late splitting of mem will not be possible in the general case
-    if ((MEM_P (operands[0]) && !kvx_ok_for_quad_reg_p (operands[1]))
-        || (MEM_P (operands[1]) && !kvx_ok_for_quad_reg_p (operands[0])))
-    {
-      gcc_assert (! reload_completed && !reload_in_progress);
-      rtx tmp = gen_reg_rtx(<MODE>mode);
-      emit_move_insn (tmp, operands[1]);
-      emit_move_insn (operands[0], tmp);
-      DONE;
-    }
+    bool misaligned_0 = kvx_hardreg_misaligned_p (operands[0], 4);
+    bool misaligned_1 = kvx_hardreg_misaligned_p (operands[1], 4);
+    if (misaligned_0 && MEM_P (operands[1]) || misaligned_1 && MEM_P (operands[0]))
+      {
+        rtx temp = gen_reg_rtx (<MODE>mode);
+        emit_insn (gen_rtx_SET (temp, operands[1]));
+        emit_insn (gen_rtx_SET (operands[0], temp));
+        DONE;
+      }
 
     if (MEM_P (operands[0]))
       operands[1] = force_reg (<MODE>mode, operands[1]);
   }
 )
 
-(define_insn_and_split "*mov<mode>_misalign_reg"
+(define_insn_and_split "*copy<mode>"
   [(set (match_operand:ALL256 0 "register_operand" "=r")
-        (match_operand:ALL256 1 "nonmemory_operand" "ir"))]
-  "(kvx_is_reg_subreg_p (operands[0]) && !kvx_ok_for_quad_reg_p (operands[0]))
-    || (kvx_is_reg_subreg_p (operands[1]) && !kvx_ok_for_quad_reg_p (operands[1]))"
+        (match_operand:ALL256 1 "register_operand" "r"))]
+  "kvx_hardreg_misaligned_p (operands[0], 4) || kvx_hardreg_misaligned_p (operands[1], 4)"
   "#"
   "&& reload_completed"
   [(const_int 0)]
   {
-    /* This should only happen during function argument preparation */
-    kvx_split_256bits_move (operands[0], operands[1], <MODE>mode);
+    kvx_split_256bits_move (operands[0], operands[1]);
     DONE;
   }
 )
 
 (define_insn "*mov<mode>"
-  [(set (match_operand:ALL256 0 "kvx_nonimmediate_operand_quad" "=r, r, r, r, r, r, r,a,b,m")
-        (match_operand:ALL256 1 "kvx_nonimmediate_operand_quad"  "r,Ca,Cb,Cm,Za,Zb,Zm,r,r,r"))]
-  "(!immediate_operand(operands[1], <MODE>mode) || !memory_operand(operands[0], <MODE>mode))"
+  [(set (match_operand:ALL256 0 "nonimmediate_operand" "=r, r, r, r, r, r, r,a,b,m")
+        (match_operand:ALL256 1 "nonimmediate_operand"  "r,Ca,Cb,Cm,Za,Zb,Zm,r,r,r"))]
+  "!kvx_hardreg_misaligned_p (operands[0], 4) && !kvx_hardreg_misaligned_p (operands[1], 4)"
   {
     switch (which_alternative)
       {
       case 0:
-        return kvx_asm_pat_copyo ();
+        return "#";
       case 1: case 2: case 3: case 4: case 5: case 6:
         return "lo%C1%m1 %0 = %1";
       case 7: case 8: case 9:
@@ -176,33 +167,30 @@
         gcc_unreachable ();
       }
   }
-  [(set_attr "type" "lsu_auxr_auxw,lsu_auxw_load,lsu_auxw_load_x,lsu_auxw_load_y,lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y,lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
-   (set_attr "length"           "4,            4,              8,             12,                     4,                       8,                      12,             4,               8,              12")]
+  [(set_attr "type" "alu_tiny_x4,lsu_auxw_load,lsu_auxw_load_x,lsu_auxw_load_y,lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y,lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
+   (set_attr "length"        "16,            4,              8,             12,                     4,                       8,                      12,             4,               8,              12")]
 )
 
-;; Split what would end-up in a copyo in 4 copyd.
-;; copyd uses 1 TINY each instead of the LSU used by copyo
-;; at the cost of 3 extra word on insn
 (define_split
   [(set (match_operand:ALL256 0 "register_operand" "")
-         (match_operand:ALL256 1 "register_operand" ""))]
-  "!optimize_size && reload_completed"
+        (match_operand:ALL256 1 "register_operand" ""))]
+  "reload_completed"
   [(const_int 0)]
   {
-    kvx_split_256bits_move (operands[0], operands[1], <MODE>mode);
+    kvx_split_256bits_move (operands[0], operands[1]);
     DONE;
   }
 )
 
-(define_insn_and_split "*mov<mode>_immediate"
+(define_insn_and_split "*make<mode>"
     [(set (match_operand:ALL256 0 "register_operand" "=r")
-          (match_operand:ALL256 1 "vec_or_scalar_immediate_operand" "i" ))]
+          (match_operand:ALL256 1 "immediate_operand" "i"))]
   ""
   "#"
-  "&& reload_completed"
+  "reload_completed"
   [(const_int 0)]
   {
-   kvx_split_256bits_move (operands[0], operands[1], <MODE>mode);
+   kvx_make_256bit_const (operands[0], operands[1]);
    DONE;
   }
 )
@@ -5828,7 +5816,7 @@
       }
     else if (flag_reciprocal_math)
       {
-        rtx t = gen_reg_rtx(<MODE>mode);
+        rtx t = gen_reg_rtx (<MODE>mode);
         emit_insn (gen_kvx_frec<suffix> (t, b, rm));
         emit_insn (gen_kvx_fmul<suffix> (operands[0], a, t, rm));
       }
@@ -5856,7 +5844,7 @@
    (match_operand:VXSF 1 "register_operand" "")]
   "flag_reciprocal_math"
   {
-    rtx temp = gen_reg_rtx(<MODE>mode);
+    rtx temp = gen_reg_rtx (<MODE>mode);
     rtx rm = gen_rtx_CONST_STRING (VOIDmode, "");
     emit_insn (gen_kvx_frsr<suffix> (temp, operands[1], rm));
     emit_insn (gen_mul<mode>3 (operands[0], operands[1], temp));

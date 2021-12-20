@@ -98,15 +98,11 @@ extern bool kvx_is_farcall_p (rtx);
 
 extern void kvx_override_options (void);
 
-const char *kvx_asm_pat_copyq (rtx srcreg);
-const char *kvx_asm_pat_copyo (void);
-
-bool kvx_ok_for_paired_reg_p (rtx op);
-bool kvx_ok_for_quad_reg_p (rtx op);
-bool kvx_is_reg_subreg_p (rtx op);
-
-void kvx_split_128bits_move (rtx dst, rtx src, enum machine_mode mode);
-void kvx_split_256bits_move (rtx dst, rtx src, enum machine_mode mode);
+extern bool kvx_hardreg_misaligned_p (rtx op, int align);
+extern void kvx_split_128bits_move (rtx dst, rtx src);
+extern void kvx_split_256bits_move (rtx dst, rtx src);
+extern void kvx_make_128bit_const (rtx dst, rtx src);
+extern void kvx_make_256bit_const (rtx dst, rtx src);
 
 extern bool kvx_has_10bit_imm_or_register_p (rtx x);
 extern bool kvx_has_10bit_immediate_p (rtx x);
@@ -162,8 +158,6 @@ extern int kvx_has_tls_reference (rtx x);
 
 extern bool kvx_float_fits_bits (const REAL_VALUE_TYPE *r, unsigned bitsz,
 				 enum machine_mode mode);
-
-extern bool kvx_subreg_const_vector_p (rtx);
 
 extern poly_int64 kvx_initial_elimination_offset (int, int);
 

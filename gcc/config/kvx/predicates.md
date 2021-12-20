@@ -26,6 +26,10 @@
        (ior (match_operand 0 "register_operand")
             (match_test "op == CONST1_RTX (mode)"))))
 
+;; Wide immediate operand for scalar or vector MODE
+(define_predicate "wide_immediate_operand"
+  (match_code "const_int,const_wide_int,const_vector"))
+
 ;; Allow for LABELs to be used in the mov expander
 ;; It will split it using add_pcrel insn.
 ;; This predicates should only be used in the expander as LABELs
@@ -191,54 +195,4 @@
 (define_predicate "load_multiple_operation_uncached"
   (and (match_code "parallel")
        (match_test "kvx_load_multiple_operation_p (op, true)")))
-
-;; Predicates used for register pair for 128-bits.
-
-;; Returns TRUE if OP is suitable for paired-register (pseudo reg are
-;; accepted)
-(define_predicate "kvx_register_pair_operand"
-  (and (match_operand 0 "register_operand")
-       (match_test "kvx_ok_for_paired_reg_p (op)")))
-
-;; Returns TRUE if OP is a paired-register or if it is a
-;; nonimmediate_operand and not a register
-(define_predicate "kvx_nonimmediate_operand_pair"
- (and (match_operand 0 "nonimmediate_operand")
-      (ior (not (match_operand 0 "register_operand"))
-           (match_operand 0 "kvx_register_pair_operand"))))
-
-;; Returns TRUE if OP is a paired-register or a general_operand and
-;; not a register.
-(define_predicate "kvx_general_operand_pair"
- (and (match_operand 0 "general_operand")
-      (ior (not (match_operand 0 "register_operand"))
-           (match_operand 0 "kvx_register_pair_operand"))))
-
-;; TRUE for any immediate, const_vector or subreg of const_vector
-(define_predicate "vec_or_scalar_immediate_operand"
-    (ior (match_operand 0 "immediate_operand")
-         (match_code "const_vector")
-         (match_test "kvx_subreg_const_vector_p (op)")))
-
-;; Predicates used for register quad for 256-bits.
-
-;; Returns TRUE if OP is suitable for quad-register (pseudo reg are
-;; accepted)
-(define_predicate "kvx_register_quad_operand"
-  (and (match_operand 0 "register_operand")
-       (match_test "kvx_ok_for_quad_reg_p (op)")))
-
-;; Returns TRUE if OP is a quad-register or if it is a
-;; nonimmediate_operand and not a register
-(define_predicate "kvx_nonimmediate_operand_quad"
- (and (match_operand 0 "nonimmediate_operand")
-      (ior (not (match_operand 0 "register_operand"))
-           (match_operand 0 "kvx_register_quad_operand"))))
-
-;; Returns TRUE if OP is a quad-register or a general_operand and
-;; not a register.
-(define_predicate "kvx_general_operand_quad"
- (and (match_operand 0 "general_operand")
-      (ior (not (match_operand 0 "register_operand"))
-           (match_operand 0 "kvx_register_quad_operand"))))
 
