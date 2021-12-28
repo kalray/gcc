@@ -24,8 +24,8 @@ int64x4_t access_v4di(int64x4_t *p, int i) { return ++p[i]; }
 /* { dg-final { scan-assembler-times "ld.xs \\\$" 1 } } */
 /* { dg-final { scan-assembler-times "sd.xs \\\$" 1 } } */
 
-/* { dg-final { scan-assembler-times "lq.xs \\\$" 1 } } */
-/* { dg-final { scan-assembler-times "sq.xs \\\$" 1 } } */
+/* { dg-final { scan-assembler-times "lq.xs \\\$" 2 } } */
+/* { dg-final { scan-assembler-times "sq.xs \\\$" 2 } } */
 
 /* { dg-final { scan-assembler-times "lo.xs \\\$" 1 } } */
 /* { dg-final { scan-assembler-times "so.xs \\\$" 1 } } */
