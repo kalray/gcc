@@ -5510,60 +5510,105 @@ kvx_asm_final_postscan_insn (FILE *file, rtx_insn *insn,
     }
 }
 
+/* Compute the cost of an addressing mode that contains X.  */
 static int
-kvx_type_all_cost (int nunits, int penalty)
+kvx_address_cost (rtx x, machine_mode mode ATTRIBUTE_UNUSED,
+		  addr_space_t space ATTRIBUTE_UNUSED,
+		  bool speed ATTRIBUTE_UNUSED)
 {
-  return COSTS_N_INSNS (6 * nunits + penalty);
+  // RISC-style offset[reg] addressing mode, default cost is zero.
+  int cost = 0;
+
+  // Case of .xs reg[reg] addressing mode.
+  if (GET_CODE (x) == PLUS && GET_CODE (XEXP (x, 0)) == MULT
+      && GET_CODE (XEXP (XEXP (x, 0), 1)) == CONST_INT)
+    cost = 1;
+
+  // Case of reg[reg] addressing mode.
+  else if (GET_CODE (x) == PLUS && REG_P (XEXP (x, 0)) && REG_P (XEXP (x, 1)))
+    cost = 2;
+
+  // Case of 0[reg] addressing mode, prefer reg[reg] if possible.
+  else if (REG_P (x) || SUBREG_P (x))
+    cost = 3;
+
+  if (DUMP_COSTS)
+    {
+      fprintf (stderr,
+	       "kvx_address_cost(mode=%s, space=%d, speed=%d, init=%d)\n",
+	       GET_MODE_NAME (mode), space, speed, !cfun->decl);
+      debug_rtx (x);
+      fprintf (stderr, "\tcost=%d\n\n", cost);
+    }
+
+  return cost;
+}
+
+static int kvx_cost_factor = 0;
+//#define COST_FACTOR(n) (kvx_cost_factor ? (n + kvx_cost_factor - 1)/kvx_cost_factor : n)
+#define COST_FACTOR(n) (((n) + 1) >> 1)
+
+static int
+kvx_type_all_cost (int nunits, int penalty, bool speed)
+{
+  int factor = 4 * nunits;
+  return speed ? COSTS_N_INSNS (factor) + penalty : COSTS_N_INSNS (4);
 }
 
 static int
-kvx_type_tiny_cost (int nunits, int penalty)
+kvx_type_tiny_cost (int nunits, int penalty, bool speed)
 {
-  return COSTS_N_INSNS (1 * nunits + penalty);
+  int factor = COST_FACTOR(1) * nunits;
+  return speed ? COSTS_N_INSNS (factor) + penalty : COSTS_N_INSNS (1);
 }
 
 static int
-kvx_type_thin_cost (int nunits, int penalty)
+kvx_type_thin_cost (int nunits, int penalty, bool speed)
 {
-  if (KV3_2)
-    return COSTS_N_INSNS (1 * nunits + penalty);
-  return COSTS_N_INSNS (2 * nunits + penalty);
+  int factor = COST_FACTOR(2) * nunits;
+  return speed ? COSTS_N_INSNS (factor) + penalty : COSTS_N_INSNS (1);
 }
 
 static int
-kvx_type_lite_cost (int nunits, int penalty)
+kvx_type_lite_cost (int nunits, int penalty, bool speed)
 {
-  return COSTS_N_INSNS (2 * nunits + penalty);
+  int factor = COST_FACTOR(2) * nunits;
+  return speed ? COSTS_N_INSNS (factor) + penalty : COSTS_N_INSNS (1);
 }
 
 static int
-kvx_type_full_cost (int nunits, int penalty)
+kvx_type_full_cost (int nunits, int penalty, bool speed)
 {
-  return COSTS_N_INSNS (4 * nunits + penalty);
+  int factor = COST_FACTOR(4) * nunits;
+  return speed ? COSTS_N_INSNS (factor) + penalty : COSTS_N_INSNS (1);
 }
 
 static int
-kvx_type_lsu_cost (int nunits, int penalty)
+kvx_type_lsu_cost (int nunits, int penalty, bool speed)
 {
-  return COSTS_N_INSNS (4 * nunits + penalty);
+  int factor = COST_FACTOR(4) * nunits;
+  return speed ? COSTS_N_INSNS (factor) + penalty : COSTS_N_INSNS (1);
 }
 
 static int
-kvx_type_mau_cost (int nunits, int penalty)
+kvx_type_mau_cost (int nunits, int penalty, bool speed)
 {
-  return COSTS_N_INSNS (4 * nunits + penalty);
+  int factor = COST_FACTOR(4) * nunits;
+  return speed ? COSTS_N_INSNS (factor) + penalty : COSTS_N_INSNS (1);
 }
 
 static int
-kvx_type_bcu_cost (int nunits, int penalty)
+kvx_type_bcu_cost (int nunits, int penalty, bool speed)
 {
-  return COSTS_N_INSNS (4 * nunits + penalty);
+  int factor = COST_FACTOR(4) * nunits;
+  return speed ? COSTS_N_INSNS (factor) + penalty : COSTS_N_INSNS (1);
 }
 
 static int
-kvx_type_tca_cost (int nunits, int penalty)
+kvx_type_tca_cost (int nunits, int penalty, bool speed)
 {
-  return COSTS_N_INSNS (4 * nunits + penalty);
+  int factor = COST_FACTOR(4) * nunits;
+  return speed ? COSTS_N_INSNS (factor) + penalty : COSTS_N_INSNS (1);
 }
 
 /* Compute a (partial) cost for rtx X.  Return true if the complete
@@ -5571,35 +5616,46 @@ kvx_type_tca_cost (int nunits, int penalty)
    scanned.  In either case, *TOTAL contains the cost result.
    The initial value of *TOTAL is the default value computed by
    (rtx_cost).  It may be left unmodified.  OUTER_CODE contains the
-   code of the superexpression of x.
-   Used by instruction selection and subreg splitting, can be approximate.  */
+   code of the superexpression of x.  */
 static bool
 kvx_rtx_costs (rtx x, machine_mode mode, int outer_code,
-	       int opno ATTRIBUTE_UNUSED, int *total, bool speed)
+	       int opno , int *total, bool speed)
 {
+  int latency = 1;
   bool float_mode_p = FLOAT_MODE_P (mode);
   int nwords = (GET_MODE_SIZE (mode) + UNITS_PER_WORD - 1) / UNITS_PER_WORD;
-  int latency = 1;
+  nwords = nwords >= 1 ? nwords : 1;
 
   if (DUMP_COSTS)
     {
-      fprintf (stderr, "kvx_rtx_costs(mode=%s, code=%s, speed=%d)\n",
-	       GET_MODE_NAME (mode), GET_RTX_NAME (outer_code), speed);
+      fprintf (stderr, "kvx_rtx_costs(mode=%s, code=%s, opno=%d speed=%d, init=%d)\n",
+	       GET_MODE_NAME (mode), GET_RTX_NAME (outer_code), opno, speed,
+	       !cfun->decl);
       debug_rtx (x);
     }
+
+  // By default there is no added cost.
+  *total = 0;
 
   switch (GET_CODE (x))
     {
     // RTX_CONST_OBJ:
     case CONST_INT:
-      // Assume 10-bit immediates are always available.
-      if (INTVAL (x) >= -512 && INTVAL (x) <= 511)
-	*total = COSTS_N_INSNS (0);
-      else if (INTVAL (x) >= -32768 && INTVAL (x) <= 32767)
-	*total = COSTS_N_INSNS (1);
-      else
-	*total = COSTS_N_INSNS (2);
-      goto return_true;
+      {
+	HOST_WIDE_INT intval = INTVAL (x);
+	if (SIGNED_INT_FITS_N_BITS (intval, 10))
+	  // Assume 10-bit immediates are available at no cost.
+	  *total = 0;
+	else if (SIGNED_INT_FITS_N_BITS (intval, 32))
+	  *total = speed ? 1 : 4;
+	else
+	  *total = speed ? 2 : 8;
+      }
+      if (outer_code == SET)
+	{
+	  *total += kvx_type_tiny_cost (nwords, 0, speed);
+	}
+      goto end_recurse;
 
     case CONST_WIDE_INT:
     case CONST_DOUBLE:
@@ -5607,18 +5663,22 @@ kvx_rtx_costs (rtx x, machine_mode mode, int outer_code,
     case CONST:
     case LABEL_REF:
     case SYMBOL_REF:
-      *total = COSTS_N_INSNS (2);
-      goto return_true;
+      *total = speed ? 2 * nwords : 8 * nwords;
+      if (outer_code == SET)
+	{
+	  *total += *total = kvx_type_tiny_cost (nwords, 0, speed);
+	}
+      goto end_recurse;
 
     // RTX_OBJ:
     case REG:
     case SCRATCH:
-      break;
+      goto end_recurse;
 
     case MEM:
-      latency = 3;
-      *total = kvx_type_lsu_cost (1, (latency - 1) * speed);
-      goto return_false;
+      latency = opno ? 3 : 1;
+      *total = kvx_type_lsu_cost (1, (latency - 1), speed);
+      goto end_recurse;
 
     // RTX_COMPARE:
     // RTX_COMM_COMPARE:
@@ -5640,30 +5700,43 @@ kvx_rtx_costs (rtx x, machine_mode mode, int outer_code,
     case ORDERED:
     case UNEQ:
     case LTGT:
-      latency = 2;
-      *total = float_mode_p
-		 ? kvx_type_lite_cost (nwords, (latency - 1) * speed)
-		 : kvx_type_tiny_cost (nwords, (latency - 1) * speed);
-      goto return_false;
+      if (outer_code != IF_THEN_ELSE)
+	{
+	  // COMP* and FCOMP* instructions.
+	  latency = 2;
+	  *total = float_mode_p
+		     ? kvx_type_lite_cost (nwords, (latency - 1), speed)
+		     : kvx_type_tiny_cost (nwords, (latency - 1), speed);
+	}
+      // Recurse for immediates.
+      break;
 
     // RTX_UNARY:
     case NEG:
     case NOT:
-      *total = kvx_type_tiny_cost (nwords, 0);
-      goto return_false;
-
     case SIGN_EXTEND:
     case ZERO_EXTEND:
-      if (MEM_P (XEXP (x, 0)))
-	*total = 0;
-      else
-	*total = kvx_type_tiny_cost (nwords, 0);
-      goto return_false;
-
+      if (outer_code == SET)
+	{
+	  enum rtx_code inner_code = GET_CODE (XEXP (x, 0));
+	  enum rtx_class inner_class = GET_RTX_CLASS (inner_code);
+	  if (inner_code ==  SUBREG || inner_class == RTX_OBJ
+	      || (!float_mode_p && inner_class == RTX_UNARY))
+	    // Stand-alone NEG / NOT / SIGN_EXTEND / ZERO_EXTEND.
+	    {
+	      *total = kvx_type_tiny_cost (nwords, 0, speed);
+	      goto end_recurse;
+	    }
+	}
     case TRUNCATE:
+      // Recurse for inner arithmetic.
+      break;
+
     case FLOAT_EXTEND:
     case FLOAT_TRUNCATE:
+    case FIX:
     case FLOAT:
+    case UNSIGNED_FIX:
     case UNSIGNED_FLOAT:
     case ABS:
     case SQRT:
@@ -5680,25 +5753,32 @@ kvx_rtx_costs (rtx x, machine_mode mode, int outer_code,
     case SS_ABS:
     case SS_TRUNCATE:
     case US_TRUNCATE:
-      *total = float_mode_p ? kvx_type_lite_cost (nwords, 0)
-			    : kvx_type_tiny_cost (nwords, 0);
-      goto return_false;
+      *total = float_mode_p ? kvx_type_lite_cost (nwords, 0, speed)
+			    : kvx_type_tiny_cost (nwords, 0, speed);
+      goto end_recurse;
 
     // RTX_COMM_ARITH:
     // RTX_BIN_ARITH:
     case PLUS:
     case MINUS:
       latency = 2 + float_mode_p * 2;
-      *total = float_mode_p ? kvx_type_mau_cost (nwords, (latency - 1) * speed)
-			    : kvx_type_tiny_cost (nwords, 0);
-      goto return_false;
+      *total = float_mode_p ? kvx_type_mau_cost (nwords, (latency - 1), speed)
+			    : kvx_type_tiny_cost (nwords, 0, speed);
+      // Recurse for immediates or for inner MULT or SHIFT.
+      break;
 
     case MULT:
     case SS_MULT:
     case US_MULT:
       latency = 2 + float_mode_p * 2;
-      *total = kvx_type_mau_cost (nwords, (latency - 1) * speed);
-      goto return_false;
+      *total = kvx_type_mau_cost (nwords, (latency - 1), speed);
+      if (!float_mode_p && (outer_code == PLUS || outer_code == MINUS))
+	{
+	  // MADD*, MSBF* instructions, subtract cost of PLUS / MINUS.
+	  *total -= kvx_type_tiny_cost (nwords, 0, speed);
+	  gcc_checking_assert (*total > 0);
+	}
+      goto end_recurse;
 
     case AND:
     case IOR:
@@ -5709,39 +5789,42 @@ kvx_rtx_costs (rtx x, machine_mode mode, int outer_code,
     case UMAX:
     case SS_PLUS:
     case US_PLUS:
-      *total = float_mode_p ? kvx_type_lite_cost (nwords, 0)
-			    : kvx_type_tiny_cost (nwords, 0);
-      goto return_false;
+      *total = float_mode_p ? kvx_type_lite_cost (nwords, 0, speed)
+			    : kvx_type_tiny_cost (nwords, 0, speed);
+      // Recurse for immediates.
+      break;
 
     case COMPARE:
-      *total = kvx_type_tiny_cost (nwords, 0);
-      goto return_false;
+      // Unused.
+      break;
 
     case DIV:
     case SS_DIV:
     case US_DIV:
+    case MOD:
+    case UDIV:
+    case UMOD:
       if (CONST_INT_P (XEXP (x, 1))
 	  && __builtin_popcount (INTVAL (XEXP (x, 1))) == 1)
 	{
 	  // Integer divide by a power of 2.
-	  *total = kvx_type_tiny_cost (nwords, 0);
-	  goto return_true;
+	  *total = kvx_type_tiny_cost (nwords, 0, speed);
+	  goto end_recurse;
 	}
-      ATTRIBUTE_FALLTHROUGH;
-      
-    case MOD:
-    case UDIV:
-    case UMOD:
-      *total = kvx_type_all_cost (4, 0);
-      goto return_true;
+      *total = kvx_type_all_cost (8, 0, speed);
+      goto end_recurse;
 
     case ASHIFT:
     case ROTATE:
     case ASHIFTRT:
     case LSHIFTRT:
     case ROTATERT:
-      *total = kvx_type_tiny_cost (nwords, 0);
-      goto return_false;
+      if (outer_code != PLUS && outer_code != MINUS)
+	{
+	  // ADDX* and SBFX* instructions.
+	  *total = kvx_type_tiny_cost (nwords, 0, speed);
+	}
+      break;
 
     case VEC_SELECT:
     case VEC_CONCAT:
@@ -5750,101 +5833,126 @@ kvx_rtx_costs (rtx x, machine_mode mode, int outer_code,
     case SS_ASHIFT:
     case US_ASHIFT:
     case US_MINUS:
-      *total = kvx_type_lite_cost (nwords, 0);
-      goto return_false;
+      *total = kvx_type_lite_cost (nwords, 0, speed);
+      break;
 
     // RTX_TERNARY:
     case IF_THEN_ELSE:
+      if (mode == VOIDmode)
+	{
+	  *total = kvx_type_bcu_cost (1, 0, speed);
+	}
+      else
+	{
+	  *total = kvx_type_lite_cost (nwords, 0, speed);
+	}
+      goto end_recurse;
+
     case VEC_MERGE:
       break;
 
     case FMA:
       latency = 2 + float_mode_p * 2;
-      *total = kvx_type_mau_cost (nwords, (latency - 1) * speed);
-      goto return_false;
+      *total = kvx_type_mau_cost (nwords, (latency - 1), speed);
+      goto end_recurse;
 
     // RTX_BITFIELD_OPS:
     case SIGN_EXTRACT:
     case ZERO_EXTRACT:
-      goto return_false;
+      if (outer_code == SET)
+	*total = kvx_type_lite_cost (nwords, 0, speed);
+      goto end_recurse;
 
     // RTX_EXTRA:
     case SET:
-      goto return_false;
+      if (REG_SUBREG_P (SET_SRC (x)) && REG_SUBREG_P (SET_DEST (x)))
+	{
+	  // Set word MOVE cost to 2, add 1 per extra word.
+	  *total = 1 + nwords;
+	  goto end_recurse;
+	}
+      break;
 
     case UNSPEC:
       switch (XINT (x, 1))
 	{
+	case UNSPEC_SBMM8:
+	case UNSPEC_SBMMT8:
+	case UNSPEC_SBMM8S:
+	case UNSPEC_SBMM8XY:
 	case UNSPEC_SRS32:
 	case UNSPEC_SRS64:
 	case UNSPEC_SRS128:
 	case UNSPEC_SRS256:
-	  *total = kvx_type_tiny_cost (nwords, 0);
-	  goto return_false;
+	  *total = kvx_type_tiny_cost (nwords, 0, speed);
+	  goto end_recurse;
 	default:
-	  *total = kvx_type_lite_cost (nwords, 0);
+	  *total = kvx_type_lite_cost (nwords, 0, speed);
 	  break;
 	}
-      goto return_false;
+      break;
 
     case UNSPEC_VOLATILE:
-      *total = kvx_type_all_cost (nwords, 0);
-      goto return_true;
+      *total = kvx_type_all_cost (nwords, 0, speed);
+      goto end_recurse;
+
+    case PREFETCH:
+      *total = kvx_type_lsu_cost (1, 0, speed);
+      goto end_recurse;
+
+    case CALL:
+    case RETURN:
+      *total = kvx_type_bcu_cost (1, 0, speed);
+      goto end_recurse;
 
     default:
       break;
     }
 
-return_false:
   if (DUMP_COSTS)
     fprintf (stderr, "\tcost=%d (inner)\n\n", *total);
   return false;
 
-return_true:
+end_recurse:
   if (DUMP_COSTS)
     fprintf (stderr, "\tcost=%d (leaf)\n\n", *total);
   return true;
 }
 
-/* Compute the cost of an addressing mode that contains X.  */
+/* Compute a full rtx cost using the same logic as the generic (rtx_cost).
+   Used to observe the full effects of recursively calling (kvx_rtx_costs).  */
 static int
-kvx_address_cost (rtx x, machine_mode mode ATTRIBUTE_UNUSED,
-		  addr_space_t space ATTRIBUTE_UNUSED,
-		  bool speed ATTRIBUTE_UNUSED)
+kvx_full_rtx_cost (rtx x, machine_mode mode, enum rtx_code outer_code,
+		   int opno, bool speed)
 {
-  int cost = kvx_type_tiny_cost (1, 0);
+  int total = 0;
+  if (x == 0)
+    return 0;
 
-  // Case of .xs reg[reg] addressing mode.
-  if (GET_CODE (x) == PLUS && GET_CODE (XEXP (x, 0)) == MULT
-      && GET_CODE (XEXP (XEXP (x, 0), 1)) == CONST_INT
-      && INTVAL (XEXP (XEXP (x, 0), 1)) > HOST_WIDE_INT_1)
-    cost = 1;
+  if (GET_MODE (x) != VOIDmode)
+    mode = GET_MODE (x);
 
-  // Case of reg[reg] addressing mode.
-  else if (GET_CODE (x) == PLUS && REG_P (XEXP (x, 0)) && REG_P (XEXP (x, 1)))
-    cost = 2;
+  enum rtx_code code = GET_CODE (x);
+  if (code == REG)
+    return 0;
 
-  // Case of const[reg] addressing mode.
-  else if (GET_CODE (x) == PLUS && REG_P (XEXP (x, 0)))
-    cost = 3;
+  // No TARGETS_MODES_TIEABLE_P.
+  if (code != SUBREG && code != TRUNCATE)
+    if (kvx_rtx_costs (x, mode, outer_code, opno, &total, speed))
+      return total;
 
-  // Case of [reg] addressing mode.
-  else if (REG_P (x))
-    cost = 4;
+  const char *fmt = GET_RTX_FORMAT (code);
+  for (int i = GET_RTX_LENGTH (code) - 1; i >= 0; i--)
+    if (fmt[i] == 'e')
+      total += kvx_full_rtx_cost (XEXP (x, i), mode, code, i, speed);
+    else if (fmt[i] == 'E')
+      for (int j = 0; j < XVECLEN (x, i); j++)
+	total += kvx_full_rtx_cost (XVECEXP (x, i, j), mode, code, i, speed);
 
-  if (DUMP_COSTS)
-    {
-      fprintf (stderr, "kvx_address_cost(mode=%s, space=%d, speed=%d)\n",
-	       GET_MODE_NAME (mode), space, speed);
-      debug_rtx (x);
-      fprintf (stderr, "\tcost=%d\n\n", cost);
-    }
-
-  return cost;
+  return total;
 }
 
 /* Describes the relative cost of RTL instructions.
-   Used by instruction combining, better than kvx_rtx_costs (PATTERN (insn)).
    /!\ Synchronize with the types.md type and latencies.  */
 static int
 kvx_insn_cost (rtx_insn *insn, bool speed)
@@ -5853,8 +5961,8 @@ kvx_insn_cost (rtx_insn *insn, bool speed)
     {
       if (DUMP_COSTS)
 	{
-	  fprintf (stderr, "kvx_insn_cost(uid=%d, speed=%d)\n", INSN_UID (insn),
-		   speed);
+	  fprintf (stderr, "kvx_insn_cost(uid=%d, speed=%d, init=%d)\n",
+		   INSN_UID (insn), speed, !cfun->decl);
 	  debug_rtx (PATTERN (insn));
 	  fprintf (stderr, "\tcost=0 (not memoized)\n\n");
 	}
@@ -5865,16 +5973,13 @@ kvx_insn_cost (rtx_insn *insn, bool speed)
   if (type == TYPE_ALU_NOP)
     return 0;
 
-  int cost = get_attr_length (insn) - 4;
-  gcc_assert (cost >= 0);
-
   if (!speed)
+    return get_attr_length (insn);
+
+  int cost = 0;
+  if (type == TYPE_ALL)
     {
-      cost = get_attr_length (insn);
-    }
-  else if (type == TYPE_ALL)
-    {
-      cost += kvx_type_all_cost (1, 0);
+      cost = kvx_type_all_cost (1, 0, speed);
     }
   else if (type >= TYPE_ALU_TINY && type < TYPE_ALU_THIN)
     {
@@ -5883,26 +5988,26 @@ kvx_insn_cost (rtx_insn *insn, bool speed)
 	nunits = 2;
       if (type >= TYPE_ALU_TINY_X4 && type <= TYPE_ALU_TINY_X4_X)
 	nunits = 4;
-      cost += kvx_type_tiny_cost (nunits, 0);
+      cost += kvx_type_tiny_cost (nunits, 0, speed);
     }
   else if (type >= TYPE_ALU_THIN && type < TYPE_ALU_LITE)
     {
       int nunits = 1;
       if (type >= TYPE_ALU_THIN_X2 && type < TYPE_ALU_LITE)
 	nunits = 2;
-      cost += kvx_type_thin_cost (nunits, 0);
+      cost += kvx_type_thin_cost (nunits, 0, speed);
     }
   else if (type >= TYPE_ALU_LITE && type < TYPE_ALU_FULL)
     {
       int nunits = 1;
       if (type >= TYPE_ALU_LITE_X2 && type < TYPE_ALU_FULL)
 	nunits = 2;
-      cost += kvx_type_lite_cost (nunits, 0);
+      cost += kvx_type_lite_cost (nunits, 0, speed);
     }
   else if (type >= TYPE_ALU_FULL && type < TYPE_LSU)
     {
       int penalty = (type == TYPE_ALU_FULL_COPRO) * (15 - 1);
-      cost += kvx_type_full_cost (1, penalty);
+      cost += kvx_type_full_cost (1, penalty, speed);
     }
   else if (type >= TYPE_LSU && type < TYPE_MAU)
     {
@@ -5914,32 +6019,34 @@ kvx_insn_cost (rtx_insn *insn, bool speed)
 	  || (type >= TYPE_LSU_AUXW_ATOMIC
 	      && type <= TYPE_LSU_AUXR_AUXW_ATOMIC_Y))
 	penalty = (24 - 1);
-      cost += kvx_type_lsu_cost (1, penalty);
+      cost += kvx_type_lsu_cost (1, penalty, speed);
     }
   else if (type >= TYPE_MAU && type < TYPE_BCU)
     {
       int penalty = (2 - 1);
       if (type == TYPE_MAU_FPU || type == TYPE_MAU_AUXR_FPU)
 	penalty = (4 - 1); // FIXME (3 - 1) in case of FP16.
-      cost += kvx_type_mau_cost (1, penalty);
+      cost += kvx_type_mau_cost (1, penalty, speed);
     }
   else if (type >= TYPE_BCU && type < TYPE_TCA)
     {
-      cost += kvx_type_bcu_cost (1, 0);
+      cost += kvx_type_bcu_cost (1, 0, speed);
     }
   else if (type == TYPE_TCA)
     {
-      cost += kvx_type_tca_cost (1, 3);
+      cost += kvx_type_tca_cost (1, 3, speed);
     }
   else
     gcc_unreachable ();
 
   if (DUMP_COSTS)
     {
-      fprintf (stderr, "kvx_insn_cost(uid=%d, speed=%d)\n", INSN_UID (insn),
-	       speed);
+      fprintf (stderr, "kvx_insn_cost(uid=%d, speed=%d, init=%d)\n",
+	       INSN_UID (insn), speed, !cfun->decl);
       debug_rtx (PATTERN (insn));
-      fprintf (stderr, "\tcost=%d\n\n", cost);
+      int rtx_cost = kvx_full_rtx_cost (PATTERN (insn), VOIDmode, INSN, 3, speed);
+      fprintf (stderr, "\tcost=%d\trtx_cost=%d%s\n\n", cost, rtx_cost,
+	       (rtx_cost > cost || rtx_cost == 0) ? "\tFIXME!" : "");
     }
 
   return cost;
@@ -5950,15 +6057,17 @@ static int
 kvx_register_move_cost (machine_mode mode, reg_class_t from ATTRIBUTE_UNUSED,
 			reg_class_t to ATTRIBUTE_UNUSED)
 {
-  int n_copyd = (GET_MODE_SIZE (mode) + UNITS_PER_WORD - 1) / UNITS_PER_WORD;
-  // Default MOVE cost is 2 per word.
-  int cost = n_copyd * 2;
+  int nwords = (GET_MODE_SIZE (mode) + UNITS_PER_WORD - 1) / UNITS_PER_WORD;
+  nwords = nwords >= 1 ? nwords : 1;
+  // Set word MOVE cost to 2, add 1 per extra word.
+  int cost = 1 + nwords;
 
   if (DUMP_COSTS)
     {
-      fprintf (stderr, "kvx_register_move_cost(mode=%s, from=%s, to=%s)\n",
-	       GET_MODE_NAME (mode), reg_class_names[from],
-	       reg_class_names[to]);
+      fprintf (stderr,
+	       "kvx_register_move_cost(mode=%s, from=%s, to=%s, init=%d)\n",
+	       GET_MODE_NAME (mode), reg_class_names[from], reg_class_names[to],
+	       !cfun->decl);
       fprintf (stderr, "\tcost=%d\n\n", cost);
     }
 
@@ -5972,15 +6081,17 @@ kvx_memory_move_cost (machine_mode mode, reg_class_t rclass ATTRIBUTE_UNUSED,
 {
   // Assume in-cache load latency is 3 cycles.
   int penalty = in ? (3 - 1) : 0;
-  int cost = kvx_type_lsu_cost (1, penalty);
+  int cost = kvx_type_lsu_cost (1, penalty, true);
 
   if (DUMP_COSTS)
     {
-      fprintf (stderr, "kvx_memory_move_cost(mode=%s, rclass=%s, in=%d)\n",
-	       GET_MODE_NAME (mode), reg_class_names[rclass], in);
+      fprintf (stderr,
+	       "kvx_memory_move_cost(mode=%s, rclass=%s, in=%d, init=%d)\n",
+	       GET_MODE_NAME (mode), reg_class_names[rclass], in, !cfun->decl);
       fprintf (stderr, "\tcost=%d\n\n", cost);
     }
 
+  gcc_assert (cost > 0);
   return cost;
 }
 
@@ -6504,6 +6615,10 @@ kvx_option_override (void)
   kvx_arch_schedule = ARCH_KV3_1;
   if (KV3_2)
     kvx_arch_schedule = ARCH_KV3_2;
+
+  const char *KVX_COST_FACTOR =  getenv("KVX_COST_FACTOR");
+  if (KVX_COST_FACTOR)
+    kvx_cost_factor = atoi (KVX_COST_FACTOR);
 }
 
 /* Recognize machine-specific patterns that may appear within
@@ -6961,11 +7076,11 @@ kvx_ctrapsi4 (void)
 #undef TARGET_CANNOT_FORCE_CONST_MEM
 #define TARGET_CANNOT_FORCE_CONST_MEM kvx_cannot_force_const_mem
 
-#undef TARGET_RTX_COSTS
-#define TARGET_RTX_COSTS kvx_rtx_costs
-
 #undef TARGET_ADDRESS_COST
 #define TARGET_ADDRESS_COST kvx_address_cost
+
+#undef TARGET_RTX_COSTS
+#define TARGET_RTX_COSTS kvx_rtx_costs
 
 #undef TARGET_INSN_COST
 #define TARGET_INSN_COST kvx_insn_cost
