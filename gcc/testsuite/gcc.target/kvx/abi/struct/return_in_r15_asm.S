@@ -28,35 +28,35 @@ check_return_is_correct:
     ;;
     ld $r16 = 16[$r12]
     ;;
-    compd.eq $r16 = $r0, $r16
+    compd.eq $r16 = $r15, $r16
     ;;
     cb.deqz $r16, 1f
     ;;
-    ld $r16 = 0[$r0]
+    ld $r16 = 0[$r15]
     ;;
     compd.eq $r16 = $r16, 0x0
     ;;
     cb.deqz $r16, 1f
     ;;
-    ld $r16 = 8[$r0]
+    ld $r16 = 8[$r15]
     ;;
     compd.eq $r16 = $r16, 0x1
     ;;
     cb.deqz $r16, 1f
     ;;
-    ld $r16 = 16[$r0]
+    ld $r16 = 16[$r15]
     ;;
     compd.eq $r16 = $r16, 0x0000000300000002
     ;;
     cb.deqz $r16, 1f
     ;;
-    ld $r16 = 24[$r0]
+    ld $r16 = 24[$r15]
     ;;
     compd.eq $r16 = $r16, 0xabababababababab
     ;;
     cb.deqz $r16, 1f
     ;;
-    ld $r16 = 32[$r0]
+    ld $r16 = 32[$r15]
     ;;
     compd.eq $r16 = $r16, 0xabababababababab
     ;;
