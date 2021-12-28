@@ -680,13 +680,22 @@ extern void kvx_profile_hook (void);
    SImode or HImode. */
 #define FUNCTION_MODE Pmode
 
-/* Macros to check the range of integers that fit into HOST_WIDE_INT. */
-#define SIGNED_INT_FITS_N_BITS(imm, N)                                         \
-  ((HOST_WIDE_INT) (imm) < ((HOST_WIDE_INT) 1 << ((N) -1))                     \
-   && (HOST_WIDE_INT) (imm) >= -((HOST_WIDE_INT) 1 << ((N) -1)))
+#define SIGNED_INT_FITS_N_BITS(imm, N) ({                                      \
+  HOST_WIDE_INT __i = (imm);                                                   \
+  ((HOST_WIDE_INT) (__i) < ((HOST_WIDE_INT) 1 << ((N) -1))                     \
+   && (HOST_WIDE_INT) (__i) >= -((HOST_WIDE_INT) 1 << ((N) -1)));              \
+ })
 
-#define UNSIGNED_INT_FITS_N_BITS(imm, N)                                       \
-  ((unsigned HOST_WIDE_INT) (imm) < ((unsigned HOST_WIDE_INT) 1 << (N)))
+#define UNSIGNED_INT_FITS_N_BITS(imm, N) ({                                    \
+  HOST_WIDE_INT __i = (imm);                                                   \
+  ((unsigned HOST_WIDE_INT) (__i) < ((unsigned HOST_WIDE_INT) 1 << (N)));      \
+ })
+
+#define REG_SUBREG_P(exp) ({                                                   \
+   rtx __x = (exp);                                                            \
+   (REG_P (__x) || (GET_CODE (__x) == SUBREG && REG_P (SUBREG_REG (__x))));    \
+ })
+
 
 #define kvx_strict_to_nonstrict_comparison_operator(code)                      \
   __extension__({                                                              \

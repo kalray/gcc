@@ -6,7 +6,7 @@ struct test {
   unsigned long long ull2;
 };
 
-/* { dg-final { scan-assembler-times "lq \\\$r0r1" 2 } } */
+/* { dg-final { scan-assembler-times "lq \\\$r" 2 } } */
 
 struct test should_pack (unsigned long long *ptr64bits) {
   struct test ret;
