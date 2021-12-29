@@ -483,12 +483,12 @@ kvx_int32x4_shr3_a(int32x4_t a)
     return __builtin_kvx_shrwqs(a, 3, ".a");
 }
 int32x4_t __attribute ((noinline))
-kvx_int32x4_shrs_ar(int32x4_t a, int32_t b)
+kvx_int32x4_shrs_as(int32x4_t a, int32_t b)
 {
     return __builtin_kvx_shrwqs(a, b, ".as");
 }
 int32x4_t __attribute ((noinline))
-kvx_int32x4_shr7_ar(int32x4_t a)
+kvx_int32x4_shr7_as(int32x4_t a)
 {
     return __builtin_kvx_shrwqs(a, 7, ".as");
 }
@@ -633,10 +633,10 @@ kvx_int32x4_shift(int32x4_t a, int32_t b)
     return __builtin_kvx_shiftwq(a, 1, b);
 }
 int32x4_t __attribute ((noinline))
-kvx_int32x4_conswq(int32x2_t a, int32x2_t b) {
+kvx_int32x4_catwq(int32x2_t a, int32x2_t b) {
     return __builtin_kvx_catwq(a, b);
 }
 int32x4_t __attribute ((noinline))
-kvx_int32x4_sconswq(int32x2_t a, int32x2_t b) {
+kvx_int32x4_scatwq(int32x2_t a, int32x2_t b) {
     return __builtin_kvx_catwq(b, a);
 }

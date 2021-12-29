@@ -570,8 +570,10 @@ tilepro*-*-*)
 	cpu_type=tilepro
 	;;
 kvx-*-*)
+	cpu_type=kvx
 	need_64bit_hwint=yes
-        extra_options="${extra_options}"
+	extra_options="${extra_options}"
+	extra_objs="kvx-builtins.o"
 	;;
 esac
 
