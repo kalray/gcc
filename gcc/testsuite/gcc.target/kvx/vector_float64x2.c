@@ -270,18 +270,10 @@ kvx_float64x2_fsdivdp(float64x2_t a, float64x2_t b)
 float64x2_t __attribute ((noinline))
 kvx_float64x2_select(float64x2_t a, float64x2_t b, int64x2_t c)
 {
-    return __builtin_kvx_selectfdp(a, b, c, 0);
+    return __builtin_kvx_selectdp(a, b, c, 0);
 }
 float64x2_t __attribute ((noinline))
 kvx_float64x2_shift(float64x2_t a, float64_t b)
 {
     return __builtin_kvx_shiftfdp(a, 1, b);
-}
-float64x2_t __attribute ((noinline))
-kvx_float64x2_consfdp(float64_t a, float64_t b) {
-    return __builtin_kvx_catfdp(a, b);
-}
-float64x2_t __attribute ((noinline))
-kvx_float64x2_sconsfdp(float64_t a, float64_t b) {
-    return __builtin_kvx_catfdp(b, a);
 }

@@ -164,3 +164,43 @@ kvx_float16_nez(float16_t a)
 {
     return a != 0.0;
 }
+int __attribute__ ((noinline))
+kvx_float16_toi32(float16_t a)
+{
+    return (int)a;
+}
+unsigned int __attribute__ ((noinline))
+kvx_float16_tou32(float16_t a)
+{
+    return (unsigned int)a;
+}
+long long  __attribute__ ((noinline))
+kvx_float16_toi64(float16_t a)
+{
+    return (long long)a;
+}
+unsigned long long __attribute__ ((noinline))
+kvx_float16_tou64(float16_t a)
+{
+    return (unsigned long long)a;
+}
+float16_t __attribute__ ((noinline))
+kvx_float16_fromi32(int i)
+{
+    return (float16_t)i;
+}
+float16_t __attribute__ ((noinline))
+kvx_float16_fromu32(unsigned int i)
+{
+    return (float16_t)i;
+}
+float16_t __attribute__ ((noinline))
+kvx_float16_fromi64(long long i)
+{
+    return (float16_t)i;
+}
+float16_t __attribute__ ((noinline))
+kvx_float16_fromu64(unsigned long long i)
+{
+    return (float16_t)i;
+}

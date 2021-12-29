@@ -29,9 +29,6 @@
 ;; Predicates
 (include "predicates.md")
 
-;; Atomics
-(include "atomics.md")
-
 (define_expand "store_multiple"
   [(match_par_dup 3 [(set (match_operand:DI 0 "" "")
 			  (match_operand:DI 1 "" ""))
@@ -1127,9 +1124,13 @@
   DONE;
 })
 
+(include "atomic.md")
+
 (include "scalar.md")
 
 (include "vector.md")
 
 (include "control.md")
+
+(include "builtin.md")
 

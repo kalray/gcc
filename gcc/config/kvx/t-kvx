@@ -1,1 +1,7 @@
+kvx-builtins.o: $(srcdir)/config/kvx/kvx-builtins.c $(CONFIG_H) \
+  $(SYSTEM_H) coretypes.h $(TM_H) $(RTL_H) $(TREE_H) $(RECOG_H) langhooks.h \
+  $(DIAGNOSTIC_CORE_H) $(OPTABS_H) $(srcdir)/config/kvx/kvx-modes.def
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
+		$(srcdir)/config/kvx/kvx-builtins.c
+
 MULTILIB_EXTRA_OPTS = fdata-sections ffunction-sections

@@ -202,10 +202,18 @@ kvx_float16x16_nez(float16x16_t a)
 float16x16_t __attribute ((noinline))
 kvx_float16x16_select(float16x16_t a, float16x16_t b, int16x16_t c)
 {
-    return __builtin_kvx_selectfhx(a, b, c, 0);
+    return __builtin_kvx_selecthx(a, b, c, 0);
 }
 float16x16_t __attribute ((noinline))
 kvx_float16x16_shift(float16x16_t a, float16_t b)
 {
     return __builtin_kvx_shiftfhx(a, 1, b);
+}
+float16x16_t __attribute ((noinline))
+kvx_float16x16_catfhx(float16x8_t a, float16x8_t b) {
+    return __builtin_kvx_cathx(a, b);
+}
+float16x16_t __attribute ((noinline))
+kvx_float16x16_scatfhx(float16x8_t a, float16x8_t b) {
+    return __builtin_kvx_cathx(b, a);
 }

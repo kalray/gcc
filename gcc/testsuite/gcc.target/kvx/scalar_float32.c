@@ -164,6 +164,46 @@ kvx_float32_nez(float32_t a)
 {
     return a != 0.0;
 }
+int __attribute__ ((noinline))
+kvx_float32_toi32(float32_t a)
+{
+    return (int)a;
+}
+unsigned int __attribute__ ((noinline))
+kvx_float32_tou32(float32_t a)
+{
+    return (unsigned int)a;
+}
+long long  __attribute__ ((noinline))
+kvx_float32_toi64(float32_t a)
+{
+    return (long long)a;
+}
+unsigned long long __attribute__ ((noinline))
+kvx_float32_tou64(float32_t a)
+{
+    return (unsigned long long)a;
+}
+float32_t __attribute__ ((noinline))
+kvx_float32_fromi32(int i)
+{
+    return (float32_t)i;
+}
+float32_t __attribute__ ((noinline))
+kvx_float32_fromu32(unsigned int i)
+{
+    return (float32_t)i;
+}
+float32_t __attribute__ ((noinline))
+kvx_float32_fromi64(long long i)
+{
+    return (float32_t)i;
+}
+float32_t __attribute__ ((noinline))
+kvx_float32_fromu64(unsigned long long i)
+{
+    return (float32_t)i;
+}
 float32_t kvx_float32_floatw(int32_t a) {
     return __builtin_kvx_floatw(a, 20, ".rn.s");
 }
