@@ -288,7 +288,255 @@ kvx_int8x32_store(int8x32_t *p, int8x32_t a)
     __builtin_kvx_sbv(p, a, 0);
 }
 int8x32_t __attribute ((noinline))
+kvx_int8x32_neg_(int8x32_t a)
+{
+    return __builtin_kvx_negbv(a, 0);
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_neg_s(int8x32_t a)
+{
+    return __builtin_kvx_negbv(a, ".s");
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_abs_(int8x32_t a)
+{
+    return __builtin_kvx_absbv(a, "");
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_abs_s(int8x32_t a)
+{
+    return __builtin_kvx_absbv(a, ".s");
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_abd_(int8x32_t a, int8x32_t b)
+{
+    return __builtin_kvx_abdbv(a, b, 0);
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_abd_s(int8x32_t a, int8x32_t b)
+{
+    return __builtin_kvx_abdbv(a, b, ".s");
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_abds_(int8x32_t a, int8_t b)
+{
+    return __builtin_kvx_abdbv(a, b-(int8x32_t){0}, 0);
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_abd0_(int8x32_t a)
+{
+    return __builtin_kvx_abdbv(a, (int8x32_t){0}, 0);
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_abd0_s(int8x32_t a)
+{
+    return __builtin_kvx_abdbv(a, (int8x32_t){0}, ".s");
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_add_s(int8x32_t a, int8x32_t b)
+{
+    return __builtin_kvx_addbv(a, b, ".s");
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_add_us(int8x32_t a, int8x32_t b)
+{
+    return __builtin_kvx_addbv(a, b, ".us");
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_adds_(int8x32_t a, int8_t b)
+{
+    return __builtin_kvx_addbv(a, b-(int8x32_t){0}, 0);
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_adds_s(int8x32_t a, int8_t b)
+{
+    return __builtin_kvx_addbv(a, b-(int8x32_t){0}, ".s");
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_adds_us(int8x32_t a, int8_t b)
+{
+    return __builtin_kvx_addbv(a, b-(int8x32_t){0}, ".us");
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_sbf_s(int8x32_t a, int8x32_t b)
+{
+    return __builtin_kvx_sbfbv(a, b, ".s");
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_sbf_us(int8x32_t a, int8x32_t b)
+{
+    return __builtin_kvx_sbfbv(a, b, ".us");
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_sbfs_(int8x32_t a, int8_t b)
+{
+    return __builtin_kvx_sbfbv(a, b-(int8x32_t){0}, 0);
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_sbfs_s(int8x32_t a, int8_t b)
+{
+    return __builtin_kvx_sbfbv(a, b-(int8x32_t){0}, ".s");
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_sbfs_us(int8x32_t a, int8_t b)
+{
+    return __builtin_kvx_sbfbv(a, b-(int8x32_t){0}, ".us");
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_min(int8x32_t a, int8x32_t b)
+{
+    return __builtin_kvx_minbv(a, b);
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_max(int8x32_t a, int8x32_t b)
+{
+    return __builtin_kvx_maxbv(a, b);
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_minu(int8x32_t a, int8x32_t b)
+{
+    return __builtin_kvx_minubv(a, b);
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_maxu(int8x32_t a, int8x32_t b)
+{
+    return __builtin_kvx_maxubv(a, b);
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_mins(int8x32_t a, int8_t b)
+{
+    return __builtin_kvx_minbv(a, b-(int8x32_t){0});
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_maxs(int8x32_t a, int8_t b)
+{
+    return __builtin_kvx_maxbv(a, b-(int8x32_t){0});
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_minus(int8x32_t a, int8_t b)
+{
+    return __builtin_kvx_minubv(a, b-(int8x32_t){0});
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_maxus(int8x32_t a, int8_t b)
+{
+    return __builtin_kvx_maxubv(a, b-(int8x32_t){0});
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_shls_(int8x32_t a, int8_t b)
+{
+    return __builtin_kvx_shlbvs(a, b, 0);
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_shl3_(int8x32_t a)
+{
+    return __builtin_kvx_shlbvs(a, 3, 0);
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_shls_s(int8x32_t a, int8_t b)
+{
+    return __builtin_kvx_shlbvs(a, b, ".s");
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_shl5_s(int8x32_t a)
+{
+    return __builtin_kvx_shlbvs(a, 5, ".s");
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_shls_us(int8x32_t a, int8_t b)
+{
+    return __builtin_kvx_shlbvs(a, b, ".us");
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_shl7_us(int8x32_t a)
+{
+    return __builtin_kvx_shlbvs(a, 7, ".us");
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_shls_r(int8x32_t a, int8_t b)
+{
+    return __builtin_kvx_shlbvs(a, b, ".r");
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_shl1_r(int8x32_t a)
+{
+    return __builtin_kvx_shlbvs(a, 1, ".r");
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_shrs_(int8x32_t a, int8_t b)
+{
+    return __builtin_kvx_shrbvs(a, b, 0);
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_shr5_(int8x32_t a)
+{
+    return __builtin_kvx_shrbvs(a, 5, 0);
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_shrs_a(int8x32_t a, int8_t b)
+{
+    return __builtin_kvx_shrbvs(a, b, ".a");
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_shr3_a(int8x32_t a)
+{
+    return __builtin_kvx_shrbvs(a, 3, ".a");
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_shrs_as(int8x32_t a, int8_t b)
+{
+    return __builtin_kvx_shrbvs(a, b, ".as");
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_shr7_as(int8x32_t a)
+{
+    return __builtin_kvx_shrbvs(a, 7, ".as");
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_shrs_r(int8x32_t a, int8_t b)
+{
+    return __builtin_kvx_shrbvs(a, b, ".r");
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_shr1_r(int8x32_t a)
+{
+    return __builtin_kvx_shrbvs(a, 1, ".r");
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_avg(int8x32_t a, int8x32_t b)
+{
+    return __builtin_kvx_avgbv(a, b, 0);
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_avg_u(int8x32_t a, int8x32_t b)
+{
+    return __builtin_kvx_avgbv(a, b, ".u");
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_avg_r(int8x32_t a, int8x32_t b)
+{
+    return __builtin_kvx_avgbv(a, b, ".r");
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_avg_ru(int8x32_t a, int8x32_t b)
+{
+    return __builtin_kvx_avgbv(a, b, ".ru");
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_select(int8x32_t a, int8x32_t b, int8x32_t c)
+{
+    return __builtin_kvx_selectbv(a, b, c, 0);
+}
+int8x32_t __attribute ((noinline))
 kvx_int8x32_shift(int8x32_t a, int8_t b)
 {
     return __builtin_kvx_shiftbv(a, 1, b);
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_catbv(int8x16_t a, int8x16_t b) {
+    return __builtin_kvx_catbv(a, b);
+}
+int8x32_t __attribute ((noinline))
+kvx_int8x32_scatbv(int8x16_t a, int8x16_t b) {
+    return __builtin_kvx_catbv(b, a);
 }

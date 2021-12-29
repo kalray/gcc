@@ -227,7 +227,7 @@ kvx_float16x4_fnarrowwhq(float32x4_t a)
 float16x4_t __attribute ((noinline))
 kvx_float16x4_select(float16x4_t a, float16x4_t b, int16x4_t c)
 {
-    return __builtin_kvx_selectfhq(a, b, c, 0);
+    return __builtin_kvx_selecthq(a, b, c, 0);
 }
 float16x4_t __attribute ((noinline))
 kvx_float16x4_shift(float16x4_t a, float16_t b)
