@@ -215,7 +215,7 @@ kvx_float16x8_ffmsxhwo(float16x8_t a, float16x8_t b, float32x8_t c)
     return __builtin_kvx_ffmsxhwo(a, b, c, ".rn");
 }
 float32x8_t __attribute__ ((noinline))
-kvx_float16x8_fwidenxhwo(float16x8_t a)
+kvx_float16x8_fwidenhwo(float16x8_t a)
 {
     return __builtin_kvx_fwidenhwo(a, ".s");
 }
@@ -227,7 +227,7 @@ kvx_float16x8_fnarrowwho(float32x8_t a)
 float16x8_t __attribute ((noinline))
 kvx_float16x8_select(float16x8_t a, float16x8_t b, int16x8_t c)
 {
-    return __builtin_kvx_selectfho(a, b, c, 0);
+    return __builtin_kvx_selectho(a, b, c, 0);
 }
 float16x8_t __attribute ((noinline))
 kvx_float16x8_shift(float16x8_t a, float16_t b)
@@ -235,10 +235,10 @@ kvx_float16x8_shift(float16x8_t a, float16_t b)
     return __builtin_kvx_shiftfho(a, 1, b);
 }
 float16x8_t __attribute ((noinline))
-kvx_float16x8_consfho(float16x4_t a, float16x4_t b) {
-    return __builtin_kvx_catfho(a, b);
+kvx_float16x8_catfho(float16x4_t a, float16x4_t b) {
+    return __builtin_kvx_catho(a, b);
 }
 float16x8_t __attribute ((noinline))
-kvx_float16x8_sconsfho(float16x4_t a, float16x4_t b) {
-    return __builtin_kvx_catfho(b, a);
+kvx_float16x8_scatfho(float16x4_t a, float16x4_t b) {
+    return __builtin_kvx_catho(b, a);
 }
