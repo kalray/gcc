@@ -307,14 +307,32 @@ kvx_float32x8_ffdmaswq(float32x8_t a, float32x8_t b, float32x4_t c)
 {
     return __builtin_kvx_ffdmaswq(a, b, c, ".rn");
 }
+float32x8_t __attribute ((noinline))
+kvx_float32x8_load(float32x8_t *p)
+{
+    return __builtin_kvx_lwo(p, ".s", 1);
+}
+void __attribute ((noinline))
+kvx_float32x8_store(float32x8_t *p, float32x8_t a)
+{
+    __builtin_kvx_swo(p, a, 0);
+}
   
 float32x8_t __attribute ((noinline))
 kvx_float32x8_select(float32x8_t a, float32x8_t b, int32x8_t c)
 {
-    return __builtin_kvx_selectfwo(a, b, c, 0);
+    return __builtin_kvx_selectwo(a, b, c, 0);
 }
 float32x8_t __attribute ((noinline))
 kvx_float32x8_shift(float32x8_t a, float32_t b)
 {
     return __builtin_kvx_shiftfwo(a, 1, b);
+}
+float32x8_t __attribute ((noinline))
+kvx_float32x8_catfwo(float32x4_t a, float32x4_t b) {
+    return __builtin_kvx_catwo(a, b);
+}
+float32x8_t __attribute ((noinline))
+kvx_float32x8_scatfwo(float32x4_t a, float32x4_t b) {
+    return __builtin_kvx_catwo(b, a);
 }

@@ -438,12 +438,12 @@ kvx_int32_shr3_a(int32_t a)
     return __builtin_kvx_shrw(a, 3, ".a");
 }
 int32_t __attribute ((noinline))
-kvx_int32_shrs_ar(int32_t a, int32_t b)
+kvx_int32_shrs_as(int32_t a, int32_t b)
 {
     return __builtin_kvx_shrw(a, b, ".as");
 }
 int32_t __attribute ((noinline))
-kvx_int32_shr7_ar(int32_t a)
+kvx_int32_shr7_as(int32_t a)
 {
     return __builtin_kvx_shrw(a, 7, ".as");
 }
