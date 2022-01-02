@@ -1,5 +1,6 @@
 (define_attr "type"
  "all,\
+  alu_nop,\
   alu_tiny,\
   alu_tiny_x,\
   alu_tiny_y,\
@@ -13,6 +14,7 @@
   alu_lite_y, \
   alu_lite_x2,\
   alu_lite_x2_x,\
+  alu_lite_x2_crwl_crwh, \
   alu_full,\
   alu_full_x,\
   alu_full_y,\
