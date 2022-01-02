@@ -236,8 +236,8 @@
 
 ;; FIXME AUTO: refine set insn to bundle it when possible. T7808
 (define_insn "*mov<mode>_all"
-    [(set (match_operand:ALLIF 0 "nonimmediate_operand" "=r, r,           r,  r, a, b, m, r , r , r , r , r , r , r,  RXX, r, r")
-          (match_operand:ALLIF 1 "general_operand"      " r, I16H16, I43H43, nF, r, r, r, Ca, Cb, Cm, Za, Zb, Zm, RXX,  r, T, S"))]
+    [(set (match_operand:ALLIF 0 "nonimmediate_operand" "=r, r,           r,  r, a, b, m, r , r , r , r , r , r , r,  SFR,   r, r")
+          (match_operand:ALLIF 1 "general_operand"      " r, I16H16, I43H43, nF, r, r, r, Ca, Cb, Cm, Za, Zb, Zm, SFR,  r, REF, SYM"))]
   "register_operand (operands[0], <MODE>mode) || register_operand (operands[1], <MODE>mode)"
 {
   switch (which_alternative)
@@ -247,9 +247,9 @@
     case 1: case 2: case 3: case 16:
       return "make %0 = %1";
     case 4: case 5: case 6:
-      return "s<ALLIF:lsusize>%m0 %0 = %1";
+      return "s<ALLIF:lsusize>%X0 %0 = %1";
     case 7: case 8: case 9: case 10: case 11: case 12:
-      return "l<lsusize><lsuzx>%C1%m1 %0 = %1";
+      return "l<lsusize><lsuzx>%V1 %0 = %1";
     case 13:
       return "get %0 = %1";
     case 14:
@@ -338,13 +338,13 @@
          (unspec:P [(const_int 0)] UNSPEC_PIC))]
    ""
    "pcrel %0 = @gotaddr()"
-[(set_attr "type" "alu_full<symlen1>")
- (set_attr "length" "<symlen2>")]
+  [(set_attr "type" "alu_full<symlen1>")
+   (set_attr "length" "<symlen2>")]
 )
 
 (define_insn "*get_<mode>"
    [(set (match_operand:ALLP 0 "register_operand" "=r")
-         (match_operand:ALLP 1 "system_register_operand" "RXX"))]
+         (match_operand:ALLP 1 "system_register_operand" "SFR"))]
    ""
    "get %0 = %1"
   [(set_attr "type" "bcu_get")]
@@ -352,14 +352,30 @@
 
 (define_insn "kvx_get"
    [(set (match_operand:DI 0 "register_operand" "=r")
-         (unspec_volatile:DI [(match_operand:DI 1 "system_register_operand" "RXX")] UNSPEC_GET))]
+         (unspec_volatile:DI [(match_operand:DI 1 "system_register_operand" "SFR")] UNSPEC_GET))]
    ""
    "get %0 = %1"
-[(set_attr "type" "bcu_get")]
+  [(set_attr "type" "bcu_get")]
+)
+
+(define_insn "*set_<mode>"
+   [(set (match_operand:ALLP 0 "system_register_operand" "=SAB,SFR")
+         (match_operand:ALLP 1 "register_operand" "r,r"))]
+   ""
+   "set %0 = %1"
+  [(set_attr "type" "all,bcu")]
+)
+
+(define_insn "kvx_set"
+   [(set (match_operand:DI 0 "system_register_operand" "=SAB,SFR")
+         (unspec_volatile:DI [(match_operand:DI 1 "register_operand" "r,r")] UNSPEC_SET))]
+   ""
+   "set %0 = %1"
+  [(set_attr "type" "all,bcu")]
 )
 
 (define_insn "kvx_wfxl"
-   [(set (match_operand:DI 0 "system_register_operand" "=RYY,RXX")
+   [(set (match_operand:DI 0 "system_register_operand" "=SAB,SFR")
          (unspec_volatile:DI [(match_operand:DI 1 "register_operand" "r,r")] UNSPEC_WFXL))]
    ""
    "wfxl %0, %1"
@@ -367,7 +383,7 @@
 )
 
 (define_insn "kvx_wfxm"
-   [(set (match_operand:DI 0 "system_register_operand" "=RYY,RXX")
+   [(set (match_operand:DI 0 "system_register_operand" "=SAB,SFR")
          (unspec_volatile:DI [(match_operand:DI 1 "register_operand" "r,r")] UNSPEC_WFXM))]
    ""
    "wfxm %0, %1"
@@ -459,7 +475,7 @@
   [(unspec [(match_operand 0 "noxsaddr_operand" "Aa,Ab,p")] UNSPEC_DINVALL)
    (clobber (mem:BLK (scratch)))]
   ""
-  "dinvall%m0 %a0"
+  "dinvall%X0 %A0"
   [(set_attr "length" "4,     8,    12")
    (set_attr "type" "lsu, lsu_x, lsu_y")]
 )
@@ -476,7 +492,7 @@
   [(unspec_volatile [(match_operand 0 "noxsaddr_operand" "Aa,Ab,p")] UNSPEC_IINVALS)
    (clobber (mem:BLK (scratch)))]
   ""
-  "iinvals%m0 %a0"
+  "iinvals%X0 %A0"
   [(set_attr "length" "4,     8,    12")
    (set_attr "type" "lsu, lsu_x, lsu_y")]
 )
@@ -486,7 +502,7 @@
              (const_int 0)
              (const_int 0))]
   ""
-  "dtouchl%m0 %a0"
+  "dtouchl%X0 %A0"
   [(set_attr "length" "4,     8,    12")
    (set_attr "type" "lsu, lsu_x, lsu_y")]
 )
@@ -496,7 +512,7 @@
              (match_operand 1 "const_int_operand" "")
              (match_operand 2 "const_int_operand" ""))]
   ""
-  "dtouchl%m0 %a0"
+  "dtouchl%X0 %A0"
   [(set_attr "length" "4,     8,    12")
    (set_attr "type" "lsu, lsu_x, lsu_y")]
 )
@@ -528,7 +544,7 @@
   [(unspec [(match_operand 0 "noxsaddr_operand" "Aa,Ab,p")] UNSPEC_DZEROL)
    (clobber (mem:BLK (scratch)))]
   "KV3_1"
-  "dzerol%m0 %a0"
+  "dzerol%X0 %A0"
   [(set_attr "length" "4,     8,    12")
    (set_attr "type" "lsu, lsu_x, lsu_y")]
 )
@@ -586,7 +602,7 @@
     (clobber (mem:BLK (scratch)))
    ]
    ""
-   "lq.u%m1 %0 = %1"
+   "lq.u%X1 %0 = %1"
 [(set_attr "length" "4, 8, 12")
  (set_attr "type"   "lsu_auxw_load_uncached, lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")]
 )
@@ -597,7 +613,7 @@
     (clobber (mem:BLK (scratch)))
    ]
    ""
-   "ld.u%m1 %0 = %1"
+   "ld.u%X1 %0 = %1"
 [(set_attr "length" "4, 8, 12")
  (set_attr "type" "lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y")]
 )
@@ -608,7 +624,7 @@
     (clobber (mem:BLK (scratch)))
    ]
    ""
-   "lwz.u%m1 %0 = %1"
+   "lwz.u%X1 %0 = %1"
 [(set_attr "length" "4,8,12")
  (set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")]
 )
@@ -619,7 +635,7 @@
     (clobber (mem:BLK (scratch)))
    ]
    ""
-   "lhs.u%m1 %0 = %1"
+   "lhs.u%X1 %0 = %1"
 [(set_attr "length" "4, 8, 12")
  (set_attr "type" "lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y")]
 )
@@ -630,7 +646,7 @@
     (clobber (mem:BLK (scratch)))
    ]
    ""
-   "lhz.u%m1 %0 = %1"
+   "lhz.u%X1 %0 = %1"
 [(set_attr "length" "4, 8, 12")
  (set_attr "type" "lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y")]
 )
@@ -640,7 +656,7 @@
    [(set (match_operand:DI 0 "register_operand"                 "=r,  r,  r,  r,  r,  r")
          (ANY_EXTEND:DI (match_operand:SHORT 1 "memory_operand" "Ca, Cb, Cm, Za, Zb, Zm")))]
    ""
-   "l<SHORT:lsusize><ANY_EXTEND:lsux>%C1%m1 %0 = %1"
+   "l<SHORT:lsusize><ANY_EXTEND:lsux>%V1 %0 = %1"
 [(set_attr "length" "            4,               8,              12,                      4,                        8,                       12")
  (set_attr "type"   "lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_y, lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y")]
 )
@@ -651,7 +667,7 @@
     (clobber (mem:BLK (scratch)))
    ]
    ""
-   "lbs.u%m1 %0 = %1"
+   "lbs.u%X1 %0 = %1"
 [(set_attr "length" "4,8,12")
  (set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")]
 )
@@ -662,7 +678,7 @@
     (clobber (mem:BLK (scratch)))
    ]
    ""
-   "lbz.u%m1 %0 = %1"
+   "lbz.u%X1 %0 = %1"
 [(set_attr "length" "4,8,12")
  (set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")]
 )
@@ -678,9 +694,9 @@
    case 0:
      return "sx<lsusize>d %0 = %1";
    case 1: case 2: case 3:
-     return "l<lsusize>s%m1 %0 = %1";
+     return "l<lsusize>s%X1 %0 = %1";
    case 4: case 5: case 6:
-     return "l<lsusize>s%m1.u %0 = %1";
+     return "l<lsusize>s%X1.u %0 = %1";
    default:
      gcc_unreachable ();
    }
@@ -698,9 +714,9 @@
      case 0:
        return "zx<lsusize>d %0 = %1";
      case 1: case 2: case 3:
-       return "l<lsusize>z%m1 %0 = %1";
+       return "l<lsusize>z%X1 %0 = %1";
      case 4: case 5: case 6:
-       return "l<lsusize>z%m1.u %0 = %1";
+       return "l<lsusize>z%X1.u %0 = %1";
      default:
        gcc_unreachable ();
    }

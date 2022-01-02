@@ -38,7 +38,6 @@ extern bool kvx_cannot_change_mode_class (enum machine_mode from,
 extern void kvx_output_function_profiler (FILE *);
 extern HOST_WIDE_INT kvx_first_parm_offset (tree decl);
 
-extern int kvx_hard_regno_rename_ok (unsigned from, unsigned to);
 extern void kvx_output_load_multiple (rtx *operands);
 
 extern void kvx_expand_tablejump (rtx op0, rtx op1);
@@ -63,7 +62,7 @@ extern void kvx_print_operand_address (FILE *file, rtx x);
 
 extern bool kvx_print_punct_valid_p (unsigned char code);
 
-extern int kvx_is_uncached_mem_op_p (rtx op);
+extern bool kvx_is_uncached_mem_op_p (rtx op);
 
 extern bool kvx_expand_load_multiple (rtx operands[]);
 extern bool kvx_expand_store_multiple (rtx operands[]);

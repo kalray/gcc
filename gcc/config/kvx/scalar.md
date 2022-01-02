@@ -2286,22 +2286,6 @@
    (set_attr "length" "4")]
 )
 
-(define_insn "*set_<mode>"
-   [(set (match_operand:ALLP 0 "system_register_operand" "=RYY,RXX")
-         (match_operand:ALLP 1 "register_operand" "r,r"))]
-   ""
-   "set %0 = %1"
-  [(set_attr "type" "all,bcu")]
-)
-
-(define_insn "kvx_set"
-   [(set (match_operand:DI 0 "system_register_operand" "=RYY,RXX")
-         (unspec_volatile:DI [(match_operand:DI 1 "register_operand" "r,r")] UNSPEC_SET))]
-   ""
-   "set %0 = %1"
-  [(set_attr "type" "all,bcu")]
-)
-
 
 ;; TI
 
@@ -3071,7 +3055,7 @@
                    (match_operand 2 "" "")] UNSPEC_LBZ))
    (use (match_dup 1))]
   ""
-  "lbz%2%m1 %0 = %1"
+  "lbz%2%X1 %0 = %1"
   [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
    (set_attr "length"                    "4,                       8,                      12")]
 )
@@ -3082,7 +3066,7 @@
                    (match_operand 2 "" "")] UNSPEC_LBS))
    (use (match_dup 1))]
   ""
-  "lbs%2%m1 %0 = %1"
+  "lbs%2%X1 %0 = %1"
   [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
    (set_attr "length"                    "4,                       8,                      12")]
 )
@@ -3093,7 +3077,7 @@
                    (match_operand 2 "" "")] UNSPEC_LHZ))
    (use (match_dup 1))]
   ""
-  "lhz%2%m1 %0 = %1"
+  "lhz%2%X1 %0 = %1"
   [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
    (set_attr "length"                    "4,                       8,                      12")]
 )
@@ -3104,7 +3088,7 @@
                    (match_operand 2 "" "")] UNSPEC_LHS))
    (use (match_dup 1))]
   ""
-  "lhs%2%m1 %0 = %1"
+  "lhs%2%X1 %0 = %1"
   [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
    (set_attr "length"                    "4,                       8,                      12")]
 )
@@ -3115,7 +3099,7 @@
                    (match_operand 2 "" "")] UNSPEC_LWZ))
    (use (match_dup 1))]
   ""
-  "lwz%2%m1 %0 = %1"
+  "lwz%2%X1 %0 = %1"
   [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
    (set_attr "length"                    "4,                       8,                      12")]
 )
@@ -3126,7 +3110,7 @@
                    (match_operand 2 "" "")] UNSPEC_LWS))
    (use (match_dup 1))]
   ""
-  "lws%2%m1 %0 = %1"
+  "lws%2%X1 %0 = %1"
   [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
    (set_attr "length"                    "4,                       8,                      12")]
 )
@@ -3137,7 +3121,7 @@
                    (match_operand 2 "" "")] UNSPEC_LHF))
    (use (match_dup 1))]
   ""
-  "lhz%2%m1 %0 = %1"
+  "lhz%2%X1 %0 = %1"
   [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
    (set_attr "length"                    "4,                       8,                      12")]
 )
@@ -3148,7 +3132,7 @@
                    (match_operand 2 "" "")] UNSPEC_LWF))
    (use (match_dup 1))]
   ""
-  "lwz%2%m1 %0 = %1"
+  "lwz%2%X1 %0 = %1"
   [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
    (set_attr "length"                    "4,                       8,                      12")]
 )
@@ -3162,7 +3146,7 @@
                    (match_operand 2 "" "")] UNSPEC_LD))
    (use (match_dup 1))]
   ""
-  "ld%2%m1 %0 = %1"
+  "ld%2%X1 %0 = %1"
   [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
    (set_attr "length"                    "4,                       8,                      12")]
 )
@@ -3173,7 +3157,7 @@
                    (match_operand 2 "" "")] UNSPEC_LQ))
    (use (match_dup 1))]
   ""
-  "lq%2%m1 %0 = %1"
+  "lq%2%X1 %0 = %1"
   [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
    (set_attr "length"                    "4,                       8,                      12")]
 )
@@ -3184,7 +3168,7 @@
                    (match_operand 2 "" "")] UNSPEC_LDF))
    (use (match_dup 1))]
   ""
-  "ld%2%m1 %0 = %1"
+  "ld%2%X1 %0 = %1"
   [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
    (set_attr "length"                    "4,                       8,                      12")]
 )
