@@ -12,14 +12,56 @@
 )
 
 (define_insn "cstoredi4"
-  [(set (match_operand:DI 0 "register_operand" "=r,r,r,i")
+  [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
         (match_operator:DI 1 "comparison_operator"
-         [(match_operand:DI 2 "register_operand" "r,r,r,i")
+         [(match_operand:DI 2 "register_operand" "r,r,r,r")
           (match_operand:DI 3 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")]))]
   ""
   "compd.%1 %0 = %2, %3"
   [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
    (set_attr "length"      "4,       4,         8,        12")]
+)
+;; sign-extend versions of cstoresi4
+(define_insn "*sext_cstoredi4"
+  [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
+        (match_operator:DI 1 "comparison_operator"
+         [(sign_extend:DI (match_operand:SI 2 "register_operand" "r,r,r,r"))
+          (match_operand:DI 3 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")]))]
+  ""
+  "compwd.%1 %0 = %2, %3"
+  [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
+   (set_attr "length"      "4,       4,         8,        12")]
+)
+(define_insn "*sext_swap_cstoredi4"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (match_operator:DI 1 "comparison_operator"
+          [(match_operand:DI 2 "register_operand" "r")]))
+           (sign_extend:DI (match_operand:SI 3 "register_operand" "r"))]
+  ""
+  "compwd.%S1 %0 = %3, %2"
+  [(set_attr "type" "alu_tiny")
+   (set_attr "length"      "4")]
+)
+;; zero-extend versions of cstoresi4
+(define_insn "*zext_cstoredi4"
+  [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
+        (match_operator:DI 1 "comparison_operator"
+         [(zero_extend:DI (match_operand:SI 2 "register_operand" "r,r,r,r"))
+          (match_operand:DI 3 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")]))]
+  ""
+  "compuwd.%1 %0 = %2, %3"
+  [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
+   (set_attr "length"      "4,       4,         8,        12")]
+)
+(define_insn "*zext_swap_cstoredi4"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (match_operator:DI 1 "comparison_operator"
+          [(match_operand:DI 2 "register_operand" "r")]))
+           (zero_extend:DI (match_operand:SI 3 "register_operand" "r"))]
+  ""
+  "compuwd.%S1 %0 = %3, %2"
+  [(set_attr "type" "alu_tiny")
+   (set_attr "length"      "4")]
 )
 
 (define_insn "*fcomp<cfx>"
@@ -28,7 +70,7 @@
          [(match_operand:ALLF 2 "register_operand" "r,r")
           (match_operand:ALLF 3 "register_f32_operand" "r,H32")]))]
   ""
-  "fcomp<cfx>.%f1 %0 = %2, %3"
+  "fcomp<cfx>.%F1 %0 = %2, %3"
   [(set_attr "type" "alu_lite,alu_lite_x")
    (set_attr "length"      "4,         8")]
 )
