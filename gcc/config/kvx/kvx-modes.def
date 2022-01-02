@@ -18,7 +18,6 @@ along with GCC; see the file COPYING3.  If not see
 <http://www.gnu.org/licenses/>.  */
 
 INT_MODE (OI, 32);
-
 FLOAT_MODE (HF, 2, 0);
 ADJUST_FLOAT_FORMAT (HF, &ieee_half_format);
 
@@ -33,6 +32,7 @@ VECTOR_MODE (INT, SI, 4);          /* V4SI */
 VECTOR_MODE (INT, SI, 8);          /* V8SI */
 VECTOR_MODE (INT, DI, 2);          /* V2DI */
 VECTOR_MODE (INT, DI, 4);          /* V4DI */
+
 VECTOR_MODE (FLOAT, HF, 4);        /* V4HF */
 VECTOR_MODE (FLOAT, HF, 8);        /* V8HF */
 VECTOR_MODE (FLOAT, HF, 16);       /* V16HF */
@@ -41,4 +41,8 @@ VECTOR_MODE (FLOAT, SF, 4);        /* V4SF */
 VECTOR_MODE (FLOAT, SF, 8);        /* V8SF */
 VECTOR_MODE (FLOAT, DF, 2);        /* V2DF */
 VECTOR_MODE (FLOAT, DF, 4);        /* V4DF */
+
+VECTOR_MODE (INT, OI, 1);          /* V1OI*/
+VECTOR_MODE (INT, OI, 2);          /* V2OI*/
+VECTOR_MODE (INT, OI, 4);          /* V4OI*/
 

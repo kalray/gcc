@@ -236,8 +236,8 @@
 
 ;; FIXME AUTO: refine set insn to bundle it when possible. T7808
 (define_insn "*mov<mode>_all"
-    [(set (match_operand:ALLIF 0 "nonimmediate_operand" "=r, r,           r,  r, a, b, m, r , r , r , r , r , r , r,  SFR,   r, r")
-          (match_operand:ALLIF 1 "general_operand"      " r, I16H16, I43H43, nF, r, r, r, Ca, Cb, Cm, Za, Zb, Zm, SFR,  r, REF, SYM"))]
+    [(set (match_operand:ALLIF 0 "nonimmediate_operand" "=r,      r,      r,  r, a, b, m,  r,  r,  r,  r,  r,  r, r, SFR,   r,   r")
+          (match_operand:ALLIF 1 "general_operand"       "r, I16H16, I43H43, nF, r, r, r, Ca, Cb, Cm, Za, Zb, Zm, SFR, r, REF, SYM"))]
   "register_operand (operands[0], <MODE>mode) || register_operand (operands[1], <MODE>mode)"
 {
   switch (which_alternative)
@@ -1103,4 +1103,6 @@
 (include "control.md")
 
 (include "builtin.md")
+
+(include "extension.md")
 

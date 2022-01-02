@@ -3137,39 +3137,3 @@
    (set_attr "length"                    "4,                       8,                      12")]
 )
 
-
-;; KVX_LD, KVX_LO, KVX_LDF
-
-(define_insn "kvx_ld"
- [(set (match_operand:DI 0 "register_operand" "=r,r,r")
-       (unspec:DI [(match_operand:DI 1 "memory_operand" "a,b,m")
-                   (match_operand 2 "" "")] UNSPEC_LD))
-   (use (match_dup 1))]
-  ""
-  "ld%2%X1 %0 = %1"
-  [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
-   (set_attr "length"                    "4,                       8,                      12")]
-)
-
-(define_insn "kvx_lq"
- [(set (match_operand:TI 0 "register_operand" "=r,r,r")
-       (unspec:TI [(match_operand:TI 1 "memory_operand" "a,b,m")
-                   (match_operand 2 "" "")] UNSPEC_LQ))
-   (use (match_dup 1))]
-  ""
-  "lq%2%X1 %0 = %1"
-  [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
-   (set_attr "length"                    "4,                       8,                      12")]
-)
-
-(define_insn "kvx_ldf"
- [(set (match_operand:DF 0 "register_operand" "=r,r,r")
-       (unspec:DF [(match_operand:DF 1 "memory_operand" "a,b,m")
-                   (match_operand 2 "" "")] UNSPEC_LDF))
-   (use (match_dup 1))]
-  ""
-  "ld%2%X1 %0 = %1"
-  [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
-   (set_attr "length"                    "4,                       8,                      12")]
-)
-

@@ -4,6 +4,9 @@
 (define_register_constraint "SFR" "(SFR_REGS)"
      "A system register constraint.")
 
+(define_register_constraint "x" "(XCR_REGS)"
+     "Coprocessor registers.")
+
 (define_constraint "SYM"
   "An immediate or symbol operand"
   (ior (match_code "const_double,const_int")

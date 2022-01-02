@@ -436,6 +436,9 @@ kvx_static_chain (const_tree fndecl, bool incoming_p ATTRIBUTE_UNUSED)
 
 static const char *pgr_reg_names[] = {KV3_PGR_REGISTER_NAMES};
 static const char *qgr_reg_names[] = {KV3_QGR_REGISTER_NAMES};
+static const char *xvr_reg_names[] = {KV3_XVR_REGISTER_NAMES};
+static const char *xwr_reg_names[] = {KV3_XWR_REGISTER_NAMES};
+static const char *xmr_reg_names[] = {KV3_XMR_REGISTER_NAMES};
 
 /* Splits X as a base + offset. Returns true if split successful,
    false if not. BASE_OUT and OFFSET_OUT contain the corresponding
@@ -613,6 +616,24 @@ kvx_hard_regno_nregs (unsigned int regno ATTRIBUTE_UNUSED, machine_mode mode)
   return (GET_MODE_SIZE (mode) + UNITS_PER_WORD - 1) / UNITS_PER_WORD;
 }
 
+static bool
+kvx_extension_mode_p (enum machine_mode mode)
+{
+  switch (mode)
+    {
+    // 256-bit coprocessor modes
+    case E_V1OImode:
+    // 512-bit coprocessor modes
+    case E_V2OImode:
+    // 1024-bit coprocessor modes
+    case E_V4OImode:
+      return true;
+    default:
+      break;
+    }
+  return false;
+}
+
 /* Implements TARGET_HARD_REGNO_MODE_OK.  */
 static bool
 kvx_hard_regno_mode_ok (unsigned regno, enum machine_mode mode)
@@ -629,6 +650,11 @@ kvx_hard_regno_mode_ok (unsigned regno, enum machine_mode mode)
   if (IN_RANGE (regno, KV3_SFR_FIRST_REGNO, KV3_SFR_LAST_REGNO))
     {
       return nwords == 1;
+    }
+  // XCR
+  if (IN_RANGE (regno, KV3_XCR_FIRST_REGNO, KV3_XCR_LAST_REGNO))
+    {
+      return !(regno & (nwords - 1)) && kvx_extension_mode_p (mode);
     }
   return false;
 }
@@ -817,6 +843,13 @@ static void
 kvx_conditional_register_usage (void)
 {
   kvx_link_reg_rtx = gen_rtx_REG (Pmode, KV3_RETURN_POINTER_REGNO);
+  if (KV3_1)
+    {
+      // On the kv3-1, only 48 coprocessor registers are available.
+      unsigned int regno = KV3_XCR_FIRST_REGNO + (48 * 4);
+      for (; regno <= KV3_XCR_LAST_REGNO; regno++)
+        fixed_regs[regno] = call_used_regs[regno] = 1;
+    }
 }
 
 rtx
@@ -1004,6 +1037,10 @@ static bool
 kvx_return_in_memory (const_tree type, const_tree fntype ATTRIBUTE_UNUSED)
 {
   HOST_WIDE_INT size = int_size_in_bytes (type);
+
+  /* Coprocessor values return in memory. */
+  if (kvx_extension_mode_p (TYPE_MODE (type)))
+    return true;
 
   /* Return value can use up to 4 registers (256bits). Larger values
    * or variable sized type must be returned in memory. */
@@ -1256,7 +1293,7 @@ kvx_vector_mode_supported_p (enum machine_mode mode)
     default:
       break;
     }
-  return false;
+  return kvx_extension_mode_p (mode);
 }
 
 static bool
@@ -1304,6 +1341,9 @@ kvx_pass_by_reference (cumulative_args_t cum ATTRIBUTE_UNUSED, const function_ar
   if (arg.type && AGGREGATE_TYPE_P (arg.type))
     size = int_size_in_bytes (arg.type);
 
+  /* Coprocessor arguments are passed by reference.  */
+  if (kvx_extension_mode_p (mode))
+    return true;
 
   /* Arguments which are variable sized or larger than 4 registers are
      passed by reference */
@@ -1377,6 +1417,9 @@ void
 kvx_print_operand (FILE *file, rtx x, int code)
 {
   rtx operand = x;
+  bool select_mreg = 0;
+  bool select_wreg = 0;
+  bool select_vreg = 0;
   bool select_qreg = 0;
   bool select_preg = 0;
   bool select_treg = 0;
@@ -1394,6 +1437,18 @@ kvx_print_operand (FILE *file, rtx x, int code)
     {
     case 0:
       /* No code, print as usual.  */
+      break;
+
+    case 'm':
+      select_mreg = true;
+      break;
+
+    case 'w':
+      select_wreg = true;
+      break;
+
+    case 'v':
+      select_vreg = true;
       break;
 
     case 'o':
@@ -1449,14 +1504,6 @@ kvx_print_operand (FILE *file, rtx x, int code)
       else if (addr_space == KVX_ADDR_SPACE_PRELOAD)
 	fprintf (file, ".us");
       else if (addr_space == KVX_ADDR_SPACE_SPECULATE)
-	fprintf (file, ".s");
-      addr_mode = true;
-      break;
-
-    case 'C': /* Print '.s' suffix in the case of coprocessor v1 load. */
-      addr_space = MEM_ADDR_SPACE (x);
-      if (addr_space == KVX_ADDR_SPACE_PRELOAD
-	  || addr_space == KVX_ADDR_SPACE_SPECULATE)
 	fprintf (file, ".s");
       addr_mode = true;
       break;
@@ -1530,9 +1577,25 @@ kvx_print_operand (FILE *file, rtx x, int code)
 	error ("incorrect hard register number %d", REGNO (operand));
       if (system_register_operand (operand, VOIDmode))
 	gcc_assert (GET_MODE_SIZE (GET_MODE (x)) <= UNITS_PER_WORD);
-      if (select_qreg)
+      if (select_mreg)
 	{
-	  fprintf (file, "$%s", qgr_reg_names[REGNO (operand)]);
+	  int index = REGNO (operand) - KV3_XCR_FIRST_REGNO;
+	  fprintf (file, "$%s", xmr_reg_names[index]);
+	}
+      else if (select_wreg)
+	{
+	  int index = REGNO (operand) - KV3_XCR_FIRST_REGNO;
+	  fprintf (file, "$%s", xwr_reg_names[index]);
+	}
+      else if (select_vreg)
+	{
+	  int index = REGNO (operand) - KV3_XCR_FIRST_REGNO;
+	  fprintf (file, "$%s", xvr_reg_names[index]);
+	}
+      else if (select_qreg)
+	{
+	  int index = REGNO (operand) - KV3_GPR_FIRST_REGNO;
+	  fprintf (file, "$%s", qgr_reg_names[index]);
 	}
       else if (select_preg)
 	{
@@ -1841,6 +1904,7 @@ should_be_saved_in_prologue (int regno)
 {
   return (df_regs_ever_live_p (regno)	   // reg is used
 	  && !call_used_regs[regno] // reg is callee-saved
+	  && REGNO_REG_CLASS (regno) != XCR_REGS
 	  && (regno == KV3_RETURN_POINTER_REGNO || !fixed_regs[regno]));
 }
 
@@ -1862,7 +1926,8 @@ kvx_get_callersaved_nonfixed_reg (machine_mode mode, unsigned int n)
   // We should be able to use the veneer regs if not fixed.
   for (i = 0, regno = 16; regno < FIRST_PSEUDO_REGISTER; regno++)
     {
-      bool candidate = call_used_regs[regno] && !fixed_regs[regno];
+      bool candidate = call_used_regs[regno] && !fixed_regs[regno]
+		       && REGNO_REG_CLASS (regno) != XCR_REGS;
 #ifdef GCC_KVX_MPPA_LINUX
       candidate &= !((regno == PROFILE_REGNO) && (crtl->profile));
 #endif
@@ -4393,7 +4458,7 @@ kvx_sched_sms_res_mii (struct ddg *g)
 	  enum attr_type type = get_attr_type (insn);
 	  if (type == TYPE_ALL)
 	    {
-	      insn_count += issue_rate;
+	      insn_count += issue_rate - 1;
 	      lsu_count++, mau_count++;
 	      bcu_count++;
 	    }
@@ -5633,7 +5698,7 @@ kvx_insn_cost (rtx_insn *insn, bool speed)
   else if (type >= TYPE_LSU && type < TYPE_MAU)
     {
       int penalty = 0;
-      if (type >= TYPE_LSU_AUXW_LOAD && type <= TYPE_LSU_AUXW_LOAD_Y)
+      if (type >= TYPE_LSU_LOAD && type <= TYPE_LSU_AUXW_LOAD_Y)
 	penalty = (3 - 1);
       if ((type >= TYPE_LSU_AUXW_LOAD_UNCACHED
 	   && type <= TYPE_LSU_LOAD_UNCACHED_Y)
