@@ -28,6 +28,9 @@
   lsu,\
   lsu_x, \
   lsu_y, \
+  lsu_load,\
+  lsu_load_x,\
+  lsu_load_y,\
   lsu_auxw_load,\
   lsu_auxw_load_x,\
   lsu_auxw_load_y,\

@@ -217,3 +217,19 @@ float16x16_t __attribute ((noinline))
 kvx_float16x16_scatfhx(float16x8_t a, float16x8_t b) {
     return __builtin_kvx_cathx(b, a);
 }
+float16x16_t __attribute ((noinline))
+kvx_float16x16_xload(const void *ptr) {
+    return __builtin_kvx_xload256(ptr, ".us");
+}
+float16x16_t __attribute ((noinline))
+kvx_float16x16_xloadc(const void *ptr, uint64_t c) {
+    return __builtin_kvx_xloadc256(ptr, c, ".us.weqz");
+}
+void __attribute ((noinline))
+kvx_float16x16_xstore(void *ptr, float16x16_t a) {
+    __builtin_kvx_xstore256(a, ptr, 0);
+}
+void __attribute ((noinline))
+kvx_float16x16_xstorec(void *ptr, float16x16_t a, uint64_t c) {
+    __builtin_kvx_xstorec256(a, ptr, c, ".odd");
+}
