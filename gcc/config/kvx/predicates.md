@@ -180,7 +180,33 @@
 (define_predicate "system_register_operand"
   (match_code "reg")
 {
-  return (REGNO_REG_CLASS (REGNO (op)) == SFR_REGS);
+  unsigned regno = REGNO (op);
+  return REGNO_REG_CLASS (regno) == SFR_REGS;
+})
+
+(define_predicate "general_register_operand"
+  (match_code "reg,subreg")
+{
+  if (GET_CODE (op) == SUBREG)
+    op = SUBREG_REG (op);
+  unsigned regno = REGNO (op);
+  return REGNO_REG_CLASS (regno) == GENERAL_REGS;
+})
+
+(define_predicate "extension_register_operand"
+  (match_code "reg,subreg")
+{
+  if (GET_CODE (op) == SUBREG)
+    op = SUBREG_REG (op);
+  unsigned regno = REGNO (op);
+  return REGNO_REG_CLASS (regno) == XCR_REGS;
+})
+
+(define_predicate "uncached_modifier"
+  (match_code "const_string")
+{
+  const char *modifier = XSTR (op, 0);
+  return modifier[0] == '.' && modifier[1] == 'u';
 })
 
 (define_predicate "store_multiple_operation"

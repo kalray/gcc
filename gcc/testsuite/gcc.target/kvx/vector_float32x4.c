@@ -381,12 +381,12 @@ kvx_float32x4_ffdmaswp(float32x4_t a, float32x4_t b, float32x2_t c)
 float32x4_t __attribute ((noinline))
 kvx_float32x4_load(float32x4_t *p)
 {
-    return __builtin_kvx_lwq(p, ".s", 1);
+    return __builtin_kvx_load128(p, ".v.s");
 }
 void __attribute ((noinline))
 kvx_float32x4_store(float32x4_t *p, float32x4_t a)
 {
-    __builtin_kvx_swq(p, a, 0);
+    __builtin_kvx_store128(a, p, 0);
 }
   
 float32x4_t __attribute ((noinline))

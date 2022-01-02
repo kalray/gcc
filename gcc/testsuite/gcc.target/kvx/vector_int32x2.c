@@ -280,12 +280,12 @@ kvx_int32x2_shru7(int32x2_t a)
 int32x2_t __attribute ((noinline))
 kvx_int32x2_load(int32x2_t *p)
 {
-    return __builtin_kvx_lwp(p, ".s", 1);
+    return __builtin_kvx_load64(p, ".v.s");
 }
 void __attribute ((noinline))
 kvx_int32x2_store(int32x2_t *p, int32x2_t a)
 {
-    __builtin_kvx_swp(p, a, 0);
+    __builtin_kvx_store64(a, p, 0);
 }
 int32x2_t __attribute ((noinline))
 kvx_int32x2_neg_(int32x2_t a)
