@@ -280,12 +280,12 @@ kvx_int16x16_shru7(int16x16_t a)
 int16x16_t __attribute ((noinline))
 kvx_int16x16_load(int16x16_t *p)
 {
-    return __builtin_kvx_lhx(p, ".s", 1);
+    return __builtin_kvx_load256(p, ".v.s");
 }
 void __attribute ((noinline))
 kvx_int16x16_store(int16x16_t *p, int16x16_t a)
 {
-    __builtin_kvx_shx(p, a, 0);
+    __builtin_kvx_store256(a, p, 0);
 }
 int16x16_t __attribute ((noinline))
 kvx_int16x16_neg_(int16x16_t a)
@@ -539,4 +539,20 @@ kvx_int16x16_cathx(int16x8_t a, int16x8_t b) {
 int16x16_t __attribute ((noinline))
 kvx_int16x16_scathx(int16x8_t a, int16x8_t b) {
     return __builtin_kvx_cathx(b, a);
+}
+int16x16_t __attribute ((noinline))
+kvx_int16x16_xload(const void *ptr) {
+    return __builtin_kvx_xload256(ptr, ".us");
+}
+int16x16_t __attribute ((noinline))
+kvx_int16x16_xloadc(const void *ptr, uint64_t c) {
+    return __builtin_kvx_xloadc256(ptr, c, ".us.weqz");
+}
+void __attribute ((noinline))
+kvx_int16x16_xstore(void *ptr, int16x16_t a) {
+    __builtin_kvx_xstore256(a, ptr, 0);
+}
+void __attribute ((noinline))
+kvx_int16x16_xstorec(void *ptr, int16x16_t a, uint64_t c) {
+    __builtin_kvx_xstorec256(a, ptr, c, ".odd");
 }
