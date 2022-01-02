@@ -65,6 +65,7 @@
 (define_reservation "kv3_full_r"  "(kv3_full_u)")
 
 (define_reservation "kv3_all_r" "kv3_tiny_x4_r + kv3_bcu_u + kv3_tca_u + kv3_issue_x8_r")
+(define_reservation "kv3_alu_nop_r" "kv3_issue_r")
 (define_reservation "kv3_alu_tiny_r" "kv3_tiny_r + kv3_issue_r")
 (define_reservation "kv3_alu_tiny_x_r" "kv3_tiny_r + kv3_issue_x2_r")
 (define_reservation "kv3_alu_tiny_y_r" "kv3_tiny_r + kv3_issue_x3_r")
@@ -78,6 +79,7 @@
 (define_reservation "kv3_alu_lite_y_r" "kv3_lite_r + kv3_issue_x3_r")
 (define_reservation "kv3_alu_lite_x2_r" "kv3_lite_x2_r + kv3_issue_x2_r")
 (define_reservation "kv3_alu_lite_x2_x_r" "kv3_lite_x2_r + kv3_issue_x4_r")
+(define_reservation "kv3_alu_lite_x2_crwl_crwh_r" "kv3_lite_x2_r + kv3_crwl_u + kv3_crwh_u + kv3_issue_x4_r")
 (define_reservation "kv3_alu_full_r" "kv3_full_r + kv3_issue_r")
 (define_reservation "kv3_alu_full_x_r" "kv3_full_r + kv3_issue_x2_r")
 (define_reservation "kv3_alu_full_y_r" "kv3_full_r + kv3_issue_x3_r")
@@ -109,6 +111,7 @@
 (define_reservation "kv3_tca_r" "kv3_tca_u + kv3_issue_r")
 
 (define_insn_reservation "kv3_all" 1 (eq_attr "type" "all") "kv3_all_r")
+(define_insn_reservation "kv3_alu_nop" 1 (eq_attr "type" "alu_nop") "kv3_alu_nop_r")
 (define_insn_reservation "kv3_alu_tiny" 1 (eq_attr "type" "alu_tiny") "kv3_alu_tiny_r")
 (define_insn_reservation "kv3_alu_tiny_x" 1 (eq_attr "type" "alu_tiny_x") "kv3_alu_tiny_x_r")
 (define_insn_reservation "kv3_alu_tiny_y" 1 (eq_attr "type" "alu_tiny_y") "kv3_alu_tiny_y_r")
@@ -122,6 +125,7 @@
 (define_insn_reservation "kv3_alu_lite_y" 1 (eq_attr "type" "alu_lite_y") "kv3_alu_lite_y_r")
 (define_insn_reservation "kv3_alu_lite_x2" 1 (eq_attr "type" "alu_lite_x2") "kv3_alu_lite_x2_r")
 (define_insn_reservation "kv3_alu_lite_x2_x" 1 (eq_attr "type" "alu_lite_x2_x") "kv3_alu_lite_x2_x_r")
+(define_insn_reservation "kv3_alu_lite_x2_crwl_crwh" 1 (eq_attr "type" "alu_lite_x2_crwl_crwh") "kv3_alu_lite_x2_crwl_crwh_r")
 (define_insn_reservation "kv3_alu_full" 1 (eq_attr "type" "alu_full") "kv3_alu_full_r")
 (define_insn_reservation "kv3_alu_full_x" 1 (eq_attr "type" "alu_full_x") "kv3_alu_full_x_r")
 (define_insn_reservation "kv3_alu_full_y" 1 (eq_attr "type" "alu_full_y") "kv3_alu_full_y_r")
