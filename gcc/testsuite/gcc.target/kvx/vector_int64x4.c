@@ -280,12 +280,12 @@ kvx_int64x4_shru7(int64x4_t a)
 int64x4_t __attribute ((noinline))
 kvx_int64x4_load(int64x4_t *p)
 {
-    return __builtin_kvx_ldq(p, ".s", 1);
+    return __builtin_kvx_load256(p, ".v.s");
 }
 void __attribute ((noinline))
 kvx_int64x4_store(int64x4_t *p, int64x4_t a)
 {
-    __builtin_kvx_sdq(p, a, 0);
+    __builtin_kvx_store256(a, p, 0);
 }
 int64x4_t __attribute ((noinline))
 kvx_int64x4_neg_(int64x4_t a)
@@ -539,4 +539,20 @@ kvx_int64x4_catdq(int64x2_t a, int64x2_t b) {
 int64x4_t __attribute ((noinline))
 kvx_int64x4_scatdq(int64x2_t a, int64x2_t b) {
     return __builtin_kvx_catdq(b, a);
+}
+int64x4_t __attribute ((noinline))
+kvx_int64x4_xload(const void *ptr) {
+    return __builtin_kvx_xload256(ptr, ".us");
+}
+int64x4_t __attribute ((noinline))
+kvx_int64x4_xloadc(const void *ptr, uint64_t c) {
+    return __builtin_kvx_xloadc256(ptr, c, ".us.weqz");
+}
+void __attribute ((noinline))
+kvx_int64x4_xstore(void *ptr, int64x4_t a) {
+    __builtin_kvx_xstore256(a, ptr, 0);
+}
+void __attribute ((noinline))
+kvx_int64x4_xstorec(void *ptr, int64x4_t a, uint64_t c) {
+    __builtin_kvx_xstorec256(a, ptr, c, ".odd");
 }

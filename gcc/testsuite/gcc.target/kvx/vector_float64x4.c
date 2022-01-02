@@ -285,3 +285,19 @@ float64x4_t __attribute ((noinline))
 kvx_float64x4_scatfdq(float64x2_t a, float64x2_t b) {
     return __builtin_kvx_catdq(b, a);
 }
+float64x4_t __attribute ((noinline))
+kvx_float64x4_xload(const void *ptr) {
+    return __builtin_kvx_xload256(ptr, ".us");
+}
+float64x4_t __attribute ((noinline))
+kvx_float64x4_xloadc(const void *ptr, uint64_t c) {
+    return __builtin_kvx_xloadc256(ptr, c, ".us.weqz");
+}
+void __attribute ((noinline))
+kvx_float64x4_xstore(void *ptr, float64x4_t a) {
+    __builtin_kvx_xstore256(a, ptr, 0);
+}
+void __attribute ((noinline))
+kvx_float64x4_xstorec(void *ptr, float64x4_t a, uint64_t c) {
+    __builtin_kvx_xstorec256(a, ptr, c, ".odd");
+}

@@ -319,14 +319,14 @@
         UNSPEC_GOTOFF
         UNSPEC_TLS_LD_CALL
 
-	;; Keep this part in sync with kvx_unspec_tls_asm_op in kvx.c
-	;; The order must match
+        ;; Keep this part in sync with kvx_unspec_tls_asm_op in kvx.c
+        ;; The order must match
         UNSPEC_TLS_GD
         UNSPEC_TLS_LD
         UNSPEC_TLS_LE
         UNSPEC_TLS_DTPOFF
         UNSPEC_TLS_IE
-	;;
+        ;;
 
         UNSPEC_PCREL
         UNSPEC_SATD
@@ -346,20 +346,20 @@
         UNSPEC_SQ
         UNSPEC_LO
         UNSPEC_SO
-        UNSPEC_LV
-        UNSPEC_SV
-        UNSPEC_MOVEFO
-        UNSPEC_MOVETO
-        UNSPEC_SWAPVO
-        UNSPEC_ALIGNO
-        UNSPEC_ALIGNV
-        UNSPEC_COPYV
-        UNSPEC_MT4X4D
-        UNSPEC_MM4ABW
-        UNSPEC_FMM4AHW0
-        UNSPEC_FMM4AHW1
-        UNSPEC_FMM4AHW2
-        UNSPEC_FMM4AHW3
+        UNSPEC_LOAD64
+        UNSPEC_LOAD128
+        UNSPEC_LOAD256
+        UNSPEC_XLOAD256
+        UNSPEC_STORE64
+        UNSPEC_STORE128
+        UNSPEC_STORE256
+        UNSPEC_XSTORE256
+        UNSPEC_XSWAP256
+        UNSPEC_XMT44D
+        UNSPEC_XMMA484BW
+        UNSPEC_XMMA484UBW
+        UNSPEC_XMMA484SUBW
+        UNSPEC_XMMA484USBW
    ]
 )
 

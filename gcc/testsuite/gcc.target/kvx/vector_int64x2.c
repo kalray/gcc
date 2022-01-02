@@ -280,12 +280,12 @@ kvx_int64x2_shru7(int64x2_t a)
 int64x2_t __attribute ((noinline))
 kvx_int64x2_load(int64x2_t *p)
 {
-    return __builtin_kvx_ldp(p, ".s", 1);
+    return __builtin_kvx_load128(p, ".v.s");
 }
 void __attribute ((noinline))
 kvx_int64x2_store(int64x2_t *p, int64x2_t a)
 {
-    __builtin_kvx_sdp(p, a, 0);
+    __builtin_kvx_store128(a, p, 0);
 }
 int64x2_t __attribute ((noinline))
 kvx_int64x2_neg_(int64x2_t a)

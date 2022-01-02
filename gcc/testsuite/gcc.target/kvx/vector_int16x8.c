@@ -280,12 +280,12 @@ kvx_int16x8_shru7(int16x8_t a)
 int16x8_t __attribute ((noinline))
 kvx_int16x8_load(int16x8_t *p)
 {
-    return __builtin_kvx_lho(p, ".s", 1);
+    return __builtin_kvx_load128(p, ".v.s");
 }
 void __attribute ((noinline))
 kvx_int16x8_store(int16x8_t *p, int16x8_t a)
 {
-    __builtin_kvx_sho(p, a, 0);
+    __builtin_kvx_store128(a, p, 0);
 }
 int16x8_t __attribute ((noinline))
 kvx_int16x8_neg_(int16x8_t a)
