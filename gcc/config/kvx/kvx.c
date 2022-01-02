@@ -556,7 +556,7 @@ kvx_pack_load_store (rtx operands[], unsigned int nops)
   if (nops != 2 && nops != 4)
     return false;
 
-  for (unsigned i = 0; i < nops; i++)
+  for (int i = 0; i < nops; i++)
     {
       set_dests[i] = operands[2 * i];
       set_srcs[i] = operands[2 * i + 1];
@@ -564,13 +564,13 @@ kvx_pack_load_store (rtx operands[], unsigned int nops)
     }
 
   /* Only for register size accesses */
-  for (unsigned i = 0; i < nops; i++)
+  for (int i = 0; i < nops; i++)
     if (GET_MODE (set_dests[i]) != DImode)
       return false;
 
   bool is_load = false;
   bool is_store = false;
-  for (unsigned i = 0; i < nops; i++)
+  for (int i = 0; i < nops; i++)
     if (MEM_P (set_srcs[i]) && REG_P (set_dests[i]))
       is_load = true;
     else if (MEM_P (set_dests[i]) && REG_P (set_srcs[i]))
@@ -668,51 +668,34 @@ kvx_pack_load_store (rtx operands[], unsigned int nops)
   return true;
 }
 
-/* Implement HARD_REGNO_RENAME_OK.  */
-int
-kvx_hard_regno_rename_ok (unsigned int from, unsigned int to)
-{
-  if (IN_RANGE (from, KV3_GPR_FIRST_REGNO, KV3_GPR_LAST_REGNO)
-      && IN_RANGE (to, KV3_GPR_FIRST_REGNO, KV3_GPR_LAST_REGNO))
-    {
-      /* Retain quad alignement */
-      if ((from % 4) == 0)
-	return ((to % 4) == 0);
-
-      /* Retain pair alignement */
-      if ((from % 2) == 0)
-	return ((to % 2) == 0);
-    }
-
-  return 1;
-}
-
+/* Implements TARGET_HARD_REGNO_NREGS. */
 static unsigned int
-kvx_hard_regno_nregs (unsigned int regno, machine_mode mode)
+kvx_hard_regno_nregs (unsigned int regno ATTRIBUTE_UNUSED, machine_mode mode)
 {
   return (GET_MODE_SIZE (mode) + UNITS_PER_WORD - 1) / UNITS_PER_WORD;
 }
 
-/* Implement HARD_REGNO_MODE_OK.  */
+/* Implements TARGET_HARD_REGNO_MODE_OK.  */
 static bool
 kvx_hard_regno_mode_ok (unsigned regno, enum machine_mode mode)
 {
-  // SI/DI -> KV3_GPR_FIRST_REGNO - KV3_GPR_LAST_REGNO => OK
-  // SI/DI -> KV3_SRF_FIRST_REGNO - KV3_SRF_LAST_REGNO => OK
-  // TI    -> KV3_GPR_FIRST_REGNO - KV3_GPR_LAST_REGNO && even => OK
-  // OI    -> KV3_GPR_FIRST_REGNO - KV3_GPR_LAST_REGNO && 0mod4 => OK
-  if (GET_MODE_SIZE (mode) <= UNITS_PER_WORD)
-    return 1;
+  int nwords = (GET_MODE_SIZE (mode) + UNITS_PER_WORD - 1) / UNITS_PER_WORD;
+  nwords = nwords >= 1 ? nwords : 1;
+  gcc_assert (__builtin_popcount (nwords) == 1);
+  // GPR
   if (IN_RANGE (regno, KV3_GPR_FIRST_REGNO, KV3_GPR_LAST_REGNO))
     {
-      if (GET_MODE_SIZE (mode) == 2 * UNITS_PER_WORD)
-	return (regno % 2 == 0);
-      if (GET_MODE_SIZE (mode) == 4 * UNITS_PER_WORD)
-	return (regno % 4 == 0);
+      return !(regno & (nwords - 1));
     }
-  return 0;
+  // SFR
+  if (IN_RANGE (regno, KV3_SFR_FIRST_REGNO, KV3_SFR_LAST_REGNO))
+    {
+      return nwords == 1;
+    }
+  return false;
 }
 
+/* Implements TARGET_CLASS_MAX_NREGS.  */
 static unsigned char
 kvx_class_max_nregs (reg_class_t regclass ATTRIBUTE_UNUSED,
 		     enum machine_mode mode)
@@ -905,7 +888,7 @@ kvx_return_addr_rtx (int count, rtx frameaddr ATTRIBUTE_UNUSED)
 		    : NULL_RTX;
 }
 
-/* Implements the macro INIT_CUMULATIVE_ARGS defined in kvx.h. */
+/* Implements INIT_CUMULATIVE_ARGS. */
 
 void
 kvx_init_cumulative_args (CUMULATIVE_ARGS *cum,
@@ -1048,7 +1031,8 @@ kvx_function_arg_advance (cumulative_args_t cum_v, enum machine_mode mode,
 
 /* Implements TARGET_FUNCTION_VALUE.  */
 static rtx
-kvx_function_value (const_tree ret_type, const_tree func, bool outgoing)
+kvx_function_value (const_tree ret_type, const_tree func,
+		    bool outgoing ATTRIBUTE_UNUSED)
 {
   int unsignedp = TYPE_UNSIGNED (ret_type);
   enum machine_mode mode = TYPE_MODE (ret_type);
@@ -1150,7 +1134,6 @@ kvx_asm_can_output_mi_thunk (const_tree thunk_fndecl ATTRIBUTE_UNUSED,
 static rtx
 kvx_expand_builtin_saveregs (void)
 {
-  int regno;
   int slot = 0;
   struct kvx_frame_info *frame;
 
@@ -1165,7 +1148,7 @@ kvx_expand_builtin_saveregs (void)
     return const0_rtx;
 
   /* use arg_pointer since saved register slots are not known at that time */
-  regno = crtl->args.info.next_arg_reg;
+  int regno = crtl->args.info.next_arg_reg;
 
   if (regno & 1)
     {
@@ -1373,23 +1356,20 @@ kvx_pass_by_reference (cumulative_args_t cum ATTRIBUTE_UNUSED,
 		       enum machine_mode mode, const_tree type,
 		       bool named ATTRIBUTE_UNUSED)
 {
-  HOST_WIDE_INT size;
+  HOST_WIDE_INT size = GET_MODE_SIZE (mode);
 
   /* GET_MODE_SIZE (BLKmode) is useless since it is 0.  */
-  size = (mode == BLKmode && type) ? int_size_in_bytes (type)
-				   : (int) GET_MODE_SIZE (mode);
+  if (mode == BLKmode && type)
+    size = int_size_in_bytes (type);
 
   /* Aggregates are passed by reference based on their size.  */
   if (type && AGGREGATE_TYPE_P (type))
     size = int_size_in_bytes (type);
 
-  /* Variable sized arguments are always returned by reference.  */
-  if (size < 0)
-    return true;
 
   /* Arguments which are variable sized or larger than 4 registers are
      passed by reference */
-  return (size > (4 * UNITS_PER_WORD)) && mode == BLKmode;
+  return size < 0 || ((size > (4 * UNITS_PER_WORD)) && mode == BLKmode);
 }
 
 static reg_class_t
@@ -1444,15 +1424,15 @@ kvx_float_to_half_as_int (unsigned fbits)
 	}
       return sign | 0x7bff; // unrounded not quite Inf
     }
-  if (val >= 0x38800000)		  // remains normalized value
-    return sign | val - 0x38000000 >> 13; // exp - 127 + 15
-  if (val < 0x33000000)			  // too small for subnormal
-    return sign;			  // becomes +/-0
-  val = (fbits & 0x7fffffff) >> 23;	  // tmp exp for subnormal calc
+  if (val >= 0x38800000)		     // remains normalized value
+    return sign | (val - 0x38000000) >> 13;  // exp - 127 + 15
+  if (val < 0x33000000)			     // too small for subnormal
+    return sign;			     // becomes +/-0
+  val = (fbits & 0x7fffffff) >> 23;	     // tmp exp for subnormal calc
   return sign
-	 | ((fbits & 0x7fffff | 0x800000) // add subnormal bit
-	      + (0x800000 >> val - 102)	  // round depending on cut off
-	    >> 126 - val); // div by 2^(1-(exp-127+15)) and >> 13 | exp=0
+	 | ((fbits & 0x7fffff | 0x800000)    // add subnormal bit
+	      + (0x800000 >> (val - 102))    // round depending on cut off
+	    >> (126 - val)); // div by 2^(1-(exp-127+15)) and >> 13 | exp=0
 }
 
 void
@@ -1465,20 +1445,17 @@ kvx_print_operand (FILE *file, rtx x, int code)
   bool select_zreg = 0;
   bool select_yreg = 0;
   bool select_xreg = 0;
-  bool addressing_mode = false;
+  bool addr_mode = false;
   bool as_address = false;
-  bool is_float = false;
-  bool must_be_reversed = false;
+  bool float_compare = false;
+  bool reverse_compare = false;
+  bool swap_compare = false;
   int addr_space = 0;
 
   switch (code)
     {
     case 0:
       /* No code, print as usual.  */
-      break;
-
-    case 'a':
-      as_address = true;
       break;
 
     case 'o':
@@ -1505,12 +1482,20 @@ kvx_print_operand (FILE *file, rtx x, int code)
       select_xreg = true;
       break;
 
-    case 'f':
-      is_float = true;
+    case 'A':
+      as_address = true;
+      break;
+
+    case 'F':
+      float_compare = true;
       break;
 
     case 'R':
-      must_be_reversed = true;
+      reverse_compare = true;
+      break;
+
+    case 'S':
+      swap_compare = true;
       break;
 
     case 'T':
@@ -1519,24 +1504,34 @@ kvx_print_operand (FILE *file, rtx x, int code)
       fprintf (file, ")");
       return;
 
-    case 'm':
-      addressing_mode = true;
-      break;
-
-    case 'C': /* Print an additional '.u' or '.us' in the case of uncached load
-	       */
-      addr_space = kvx_is_uncached_mem_op_p (x);
+    case 'V': /* Print '.u' or '.us' or '.s' variant for memory load. */
+      addr_space = MEM_ADDR_SPACE (x);
       if (addr_space == KVX_ADDR_SPACE_BYPASS)
 	fprintf (file, ".u");
-      if (addr_space == KVX_ADDR_SPACE_PRELOAD)
+      else if (addr_space == KVX_ADDR_SPACE_PRELOAD)
 	fprintf (file, ".us");
-      return;
+      else if (addr_space == KVX_ADDR_SPACE_SPECULATE)
+	fprintf (file, ".s");
+      addr_mode = true;
+      break;
+
+    case 'C': /* Print '.s' suffix in the case of coprocessor v1 load. */
+      addr_space = MEM_ADDR_SPACE (x);
+      if (addr_space == KVX_ADDR_SPACE_PRELOAD
+	  || addr_space == KVX_ADDR_SPACE_SPECULATE)
+	fprintf (file, ".s");
+      addr_mode = true;
+      break;
+
+    case 'X':
+      addr_mode = true;
+      break;
 
     default:
       output_operand_lossage ("invalid operand code '%c'", code);
     }
 
-  if ((as_address || addressing_mode) && GET_CODE (x) != MEM)
+  if ((as_address || addr_mode) && GET_CODE (x) != MEM)
     {
       x = gen_rtx_MEM (Pmode, x);
       operand = x;
@@ -1544,18 +1539,19 @@ kvx_print_operand (FILE *file, rtx x, int code)
 
   if (COMPARISON_P (x))
     {
-      if (!is_float)
+      enum rtx_code code = GET_CODE (x);
+      if (!float_compare)
 	{
-	  if (must_be_reversed)
-	    fprintf (file, "%s",
-		     GET_RTX_NAME (reverse_condition (GET_CODE (x))));
-	  else
-	    fprintf (file, "%s", GET_RTX_NAME (GET_CODE (x)));
+	  if (reverse_compare)
+	    code = reverse_condition (code);
+	  else if (swap_compare)
+	    code = swap_condition (code);
+	  fprintf (file, "%s", GET_RTX_NAME (code));
 	}
       else
 	{
-	  const char *name;
-	  switch (GET_CODE (x))
+	  const char *name = 0;
+	  switch (code)
 	    {
 	    case NE:
 	      name = "une";
@@ -1593,7 +1589,7 @@ kvx_print_operand (FILE *file, rtx x, int code)
     {
     case REG:
       if (REGNO (operand) >= FIRST_PSEUDO_REGISTER)
-	error ("internal error: bad register: %d", REGNO (operand));
+	error ("incorrect hard register number %d", REGNO (operand));
       if (system_register_operand (operand, VOIDmode))
 	gcc_assert (GET_MODE_SIZE (GET_MODE (x)) <= UNITS_PER_WORD);
       if (select_qreg)
@@ -1602,7 +1598,8 @@ kvx_print_operand (FILE *file, rtx x, int code)
 	}
       else if (select_preg)
 	{
-	  fprintf (file, "$%s", pgr_reg_names[REGNO (operand)]);
+	  int index = REGNO (operand) - KV3_GPR_FIRST_REGNO;
+	  fprintf (file, "$%s", pgr_reg_names[index]);
 	}
       else if (select_treg)
 	{
@@ -1630,18 +1627,20 @@ kvx_print_operand (FILE *file, rtx x, int code)
 	}
       else if (GET_MODE_SIZE (GET_MODE (x)) == UNITS_PER_WORD * 4)
 	{
-	  fprintf (file, "$%s", qgr_reg_names[REGNO (operand)]);
+	  int index = REGNO (operand) - KV3_GPR_FIRST_REGNO;
+	  fprintf (file, "$%s", qgr_reg_names[index]);
 	}
       else if (GET_MODE_SIZE (GET_MODE (x)) == UNITS_PER_WORD * 2)
 	{
-	  fprintf (file, "$%s", pgr_reg_names[REGNO (operand)]);
+	  int index = REGNO (operand) - KV3_GPR_FIRST_REGNO;
+	  fprintf (file, "$%s", pgr_reg_names[index]);
 	}
       else
 	fprintf (file, "$%s", reg_names[REGNO (operand)]);
       return;
 
     case MEM:
-      if (addressing_mode)
+      if (addr_mode)
 	{
 	  x = XEXP (x, 0);
 	  if (GET_CODE (x) == PLUS && GET_CODE (XEXP (x, 0)) == MULT
@@ -1677,7 +1676,6 @@ kvx_print_operand (FILE *file, rtx x, int code)
 	  }
 	else if (GET_MODE (x) == DFmode)
 	  {
-	    /* this is a double that should fit on less than 64bits */
 	    REAL_VALUE_TO_TARGET_DOUBLE (r, l);
 	    fprintf (file, "0x%08x%08x", (unsigned int) l[1],
 		     (unsigned int) l[0]);
@@ -1932,12 +1930,12 @@ kvx_get_callersaved_nonfixed_reg (machine_mode mode, unsigned int n)
 #endif
 
       if (!candidate)
-        continue;
+	continue;
 
       if (i == n)
-        return gen_rtx_REG (mode, regno);
+	return gen_rtx_REG (mode, regno);
       else
-        i++;
+	i++;
     }
 
   error ("No scratch register available in function prologue.");
@@ -1957,7 +1955,7 @@ kvx_emit_single_spill (rtx mem, rtx reg, bool is_load)
 }
 
 static void
-kvx_emit_multiple_spill (rtx mem, rtx reg, unsigned nr, bool is_load)
+kvx_emit_multiple_spill (rtx mem, rtx reg, int nr, bool is_load)
 {
   gcc_assert (nr == 2 || nr == 4);
 
@@ -1974,7 +1972,7 @@ kvx_emit_multiple_spill (rtx mem, rtx reg, unsigned nr, bool is_load)
       RTX_FRAME_RELATED_P (insn) = 1;
       gcc_assert (XVECLEN (PATTERN (insn), 0) == nr);
 
-      for (unsigned int i = 0; i < nr; i++)
+      for (int i = 0; i < nr; i++)
 	{
 	  add_reg_note (insn, REG_CFA_OFFSET,
 			copy_rtx (XVECEXP (PATTERN (insn), 0, i)));
@@ -1993,7 +1991,7 @@ kvx_save_or_restore_callee_save_registers (bool restore)
   rtx insn;
   rtx (*gen_mem_ref) (enum machine_mode, rtx) = gen_rtx_MEM;
 
-  unsigned regno;
+  unsigned int regno;
 
   unsigned int pack_prev_regs[4];
   unsigned int pack_prev_regs_idx = 0;
@@ -2244,7 +2242,7 @@ kvx_save_or_restore_callee_save_registers (bool restore)
     }
 }
 
-/* Implement INITIAL_ELIMINATION_OFFSET.  FROM is either the frame pointer
+/* Implements INITIAL_ELIMINATION_OFFSET.  FROM is either the frame pointer
    or argument pointer.  TO is either the stack pointer or frame
    pointer.  */
 
@@ -2460,6 +2458,7 @@ kvx_classify_tls_symbol (rtx x)
     default:
       gcc_unreachable ();
     }
+  return (enum kvx_symbol_type)0;
 }
 
 static enum kvx_symbol_type
@@ -3635,7 +3634,7 @@ kvx_expand_vec_perm_const_emit_insf (rtx target, rtx source1, rtx source2,
   return NULL_RTX;
 }
 
-/* Implement swizzle (NULL source2) or shuffle based on kvx_expand_vec_perm.
+/* Implements swizzle (NULL source2) or shuffle based on kvx_expand_vec_perm.
    Before implementing a generic SBMM8-XORD scheme, we special-case the target
    words that can be computed using a MOVE alone or followed by EXTFZ, INSF. */
 void
@@ -3772,7 +3771,7 @@ kvx_vectorize_vec_perm_const (machine_mode vmode, rtx target, rtx op0,
 {
   opt_machine_mode smode = mode_for_int_vector (vmode);
   rtx sel_rtx = vec_perm_indices_to_rtx (smode.else_void (), sel);
-  kvx_expand_vec_perm_const(target, op0, op1, sel_rtx);
+  return kvx_expand_vec_perm_const(target, op0, op1, sel_rtx);
 }
 
 /* Helper to implement vector cross-element right shift. Two source chunks are
@@ -4320,7 +4319,7 @@ kvx_sched_init (FILE *file ATTRIBUTE_UNUSED, int verbose ATTRIBUTE_UNUSED,
 {
   if (reload_completed)
     {
-      if ((unsigned) kvx_sched2_prev_uid < kvx_sched2_max_uid)
+      if ((unsigned) kvx_sched2_prev_uid < (unsigned) kvx_sched2_max_uid)
 	{
 	  kvx_sched2_insn_flags[kvx_sched2_prev_uid]
 	    |= KVX_SCHED2_INSN_STOP | KVX_SCHED2_INSN_TAIL;
@@ -4334,7 +4333,7 @@ kvx_sched_finish (FILE *file ATTRIBUTE_UNUSED, int verbose ATTRIBUTE_UNUSED)
 {
   if (reload_completed)
     {
-      if ((unsigned) kvx_sched2_prev_uid < kvx_sched2_max_uid)
+      if ((unsigned) kvx_sched2_prev_uid < (unsigned) kvx_sched2_max_uid)
 	{
 	  kvx_sched2_insn_flags[kvx_sched2_prev_uid]
 	    |= KVX_SCHED2_INSN_STOP | KVX_SCHED2_INSN_TAIL;
@@ -4373,7 +4372,8 @@ kvx_sched_dfa_new_cycle (FILE *dump ATTRIBUTE_UNUSED,
 {
   // Use this hook to record the cycle and flags of INSN in SCHED2.
   int uid = INSN_UID (insn);
-  if ((unsigned) uid < kvx_sched2_max_uid && GET_CODE (PATTERN (insn)) != USE
+  if ((unsigned) uid < (unsigned) kvx_sched2_max_uid
+      && GET_CODE (PATTERN (insn)) != USE
       && GET_CODE (PATTERN (insn)) != CLOBBER)
     {
       int prev_uid = kvx_sched2_prev_uid;
@@ -4417,7 +4417,7 @@ kvx_sched_set_sched_flags (struct spec_info_def *spec_info)
 
 // Always return true, as long-running instructions are fully pipelined.
 static bool
-kvx_sched_can_speculate_insn (rtx_insn *insn)
+kvx_sched_can_speculate_insn (rtx_insn *insn ATTRIBUTE_UNUSED)
 {
   return true;
 }
@@ -4430,7 +4430,6 @@ kvx_sched_sms_res_mii (struct ddg *g)
   int lite_count = 0;
   int full_count = 0;
   int auxr_count = 0;
-  int alu_count = 0;
   int lsu_count = 0;
   int mau_count = 0;
   int bcu_count = 0;
@@ -4449,6 +4448,8 @@ kvx_sched_sms_res_mii (struct ddg *g)
 	      lsu_count++, mau_count++;
 	      bcu_count++;
 	    }
+	  else if (type == TYPE_ALU_NOP)
+	    ;
 	  else if (type >= TYPE_ALU_TINY && type < TYPE_LSU)
 	    {
 	      if (type < TYPE_ALU_TINY_X2)
@@ -4600,9 +4601,8 @@ kvx_has_64bit_immediate_p (rtx x)
 }
 
 /* Test whether the memory operand X should be accessed cached or
-   uncached (bypass or preload) regarding it's name address space.
-   If non-zero, the return value is the MEM_ADDR_SPACE. */
-int
+   uncached (bypass or preload) based on its memory address space.  */
+bool
 kvx_is_uncached_mem_op_p (rtx x)
 {
   gcc_assert (MEM_P (x));
@@ -4612,7 +4612,13 @@ kvx_is_uncached_mem_op_p (rtx x)
   /* __convert[_no_sync] addr space should not come here. */
   gcc_assert (MEM_ADDR_SPACE (x) < KVX_ADDR_SPACE_CONVERT);
 
+#if 1
+  int addr_space = MEM_ADDR_SPACE (x);
+  return addr_space == KVX_ADDR_SPACE_BYPASS
+	 || addr_space == KVX_ADDR_SPACE_PRELOAD;
+#else
   return MEM_ADDR_SPACE (x);
+#endif
 }
 
 HOST_WIDE_INT
@@ -4741,7 +4747,7 @@ kvx_has_43bit_vector_const_p (rtx x)
 bool
 kvx_has_32x2bit_vector_const_p (rtx x)
 {
-  HOST_WIDE_INT value = kvx_const_vector_value (x, 0);
+  //HOST_WIDE_INT value = kvx_const_vector_value (x, 0);
   // Need the dual immediate syntax to be fixed in assembler.
   // return (value&0xFFFFFFFF) == ((value>>32)&0xFFFFFFFF);
   return false;
@@ -4752,15 +4758,11 @@ kvx_has_32x2bit_vector_const_p (rtx x)
 static bool
 kvx_expand_load_store_multiple (rtx operands[], bool is_load)
 {
-  int regno;
-  int count;
-  int i;
-
   const int reg_op_idx = is_load ? 0 : 1;
   const int mem_op_idx = is_load ? 1 : 0;
 
-  count = INTVAL (operands[2]);
-  regno = REGNO (operands[reg_op_idx]);
+  int count = INTVAL (operands[2]);
+  int regno = REGNO (operands[reg_op_idx]);
 
   if (GET_CODE (operands[2]) != CONST_INT
       || GET_MODE (operands[reg_op_idx]) != DImode || (count != 2 && count != 4)
@@ -4784,7 +4786,7 @@ kvx_expand_load_store_multiple (rtx operands[], bool is_load)
   /* Add a PLUS so that we have a simpler match in load multiple patterns */
   XEXP (operands[mem_op_idx], 0) = gen_rtx_PLUS (Pmode, base, offset);
 
-  for (i = 0; i < count; i++)
+  for (int i = 0; i < count; i++)
     {
       rtx addr
 	= adjust_address_nv (operands[mem_op_idx], DImode, i * UNITS_PER_WORD);
@@ -4825,8 +4827,7 @@ kvx_expand_load_multiple (rtx operands[])
 
 /*
  * When IS_LOAD is TRUE, returns TRUE if OP is a load multiple
- * operation and all mems are cached/uncached depending on
- * IS_UNCACHED.
+ * operation and all mems have same address space ADDR_SPACE.
  * When IS_LOAD is FALSE, returns TRUE if OP is a store multiple
  * operation.
  * Returns FALSE otherwise.
@@ -4835,14 +4836,13 @@ static bool
 kvx_load_store_multiple_operation_p (rtx op, bool is_uncached, bool is_load)
 {
   int count = XVECLEN (op, 0);
-  unsigned int dest_regno;
-  int i;
+  int addr_space = -1;
 
   /* Perform a quick check so we don't blow up below.  */
   if (count != 2 && count != 4)
     return 0;
 
-  for (i = 0; i < count; i++)
+  for (int i = 0; i < count; i++)
     {
       rtx set = XVECEXP (op, 0, i);
       if (GET_CODE (set) != SET)
@@ -4854,10 +4854,26 @@ kvx_load_store_multiple_operation_p (rtx op, bool is_uncached, bool is_load)
       if (!REG_P (reg_part) || !MEM_P (mem_part) || MEM_VOLATILE_P (mem_part))
 	return false;
 
+#if 1
       if (is_load && is_uncached != !!kvx_is_uncached_mem_op_p (mem_part))
+#else
+      if (addr_space < 0)
+	addr_space = MEM_ADDR_SPACE (mem_part);
+
+      if (is_load && addr_space != MEM_ADDR_SPACE (mem_part))
+#endif
 	return false;
     }
 
+#if 0
+  if (is_uncached && addr_space != KVX_ADDR_SPACE_BYPASS
+      && addr_space != KVX_ADDR_SPACE_PRELOAD)
+    return false;
+  if (!is_uncached && addr_space != ADDR_SPACE_GENERIC
+      && addr_space != KVX_ADDR_SPACE_SPECULATE)
+    return false;
+
+#endif
   rtx first_mem
     = is_load ? SET_SRC (XVECEXP (op, 0, 0)) : SET_DEST (XVECEXP (op, 0, 0));
   rtx first_reg
@@ -4866,7 +4882,7 @@ kvx_load_store_multiple_operation_p (rtx op, bool is_uncached, bool is_load)
   if (TARGET_STRICT_ALIGN && MEM_ALIGN (first_mem) < (count * UNITS_PER_WORD))
     return false;
 
-  dest_regno = REGNO (first_reg);
+  unsigned int dest_regno = REGNO (first_reg);
 
   /* register number must be correctly aligned */
   if (dest_regno < FIRST_PSEUDO_REGISTER && (dest_regno % count != 0))
@@ -4875,7 +4891,7 @@ kvx_load_store_multiple_operation_p (rtx op, bool is_uncached, bool is_load)
   HOST_WIDE_INT expected_offset = 0;
   rtx base;
 
-  for (i = 0; i < count; i++)
+  for (int i = 0; i < count; i++)
     {
       rtx elt = XVECEXP (op, 0, i);
       rtx base_cur, offset_cur;
@@ -4906,8 +4922,8 @@ kvx_load_store_multiple_operation_p (rtx op, bool is_uncached, bool is_load)
 }
 
 /*
- * Returns TRUE if OP is a load multiple operation and all mems are
- * cached/uncached depending on IS_UNCACHED.
+ * Returns TRUE if OP is a load multiple operation and all its mems
+ * address spaces are KVX_ADDR_SPACE_BYPASS if IS_UNCACHED is true.
  */
 bool
 kvx_load_multiple_operation_p (rtx op, bool is_uncached)
@@ -4922,398 +4938,6 @@ bool
 kvx_store_multiple_operation_p (rtx op)
 {
   return kvx_load_store_multiple_operation_p (op, false, false);
-}
-
-/* Following funtions are used for bundling insn before ASM emission */
-
-struct bundle_state
-{
-  /* Unique bundle state number to identify them in the debugging
-     output */
-  int unique_num;
-
-  /* First insn in the bundle */
-  rtx_insn *insn;
-
-  /* Last insn in the bundle */
-  rtx_insn *last_insn;
-
-  /* Number of insn in the bundle */
-  int insns_num;
-
-  /* Registers being defined within the bundle */
-  HARD_REG_SET reg_defs;
-
-  /* All bundle states are in the following chain.  */
-  struct bundle_state *allocated_states_chain;
-
-  struct bundle_state *next;
-  state_t dfa_state;
-};
-
-/* Bundles list for current function */
-static struct bundle_state *cur_bundle_list;
-
-/* The unique number of next bundle state.  */
-static int bundle_states_num;
-
-/* All allocated bundle states are in the following chain.  */
-static struct bundle_state *allocated_bundle_states_chain;
-
-/* All allocated but not used bundle states are in the following
-   chain.  */
-static struct bundle_state *free_bundle_state_chain;
-
-struct bundle_regs
-{
-  int set_dest;
-  rtx scanned_insn;
-  HARD_REG_SET uses;
-  HARD_REG_SET defs;
-};
-
-static void kvx_scan_insn_registers_wrap (rtx *x, void *data);
-
-static int
-kvx_scan_insn_registers_1 (rtx *x, void *data)
-{
-  struct bundle_regs *regs = (struct bundle_regs *) data;
-
-  if (!*x)
-    return 0;
-
-  if (GET_CODE (*x) == USE && CALL_P (regs->scanned_insn))
-    return -1;
-
-  if (GET_CODE (*x) == SET)
-    {
-      regs->set_dest = 1;
-      /* for_each_rtx (&SET_DEST (*x), kvx_scan_insn_registers_1, regs); */
-      kvx_scan_insn_registers_wrap (&SET_DEST (*x), regs);
-      regs->set_dest = 0;
-      /* for_each_rtx (&SET_SRC (*x), kvx_scan_insn_registers_1, regs); */
-      kvx_scan_insn_registers_wrap (&SET_SRC (*x), regs);
-      return -1;
-    }
-
-  if (MEM_P (*x))
-    {
-      regs->set_dest = 0;
-      /* for_each_rtx (&XEXP (*x, 0), kvx_scan_insn_registers_1, regs); */
-      kvx_scan_insn_registers_wrap (&XEXP (*x, 0), regs);
-      return -1;
-    }
-
-  if (GET_CODE (*x) == CLOBBER)
-    {
-      if (REG_P (XEXP (*x, 0)))
-	SET_HARD_REG_BIT (regs->defs, REGNO (XEXP (*x, 0)));
-
-      /* double/quadruple/octuple register */
-      /* Also mark the implicitely defined registers */
-      if (GET_MODE_SIZE (GET_MODE (*x)) > UNITS_PER_WORD)
-	{
-	  unsigned word;
-	  for (word = 1; word < GET_MODE_SIZE (GET_MODE (*x)) / UNITS_PER_WORD;
-	       word++)
-	    {
-	      SET_HARD_REG_BIT (regs->defs, REGNO (XEXP (*x, 0)) + word);
-	    }
-	}
-      return -1;
-    }
-
-  if (GET_CODE (*x) == EXPR_LIST
-      && (enum reg_note) GET_MODE (*x) != REG_DEP_TRUE)
-    {
-      return -1;
-    }
-
-  if (REG_P (*x))
-    {
-      /* Must be a real hard registers */
-      gcc_assert (REGNO (*x) < KV3_MDS_REGISTERS);
-
-      if (regs->set_dest)
-	SET_HARD_REG_BIT (regs->defs, REGNO (*x));
-      else
-	SET_HARD_REG_BIT (regs->uses, REGNO (*x));
-
-      if (GET_MODE_SIZE (GET_MODE (*x)) > UNITS_PER_WORD)
-	{
-	  unsigned word;
-	  for (word = 1; word < GET_MODE_SIZE (GET_MODE (*x)) / UNITS_PER_WORD;
-	       word++)
-	    {
-	      SET_HARD_REG_BIT (regs->set_dest ? regs->defs : regs->uses,
-				REGNO (*x) + word);
-	    }
-	}
-    }
-
-  return 0;
-}
-
-static void
-kvx_scan_insn_registers_wrap (rtx *x, void *data)
-{
-  subrtx_ptr_iterator::array_type array;
-  FOR_EACH_SUBRTX_PTR (iter, array, x, ALL)
-    {
-      rtx *x = *iter;
-      if (kvx_scan_insn_registers_1 (x, data) == -1)
-	{
-	  iter.skip_subrtxes ();
-	}
-    }
-}
-
-static void
-kvx_scan_insn_registers (rtx insn, struct bundle_regs *regs)
-{
-  if (GET_CODE (insn) == CLOBBER || GET_CODE (insn) == USE || !INSN_P (insn))
-    return;
-
-  regs->set_dest = 0;
-  regs->scanned_insn = insn;
-  CLEAR_HARD_REG_SET (regs->uses);
-  CLEAR_HARD_REG_SET (regs->defs);
-  /* for_each_rtx (&insn, kvx_scan_insn_registers_1, regs); */
-  kvx_scan_insn_registers_wrap (&insn, regs);
-}
-
-/* Skip over irrelevant NOTEs and such and look for the next insn we
-   would consider bundling.  */
-static rtx_insn *
-next_insn_to_bundle (rtx_insn *r, rtx_insn *end)
-{
-  for (; r != end; r = NEXT_INSN (r))
-    {
-      if (NONDEBUG_INSN_P (r) && GET_CODE (PATTERN (r)) != USE
-	  && GET_CODE (PATTERN (r)) != CLOBBER)
-	return r;
-    }
-
-  return NULL;
-}
-/* Finish work with abstract data `bundle states'.  */
-
-static void
-finish_bundle_states (void)
-{
-  struct bundle_state *curr_state, *next_state;
-
-  for (curr_state = allocated_bundle_states_chain; curr_state != NULL;
-       curr_state = next_state)
-    {
-      next_state = curr_state->allocated_states_chain;
-      free (curr_state->dfa_state);
-      free (curr_state);
-    }
-}
-
-/* Start work with abstract data `bundle states'.  */
-
-static void
-initiate_bundle_states (void)
-{
-  if (cur_bundle_list != NULL)
-    finish_bundle_states ();
-
-  bundle_states_num = 0;
-  cur_bundle_list = NULL;
-  free_bundle_state_chain = NULL;
-  allocated_bundle_states_chain = NULL;
-}
-
-static struct bundle_state *
-get_free_bundle_state (void)
-{
-  struct bundle_state *result;
-
-  if (free_bundle_state_chain != NULL)
-    {
-      result = free_bundle_state_chain;
-      free_bundle_state_chain = result->next;
-    }
-  else
-    {
-      result = XNEW (struct bundle_state);
-      result->allocated_states_chain = allocated_bundle_states_chain;
-      allocated_bundle_states_chain = result;
-      result->dfa_state = xmalloc (dfa_state_size);
-    }
-
-  result->next = NULL;
-  result->insn = NULL;
-  result->last_insn = NULL;
-  result->insns_num = 0;
-
-  CLEAR_HARD_REG_SET (result->reg_defs);
-  state_reset (result->dfa_state);
-
-  result->unique_num = bundle_states_num;
-  bundle_states_num++;
-
-  return result;
-}
-
-/* The following function frees given bundle state.  */
-static void free_bundle_state (struct bundle_state *state) ATTRIBUTE_UNUSED;
-
-static void
-free_bundle_state (struct bundle_state *state)
-{
-  state->next = free_bundle_state_chain;
-  free_bundle_state_chain = state;
-}
-
-static int
-kvx_insn_is_bundle_end_p (rtx insn)
-{
-  bundle_state *i;
-  for (i = cur_bundle_list; i; i = i->next)
-    {
-      gcc_assert (i->insn != NULL_RTX);
-      gcc_assert (i->last_insn != NULL_RTX);
-      if (i->last_insn == insn)
-	return 1;
-    }
-  return 0;
-}
-
-static void kvx_dump_bundles (void);
-
-static void
-kvx_gen_bundles (void)
-{
-  bundle_state *cur_bstate = NULL;
-
-  dfa_start ();
-
-  basic_block bb;
-  FOR_EACH_BB_FN (bb, cfun)
-    {
-      rtx_insn *next, *prev;
-      rtx_insn *end = NEXT_INSN (BB_END (bb));
-
-      if (next_insn_to_bundle (BB_HEAD (bb), end) == NULL)
-	continue;
-
-      /* BB has no insn to bundle */
-      if (next_insn_to_bundle (BB_HEAD (bb), end) == NULL_RTX)
-	continue;
-
-      if (cur_bstate == NULL)
-	{
-	  /* First bundle for function */
-	  cur_bstate = get_free_bundle_state ();
-	  cur_bundle_list = cur_bstate;
-	}
-      else if (cur_bstate->insns_num != 0) /* can reuse preallocated
-					      bundle if previous BB
-					      ended-up empty of
-					      insns */
-	{
-	  cur_bstate->next = get_free_bundle_state ();
-	  cur_bstate = cur_bstate->next;
-	}
-
-      prev = NULL;
-      for (rtx_insn *insn = next_insn_to_bundle (BB_HEAD (bb), end); insn;
-	   prev = insn, insn = next)
-	{
-	  next = next_insn_to_bundle (NEXT_INSN (insn), end);
-
-	  struct bundle_regs cur_insn_regs = {0};
-
-	  /* First, check if the insn fits in the bundle:
-	   * - bundle size
-	   * - exu resources
-	   */
-	  int can_issue = state_transition (cur_bstate->dfa_state, insn) < 0;
-
-	  /* Scan insn for registers definitions and usage. */
-	  kvx_scan_insn_registers (insn, &cur_insn_regs);
-
-	  const int insn_raw = hard_reg_set_intersect_p (cur_insn_regs.uses,
-							 cur_bstate->reg_defs);
-	  const int insn_waw = hard_reg_set_intersect_p (cur_insn_regs.defs,
-							 cur_bstate->reg_defs);
-	  const int insn_jump = JUMP_P (insn) || CALL_P (insn);
-	  const int next_is_label = (next != NULL) && LABEL_P (next);
-
-	  /* Current insn can't be bundled with other insn, create a new one. */
-	  if (!can_issue || insn_raw || insn_waw)
-	    {
-	      gcc_assert (cur_bstate->insn != NULL);
-
-	      gcc_assert (prev != NULL);
-
-	      cur_bstate->next = get_free_bundle_state ();
-	      cur_bstate = cur_bstate->next;
-
-	      state_transition (cur_bstate->dfa_state, insn);
-	    }
-
-	  if (cur_bstate->insn == NULL)
-	    {
-	      /* First insn in bundle */
-	      cur_bstate->insn = insn;
-	      cur_bstate->insns_num = 1;
-	    }
-	  else
-	    {
-	      cur_bstate->insns_num++;
-	    }
-	  cur_bstate->last_insn = insn;
-
-	  IOR_HARD_REG_SET (cur_bstate->reg_defs, cur_insn_regs.defs);
-
-	  /* Current insn is a jump, don't bundle following insns. */
-	  /* If there is a label in the middle of a possible bundle,
-	     split it */
-	  if ((insn_jump && next != NULL) || next_is_label)
-	    {
-	      gcc_assert (cur_bstate->insn != NULL);
-	      cur_bstate->next = get_free_bundle_state ();
-	      cur_bstate = cur_bstate->next;
-	    }
-	}
-    }
-
-  dfa_finish ();
-}
-
-static void kvx_dump_bundles (void) ATTRIBUTE_UNUSED;
-
-static void
-kvx_dump_bundles (void)
-{
-  bundle_state *i;
-  for (i = cur_bundle_list; i; i = i->next)
-    {
-
-      rtx_insn *binsn = i->insn;
-      fprintf (stderr, "BUNDLE START %d\n", i->unique_num);
-
-      if (i->insn == NULL_RTX)
-	fprintf (stderr, " invalid bundle %d: insn is NULL\n", i->unique_num);
-
-      if (i->last_insn == NULL_RTX)
-	fprintf (stderr, " invalid bundle %d: last_insn is NULL\n",
-		 i->unique_num);
-
-      int bundle_stop = 0;
-      do
-	{
-	  bundle_stop = (binsn == i->last_insn);
-	  debug (binsn);
-	  binsn = NEXT_INSN (binsn);
-	}
-      while (!bundle_stop);
-      fprintf (stderr, "BUNDLE STOP %d\n", i->unique_num);
-    }
 }
 
 /* Used during CFA note fixups.  When a FRAME_RELATED_P insn is being
@@ -5486,60 +5110,46 @@ static void
 kvx_fix_debug_for_bundles (void)
 {
   unsigned cur_cfa_reg = REGNO (stack_pointer_rtx);
-  if (!TARGET_BUNDLING)
+  rtx_insn *start_insn = 0, *stop_insn = 0;
+  basic_block bb;
+  FOR_EACH_BB_FN (bb, cfun)
     {
-      rtx_insn *start_insn = 0, *stop_insn = 0;
-      basic_block bb;
-      FOR_EACH_BB_FN (bb, cfun)
+      rtx_insn *insn;
+      FOR_BB_INSNS (bb, insn)
 	{
-	  rtx_insn *insn;
-	  FOR_BB_INSNS (bb, insn)
+	  if (NONDEBUG_INSN_P (insn) && GET_CODE (PATTERN (insn)) != USE
+	      && GET_CODE (PATTERN (insn)) != CLOBBER)
 	    {
-	      if (NONDEBUG_INSN_P (insn) && GET_CODE (PATTERN (insn)) != USE
-		  && GET_CODE (PATTERN (insn)) != CLOBBER)
+	      int uid = INSN_UID (insn);
+	      if ((unsigned) uid >= (unsigned) kvx_sched2_max_uid
+		  || kvx_sched2_insn_cycle[uid] < 0)
 		{
-		  int uid = INSN_UID (insn);
-		  if ((unsigned) uid >= kvx_sched2_max_uid
-		      || kvx_sched2_insn_cycle[uid] < 0)
-		    {
-		      if (!start_insn)
-			start_insn = stop_insn = insn;
-		    }
-		  else
-		    {
-		      unsigned flags = kvx_sched2_insn_flags[uid];
-		      if (flags & KVX_SCHED2_INSN_HEAD)
-			cur_cfa_reg = REGNO (stack_pointer_rtx);
-		      if (flags & KVX_SCHED2_INSN_START)
-			start_insn = insn;
-		      if (flags & KVX_SCHED2_INSN_STOP)
-			stop_insn = insn;
-		    }
-		  if (start_insn && stop_insn)
-		    {
-		      kvx_fix_debug_for_bundle_1 (start_insn, stop_insn);
-		      cur_cfa_reg
-			= kvx_fix_debug_for_bundle_2 (start_insn, stop_insn,
-						      cur_cfa_reg);
-		      start_insn = stop_insn = 0;
-		    }
+		  if (!start_insn)
+		    start_insn = stop_insn = insn;
+		}
+	      else
+		{
+		  unsigned flags = kvx_sched2_insn_flags[uid];
+		  if (flags & KVX_SCHED2_INSN_HEAD)
+		    cur_cfa_reg = REGNO (stack_pointer_rtx);
+		  if (flags & KVX_SCHED2_INSN_START)
+		    start_insn = insn;
+		  if (flags & KVX_SCHED2_INSN_STOP)
+		    stop_insn = insn;
+		}
+	      if (start_insn && stop_insn)
+		{
+		  kvx_fix_debug_for_bundle_1 (start_insn, stop_insn);
+		  cur_cfa_reg
+		    = kvx_fix_debug_for_bundle_2 (start_insn, stop_insn,
+						  cur_cfa_reg);
+		  start_insn = stop_insn = 0;
 		}
 	    }
 	}
-      if (start_insn || stop_insn)
-	gcc_assert (!start_insn && !stop_insn);
     }
-  else
-    {
-      for (bundle_state *i = cur_bundle_list; i; i = i->next)
-	{
-	  rtx_insn *start_insn = i->insn;
-	  rtx_insn *stop_insn = i->last_insn;
-	  kvx_fix_debug_for_bundle_1 (start_insn, stop_insn);
-	  cur_cfa_reg
-	    = kvx_fix_debug_for_bundle_2 (start_insn, stop_insn, cur_cfa_reg);
-	}
-    }
+  if (start_insn || stop_insn)
+    gcc_assert (!start_insn && !stop_insn);
 }
 
 /* Adjust for the stall effects of AUXR RAW on issue cycle. */
@@ -5619,10 +5229,10 @@ kvx_asm_final_postscan_insn (FILE *file, rtx_insn *insn,
 			     rtx *opvec ATTRIBUTE_UNUSED,
 			     int noperands ATTRIBUTE_UNUSED)
 {
-  if (!TARGET_BUNDLING && kvx_sched2_insn_cycle)
+  if (kvx_sched2_insn_cycle)
     {
       int uid = INSN_UID (insn);
-      if ((unsigned) uid >= kvx_sched2_max_uid
+      if ((unsigned) uid >= (unsigned) kvx_sched2_max_uid
 	  || kvx_sched2_insn_cycle[uid] < 0)
 	{
 	  if (TARGET_SCHED2_DATES)
@@ -5651,12 +5261,7 @@ kvx_asm_final_postscan_insn (FILE *file, rtx_insn *insn,
 	  return;
 	}
     }
-  if (!TARGET_BUNDLING && !kvx_sched2_insn_cycle)
-    {
-      fprintf (file, "\t;;\n");
-      return;
-    }
-  if (!scheduling || kvx_insn_is_bundle_end_p (insn))
+  if (!kvx_sched2_insn_cycle || !scheduling)
     {
       fprintf (file, "\t;;\n");
       return;
@@ -6029,7 +5634,7 @@ kvx_insn_cost (rtx_insn *insn, bool speed)
   else if (type >= TYPE_ALU_LITE && type < TYPE_ALU_FULL)
     {
       int nunits = 1;
-      if (type >= TYPE_ALU_LITE_X2 && type <= TYPE_ALU_LITE_X2_X)
+      if (type >= TYPE_ALU_LITE_X2 && type <= TYPE_ALU_LITE_X2_CRWL_CRWH)
 	nunits = 2;
       cost += kvx_type_lite_cost (nunits, 0);
     }
@@ -6226,6 +5831,7 @@ kvx_addr_space_legitimate_address_p (machine_mode mode, rtx exp, bool strict,
     case ADDR_SPACE_GENERIC:
     case KVX_ADDR_SPACE_BYPASS:
     case KVX_ADDR_SPACE_PRELOAD:
+    case KVX_ADDR_SPACE_SPECULATE:
       return kvx_legitimate_address_p (mode, exp, strict);
 
     case KVX_ADDR_SPACE_CONVERT:
@@ -6508,10 +6114,9 @@ hwloop_optimize (hwloop_info loop)
 static struct hw_doloop_hooks kvx_doloop_hooks
   = {hwloop_pattern_reg, hwloop_optimize, hwloop_fail};
 
-/* Implement the TARGET_MACHINE_DEPENDENT_REORG pass.  */
-
+/* Implements TARGET_MACHINE_DEPENDENT_REORG.  */
 static void
-kvx_reorg (void)
+kvx_machine_dependent_reorg (void)
 {
   compute_bb_for_insn ();
 
@@ -6537,18 +6142,8 @@ kvx_reorg (void)
       timevar_pop (TV_SCHED2);
     }
 
-  if (scheduling && !TARGET_BUNDLING)
+  if (scheduling)
     {
-      kvx_fix_debug_for_bundles ();
-    }
-
-  /* Do it even if ! TARGET_BUNDLING because it also takes care of
-   cleaning previous data */
-  initiate_bundle_states ();
-
-  if (scheduling && TARGET_BUNDLING)
-    {
-      kvx_gen_bundles ();
       kvx_fix_debug_for_bundles ();
     }
 
@@ -6622,8 +6217,7 @@ kvx_handle_fixed_reg_option (const char *arg)
   return true;
 }
 
-/* Implement TARGET_OPTION_OVERRIDE.  */
-
+/* Implements TARGET_OPTION_OVERRIDE.  */
 static void
 kvx_option_override (void)
 {
@@ -7026,9 +6620,6 @@ kvx_ctrapsi4 (void)
 
 /* Initialize the GCC target structure.  */
 
-#undef TARGET_CLASS_MAX_NREGS
-#define TARGET_CLASS_MAX_NREGS kvx_class_max_nregs
-
 #undef TARGET_OPTION_OVERRIDE
 #define TARGET_OPTION_OVERRIDE kvx_option_override
 
@@ -7201,7 +6792,7 @@ kvx_ctrapsi4 (void)
 #define TARGET_ASM_FINAL_POSTSCAN_INSN kvx_asm_final_postscan_insn
 
 #undef TARGET_MACHINE_DEPENDENT_REORG
-#define TARGET_MACHINE_DEPENDENT_REORG kvx_reorg
+#define TARGET_MACHINE_DEPENDENT_REORG kvx_machine_dependent_reorg
 
 #undef TARGET_ATTRIBUTE_TABLE
 #define TARGET_ATTRIBUTE_TABLE kvx_attribute_table
@@ -7260,6 +6851,9 @@ kvx_ctrapsi4 (void)
 #undef TARGET_HARD_REGNO_MODE_OK
 #define TARGET_HARD_REGNO_MODE_OK kvx_hard_regno_mode_ok
 
+#undef TARGET_CLASS_MAX_NREGS
+#define TARGET_CLASS_MAX_NREGS kvx_class_max_nregs
+
 #undef TARGET_STARTING_FRAME_OFFSET
 #define TARGET_STARTING_FRAME_OFFSET kvx_starting_frame_offset
 
@@ -7268,10 +6862,10 @@ kvx_ctrapsi4 (void)
 #define TARGET_STATIC_CHAIN kvx_static_chain
 
 #undef TARGET_DELAY_SCHED2
-#define TARGET_DELAY_SCHED2 (!TARGET_BUNDLING)
+#define TARGET_DELAY_SCHED2 (true)
 
 #undef TARGET_DELAY_VARTRACK
-#define TARGET_DELAY_VARTRACK (!TARGET_BUNDLING)
+#define TARGET_DELAY_VARTRACK (true)
 
 #undef TARGET_VECTORIZE_VEC_PERM_CONST
 #define TARGET_VECTORIZE_VEC_PERM_CONST		\

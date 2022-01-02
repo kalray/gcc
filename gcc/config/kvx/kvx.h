@@ -768,20 +768,19 @@ extern void kvx_profile_hook (void);
 
 #define TARGET_SUPPORTS_WIDE_INT 1
 
-/* Address spaces
-
-   The __bypass and __preload address spaces refers to same space as the generic
-   one but accesses to __bypass and __preload objects are achieved using
-   uncached and uncached speculative load instructions. */
+/* The __bypass, __preload and __speculate address spaces refers to the same
+ * memory but direct load instructions to use a variant modifier.  */
 #define KVX_ADDR_SPACE_BYPASS 1
 #define KVX_ADDR_SPACE_PRELOAD 2
-#define KVX_ADDR_SPACE_CONVERT 3
+#define KVX_ADDR_SPACE_SPECULATE 3
+#define KVX_ADDR_SPACE_CONVERT 4
 
 #define REGISTER_TARGET_PRAGMAS()                                              \
   do                                                                           \
     {                                                                          \
       c_register_addr_space ("__bypass", KVX_ADDR_SPACE_BYPASS);               \
       c_register_addr_space ("__preload", KVX_ADDR_SPACE_PRELOAD);             \
+      c_register_addr_space ("__speculate", KVX_ADDR_SPACE_SPECULATE);         \
       c_register_addr_space ("__convert", KVX_ADDR_SPACE_CONVERT);             \
     }                                                                          \
   while (0)

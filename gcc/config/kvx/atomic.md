@@ -183,7 +183,7 @@
    (set (match_dup 1)
     (unspec:SIDI [(match_dup 1) (match_dup 0)] UNSPEC_ACSWAP))]
    ""
-   "acswap<lsusize>%m1 %1 = %0"
+   "acswap<lsusize>%X1 %1 = %0"
   [(set_attr "length" "4,8")
    (set_attr "type" "lsu_auxr_auxw_atomic,lsu_auxr_auxw_atomic_x")])
 
@@ -198,7 +198,7 @@
     (plus:SIDI (match_dup 1)
                (match_operand:SIDI 2 "nonmemory_operand" "0,0,0")))]
    ""
-   "aladd<lsusize>%m1 %1 = %0"
+   "aladd<lsusize>%X1 %1 = %0"
   [(set_attr "length" "4,8,12")
    (set_attr "type" "lsu_auxr_auxw_atomic,lsu_auxr_auxw_atomic_x,lsu_auxr_auxw_atomic_y")])
 
@@ -207,7 +207,7 @@
   [(set (match_operand:SIDI 0 "register_operand" "=r,r,r")
     (unspec_volatile:SIDI [(match_operand:SIDI 1 "memory_operand" "a,b,m")] UNSPEC_ALCLR))]
    ""
-   "alclr<lsusize>%m1 %0 = %1"
+   "alclr<lsusize>%X1 %0 = %1"
   [(set_attr "length" "4,8,12")
    (set_attr "type" "lsu_auxw_atomic,lsu_auxw_atomic_x,lsu_auxw_atomic_y")])
 

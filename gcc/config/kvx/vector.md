@@ -12,7 +12,7 @@
 
 (define_insn "*mov<mode>"
   [(set (match_operand:SIMD64 0 "nonimmediate_operand" "=r, r, r, r, r, r, r,a,b,m,  r,  r,r")
-        (match_operand:SIMD64 1 "general_operand"       "r,Ca,Cb,Cm,Za,Zb,Zm,r,r,r,v16,v43,i"))]
+        (match_operand:SIMD64 1 "general_operand"       "r,Ca,Cb,Cm,Za,Zb,Zm,r,r,r,S16,S43,i"))]
   "(!immediate_operand (operands[1], <MODE>mode) || !memory_operand (operands[0], <MODE>mode))"
   {
     switch (which_alternative)
@@ -20,9 +20,9 @@
       case 0:
         return "copyd %0 = %1";
       case 1: case 2: case 3: case 4: case 5: case 6:
-        return "ld%C1%m1 %0 = %1";
+        return "ld%V1 %0 = %1";
       case 7: case 8: case 9:
-        return "sd%m0 %0 = %1";
+        return "sd%X0 %0 = %1";
       case 10: case 11: case 12:
         return "make %0 = %1";
       default:
@@ -79,9 +79,9 @@
       case 0:
         return "#";
       case 1: case 2: case 3: case 4: case 5: case 6:
-        return "lq%C1%m1 %0 = %1";
+        return "lq%V1 %0 = %1";
       case 7: case 8: case 9:
-        return "sq%m0 %0 = %1";
+        return "sq%X0 %0 = %1";
       default:
         gcc_unreachable ();
       }
@@ -160,9 +160,9 @@
       case 0:
         return "#";
       case 1: case 2: case 3: case 4: case 5: case 6:
-        return "lo%C1%m1 %0 = %1";
+        return "lo%V1 %0 = %1";
       case 7: case 8: case 9:
-        return "so%m0 %0 = %1";
+        return "so%X0 %0 = %1";
       default:
         gcc_unreachable ();
       }
@@ -5563,7 +5563,7 @@
          [(match_operand:S64F 2 "register_operand" "r")
           (match_operand:S64F 3 "register_operand" "r")]))]
   ""
-  "fcompn<suffix>.%f1 %0 = %2, %3"
+  "fcompn<suffix>.%F1 %0 = %2, %3"
   [(set_attr "type" "alu_lite")]
 )
 
@@ -5883,7 +5883,7 @@
          [(match_operand:S128F 2 "register_operand" "r")
           (match_operand:S128F 3 "register_operand" "r")]))]
   ""
-  "fcompn<chunkx>.%f1 %x0 = %x2, %x3\n\tfcompn<chunkx>.%f1 %y0 = %y2, %y3"
+  "fcompn<chunkx>.%F1 %x0 = %x2, %x3\n\tfcompn<chunkx>.%F1 %y0 = %y2, %y3"
   [(set_attr "type" "alu_lite_x2")
    (set_attr "length"         "8")]
 )
@@ -6370,7 +6370,7 @@
                        [(match_operand:V2DF 2 "register_operand" "r")
                         (match_operand:V2DF 3 "register_operand" "r")])] UNSPEC_COMP128))]
   ""
-  "fcompd.%f1 %x0 = %x2, %x3\n\tfcompd.%f1 %y0 = %y2, %y3"
+  "fcompd.%F1 %x0 = %x2, %x3\n\tfcompd.%F1 %y0 = %y2, %y3"
   [(set_attr "type" "alu_lite_x2")
    (set_attr "length"         "8")]
 )
@@ -7496,7 +7496,7 @@
                         (match_operand 2 "" "")] UNSPEC_LD))
    (use (match_dup 1))]
   ""
-  "ld%2%m1 %0 = %1"
+  "ld%2%X1 %0 = %1"
   [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
    (set_attr "length"                    "4,                       8,                      12")]
 )
@@ -7506,7 +7506,7 @@
                    (match_operand:SIMD64 1 "register_operand" "r,r,r")] UNSPEC_SD)
    (clobber (match_dup 0))]
   ""
-  "sd%m0 %0 = %1"
+  "sd%X0 %0 = %1"
   [(set_attr "type" "lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
    (set_attr "length"            "4,               8,              12")]
 )
@@ -7519,7 +7519,7 @@
                          (match_operand 2 "" "")] UNSPEC_LQ))
    (use (match_dup 1))]
   ""
-  "lq%2%m1 %0 = %1"
+  "lq%2%X1 %0 = %1"
   [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
    (set_attr "length"                    "4,                       8,                      12")]
 )
@@ -7529,7 +7529,7 @@
                     (match_operand:SIMD128 1 "register_operand" "r,r,r")] UNSPEC_SQ)
    (clobber (match_dup 0))]
   ""
-  "sq%m0 %0 = %1"
+  "sq%X0 %0 = %1"
   [(set_attr "type" "lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
    (set_attr "length"            "4,               8,              12")]
 )
@@ -7542,7 +7542,7 @@
                          (match_operand 2 "" "")] UNSPEC_LO))
    (use (match_dup 1))]
   ""
-  "lo%2%m1 %0 = %1"
+  "lo%2%X1 %0 = %1"
   [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
    (set_attr "length"                    "4,                       8,                      12")]
 )
@@ -7552,7 +7552,7 @@
                     (match_operand:SIMD256 1 "register_operand" "r,r,r")] UNSPEC_SO)
    (clobber (match_dup 0))]
   ""
-  "so%m0 %0 = %1"
+  "so%X0 %0 = %1"
   [(set_attr "type" "lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
    (set_attr "length"            "4,               8,              12")]
 )
@@ -7565,7 +7565,7 @@
                             (match_operand 2 "" "")] UNSPEC_LV)
    (use (match_dup 1))]
   ""
-  "lv%2%m1 $%0 = %1"
+  "lv%2%X1 $%0 = %1"
   [(set_attr "type" "lsu_load_uncached,lsu_load_uncached_x,lsu_load_uncached_y")
    (set_attr "length"               "4,                  8,                 12")]
 )
@@ -7575,7 +7575,7 @@
                             (match_operand 1 "" "")] UNSPEC_SV)
    (clobber (match_dup 0))]
   ""
-  "sv%m0 %0 = $%1"
+  "sv%X0 %0 = $%1"
   [(set_attr "type" "lsu_crrp_store,lsu_crrp_store_x,lsu_crrp_store_y")
    (set_attr "length"            "4,               8,              12")]
 )

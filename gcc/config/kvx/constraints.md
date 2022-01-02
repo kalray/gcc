@@ -1,15 +1,15 @@
-(define_register_constraint "RXX" "(SFR_REGS)"
-     "A system register constraint.")
-
-(define_register_constraint "RYY" "(AIB_REGS)"
+(define_register_constraint "SAB" "(SAB_REGS)"
      "A system register forcing SET and WFX* alone in bundle.")
 
-(define_constraint "S"
+(define_register_constraint "SFR" "(SFR_REGS)"
+     "A system register constraint.")
+
+(define_constraint "SYM"
   "An immediate or symbol operand"
   (ior (match_code "const_double,const_int")
        (match_test "kvx_symbol_operand(op,mode)")))
 
-(define_constraint "T"
+(define_constraint "REF"
   "A label reference"
   (match_code "label_ref"))
 
@@ -75,33 +75,33 @@
              (match_test "TARGET_32"))
         (match_test "satisfies_constraint_I37(op)")))
 
-(define_constraint "v10"
-  "A manifest vector constant whose value fits in signed 10 bits."
+(define_constraint "S10"
+  "A vector constant whose value fits in signed 10 bits."
   (and (match_code "const_vector")
        (match_test "kvx_has_10bit_vector_const_p (op)")))
 
-(define_constraint "v16"
-  "A manifest vector constant whose value fits in signed 16 bits."
+(define_constraint "S16"
+  "A vector constant whose value fits in signed 16 bits."
   (and (match_code "const_vector")
        (match_test "kvx_has_16bit_vector_const_p (op)")))
 
-(define_constraint "v32"
-  "A manifest vector constant whose value fits in signed 32 bits."
+(define_constraint "S32"
+  "A vector constant whose value fits in signed 32 bits."
   (and (match_code "const_vector")
        (match_test "kvx_has_32bit_vector_const_p (op)")))
 
-(define_constraint "v37"
-  "A manifest vector constant whose value fits in signed 37 bits."
+(define_constraint "S37"
+  "A vector constant whose value fits in signed 37 bits."
   (and (match_code "const_vector")
        (match_test "kvx_has_37bit_vector_const_p (op)")))
 
-(define_constraint "v43"
-  "A manifest vector constant whose value fits in signed 43 bits."
+(define_constraint "S43"
+  "A vector constant whose value fits in signed 43 bits."
   (and (match_code "const_vector")
        (match_test "kvx_has_43bit_vector_const_p (op)")))
 
-(define_constraint "vx2"
-  "A 64-bit vector constant made of two identical 32-bit manifest values"
+(define_constraint "SX2"
+  "A 64-bit vector constant made of two identical 32-bit values"
   (and (match_code "const_vector")
        (match_test "kvx_has_32x2bit_vector_const_p (op)")))
 
@@ -119,11 +119,6 @@
   "Uncached memory operands"
   (and (match_code "mem")
        (match_test "kvx_is_uncached_mem_op_p (op)")))
-
-;; (define_memory_constraint "Q"
-;;   "Packed memory operand, need not be correct."
-;;   (match_code "mem"))
-
 
 (define_memory_constraint "Cm"
   "Cached memory operands with 64-bit immediates"

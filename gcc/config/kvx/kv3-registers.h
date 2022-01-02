@@ -24,8 +24,8 @@ enum reg_class {
   GPR_REGS,
   PGR_REGS,
   QGR_REGS,
+  SAB_REGS,
   SFR_REGS,
-  AIB_REGS,
   ALL_REGS,
   LIM_REG_CLASSES
 };
@@ -35,8 +35,8 @@ enum reg_class {
   "GPR_REGS", \
   "PGR_REGS", \
   "QGR_REGS", \
+  "SAB_REGS", \
   "SFR_REGS", \
-  "AIB_REGS", \
   "ALL_REGS", \
   "LIM_REG_CLASSES" \
 }
@@ -55,8 +55,8 @@ enum reg_class {
   { 0xffffffff, 0xffffffff, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, }, /* GPR_REGS */ \
   { 0xffffffff, 0xffffffff, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, }, /* PGR_REGS */ \
   { 0xffffffff, 0xffffffff, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, }, /* QGR_REGS */ \
+  { 0x00000000, 0x00000000, 0x10000002, 0x00000000, 0x000000f0, 0x0000003f, 0x00000010, 0x00000000, }, /* SAB_REGS */ \
   { 0x00000000, 0x00000000, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, }, /* SFR_REGS */ \
-  { 0x00000000, 0x00000000, 0x10000002, 0x00000000, 0x000000f0, 0x0000003f, 0x00000010, 0x00000000, }, /* AIB_REGS */ \
   { 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, }, /* ALL_REGS */ \
 }
 

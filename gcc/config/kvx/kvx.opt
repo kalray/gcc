@@ -31,10 +31,6 @@ mdump-costs
 Target Report Var(DUMP_COSTS) Init(0)
 Dump calls to target-dependent cost functions
 
-fbundling
-Target Report Mask(BUNDLING)
-Enable bundling when optimizing (active by default)
-
 fhwloop
 Target Report Mask(HWLOOP)
 Enable hwloop generation when optimizing (active by default)
