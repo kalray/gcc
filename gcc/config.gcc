@@ -574,6 +574,7 @@ kvx-*-*)
 	need_64bit_hwint=yes
 	extra_options="${extra_options}"
 	extra_objs="kvx-builtins.o"
+	target_gtfiles="\$(srcdir)/config/kvx/kvx-builtins.c"
 	;;
 esac
 
@@ -2317,7 +2318,7 @@ kvx-*-cos*)
 	;;
 kvx-*-linux*)
 	tm_file="${tm_file} dbxelf.h elfos.h gnu-user.h linux.h kvx/kvx-linux.h glibc-stdint.h"
-	tmake_file="${tmake_file} t-linux kvx/t-linux"
+	tmake_file="${tmake_file} t-linux kvx/t-kvx kvx/t-linux"
 	;;
 lm32-*-elf*)
         tm_file="dbxelf.h elfos.h ${tm_file} newlib-stdint.h"
