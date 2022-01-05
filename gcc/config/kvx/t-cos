@@ -1,2 +1,3 @@
+MULTILIB_EXTRA_OPTS = fdata-sections ffunction-sections
 MULTILIB_OPTIONS = m32 march=kv3-2
 MULTILIB_DIRNAMES = 32 kv3-2
