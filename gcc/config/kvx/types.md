@@ -9,6 +9,12 @@
   alu_tiny_x2_y,\
   alu_tiny_x4,\
   alu_tiny_x4_x,\
+  alu_thin, \
+  alu_thin_x, \
+  alu_thin_y, \
+  alu_thin_x2,\
+  alu_thin_x2_x,\
+  alu_thin_x2_crwl_crwh, \
   alu_lite, \
   alu_lite_x, \
   alu_lite_y, \

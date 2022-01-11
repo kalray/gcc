@@ -358,7 +358,7 @@
                           (match_dup 0)] UNSPEC_INITX2B))]
   ""
   "insf %0 = %1, 63, 32"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "kvx_init0<lsvs>"
@@ -366,7 +366,7 @@
         (unspec:SIMD16X4 [(match_operand:<INNER> 1 "register_operand" "r")] UNSPEC_INITX4A))]
   ""
   "zxhd %0 = %1"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "kvx_init1<lsvs>"
@@ -375,7 +375,7 @@
                           (match_dup 0)] UNSPEC_INITX4B))]
   ""
   "insf %0 = %1, 31, 16"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "kvx_init2<lsvs>"
@@ -384,7 +384,7 @@
                           (match_dup 0)] UNSPEC_INITX4C))]
   ""
   "insf %0 = %1, 47, 32"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "kvx_init3<lsvs>"
@@ -393,7 +393,7 @@
                           (match_dup 0)] UNSPEC_INITX4D))]
   ""
   "insf %0 = %1, 63, 48"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "kvx_init0<lsvs>"
@@ -410,7 +410,7 @@
                          (match_dup 0)] UNSPEC_INITX8B))]
   ""
   "insf %0 = %1, 15, 8"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "kvx_init2<lsvs>"
@@ -419,7 +419,7 @@
                          (match_dup 0)] UNSPEC_INITX8C))]
   ""
   "insf %0 = %1, 23, 16"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "kvx_init3<lsvs>"
@@ -428,7 +428,7 @@
                          (match_dup 0)] UNSPEC_INITX8D))]
   ""
   "insf %0 = %1, 31, 24"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "kvx_init4<lsvs>"
@@ -437,7 +437,7 @@
                          (match_dup 0)] UNSPEC_INITX8E))]
   ""
   "insf %0 = %1, 39, 32"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "kvx_init5<lsvs>"
@@ -446,7 +446,7 @@
                          (match_dup 0)] UNSPEC_INITX8F))]
   ""
   "insf %0 = %1, 47, 40"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "kvx_init6<lsvs>"
@@ -455,7 +455,7 @@
                          (match_dup 0)] UNSPEC_INITX8G))]
   ""
   "insf %0 = %1, 55, 48"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "kvx_init7<lsvs>"
@@ -464,7 +464,7 @@
                          (match_dup 0)] UNSPEC_INITX8H))]
   ""
   "insf %0 = %1, 63, 56"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "*sbmm8"
@@ -473,7 +473,7 @@
                        (match_operand:DI 2 "register_operand" "r")] UNSPEC_SBMM8))]
   ""
   "sbmm8 %0 = %1, %2"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "*sbmm8s"
@@ -482,7 +482,7 @@
                        (match_operand:DI 2 "register_operand" "r")] UNSPEC_SBMM8S))]
   ""
   "sbmm8.@ %0 = %1, %2"
-  [(set_attr "type" "alu_lite_x")
+  [(set_attr "type" "alu_thin_x")
    (set_attr "length"        "8")]
 )
 
@@ -493,7 +493,7 @@
                         (match_operand:DI 3 "register_operand" "r")] UNSPEC_SBMM8XY))]
   ""
   "sbmm8 %x0 = %x1, %2\n\tsbmm8 %y0 = %y1, %3"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -553,7 +553,7 @@
                        (match_dup 0)] UNSPEC_INSF))]
   ""
   "insf %0 = %1, %2+%3-1, %3"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "*extfz"
@@ -563,7 +563,7 @@
                         (match_operand:SI 3 "sixbits_unsigned_operand" "i")] UNSPEC_EXTFZ))]
   ""
   "extfz %0 = %1, %2+%3-1, %3"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "*zxextfz_8_0"
@@ -581,7 +581,7 @@
                                                  (const_int 8) (const_int 8)] UNSPEC_EXTFZ)))]
   ""
   "extfz %0 = %1, 15, 8"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "*zxextfz_8_16"
@@ -590,7 +590,7 @@
                                                  (const_int 8) (const_int 16)] UNSPEC_EXTFZ)))]
   ""
   "extfz %0 = %1, 23, 16"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "*zxextfz_8_24"
@@ -599,7 +599,7 @@
                                                  (const_int 8) (const_int 24)] UNSPEC_EXTFZ)))]
   ""
   "extfz %0 = %1, 31, 24"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "*zxextfz_8_32"
@@ -608,7 +608,7 @@
                                                  (const_int 8) (const_int 32)] UNSPEC_EXTFZ)))]
   ""
   "extfz %0 = %1, 39, 32"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "*zxextfz_8_40"
@@ -617,7 +617,7 @@
                                                  (const_int 8) (const_int 40)] UNSPEC_EXTFZ)))]
   ""
   "extfz %0 = %1, 47, 40"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "*zxextfz_8_48"
@@ -626,7 +626,7 @@
                                                  (const_int 8) (const_int 48)] UNSPEC_EXTFZ)))]
   ""
   "extfz %0 = %1, 55, 48"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "*zxextfz_8_56"
@@ -644,7 +644,7 @@
                                                  (const_int 8) (const_int 0)] UNSPEC_EXTFZ)))]
   ""
   "sxbd %0 = %1"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "*sxextfz_8_8"
@@ -653,7 +653,7 @@
                                                  (const_int 8) (const_int 8)] UNSPEC_EXTFZ)))]
   ""
   "extfs %0 = %1, 15, 8"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "*sxextfz_8_16"
@@ -662,7 +662,7 @@
                                                  (const_int 8) (const_int 16)] UNSPEC_EXTFZ)))]
   ""
   "extfs %0 = %1, 23, 16"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "*sxextfz_8_24"
@@ -671,7 +671,7 @@
                                                  (const_int 8) (const_int 24)] UNSPEC_EXTFZ)))]
   ""
   "extfs %0 = %1, 31, 24"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "*sxextfz_8_32"
@@ -680,7 +680,7 @@
                                                  (const_int 8) (const_int 32)] UNSPEC_EXTFZ)))]
   ""
   "extfs %0 = %1, 39, 32"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "*sxextfz_8_40"
@@ -689,7 +689,7 @@
                                                  (const_int 8) (const_int 40)] UNSPEC_EXTFZ)))]
   ""
   "extfs %0 = %1, 47, 40"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "*sxextfz_8_48"
@@ -698,7 +698,7 @@
                                                  (const_int 8) (const_int 48)] UNSPEC_EXTFZ)))]
   ""
   "extfs %0 = %1, 55, 48"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "*sxextfz_8_56"
@@ -716,7 +716,7 @@
                                                  (const_int 16) (const_int 0)] UNSPEC_EXTFZ)))]
   ""
   "zxhd %0 = %1"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "*zxextfz_16_16"
@@ -734,7 +734,7 @@
                                                  (const_int 16) (const_int 32)] UNSPEC_EXTFZ)))]
   ""
   "extfz %0 = %1, 47, 32"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "*zxextfz_16_48"
@@ -752,7 +752,7 @@
                                                  (const_int 16) (const_int 0)] UNSPEC_EXTFZ)))]
   ""
   "sxhd %0 = %1"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "*sxextfz_16_16"
@@ -761,7 +761,7 @@
                                                  (const_int 16) (const_int 16)] UNSPEC_EXTFZ)))]
   ""
   "extfs %0 = %1, 31, 16"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "*sxextfz_16_32"
@@ -770,7 +770,7 @@
                                                  (const_int 16) (const_int 32)] UNSPEC_EXTFZ)))]
   ""
   "extfs %0 = %1, 47, 32"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "*sxextfz_16_48"
@@ -806,7 +806,7 @@
                                                  (const_int 32) (const_int 0)] UNSPEC_EXTFZ)))]
   ""
   "sxwd %0 = %1"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "*sxextfz_32_32"
@@ -891,7 +891,7 @@
         (unspec:V4HI [(match_operand:V4HI 1 "register_operand" "r")] UNSPEC_ZXOBHQ))]
   ""
   "srlhqs %0 = %1, 8"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "*qxebhq"
@@ -899,7 +899,7 @@
         (unspec:V4HI [(match_operand:V4HI 1 "register_operand" "r")] UNSPEC_QXEBHQ))]
   ""
   "sllhqs %0 = %1, 8"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "*qxobhq"
@@ -1286,7 +1286,7 @@
                            (match_operand:S64I 4 "register_operand" "0")))]
   ""
   "cmove<suffix>.%2z %3? %0 = %1"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "*select<suffix>_nez"
@@ -1299,7 +1299,7 @@
                            (match_operand:S64I 4 "register_operand" "0")))]
   ""
   "cmove<suffix>.%2z %3? %0 = %1"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "add<mode>3"
@@ -1604,7 +1604,7 @@
                      (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
   ""
   "sll<suffix>s %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite")
+  [(set_attr "type" "alu_thin,alu_thin")
    (set_attr "length" "     4,       4")]
 )
 
@@ -1614,7 +1614,7 @@
                         (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
   ""
   "sls<suffix>s %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite")
+  [(set_attr "type" "alu_thin,alu_thin")
    (set_attr "length" "     4,       4")]
 )
 
@@ -1653,7 +1653,7 @@
                        (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
   ""
   "sra<suffix>s %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite")
+  [(set_attr "type" "alu_thin,alu_thin")
    (set_attr "length" "     4,       4")]
 )
 
@@ -1663,7 +1663,7 @@
                        (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
   ""
   "srl<suffix>s %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite")
+  [(set_attr "type" "alu_thin,alu_thin")
    (set_attr "length" "     4,       4")]
 )
 
@@ -1673,7 +1673,7 @@
                       (match_operand:SI 2 "sat_shift_operand" "r,U06")] UNSPEC_SRS64))]
   ""
   "srs<suffix>s %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite")
+  [(set_attr "type" "alu_thin,alu_thin")
    (set_attr "length" "     4,       4")]
 )
 
@@ -1736,7 +1736,7 @@
         (abs:S64I (match_operand:S64I 1 "register_operand" "r")))]
   ""
   "abs<suffix> %0 = %1"
-  [(set_attr "type" "alu_lite_x")
+  [(set_attr "type" "alu_thin_x")
    (set_attr "length"        "8")]
 )
 
@@ -1799,7 +1799,7 @@
                               (match_operand:S64I 2 "register_operand" "r"))))]
   ""
   "abd<suffix> %0 = %1, %2"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn_and_split "ssabd<mode>3"
@@ -1939,7 +1939,7 @@
                         (match_operand:DI 3 "register_operand" "r")] UNSPEC_ZX64))]
   ""
   "sbmm8 %x0 = %1, %2\n\tsbmm8 %y0 = %1, %3"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -1948,7 +1948,7 @@
         (unspec:<WIDE> [(match_operand:S64L 1 "register_operand" "r")] UNSPEC_SX64))]
   ""
   "sxl<hwidenx> %x0 = %1\n\tsxm<hwidenx> %y0 = %1"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -1976,7 +1976,7 @@
                         (match_operand:DI 3 "register_operand" "r")] UNSPEC_QX64))]
   ""
   "sbmm8 %x0 = %1, %2\n\tsbmm8 %y0 = %1, %3"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -2252,7 +2252,7 @@
                          (match_operand:SI 2 "register_operand" "r")))]
   ""
   "insf %0 = %2, 63, 32"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "kvx_zxwdp"
@@ -2269,7 +2269,7 @@
         (unspec:V2DI [(match_operand:V2SI 1 "register_operand" "r")] UNSPEC_SXWDP))]
   ""
   "sxwd %x0 = %1\n\tsrad %y0 = %1, 32"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -2492,7 +2492,7 @@
                             (match_operand:S128I 4 "register_operand" "0")))]
   ""
   "cmove<chunkx>.%2z %x3? %x0 = %x1\n\tcmove<chunkx>.%2z %y3? %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -2506,7 +2506,7 @@
                             (match_operand:S128I 4 "register_operand" "0")))]
   ""
   "cmove<chunkx>.%2z %x3? %x0 = %x1\n\tcmove<chunkx>.%2z %y3? %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -2516,7 +2516,7 @@
                       (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
   ""
   "sll<chunkxs> %x0 = %x1, %2\n\tsll<chunkxs> %y0 = %y1, %2"
-  [(set_attr "type" "alu_lite_x2,alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2,alu_thin_x2")
    (set_attr "length" "        8,          8")]
 )
 
@@ -2526,7 +2526,7 @@
                          (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
   ""
   "sls<chunkxs> %x0 = %x1, %2\n\tsls<chunkxs> %y0 = %y1, %2"
-  [(set_attr "type" "alu_lite_x2,alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2,alu_thin_x2")
    (set_attr "length" "        8,          8")]
 )
 
@@ -2565,7 +2565,7 @@
                         (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
   ""
   "sra<chunkxs> %x0 = %x1, %2\n\tsra<chunkxs> %y0 = %y1, %2"
-  [(set_attr "type" "alu_lite_x2,alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2,alu_thin_x2")
    (set_attr "length" "        8,          8")]
 )
 
@@ -2575,7 +2575,7 @@
                         (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
   ""
   "srl<chunkxs> %x0 = %x1, %2\n\tsrl<chunkxs> %y0 = %y1, %2"
-  [(set_attr "type" "alu_lite_x2,alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2,alu_thin_x2")
    (set_attr "length" "        8,          8")]
 )
 
@@ -2585,7 +2585,7 @@
                        (match_operand:SI 2 "sat_shift_operand" "r,U06")] UNSPEC_SRS128))]
   ""
   "srs<chunkxs> %x0 = %x1, %2\n\tsrs<chunkxs> %y0 = %y1, %2"
-  [(set_attr "type" "alu_lite_x2,alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2,alu_thin_x2")
    (set_attr "length" "        8,          8")]
 )
 
@@ -3356,7 +3356,7 @@
         (abs:V128J (match_operand:V128J 1 "register_operand" "r")))]
   ""
   "abs<chunkx> %x0 = %x1\n\tabs<chunkx> %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2_x")
+  [(set_attr "type" "alu_thin_x2_x")
    (set_attr "length"          "16")]
 )
 
@@ -3424,7 +3424,7 @@
                                 (match_operand:V128J 2 "register_operand" "r"))))]
   ""
   "abd<chunkx> %x0 = %x1, %x2\n\tabd<chunkx> %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -3434,7 +3434,7 @@
                                 (match_operand:V128J 2 "register_operand" "r"))))]
   ""
   "abd<chunkx> %x0 = %1, %x2\n\tabd<chunkx> %y0 = %1, %y2"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -3444,7 +3444,7 @@
                                 (unspec:V128J [(match_operand:<CHUNK> 2 "nonmemory_operand" "r")] UNSPEC_DUP128))))]
   ""
   "abd<chunkx> %x0 = %x1, %2\n\tabd<chunkx> %y0 = %y1, %2"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -3784,7 +3784,7 @@
                            (match_operand:V2DI 4 "register_operand" "0")))]
   ""
   "cmoved.d%2z %x3? %x0 = %x1\n\tcmoved.d%2z %y3? %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -3798,7 +3798,7 @@
                            (match_operand:V2DI 4 "register_operand" "0")))]
   ""
   "cmoved.d%2z %x3? %x0 = %x1\n\tcmoved.d%2z %y3? %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -3818,7 +3818,7 @@
                         (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
   ""
   "slsd %x0 = %x1, %2\n\tslsd %y0 = %y1, %2"
-  [(set_attr "type" "alu_lite_x2,alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2,alu_thin_x2")
    (set_attr "length" "        8,          8")]
 )
 
@@ -3877,7 +3877,7 @@
                       (match_operand:SI 2 "sat_shift_operand" "r,U06")] UNSPEC_SRS128))]
   ""
   "srsd %x0 = %x1, %2\n\tsrsd %y0 = %y1, %2"
-  [(set_attr "type" "alu_lite_x2,alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2,alu_thin_x2")
    (set_attr "length" "        8,          8")]
 )
 
@@ -3887,7 +3887,7 @@
                       (match_operand:V2DI 2 "register_operand" "r")] UNSPEC_STSUDP))]
   ""
   "stsud %x0 = %x1, %x2\n\tstsud %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -5002,7 +5002,7 @@
    (set (subreg:<HALF> (match_dup 0) 16)
         (abs:<HALF> (subreg:<HALF> (match_dup 1) 16)))]
   ""
-  [(set_attr "type" "alu_lite_x2_x")]
+  [(set_attr "type" "alu_thin_x2_x")]
 )
 
 (define_insn_and_split "ssabs<mode>2"
@@ -5100,7 +5100,7 @@
         (abs:<HALF> (minus:<HALF> (subreg:<HALF> (match_dup 1) 16)
                                   (subreg:<HALF> (match_dup 2) 16))))]
   ""
-  [(set_attr "type" "alu_lite_x2")]
+  [(set_attr "type" "alu_thin_x2")]
 )
 
 (define_insn_and_split "*abd<suffix>_s1"
@@ -5564,7 +5564,7 @@
           (match_operand:S64F 3 "register_operand" "r")]))]
   ""
   "fcompn<suffix>.%F1 %0 = %2, %3"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "*selectf<suffix>"
@@ -5576,7 +5576,7 @@
                            (match_operand:S64F 4 "register_operand" "0")))]
   ""
   "cmove<suffix>.%2z %3? %0 = %1"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "*selectf<suffix>_nez"
@@ -5589,7 +5589,7 @@
                            (match_operand:S64F 4 "register_operand" "0")))]
   ""
   "cmove<suffix>.%2z %3? %0 = %1"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "add<mode>3"
@@ -5645,7 +5645,7 @@
                    (match_operand:S64F 2 "register_operand" "r")))]
   ""
   "fmin<suffix> %0 = %1, %2"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "fmax<mode>3"
@@ -5654,7 +5654,7 @@
                    (match_operand:S64F 2 "register_operand" "r")))]
   ""
   "fmax<suffix> %0 = %1, %2"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "neg<mode>2"
@@ -5662,7 +5662,7 @@
         (neg:S64F (match_operand:S64F 1 "register_operand" "r")))]
   ""
   "fneg<suffix> %0 = %1"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "abs<mode>2"
@@ -5670,7 +5670,7 @@
         (abs:S64F (match_operand:S64F 1 "register_operand" "r")))]
   ""
   "fabs<suffix> %0 = %1"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_expand "copysign<mode>3"
@@ -5884,7 +5884,7 @@
           (match_operand:S128F 3 "register_operand" "r")]))]
   ""
   "fcompn<chunkx>.%F1 %x0 = %x2, %x3\n\tfcompn<chunkx>.%F1 %y0 = %y2, %y3"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -5897,7 +5897,7 @@
                             (match_operand:S128F 4 "register_operand" "0")))]
   ""
   "cmove<chunkx>.%2z %x3? %x0 = %x1\n\tcmove<chunkx>.%2z %y3? %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -5911,7 +5911,7 @@
                             (match_operand:S128F 4 "register_operand" "0")))]
   ""
   "cmove<chunkx>.%2z %x3? %x0 = %x1\n\tcmove<chunkx>.%2z %y3? %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -6012,7 +6012,7 @@
                     (match_operand:V128F 2 "register_operand" "r")))]
   ""
   "fmin<chunkx> %x0 = %x1, %x2\n\tfmin<chunkx> %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -6022,7 +6022,7 @@
                     (match_operand:V128F 2 "register_operand" "r")))]
   ""
   "fmin<chunkx> %x0 = %1, %x2\n\tfmin<chunkx> %y0 = %1, %y2"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -6032,7 +6032,7 @@
                     (unspec:V128F [(match_operand:<CHUNK> 2 "nonmemory_operand" "r")] UNSPEC_DUP128)))]
   ""
   "fmin<chunkx> %x0 = %x1, %2\n\tfmin<chunkx> %y0 = %y1, %2"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -6042,7 +6042,7 @@
                     (match_operand:V128F 2 "register_operand" "r")))]
   ""
   "fmax<chunkx> %x0 = %x1, %x2\n\tfmax<chunkx> %y0 = %y1, %y2"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -6052,7 +6052,7 @@
                     (match_operand:V128F 2 "register_operand" "r")))]
   ""
   "fmax<chunkx> %x0 = %1, %x2\n\tfmax<chunkx> %y0 = %1, %y2"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -6062,7 +6062,7 @@
                     (unspec:V128F [(match_operand:<CHUNK> 2 "nonmemory_operand" "r")] UNSPEC_DUP128)))]
   ""
   "fmax<chunkx> %x0 = %x1, %2\n\tfmax<chunkx> %y0 = %y1, %2"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -6071,7 +6071,7 @@
         (neg:V128F (match_operand:V128F 1 "register_operand" "r")))]
   ""
   "fneg<chunkx> %x0 = %x1\n\tfneg<chunkx> %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -6080,7 +6080,7 @@
         (abs:V128F (match_operand:V128F 1 "register_operand" "r")))]
   ""
   "fabs<chunkx> %x0 = %x1\n\tfabs<chunkx> %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -6371,7 +6371,7 @@
                         (match_operand:V2DF 3 "register_operand" "r")])] UNSPEC_COMP128))]
   ""
   "fcompd.%F1 %x0 = %x2, %x3\n\tfcompd.%F1 %y0 = %y2, %y3"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -6384,7 +6384,7 @@
                            (match_operand:V2DF 4 "register_operand" "0")))]
   ""
   "cmoved.d%2z %x3? %x0 = %x1\n\tcmoved.d%2z %y3? %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -6398,7 +6398,7 @@
                            (match_operand:V2DF 4 "register_operand" "0")))]
   ""
   "cmoved.d%2z %x3? %x0 = %x1\n\tcmoved.d%2z %y3? %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -6781,7 +6781,7 @@
         (smin:<HALF> (subreg:<HALF> (match_dup 1) 16)
                      (subreg:<HALF> (match_dup 2) 16)))]
   ""
-  [(set_attr "type" "alu_lite_x2")]
+  [(set_attr "type" "alu_thin_x2")]
 )
 
 (define_insn_and_split "*fmin<mode>3_s1"
@@ -6832,7 +6832,7 @@
         (smax:<HALF> (subreg:<HALF> (match_dup 1) 16)
                      (subreg:<HALF> (match_dup 2) 16)))]
   ""
-  [(set_attr "type" "alu_lite_x2")]
+  [(set_attr "type" "alu_thin_x2")]
 )
 
 (define_insn_and_split "*fmax<mode>3_s1"
@@ -6894,7 +6894,7 @@
    (set (subreg:<HALF> (match_dup 0) 16)
         (abs:<HALF> (subreg:<HALF> (match_dup 1) 16)))]
   ""
-  [(set_attr "type" "alu_lite_x2")]
+  [(set_attr "type" "alu_thin_x2")]
 )
 
 (define_expand "copysign<mode>3"
