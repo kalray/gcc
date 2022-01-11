@@ -23,14 +23,14 @@
 )
 ;; sign-extend versions of cstoresi4
 (define_insn "*sext_cstoredi4"
-  [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
+  [(set (match_operand:DI 0 "register_operand" "=r,r")
         (match_operator:DI 1 "comparison_operator"
-         [(sign_extend:DI (match_operand:SI 2 "register_operand" "r,r,r,r"))
-          (match_operand:DI 3 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")]))]
+         [(sign_extend:DI (match_operand:SI 2 "register_operand" "r,r"))
+          (match_operand:DI 3 "register_s32_operand" "r,B32")]))]
   ""
   "compwd.%1 %0 = %2, %3"
-  [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
-   (set_attr "length"      "4,       4,         8,        12")]
+  [(set_attr "type" "alu_thin,alu_thin_x")
+   (set_attr "length"      "4,         8")]
 )
 (define_insn "*sext_swap_cstoredi4"
   [(set (match_operand:DI 0 "register_operand" "=r")
@@ -39,19 +39,19 @@
            (sign_extend:DI (match_operand:SI 3 "register_operand" "r"))]
   ""
   "compwd.%S1 %0 = %3, %2"
-  [(set_attr "type" "alu_tiny")
+  [(set_attr "type" "alu_thin")
    (set_attr "length"      "4")]
 )
 ;; zero-extend versions of cstoresi4
 (define_insn "*zext_cstoredi4"
-  [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
+  [(set (match_operand:DI 0 "register_operand" "=r,r")
         (match_operator:DI 1 "comparison_operator"
-         [(zero_extend:DI (match_operand:SI 2 "register_operand" "r,r,r,r"))
-          (match_operand:DI 3 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")]))]
+         [(zero_extend:DI (match_operand:SI 2 "register_operand" "r,r"))
+          (match_operand:DI 3 "register_s32_operand" "r,B32")]))]
   ""
   "compuwd.%1 %0 = %2, %3"
-  [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
-   (set_attr "length"      "4,       4,         8,        12")]
+  [(set_attr "type" "alu_thin,alu_thin_x")
+   (set_attr "length"      "4,         8")]
 )
 (define_insn "*zext_swap_cstoredi4"
   [(set (match_operand:DI 0 "register_operand" "=r")
@@ -60,7 +60,7 @@
            (zero_extend:DI (match_operand:SI 3 "register_operand" "r"))]
   ""
   "compuwd.%S1 %0 = %3, %2"
-  [(set_attr "type" "alu_tiny")
+  [(set_attr "type" "alu_thin")
    (set_attr "length"      "4")]
 )
 
@@ -71,7 +71,7 @@
           (match_operand:ALLF 3 "register_f32_operand" "r,H32")]))]
   ""
   "fcomp<cfx>.%F1 %0 = %2, %3"
-  [(set_attr "type" "alu_lite,alu_lite_x")
+  [(set_attr "type" "alu_thin,alu_thin_x")
    (set_attr "length"      "4,         8")]
 )
 
@@ -166,7 +166,7 @@
                              (match_operand:FITGPR 4 "register_operand" "0,0,0,0")))]
   ""
   "cmoved.<SIDI:suffix>%2z %3? %0 = %1"
-  [(set_attr "type" "alu_lite,alu_lite,alu_lite_x,alu_lite_y")
+  [(set_attr "type" "alu_thin,alu_thin,alu_thin_x,alu_thin_y")
    (set_attr "length"      "4,       4,         8,        12")]
 )
 
@@ -179,7 +179,7 @@
                              (match_operand:FITGPR 3 "register_operand" "0,0,0,0")))]
   ""
   "cmoved.odd %2? %0 = %1"
-  [(set_attr "type" "alu_lite,alu_lite,alu_lite_x,alu_lite_y")
+  [(set_attr "type" "alu_thin,alu_thin,alu_thin_x,alu_thin_y")
    (set_attr "length"      "4,       4,         8,        12")]
 )
 
@@ -192,7 +192,7 @@
                              (match_operand:FITGPR 3 "register_operand" "0,0,0,0")))]
   ""
   "cmoved.even %2? %0 = %1"
-  [(set_attr "type" "alu_lite,alu_lite,alu_lite_x,alu_lite_y")
+  [(set_attr "type" "alu_thin,alu_thin,alu_thin_x,alu_thin_y")
    (set_attr "length"      "4,       4,         8,        12")]
 )
 
@@ -205,7 +205,7 @@
                              (match_operand:ALL128 4 "register_operand" "0")))]
   ""
   "cmoved.<SIDI:suffix>%2z %3? %x0 = %x1\n\tcmoved.<SIDI:suffix>%2z %3? %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -218,7 +218,7 @@
                              (match_operand:ALL128 3 "register_operand" "0")))]
   ""
   "cmoved.odd %2? %x0 = %x1\n\tcmoved.odd %2? %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -231,7 +231,7 @@
                              (match_operand:ALL128 3 "register_operand" "0")))]
   ""
   "cmoved.even %2? %x0 = %x1\n\tcmoved.even %2? %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 

@@ -1291,7 +1291,7 @@
                          (match_operand:SI 2 "register_operand" "r")))]
   ""
   "insf %0 = %2, 63, 32"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "kvx_catfwp"
@@ -1300,7 +1300,7 @@
                          (match_operand:SF 2 "register_operand" "r")))]
   ""
   "insf %0 = %2, 63, 32"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn_and_split "kvx_cat<lsvs>"
@@ -1362,7 +1362,7 @@
                     (match_operand 4 "" "")] UNSPEC_SELECT32))]
   ""
   "cmoved%4 %3? %0 = %1"
-  [(set_attr "type" "alu_lite")
+  [(set_attr "type" "alu_thin")
    (set_attr "length"      "4")]
 )
 
@@ -1374,7 +1374,7 @@
                     (match_operand 4 "" "")] UNSPEC_SELECT64))]
   ""
   "cmoved%4 %3? %0 = %1"
-  [(set_attr "type" "alu_lite")
+  [(set_attr "type" "alu_thin")
    (set_attr "length"      "4")]
 )
 
@@ -1425,7 +1425,7 @@
                       (match_operand 4 "" "")] UNSPEC_SELECT64))]
   ""
   "cmove<suffix>%4 %3? %0 = %1"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "kvx_select<suffix>"
@@ -1436,7 +1436,7 @@
                        (match_operand 4 "" "")] UNSPEC_SELECT128))]
   ""
   "cmove<chunkx>%4 %x3? %x0 = %x1\n\tcmove<chunkx>%4 %y3? %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -1448,7 +1448,7 @@
                       (match_operand 4 "" "")] UNSPEC_SELECT128))]
   ""
   "cmoved%4 %x3? %x0 = %x1\n\tcmoved%4 %y3? %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -1509,7 +1509,7 @@
                       (match_operand 4 "" "")] UNSPEC_SELECT64))]
   ""
   "cmove<suffix>%4 %3? %0 = %1"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "kvx_selectf<suffix>"
@@ -1520,7 +1520,7 @@
                        (match_operand 4 "" "")] UNSPEC_SELECT128))]
   ""
   "cmove<chunkx>%4 %x3? %x0 = %x1\n\tcmove<chunkx>%4 %y3? %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -1532,7 +1532,7 @@
                       (match_operand 4 "" "")] UNSPEC_SELECT128))]
   ""
   "cmoved%4 %x3? %x0 = %x1\n\tcmoved%4 %y3? %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -4859,7 +4859,7 @@
         (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")] UNSPEC_FCONJWC))]
   ""
   "fnegd %0 = %1"
-  [(set_attr "type" "alu_lite")]
+  [(set_attr "type" "alu_thin")]
 )
 
 (define_insn "kvx_fconjwcp"
@@ -4867,7 +4867,7 @@
         (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")] UNSPEC_FCONJWCP))]
   ""
   "fnegd %x0 = %x1\n\tfnegd %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
