@@ -4427,13 +4427,16 @@ kvx_sched_sms_res_mii (struct ddg *g)
 {
   int insn_count = 0;
   int tiny_count = 0;
+  int thin_count = 0;
   int lite_count = 0;
   int full_count = 0;
   int auxr_count = 0;
   int lsu_count = 0;
   int mau_count = 0;
   int bcu_count = 0;
+  int tca_count = 0;
   int issue_rate = kvx_sched_issue_rate ();
+
   for (int i = 0; i < g->num_nodes; i++)
     {
       rtx_insn *insn = g->nodes[i].insn;
@@ -4452,32 +4455,51 @@ kvx_sched_sms_res_mii (struct ddg *g)
 	    ;
 	  else if (type >= TYPE_ALU_TINY && type < TYPE_LSU)
 	    {
-	      if (type < TYPE_ALU_TINY_X2)
+	      if (type >= TYPE_ALU_TINY && type < TYPE_ALU_TINY_X2)
 		tiny_count++;
-	      else if (type < TYPE_ALU_TINY_X4)
+	      else if (type >= TYPE_ALU_TINY_X2 && type < TYPE_ALU_TINY_X4)
 		tiny_count += 2;
-	      else if (type < TYPE_ALU_LITE)
+	      else if (type >= TYPE_ALU_TINY_X4 && type < TYPE_ALU_THIN)
 		tiny_count += 4;
-	      else if (type < TYPE_ALU_LITE_X2)
+	      else if (type >= TYPE_ALU_THIN && type < TYPE_ALU_THIN_X2)
+		thin_count++;
+	      else if (type >= TYPE_ALU_THIN_X2 && type < TYPE_ALU_LITE)
+		thin_count += 2;
+	      else if (type >= TYPE_ALU_LITE && type < TYPE_ALU_LITE_X2)
 		lite_count++;
-	      else if (type < TYPE_ALU_FULL)
+	      else if (type >= TYPE_ALU_LITE_X2 && type < TYPE_ALU_FULL)
 		lite_count += 2;
-	      else
+	      else if (type >= TYPE_ALU_FULL && type < TYPE_LSU)
 		full_count++;
+	      else
+		gcc_unreachable ();
 	    }
 	  else if (type >= TYPE_LSU && type < TYPE_MAU)
-	    lsu_count++;
-	    if (type >= TYPE_LSU_AUXR_STORE
-		&& type < TYPE_LSU_CRRP_STORE)
-	      auxr_count++;
+	    {
+	      lsu_count++;
+	      if (type >= TYPE_LSU_AUXR_STORE && type < TYPE_LSU_CRRP_STORE)
+		auxr_count++;
+	    }
 	  else if (type >= TYPE_MAU && type < TYPE_BCU)
-	    mau_count++;
-	    if (type >= TYPE_MAU_AUXR)
-	      auxr_count++;
+	    {
+	      mau_count++;
+	      if (type >= TYPE_MAU_AUXR)
+		auxr_count++;
+	    }
 	  else if (type >= TYPE_BCU && type < TYPE_TCA)
 	    bcu_count++;
+	  else if (type == TYPE_TCA)
+	    tca_count++;
+	  else
+	    gcc_unreachable ();
 	}
     }
+
+  if (KV3_1)
+    lite_count += thin_count;
+  if (KV3_2)
+    tiny_count += thin_count;
+
   int res_mii = (insn_count + issue_rate - 1) / issue_rate;
   if (res_mii < (tiny_count + 3)/4)
     res_mii = (tiny_count + 3)/4;
@@ -4493,6 +4515,9 @@ kvx_sched_sms_res_mii (struct ddg *g)
     res_mii = mau_count;
   if (res_mii < bcu_count)
     res_mii = bcu_count;
+  if (res_mii < tca_count)
+    res_mii = tca_count;
+
   return res_mii;
 }
 
@@ -5281,6 +5306,14 @@ kvx_type_tiny_cost (int nunits, int penalty)
 }
 
 static int
+kvx_type_thin_cost (int nunits, int penalty)
+{
+  if (KV3_2)
+    return COSTS_N_INSNS (1 * nunits + penalty);
+  return COSTS_N_INSNS (2 * nunits + penalty);
+}
+
+static int
 kvx_type_lite_cost (int nunits, int penalty)
 {
   return COSTS_N_INSNS (2 * nunits + penalty);
@@ -5622,7 +5655,7 @@ kvx_insn_cost (rtx_insn *insn, bool speed)
     {
       cost += kvx_type_all_cost (1, 0);
     }
-  else if (type >= TYPE_ALU_TINY && type < TYPE_ALU_LITE)
+  else if (type >= TYPE_ALU_TINY && type < TYPE_ALU_THIN)
     {
       int nunits = 1;
       if (type >= TYPE_ALU_TINY_X2 && type <= TYPE_ALU_TINY_X2_Y)
@@ -5631,10 +5664,17 @@ kvx_insn_cost (rtx_insn *insn, bool speed)
 	nunits = 4;
       cost += kvx_type_tiny_cost (nunits, 0);
     }
+  else if (type >= TYPE_ALU_THIN && type < TYPE_ALU_LITE)
+    {
+      int nunits = 1;
+      if (type >= TYPE_ALU_THIN_X2 && type < TYPE_ALU_LITE)
+	nunits = 2;
+      cost += kvx_type_thin_cost (nunits, 0);
+    }
   else if (type >= TYPE_ALU_LITE && type < TYPE_ALU_FULL)
     {
       int nunits = 1;
-      if (type >= TYPE_ALU_LITE_X2 && type <= TYPE_ALU_LITE_X2_CRWL_CRWH)
+      if (type >= TYPE_ALU_LITE_X2 && type < TYPE_ALU_FULL)
 	nunits = 2;
       cost += kvx_type_lite_cost (nunits, 0);
     }
@@ -5662,14 +5702,16 @@ kvx_insn_cost (rtx_insn *insn, bool speed)
 	penalty = (4 - 1); // FIXME (3 - 1) in case of FP16.
       cost += kvx_type_mau_cost (1, penalty);
     }
-  else if (type >= TYPE_MAU && type < TYPE_BCU)
+  else if (type >= TYPE_BCU && type < TYPE_TCA)
     {
       cost += kvx_type_bcu_cost (1, 0);
     }
-  else if (type >= TYPE_BCU && type < TYPE_TCA)
+  else if (type == TYPE_TCA)
     {
       cost += kvx_type_tca_cost (1, 3);
     }
+  else
+    gcc_unreachable ();
 
   if (DUMP_COSTS)
     {
