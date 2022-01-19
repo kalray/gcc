@@ -48,6 +48,10 @@ BINUTILS_DEPENDENCIES += host-flex host-bison
 HOST_BINUTILS_DEPENDENCIES += host-flex host-bison
 endif
 
+# Patch libtool to make it work properly for cross-compilation
+BINUTILS_LIBTOOL_PATCH = YES
+BINUTILS_AUTORECONF = YES
+
 # When binutils sources are fetched from the binutils-gdb repository,
 # they also contain the gdb sources, but gdb shouldn't be built, so we
 # disable it.

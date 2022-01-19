@@ -1,0 +1,33 @@
+From 075238492422c5069e9a082eb09e725f8d9ec6fe Mon Sep 17 00:00:00 2001
+From: Jonathan Borne <jborne@kalray.eu>
+Date: Mon, 24 Jan 2022 14:15:42 +0100
+Subject: [PATCH] Fix cross-compilation relinking
+
+Fix a bug where -L/usr/lib appears during relinking phase in
+cross-compilation environment.
+The library search paths should be relative to the staging or
+target environment and not the host environment.
+This bug makes relinking fail with
+ERROR: unsafe header/library path used in cross-compilation: '-L/usr/lib'
+Solution:
+if $inst_dir_prefix is specified we should only include -L/$inst_dir_prefix/$libdir
+---
+ libltdl/config/ltmain.m4sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libltdl/config/ltmain.m4sh b/libltdl/config/ltmain.m4sh
+index 9e6646fa..6574ee48 100644
+--- a/libltdl/config/ltmain.m4sh
++++ b/libltdl/config/ltmain.m4sh
+@@ -5521,7 +5521,7 @@ func_mode_link ()
+ 	      if test -n "$inst_prefix_dir"; then
+ 		case $libdir in
+ 		  [\\/]*)
+-		    add_dir="$add_dir -L$inst_prefix_dir$libdir"
++		    add_dir=" -L$inst_prefix_dir$libdir"
+ 		    ;;
+ 		esac
+ 	      fi
+-- 
+2.17.1
+
