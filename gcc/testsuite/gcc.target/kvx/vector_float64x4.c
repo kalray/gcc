@@ -290,8 +290,8 @@ kvx_float64x4_xload(const void *ptr) {
     return __builtin_kvx_xload256(ptr, ".us");
 }
 float64x4_t __attribute ((noinline))
-kvx_float64x4_xloadc(const void *ptr, uint64_t c) {
-    return __builtin_kvx_xloadc256(ptr, c, ".us.weqz");
+kvx_float64x4_xloadc(const void *ptr, float64x4_t b, uint64_t c) {
+    return __builtin_kvx_xloadc256(ptr, b, c, ".us.weqz");
 }
 void __attribute ((noinline))
 kvx_float64x4_xstore(void *ptr, float64x4_t a) {
