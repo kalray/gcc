@@ -5427,6 +5427,76 @@
 
 ;; KVX_LOAD*
 
+(define_insn "kvx_loadbz"
+  [(set (match_operand:DI 0 "register_operand" "=r,r,r")
+        (zero_extend:DI (unspec:QI [(match_operand:QI 1 "memory_operand" "a,b,m")
+                                    (match_operand 2 "" "")] UNSPEC_LOAD8)))
+   (use (match_dup 1))]
+  ""
+  "lbz%2%X1 %0 = %1"
+  [(set_attr_alternative "type"
+    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+   (set_attr "length" "4, 8, 12")]
+)
+
+(define_insn "kvx_loadhz"
+  [(set (match_operand:DI 0 "register_operand" "=r,r,r")
+        (zero_extend:DI (unspec:HI [(match_operand:HI 1 "memory_operand" "a,b,m")
+                                    (match_operand 2 "" "")] UNSPEC_LOAD16)))
+   (use (match_dup 1))]
+  ""
+  "lhz%2%X1 %0 = %1"
+  [(set_attr_alternative "type"
+    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+   (set_attr "length" "4, 8, 12")]
+)
+
+(define_insn "kvx_loadwz"
+  [(set (match_operand:DI 0 "register_operand" "=r,r,r")
+        (zero_extend:DI (unspec:SI [(match_operand:SI 1 "memory_operand" "a,b,m")
+                                    (match_operand 2 "" "")] UNSPEC_LOAD32)))
+   (use (match_dup 1))]
+  ""
+  "lwz%2%X1 %0 = %1"
+  [(set_attr_alternative "type"
+    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+   (set_attr "length" "4, 8, 12")]
+)
+
+(define_insn "kvx_loadd"
+  [(set (match_operand:DI 0 "register_operand" "=r,r,r")
+        (unspec:DI [(match_operand:DI 1 "memory_operand" "a,b,m")
+                    (match_operand 2 "" "")] UNSPEC_LOAD64))
+   (use (match_dup 1))]
+  ""
+  "ld%2%X1 %0 = %1"
+  [(set_attr_alternative "type"
+    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+   (set_attr "length" "4, 8, 12")]
+)
+
+(define_insn "kvx_loadq"
+  [(set (match_operand:TI 0 "register_operand" "=r,r,r")
+        (unspec:TI [(match_operand:TI 1 "memory_operand" "a,b,m")
+                    (match_operand 2 "" "")] UNSPEC_LOAD128))
+   (use (match_dup 1))]
+  ""
+  "lq%2%X1 %0 = %1"
+  [(set_attr_alternative "type"
+    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+   (set_attr "length" "4, 8, 12")]
+)
+
 (define_insn "kvx_load64"
   [(set (match_operand:DATA64 0 "register_operand" "=r,r,r")
         (unspec:DATA64 [(match_operand:DATA64 1 "memory_operand" "a,b,m")
@@ -5447,7 +5517,7 @@
                          (match_operand 2 "" "")] UNSPEC_LOAD128))
    (use (match_dup 1))]
   ""
-  "lq%2%X1 %q0 = %1"
+  "lq%2%X1 %0 = %1"
   [(set_attr_alternative "type"
     [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
      (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
@@ -5461,7 +5531,7 @@
                          (match_operand 2 "" "")] UNSPEC_LOAD256))
    (use (match_dup 1))]
   ""
-  "lo%2%X1 %o0 = %1"
+  "lo%2%X1 %0 = %1"
   [(set_attr_alternative "type"
     [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
      (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
@@ -5470,55 +5540,215 @@
 )
 
 
-;; KVX_LOAD*C
+;; KVX_LOADC*
+
+(define_insn "kvx_loadcbz"
+  [(set (match_operand:DI 0 "register_operand" "=r,r,r")
+        (zero_extend:DI (unspec:QI [(match_operand:QI 1 "memory_operand" "a,b,m")
+                                    (match_operand:DI 2 "register_operand" "0,0,0")
+                                    (match_operand:DI 3 "register_operand" "r,r,r")
+                                    (match_operand 4 "" "")] UNSPEC_LOAD8)))
+   (use (match_dup 1))]
+  ""
+  "lbz%4%X1 %3? %0 = %1"
+  [(set_attr_alternative "type"
+    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+   (set_attr "length" "4, 8, 12")]
+)
+
+(define_insn "kvx_loadchz"
+  [(set (match_operand:DI 0 "register_operand" "=r,r,r")
+        (zero_extend:DI (unspec:HI [(match_operand:HI 1 "memory_operand" "a,b,m")
+                                    (match_operand:DI 2 "register_operand" "0,0,0")
+                                    (match_operand:DI 3 "register_operand" "r,r,r")
+                                    (match_operand 4 "" "")] UNSPEC_LOAD16)))
+   (use (match_dup 1))]
+  ""
+  "lhz%4%X1 %3? %0 = %1"
+  [(set_attr_alternative "type"
+    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+   (set_attr "length" "4, 8, 12")]
+)
+
+(define_insn "kvx_loadcwz"
+  [(set (match_operand:DI 0 "register_operand" "=r,r,r")
+        (zero_extend:DI (unspec:SI [(match_operand:SI 1 "memory_operand" "a,b,m")
+                                    (match_operand:DI 2 "register_operand" "0,0,0")
+                                    (match_operand:DI 3 "register_operand" "r,r,r")
+                                    (match_operand 4 "" "")] UNSPEC_LOAD32)))
+   (use (match_dup 1))]
+  ""
+  "lwz%4%X1 %3? %0 = %1"
+  [(set_attr_alternative "type"
+    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+   (set_attr "length" "4, 8, 12")]
+)
+
+(define_insn "kvx_loadcd"
+  [(set (match_operand:DI 0 "register_operand" "=r,r,r")
+        (unspec:DI [(match_operand:DI 1 "memory_operand" "a,b,m")
+                    (match_operand:DI 2 "register_operand" "0,0,0")
+                    (match_operand:DI 3 "register_operand" "r,r,r")
+                    (match_operand 4 "" "")] UNSPEC_LOAD64))
+   (use (match_dup 1))]
+  ""
+  "ld%4%X1 %3? %0 = %1"
+  [(set_attr_alternative "type"
+    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+   (set_attr "length" "4, 8, 12")]
+)
+
+(define_insn "kvx_loadcq"
+  [(set (match_operand:TI 0 "register_operand" "=r,r,r")
+        (unspec:TI [(match_operand:TI 1 "memory_operand" "a,b,m")
+                    (match_operand:TI 2 "register_operand" "0,0,0")
+                    (match_operand:DI 3 "register_operand" "r,r,r")
+                    (match_operand 4 "" "")] UNSPEC_LOAD128))
+   (use (match_dup 1))]
+  ""
+  "lq%4%X1 %3? %0 = %1"
+  [(set_attr_alternative "type"
+    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+   (set_attr "length" "4, 8, 12")]
+)
 
 (define_insn "kvx_loadc64"
   [(set (match_operand:DATA64 0 "register_operand" "=r,r,r")
         (unspec:DATA64 [(match_operand:DATA64 1 "memory_operand" "a,b,m")
-                        (match_operand:DI 2 "register_operand" "r,r,r")
-                        (match_operand 3 "" "")] UNSPEC_LOAD64))
+                        (match_operand:DATA64 2 "register_operand" "0,0,0")
+                        (match_operand:DI 3 "register_operand" "r,r,r")
+                        (match_operand 4 "" "")] UNSPEC_LOAD64))
    (use (match_dup 1))]
   ""
-  "ld%3%X1 %2? %0 = %1"
+  "ld%4%X1 %3? %0 = %1"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
-     (if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
-     (if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
 (define_insn "kvx_loadc128"
   [(set (match_operand:DATA128 0 "register_operand" "=r,r,r")
         (unspec:DATA128 [(match_operand:DATA128 1 "memory_operand" "a,b,m")
-                         (match_operand:DI 2 "register_operand" "r,r,r")
-                         (match_operand 3 "" "")] UNSPEC_LOAD128))
+                         (match_operand:DATA128 2 "register_operand" "0,0,0")
+                         (match_operand:DI 3 "register_operand" "r,r,r")
+                         (match_operand 4 "" "")] UNSPEC_LOAD128))
    (use (match_dup 1))]
   ""
-  "lq%3%X1 %2? %q0 = %1"
+  "lq%4%X1 %3? %0 = %1"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
-     (if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
-     (if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
 (define_insn "kvx_loadc256"
   [(set (match_operand:DATA256 0 "register_operand" "=r,r,r")
         (unspec:DATA256 [(match_operand:DATA256 1 "memory_operand" "a,b,m")
-                         (match_operand:DI 2 "register_operand" "r,r,r")
-                         (match_operand 3 "" "")] UNSPEC_LOAD256))
+                         (match_operand:DATA256 2 "register_operand" "0,0,0")
+                         (match_operand:DI 3 "register_operand" "r,r,r")
+                         (match_operand 4 "" "")] UNSPEC_LOAD256))
    (use (match_dup 1))]
   ""
-  "lo%3%X1 %2? %o0 = %1"
+  "lo%4%X1 %3? %0 = %1"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
-     (if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
-     (if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
 
 ;; KVX_STORE*
+
+(define_insn "kvx_storeb"
+  [(set (match_operand:QI 1 "memory_operand"  "=a,b,m")
+        (unspec:QI [(match_operand:DI 0 "register_operand" "r,r,r")] UNSPEC_STORE8))
+   (clobber (match_dup 1))]
+  ""
+  "sb%X1 %1 = %0"
+  [(set_attr "type" "lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
+   (set_attr "length"            "4,               8,              12")]
+)
+(define_insn "*kvx_storeb"
+  [(set (match_operand:QI 1 "memory_operand"  "=a,b,m")
+        (unspec:QI [(ANY_EXTEND:DI (match_operand:QI 0 "register_operand" "r,r,r"))] UNSPEC_STORE8))
+   (clobber (match_dup 1))]
+  ""
+  "sb%X1 %1 = %0"
+  [(set_attr "type" "lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
+   (set_attr "length"            "4,               8,              12")]
+)
+
+(define_insn "kvx_storeh"
+  [(set (match_operand:HI 1 "memory_operand"  "=a,b,m")
+        (unspec:HI [(match_operand:DI 0 "register_operand" "r,r,r")] UNSPEC_STORE16))
+   (clobber (match_dup 1))]
+  ""
+  "sh%X1 %1 = %0"
+  [(set_attr "type" "lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
+   (set_attr "length"            "4,               8,              12")]
+)
+(define_insn "*kvx_storeh"
+  [(set (match_operand:HI 1 "memory_operand"  "=a,b,m")
+        (unspec:HI [(ANY_EXTEND:DI (match_operand:HI 0 "register_operand" "r,r,r"))] UNSPEC_STORE16))
+   (clobber (match_dup 1))]
+  ""
+  "sh%X1 %1 = %0"
+  [(set_attr "type" "lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
+   (set_attr "length"            "4,               8,              12")]
+)
+
+(define_insn "kvx_storew"
+  [(set (match_operand:SI 1 "memory_operand"  "=a,b,m")
+        (unspec:SI [(match_operand:DI 0 "register_operand" "r,r,r")] UNSPEC_STORE32))
+   (clobber (match_dup 1))]
+  ""
+  "sw%X1 %1 = %0"
+  [(set_attr "type" "lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
+   (set_attr "length"            "4,               8,              12")]
+)
+(define_insn "*kvx_storew"
+  [(set (match_operand:SI 1 "memory_operand"  "=a,b,m")
+        (unspec:SI [(ANY_EXTEND:DI (match_operand:SI 0 "register_operand" "r,r,r"))] UNSPEC_STORE32))
+   (clobber (match_dup 1))]
+  ""
+  "sw%X1 %1 = %0"
+  [(set_attr "type" "lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
+   (set_attr "length"            "4,               8,              12")]
+)
+
+(define_insn "kvx_stored"
+  [(set (match_operand:DI 1 "memory_operand"  "=a,b,m")
+        (unspec:DI [(match_operand:DI 0 "register_operand" "r,r,r")] UNSPEC_STORE64))
+   (clobber (match_dup 1))]
+  ""
+  "sd%X1 %1 = %0"
+  [(set_attr "type" "lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
+   (set_attr "length"            "4,               8,              12")]
+)
+
+(define_insn "kvx_storeq"
+  [(set (match_operand:TI 1 "memory_operand"  "=a,b,m")
+        (unspec:TI [(match_operand:TI 0 "register_operand" "r,r,r")] UNSPEC_STORE128))
+   (clobber (match_dup 1))]
+  ""
+  "sq%X1 %1 = %0"
+  [(set_attr "type" "lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
+   (set_attr "length"            "4,               8,              12")]
+)
 
 (define_insn "kvx_store64"
   [(set (match_operand:DATA64 1 "memory_operand"  "=a,b,m")
@@ -5535,7 +5765,7 @@
         (unspec:DATA128 [(match_operand:DATA128 0 "register_operand" "r,r,r")] UNSPEC_STORE128))
    (clobber (match_dup 1))]
   ""
-  "sq%X1 %1 = %q0"
+  "sq%X1 %1 = %0"
   [(set_attr "type" "lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
    (set_attr "length"            "4,               8,              12")]
 )
@@ -5545,13 +5775,106 @@
         (unspec:DATA256 [(match_operand:DATA256 0 "register_operand" "r,r,r")] UNSPEC_STORE256))
    (clobber (match_dup 1))]
   ""
-  "so%X1 %1 = %o0"
+  "so%X1 %1 = %0"
   [(set_attr "type" "lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
    (set_attr "length"            "4,               8,              12")]
 )
 
 
-;; KVX_STORE*C
+;; KVX_STOREC*
+
+(define_insn "kvx_storecb"
+  [(set (match_operand:QI 1 "memory_operand"  "=a,b,m")
+        (unspec:QI [(match_operand:DI 0 "register_operand" "r,r,r")
+                    (match_operand:DI 2 "register_operand" "r,r,r")
+                    (match_operand 3 "" "")] UNSPEC_STORE8))
+   (clobber (match_dup 1))]
+  ""
+  "sb%3%X1 %2? %1 = %0"
+  [(set_attr "type" "lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
+   (set_attr "length"            "4,               8,              12")]
+)
+(define_insn "*kvx_storecb"
+  [(set (match_operand:QI 1 "memory_operand"  "=a,b,m")
+        (unspec:QI [(ANY_EXTEND:DI (match_operand:QI 0 "register_operand" "r,r,r"))
+                    (match_operand:DI 2 "register_operand" "r,r,r")
+                    (match_operand 3 "" "")] UNSPEC_STORE8))
+   (clobber (match_dup 1))]
+  ""
+  "sb%3%X1 %2? %1 = %0"
+  [(set_attr "type" "lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
+   (set_attr "length"            "4,               8,              12")]
+)
+
+(define_insn "kvx_storech"
+  [(set (match_operand:HI 1 "memory_operand"  "=a,b,m")
+        (unspec:HI [(match_operand:DI 0 "register_operand" "r,r,r")
+                    (match_operand:DI 2 "register_operand" "r,r,r")
+                    (match_operand 3 "" "")] UNSPEC_STORE16))
+   (clobber (match_dup 1))]
+  ""
+  "sh%3%X1 %2? %1 = %0"
+  [(set_attr "type" "lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
+   (set_attr "length"            "4,               8,              12")]
+)
+(define_insn "*kvx_storech"
+  [(set (match_operand:HI 1 "memory_operand"  "=a,b,m")
+        (unspec:HI [(ANY_EXTEND:DI (match_operand:HI 0 "register_operand" "r,r,r"))
+                    (match_operand:DI 2 "register_operand" "r,r,r")
+                    (match_operand 3 "" "")] UNSPEC_STORE16))
+   (clobber (match_dup 1))]
+  ""
+  "sh%3%X1 %2? %1 = %0"
+  [(set_attr "type" "lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
+   (set_attr "length"            "4,               8,              12")]
+)
+
+(define_insn "kvx_storecw"
+  [(set (match_operand:SI 1 "memory_operand"  "=a,b,m")
+        (unspec:SI [(match_operand:DI 0 "register_operand" "r,r,r")
+                    (match_operand:DI 2 "register_operand" "r,r,r")
+                    (match_operand 3 "" "")] UNSPEC_STORE32))
+   (clobber (match_dup 1))]
+  ""
+  "sw%3%X1 %2? %1 = %0"
+  [(set_attr "type" "lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
+   (set_attr "length"            "4,               8,              12")]
+)
+(define_insn "*kvx_storecw"
+  [(set (match_operand:SI 1 "memory_operand"  "=a,b,m")
+        (unspec:SI [(ANY_EXTEND:DI (match_operand:SI 0 "register_operand" "r,r,r"))
+                    (match_operand:DI 2 "register_operand" "r,r,r")
+                    (match_operand 3 "" "")] UNSPEC_STORE32))
+   (clobber (match_dup 1))]
+  ""
+  "sw%3%X1 %2? %1 = %0"
+  [(set_attr "type" "lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
+   (set_attr "length"            "4,               8,              12")]
+)
+
+(define_insn "kvx_storecd"
+  [(set (match_operand:DI 1 "memory_operand"  "=a,b,m")
+        (unspec:DI [(match_operand:DI 0 "register_operand" "r,r,r")
+                    (match_operand:DI 2 "register_operand" "r,r,r")
+                    (match_operand 3 "" "")] UNSPEC_STORE64))
+   (clobber (match_dup 1))]
+  ""
+  "sd%3%X1 %2? %1 = %0"
+  [(set_attr "type" "lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
+   (set_attr "length"            "4,               8,              12")]
+)
+
+(define_insn "kvx_storecq"
+  [(set (match_operand:TI 1 "memory_operand"  "=a,b,m")
+        (unspec:TI [(match_operand:TI 0 "register_operand" "r,r,r")
+                    (match_operand:DI 2 "register_operand" "r,r,r")
+                    (match_operand 3 "" "")] UNSPEC_STORE128))
+   (clobber (match_dup 1))]
+  ""
+  "sq%3%X1 %2? %1 = %0"
+  [(set_attr "type" "lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
+   (set_attr "length"            "4,               8,              12")]
+)
 
 (define_insn "kvx_storec64"
   [(set (match_operand:DATA64 1 "memory_operand"  "=a,b,m")
@@ -5572,7 +5895,7 @@
                          (match_operand 3 "" "")] UNSPEC_STORE128))
    (clobber (match_dup 1))]
   ""
-  "sq%3%X1 %2? %1 = %q0"
+  "sq%3%X1 %2? %1 = %0"
   [(set_attr "type" "lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
    (set_attr "length"            "4,               8,              12")]
 )
@@ -5584,7 +5907,7 @@
                          (match_operand 3 "" "")] UNSPEC_STORE256))
    (clobber (match_dup 1))]
   ""
-  "so%3%X1 %2? %1 = %o0"
+  "so%3%X1 %2? %1 = %0"
   [(set_attr "type" "lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
    (set_attr "length"            "4,               8,              12")]
 )

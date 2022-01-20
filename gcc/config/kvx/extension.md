@@ -1,4 +1,4 @@
-;; Abstract the implentation modes
+;; Abstract the extension modes
 
 (define_mode_iterator EXT256 [
   V1OI
@@ -21,6 +21,14 @@
   {
     if (MEM_P(operands[0]))
       operands[1] = force_reg (<MODE>mode, operands[1]);
+    if (CONSTANT_P (operands[1]))
+      {
+        rtx temp = gen_reg_rtx (OImode);
+        emit_insn (gen_rtx_SET (temp, CONST_VECTOR_ELT (operands[1], 0)));
+        rtx subreg = simplify_gen_subreg (<MODE>mode, temp, OImode, 0);
+        emit_insn (gen_rtx_SET (operands[0], subreg));
+        DONE;
+      }
   }
 )
 
@@ -50,8 +58,8 @@
 )
 
 (define_insn "*xmovef<mode>"
-  [(set (match_operand:ALL256 0 "general_register_operand"  "=r")
-        (match_operand:ALL256 1 "extension_register_operand" "x"))]
+  [(set (match_operand:ALL256 0 "register_operand" "=r")
+        (match_operand:ALL256 1 "register_operand" "x"))]
   ""
   "xmovefo %0 = %v1"
   [(set_attr "type" "bcu_tiny_auxw_crrp")
@@ -59,8 +67,8 @@
 )
 
 (define_insn "*xmovet<mode>"
-  [(set (match_operand:ALL256 0 "extension_register_operand" "=x")
-        (match_operand:ALL256 1 "general_register_operand"    "r"))]
+  [(set (match_operand:ALL256 0 "register_operand" "=x")
+        (match_operand:ALL256 1 "register_operand" "r"))]
   ""
   "xmovetq %v0.lo = %x1, %y1\n\txmovetq %v0.hi = %z1, %t1"
   [(set_attr "type" "alu_lite_x2_crwl_crwh")
@@ -79,7 +87,7 @@
   }
 )
 
-(define_insn_and_split "*mov<mode>"
+(define_insn_and_split "*mov<EXT512:mode>"
   [(set (match_operand:EXT512 0 "nonimmediate_operand" "=x,x,x,x,a,b,m,r,x")
         (match_operand:EXT512 1 "nonimmediate_operand"  "x,a,b,m,x,x,x,x,r"))]
   ""
@@ -103,7 +111,7 @@
   }
 )
 
-(define_insn_and_split "*mov<mode>"
+(define_insn_and_split "*mov<EXT1024:mode>"
   [(set (match_operand:EXT1024 0 "nonimmediate_operand" "=x,x,x,x,a,b,m,r,x")
         (match_operand:EXT1024 1 "nonimmediate_operand"  "x,a,b,m,x,x,x,x,r"))]
   ""
@@ -117,7 +125,7 @@
 )
 
 
-;; KVX_XLOAD256, KVX_XLOAD256Q
+;; KVX_XLOAD256, KVX_XLOAD256H, KVX_XLOAD256Q
 
 (define_insn "kvx_xload256"
   [(set (match_operand:EXT256 0 "register_operand" "=x,x,x")
@@ -134,28 +142,14 @@
 )
 
 (define_insn "kvx_xload256q"
-  [(set (match_operand:EXT1024 0 "register_operand" "+x,x,x")
-        (unspec:EXT1024 [(match_operand:EXT256 1 "memory_operand"     "a,b,m")
-                         (match_operand 2 "" "")
-                         (match_operand 3 "" "")] UNSPEC_XLOAD256))
+  [(set (match_operand:EXT1024 0 "register_operand" "=x,x,x")
+        (unspec:EXT1024 [(match_operand:EXT256 1 "memory_operand" "a,b,m")
+                         (match_operand:EXT1024 2 "register_operand" "0,0,0")
+                         (match_operand 3 "" "")
+                         (match_operand 4 "" "")] UNSPEC_XLOAD256))
    (use (match_dup 1))]
   ""
-  "xlo.q%3%2%X1 %m0 = %1"
-  [(set_attr_alternative "type"
-    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_load_uncached") (const_string "lsu_load"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_load_uncached_x") (const_string "lsu_load_x"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_load_uncached_y") (const_string "lsu_load_y"))])
-   (set_attr "length" "4, 8, 12")]
-)
-
-(define_insn "kvx_xloadc256"
-  [(set (match_operand:EXT256 0 "register_operand" "=x,x,x")
-        (unspec:EXT256 [(match_operand:EXT256 1 "memory_operand" "a,b,m")
-                        (match_operand:DI 2 "register_operand" "r,r,r")
-                        (match_operand 3 "" "")] UNSPEC_XLOAD256))
-   (use (match_dup 1))]
-  ""
-  "xlo%3%X1 %2? %v0 = %1"
+  "xlo.q%4%3%X1 %m0 = %1"
   [(set_attr_alternative "type"
     [(if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_load_uncached") (const_string "lsu_load"))
      (if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_load_uncached_x") (const_string "lsu_load_x"))
@@ -163,8 +157,41 @@
    (set_attr "length" "4, 8, 12")]
 )
 
+(define_insn "kvx_xloadc256"
+  [(set (match_operand:EXT256 0 "register_operand" "=x,x,x")
+        (unspec:EXT256 [(match_operand:EXT256 1 "memory_operand" "a,b,m")
+                        (match_operand:EXT256 2 "register_operand" "0,0,0")
+                        (match_operand:DI 3 "register_operand" "r,r,r")
+                        (match_operand 4 "" "")] UNSPEC_XLOAD256))
+   (use (match_dup 1))]
+  ""
+  "xlo%4%X1 %3? %v0 = %1"
+  [(set_attr_alternative "type"
+    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_load_uncached") (const_string "lsu_load"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_load_uncached_x") (const_string "lsu_load_x"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_load_uncached_y") (const_string "lsu_load_y"))])
+   (set_attr "length" "4, 8, 12")]
+)
 
-;; KVX_XSTORE256
+(define_insn "kvx_xloadc256q"
+  [(set (match_operand:EXT1024 0 "register_operand" "=x,x,x")
+        (unspec:EXT1024 [(match_operand:EXT256 1 "memory_operand" "a,b,m")
+                         (match_operand:EXT1024 2 "register_operand" "0,0,0")
+                         (match_operand:DI 3 "register_operand" "r,r,r")
+                         (match_operand 4 "" "")
+                         (match_operand 5 "" "")] UNSPEC_XLOAD256))
+   (use (match_dup 1))]
+  ""
+  "xlo.q%5%4%X1 %3? %m0 = %1"
+  [(set_attr_alternative "type"
+    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_load_uncached") (const_string "lsu_load"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_load_uncached_x") (const_string "lsu_load_x"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_load_uncached_y") (const_string "lsu_load_y"))])
+   (set_attr "length" "4, 8, 12")]
+)
+
+
+;; KVX_XSTORE256, KVX_XSTOREC256
 
 (define_insn "kvx_xstore256"
   [(set (match_operand:EXT256 1 "memory_operand"  "=a,b,m")
@@ -191,14 +218,37 @@
 
 ;; KVX_XSWAP256
 
-(define_insn "kvx_xswap256"
-  [(set (match_operand:V32QI 0 "register_operand" "=r")
-        (unspec:V32QI [(match_operand:EXT256 1 "register_operand" "+x")
-                       (match_operand:V32QI 2 "register_operand" "0")] UNSPEC_XSWAP256))]
+(define_expand "kvx_xswap256"
+  [(match_operand:V32QI 0 "register_operand" "")
+   (match_operand:EXT256 1 "memory_operand" "")
+   (match_operand:V32QI 2 "register_operand" "")]
   ""
-  "xmovetq %v1.lo = %x0, %y0\n\txmovetq %v1.hi = %z0, %t0\n\txmovefo %0 = %v1"
-  [(set_attr "type" "all")
-   (set_attr "length" "12")]
+  {
+    rtx swapped = gen_reg_rtx (<MODE>mode);
+    swapped = force_reg (<MODE>mode, operands[1]);
+    emit_insn (gen_kvx_xswapfv32qi (operands[0], swapped));
+    emit_insn (gen_kvx_xswaptv32qi (swapped, operands[2]));
+    emit_move_insn (operands[1], swapped);
+    DONE;
+  }
+)
+
+(define_insn "kvx_xswapf<ALL256:mode>"
+  [(set (match_operand:ALL256 0 "register_operand" "=r")
+        (unspec:ALL256 [(match_operand:EXT256 1 "register_operand" "x")] UNSPEC_XSWAP256))]
+  ""
+  "xmovefo %0 = %v1"
+  [(set_attr "type" "bcu_tiny_auxw_crrp")
+   (set_attr "length" "4")]
+)
+
+(define_insn "kvx_xswapt<ALL256:mode>"
+  [(set (match_operand:EXT256 0 "register_operand" "=x")
+        (unspec:EXT256 [(match_operand:ALL256 1 "register_operand" "r")] UNSPEC_XSWAP256))]
+  ""
+  "xmovetq %v0.lo = %x1, %y1\n\txmovetq %v0.hi = %z1, %t1"
+  [(set_attr "type" "alu_lite_x2_crwl_crwh")
+   (set_attr "length" "8")]
 )
 
 
@@ -227,11 +277,11 @@
     if (!*xstr)
       emit_insn (gen_kvx_xmma484bw_1 (operands[0], operands[1], operands[2], operands[3]));
     else if (xstr[1] == 'u' && xstr[2] == 0)
-      emit_insn (gen_kvx_xmma484ubw_1 (operands[0], operands[1], operands[2], operands[3]));
+      emit_insn (gen_kvx_xmmau484bw_1 (operands[0], operands[1], operands[2], operands[3]));
     else if (xstr[1] == 'u' && xstr[2] == 's')
-      emit_insn (gen_kvx_xmma484usbw_1 (operands[0], operands[1], operands[2], operands[3]));
+      emit_insn (gen_kvx_xmmaus484bw_1 (operands[0], operands[1], operands[2], operands[3]));
     else if (xstr[1] == 's' && xstr[2] == 'u')
-      emit_insn (gen_kvx_xmma484subw_1 (operands[0], operands[1], operands[2], operands[3]));
+      emit_insn (gen_kvx_xmmasu484bw_1 (operands[0], operands[1], operands[2], operands[3]));
     else
       gcc_unreachable ();
     DONE;
@@ -248,31 +298,31 @@
   [(set_attr "type" "tca")]
 )
 
-(define_insn "kvx_xmma484ubw_1"
+(define_insn "kvx_xmmau484bw_1"
   [(set (match_operand:EXT512 0 "register_operand" "=x")
         (unspec:EXT512 [(match_operand:EXT256 1 "register_operand" "x")
                         (match_operand:EXT256 2 "register_operand" "x")
-                        (match_operand:EXT512 3 "register_operand" "x")] UNSPEC_XMMA484UBW))]
+                        (match_operand:EXT512 3 "register_operand" "x")] UNSPEC_XMMAU484BW))]
   ""
   "mma484ubw %w0 = %w3, %v1, %v2"
   [(set_attr "type" "tca")]
 )
 
-(define_insn "kvx_xmma484subw_1"
+(define_insn "kvx_xmmasu484bw_1"
   [(set (match_operand:EXT512 0 "register_operand" "=x")
         (unspec:EXT512 [(match_operand:EXT256 1 "register_operand" "x")
                         (match_operand:EXT256 2 "register_operand" "x")
-                        (match_operand:EXT512 3 "register_operand" "x")] UNSPEC_XMMA484SUBW))]
+                        (match_operand:EXT512 3 "register_operand" "x")] UNSPEC_XMMASU484BW))]
   ""
   "mma484subw %w0 = %w3, %v1, %v2"
   [(set_attr "type" "tca")]
 )
 
-(define_insn "kvx_xmma484usbw_1"
+(define_insn "kvx_xmmaus484bw_1"
   [(set (match_operand:EXT512 0 "register_operand" "=x")
         (unspec:EXT512 [(match_operand:EXT256 1 "register_operand" "x")
                         (match_operand:EXT256 2 "register_operand" "x")
-                        (match_operand:EXT512 3 "register_operand" "x")] UNSPEC_XMMA484USBW))]
+                        (match_operand:EXT512 3 "register_operand" "x")] UNSPEC_XMMAUS484BW))]
   ""
   "mma484usbw %w0 = %w3, %v1, %v2"
   [(set_attr "type" "tca")]

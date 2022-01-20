@@ -222,8 +222,8 @@ kvx_float16x16_xload(const void *ptr) {
     return __builtin_kvx_xload256(ptr, ".us");
 }
 float16x16_t __attribute ((noinline))
-kvx_float16x16_xloadc(const void *ptr, uint64_t c) {
-    return __builtin_kvx_xloadc256(ptr, c, ".us.weqz");
+kvx_float16x16_xloadc(const void *ptr, float16x16_t b, uint64_t c) {
+    return __builtin_kvx_xloadc256(ptr, b, c, ".us.weqz");
 }
 void __attribute ((noinline))
 kvx_float16x16_xstore(void *ptr, float16x16_t a) {

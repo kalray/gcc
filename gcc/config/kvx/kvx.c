@@ -209,7 +209,7 @@ struct GTY (()) machine_function
 				| padding1      |
 				|               |
 				+---------------+
- Argument Pointer / Virt. FP--->| [Static chain]| [256-bits aligned]
+Argument Pointer / Virt. FP-->| [Static chain]| [256-bits aligned]
 				+---------------+
 				| Local         |
 				| Variable      |
@@ -496,11 +496,50 @@ kvx_static_chain (const_tree fndecl, bool incoming_p ATTRIBUTE_UNUSED)
   return gen_frame_mem (Pmode, frame_pointer_rtx);
 }
 
-static const char *pgr_reg_names[] = {KV3_PGR_REGISTER_NAMES};
-static const char *qgr_reg_names[] = {KV3_QGR_REGISTER_NAMES};
-static const char *xvr_reg_names[] = {KV3_XVR_REGISTER_NAMES};
-static const char *xwr_reg_names[] = {KV3_XWR_REGISTER_NAMES};
-static const char *xmr_reg_names[] = {KV3_XMR_REGISTER_NAMES};
+static const char *
+kvx_pgr_reg_name (unsigned regno)
+{
+  static const char *pgr_reg_names[] = {KV3_PGR_REGISTER_NAMES};
+  unsigned index = regno - KV3_GPR_FIRST_REGNO;
+  gcc_assert (index % 2 == 0);
+  return pgr_reg_names[index / 2];
+}
+
+static const char *
+kvx_qgr_reg_name (unsigned regno)
+{
+  static const char *qgr_reg_names[] = {KV3_QGR_REGISTER_NAMES};
+  unsigned index = regno - KV3_GPR_FIRST_REGNO;
+  gcc_assert (index % 4 == 0);
+  return qgr_reg_names[index / 4];
+}
+
+static const char *
+kvx_xvr_reg_name (unsigned regno)
+{
+  static const char *xvr_reg_names[] = {KV3_XVR_REGISTER_NAMES};
+  unsigned index = regno - KV3_XCR_FIRST_REGNO;
+  gcc_assert (index % 4 == 0);
+  return xvr_reg_names[index / 4];
+}
+
+static const char *
+kvx_xwr_reg_name (unsigned regno)
+{
+  static const char *xwr_reg_names[] = {KV3_XWR_REGISTER_NAMES};
+  unsigned index = regno - KV3_XCR_FIRST_REGNO;
+  gcc_assert (index % 8 == 0);
+  return xwr_reg_names[index / 8];
+}
+
+static const char *
+kvx_xmr_reg_name (unsigned regno)
+{
+  static const char *xmr_reg_names[] = {KV3_XMR_REGISTER_NAMES};
+  unsigned index = regno - KV3_XCR_FIRST_REGNO;
+  gcc_assert (index % 16 == 0);
+  return xmr_reg_names[index / 16];
+}
 
 /* Splits X as a base + offset. Returns true if split successful,
    false if not. BASE_OUT and OFFSET_OUT contain the corresponding
@@ -747,6 +786,43 @@ bool kvx_legitimate_pic_symbolic_ref_p (rtx op);
 
 static bool kvx_legitimate_constant_p (enum machine_mode mode ATTRIBUTE_UNUSED,
 				       rtx x);
+
+/* Implements TARGET_SECONDARY_RELOAD.  */
+static reg_class_t
+kvx_secondary_reload (bool in_p ATTRIBUTE_UNUSED, rtx x ATTRIBUTE_UNUSED,
+		      reg_class_t reload_class ATTRIBUTE_UNUSED,
+		      enum machine_mode reload_mode ATTRIBUTE_UNUSED,
+		      secondary_reload_info *sri ATTRIBUTE_UNUSED)
+{
+  if (flag_pic)
+    {
+      if (in_p && GET_CODE (x) == SYMBOL_REF && SYMBOL_REF_LOCAL_P (x)
+	  && !SYMBOL_REF_EXTERNAL_P (x))
+	{
+	  if (sri->prev_sri == NULL)
+	    {
+	      return GPR_REGS;
+	    }
+	  else
+	    {
+	      sri->icode = GET_MODE (x) == SImode ? CODE_FOR_reload_in_gotoff_si
+						  : CODE_FOR_reload_in_gotoff_di;
+	      return NO_REGS;
+	    }
+	}
+      else if (SYMBOLIC_CONST (x) && !kvx_legitimate_constant_p (VOIDmode, x))
+	{
+	  gcc_unreachable ();
+	}
+    }
+
+#if 0
+  if (reload_class == XCR_REGS && CONSTANT_P(x))
+    return GENERAL_REGS;
+#endif
+
+  return NO_REGS;
+}
 
 /* Table of machine attributes.  */
 static const struct attribute_spec kvx_attribute_table[] = {
@@ -1412,36 +1488,6 @@ kvx_pass_by_reference (cumulative_args_t cum ATTRIBUTE_UNUSED,
   return size < 0 || ((size > (4 * UNITS_PER_WORD)) && mode == BLKmode);
 }
 
-static reg_class_t
-kvx_secondary_reload (bool in_p ATTRIBUTE_UNUSED, rtx x ATTRIBUTE_UNUSED,
-		      reg_class_t reload_class ATTRIBUTE_UNUSED,
-		      enum machine_mode reload_mode ATTRIBUTE_UNUSED,
-		      secondary_reload_info *sri ATTRIBUTE_UNUSED)
-{
-  if (!flag_pic)
-    return NO_REGS;
-
-  if (in_p && GET_CODE (x) == SYMBOL_REF && SYMBOL_REF_LOCAL_P (x)
-      && !SYMBOL_REF_EXTERNAL_P (x))
-    {
-      if (sri->prev_sri == NULL)
-	{
-	  return GPR_REGS;
-	}
-      else
-	{
-	  sri->icode = GET_MODE (x) == SImode ? CODE_FOR_reload_in_gotoff_si
-					      : CODE_FOR_reload_in_gotoff_di;
-	  return NO_REGS;
-	}
-    }
-  else if (SYMBOLIC_CONST (x) && !kvx_legitimate_constant_p (VOIDmode, x))
-    {
-      gcc_unreachable ();
-    }
-  return NO_REGS;
-}
-
 static const char *kvx_unspec_tls_asm_op[]
   = {"@tlsgd", "@tlsld", "@tlsle", "@dtpoff", "@tlsie"};
 
@@ -1640,30 +1686,15 @@ kvx_print_operand (FILE *file, rtx x, int code)
       if (system_register_operand (operand, VOIDmode))
 	gcc_assert (GET_MODE_SIZE (GET_MODE (x)) <= UNITS_PER_WORD);
       if (select_mreg)
-	{
-	  int index = REGNO (operand) - KV3_XCR_FIRST_REGNO;
-	  fprintf (file, "$%s", xmr_reg_names[index]);
-	}
+	fprintf (file, "$%s", kvx_xmr_reg_name (REGNO (operand)));
       else if (select_wreg)
-	{
-	  int index = REGNO (operand) - KV3_XCR_FIRST_REGNO;
-	  fprintf (file, "$%s", xwr_reg_names[index]);
-	}
+	fprintf (file, "$%s", kvx_xwr_reg_name (REGNO (operand)));
       else if (select_vreg)
-	{
-	  int index = REGNO (operand) - KV3_XCR_FIRST_REGNO;
-	  fprintf (file, "$%s", xvr_reg_names[index]);
-	}
+	fprintf (file, "$%s", kvx_xvr_reg_name (REGNO (operand)));
       else if (select_qreg)
-	{
-	  int index = REGNO (operand) - KV3_GPR_FIRST_REGNO;
-	  fprintf (file, "$%s", qgr_reg_names[index]);
-	}
+	fprintf (file, "$%s", kvx_qgr_reg_name (REGNO (operand)));
       else if (select_preg)
-	{
-	  int index = REGNO (operand) - KV3_GPR_FIRST_REGNO;
-	  fprintf (file, "$%s", pgr_reg_names[index]);
-	}
+	fprintf (file, "$%s", kvx_pgr_reg_name (REGNO (operand)));
       else if (select_treg)
 	{
 	  if (GET_MODE_SIZE (GET_MODE (x)) < UNITS_PER_WORD * 4)
@@ -1689,15 +1720,9 @@ kvx_print_operand (FILE *file, rtx x, int code)
 	  fprintf (file, "$%s", reg_names[REGNO (operand)]);
 	}
       else if (GET_MODE_SIZE (GET_MODE (x)) == UNITS_PER_WORD * 4)
-	{
-	  int index = REGNO (operand) - KV3_GPR_FIRST_REGNO;
-	  fprintf (file, "$%s", qgr_reg_names[index]);
-	}
+	fprintf (file, "$%s", kvx_qgr_reg_name (REGNO (operand)));
       else if (GET_MODE_SIZE (GET_MODE (x)) == UNITS_PER_WORD * 2)
-	{
-	  int index = REGNO (operand) - KV3_GPR_FIRST_REGNO;
-	  fprintf (file, "$%s", pgr_reg_names[index]);
-	}
+	fprintf (file, "$%s", kvx_pgr_reg_name (REGNO (operand)));
       else
 	fprintf (file, "$%s", reg_names[REGNO (operand)]);
       return;
@@ -1829,9 +1854,9 @@ kvx_regname (rtx x)
       if (GET_MODE_SIZE (mode) <= UNITS_PER_WORD)
 	return reg_names[REGNO (x)];
       else if (GET_MODE_SIZE (mode) <= 2 * UNITS_PER_WORD)
-	return pgr_reg_names[REGNO (x)];
+	return kvx_pgr_reg_name (REGNO (x));
       else if (GET_MODE_SIZE (mode) <= 4 * UNITS_PER_WORD)
-	return qgr_reg_names[REGNO (x)];
+	return kvx_qgr_reg_name (REGNO (x));
       gcc_unreachable ();
     case SUBREG:
       // Addressing mode with register offset
@@ -4926,7 +4951,6 @@ static bool
 kvx_load_store_multiple_operation_p (rtx op, bool is_uncached, bool is_load)
 {
   int count = XVECLEN (op, 0);
-  int addr_space = -1;
 
   /* Perform a quick check so we don't blow up below.  */
   if (count != 2 && count != 4)
@@ -6804,9 +6828,6 @@ kvx_ctrapsi4 (void)
 #undef TARGET_PASS_BY_REFERENCE
 #define TARGET_PASS_BY_REFERENCE kvx_pass_by_reference
 
-#undef TARGET_SECONDARY_RELOAD
-#define TARGET_SECONDARY_RELOAD kvx_secondary_reload
-
 #undef TARGET_INIT_BUILTINS
 #define TARGET_INIT_BUILTINS kvx_init_builtins
 
@@ -6960,6 +6981,9 @@ kvx_ctrapsi4 (void)
 
 #undef TARGET_CLASS_MAX_NREGS
 #define TARGET_CLASS_MAX_NREGS kvx_class_max_nregs
+
+#undef TARGET_SECONDARY_RELOAD
+#define TARGET_SECONDARY_RELOAD kvx_secondary_reload
 
 #undef TARGET_STARTING_FRAME_OFFSET
 #define TARGET_STARTING_FRAME_OFFSET kvx_starting_frame_offset
