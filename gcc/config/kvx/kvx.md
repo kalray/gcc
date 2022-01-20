@@ -1,5 +1,4 @@
-(define_attr "length" ""
-         (const_int 4))
+(define_attr "length" "" (const_int 4))
 
 ;; Only support Coolidge, but keep flexibility as long as it does not
 ;; cost too much

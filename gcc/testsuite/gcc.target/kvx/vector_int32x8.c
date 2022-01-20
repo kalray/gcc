@@ -565,8 +565,8 @@ kvx_int32x8_xload(const void *ptr) {
     return __builtin_kvx_xload256(ptr, ".us");
 }
 int32x8_t __attribute ((noinline))
-kvx_int32x8_xloadc(const void *ptr, uint64_t c) {
-    return __builtin_kvx_xloadc256(ptr, c, ".us.weqz");
+kvx_int32x8_xloadc(const void *ptr, int32x8_t b, uint64_t c) {
+    return __builtin_kvx_xloadc256(ptr, b, c, ".us.weqz");
 }
 void __attribute ((noinline))
 kvx_int32x8_xstore(void *ptr, int32x8_t a) {

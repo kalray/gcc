@@ -102,8 +102,8 @@
 )
 
 (define_insn_and_split "*make<mode>"
-    [(set (match_operand:ALL128 0 "register_operand" "=r")
-          (match_operand:ALL128 1 "immediate_operand" "i"))]
+  [(set (match_operand:ALL128 0 "register_operand" "=r")
+        (match_operand:ALL128 1 "immediate_operand" "i"))]
   ""
   "#"
   "reload_completed"
@@ -190,8 +190,8 @@
   "reload_completed"
   [(const_int 0)]
   {
-   kvx_make_256bit_const (operands[0], operands[1]);
-   DONE;
+    kvx_make_256bit_const (operands[0], operands[1]);
+    DONE;
   }
 )
 
