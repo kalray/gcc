@@ -216,6 +216,46 @@ kvx_int64_shl(int64_t a, int b)
     return a << b;
 }
 int64_t __attribute ((noinline))
+kvx_int64_loads(const char *p)
+{
+    return __builtin_kvx_loadd(p, ".s");
+}
+int64_t __attribute ((noinline))
+kvx_int64_loadv(const char *p)
+{
+    return __builtin_kvx_loadd(p, ".v");
+}
+int64_t __attribute ((noinline))
+kvx_int64_loadc(const char *p, int64_t b, long c)
+{
+    return __builtin_kvx_loadcd(p, b, c, ".us.wnez");
+}
+int64_t __attribute ((noinline))
+kvx_int64_loadcv(const char *p, int64_t b, long c)
+{
+    return __builtin_kvx_loadcd(p, b, c, ".v.wnez");
+}
+void __attribute ((noinline))
+kvx_int64_store(char *p, int64_t b)
+{
+    __builtin_kvx_stored(b, p, "");
+}
+void __attribute ((noinline))
+kvx_int64_storev(char *p, int64_t b)
+{
+    __builtin_kvx_stored(b, p, ".v");
+}
+void __attribute ((noinline))
+kvx_int64_storec(char *p, int64_t b, long c)
+{
+    __builtin_kvx_storecd(b, p, c, ".deqz");
+}
+void __attribute ((noinline))
+kvx_int64_storecv(char *p, int64_t b, long c)
+{
+    __builtin_kvx_storecd(b, p, c, ".v.dnez");
+}
+int64_t __attribute ((noinline))
 kvx_int64_shr(int64_t a, int b)
 {
     return a >> b;

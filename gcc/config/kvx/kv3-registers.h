@@ -132,112 +132,52 @@ enum reg_class {
 	"a62_x",	"a62_y",	"a62_z",	"a62_t",	"a63_x",	"a63_y",	"a63_z",	"a63_t",
 
 #define KV3_PGR_REGISTER_NAMES \
-	"r0r1",	"ERROR",	"r2r3",	"ERROR",	"r4r5",	"ERROR",	"r6r7",	"ERROR", \
-	"r8r9",	"ERROR",	"r10r11",	"ERROR",	"r12r13",	"ERROR",	"r14r15",	"ERROR", \
-	"r16r17",	"ERROR",	"r18r19",	"ERROR",	"r20r21",	"ERROR",	"r22r23",	"ERROR", \
-	"r24r25",	"ERROR",	"r26r27",	"ERROR",	"r28r29",	"ERROR",	"r30r31",	"ERROR", \
-	"r32r33",	"ERROR",	"r34r35",	"ERROR",	"r36r37",	"ERROR",	"r38r39",	"ERROR", \
-	"r40r41",	"ERROR",	"r42r43",	"ERROR",	"r44r45",	"ERROR",	"r46r47",	"ERROR", \
-	"r48r49",	"ERROR",	"r50r51",	"ERROR",	"r52r53",	"ERROR",	"r54r55",	"ERROR", \
-	"r56r57",	"ERROR",	"r58r59",	"ERROR",	"r60r61",	"ERROR",	"r62r63",	"ERROR",
+	"r0r1",	"r2r3",	"r4r5",	"r6r7",	"r8r9",	"r10r11",	"r12r13",	"r14r15", \
+	"r16r17",	"r18r19",	"r20r21",	"r22r23",	"r24r25",	"r26r27",	"r28r29",	"r30r31", \
+	"r32r33",	"r34r35",	"r36r37",	"r38r39",	"r40r41",	"r42r43",	"r44r45",	"r46r47", \
+	"r48r49",	"r50r51",	"r52r53",	"r54r55",	"r56r57",	"r58r59",	"r60r61",	"r62r63",
 
 #define KV3_QGR_REGISTER_NAMES \
-	"r0r1r2r3",	"ERROR",	"ERROR",	"ERROR",	"r4r5r6r7",	"ERROR",	"ERROR",	"ERROR", \
-	"r8r9r10r11",	"ERROR",	"ERROR",	"ERROR",	"r12r13r14r15",	"ERROR",	"ERROR",	"ERROR", \
-	"r16r17r18r19",	"ERROR",	"ERROR",	"ERROR",	"r20r21r22r23",	"ERROR",	"ERROR",	"ERROR", \
-	"r24r25r26r27",	"ERROR",	"ERROR",	"ERROR",	"r28r29r30r31",	"ERROR",	"ERROR",	"ERROR", \
-	"r32r33r34r35",	"ERROR",	"ERROR",	"ERROR",	"r36r37r38r39",	"ERROR",	"ERROR",	"ERROR", \
-	"r40r41r42r43",	"ERROR",	"ERROR",	"ERROR",	"r44r45r46r47",	"ERROR",	"ERROR",	"ERROR", \
-	"r48r49r50r51",	"ERROR",	"ERROR",	"ERROR",	"r52r53r54r55",	"ERROR",	"ERROR",	"ERROR", \
-	"r56r57r58r59",	"ERROR",	"ERROR",	"ERROR",	"r60r61r62r63",	"ERROR",	"ERROR",	"ERROR",
+	"r0r1r2r3",	"r4r5r6r7",	"r8r9r10r11",	"r12r13r14r15",	"r16r17r18r19",	"r20r21r22r23",	"r24r25r26r27",	"r28r29r30r31", \
+	"r32r33r34r35",	"r36r37r38r39",	"r40r41r42r43",	"r44r45r46r47",	"r48r49r50r51",	"r52r53r54r55",	"r56r57r58r59",	"r60r61r62r63",
 
 #define KV3_XBR_REGISTER_NAMES \
-	"a0_lo",	"ERROR",	"a0_hi",	"ERROR",	"a1_lo",	"ERROR",	"a1_hi",	"ERROR", \
-	"a2_lo",	"ERROR",	"a2_hi",	"ERROR",	"a3_lo",	"ERROR",	"a3_hi",	"ERROR", \
-	"a4_lo",	"ERROR",	"a4_hi",	"ERROR",	"a5_lo",	"ERROR",	"a5_hi",	"ERROR", \
-	"a6_lo",	"ERROR",	"a6_hi",	"ERROR",	"a7_lo",	"ERROR",	"a7_hi",	"ERROR", \
-	"a8_lo",	"ERROR",	"a8_hi",	"ERROR",	"a9_lo",	"ERROR",	"a9_hi",	"ERROR", \
-	"a10_lo",	"ERROR",	"a10_hi",	"ERROR",	"a11_lo",	"ERROR",	"a11_hi",	"ERROR", \
-	"a12_lo",	"ERROR",	"a12_hi",	"ERROR",	"a13_lo",	"ERROR",	"a13_hi",	"ERROR", \
-	"a14_lo",	"ERROR",	"a14_hi",	"ERROR",	"a15_lo",	"ERROR",	"a15_hi",	"ERROR", \
-	"a16_lo",	"ERROR",	"a16_hi",	"ERROR",	"a17_lo",	"ERROR",	"a17_hi",	"ERROR", \
-	"a18_lo",	"ERROR",	"a18_hi",	"ERROR",	"a19_lo",	"ERROR",	"a19_hi",	"ERROR", \
-	"a20_lo",	"ERROR",	"a20_hi",	"ERROR",	"a21_lo",	"ERROR",	"a21_hi",	"ERROR", \
-	"a22_lo",	"ERROR",	"a22_hi",	"ERROR",	"a23_lo",	"ERROR",	"a23_hi",	"ERROR", \
-	"a24_lo",	"ERROR",	"a24_hi",	"ERROR",	"a25_lo",	"ERROR",	"a25_hi",	"ERROR", \
-	"a26_lo",	"ERROR",	"a26_hi",	"ERROR",	"a27_lo",	"ERROR",	"a27_hi",	"ERROR", \
-	"a28_lo",	"ERROR",	"a28_hi",	"ERROR",	"a29_lo",	"ERROR",	"a29_hi",	"ERROR", \
-	"a30_lo",	"ERROR",	"a30_hi",	"ERROR",	"a31_lo",	"ERROR",	"a31_hi",	"ERROR", \
-	"a32_lo",	"ERROR",	"a32_hi",	"ERROR",	"a33_lo",	"ERROR",	"a33_hi",	"ERROR", \
-	"a34_lo",	"ERROR",	"a34_hi",	"ERROR",	"a35_lo",	"ERROR",	"a35_hi",	"ERROR", \
-	"a36_lo",	"ERROR",	"a36_hi",	"ERROR",	"a37_lo",	"ERROR",	"a37_hi",	"ERROR", \
-	"a38_lo",	"ERROR",	"a38_hi",	"ERROR",	"a39_lo",	"ERROR",	"a39_hi",	"ERROR", \
-	"a40_lo",	"ERROR",	"a40_hi",	"ERROR",	"a41_lo",	"ERROR",	"a41_hi",	"ERROR", \
-	"a42_lo",	"ERROR",	"a42_hi",	"ERROR",	"a43_lo",	"ERROR",	"a43_hi",	"ERROR", \
-	"a44_lo",	"ERROR",	"a44_hi",	"ERROR",	"a45_lo",	"ERROR",	"a45_hi",	"ERROR", \
-	"a46_lo",	"ERROR",	"a46_hi",	"ERROR",	"a47_lo",	"ERROR",	"a47_hi",	"ERROR", \
-	"a48_lo",	"ERROR",	"a48_hi",	"ERROR",	"a49_lo",	"ERROR",	"a49_hi",	"ERROR", \
-	"a50_lo",	"ERROR",	"a50_hi",	"ERROR",	"a51_lo",	"ERROR",	"a51_hi",	"ERROR", \
-	"a52_lo",	"ERROR",	"a52_hi",	"ERROR",	"a53_lo",	"ERROR",	"a53_hi",	"ERROR", \
-	"a54_lo",	"ERROR",	"a54_hi",	"ERROR",	"a55_lo",	"ERROR",	"a55_hi",	"ERROR", \
-	"a56_lo",	"ERROR",	"a56_hi",	"ERROR",	"a57_lo",	"ERROR",	"a57_hi",	"ERROR", \
-	"a58_lo",	"ERROR",	"a58_hi",	"ERROR",	"a59_lo",	"ERROR",	"a59_hi",	"ERROR", \
-	"a60_lo",	"ERROR",	"a60_hi",	"ERROR",	"a61_lo",	"ERROR",	"a61_hi",	"ERROR", \
-	"a62_lo",	"ERROR",	"a62_hi",	"ERROR",	"a63_lo",	"ERROR",	"a63_hi",	"ERROR",
+	"a0_lo",	"a0_hi",	"a1_lo",	"a1_hi",	"a2_lo",	"a2_hi",	"a3_lo",	"a3_hi", \
+	"a4_lo",	"a4_hi",	"a5_lo",	"a5_hi",	"a6_lo",	"a6_hi",	"a7_lo",	"a7_hi", \
+	"a8_lo",	"a8_hi",	"a9_lo",	"a9_hi",	"a10_lo",	"a10_hi",	"a11_lo",	"a11_hi", \
+	"a12_lo",	"a12_hi",	"a13_lo",	"a13_hi",	"a14_lo",	"a14_hi",	"a15_lo",	"a15_hi", \
+	"a16_lo",	"a16_hi",	"a17_lo",	"a17_hi",	"a18_lo",	"a18_hi",	"a19_lo",	"a19_hi", \
+	"a20_lo",	"a20_hi",	"a21_lo",	"a21_hi",	"a22_lo",	"a22_hi",	"a23_lo",	"a23_hi", \
+	"a24_lo",	"a24_hi",	"a25_lo",	"a25_hi",	"a26_lo",	"a26_hi",	"a27_lo",	"a27_hi", \
+	"a28_lo",	"a28_hi",	"a29_lo",	"a29_hi",	"a30_lo",	"a30_hi",	"a31_lo",	"a31_hi", \
+	"a32_lo",	"a32_hi",	"a33_lo",	"a33_hi",	"a34_lo",	"a34_hi",	"a35_lo",	"a35_hi", \
+	"a36_lo",	"a36_hi",	"a37_lo",	"a37_hi",	"a38_lo",	"a38_hi",	"a39_lo",	"a39_hi", \
+	"a40_lo",	"a40_hi",	"a41_lo",	"a41_hi",	"a42_lo",	"a42_hi",	"a43_lo",	"a43_hi", \
+	"a44_lo",	"a44_hi",	"a45_lo",	"a45_hi",	"a46_lo",	"a46_hi",	"a47_lo",	"a47_hi", \
+	"a48_lo",	"a48_hi",	"a49_lo",	"a49_hi",	"a50_lo",	"a50_hi",	"a51_lo",	"a51_hi", \
+	"a52_lo",	"a52_hi",	"a53_lo",	"a53_hi",	"a54_lo",	"a54_hi",	"a55_lo",	"a55_hi", \
+	"a56_lo",	"a56_hi",	"a57_lo",	"a57_hi",	"a58_lo",	"a58_hi",	"a59_lo",	"a59_hi", \
+	"a60_lo",	"a60_hi",	"a61_lo",	"a61_hi",	"a62_lo",	"a62_hi",	"a63_lo",	"a63_hi",
 
 #define KV3_XVR_REGISTER_NAMES \
-	"a0",	"ERROR",	"ERROR",	"ERROR",	"a1",	"ERROR",	"ERROR",	"ERROR", \
-	"a2",	"ERROR",	"ERROR",	"ERROR",	"a3",	"ERROR",	"ERROR",	"ERROR", \
-	"a4",	"ERROR",	"ERROR",	"ERROR",	"a5",	"ERROR",	"ERROR",	"ERROR", \
-	"a6",	"ERROR",	"ERROR",	"ERROR",	"a7",	"ERROR",	"ERROR",	"ERROR", \
-	"a8",	"ERROR",	"ERROR",	"ERROR",	"a9",	"ERROR",	"ERROR",	"ERROR", \
-	"a10",	"ERROR",	"ERROR",	"ERROR",	"a11",	"ERROR",	"ERROR",	"ERROR", \
-	"a12",	"ERROR",	"ERROR",	"ERROR",	"a13",	"ERROR",	"ERROR",	"ERROR", \
-	"a14",	"ERROR",	"ERROR",	"ERROR",	"a15",	"ERROR",	"ERROR",	"ERROR", \
-	"a16",	"ERROR",	"ERROR",	"ERROR",	"a17",	"ERROR",	"ERROR",	"ERROR", \
-	"a18",	"ERROR",	"ERROR",	"ERROR",	"a19",	"ERROR",	"ERROR",	"ERROR", \
-	"a20",	"ERROR",	"ERROR",	"ERROR",	"a21",	"ERROR",	"ERROR",	"ERROR", \
-	"a22",	"ERROR",	"ERROR",	"ERROR",	"a23",	"ERROR",	"ERROR",	"ERROR", \
-	"a24",	"ERROR",	"ERROR",	"ERROR",	"a25",	"ERROR",	"ERROR",	"ERROR", \
-	"a26",	"ERROR",	"ERROR",	"ERROR",	"a27",	"ERROR",	"ERROR",	"ERROR", \
-	"a28",	"ERROR",	"ERROR",	"ERROR",	"a29",	"ERROR",	"ERROR",	"ERROR", \
-	"a30",	"ERROR",	"ERROR",	"ERROR",	"a31",	"ERROR",	"ERROR",	"ERROR", \
-	"a32",	"ERROR",	"ERROR",	"ERROR",	"a33",	"ERROR",	"ERROR",	"ERROR", \
-	"a34",	"ERROR",	"ERROR",	"ERROR",	"a35",	"ERROR",	"ERROR",	"ERROR", \
-	"a36",	"ERROR",	"ERROR",	"ERROR",	"a37",	"ERROR",	"ERROR",	"ERROR", \
-	"a38",	"ERROR",	"ERROR",	"ERROR",	"a39",	"ERROR",	"ERROR",	"ERROR", \
-	"a40",	"ERROR",	"ERROR",	"ERROR",	"a41",	"ERROR",	"ERROR",	"ERROR", \
-	"a42",	"ERROR",	"ERROR",	"ERROR",	"a43",	"ERROR",	"ERROR",	"ERROR", \
-	"a44",	"ERROR",	"ERROR",	"ERROR",	"a45",	"ERROR",	"ERROR",	"ERROR", \
-	"a46",	"ERROR",	"ERROR",	"ERROR",	"a47",	"ERROR",	"ERROR",	"ERROR", \
-	"a48",	"ERROR",	"ERROR",	"ERROR",	"a49",	"ERROR",	"ERROR",	"ERROR", \
-	"a50",	"ERROR",	"ERROR",	"ERROR",	"a51",	"ERROR",	"ERROR",	"ERROR", \
-	"a52",	"ERROR",	"ERROR",	"ERROR",	"a53",	"ERROR",	"ERROR",	"ERROR", \
-	"a54",	"ERROR",	"ERROR",	"ERROR",	"a55",	"ERROR",	"ERROR",	"ERROR", \
-	"a56",	"ERROR",	"ERROR",	"ERROR",	"a57",	"ERROR",	"ERROR",	"ERROR", \
-	"a58",	"ERROR",	"ERROR",	"ERROR",	"a59",	"ERROR",	"ERROR",	"ERROR", \
-	"a60",	"ERROR",	"ERROR",	"ERROR",	"a61",	"ERROR",	"ERROR",	"ERROR", \
-	"a62",	"ERROR",	"ERROR",	"ERROR",	"a63",	"ERROR",	"ERROR",	"ERROR",
+	"a0",	"a1",	"a2",	"a3",	"a4",	"a5",	"a6",	"a7", \
+	"a8",	"a9",	"a10",	"a11",	"a12",	"a13",	"a14",	"a15", \
+	"a16",	"a17",	"a18",	"a19",	"a20",	"a21",	"a22",	"a23", \
+	"a24",	"a25",	"a26",	"a27",	"a28",	"a29",	"a30",	"a31", \
+	"a32",	"a33",	"a34",	"a35",	"a36",	"a37",	"a38",	"a39", \
+	"a40",	"a41",	"a42",	"a43",	"a44",	"a45",	"a46",	"a47", \
+	"a48",	"a49",	"a50",	"a51",	"a52",	"a53",	"a54",	"a55", \
+	"a56",	"a57",	"a58",	"a59",	"a60",	"a61",	"a62",	"a63",
 
 #define KV3_XWR_REGISTER_NAMES \
-	"a0a1",	"ERROR",	"a2a3",	"ERROR",	"a4a5",	"ERROR",	"a6a7",	"ERROR", \
-	"a8a9",	"ERROR",	"a10a11",	"ERROR",	"a12a13",	"ERROR",	"a14a15",	"ERROR", \
-	"a16a17",	"ERROR",	"a18a19",	"ERROR",	"a20a21",	"ERROR",	"a22a23",	"ERROR", \
-	"a24a25",	"ERROR",	"a26a27",	"ERROR",	"a28a29",	"ERROR",	"a30a31",	"ERROR", \
-	"a32a33",	"ERROR",	"a34a35",	"ERROR",	"a36a37",	"ERROR",	"a38a39",	"ERROR", \
-	"a40a41",	"ERROR",	"a42a43",	"ERROR",	"a44a45",	"ERROR",	"a46a47",	"ERROR", \
-	"a48a49",	"ERROR",	"a50a51",	"ERROR",	"a52a53",	"ERROR",	"a54a55",	"ERROR", \
-	"a56a57",	"ERROR",	"a58a59",	"ERROR",	"a60a61",	"ERROR",	"a62a63",	"ERROR",
+	"a0a1",	"a2a3",	"a4a5",	"a6a7",	"a8a9",	"a10a11",	"a12a13",	"a14a15", \
+	"a16a17",	"a18a19",	"a20a21",	"a22a23",	"a24a25",	"a26a27",	"a28a29",	"a30a31", \
+	"a32a33",	"a34a35",	"a36a37",	"a38a39",	"a40a41",	"a42a43",	"a44a45",	"a46a47", \
+	"a48a49",	"a50a51",	"a52a53",	"a54a55",	"a56a57",	"a58a59",	"a60a61",	"a62a63",
 
 #define KV3_XMR_REGISTER_NAMES \
-	"a0a1a2a3",	"ERROR",	"ERROR",	"ERROR",	"a4a5a6a7",	"ERROR",	"ERROR",	"ERROR", \
-	"a8a9a10a11",	"ERROR",	"ERROR",	"ERROR",	"a12a13a14a15",	"ERROR",	"ERROR",	"ERROR", \
-	"a16a17a18a19",	"ERROR",	"ERROR",	"ERROR",	"a20a21a22a23",	"ERROR",	"ERROR",	"ERROR", \
-	"a24a25a26a27",	"ERROR",	"ERROR",	"ERROR",	"a28a29a30a31",	"ERROR",	"ERROR",	"ERROR", \
-	"a32a33a34a35",	"ERROR",	"ERROR",	"ERROR",	"a36a37a38a39",	"ERROR",	"ERROR",	"ERROR", \
-	"a40a41a42a43",	"ERROR",	"ERROR",	"ERROR",	"a44a45a46a47",	"ERROR",	"ERROR",	"ERROR", \
-	"a48a49a50a51",	"ERROR",	"ERROR",	"ERROR",	"a52a53a54a55",	"ERROR",	"ERROR",	"ERROR", \
-	"a56a57a58a59",	"ERROR",	"ERROR",	"ERROR",	"a60a61a62a63",	"ERROR",	"ERROR",	"ERROR",
+	"a0a1a2a3",	"a4a5a6a7",	"a8a9a10a11",	"a12a13a14a15",	"a16a17a18a19",	"a20a21a22a23",	"a24a25a26a27",	"a28a29a30a31", \
+	"a32a33a34a35",	"a36a37a38a39",	"a40a41a42a43",	"a44a45a46a47",	"a48a49a50a51",	"a52a53a54a55",	"a56a57a58a59",	"a60a61a62a63",
 
 #define KV3_ABI_REGULAR 0
 #define KV3_PROGRAM_POINTER_REGNO 64
