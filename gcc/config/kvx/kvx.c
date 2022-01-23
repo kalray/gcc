@@ -666,6 +666,14 @@ kvx_extension_mode_p (enum machine_mode mode)
     case E_V2OImode:
     // 1024-bit coprocessor modes
     case E_V4OImode:
+    // 2048-bit coprocessor modes
+    case E_V8OImode:
+    // 4096-bit coprocessor modes
+    case E_V16OImode:
+    // 8192-bit coprocessor modes
+    case E_V32OImode:
+    // 16384-bit coprocessor modes
+    case E_V64OImode:
       return true;
     default:
       break;
@@ -1465,15 +1473,13 @@ void
 kvx_print_operand (FILE *file, rtx x, int code)
 {
   rtx operand = x;
-  bool select_mreg = 0;
-  bool select_wreg = 0;
-  bool select_vreg = 0;
-  bool select_qreg = 0;
-  bool select_preg = 0;
-  bool select_treg = 0;
-  bool select_zreg = 0;
-  bool select_yreg = 0;
-  bool select_xreg = 0;
+  bool force_breg = 0;
+  bool force_qreg = 0;
+  bool force_preg = 0;
+  bool force_treg = 0;
+  bool force_zreg = 0;
+  bool force_yreg = 0;
+  bool force_xreg = 0;
   bool addr_mode = false;
   bool as_address = false;
   bool float_compare = false;
@@ -1488,40 +1494,32 @@ kvx_print_operand (FILE *file, rtx x, int code)
       /* No code, print as usual.  */
       break;
 
-    case 'm':
-      select_mreg = true;
-      break;
-
-    case 'w':
-      select_wreg = true;
-      break;
-
-    case 'v':
-      select_vreg = true;
+    case 'b':
+      force_breg = true;
       break;
 
     case 'o':
-      select_qreg = true;
+      force_qreg = true;
       break;
 
     case 'q':
-      select_preg = true;
+      force_preg = true;
       break;
 
     case 't':
-      select_treg = true;
+      force_treg = true;
       break;
 
     case 'z':
-      select_zreg = true;
+      force_zreg = true;
       break;
 
     case 'y':
-      select_yreg = true;
+      force_yreg = true;
       break;
 
     case 'x':
-      select_xreg = true;
+      force_xreg = true;
       break;
 
     case 'A':
@@ -1628,48 +1626,62 @@ kvx_print_operand (FILE *file, rtx x, int code)
     case REG:
       if (REGNO (operand) >= FIRST_PSEUDO_REGISTER)
 	error ("incorrect hard register number %d", REGNO (operand));
-      if (system_register_operand (operand, VOIDmode))
-	gcc_assert (GET_MODE_SIZE (GET_MODE (x)) <= UNITS_PER_WORD);
-      if (select_mreg)
-	fprintf (file, "$%s", kvx_xmr_reg_name (REGNO (operand)));
-      else if (select_wreg)
-	fprintf (file, "$%s", kvx_xwr_reg_name (REGNO (operand)));
-      else if (select_vreg)
-	fprintf (file, "$%s", kvx_xvr_reg_name (REGNO (operand)));
-      else if (select_qreg)
+      else if (force_breg)
+	{
+	  int nwords = GET_MODE_SIZE (GET_MODE (x)) / UNITS_PER_WORD;
+	  fprintf (file, "$%s..%s", kvx_xvr_reg_name (REGNO (operand)),
+		   kvx_xvr_reg_name (REGNO (operand) + nwords - 4));
+	}
+      else if (force_qreg)
 	fprintf (file, "$%s", kvx_qgr_reg_name (REGNO (operand)));
-      else if (select_preg)
+      else if (force_preg)
 	fprintf (file, "$%s", kvx_pgr_reg_name (REGNO (operand)));
-      else if (select_treg)
+      else if (force_treg)
 	{
 	  if (GET_MODE_SIZE (GET_MODE (x)) < UNITS_PER_WORD * 4)
 	    error ("using %%t format with operand smaller than 4 registers");
 	  fprintf (file, "$%s", reg_names[REGNO (operand) + 3]);
 	}
-      else if (select_zreg)
+      else if (force_zreg)
 	{
 	  if (GET_MODE_SIZE (GET_MODE (x)) < UNITS_PER_WORD * 4)
 	    error ("using %%z format with operand smaller than 4 registers");
 	  fprintf (file, "$%s", reg_names[REGNO (operand) + 2]);
 	}
-      else if (select_yreg)
+      else if (force_yreg)
 	{
 	  if (GET_MODE_SIZE (GET_MODE (x)) < UNITS_PER_WORD * 2)
 	    error ("using %%y format with operand smaller than 2 registers");
 	  fprintf (file, "$%s", reg_names[REGNO (operand) + 1]);
 	}
-      else if (select_xreg)
+      else if (force_xreg)
 	{
 	  if (GET_MODE_SIZE (GET_MODE (x)) < UNITS_PER_WORD * 2)
 	    error ("using %%x format with operand smaller than 2 registers");
 	  fprintf (file, "$%s", reg_names[REGNO (operand)]);
 	}
-      else if (GET_MODE_SIZE (GET_MODE (x)) == UNITS_PER_WORD * 4)
-	fprintf (file, "$%s", kvx_qgr_reg_name (REGNO (operand)));
-      else if (GET_MODE_SIZE (GET_MODE (x)) == UNITS_PER_WORD * 2)
-	fprintf (file, "$%s", kvx_pgr_reg_name (REGNO (operand)));
-      else
+      else if (system_register_operand (operand, VOIDmode))
 	fprintf (file, "$%s", reg_names[REGNO (operand)]);
+      else if (general_register_operand (operand, VOIDmode))
+	{
+	  if (GET_MODE_SIZE (GET_MODE (x)) == UNITS_PER_WORD * 4)
+	    fprintf (file, "$%s", kvx_qgr_reg_name (REGNO (operand)));
+	  else if (GET_MODE_SIZE (GET_MODE (x)) == UNITS_PER_WORD * 2)
+	    fprintf (file, "$%s", kvx_pgr_reg_name (REGNO (operand)));
+	  else
+	    fprintf (file, "$%s", reg_names[REGNO (operand)]);
+	}
+      else if (extension_register_operand (operand, VOIDmode))
+	{
+	  if (GET_MODE_SIZE (GET_MODE (x)) == UNITS_PER_WORD * 16)
+	    fprintf (file, "$%s", kvx_xmr_reg_name (REGNO (operand)));
+	  else if (GET_MODE_SIZE (GET_MODE (x)) == UNITS_PER_WORD * 8)
+	    fprintf (file, "$%s", kvx_xwr_reg_name (REGNO (operand)));
+	  else
+	    fprintf (file, "$%s", kvx_xvr_reg_name (REGNO (operand)));
+	}
+      else
+	gcc_unreachable ();
       return;
 
     case MEM:
@@ -1729,7 +1741,7 @@ kvx_print_operand (FILE *file, rtx x, int code)
       return;
 
       case CONST_VECTOR: {
-	int slice = 1 * select_yreg + 2 * select_zreg + 3 * select_treg;
+	int slice = 1 * force_yreg + 2 * force_zreg + 3 * force_treg;
 	fprintf (file, "0x" HOST_WIDE_INT_PRINT_PADDED_HEX,
 		 kvx_const_vector_value (x, slice));
       }
@@ -4619,7 +4631,7 @@ kvx_sched_reassociation_width (unsigned int opc, enum machine_mode mode)
 /* Test if X is of the form reg[reg] or .xs reg = reg[reg] or signed10bits[reg]
  */
 bool
-kvx_has_10bit_imm_or_register_p (rtx x)
+kvx_has_10bit_imm_or_reg_p (rtx x)
 {
   if (MEM_P (x))
     x = XEXP (x, 0);
@@ -4658,19 +4670,6 @@ kvx_has_10bit_immediate_p (rtx x)
 }
 
 bool
-kvx_has_27bit_immediate_p (rtx x)
-{
-  if (MEM_P (x))
-    x = XEXP (x, 0);
-
-  if (GET_CODE (x) == PLUS && GET_CODE (XEXP (x, 1)) == CONST_INT
-      && REG_P (XEXP (x, 0)))
-    return IN_RANGE (INTVAL (XEXP (x, 1)), -(1LL << 26), (1LL << 26) - 1);
-
-  return false;
-}
-
-bool
 kvx_has_37bit_immediate_p (rtx x)
 {
   if (MEM_P (x))
@@ -4697,6 +4696,33 @@ kvx_has_64bit_immediate_p (rtx x)
   if (GET_CODE (x) == PLUS && GET_CODE (XEXP (x, 1)) != CONST_INT
       && REG_P (XEXP (x, 0)))
     return true;
+
+  return false;
+}
+
+bool
+kvx_has_27bit_immediate_p (rtx x)
+{
+  if (MEM_P (x))
+    x = XEXP (x, 0);
+
+  if (GET_CODE (x) == PLUS && GET_CODE (XEXP (x, 1)) == CONST_INT
+      && REG_P (XEXP (x, 0)))
+    return IN_RANGE (INTVAL (XEXP (x, 1)), -(1LL << 26), (1LL << 26) - 1);
+
+  return false;
+}
+
+bool
+kvx_has_54bit_immediate_p (rtx x)
+{
+  if (MEM_P (x))
+    x = XEXP (x, 0);
+
+  if (GET_CODE (x) == PLUS && GET_CODE (XEXP (x, 1)) == CONST_INT
+      && REG_P (XEXP (x, 0)))
+    return !IN_RANGE (INTVAL (XEXP (x, 1)), -(1LL << 26), (1LL << 26) - 1)
+	   && IN_RANGE (INTVAL (XEXP (x, 1)), -(1LL << 53), (1LL << 53) - 1);
 
   return false;
 }
