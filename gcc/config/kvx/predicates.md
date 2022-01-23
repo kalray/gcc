@@ -167,17 +167,27 @@
   return true;
 })
 
-;; Used to filter the addressing mode of atomic instruction memory operand.
+;; Used to filter the addressing mode of masked memory instructions.
+(define_special_predicate "memfoiled_operand"
+  (match_code "mem")
+{
+  return indirect_operand (op, mode)
+         || kvx_has_27bit_immediate_p (op)
+         || kvx_has_54bit_immediate_p (op);
+})
+
+;; Used to filter the addressing mode of atomic memory instructions.
 (define_special_predicate "mematomic_operand"
   (match_code "mem")
 {
-  if (KV3_2)
-    return indirect_operand (op, mode)
-           || kvx_has_27bit_immediate_p (op);
-  return memory_operand (op, mode);
+  if (KV3_1)
+    return memory_operand (op, mode);
+  return indirect_operand (op, mode)
+         || kvx_has_27bit_immediate_p (op)
+         || kvx_has_54bit_immediate_p (op);
 })
 
-;; Used for hw loop pattern where we have an output reload in a jump insn.
+;; Used for do loop pattern where we have an output reload in a jump insn.
 ;; This is not supported by reload so the insn must handle them.
 ;; This hack comes from the arc backend.
 (define_predicate "shouldbe_register_operand"
@@ -216,6 +226,10 @@
   (match_code "const_string")
 {
   const char *modifier = XSTR (op, 0);
+  if (modifier[0] == '.' && modifier[1] == 'u')
+    return true;
+  for (modifier++; *modifier; modifier++)
+    if (*modifier == '.') break;
   return modifier[0] == '.' && modifier[1] == 'u';
 })
 

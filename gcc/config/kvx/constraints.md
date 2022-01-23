@@ -111,7 +111,7 @@
 (define_memory_constraint "a"
   "Memory operands with 10-bit immediates or register"
   (and (match_code "mem")
-       (match_test "kvx_has_10bit_imm_or_register_p (op)")))
+       (match_test "kvx_has_10bit_imm_or_reg_p (op)")))
 
 (define_memory_constraint "b"
   "Memory operands with 37-bit immediates"
@@ -127,6 +127,11 @@
   "Memory operands with 27-bit immediates"
   (and (match_code "mem")
        (match_test "kvx_has_27bit_immediate_p (op)")))
+
+(define_memory_constraint "e"
+  "Memory operands with 54-bit immediates"
+  (and (match_code "mem")
+       (match_test "kvx_has_54bit_immediate_p (op)")))
 
 (define_memory_constraint "u"
   "Uncached memory operands"
@@ -148,7 +153,7 @@
 (define_memory_constraint "Ca"
   "Cached memory operands with 10-bit immediates or register"
   (and (match_code "mem")
-       (match_test "kvx_has_10bit_imm_or_register_p (op)")
+       (match_test "kvx_has_10bit_imm_or_reg_p (op)")
        (match_test "!kvx_is_uncached_mem_op_p (op)")))
 
 (define_memory_constraint "Zm"
@@ -166,13 +171,13 @@
 (define_memory_constraint "Za"
   "Uncached memory operands with 10-bit immediates or register"
   (and (match_code "mem")
-       (match_test "kvx_has_10bit_imm_or_register_p (op)")
+       (match_test "kvx_has_10bit_imm_or_reg_p (op)")
        (match_test "kvx_is_uncached_mem_op_p (op)")))
 
 (define_address_constraint "Aa"
   "Memory address with 10-bit immediates or register"
   (and (match_test "address_operand (op, mode)")
-       (match_test "kvx_has_10bit_imm_or_register_p (op)")))
+       (match_test "kvx_has_10bit_imm_or_reg_p (op)")))
 
 (define_address_constraint "Ab"
   "Memory address with 37-bit immediates"

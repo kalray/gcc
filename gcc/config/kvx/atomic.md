@@ -89,10 +89,10 @@
 ;; Atomic operation (add, sub, or, and, xor, nand) on memory with memory
 ;; model semantics.
 (define_expand "atomic_<atomic_optab><mode>"
-  [(set (match_operand:SIDI 0 "register_operand" "+r")                               ;; op result
-    (unspec_volatile:SIDI
-      [(atomic_op:SIDI (match_dup 0) (match_operand:SIDI 1 "mematomic_operand" "r")) ;; op1, op2
-       (match_operand:SI 2 "const_int_operand")] UNSPEC_ATOMIC_OP))]                 ;; model
+  [(match_operand:SIDI 0 "register_operand" "")    ;; op result
+   (atomic_op:SIDI (match_dup 0)
+     (match_operand:SIDI 1 "mematomic_operand" ""));; op1, op2
+   (match_operand:SI 2 "const_int_operand" "")]    ;; model
   ""
   {
     kvx_expand_atomic_op (<CODE>, NULL_RTX, false, operands[0], operands[1], operands[2]);
@@ -103,11 +103,11 @@
 ;; Atomic operation (add, sub, or, and, xor, nand) on memory with memory
 ;; model semantics, return the original value.
 (define_expand "atomic_fetch_<atomic_optab><mode>"
- [(match_operand:SIDI 0 "register_operand" "")   ;; output (memory content before op)
+ [(match_operand:SIDI 0 "register_operand" "")    ;; output (memory content before op)
   (atomic_op:SIDI
-   (match_operand:SIDI 1 "mematomic_operand" "") ;; op1, op result
-   (match_operand:SIDI 2 "register_operand" "")) ;; op2
-  (match_operand:SI 3 "const_int_operand")]      ;; model
+    (match_operand:SIDI 1 "mematomic_operand" "") ;; op1, op result
+    (match_operand:SIDI 2 "register_operand" "")) ;; op2
+   (match_operand:SI 3 "const_int_operand")]      ;; model
   ""
   {
     kvx_expand_atomic_op (<CODE>, operands[0], false, operands[1], operands[2], operands[3]);
@@ -118,11 +118,11 @@
 ;; Atomic operation (add, sub, or, and, xor, nand) on memory with memory
 ;; model semantics, perform the operation then return the result.
 (define_expand "atomic_<atomic_optab>_fetch<mode>"
- [(match_operand:SIDI 0 "register_operand" "")   ;; output (op result)
+ [(match_operand:SIDI 0 "register_operand" "")    ;; output (op result)
   (atomic_op:SIDI
-   (match_operand:SIDI 1 "mematomic_operand" "") ;; op1, op result
-   (match_operand:SIDI 2 "register_operand" "")) ;; op2
-  (match_operand:SI 3 "const_int_operand")]      ;; model
+    (match_operand:SIDI 1 "mematomic_operand" "") ;; op1, op result
+    (match_operand:SIDI 2 "register_operand" "")) ;; op2
+  (match_operand:SI 3 "const_int_operand" "")]    ;; model
   ""
   {
     kvx_expand_atomic_op (<CODE>, operands[0], true, operands[1], operands[2], operands[3]);
@@ -197,25 +197,25 @@
 )
 
 (define_insn "*acswap<lsusize>_1"
-  [(set (match_operand:TI 0 "register_operand" "+r,r")
-    (unspec_volatile:TI [(match_operand:SIDI 1 "mematomic_operand" "+a,b")] UNSPEC_ACSWAP))
+  [(set (match_operand:TI 0 "register_operand" "+r,r,r")
+     (unspec_volatile:TI [(match_operand:SIDI 1 "mematomic_operand" "+a,b,m")] UNSPEC_ACSWAP))
    (set (match_dup 1)
-    (unspec:SIDI [(match_dup 1) (match_dup 0)] UNSPEC_ACSWAP))]
+     (unspec:SIDI [(match_dup 1) (match_dup 0)] UNSPEC_ACSWAP))]
   "KV3_1"
   "acswap<lsusize>%X1 %1 = %0"
-  [(set_attr "length" "4,8")
-   (set_attr "type" "lsu_auxr_auxw_atomic,lsu_auxr_auxw_atomic_x")]
+  [(set_attr "length" "4,8,12")
+   (set_attr "type" "lsu_auxr_auxw_atomic,lsu_auxr_auxw_atomic_x,lsu_auxr_auxw_atomic_y")]
 )
 
 (define_insn "*acswap<lsusize>_2"
-  [(set (match_operand:TI 0 "register_operand" "+r,r")
-    (unspec_volatile:TI [(match_operand:SIDI 1 "mematomic_operand" "+c,d")] UNSPEC_ACSWAP))
+  [(set (match_operand:TI 0 "register_operand" "+r,r,r")
+     (unspec_volatile:TI [(match_operand:SIDI 1 "mematomic_operand" "+c,d,e")] UNSPEC_ACSWAP))
    (set (match_dup 1)
-    (unspec:SIDI [(match_dup 1) (match_dup 0)] UNSPEC_ACSWAP))]
+     (unspec:SIDI [(match_dup 1) (match_dup 0)] UNSPEC_ACSWAP))]
   "KV3_2"
   "acswap<lsusize>%X1 %O1 = %0"
-  [(set_attr "length" "4,8")
-   (set_attr "type" "lsu_auxr_auxw_atomic,lsu_auxr_auxw_atomic_x")]
+  [(set_attr "length" "4,8,12")
+   (set_attr "type" "lsu_auxr_auxw_atomic,lsu_auxr_auxw_atomic_x,lsu_auxr_auxw_atomic_y")]
 )
 
 ;; Fetch and Add
@@ -244,15 +244,15 @@
 )
 
 (define_insn "*aladd<lsusize>_2"
-  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
-     (unspec_volatile:SIDI [(match_operand:SIDI 1 "mematomic_operand" "+c,d")] UNSPEC_ALADD))
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r,r")
+     (unspec_volatile:SIDI [(match_operand:SIDI 1 "mematomic_operand" "+c,d,e")] UNSPEC_ALADD))
    (set (match_dup 1)
      (plus:SIDI (match_dup 1)
-                (match_operand:SIDI 2 "nonmemory_operand" "0,0")))]
+                (match_operand:SIDI 2 "nonmemory_operand" "0,0,0")))]
   "KV3_2"
   "aladd<lsusize>%X1 %O1 = %0"
-  [(set_attr "length" "4,8")
-   (set_attr "type" "lsu_auxr_auxw_atomic,lsu_auxr_auxw_atomic_x")]
+  [(set_attr "length" "4,8,12")
+   (set_attr "type" "lsu_auxr_auxw_atomic,lsu_auxr_auxw_atomic_x,lsu_auxr_auxw_atomic_y")]
 )
 
 ;; Load and Clear
@@ -273,11 +273,11 @@
 )
 
 (define_insn "*alclr<lsusize>_2"
-  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
-     (unspec_volatile:SIDI [(match_operand:SIDI 1 "mematomic_operand" "c,d")] UNSPEC_ALCLR))]
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r,r")
+     (unspec_volatile:SIDI [(match_operand:SIDI 1 "mematomic_operand" "c,d,e")] UNSPEC_ALCLR))]
   "KV3_2"
   "alclr<lsusize>%X1 %0 = %O1"
-  [(set_attr "length" "4,8")
-   (set_attr "type" "lsu_auxw_atomic,lsu_auxw_atomic_x")]
+  [(set_attr "length" "4,8,12")
+   (set_attr "type" "lsu_auxw_atomic,lsu_auxw_atomic_x,lsu_auxw_atomic_y")]
 )
 
