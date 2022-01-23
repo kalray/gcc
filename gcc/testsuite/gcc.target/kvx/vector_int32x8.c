@@ -574,5 +574,5 @@ kvx_int32x8_xstore(void *ptr, int32x8_t a) {
 }
 void __attribute ((noinline))
 kvx_int32x8_xstorec(void *ptr, int32x8_t a, uint64_t c) {
-    __builtin_kvx_xstorec256(a, ptr, c, ".odd");
+    __builtin_kvx_xstorec256(a, ptr, c, ".deqz");
 }

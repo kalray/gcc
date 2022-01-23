@@ -103,11 +103,12 @@ extern void kvx_split_256bits_move (rtx dst, rtx src);
 extern void kvx_make_128bit_const (rtx dst, rtx src);
 extern void kvx_make_256bit_const (rtx dst, rtx src);
 
-extern bool kvx_has_10bit_imm_or_register_p (rtx x);
+extern bool kvx_has_10bit_imm_or_reg_p (rtx x);
 extern bool kvx_has_10bit_immediate_p (rtx x);
-extern bool kvx_has_27bit_immediate_p (rtx x);
 extern bool kvx_has_37bit_immediate_p (rtx x);
 extern bool kvx_has_64bit_immediate_p (rtx x);
+extern bool kvx_has_27bit_immediate_p (rtx x);
+extern bool kvx_has_54bit_immediate_p (rtx x);
 
 extern HOST_WIDE_INT kvx_const_vector_value (rtx x, int index);
 
