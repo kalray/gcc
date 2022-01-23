@@ -950,3 +950,32 @@
   V8HI V4SI
 ])
 
+;; Attribute to get the double MODE of a vector mode.
+(define_mode_attr DMODE [
+  (V8QI    "V16QI")
+  (V4HI    "V8HI")
+  (V4HF    "V8HF")
+  (V2SI    "V4SI")
+  (V2SF    "V4SF")
+  (DI      "V2DI")
+  (DF      "V2DF")
+  (V16QI   "V32QI")
+  (V8HI    "V16HI")
+  (V8HF    "V16HF")
+  (V4SI    "V8SI")
+  (V4SF    "V8SF")
+  (V2DI    "V4DI")
+  (V2DF    "V4DF")
+])
+
+;; Attribute to get the quadruple MODE of a vector mode.
+(define_mode_attr QMODE [
+  (V8QI    "V32QI")
+  (V4HI    "V16HI")
+  (V4HF    "V16HF")
+  (V2SI    "V8SI")
+  (V2SF    "V8SF")
+  (DI      "V4DI")
+  (DF      "V4DF")
+])
+
