@@ -79,7 +79,7 @@
   }
 )
 
-(define_insn_and_split "*mov<mode>"
+(define_insn_and_split "*mov<EXT512:mode>"
   [(set (match_operand:EXT512 0 "nonimmediate_operand" "=x,x,x,x,a,b,m,r,x")
         (match_operand:EXT512 1 "nonimmediate_operand"  "x,a,b,m,x,x,x,x,r"))]
   ""
@@ -103,7 +103,7 @@
   }
 )
 
-(define_insn_and_split "*mov<mode>"
+(define_insn_and_split "*mov<EXT1024:mode>"
   [(set (match_operand:EXT1024 0 "nonimmediate_operand" "=x,x,x,x,a,b,m,r,x")
         (match_operand:EXT1024 1 "nonimmediate_operand"  "x,a,b,m,x,x,x,x,r"))]
   ""
