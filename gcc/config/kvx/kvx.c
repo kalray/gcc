@@ -1331,7 +1331,7 @@ kvx_vectorize_preferred_simd_mode (scalar_mode mode)
 static bool
 kvx_pass_by_reference (cumulative_args_t cum ATTRIBUTE_UNUSED, const function_arg_info &arg)
 {
-  HOST_WIDE_INT size = GET_MODE_SIZE (mode);
+  HOST_WIDE_INT size = GET_MODE_SIZE (arg.mode);
 
   /* GET_MODE_SIZE (BLKmode) is useless since it is 0.  */
   if (arg.mode == BLKmode && arg.type)
@@ -1342,7 +1342,7 @@ kvx_pass_by_reference (cumulative_args_t cum ATTRIBUTE_UNUSED, const function_ar
     size = int_size_in_bytes (arg.type);
 
   /* Coprocessor arguments are passed by reference.  */
-  if (kvx_extension_mode_p (mode))
+  if (kvx_extension_mode_p (arg.mode))
     return true;
 
   /* Arguments which are variable sized or larger than 4 registers are
