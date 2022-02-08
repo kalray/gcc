@@ -733,6 +733,7 @@ config BR2_PIC_PIE_ARCH_SUPPORTS
 	depends on !BR2_microblaze
 	# Nios2 toolchains produce non working binaries with -fPIC
 	depends on !BR2_nios2
+	depends on !BR2_kvx
 
 config BR2_PIC_PIE
 	bool "Build code with PIC/PIE"
