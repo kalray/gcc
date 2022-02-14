@@ -458,6 +458,37 @@
   (V4DF    "DF")
 ])
 
+;; Attribute to get the inner mode of a vector mode.
+(define_mode_attr inner [
+  (QI      "qi")
+  (HI      "hi")
+  (SI      "si")
+  (HF      "hf")
+  (SF      "sf")
+  (DI      "di")
+  (DF      "df")
+  (SC      "sc")
+  (V8QI    "qi")
+  (V4HI    "hi")
+  (V4HF    "hf")
+  (V2SI    "si")
+  (V2SF    "sf")
+  (V16QI   "qi")
+  (V8HI    "hi")
+  (V8HF    "hf")
+  (V4SI    "si")
+  (V4SF    "sf")
+  (V2DI    "di")
+  (V2DF    "df")
+  (V32QI   "qi")
+  (V16HI   "hi")
+  (V16HF   "hf")
+  (V8SI    "si")
+  (V8SF    "sf")
+  (V4DI    "di")
+  (V4DF    "df")
+])
+
 ;; Attribute to get the mask MODE of a vector mode.
 (define_mode_attr MASK [
   (V8QI    "V8QI")
