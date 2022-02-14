@@ -10,6 +10,17 @@
   [(set_attr "type" "alu_tiny,alu_tiny_x")
    (set_attr "length"      "4,         8")]
 )
+;; zero-extend version of cstoresi4
+(define_insn "*cstoresi4_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r,r")
+        (match_operator:DI   1 "comparison_operator"
+         [(match_operand:SI 2 "register_operand" "r,r")
+          (match_operand:SI 3 "kvx_r_any32_operand" "r,i")]))]
+  ""
+  "compw.%1 %0 = %2, %3"
+  [(set_attr "type" "alu_tiny,alu_tiny_x")
+   (set_attr "length"      "4,         8")]
+)
 
 (define_insn "cstoredi4"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
@@ -21,6 +32,7 @@
   [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
    (set_attr "length"      "4,       4,         8,        12")]
 )
+
 ;; sign-extend versions of cstoresi4
 (define_insn "*sext_cstoredi4"
   [(set (match_operand:DI 0 "register_operand" "=r,r")
