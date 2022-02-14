@@ -2172,9 +2172,9 @@
 )
 
 (define_insn "kvx_select<suffix>"
-  [(set (match_operand:S128I 0 "register_operand" "=r")
-        (unspec:S128I [(match_operand:S128I 1 "register_operand" "r")
-                       (match_operand:S128I 2 "register_operand" "0")
+  [(set (match_operand:V128J 0 "register_operand" "=r")
+        (unspec:V128J [(match_operand:V128J 1 "register_operand" "r")
+                       (match_operand:V128J 2 "register_operand" "0")
                        (match_operand:<MASK> 3 "register_operand" "r")
                        (match_operand 4 "" "")] UNSPEC_SELECT))]
   ""
@@ -2183,27 +2183,25 @@
    (set_attr "length"         "8")]
 )
 
-(define_insn "kvx_selectdp"
-  [(set (match_operand:V2DI 0 "register_operand" "=r")
-        (unspec:V2DI [(match_operand:V2DI 1 "register_operand" "r")
-                      (match_operand:V2DI 2 "register_operand" "0")
-                      (match_operand:V2DI 3 "register_operand" "r")
-                      (match_operand 4 "" "")] UNSPEC_SELECT))]
-  ""
-  "cmoved%4 %x3? %x0 = %x1\n\tcmoved%4 %y3? %y0 = %y1"
-  [(set_attr "type" "alu_thin_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn_and_split "kvx_select<suffix>"
-  [(set (match_operand:S256I 0 "register_operand" "=r")
-        (unspec:S256I [(match_operand:S256I 1 "register_operand" "r")
-                       (match_operand:S256I 2 "register_operand" "0")
-                       (match_operand:S256I 3 "register_operand" "r")
+(define_expand "kvx_select<suffix>"
+  [(set (match_operand:V256J 0 "register_operand" "")
+        (unspec:V256J [(match_operand:V256J 1 "register_operand" "")
+                       (match_operand:V256J 2 "register_operand" "")
+                       (match_operand:V256J 3 "register_operand" "")
                        (match_operand 4 "" "")] UNSPEC_SELECT))]
   ""
+  ""
+)
+
+(define_insn_and_split "kvx_select<suffix>_1"
+  [(set (match_operand:V256J 0 "register_operand" "=r")
+        (unspec:V256J [(match_operand:V256J 1 "register_operand" "r")
+                       (match_operand:V256J 2 "register_operand" "0")
+                       (match_operand:V256J 3 "register_operand" "r")
+                       (match_operand 4 "" "")] UNSPEC_SELECT))]
+  "KV3_1"
   "#"
-  "reload_completed"
+  "KV3_1 && reload_completed"
   [(set (subreg:<HALF> (match_dup 0) 0)
         (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 0)
                         (subreg:<HALF> (match_dup 2) 0)
@@ -2218,27 +2216,19 @@
   [(set_attr "type" "alu_lite_x2")]
 )
 
-(define_insn_and_split "kvx_selectdq"
-  [(set (match_operand:V4DI 0 "register_operand" "=r")
-        (unspec:V4DI [(match_operand:V4DI 1 "register_operand" "r")
-                      (match_operand:V4DI 2 "register_operand" "0")
-                      (match_operand:V4DI 3 "register_operand" "r")
-                      (match_operand 4 "" "")] UNSPEC_SELECT))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V2DI (match_dup 0) 0)
-        (unspec:V2DI [(subreg:V2DI (match_dup 1) 0)
-                      (subreg:V2DI (match_dup 2) 0)
-                      (subreg:V2DI (match_dup 3) 0)
-                      (match_dup 4)] UNSPEC_SELECT))
-   (set (subreg:V2DI (match_dup 0) 16)
-        (unspec:V2DI [(subreg:V2DI (match_dup 1) 16)
-                      (subreg:V2DI (match_dup 2) 16)
-                      (subreg:V2DI (match_dup 3) 16)
-                      (match_dup 4)] UNSPEC_SELECT))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
+(define_insn "kvx_select<suffix>_2"
+  [(set (match_operand:V256J 0 "register_operand" "=r")
+        (unspec:V256J [(match_operand:V256J 1 "register_operand" "r")
+                       (match_operand:V256J 2 "register_operand" "0")
+                       (match_operand:V256J 3 "register_operand" "r")
+                       (match_operand 4 "" "")] UNSPEC_SELECT))]
+  "KV3_2"
+  {
+    return "cmove<chunkx>%4 %x3? %x0 = %x1\n\tcmove<chunkx>%4 %y3? %y0 = %y1\n\t"
+           "cmove<chunkx>%4 %z3? %z0 = %z1\n\tcmove<chunkx>%4 %t3? %t0 = %t1";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
 )
 
 
@@ -2280,9 +2270,9 @@
 )
 
 (define_insn "kvx_selectf<suffix>"
-  [(set (match_operand:S128F 0 "register_operand" "=r")
-        (unspec:S128F [(match_operand:S128F 1 "register_operand" "r")
-                       (match_operand:S128F 2 "register_operand" "0")
+  [(set (match_operand:V128F 0 "register_operand" "=r")
+        (unspec:V128F [(match_operand:V128F 1 "register_operand" "r")
+                       (match_operand:V128F 2 "register_operand" "0")
                        (match_operand:<MASK> 3 "register_operand" "r")
                        (match_operand 4 "" "")] UNSPEC_SELECT))]
   ""
@@ -2291,27 +2281,25 @@
    (set_attr "length"         "8")]
 )
 
-(define_insn "kvx_selectfdp"
-  [(set (match_operand:V2DF 0 "register_operand" "=r")
-        (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")
-                      (match_operand:V2DF 2 "register_operand" "0")
-                      (match_operand:V2DI 3 "register_operand" "r")
-                      (match_operand 4 "" "")] UNSPEC_SELECT))]
-  ""
-  "cmoved%4 %x3? %x0 = %x1\n\tcmoved%4 %y3? %y0 = %y1"
-  [(set_attr "type" "alu_thin_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn_and_split "kvx_selectf<suffix>"
-  [(set (match_operand:S256F 0 "register_operand" "=r")
-        (unspec:S256F [(match_operand:S256F 1 "register_operand" "r")
-                       (match_operand:S256F 2 "register_operand" "0")
-                       (match_operand:<MASK> 3 "register_operand" "r")
+(define_expand "kvx_selectf<suffix>"
+  [(set (match_operand:V256F 0 "register_operand" "")
+        (unspec:V256F [(match_operand:V256F 1 "register_operand" "")
+                       (match_operand:V256F 2 "register_operand" "")
+                       (match_operand:<MASK> 3 "register_operand" "")
                        (match_operand 4 "" "")] UNSPEC_SELECT))]
   ""
+  ""
+)
+
+(define_insn_and_split "kvx_selectf<suffix>_1"
+  [(set (match_operand:V256F 0 "register_operand" "=r")
+        (unspec:V256F [(match_operand:V256F 1 "register_operand" "r")
+                       (match_operand:V256F 2 "register_operand" "0")
+                       (match_operand:<MASK> 3 "register_operand" "r")
+                       (match_operand 4 "" "")] UNSPEC_SELECT))]
+  "KV3_1"
   "#"
-  "reload_completed"
+  "KV3_1 && reload_completed"
   [(set (subreg:<HALF> (match_dup 0) 0)
         (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 0)
                         (subreg:<HALF> (match_dup 2) 0)
@@ -2326,27 +2314,19 @@
   [(set_attr "type" "alu_lite_x2")]
 )
 
-(define_insn_and_split "kvx_selectfdq"
-  [(set (match_operand:V4DF 0 "register_operand" "=r")
-        (unspec:V4DF [(match_operand:V4DF 1 "register_operand" "r")
-                      (match_operand:V4DF 2 "register_operand" "0")
-                      (match_operand:V4DI 3 "register_operand" "r")
-                      (match_operand 4 "" "")] UNSPEC_SELECT))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:V2DF (match_dup 0) 0)
-        (unspec:V2DF [(subreg:V2DF (match_dup 1) 0)
-                      (subreg:V2DF (match_dup 2) 0)
-                      (subreg:V2DI (match_dup 3) 0)
-                      (match_dup 4)] UNSPEC_SELECT))
-   (set (subreg:V2DF (match_dup 0) 16)
-        (unspec:V2DF [(subreg:V2DF (match_dup 1) 16)
-                      (subreg:V2DF (match_dup 2) 16)
-                      (subreg:V2DI (match_dup 3) 16)
-                      (match_dup 4)] UNSPEC_SELECT))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
+(define_insn "kvx_selectf<suffix>_2"
+  [(set (match_operand:V256F 0 "register_operand" "=r")
+        (unspec:V256F [(match_operand:V256F 1 "register_operand" "r")
+                       (match_operand:V256F 2 "register_operand" "0")
+                       (match_operand:<MASK> 3 "register_operand" "r")
+                       (match_operand 4 "" "")] UNSPEC_SELECT))]
+  "KV3_2"
+  {
+    return "cmove<chunkx>%4 %x3? %x0 = %x1\n\tcmove<chunkx>%4 %y3? %y0 = %y1\n\t"
+           "cmove<chunkx>%4 %z3? %z0 = %z1\n\tcmove<chunkx>%4 %t3? %t0 = %t1";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
 )
 
 
@@ -2376,7 +2356,7 @@
         (unspec:V2DI [(subreg:V2DI (match_dup 1) 16)
                       (subreg:V2DI (match_dup 2) 16)] UNSPEC_STSU))]
   ""
-  [(set_attr "type" "alu_lite_x2")]
+  [(set_attr "type" "alu_thin_x2")]
 )
 
 (define_insn_and_split "kvx_stsudo"
@@ -2602,7 +2582,7 @@
                       (match_operand 3 "" "")] UNSPEC_FADD))]
   "KV3_1"
   "#"
-  "&& reload_completed"
+  "KV3_1 && reload_completed"
   [(set (subreg:V4HF (match_dup 0) 0)
         (unspec:V4HF [(subreg:V4HF (match_dup 1) 0)
                       (subreg:V4HF (match_dup 2) 0)
@@ -2795,7 +2775,7 @@
                       (match_operand 3 "" "")] UNSPEC_FSBF))]
   "KV3_1"
   "#"
-  "&& reload_completed"
+  "KV3_1 && reload_completed"
   [(set (subreg:V4HF (match_dup 0) 0)
         (unspec:V4HF [(subreg:V4HF (match_dup 1) 0)
                       (subreg:V4HF (match_dup 2) 0)
@@ -2988,7 +2968,7 @@
                       (match_operand 3 "" "")] UNSPEC_FMUL))]
   "KV3_1"
   "#"
-  "&& reload_completed"
+  "KV3_1 && reload_completed"
   [(set (subreg:V4HF (match_dup 0) 0)
         (unspec:V4HF [(subreg:V4HF (match_dup 1) 0)
                       (subreg:V4HF (match_dup 2) 0)
@@ -3168,7 +3148,7 @@
                       (match_operand 3 "" "")] UNSPEC_FMULC))]
   "KV3_1"
   "#"
-  "&& reload_completed"
+  "KV3_1 && reload_completed"
   [(set (subreg:V2SF (match_dup 0) 0)
         (unspec:V2SF [(subreg:V2SF (match_dup 1) 0)
                       (subreg:V2SF (match_dup 2) 0)
@@ -3675,7 +3655,7 @@
                        (match_operand 4 "" "")] UNSPEC_FFMA))]
   "KV3_1"
   "#"
-  "&& reload_completed"
+  "KV3_1 && reload_completed"
   [(set (subreg:<CHUNK> (match_dup 0) 0)
         (unspec:<CHUNK> [(subreg:<CHUNK> (match_dup 1) 0)
                          (subreg:<CHUNK> (match_dup 2) 0)
@@ -3933,7 +3913,7 @@
                       (match_operand 4 "" "")] UNSPEC_FFMAC))]
   "KV3_2"
   "#"
-  "&& reload_completed"
+  "KV3_2 && reload_completed"
   [(set (subreg:V4SF (match_dup 0) 0)
         (unspec:V4SF [(subreg:V4SF (match_dup 1) 0)
                       (subreg:V4SF (match_dup 2) 0)
@@ -4088,7 +4068,7 @@
                        (match_operand 4 "" "")] UNSPEC_FFMS))]
   "KV3_1"
   "#"
-  "&& reload_completed"
+  "KV3_1 && reload_completed"
   [(set (subreg:<CHUNK> (match_dup 0) 0)
         (unspec:<CHUNK> [(subreg:<CHUNK> (match_dup 1) 0)
                          (subreg:<CHUNK> (match_dup 2) 0)
@@ -4346,7 +4326,7 @@
                       (match_operand 4 "" "")] UNSPEC_FFMSC))]
   "KV3_2"
   "#"
-  "&& reload_completed"
+  "KV3_2 && reload_completed"
   [(set (subreg:V4SF (match_dup 0) 0)
         (unspec:V4SF [(subreg:V4SF (match_dup 1) 0)
                       (subreg:V4SF (match_dup 2) 0)
@@ -5944,7 +5924,7 @@
         (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")] UNSPEC_FCONJ))]
   ""
   "copyd %x0 = %x1\n\tfnegd %y0 = %y1"
-  [(set_attr "type" "alu_lite_x2")
+  [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
@@ -5959,7 +5939,7 @@
    (set (subreg:V4SF (match_dup 0) 16)
         (unspec:V4SF [(subreg:V4SF (match_dup 1) 16)] UNSPEC_FCONJ))]
   ""
-  [(set_attr "type" "alu_lite_x2")]
+  [(set_attr "type" "alu_thin_x2")]
 )
 
 (define_insn "kvx_fconjdcp"

@@ -76,7 +76,7 @@
 (define_reservation "kv3_alu_tiny_x2_r" "kv3_tiny_x2_r + kv3_issue_x2_r")
 (define_reservation "kv3_alu_tiny_x2_x_r" "kv3_tiny_x2_r + kv3_issue_x4_r")
 (define_reservation "kv3_alu_tiny_x2_y_r" "kv3_tiny_x2_r + kv3_issue_x6_r")
-;;(define_reservation "kv3_alu_tiny_x2_crwl_crwh_r" "kv3_tiny_x2_r + kv3_crwl_u + kv3_crwh_u + kv3_issue_x4_r")
+(define_reservation "kv3_alu_tiny_x2_crwl_crwh_r" "kv3_tiny_x2_r + kv3_crwl_u + kv3_crwh_u + kv3_issue_x4_r")
 (define_reservation "kv3_alu_tiny_x4_r" "kv3_tiny_x4_r + kv3_issue_x4_r")
 (define_reservation "kv3_alu_tiny_x4_x_r" "kv3_tiny_x4_r + kv3_issue_x8_r")
 ;;
@@ -121,6 +121,7 @@
 ;;
 (define_reservation "kv3_tca_r" "kv3_tca_u + kv3_issue_r")
 
+;; Instruction reservations
 (define_insn_reservation "kv3_all" 1 (eq_attr "type" "all") "kv3_all_r")
 (define_insn_reservation "kv3_alu_nop" 1 (eq_attr "type" "alu_nop") "kv3_alu_nop_r")
 ;;
@@ -144,20 +145,12 @@
 (define_insn_reservation "kv3_alu_thin_x2_1" 1 (and (eq_attr "type" "alu_thin_x2") (match_test "KV3_1")) "kv3_alu_lite_x2_r")
 (define_insn_reservation "kv3_alu_thin_x2_x_1" 1 (and (eq_attr "type" "alu_thin_x2_x") (match_test "KV3_1")) "kv3_alu_lite_x2_x_r")
 (define_insn_reservation "kv3_alu_thin_x2_crwl_crwh_1" 1 (and (eq_attr "type" "alu_thin_x2_crwl_crwh") (match_test "KV3_1")) "kv3_alu_lite_x2_crwl_crwh_r")
-;; Delete this when kv3-2 the hardware implements ALU_TINY as in the specification
-(define_insn_reservation "kv3_alu_thin_2" 1 (and (eq_attr "type" "alu_thin") (match_test "KV3_2")) "kv3_alu_lite_r")
-(define_insn_reservation "kv3_alu_thin_x_2" 1 (and (eq_attr "type" "alu_thin_x") (match_test "KV3_2")) "kv3_alu_lite_x_r")
-(define_insn_reservation "kv3_alu_thin_y_2" 1 (and (eq_attr "type" "alu_thin_y") (match_test "KV3_2")) "kv3_alu_lite_y_r")
-(define_insn_reservation "kv3_alu_thin_x2_2" 1 (and (eq_attr "type" "alu_thin_x2") (match_test "KV3_2")) "kv3_alu_lite_x2_r")
-(define_insn_reservation "kv3_alu_thin_x2_x_2" 1 (and (eq_attr "type" "alu_thin_x2_x") (match_test "KV3_2")) "kv3_alu_lite_x2_x_r")
-(define_insn_reservation "kv3_alu_thin_x2_crwl_crwh_2" 1 (and (eq_attr "type" "alu_thin_x2_crwl_crwh") (match_test "KV3_2")) "kv3_alu_lite_x2_crwl_crwh_r")
-;; Uncomment this when the kv3-2 hardware implements ALU_TINY as in the specification.
-;;(define_insn_reservation "kv3_alu_thin_2" 1 (and (eq_attr "type" "alu_thin") (match_test "KV3_2")) "kv3_alu_tiny_r")
-;;(define_insn_reservation "kv3_alu_thin_x_2" 1 (and (eq_attr "type" "alu_thin_x") (match_test "KV3_2")) "kv3_alu_tiny_x_r")
-;;(define_insn_reservation "kv3_alu_thin_y_2" 1 (and (eq_attr "type" "alu_thin_y") (match_test "KV3_2")) "kv3_alu_tiny_y_r")
-;;(define_insn_reservation "kv3_alu_thin_x2_2" 1 (and (eq_attr "type" "alu_thin_x2") (match_test "KV3_2")) "kv3_alu_tiny_x2_r")
-;;(define_insn_reservation "kv3_alu_thin_x2_x_2" 1 (and (eq_attr "type" "alu_thin_x2_x") (match_test "KV3_2")) "kv3_alu_tiny_x2_x_r")
-;;(define_insn_reservation "kv3_alu_thin_x2_crwl_crwh_2" 1 (and (eq_attr "type" "alu_thin_x2_crwl_crwh") (match_test "KV3_2")) "kv3_alu_tiny_x2_crwl_crwh_r")
+(define_insn_reservation "kv3_alu_thin_2" 1 (and (eq_attr "type" "alu_thin") (match_test "KV3_2")) "kv3_alu_tiny_r")
+(define_insn_reservation "kv3_alu_thin_x_2" 1 (and (eq_attr "type" "alu_thin_x") (match_test "KV3_2")) "kv3_alu_tiny_x_r")
+(define_insn_reservation "kv3_alu_thin_y_2" 1 (and (eq_attr "type" "alu_thin_y") (match_test "KV3_2")) "kv3_alu_tiny_y_r")
+(define_insn_reservation "kv3_alu_thin_x2_2" 1 (and (eq_attr "type" "alu_thin_x2") (match_test "KV3_2")) "kv3_alu_tiny_x2_r")
+(define_insn_reservation "kv3_alu_thin_x2_x_2" 1 (and (eq_attr "type" "alu_thin_x2_x") (match_test "KV3_2")) "kv3_alu_tiny_x2_x_r")
+(define_insn_reservation "kv3_alu_thin_x2_crwl_crwh_2" 1 (and (eq_attr "type" "alu_thin_x2_crwl_crwh") (match_test "KV3_2")) "kv3_alu_tiny_x2_crwl_crwh_r")
 ;;
 (define_insn_reservation "kv3_alu_lite" 1 (eq_attr "type" "alu_lite") "kv3_alu_lite_r")
 (define_insn_reservation "kv3_alu_lite_x" 1 (eq_attr "type" "alu_lite_x") "kv3_alu_lite_x_r")
