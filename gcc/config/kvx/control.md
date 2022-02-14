@@ -254,9 +254,9 @@
                                                  (const_int 0)])
                              (match_operand:ALL256 1 "register_operand" "r")
                              (match_operand:ALL256 4 "register_operand" "0")))]
-  ""
+  "KV3_1"
   "#"
-  "reload_completed"
+  "KV3_1 && reload_completed"
   [(set (subreg:TI (match_dup 0) 0)
         (if_then_else:TI (match_op_dup 2 [(match_dup 3) (const_int 0)])
                          (subreg:TI (match_dup 1) 0)
@@ -269,6 +269,22 @@
   [(set_attr "type" "alu_lite_x2")]
 )
 
+(define_insn "*cmov<SIDI:mode>.<ALL256:mode>"
+  [(set (match_operand:ALL256 0 "register_operand" "=r")
+        (if_then_else:ALL256 (match_operator 2 "zero_comparison_operator"
+                                                [(match_operand:SIDI 3 "register_operand" "r")
+                                                 (const_int 0)])
+                             (match_operand:ALL256 1 "register_operand" "r")
+                             (match_operand:ALL256 4 "register_operand" "0")))]
+  "KV3_2"
+  {
+    return "cmoved.<SIDI:suffix>%2z %3? %x0 = %x1\n\tcmoved.<SIDI:suffix>%2z %3? %y0 = %y1\n\t"
+           "cmoved.<SIDI:suffix>%2z %3? %z0 = %z1\n\tcmoved.<SIDI:suffix>%2z %3? %t0 = %t1";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
 (define_insn_and_split "*cmov<SIDI:mode>.<ALL256:mode>.odd"
   [(set (match_operand:ALL256 0 "register_operand" "=r")
         (if_then_else:ALL256 (ne (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r")
@@ -276,7 +292,7 @@
                                  (const_int 0))
                              (match_operand:ALL256 1 "register_operand" "r")
                              (match_operand:ALL256 3 "register_operand" "0")))]
-  ""
+  "KV3_1"
   "#"
   "reload_completed"
   [(set (subreg:TI (match_dup 0) 0)
@@ -292,7 +308,23 @@
                          (subreg:TI (match_dup 1) 16)
                          (subreg:TI (match_dup 3) 16)))]
   ""
-  [(set_attr "type" "alu_lite_x2")]
+  [(set_attr "type" "alu_thin_x2")]
+)
+
+(define_insn "*cmov<SIDI:mode>.<ALL256:mode>.odd"
+  [(set (match_operand:ALL256 0 "register_operand" "=r")
+        (if_then_else:ALL256 (ne (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r")
+                                                    (const_int 1) (const_int 0))
+                                 (const_int 0))
+                             (match_operand:ALL256 1 "register_operand" "r")
+                             (match_operand:ALL256 3 "register_operand" "0")))]
+  "KV3_2"
+  {
+    return "cmoved.odd %2? %x0 = %x1\n\tcmoved.odd %2? %y0 = %y1\n\t"
+           "cmoved.odd %2? %z0 = %z1\n\tcmoved.odd %2? %t0 = %t1";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
 )
 
 (define_insn_and_split "*cmov<SIDI:mode>.<ALL256:mode>.even"
@@ -302,7 +334,7 @@
                                  (const_int 0))
                              (match_operand:ALL256 1 "register_operand" "r")
                              (match_operand:ALL256 3 "register_operand" "0")))]
-  ""
+  "KV3_1"
   "#"
   "reload_completed"
   [(set (subreg:TI (match_dup 0) 0)
@@ -318,7 +350,23 @@
                          (subreg:TI (match_dup 1) 16)
                          (subreg:TI (match_dup 3) 16)))]
   ""
-  [(set_attr "type" "alu_lite_x2")]
+  [(set_attr "type" "alu_thin_x2")]
+)
+
+(define_insn "*cmov<SIDI:mode>.<ALL256:mode>.even"
+  [(set (match_operand:ALL256 0 "register_operand" "=r")
+        (if_then_else:ALL256 (eq (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r")
+                                                    (const_int 1) (const_int 0))
+                                 (const_int 0))
+                             (match_operand:ALL256 1 "register_operand" "r")
+                             (match_operand:ALL256 3 "register_operand" "0")))]
+  "KV3_2"
+  {
+    return "cmoved.even %2? %x0 = %x1\n\tcmoved.even %2? %y0 = %y1\n\t"
+           "cmoved.even %2? %z0 = %z1\n\tcmoved.even %2? %t0 = %t1";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
 )
 
 
