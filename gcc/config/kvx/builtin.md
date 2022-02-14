@@ -1098,7 +1098,7 @@
 (define_expand "kvx_shift<lsvs>"
   [(match_operand:S64A 0 "register_operand" "")
    (match_operand:S64A 1 "register_operand" "")
-   (match_operand:SI 2 "sixbits_unsigned_operand" "")
+   (match_operand 2 "sixbits_unsigned_operand" "")
    (match_operand:<INNER> 3 "nonmemory_operand" "")]
   ""
   {
@@ -1117,7 +1117,7 @@
 (define_expand "kvx_shift<lsvs>"
   [(match_operand:S128A 0 "register_operand" "")
    (match_operand:S128A 1 "register_operand" "")
-   (match_operand:SI 2 "sixbits_unsigned_operand" "")
+   (match_operand 2 "sixbits_unsigned_operand" "")
    (match_operand:<INNER> 3 "nonmemory_operand" "")]
   ""
   {
@@ -1153,7 +1153,7 @@
 (define_expand "kvx_shift<lsvs>"
   [(match_operand:W128A 0 "register_operand" "")
    (match_operand:W128A 1 "register_operand" "")
-   (match_operand:SI 2 "sixbits_unsigned_operand" "")
+   (match_operand 2 "sixbits_unsigned_operand" "")
    (match_operand:<INNER> 3 "nonmemory_operand" "")]
   ""
   {
@@ -4228,7 +4228,7 @@
 (define_insn "kvx_floatw"
   [(set (match_operand:SF 0 "register_operand" "=r")
         (unspec:SF [(match_operand:SI 1 "register_operand" "r")
-                    (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                    (match_operand 2 "sixbits_unsigned_operand" "i")
                     (match_operand 3 "" "")] UNSPEC_FLOATW))]
   ""
   "floatw%3 %0 = %1, %2"
@@ -4238,7 +4238,7 @@
 (define_insn "kvx_floatd"
   [(set (match_operand:DF 0 "register_operand" "=r")
         (unspec:DF [(match_operand:DI 1 "register_operand" "r")
-                    (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                    (match_operand 2 "sixbits_unsigned_operand" "i")
                     (match_operand 3 "" "")] UNSPEC_FLOATD))]
   ""
   "floatd%3 %0 = %1, %2"
@@ -4248,7 +4248,7 @@
 (define_insn "kvx_floatwp"
   [(set (match_operand:V2SF 0 "register_operand" "=r")
         (unspec:V2SF [(match_operand:V2SI 1 "register_operand" "r")
-                      (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                      (match_operand 2 "sixbits_unsigned_operand" "i")
                       (match_operand 3 "" "")] UNSPEC_FLOATWP))]
   ""
   "floatwp%3 %0 = %1, %2"
@@ -4258,7 +4258,7 @@
 (define_insn_and_split "kvx_floatwq"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (unspec:V4SF [(match_operand:V4SI 1 "register_operand" "r")
-                      (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                      (match_operand 2 "sixbits_unsigned_operand" "i")
                       (match_operand 3 "" "")] UNSPEC_FLOATWQ))]
   ""
   "#"
@@ -4278,7 +4278,7 @@
 (define_insn_and_split "kvx_floatdp"
   [(set (match_operand:V2DF 0 "register_operand" "=r")
         (unspec:V2DF [(match_operand:V2DI 1 "register_operand" "r")
-                      (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                      (match_operand 2 "sixbits_unsigned_operand" "i")
                       (match_operand 3 "" "")] UNSPEC_FLOATDP))]
   ""
   "#"
@@ -4298,7 +4298,7 @@
 (define_insn_and_split "kvx_floatwo"
   [(set (match_operand:V8SF 0 "register_operand" "=r")
         (unspec:V8SF [(match_operand:V8SI 1 "register_operand" "r")
-                      (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                      (match_operand 2 "sixbits_unsigned_operand" "i")
                       (match_operand 3 "" "")] UNSPEC_FLOATWO))]
   ""
   "#"
@@ -4326,7 +4326,7 @@
 (define_insn_and_split "kvx_floatdq"
   [(set (match_operand:V4DF 0 "register_operand" "=r")
         (unspec:V4DF [(match_operand:V4DI 1 "register_operand" "r")
-                      (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                      (match_operand 2 "sixbits_unsigned_operand" "i")
                       (match_operand 3 "" "")] UNSPEC_FLOATDQ))]
   ""
   "#"
@@ -4357,7 +4357,7 @@
 (define_insn "kvx_floatuw"
   [(set (match_operand:SF 0 "register_operand" "=r")
         (unspec:SF [(match_operand:SI 1 "register_operand" "r")
-                    (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                    (match_operand 2 "sixbits_unsigned_operand" "i")
                     (match_operand 3 "" "")] UNSPEC_FLOATUW))]
   ""
   "floatuw%3 %0 = %1, %2"
@@ -4367,7 +4367,7 @@
 (define_insn "kvx_floatud"
   [(set (match_operand:DF 0 "register_operand" "=r")
         (unspec:DF [(match_operand:DI 1 "register_operand" "r")
-                    (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                    (match_operand 2 "sixbits_unsigned_operand" "i")
                     (match_operand 3 "" "")] UNSPEC_FLOATUD))]
   ""
   "floatud%3 %0 = %1, %2"
@@ -4377,7 +4377,7 @@
 (define_insn "kvx_floatuwp"
   [(set (match_operand:V2SF 0 "register_operand" "=r")
         (unspec:V2SF [(match_operand:V2SI 1 "register_operand" "r")
-                      (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                      (match_operand 2 "sixbits_unsigned_operand" "i")
                       (match_operand 3 "" "")] UNSPEC_FLOATUWP))]
   ""
   "floatuwp%3 %0 = %1, %2"
@@ -4387,7 +4387,7 @@
 (define_insn_and_split "kvx_floatuwq"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (unspec:V4SF [(match_operand:V4SI 1 "register_operand" "r")
-                      (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                      (match_operand 2 "sixbits_unsigned_operand" "i")
                       (match_operand 3 "" "")] UNSPEC_FLOATUWQ))]
   ""
   "#"
@@ -4407,7 +4407,7 @@
 (define_insn_and_split "kvx_floatudp"
   [(set (match_operand:V2DF 0 "register_operand" "=r")
         (unspec:V2DF [(match_operand:V2DI 1 "register_operand" "r")
-                      (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                      (match_operand 2 "sixbits_unsigned_operand" "i")
                       (match_operand 3 "" "")] UNSPEC_FLOATUDP))]
   ""
   "#"
@@ -4427,7 +4427,7 @@
 (define_insn_and_split "kvx_floatuwo"
   [(set (match_operand:V8SF 0 "register_operand" "=r")
         (unspec:V8SF [(match_operand:V8SI 1 "register_operand" "r")
-                      (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                      (match_operand 2 "sixbits_unsigned_operand" "i")
                       (match_operand 3 "" "")] UNSPEC_FLOATUWO))]
   ""
   "#"
@@ -4455,7 +4455,7 @@
 (define_insn_and_split "kvx_floatudq"
   [(set (match_operand:V4DF 0 "register_operand" "=r")
         (unspec:V4DF [(match_operand:V4DI 1 "register_operand" "r")
-                      (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                      (match_operand 2 "sixbits_unsigned_operand" "i")
                       (match_operand 3 "" "")] UNSPEC_FLOATUDQ))]
   ""
   "#"
@@ -4486,7 +4486,7 @@
 (define_insn "kvx_fixedw"
   [(set (match_operand:SI 0 "register_operand" "=r")
         (unspec:SI [(match_operand:SF 1 "register_operand" "r")
-                    (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                    (match_operand 2 "sixbits_unsigned_operand" "i")
                     (match_operand 3 "" "")] UNSPEC_FIXEDW))]
   ""
   "fixedw%3 %0 = %1, %2"
@@ -4496,7 +4496,7 @@
 (define_insn "*kvx_fixedw_zext"
   [(set (match_operand:DI 0 "register_operand" "=r")
         (zero_extend:DI (unspec:SI [(match_operand:SF 1 "register_operand" "r")
-                                    (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                                    (match_operand 2 "sixbits_unsigned_operand" "i")
                                     (match_operand 3 "" "")] UNSPEC_FIXEDW)))]
   ""
   "fixedw%3 %0 = %1, %2"
@@ -4506,7 +4506,7 @@
 (define_insn "kvx_fixedd"
   [(set (match_operand:DI 0 "register_operand" "=r")
         (unspec:DI [(match_operand:DF 1 "register_operand" "r")
-                    (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                    (match_operand 2 "sixbits_unsigned_operand" "i")
                     (match_operand 3 "" "")] UNSPEC_FIXEDD))]
   ""
   "fixedd%3 %0 = %1, %2"
@@ -4516,7 +4516,7 @@
 (define_insn "kvx_fixedwp"
   [(set (match_operand:V2SI 0 "register_operand" "=r")
         (unspec:V2SI [(match_operand:V2SF 1 "register_operand" "r")
-                      (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                      (match_operand 2 "sixbits_unsigned_operand" "i")
                       (match_operand 3 "" "")] UNSPEC_FIXEDWP))]
   ""
   "fixedwp%3 %0 = %1, %2"
@@ -4526,7 +4526,7 @@
 (define_insn_and_split "kvx_fixedwq"
   [(set (match_operand:V4SI 0 "register_operand" "=r")
         (unspec:V4SI [(match_operand:V4SF 1 "register_operand" "r")
-                      (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                      (match_operand 2 "sixbits_unsigned_operand" "i")
                       (match_operand 3 "" "")] UNSPEC_FIXEDWQ))]
   ""
   "#"
@@ -4546,7 +4546,7 @@
 (define_insn_and_split "kvx_fixeddp"
   [(set (match_operand:V2DI 0 "register_operand" "=r")
         (unspec:V2DI [(match_operand:V2DF 1 "register_operand" "r")
-                      (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                      (match_operand 2 "sixbits_unsigned_operand" "i")
                       (match_operand 3 "" "")] UNSPEC_FIXEDDP))]
   ""
   "#"
@@ -4566,7 +4566,7 @@
 (define_insn_and_split "kvx_fixedwo"
   [(set (match_operand:V8SI 0 "register_operand" "=r")
         (unspec:V8SI [(match_operand:V8SF 1 "register_operand" "r")
-                      (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                      (match_operand 2 "sixbits_unsigned_operand" "i")
                       (match_operand 3 "" "")] UNSPEC_FIXEDWO))]
   ""
   "#"
@@ -4594,7 +4594,7 @@
 (define_insn_and_split "kvx_fixeddq"
   [(set (match_operand:V4DI 0 "register_operand" "=r")
         (unspec:V4DI [(match_operand:V4DF 1 "register_operand" "r")
-                      (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                      (match_operand 2 "sixbits_unsigned_operand" "i")
                       (match_operand 3 "" "")] UNSPEC_FIXEDDQ))]
   ""
   "#"
@@ -4625,7 +4625,7 @@
 (define_insn "kvx_fixeduw"
   [(set (match_operand:SI 0 "register_operand" "=r")
         (unspec:SI [(match_operand:SF 1 "register_operand" "r")
-                    (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                    (match_operand 2 "sixbits_unsigned_operand" "i")
                     (match_operand 3 "" "")] UNSPEC_FIXEDUW))]
   ""
   "fixeduw%3 %0 = %1, %2"
@@ -4635,7 +4635,7 @@
 (define_insn "*kvx_fixeduw_zext"
   [(set (match_operand:DI 0 "register_operand" "=r")
         (zero_extend:DI (unspec:SI [(match_operand:SF 1 "register_operand" "r")
-                                    (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                                    (match_operand 2 "sixbits_unsigned_operand" "i")
                                     (match_operand 3 "" "")] UNSPEC_FIXEDUW)))]
   ""
   "fixeduw%3 %0 = %1, %2"
@@ -4645,7 +4645,7 @@
 (define_insn "kvx_fixedud"
   [(set (match_operand:DI 0 "register_operand" "=r")
         (unspec:DI [(match_operand:DF 1 "register_operand" "r")
-                    (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                    (match_operand 2 "sixbits_unsigned_operand" "i")
                     (match_operand 3 "" "")] UNSPEC_FIXEDUD))]
   ""
   "fixedud%3 %0 = %1, %2"
@@ -4655,7 +4655,7 @@
 (define_insn "kvx_fixeduwp"
   [(set (match_operand:V2SI 0 "register_operand" "=r")
         (unspec:V2SI [(match_operand:V2SF 1 "register_operand" "r")
-                      (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                      (match_operand 2 "sixbits_unsigned_operand" "i")
                       (match_operand 3 "" "")] UNSPEC_FIXEDUWP))]
   ""
   "fixeduwp%3 %0 = %1, %2"
@@ -4665,7 +4665,7 @@
 (define_insn_and_split "kvx_fixeduwq"
   [(set (match_operand:V4SI 0 "register_operand" "=r")
         (unspec:V4SI [(match_operand:V4SF 1 "register_operand" "r")
-                      (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                      (match_operand 2 "sixbits_unsigned_operand" "i")
                       (match_operand 3 "" "")] UNSPEC_FIXEDUWQ))]
   ""
   "#"
@@ -4685,7 +4685,7 @@
 (define_insn_and_split "kvx_fixedudp"
   [(set (match_operand:V2DI 0 "register_operand" "=r")
         (unspec:V2DI [(match_operand:V2DF 1 "register_operand" "r")
-                      (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                      (match_operand 2 "sixbits_unsigned_operand" "i")
                       (match_operand 3 "" "")] UNSPEC_FIXEDUDP))]
   ""
   "#"
@@ -4705,7 +4705,7 @@
 (define_insn_and_split "kvx_fixeduwo"
   [(set (match_operand:V8SI 0 "register_operand" "=r")
         (unspec:V8SI [(match_operand:V8SF 1 "register_operand" "r")
-                      (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                      (match_operand 2 "sixbits_unsigned_operand" "i")
                       (match_operand 3 "" "")] UNSPEC_FIXEDUWO))]
   ""
   "#"
@@ -4733,7 +4733,7 @@
 (define_insn_and_split "kvx_fixedudq"
   [(set (match_operand:V4DI 0 "register_operand" "=r")
         (unspec:V4DI [(match_operand:V4DF 1 "register_operand" "r")
-                      (match_operand:SI 2 "sixbits_unsigned_operand" "i")
+                      (match_operand 2 "sixbits_unsigned_operand" "i")
                       (match_operand 3 "" "")] UNSPEC_FIXEDUDQ))]
   ""
   "#"

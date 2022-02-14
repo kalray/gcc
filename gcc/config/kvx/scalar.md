@@ -210,6 +210,17 @@
   [(set_attr "type" "alu_lite,alu_lite_x")
    (set_attr "length" "     4,         8")]
 )
+;; zero-extend version of *addx2si
+(define_insn "*addx2si_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r,r")
+        (zero_extend:DI (plus:SI (ashift:SI (match_operand:SI 1 "register_operand" "r,r")
+                                            (const_int 1))
+                                 (match_operand:SI 2 "register_s32_operand" "r,B32"))))]
+  ""
+  "addx2w %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
 
 (define_insn "*addx4<suffix>"
   [(set (match_operand:SIDI 0 "register_operand" "=r,r")
@@ -218,6 +229,17 @@
                    (match_operand:SIDI 2 "register_s32_operand" "r,B32")))]
   ""
   "addx4<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
+;; zero-extend version of *addx4si
+(define_insn "*addx4si_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r,r")
+        (zero_extend:DI (plus:SI (ashift:SI (match_operand:SI 1 "register_operand" "r,r")
+                                            (const_int 2))
+                                 (match_operand:SI 2 "register_s32_operand" "r,B32"))))]
+  ""
+  "addx4w %0 = %1, %2"
   [(set_attr "type" "alu_lite,alu_lite_x")
    (set_attr "length" "     4,         8")]
 )
@@ -232,6 +254,17 @@
   [(set_attr "type" "alu_lite,alu_lite_x")
    (set_attr "length" "     4,         8")]
 )
+;; zero-extend version of *addx8si
+(define_insn "*addx8si_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r,r")
+        (zero_extend:DI (plus:SI (ashift:SI (match_operand:SI 1 "register_operand" "r,r")
+                                            (const_int 3))
+                                 (match_operand:SI 2 "register_s32_operand" "r,B32"))))]
+  ""
+  "addx8w %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
 
 (define_insn "*addx16<suffix>"
   [(set (match_operand:SIDI 0 "register_operand" "=r,r")
@@ -240,6 +273,17 @@
                    (match_operand:SIDI 2 "register_s32_operand" "r,B32")))]
   ""
   "addx16<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
+;; zero-extend version of *addx16si
+(define_insn "*addx16si_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r,r")
+        (zero_extend:DI (plus:SI (ashift:SI (match_operand:SI 1 "register_operand" "r,r")
+                                            (const_int 4))
+                                 (match_operand:SI 2 "register_s32_operand" "r,B32"))))]
+  ""
+  "addx16w %0 = %1, %2"
   [(set_attr "type" "alu_lite,alu_lite_x")
    (set_attr "length" "     4,         8")]
 )
@@ -254,6 +298,17 @@
   [(set_attr "type" "alu_lite,alu_lite_x")
    (set_attr "length" "     4,         8")]
 )
+;; zero-extend version of *sbfx2si
+(define_insn "*sbfx2si_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r,r")
+        (zero_extend:DI (minus:SI (match_operand:SI 1 "register_s32_operand" "r,B32")
+                                  (ashift:SI (match_operand:SI 2 "register_operand" "r,r")
+                                             (const_int 1)))))]
+  ""
+  "sbfx2w %0 = %2, %1"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
 
 (define_insn "*sbfx4<suffix>"
   [(set (match_operand:SIDI 0 "register_operand" "=r,r")
@@ -262,6 +317,17 @@
                                  (const_int 2))))]
   ""
   "sbfx4<suffix> %0 = %2, %1"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
+;; zero-extend version of *sbfx4si
+(define_insn "*sbfx4si_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r,r")
+        (zero_extend:DI (minus:SI (match_operand:SI 1 "register_s32_operand" "r,B32")
+                                  (ashift:SI (match_operand:SI 2 "register_operand" "r,r")
+                                             (const_int 2)))))]
+  ""
+  "sbfx4w %0 = %2, %1"
   [(set_attr "type" "alu_lite,alu_lite_x")
    (set_attr "length" "     4,         8")]
 )
@@ -276,6 +342,17 @@
   [(set_attr "type" "alu_lite,alu_lite_x")
    (set_attr "length" "     4,         8")]
 )
+;; zero-extend version of *sbfx8si
+(define_insn "*sbfx8si_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r,r")
+        (zero_extend:DI (minus:SI (match_operand:SI 1 "register_s32_operand" "r,B32")
+                                  (ashift:SI (match_operand:SI 2 "register_operand" "r,r")
+                                             (const_int 3)))))]
+  ""
+  "sbfx8w %0 = %2, %1"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
 
 (define_insn "*sbfx16<suffix>"
   [(set (match_operand:SIDI 0 "register_operand" "=r,r")
@@ -284,6 +361,17 @@
                                  (const_int 4))))]
   ""
   "sbfx16<suffix> %0 = %2, %1"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
+;; zero-extend version of *sbfx16si
+(define_insn "*sbfx16si_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r,r")
+        (zero_extend:DI (minus:SI (match_operand:SI 1 "register_s32_operand" "r,B32")
+                                  (ashift:SI (match_operand:SI 2 "register_operand" "r,r")
+                                             (const_int 4)))))]
+  ""
+  "sbfx16w %0 = %2, %1"
   [(set_attr "type" "alu_lite,alu_lite_x")
    (set_attr "length" "     4,         8")]
 )
@@ -342,8 +430,8 @@
 (define_insn "extv<mode>"
   [(set (match_operand:SIDI 0 "register_operand" "=r")
         (sign_extract:SIDI (match_operand:SIDI 1 "register_operand" "r")
-                           (match_operand:SIDI 2 "sixbits_unsigned_operand" "i")
-                           (match_operand:SIDI 3 "sixbits_unsigned_operand" "i")))]
+                           (match_operand 2 "sixbits_unsigned_operand" "i")
+                           (match_operand 3 "sixbits_unsigned_operand" "i")))]
   ""
   "extfs %0 = %1, %2+%3-1, %3"
   [(set_attr "type" "alu_thin")]
@@ -352,8 +440,8 @@
 (define_insn "extzv<mode>"
   [(set (match_operand:SIDI 0 "register_operand" "=r")
         (zero_extract:SIDI (match_operand:SIDI 1 "register_operand" "r")
-                           (match_operand:SIDI 2 "sixbits_unsigned_operand" "i")
-                           (match_operand:SIDI 3 "sixbits_unsigned_operand" "i")))]
+                           (match_operand 2 "sixbits_unsigned_operand" "i")
+                           (match_operand 3 "sixbits_unsigned_operand" "i")))]
   ""
   "extfz %0 = %1, %2+%3-1, %3"
   [(set_attr "type" "alu_thin")]
@@ -361,8 +449,8 @@
 
 (define_insn "insv<mode>"
   [(set (zero_extract:SIDI (match_operand:SIDI 0 "register_operand" "+r")
-                           (match_operand:SIDI 1 "sixbits_unsigned_operand" "i")
-                           (match_operand:SIDI 2 "sixbits_unsigned_operand" "i"))
+                           (match_operand 1 "sixbits_unsigned_operand" "i")
+                           (match_operand 2 "sixbits_unsigned_operand" "i"))
         (match_operand:SIDI 3 "register_operand" "r"))]
   ""
   "insf %0 = %3, %1+%2-1, %2"

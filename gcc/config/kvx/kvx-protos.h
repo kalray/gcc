@@ -141,6 +141,8 @@ extern rtx kvx_expand_chunk_splat (rtx target, rtx source,
 
 extern void kvx_expand_vector_init (rtx target, rtx source);
 
+extern void kvx_expand_vector_duplicate (rtx target, rtx source);
+
 extern bool kvx_expand_vec_perm_const (rtx target, rtx source1, rtx source2, rtx selector);
 
 extern rtx kvx_expand_chunk_shift (rtx target, rtx source1, rtx source2, int shift);

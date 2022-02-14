@@ -3354,19 +3354,20 @@ kvx_expand_vector_insert (rtx target, rtx source, rtx where)
 
       if (GET_MODE_SIZE (inner_mode) == UNITS_PER_WORD)
 	{
-	  rtx op0 = simplify_gen_subreg (inner_mode, target, vector_mode, major*UNITS_PER_WORD);
+	  rtx op0 = simplify_gen_subreg (inner_mode, target, vector_mode,
+					 major * UNITS_PER_WORD);
 	  rtx op1 = source;
 	  emit_move_insn (op0, op1);
 	}
       else
 	{
-	  machine_mode chunk_mode = kvx_get_chunk_mode (vector_mode);
-	  rtx op0 = simplify_gen_subreg (chunk_mode, target, vector_mode, major*UNITS_PER_WORD);
-	  rtx op1 = source;
-	  rtx op2 = GEN_INT (width*8);
-	  rtx op3 = GEN_INT (minor*8);
-	  rtx insert = gen_rtx_UNSPEC (chunk_mode, gen_rtvec (4, op1, op2, op3, op0), UNSPEC_INSF);
-	  emit_insn (gen_rtx_SET (op0, insert));
+	  rtx op0 = simplify_gen_subreg (DImode, target, vector_mode,
+					 major * UNITS_PER_WORD);
+	  rtx op1 = gen_lowpart (DImode, source);
+	  rtx op2 = GEN_INT (width * 8);
+	  rtx op3 = GEN_INT (minor * 8);
+	  rtx opi = gen_rtx_ZERO_EXTRACT (DImode, op0, op2, op3);
+	  emit_insn (gen_rtx_SET (opi, op1));
 	}
 
       return;
@@ -3391,17 +3392,18 @@ kvx_expand_vector_extract (rtx target, rtx source, rtx where)
       if (GET_MODE_SIZE (inner_mode) == UNITS_PER_WORD)
 	{
 	  rtx op0 = target;
-	  rtx op1 = simplify_gen_subreg(inner_mode, source, vector_mode, major*UNITS_PER_WORD);
+	  rtx op1 = simplify_gen_subreg (inner_mode, source, vector_mode,
+					 major * UNITS_PER_WORD);
 	  emit_move_insn (op0, op1);
 	}
       else
 	{
-	  machine_mode chunk_mode = kvx_get_chunk_mode (vector_mode);
-	  rtx op0 = target;
-	  rtx op1 = simplify_gen_subreg(chunk_mode, source, vector_mode, major*UNITS_PER_WORD);
-	  rtx op2 = GEN_INT (width*8);
-	  rtx op3 = GEN_INT (minor*8);
-	  rtx extract = gen_rtx_UNSPEC (inner_mode, gen_rtvec (3, op1, op2, op3), UNSPEC_EXTFZ);
+	  rtx op0 = simplify_gen_subreg (DImode, target, inner_mode, 0);
+	  rtx op1 = simplify_gen_subreg (DImode, source, vector_mode,
+					 major * UNITS_PER_WORD);
+	  rtx op2 = GEN_INT (width * 8);
+	  rtx op3 = GEN_INT (minor * 8);
+	  rtx extract = gen_rtx_ZERO_EXTRACT (DImode, op1, op2, op3);
 	  emit_insn (gen_rtx_SET (op0, extract));
 	}
 
@@ -3517,7 +3519,8 @@ kvx_expand_chunk_insert(rtx target, rtx source, int index, machine_mode inner_mo
   return target;
 }
 
-/* Called by kvx_expand_vector_init(). */
+/* Called by the vec_duplicate<mode> standard pattern and by
+ * kvx_expand_vector_init().  */
 void
 kvx_expand_vector_duplicate (rtx target, rtx source)
 {
@@ -3530,16 +3533,8 @@ kvx_expand_vector_duplicate (rtx target, rtx source)
 
   unsigned vector_size = GET_MODE_SIZE (vector_mode);
   if (vector_size > UNITS_PER_WORD)
-    {
-      rtx splat = NULL_RTX;
-      if (vector_size == 2*UNITS_PER_WORD)
-	splat = gen_rtx_UNSPEC (vector_mode, gen_rtvec (1, chunk), UNSPEC_DUP128);
-      else if (vector_size == 4*UNITS_PER_WORD)
-	splat = gen_rtx_UNSPEC (vector_mode, gen_rtvec (1, chunk), UNSPEC_DUP256);
-      else
-	gcc_unreachable ();
-      emit_insn (gen_rtx_SET (target, splat));
-    }
+    emit_insn (gen_rtx_SET (target,
+			    gen_rtx_VEC_DUPLICATE (vector_mode, chunk)));
   else
     emit_insn (gen_rtx_SET (target, chunk));
 
@@ -3718,32 +3713,32 @@ kvx_expand_vec_perm_const_emit_insf (rtx target, rtx source1, rtx source2,
 
   if (maski == constanti && origm >= 0 && origi >= 0)
     {
-      machine_mode inner_mode = GET_MODE_INNER (vector_mode);
       machine_mode chunk_mode = kvx_get_chunk_mode (vector_mode);
-      rtx op0 = kvx_expand_vec_perm_const_emit_move (target, source1, source2,
-						     dest, origm);
+      rtx targeti = kvx_expand_vec_perm_const_emit_move (target, source1,
+							 source2, dest, origm);
       rtx sourcei = origi >= nwords? source2: source1;
       int offseti = origi >= nwords? origi - nwords: origi;
-      rtx op2 = GEN_INT (count*8);
+      rtx op0 = simplify_gen_subreg (DImode, targeti, chunk_mode, 0);
+      rtx op2 = GEN_INT (count * 8);
       rtx op1 = NULL_RTX;
 
       // If shift is not a multiple of 8, extract is needed.
       if ((shift & 7))
 	{
-	  op1 = gen_reg_rtx (inner_mode);
-	  rtx op3 = GEN_INT ((shift & 7)*8);
-	  rtx opi = simplify_gen_subreg (chunk_mode, sourcei, vector_mode, offseti*UNITS_PER_WORD);
-	  rtx extract = gen_rtx_UNSPEC (inner_mode, gen_rtvec (3, opi, op2, op3), UNSPEC_EXTFZ);
+	  op1 = gen_reg_rtx (DImode);
+	  rtx op3 = GEN_INT ((shift & 7) * 8);
+	  rtx opi = simplify_gen_subreg (DImode, sourcei, vector_mode,
+					 offseti * UNITS_PER_WORD);
+	  rtx extract = gen_rtx_ZERO_EXTRACT (DImode, opi, op2, op3);
 	  emit_insn (gen_rtx_SET (op1, extract));
 	}
       else
-	{
-	  op1 = simplify_gen_subreg (inner_mode, sourcei, vector_mode, offseti*UNITS_PER_WORD);
-	}
+	op1 = simplify_gen_subreg (DImode, sourcei, vector_mode,
+				   offseti * UNITS_PER_WORD);
 
       rtx op3 = GEN_INT (shift & -8);
-      rtx insert = gen_rtx_UNSPEC (chunk_mode, gen_rtvec (4, op1, op2, op3, op0), UNSPEC_INSF);
-      emit_insn (gen_rtx_SET (op0, insert));
+      rtx opi = gen_rtx_ZERO_EXTRACT (DImode, op0, op2, op3);
+      emit_insn (gen_rtx_SET (opi, op1));
       return op0;
     }
 
