@@ -817,6 +817,7 @@ comment "Stack Smashing Protection needs a toolchain w/ SSP"
 choice
 	bool "RELRO Protection"
 	default BR2_RELRO_FULL if BR2_TOOLCHAIN_SUPPORTS_PIE
+	default BR2_RELRO_NONE if BR2_kvx # RELRO is not supported on kvx
 	default BR2_RELRO_PARTIAL
 	depends on BR2_SHARED_LIBS
 	help
