@@ -117,6 +117,24 @@
   mod
   umod
 ])
+;; Binary arithmetic commutative code iterator for expanding VXQI patterns.
+(define_code_iterator BINARITHC [
+  plus
+  ss_plus
+  us_plus
+  ;; mult
+  smin
+  smax
+  umin
+  umax
+])
+
+;; Binary minus code iterator for expanding VXQI patterns.
+(define_code_iterator BINMINUS [
+  minus
+  ss_minus
+  us_minus
+])
 
 ;; Binary shift left code iterator for expanding VXQI patterns.
 (define_code_iterator BINSHL [
@@ -129,6 +147,25 @@
 (define_code_iterator BINSHR [
   lshiftrt
   ashiftrt
+])
+
+;; Binary shift left and right code iterator for the KV3_2 VXQI TINY patterns.
+(define_code_iterator BINSHLRT [
+  ashift
+  lshiftrt
+  ashiftrt
+])
+
+;; Binary shift left and right code iterator for the KV3_2 VXQI LITE patterns.
+(define_code_iterator BINSHLRL [
+  ss_ashift
+  us_ashift
+])
+
+;; Rotate left and right code iterator for the KV3_2 VXQI patterns.
+(define_code_iterator ROTATE [
+  rotate
+  rotatert
 ])
 
 ;; Code attribute for mapping code to prefix of pattern name.
@@ -158,6 +195,31 @@
   (ashiftrt "ashr")
   (lshiftrt "lshr")
   (rotatert "rotr")
+])
+
+;; Code attribute for mapping code to instruction mnemonic stem.
+(define_code_attr stem [
+  (neg "neg")
+  (ss_neg "negs")
+  (abs "abs")
+  (ss_abs "abss")
+  (plus "add")
+  (ss_plus "adds")
+  (us_plus "addus")
+  (minus "sbf")
+  (ss_minus "sbfs")
+  (us_minus "sbfus")
+  (smin "min")
+  (smax "max")
+  (umin "minu")
+  (umax "maxu")
+  (ashift "sll")
+  (ss_ashift "sls")
+  (us_ashift "slus")
+  (rotate "rol")
+  (ashiftrt "sra")
+  (lshiftrt "srl")
+  (rotatert "ror")
 ])
 
 ;; Code attribute for setting the 8 lsbs of 16-bit lanes.
@@ -203,6 +265,12 @@
   (ss_abs "ssabd")
 ])
 
+;; Code attribute for mapping code to abd instruction mnemonics.
+(define_code_attr abdm [
+  (abs "abd")
+  (ss_abs "abds")
+])
+
 ;; Int iterator for the AVG operators of VXQI patterns.
 (define_int_iterator UNSPEC_AVGI [
   UNSPEC_AVG
@@ -233,6 +301,14 @@
   (UNSPEC_AVGU "false")
   (UNSPEC_AVGR "true")
   (UNSPEC_AVGRU "true")
+])
+
+;; Int attribute for the AVG mnemonic of VXQI patterns.
+(define_int_attr avgm [
+  (UNSPEC_AVG "avg")
+  (UNSPEC_AVGU "avgu")
+  (UNSPEC_AVGR "avgr")
+  (UNSPEC_AVGRU "avgru")
 ])
 
 ;; Iterator for all integer modes (up to 64-bit)
@@ -919,6 +995,11 @@
   V4HI V2SI
 ])
 
+;; Iterator same as S64I on kv3-1 and same as S64L on kv3-2.
+(define_mode_iterator S64K [
+  (V8QI "KV3_2") V4HI V2SI
+])
+
 ;; Iterator for all the small element 64-bit vector integer modes.
 (define_mode_iterator S64L [
   V8QI V4HI V2SI
@@ -939,6 +1020,16 @@
   V8HI V4SI
 ])
 
+;; Iterator same as S128I on kv3-1 and same as S128L on kv3-2.
+(define_mode_iterator S128K [
+  (V16QI "KV3_2") V8HI V4SI
+])
+
+;; Iterator for all the small element 128-bit vector integer modes.
+(define_mode_iterator S128L [
+  V16QI V8HI V4SI
+])
+
 ;; Iterator for the small element 128-bit vector FP modes.
 (define_mode_iterator S128F [
   V8HF V4SF
@@ -947,6 +1038,16 @@
 ;; Iterator for the non-byte small element 256-bit vector integer modes.
 (define_mode_iterator S256I [
   V16HI V8SI
+])
+
+;; Iterator same as S256I on kv3-1 and same as S256L on kv3-2.
+(define_mode_iterator S256K [
+  (V32QI "KV3_2") V16HI V8SI
+])
+
+;; Iterator for all the small element 256-bit vector integer modes.
+(define_mode_iterator S256L [
+  V32QI V16HI V8SI
 ])
 
 ;; Iterator for the small element 256-bit vector FP modes.
@@ -964,9 +1065,9 @@
   V8HI V4SI V2DI
 ])
 
-;; Iterator for the non-standard 128-bit vector integer modes.
+;; Iterator same as V128J on kv3-1 and same as V128L on kv3-2.
 (define_mode_iterator V128K [
-  V16QI V8HI V2DI
+  (V16QI "KV3_2") V8HI V4SI V2DI
 ])
 
 ;; Iterator for all the 128-bit vector integer modes.
@@ -992,6 +1093,11 @@
 ;; Iterator for the non-byte 256-bit vector integer modes.
 (define_mode_iterator V256J [
   V16HI V8SI V4DI
+])
+
+;; Iterator same as V256J on kv3-1 and same as V256L on kv3-2.
+(define_mode_iterator V256K [
+  (V32QI "KV3_2") V16HI V8SI V4DI
 ])
 
 ;; Iterator for all the 256-bit vector integer modes.
