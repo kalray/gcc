@@ -1,11 +1,6 @@
 (define_attr "length" "" (const_int 4))
 
-;; Only support Coolidge, but keep flexibility as long as it does not
-;; cost too much
-
-(define_attr "arch" "coolidge" (const (symbol_ref "kvx_arch_schedule")))
-
-(define_attr "only_64b" "yes,no" (const_string "no"))
+(define_attr "arch" "kv3_1,kv3_2" (const (symbol_ref "kvx_arch_schedule")))
 
 ;; Unspec numbers
 (include "unspec.md")
@@ -20,7 +15,7 @@
 (include "types.md")
 
 ;; Scheduling classes
-(include "coolidge.md")
+(include "scheduling.md")
 
 ;; Constraints
 (include "constraints.md")
@@ -215,7 +210,6 @@
 ;;
 
 ;; FIXME AUTO: add size info for 'reg[reg]' addressing (currently falling back to lsu.x)
-;; FIXME AUTO: reservations for coolidge are not OK
 
 (define_expand "mov<mode>"
    [(set (match_operand:ALLIF 0 "nonimmediate_operand" "")

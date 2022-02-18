@@ -1,8 +1,8 @@
 (automata_option "ndfa")
 (automata_option "v")
 
-(define_automaton "coolidge_exu")
-(define_automaton "coolidge_issue")
+(define_automaton "kv3_exu")
+(define_automaton "kv3_issue")
 
 (define_cpu_unit
   "kv3_issue0_u,
@@ -13,7 +13,7 @@
    kv3_issue5_u,
    kv3_issue6_u,
    kv3_issue7_u"
-  "coolidge_issue")
+  "kv3_issue")
 
 (define_cpu_unit
   "kv3_tiny0_u,
@@ -32,7 +32,7 @@
    kv3_crrp_u,
    kv3_crwl_u,
    kv3_crwh_u"
-  "coolidge_exu")
+  "kv3_exu")
 
 (absence_set "kv3_tiny0_u" "kv3_lite0_u,kv3_full_u")
 (absence_set "kv3_tiny1_u" "kv3_lite1_u")

@@ -80,7 +80,7 @@
   (zero_extend "u")
 ])
 
-;; Unary arithmetic code iterator for expanding V*QI patterns.
+;; Unary arithmetic code iterator for expanding VXQI patterns.
 (define_code_iterator UNARITH [
   neg
   ss_neg
@@ -89,7 +89,7 @@
   ss_abs
 ])
 
-;; Binary arithmetic code iterator for expanding V*QI patterns.
+;; Binary arithmetic code iterator for expanding VXQI patterns.
 (define_code_iterator BINARITH [
   plus
   ss_plus
@@ -104,19 +104,17 @@
   umax
 ])
 
-;; Binary shift left code iterator for expanding V*QI patterns.
+;; Binary shift left code iterator for expanding VXQI patterns.
 (define_code_iterator BINSHL [
   ashift
   ss_ashift
   us_ashift
-  ;; rotate
 ])
 
-;; Binary shift right code iterator for expanding V*QI patterns.
+;; Binary shift right code iterator for expanding VXQI patterns.
 (define_code_iterator BINSHR [
   lshiftrt
   ashiftrt
-  ;; rotatert
 ])
 
 ;; Code attribute for mapping code to prefix of pattern name.
@@ -173,19 +171,19 @@
   (rotatert "true")
 ])
 
-;; Code iterator to generate the "abd<>3" and "ssabd<>3" templates.
+;; Code iterator to generate the "abd<>3" and "ssabd<>3" patterns.
 (define_code_iterator ABS [
   abs
   ss_abs
 ])
 
-;; Code attribute for the "abd<>3" and "ssabd<>3" templates.
-(define_code_attr abd [
+;; Code attribute for the "abd<>3" and "ssabd<>3" pattern names.
+(define_code_attr abdn [
   (abs "abd")
   (ss_abs "ssabd")
 ])
 
-;; Int iterator for the AVG operators of V*QI patterns.
+;; Int iterator for the AVG operators of VXQI patterns.
 (define_int_iterator UNSPEC_AVG [
   UNSPEC_AVGWP
   UNSPEC_AVGUWP
@@ -193,7 +191,7 @@
   UNSPEC_AVGRUWP
 ])
 
-;; Int attribute for the AVG prefix of V*QI patterns.
+;; Int attribute for the AVG prefix of VXQI patterns.
 (define_int_attr avgpre [
   (UNSPEC_AVGWP "avg")
   (UNSPEC_AVGUWP "uavg")
@@ -201,7 +199,7 @@
   (UNSPEC_AVGRUWP "uavg")
 ])
 
-;; Int attribute for the AVG postfix of V*QI patterns.
+;; Int attribute for the AVG postfix of VXQI patterns.
 (define_int_attr avgpost [
   (UNSPEC_AVGWP "3_floor")
   (UNSPEC_AVGUWP "3_floor")
@@ -209,7 +207,7 @@
   (UNSPEC_AVGRUWP "3_ceil")
 ])
 
-;; Int attribute for the AVG rounding of V*QI patterns.
+;; Int attribute for the AVG rounding of VXQI patterns.
 (define_int_attr avground [
   (UNSPEC_AVGWP "false")
   (UNSPEC_AVGUWP "false")
@@ -821,27 +819,63 @@
   (V4DF    "d")
 ])
 
-;; Iterator for the small elements 64-bit vector integer modes.
+;; Iterator for all the small element 64-bit vector modes.
+(define_mode_iterator S64A [
+  V8QI V4HI V2SI
+  V4HF V2SF
+])
+
+;; Iterator for the non-byte small element 64-bit vector integer modes.
 (define_mode_iterator S64I [
   V4HI V2SI
 ])
 
-;; Iterator for V8QI S64I
-(define_mode_iterator S64K [
+;; Iterator for all the small element 64-bit vector integer modes.
+(define_mode_iterator S64L [
   V8QI V4HI V2SI
 ])
 
-;; Iterator for S64K minus V2SI
-(define_mode_iterator S64L [
+;; Iterator for the non-standard 64-bit vector integer modes.
+(define_mode_iterator S64M [
   V8QI V4HI
 ])
 
-;; Iterator for the small elements 128-bit vector integer modes.
+;; Iterator for the small element 64-bit vector FP modes.
+(define_mode_iterator S64F [
+  V4HF V2SF
+])
+
+;; Iterator for the non-byte small element 128-bit vector integer modes.
 (define_mode_iterator S128I [
   V8HI V4SI
 ])
 
-;; Iterator for V8HI V2DI
+;; Iterator for all the small element 128-bit vector integer modes.
+(define_mode_iterator S128K [
+  V16QI V8HI V4SI
+])
+
+;; Iterator for the small element 128-bit vector FP modes.
+(define_mode_iterator S128F [
+  V8HF V4SF
+])
+
+;; Iterator for the non-byte small element 256-bit vector integer modes.
+(define_mode_iterator S256I [
+  V16HI V8SI
+])
+
+;; Iterator for all the small element 256-bit vector integer modes.
+(define_mode_iterator S256K [
+  V32QI V16HI V8SI
+])
+
+;; Iterator for the small element 256-bit vector FP modes.
+(define_mode_iterator S256F [
+  V16HF V8SF
+])
+
+;; Iterator for the non-byte non-standard 128-bit vector integer modes.
 (define_mode_iterator V128I [
   V8HI V2DI
 ])
@@ -851,14 +885,24 @@
   V8HI V4SI V2DI
 ])
 
-;; Iterator for V16QI S128I
-(define_mode_iterator S128K [
-  V16QI V8HI V4SI
+;; Iterator for the non-standard 128-bit vector integer modes.
+(define_mode_iterator V128K [
+  V16QI V8HI V2DI
 ])
 
-;; Iterator for the small elements 256-bit vector integer modes.
-(define_mode_iterator S256I [
-  V16HI V8SI
+;; Iterator for all the 128-bit vector integer modes.
+(define_mode_iterator V128L [
+  V16QI V8HI V4SI V2DI
+])
+
+;; Iterator for all the 128-bit vector FP modes.
+(define_mode_iterator V128F [
+  V8HF V4SF V2DF
+])
+
+;; Iterator for the 64-bit element 128-bit vector modes.
+(define_mode_iterator W128A [
+  V2DI V2DF
 ])
 
 ;; Iterator for V16HI V4DI
@@ -871,35 +915,14 @@
   V16HI V8SI V4DI
 ])
 
-;; Iterator for the small elements 64-bit vector FP modes.
-(define_mode_iterator S64F [
-  V4HF V2SF
-])
-
-;; Iterator for the small elements 128-bit vector FP modes.
-(define_mode_iterator S128F [
-  V8HF V4SF
-])
-
-;; Iterator for all the 128-bit vector FP modes.
-(define_mode_iterator V128F [
-  V8HF V4SF V2DF
-])
-
-;; Iterator for the small elements 256-bit vector FP modes.
-(define_mode_iterator S256F [
-  V16HF V8SF
+;; Iterator for all the 256-bit vector integer modes.
+(define_mode_iterator V256L [
+  V32QI V16HI V8SI V4DI
 ])
 
 ;; Iterator for all the 256-bit vector FP modes.
 (define_mode_iterator V256F [
   V16HF V8SF V4DF
-])
-
-;; Iterator for V8QI S64I S64F
-(define_mode_iterator S64A [
-  V8QI V4HI V2SI
-  V4HF V2SF
 ])
 
 ;; Iterator for V16QI S128I S128F
@@ -914,12 +937,7 @@
   V16HF V8SF
 ])
 
-;; Iterator for the 64-bit elements 128-bit vector modes.
-(define_mode_iterator W128A [
-  V2DI V2DF
-])
-
-;; Iterator for the 64-bit elements 256-bit vector modes.
+;; Iterator for the 64-bit element 256-bit vector modes.
 (define_mode_iterator W256A [
   V4DI V4DF
 ])
@@ -936,6 +954,20 @@
   V8QI
   V16QI
   V32QI
+])
+
+;; UNSPEC_SELECT for the vector QI modes.
+(define_mode_attr UNSPEC_SELECT [
+  (V8QI   "UNSPEC_SELECT64")
+  (V16QI  "UNSPEC_SELECT128")
+  (V32QI  "UNSPEC_SELECT256")
+])
+
+;; UNSPEC_SRS for the vector QI modes.
+(define_mode_attr UNSPEC_SRS [
+  (V8QI   "UNSPEC_SRS64")
+  (V16QI  "UNSPEC_SRS128")
+  (V32QI  "UNSPEC_SRS256")
 ])
 
 ;; Iterator for the widening QI vector modes.
