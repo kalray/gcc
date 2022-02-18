@@ -276,8 +276,9 @@
 
 (define_insn "abdsi3_1"
   [(set (match_operand:SI 0 "register_operand" "=r,r,r")
-        (abs:SI (minus:SI (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i")
-                          (match_operand:SI 1 "register_operand" "r,r,r"))))]
+        (abs:SI (minus:SI (umax:SI (match_operand:SI 1 "register_operand" "r,r,r")
+                                   (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i"))
+                          (umin:SI (match_dup 1) (match_dup 2)))))]
   "KV3_1"
   "abdw %0 = %1, %2"
   [(set_attr "type" "alu_thin,alu_thin,alu_thin_x")
@@ -286,8 +287,9 @@
 
 (define_insn "abddi3_1"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
-        (abs:DI (minus:DI (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")
-                          (match_operand:DI 1 "register_operand" "r,r,r,r"))))]
+        (abs:DI (minus:DI (umax:DI (match_operand:DI 1 "register_operand" "r,r,r,r")
+                                   (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i"))
+                          (umin:DI (match_dup 1) (match_dup 2)))))]
   "KV3_1"
   "abdd %0 = %1, %2"
   [(set_attr "type" "alu_thin,alu_thin,alu_thin_x,alu_thin_y")
@@ -296,8 +298,9 @@
 
 (define_insn "abd<mode>3_2"
   [(set (match_operand:SIDI 0 "register_operand" "=r,r")
-        (abs:SIDI (minus:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
-                              (match_operand:SIDI 2 "register_s32_operand" "r,B32"))))]
+        (abs:SIDI (minus:SIDI (umax:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
+                                         (match_operand:SIDI 2 "register_s32_operand" "r,B32"))
+                              (umin:SIDI (match_dup 1) (match_dup 2)))))]
   "KV3_2"
   "abd<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_tiny,alu_tiny_x")
@@ -306,8 +309,9 @@
 ;; zero-extend version of abdsi3
 (define_insn "*abdsi3_zext"
   [(set (match_operand:DI 0 "register_operand" "=r,r")
-        (zero_extend:DI (abs:SI (minus:SI (match_operand:SI 1 "register_operand" "r,r")
-                                          (match_operand:SI 2 "register_s32_operand" "r,B32")))))]
+        (zero_extend:DI (abs:SI (minus:SI (umax:SI (match_operand:SI 1 "register_operand" "r,r")
+                                                   (match_operand:SI 2 "register_s32_operand" "r,B32"))
+                                          (umin:SI (match_dup 1) (match_dup 2))))))]
   "KV3_2"
   "abdw %0 = %1, %2"
   [(set_attr "type" "alu_tiny,alu_tiny_x")
@@ -332,8 +336,9 @@
 
 (define_insn_and_split "ssabd<mode>3_1"
   [(set (match_operand:SIDI 0 "register_operand" "=r")
-        (ss_abs:SIDI (minus:SIDI (match_operand:SIDI 1 "register_operand" "r")
-                                 (match_operand:SIDI 2 "register_operand" "r"))))
+        (ss_abs:SIDI (minus:SIDI (umax:SIDI (match_operand:SIDI 1 "register_operand" "r")
+                                            (match_operand:SIDI 2 "register_operand" "r"))
+                                 (umin:SIDI (match_dup 2) (match_dup 1)))))
    (clobber (match_scratch:SIDI 3 "=&r"))
    (clobber (match_scratch:SIDI 4 "=&r"))]
   "KV3_1"
@@ -355,8 +360,9 @@
 
 (define_insn "ssabd<mode>3_2"
   [(set (match_operand:SIDI 0 "register_operand" "=r,r")
-        (ss_abs:SIDI (minus:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
-                                 (match_operand:SIDI 2 "register_s32_operand" "r,B32"))))]
+        (ss_abs:SIDI (minus:SIDI (umax:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
+                                            (match_operand:SIDI 2 "register_s32_operand" "r,B32"))
+                                 (umin:SIDI (match_dup 1) (match_dup 2)))))]
   "KV3_2"
   "abds<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_tiny,alu_tiny_x")
@@ -365,8 +371,9 @@
 ;; zero-extend version of ssabdsi3
 (define_insn "*ssabdsi3_zext"
   [(set (match_operand:DI 0 "register_operand" "=r,r")
-        (zero_extend:DI (ss_abs:SI (minus:SI (match_operand:SI 1 "register_operand" "r,r")
-                                             (match_operand:SI 2 "register_s32_operand" "r,B32")))))]
+        (zero_extend:DI (ss_abs:SI (minus:SI (umax:SI (match_operand:SI 1 "register_operand" "r,r")
+                                                      (match_operand:SI 2 "register_s32_operand" "r,B32"))
+                                             (umin:SI (match_dup 1) (match_dup 2))))))]
   "KV3_2"
   "abdsw %0 = %1, %2"
   [(set_attr "type" "alu_tiny,alu_tiny_x")
