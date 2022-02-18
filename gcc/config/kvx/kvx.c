@@ -3106,7 +3106,7 @@ kvx_get_predicate_mode (enum machine_mode mode)
   return int_mode_for_mode (mode).require ();
 }
 
-/* Emulate V<n>QI comparisons by expanding them to V4HI comparisons. */
+/* Emulate VXQI comparisons by expanding them to V4HI comparisons. */
 static rtx
 kvx_emulate_vxqi_comparison(rtx pred, enum rtx_code cmp_code, rtx left, rtx right)
 {
@@ -3155,7 +3155,7 @@ kvx_lower_comparison (rtx pred, enum rtx_code cmp_code, rtx left, rtx right)
   if (pred == NULL_RTX)
     pred = gen_reg_rtx (kvx_get_predicate_mode (cmp_mode));
 
-  if (VECTOR_MODE_P (cmp_mode) && GET_MODE_INNER (cmp_mode) == QImode)
+  if (KV3_1 && VECTOR_MODE_P (cmp_mode) && GET_MODE_INNER (cmp_mode) == QImode)
     return kvx_emulate_vxqi_comparison (pred, cmp_code, left,right);
 
   machine_mode pred_mode = GET_MODE (pred);
@@ -3316,7 +3316,8 @@ kvx_expand_conditional_move (rtx target, rtx select1, rtx select2,
     {
       emit_insn (gen_rtx_SET (dst, pred));
     }
-  else if (VECTOR_MODE_P (cmp_mode) && GET_MODE_INNER (cmp_mode) == QImode)
+  else if (KV3_1 && VECTOR_MODE_P (cmp_mode)
+	   && GET_MODE_INNER (cmp_mode) == QImode)
     {
       kvx_emulate_vxqi_simplecond_move(pred, cmp_code, src, dst);
     }
