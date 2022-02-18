@@ -6382,7 +6382,9 @@ kvx_option_override (void)
 	  }
       }
 
-  kvx_arch_schedule = ARCH_COOLIDGE;
+  kvx_arch_schedule = ARCH_KV3_1;
+  if (KV3_2)
+    kvx_arch_schedule = ARCH_KV3_2;
 }
 
 /* Recognize machine-specific patterns that may appear within
