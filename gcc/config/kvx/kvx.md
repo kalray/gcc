@@ -449,18 +449,26 @@
 )
 
 (define_insn "kvx_fence"
-  [(unspec [(const_int 0)] UNSPEC_FENCE)
+  [(unspec [(match_operand 0 "" "")] UNSPEC_FENCE)
    (clobber (mem:BLK (scratch)))]
   ""
-  "fence"
+  "fence%0"
   [(set_attr "type" "lsu")]
 )
 
-(define_insn "kvx_dinval"
-  [(unspec [(const_int 0)] UNSPEC_DINVAL)
+(define_insn "kvx_d1inval"
+  [(unspec [(const_int 0)] UNSPEC_D1INVAL)
    (clobber (mem:BLK (scratch)))]
   ""
-  "dinval"
+  "d1inval"
+  [(set_attr "type" "lsu")]
+)
+
+(define_insn "kvx_i1inval"
+  [(unspec_volatile [(const_int 0)] UNSPEC_I1INVAL)
+   (clobber (mem:BLK (scratch)))]
+  ""
+  "i1inval"
   [(set_attr "type" "lsu")]
 )
 
@@ -473,23 +481,6 @@
    (set_attr "type" "lsu, lsu_x, lsu_y")]
 )
 
-(define_insn "kvx_iinval"
-  [(unspec_volatile [(const_int 0)] UNSPEC_IINVAL)
-   (clobber (mem:BLK (scratch)))]
-  ""
-  "iinval"
-  [(set_attr "type" "lsu")]
-)
-
-(define_insn "kvx_iinvals"
-  [(unspec_volatile [(match_operand 0 "noxsaddr_operand" "Aa,Ab,p")] UNSPEC_IINVALS)
-   (clobber (mem:BLK (scratch)))]
-  ""
-  "iinvals%X0 %A0"
-  [(set_attr "length" "4,     8,    12")
-   (set_attr "type" "lsu, lsu_x, lsu_y")]
-)
-
 (define_insn "kvx_dtouchl"
   [(prefetch (match_operand 0 "noxsaddr_operand" "Aa,Ab,p")
              (const_int 0)
@@ -498,6 +489,63 @@
   "dtouchl%X0 %A0"
   [(set_attr "length" "4,     8,    12")
    (set_attr "type" "lsu, lsu_x, lsu_y")]
+)
+
+(define_insn "kvx_dpurgel"
+  [(unspec [(match_operand 0 "noxsaddr_operand" "Aa,Ab,p")] UNSPEC_DPURGEL)
+   (clobber (mem:BLK (scratch)))]
+  ""
+  "dpurgel%X0 %A0"
+  [(set_attr "length" "4,     8,    12")
+   (set_attr "type" "lsu, lsu_x, lsu_y")]
+)
+
+(define_insn "kvx_dflushl"
+  [(unspec [(match_operand 0 "noxsaddr_operand" "Aa,Ab,p")] UNSPEC_DFLUSHL)
+   (clobber (mem:BLK (scratch)))]
+  ""
+  "dflushl%X0 %A0"
+  [(set_attr "length" "4,     8,    12")
+   (set_attr "type" "lsu, lsu_x, lsu_y")]
+)
+
+(define_insn "kvx_i1invals"
+  [(unspec_volatile [(match_operand 0 "noxsaddr_operand" "Aa,Ab,p")] UNSPEC_I1INVALS)
+   (clobber (mem:BLK (scratch)))]
+  ""
+  "i1invals%X0 %A0"
+  [(set_attr "length" "4,     8,    12")
+   (set_attr "type" "lsu, lsu_x, lsu_y")]
+)
+
+(define_insn "kvx_dinvalsw"
+  [(unspec [(match_operand:DI 0 "register_operand" "r")
+            (match_operand:DI 1 "register_operand" "r")
+            (match_operand 2 "" "")] UNSPEC_DINVALSW)
+   (clobber (mem:BLK (scratch)))]
+  ""
+  "dinvalsw%2 %0, %1"
+  [(set_attr "type" "lsu")]
+)
+
+(define_insn "kvx_dpurgesw"
+  [(unspec [(match_operand:DI 0 "register_operand" "r")
+            (match_operand:DI 1 "register_operand" "r")
+            (match_operand 2 "" "")] UNSPEC_DPURGESW)
+   (clobber (mem:BLK (scratch)))]
+  ""
+  "dpurgesw%2 %0, %1"
+  [(set_attr "type" "lsu")]
+)
+
+(define_insn "kvx_dflushsw"
+  [(unspec [(match_operand:DI 0 "register_operand" "r")
+            (match_operand:DI 1 "register_operand" "r")
+            (match_operand 2 "" "")] UNSPEC_DFLUSHSW)
+   (clobber (mem:BLK (scratch)))]
+  ""
+  "dflushsw%2 %0, %1"
+  [(set_attr "type" "lsu")]
 )
 
 (define_insn "prefetch"
@@ -584,8 +632,8 @@
   [(clobber (mem:BLK (scratch)))]
   ""
   {
-    emit_insn (gen_kvx_dinval ());
-    emit_insn (gen_kvx_fence ());
+    rtx modifier = gen_rtx_CONST_STRING (VOIDmode, "");
+    emit_insn (gen_kvx_fence (modifier));
   }
 )
 
@@ -987,36 +1035,13 @@
   })
 
 
-;; FIXME AUTO: fix predicate. Incorrectly too wide
-(define_insn "satd"
-  [(set (match_operand:DI 0 "register_operand" "=r,r")
-        (unspec:DI [(match_operand:DI 1 "register_operand" "r,r")
-                    (match_operand:SI 2 "sat_shift_operand" "r,U06")] UNSPEC_SATD))]
-  ""
-  "satd %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite")
-   (set_attr "length" "4,4")]
-)
-
-;; FIXME AUTO: fix predicate. Incorrectly too wide
-(define_insn "satud"
-  [(set (match_operand:DI 0 "register_operand" "=r,r")
-        (unspec:DI [(match_operand:DI 1 "register_operand" "r,r")
-                    (match_operand:SI 2 "sat_shift_operand" "r,U06")] UNSPEC_SATUD))]
-  ""
-  "satud %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite")
-   (set_attr "length" "4,4")]
-)
-
-
 /********** Hardware loops **************/
 
 ;; Here, we let a symbol even if there are only 17bits of immediate value.
 ;; FIXME AUTO: we should let gcc know operand 0 is unused after insn.
 (define_insn "kvx_loopdo"
   [(unspec_volatile [(match_operand 0 "register_operand" "r")
-                     (match_operand 1 "" "")] UNSPEC_LOOPDO)]
+                     (match_operand 1 "" "")] UNSPEC_DOLOOP)]
   ""
   "loopdo %0, %1"
   [(set_attr "type" "all")
@@ -1049,7 +1074,7 @@
    (set (match_dup 0)
         (plus:SIDI (match_dup 0)
                    (const_int -1)))
-   (unspec [(const_int 0)] UNSPEC_LOOPDO_END)
+   (unspec [(const_int 0)] UNSPEC_ENDLOOP)
    (clobber (match_scratch:SIDI 2 "=X,&r"))]
   ""
   {
