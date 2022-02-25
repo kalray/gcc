@@ -165,7 +165,8 @@
   [(match_operand:SI 0 "const_int_operand" "")] ;; model
   ""
   {
-    emit_insn (gen_kvx_fence ());
+    rtx modifier = gen_rtx_CONST_STRING (VOIDmode, "");
+    emit_insn (gen_kvx_fence (modifier));
     DONE;
   }
 )
@@ -184,48 +185,71 @@
 
 ;; KVX's builtins
 
-;; Compare and Swap
-(define_expand "acswap<lsusize>"
-  [(parallel
-  [(set (match_operand:TI 0 "register_operand" "")
-     (unspec_volatile:TI [(match_operand:SIDI 1 "mematomic_operand" "")] UNSPEC_ACSWAP))
-   (set (match_dup 1)
-     (unspec:SIDI [(match_dup 1) (match_dup 0)] UNSPEC_ACSWAP))]
-  )]
-  ""
-  ""
-)
+;; Atomic Load
 
-(define_insn "*acswap<lsusize>_1"
-  [(set (match_operand:TI 0 "register_operand" "+r,r,r")
-     (unspec_volatile:TI [(match_operand:SIDI 1 "mematomic_operand" "+a,b,m")] UNSPEC_ACSWAP))
-   (set (match_dup 1)
-     (unspec:SIDI [(match_dup 1) (match_dup 0)] UNSPEC_ACSWAP))]
-  "KV3_1"
-  "acswap<lsusize>%X1 %1 = %0"
-  [(set_attr "length" "4,8,12")
-   (set_attr "type" "lsu_auxr_auxw_atomic,lsu_auxr_auxw_atomic_x,lsu_auxr_auxw_atomic_y")]
-)
-
-(define_insn "*acswap<lsusize>_2"
-  [(set (match_operand:TI 0 "register_operand" "+r,r,r")
-     (unspec_volatile:TI [(match_operand:SIDI 1 "mematomic_operand" "+c,d,e")] UNSPEC_ACSWAP))
-   (set (match_dup 1)
-     (unspec:SIDI [(match_dup 1) (match_dup 0)] UNSPEC_ACSWAP))]
+(define_insn "kvx_al<lsusize>"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r,r")
+     (unspec_volatile:SIDI [(match_operand:SIDI 1 "mematomic_operand" "c,d,e")
+                            (match_operand 2 "" "")] UNSPEC_ALOAD))
+   (use (match_dup 1))]
   "KV3_2"
-  "acswap<lsusize>%X1 %O1 = %0"
-  [(set_attr "length" "4,8,12")
-   (set_attr "type" "lsu_auxr_auxw_atomic,lsu_auxr_auxw_atomic_x,lsu_auxr_auxw_atomic_y")]
+  "al<lsusize>%2%X1 %0 = %O1"
+  [(set_attr "type" "lsu_auxw_atomic,lsu_auxw_atomic_x,lsu_auxw_atomic_y")
+   (set_attr "length"             "4,                8,               12")]
 )
 
-;; Fetch and Add
-(define_expand "aladd<lsusize>"
+;; Atomic Store
+
+(define_insn "kvx_as<lsusize>"
+  [(set (match_operand:SIDI 1 "mematomic_operand"  "=c,d,e")
+        (unspec_volatile:SIDI [(match_operand:SIDI 0 "register_operand" "r,r,r")
+                               (match_operand 2 "" "")] UNSPEC_ASTORE))
+   (clobber (match_dup 1))]
+  "KV3_2"
+  "as<lsusize>%2%X1 %O1 = %0"
+  [(set_attr "type" "lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
+   (set_attr "length"            "4,               8,              12")]
+)
+
+
+;; Atomic Load and Clear
+(define_expand "kvx_alclr<lsusize>"
+  [(set (match_operand:SIDI 0 "register_operand" "")
+        (unspec_volatile:SIDI [(match_operand:SIDI 1 "mematomic_operand" "")
+                               (match_operand 2 "" "")] UNSPEC_ALCLR))]
+  ""
+  ""
+)
+
+(define_insn "*alclr<lsusize>_1"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r,r")
+         (unspec_volatile:SIDI [(match_operand:SIDI 1 "mematomic_operand" "a,b,m")
+                                (match_operand 2 "" "")] UNSPEC_ALCLR))]
+  "KV3_1"
+  "alclr<lsusize>%2%X1 %0 = %1"
+  [(set_attr "type" "lsu_auxw_atomic,lsu_auxw_atomic_x,lsu_auxw_atomic_y")
+   (set_attr "length"             "4,                8,               12")]
+)
+
+(define_insn "*alclr<lsusize>_2"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r,r")
+        (unspec_volatile:SIDI [(match_operand:SIDI 1 "mematomic_operand" "c,d,e")
+                               (match_operand 2 "" "")] UNSPEC_ALCLR))]
+  "KV3_2"
+  "alclr<lsusize>%2%X1 %0 = %O1"
+  [(set_attr "type" "lsu_auxw_atomic,lsu_auxw_atomic_x,lsu_auxw_atomic_y")
+   (set_attr "length"             "4,                8,               12")]
+)
+
+;; Atomic Load and Add
+(define_expand "kvx_aladd<lsusize>"
   [(parallel
   [(set (match_operand:SIDI 0 "register_operand" "")
-     (unspec_volatile:SIDI [(match_operand:SIDI 1 "mematomic_operand" "")] UNSPEC_ALADD))
+        (unspec_volatile:SIDI [(match_operand:SIDI 1 "mematomic_operand" "")
+                               (match_operand 3 "" "")] UNSPEC_ALADD))
    (set (match_dup 1)
-     (plus:SIDI (match_dup 1)
-                (match_operand:SIDI 2 "nonmemory_operand" "")))]
+        (plus:SIDI (match_dup 1)
+                   (match_operand:SIDI 2 "nonmemory_operand" "")))]
   )]
   ""
   ""
@@ -233,51 +257,64 @@
 
 (define_insn "*aladd<lsusize>_1"
   [(set (match_operand:SIDI 0 "register_operand" "=r,r,r")
-     (unspec_volatile:SIDI [(match_operand:SIDI 1 "mematomic_operand" "+a,b,m")] UNSPEC_ALADD))
+        (unspec_volatile:SIDI [(match_operand:SIDI 1 "mematomic_operand" "+a,b,m")
+                               (match_operand 3 "" "")] UNSPEC_ALADD))
    (set (match_dup 1)
-     (plus:SIDI (match_dup 1)
-                (match_operand:SIDI 2 "nonmemory_operand" "0,0,0")))]
+        (plus:SIDI (match_dup 1)
+                   (match_operand:SIDI 2 "nonmemory_operand" "0,0,0")))]
   "KV3_1"
-  "aladd<lsusize>%X1 %1 = %0"
-  [(set_attr "length" "4,8,12")
-   (set_attr "type" "lsu_auxr_auxw_atomic,lsu_auxr_auxw_atomic_x,lsu_auxr_auxw_atomic_y")]
+  "aladd<lsusize>%3%X1 %1 = %0"
+  [(set_attr "type" "lsu_auxr_auxw_atomic,lsu_auxr_auxw_atomic_x,lsu_auxr_auxw_atomic_y")
+   (set_attr "length"                  "4,                     8,                    12")]
 )
 
 (define_insn "*aladd<lsusize>_2"
   [(set (match_operand:SIDI 0 "register_operand" "=r,r,r")
-     (unspec_volatile:SIDI [(match_operand:SIDI 1 "mematomic_operand" "+c,d,e")] UNSPEC_ALADD))
+        (unspec_volatile:SIDI [(match_operand:SIDI 1 "mematomic_operand" "+c,d,e")
+                               (match_operand 3 "" "")] UNSPEC_ALADD))
    (set (match_dup 1)
-     (plus:SIDI (match_dup 1)
-                (match_operand:SIDI 2 "nonmemory_operand" "0,0,0")))]
+        (plus:SIDI (match_dup 1)
+                   (match_operand:SIDI 2 "nonmemory_operand" "0,0,0")))]
   "KV3_2"
-  "aladd<lsusize>%X1 %O1 = %0"
-  [(set_attr "length" "4,8,12")
-   (set_attr "type" "lsu_auxr_auxw_atomic,lsu_auxr_auxw_atomic_x,lsu_auxr_auxw_atomic_y")]
+  "aladd<lsusize>%3%X1 %O1 = %0"
+  [(set_attr "type" "lsu_auxr_auxw_atomic,lsu_auxr_auxw_atomic_x,lsu_auxr_auxw_atomic_y")
+   (set_attr "length"                  "4,                     8,                    12")]
 )
 
-;; Load and Clear
-(define_expand "alclr<lsusize>"
-  [(set (match_operand:SIDI 0 "register_operand" "")
-    (unspec_volatile:SIDI [(match_operand:SIDI 1 "mematomic_operand" "")] UNSPEC_ALCLR))]
+;; Atomic Compare and Swap
+(define_expand "kvx_acswap<lsusize>"
+  [(parallel
+  [(set (match_operand:TI 0 "register_operand" "")
+        (unspec_volatile:TI [(match_operand:SIDI 1 "mematomic_operand" "")
+                             (match_operand 2 "" "")] UNSPEC_ACSWAP))
+   (set (match_dup 1)
+        (unspec:SIDI [(match_dup 1) (match_dup 0)] UNSPEC_ACSWAP))]
+  )]
   ""
   ""
 )
 
-(define_insn "*alclr<lsusize>_1"
-  [(set (match_operand:SIDI 0 "register_operand" "=r,r,r")
-     (unspec_volatile:SIDI [(match_operand:SIDI 1 "mematomic_operand" "a,b,m")] UNSPEC_ALCLR))]
+(define_insn "*acswap<lsusize>_1"
+  [(set (match_operand:TI 0 "register_operand" "+r,r,r")
+        (unspec_volatile:TI [(match_operand:SIDI 1 "mematomic_operand" "+a,b,m")
+                             (match_operand 2 "" "")] UNSPEC_ACSWAP))
+   (set (match_dup 1)
+        (unspec:SIDI [(match_dup 1) (match_dup 0)] UNSPEC_ACSWAP))]
   "KV3_1"
-  "alclr<lsusize>%X1 %0 = %1"
-  [(set_attr "length" "4,8,12")
-   (set_attr "type" "lsu_auxw_atomic,lsu_auxw_atomic_x,lsu_auxw_atomic_y")]
+  "acswap<lsusize>%2%X1 %1 = %0"
+  [(set_attr "type" "lsu_auxr_auxw_atomic,lsu_auxr_auxw_atomic_x,lsu_auxr_auxw_atomic_y")
+   (set_attr "length"                  "4,                     8,                    12")]
 )
 
-(define_insn "*alclr<lsusize>_2"
-  [(set (match_operand:SIDI 0 "register_operand" "=r,r,r")
-     (unspec_volatile:SIDI [(match_operand:SIDI 1 "mematomic_operand" "c,d,e")] UNSPEC_ALCLR))]
+(define_insn "*acswap<lsusize>_2"
+  [(set (match_operand:TI 0 "register_operand" "+r,r,r")
+        (unspec_volatile:TI [(match_operand:SIDI 1 "mematomic_operand" "+c,d,e")
+                             (match_operand 2 "" "")] UNSPEC_ACSWAP))
+   (set (match_dup 1)
+        (unspec:SIDI [(match_dup 1) (match_dup 0)] UNSPEC_ACSWAP))]
   "KV3_2"
-  "alclr<lsusize>%X1 %0 = %O1"
-  [(set_attr "length" "4,8,12")
-   (set_attr "type" "lsu_auxw_atomic,lsu_auxw_atomic_x,lsu_auxw_atomic_y")]
+  "acswap<lsusize>%2%X1 %O1 = %0"
+  [(set_attr "type" "lsu_auxr_auxw_atomic,lsu_auxr_auxw_atomic_x,lsu_auxr_auxw_atomic_y")
+   (set_attr "length"                  "4,                     8,                    12")]
 )
 
