@@ -2,28 +2,37 @@
 (define_c_enum "unspec"
   [     
         UNSPEC_EFFECT
-        UNSPEC_ATOMIC_OP
         UNSPEC_AWAIT
         UNSPEC_BARRIER
         UNSPEC_SLEEP
         UNSPEC_STOP
         UNSPEC_SCALL
-        UNSPEC_DPURGE
-        UNSPEC_DPURGEL
-        UNSPEC_DINVALL
+
+        UNSPEC_ALOAD
+        UNSPEC_ASTORE
         UNSPEC_ALCLR
+        UNSPEC_ALADD
+        UNSPEC_ACSWAP
+        UNSPEC_D1INVAL
+        UNSPEC_I1INVAL
+        UNSPEC_DTOUCHL
+        UNSPEC_DINVALL
+        UNSPEC_DPURGEL
+        UNSPEC_DFLUSHL
+        UNSPEC_I1INVALS
+        UNSPEC_DINVALSW
+        UNSPEC_DPURGESW
+        UNSPEC_DFLUSHSW
+        UNSPEC_FENCE
+        UNSPEC_DZEROL
+
         UNSPEC_GET
         UNSPEC_SET
         UNSPEC_STSUW
         UNSPEC_STSUD
         UNSPEC_STSUDP
-        UNSPEC_IINVALS
         UNSPEC_SBMM8
         UNSPEC_SBMMT8
-        UNSPEC_DINVAL
-        UNSPEC_IINVAL
-        UNSPEC_DTOUCHL
-        UNSPEC_DZEROL
         UNSPEC_LQU
         UNSPEC_LDU
         UNSPEC_LBSU
@@ -41,10 +50,8 @@
         UNSPEC_WFXM
         UNSPEC_LWZU
         UNSPEC_SYNCGROUP
-        UNSPEC_LOOPDO
-        UNSPEC_LOOPDO_END
-        UNSPEC_ACSWAP
-        UNSPEC_ALADD
+        UNSPEC_DOLOOP
+        UNSPEC_ENDLOOP
 
         UNSPEC_ADDCD
         UNSPEC_SBFCD
@@ -305,7 +312,6 @@
         UNSPEC_TLBPROBE
         UNSPEC_TLBREAD
         UNSPEC_TLBWRITE
-        UNSPEC_FENCE
         UNSPEC_PIC
         UNSPEC_GOT
         UNSPEC_GOTOFF
@@ -321,8 +327,6 @@
         ;;
 
         UNSPEC_PCREL
-        UNSPEC_SATD
-        UNSPEC_SATUD
         UNSPEC_LBZ
         UNSPEC_LBS
         UNSPEC_LHZ
