@@ -3944,14 +3944,16 @@ kvx_emit_pre_barrier (rtx model, bool move)
     case MEMMODEL_RELAXED:
     case MEMMODEL_CONSUME:
     case MEMMODEL_ACQUIRE:
-    case MEMMODEL_ACQ_REL:
-      // no barrier is required for RELAXED, CONSUME, ACQUIRE, and
-      // ACQ_REL memory models with MOVE operations (loads/stores). Be
-      // conservative for any other cases, emit a fence.
+      /* No barrier is required for RELAXED, CONSUME, and ACQUIRE
+       * memory models with MOVE operations (loads/stores). Be
+       * conservative for any other cases, emit a fence.  */
       if (move)
 	break;
-    case MEMMODEL_RELEASE:
+    /* Total order does fence before. */
     case MEMMODEL_SEQ_CST:
+    /* Must commit pending stores in memory before store/atomic in memory. */
+    case MEMMODEL_RELEASE:
+    case MEMMODEL_ACQ_REL:
       emit_insn (gen_mem_thread_fence (model));
       break;
     default:
@@ -3970,16 +3972,18 @@ kvx_emit_post_barrier (rtx model, bool move)
   switch (mm & MEMMODEL_BASE_MASK) // treat sync operations as atomic ones
     {
     case MEMMODEL_RELAXED:
+    case MEMMODEL_ACQUIRE:
     case MEMMODEL_RELEASE:
     case MEMMODEL_ACQ_REL:
-      // no barrier is required for RELAXED, RELEASE, and ACQ_REL
-      // memory models with MOVE operations (loads/stores). Be
-      // conservative for any other cases, emit a fence.
+      /* no barrier is required for RELAXED, ACQUIRE, RELEASE, and ACQ_REL
+       * memory models with MOVE operations (loads/stores). Be
+       * conservative for any other cases, emit a fence.  */
       if (move)
 	break;
-    case MEMMODEL_ACQUIRE:
-    case MEMMODEL_CONSUME:
+    /* Total order does fence after. */
     case MEMMODEL_SEQ_CST:
+    /* Make sure load is return before moving on. */
+    case MEMMODEL_CONSUME:
       emit_insn (gen_mem_thread_fence (model));
       break;
     default:
@@ -4080,8 +4084,6 @@ kvx_expand_atomic_op (enum rtx_code code, rtx target, bool after, rtx mem,
 
   gcc_assert ((mode == SImode || mode == DImode));
 
-  kvx_emit_pre_barrier (model, false);
-
   emit_label (csloop); /* cas loop entry point */
   /* copy memory content to perform op on it (atomic uncached load) */
   gen = mode == SImode ? gen_atomic_loadsi : gen_atomic_loaddi;
@@ -4125,12 +4127,18 @@ kvx_expand_atomic_op (enum rtx_code code, rtx target, bool after, rtx mem,
   if (target && after)
     emit_move_insn (op_res_copy, op_res);
 
-  /* Update memory with op result iff memory hasn't been modified
-  since, i.e: if CURR_MEM_VAL == MEM; then update MEM with
-  NEW_MEM_VAL; else try again */
+  /* Handle pre fence right before acswap. */
+  kvx_emit_pre_barrier (model, true);
+
+  /* Update memory with op result iff memory hasn't been modified since:
+     if CURR_MEM_VAL == MEM then update MEM with NEW_MEM_VAL else try again. */
   rtx modifier = gen_rtx_CONST_STRING (VOIDmode, "");
   emit_insn (mode == SImode ? gen_kvx_acswapw (tmp, mem, modifier)
 			    : gen_kvx_acswapd (tmp, mem, modifier));
+
+  /* Handle post fence right after acswap. */
+  kvx_emit_post_barrier (model, true);
+
   /* ACSWAP insn returns 0x0 (fail) or 0x1 (success) in the low part of TMP:
      - if successful: MEM is updated, do not loop
      - if failing: MEM has changed, try again */
@@ -4147,8 +4155,6 @@ kvx_expand_atomic_op (enum rtx_code code, rtx target, bool after, rtx mem,
 	       : gen_lowpart (mode, curr_mem_val));
       emit_move_insn (target, ret);
     }
-
-  kvx_emit_post_barrier (model, false);
 }
 
 /* Expand the atomic test-and-set on byte atomic operation using the
@@ -4166,45 +4172,49 @@ kvx_expand_atomic_test_and_set (rtx operands[])
   rtx (*and3) (rtx, rtx, rtx) = Pmode == SImode ? gen_andsi3 : gen_anddi3;
   rtx (*mul3) (rtx, rtx, rtx) = Pmode == SImode ? gen_mulsi3 : gen_muldi3;
 
-  kvx_emit_pre_barrier (model, false);
-
-  /* Word ADDRESS is byte POINTER & -4. */
+  /* Mask POINTER to get the word ADDRESS := POINTER & -4. */
   rtx pointer = gen_reg_rtx (Pmode);
   emit_move_insn (pointer, XEXP (mem, 0));
   rtx address = gen_reg_rtx (Pmode);
   emit_insn (and3 (address, pointer, GEN_INT (-4)));
   rtx memsi = gen_rtx_MEM (SImode, address);
 
-  /* Boolean CAS loop entry point. */
+  /* Boolean CAS loop entry point: load OLDVAL from word ADDRESS. */
   rtx retry = gen_label_rtx ();
   emit_label (retry);
   emit_insn (gen_atomic_loadsi (oldval, memsi, GEN_INT (MEMMODEL_RELAXED)));
 
-  /* Compute byte SHIFT = ((POINTER & 0x3) * BITS_PER_UNIT) */
+  /* Byte SHIFT := ((POINTER & 0x3) * BITS_PER_UNIT). */
   rtx shift = gen_reg_rtx (Pmode);
   emit_insn (and3 (shift, pointer, GEN_INT (0x3)));
   emit_insn (mul3 (shift, shift, GEN_INT (BITS_PER_UNIT)));
 
-  /* Keep only the byte to test-and-set: BYTE := OLDVAL >> SHIFT & 0xFF. */
+  /* Byte to test-and-set is BYTE := OLDVAL >> SHIFT & 0xFF. */
   rtx byte = gen_reg_rtx (SImode);
   emit_insn (gen_lshrsi3 (byte, oldval, gen_lowpart (SImode, shift)));
   emit_insn (gen_andsi3 (byte, byte, GEN_INT (0xFF)));
 
   /* If BYTE is false, try a compare-and-swap with the byte set to TRUE.
-   * Else return true (i.e. BYTE) because the lock is already acquired. */
+     Else return true (i.e. BYTE) because the lock is already acquired. */
   rtx fini = gen_label_rtx ();
   emit_cmp_and_jump_insns (byte, const0_rtx, NE, NULL_RTX, SImode, true, fini);
 
-  /* NEWVAL := OLDVAL | TRUE << SHIFT */
+  /* Build NEWVAL := OLDVAL | TRUE << SHIFT */
   rtx mask = gen_reg_rtx (SImode);
   emit_move_insn (mask, const1_rtx);
   emit_insn (gen_ashlsi3 (mask, mask, gen_lowpart (SImode, shift)));
   emit_insn (gen_iorsi3 (newval, oldval, mask));
 
+  /* Handle pre fence right before acswap. */
+  kvx_emit_pre_barrier (model, true);
+
   rtx modifier = gen_rtx_CONST_STRING (VOIDmode, "");
   emit_insn (gen_kvx_acswapw (tmp, memsi, modifier));
 
-  /* ACSWAP insn returns 0x0 (fail) or 0x1 (success) in the low part of TMP:
+  /* Handle post fence right after acswap. */
+  kvx_emit_post_barrier (model, true);
+
+  /* ACSWAP returns 0x0 (fail) or 0x1 (success) in the low part of TMP:
      - if successful: MEM is updated, do not loop,
 		      lock is acquired, return false (i.e. BYTE)
      - if failing: MEM has changed, try again */
@@ -4213,8 +4223,6 @@ kvx_expand_atomic_test_and_set (rtx operands[])
 
   emit_label (fini);
   emit_move_insn (operands[0], gen_lowpart (QImode, byte));
-
-  kvx_emit_post_barrier (model, false);
 }
 
 int
