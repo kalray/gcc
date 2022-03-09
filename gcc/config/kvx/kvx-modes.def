@@ -48,5 +48,4 @@ VECTOR_MODE (INT, OI, 4);          /* V4OI*/
 VECTOR_MODE (INT, OI, 8);          /* V8OI*/
 VECTOR_MODE (INT, OI, 16);         /* V16OI*/
 VECTOR_MODE (INT, OI, 32);         /* V32OI*/
-VECTOR_MODE (INT, OI, 64);         /* V64OI*/
 

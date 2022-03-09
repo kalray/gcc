@@ -195,6 +195,16 @@ kvx_float16x16_gt(float16x16_t a, float16x16_t b)
     return a > b;
 }
 int16x16_t __attribute__ ((noinline))
+kvx_float16x16_eqs(float16x16_t a, float16_t b)
+{
+    return a == b-(float16x16_t){};
+}
+int16x16_t __attribute__ ((noinline))
+kvx_float16x16_gts(float16x16_t a, float16_t b)
+{
+    return a > b-(float16x16_t){};
+}
+int16x16_t __attribute__ ((noinline))
 kvx_float16x16_nez(float16x16_t a)
 {
     return a != 0.0;
@@ -216,20 +226,4 @@ kvx_float16x16_catfhx(float16x8_t a, float16x8_t b) {
 float16x16_t __attribute ((noinline))
 kvx_float16x16_scatfhx(float16x8_t a, float16x8_t b) {
     return __builtin_kvx_cathx(b, a);
-}
-float16x16_t __attribute ((noinline))
-kvx_float16x16_xload(const void *ptr) {
-    return __builtin_kvx_xload256(ptr, ".us");
-}
-float16x16_t __attribute ((noinline))
-kvx_float16x16_xloadc(const void *ptr, float16x16_t b, uint64_t c) {
-    return __builtin_kvx_xloadc256(ptr, b, c, ".us.weqz");
-}
-void __attribute ((noinline))
-kvx_float16x16_xstore(void *ptr, float16x16_t a) {
-    __builtin_kvx_xstore256(a, ptr, 0);
-}
-void __attribute ((noinline))
-kvx_float16x16_xstorec(void *ptr, float16x16_t a, uint64_t c) {
-    __builtin_kvx_xstorec256(a, ptr, c, ".deqz");
 }
