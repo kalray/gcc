@@ -195,6 +195,16 @@ kvx_float32x2_gt(float32x2_t a, float32x2_t b)
     return a > b;
 }
 int32x2_t __attribute__ ((noinline))
+kvx_float32x2_eqs(float32x2_t a, float32_t b)
+{
+    return a == b-(float32x2_t){};
+}
+int32x2_t __attribute__ ((noinline))
+kvx_float32x2_gts(float32x2_t a, float32_t b)
+{
+    return a > b-(float32x2_t){};
+}
+int32x2_t __attribute__ ((noinline))
 kvx_float32x2_nez(float32x2_t a)
 {
     return a != 0.0;
@@ -335,7 +345,7 @@ kvx_float32x2_ffdmasw(float32x2_t a, float32x2_t b, float32_t c)
 float32x2_t __attribute ((noinline))
 kvx_float32x2_load(float32x2_t *p)
 {
-    return __builtin_kvx_load64(p, ".v.s");
+    return __builtin_kvx_load64(p, ".s", 1);
 }
 void __attribute ((noinline))
 kvx_float32x2_store(float32x2_t *p, float32x2_t a)

@@ -204,3 +204,43 @@ kvx_float16_fromu64(unsigned long long i)
 {
     return (float16_t)i;
 }
+float16_t __attribute ((noinline))
+kvx_float16_loads(const char *p)
+{
+    return __builtin_kvx_loadhf(p, ".s");
+}
+float16_t __attribute ((noinline))
+kvx_float16_loadv(const char *p)
+{
+    return __builtin_kvx_loadhf(p, "", 1);
+}
+float16_t __attribute ((noinline))
+kvx_float16_loadc(float16_t b, const char *p, long c)
+{
+    return __builtin_kvx_loadchf(b, p, c, ".us.wnez");
+}
+float16_t __attribute ((noinline))
+kvx_float16_loadcv(float16_t b, const char *p, long c)
+{
+    return __builtin_kvx_loadchf(b, p, c, ".wnez");
+}
+void __attribute ((noinline))
+kvx_float16_store(char *p, float16_t b)
+{
+    __builtin_kvx_storehf(b, p, 0);
+}
+void __attribute ((noinline))
+kvx_float16_storev(char *p, float16_t b)
+{
+    __builtin_kvx_storehf(b, p, 1);
+}
+void __attribute ((noinline))
+kvx_float16_storec(char *p, float16_t b, long c)
+{
+    __builtin_kvx_storechf(b, p, c, ".deqz");
+}
+void __attribute ((noinline))
+kvx_float16_storecv(char *p, float16_t b, long c)
+{
+    __builtin_kvx_storechf(b, p, c, ".dnez");
+}

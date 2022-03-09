@@ -195,6 +195,16 @@ kvx_float64x2_gt(float64x2_t a, float64x2_t b)
     return a > b;
 }
 int64x2_t __attribute__ ((noinline))
+kvx_float64x2_eqs(float64x2_t a, float64_t b)
+{
+    return a == b-(float64x2_t){};
+}
+int64x2_t __attribute__ ((noinline))
+kvx_float64x2_gts(float64x2_t a, float64_t b)
+{
+    return a > b-(float64x2_t){};
+}
+int64x2_t __attribute__ ((noinline))
 kvx_float64x2_nez(float64x2_t a)
 {
     return a != 0.0;

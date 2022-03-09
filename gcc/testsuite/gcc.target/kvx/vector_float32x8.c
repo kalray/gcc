@@ -195,6 +195,16 @@ kvx_float32x8_gt(float32x8_t a, float32x8_t b)
     return a > b;
 }
 int32x8_t __attribute__ ((noinline))
+kvx_float32x8_eqs(float32x8_t a, float32_t b)
+{
+    return a == b-(float32x8_t){};
+}
+int32x8_t __attribute__ ((noinline))
+kvx_float32x8_gts(float32x8_t a, float32_t b)
+{
+    return a > b-(float32x8_t){};
+}
+int32x8_t __attribute__ ((noinline))
 kvx_float32x8_nez(float32x8_t a)
 {
     return a != 0.0;
@@ -310,7 +320,7 @@ kvx_float32x8_ffdmaswq(float32x8_t a, float32x8_t b, float32x4_t c)
 float32x8_t __attribute ((noinline))
 kvx_float32x8_load(float32x8_t *p)
 {
-    return __builtin_kvx_load256(p, ".v.s");
+    return __builtin_kvx_load256(p, ".s", 1);
 }
 void __attribute ((noinline))
 kvx_float32x8_store(float32x8_t *p, float32x8_t a)
@@ -335,20 +345,4 @@ kvx_float32x8_catfwo(float32x4_t a, float32x4_t b) {
 float32x8_t __attribute ((noinline))
 kvx_float32x8_scatfwo(float32x4_t a, float32x4_t b) {
     return __builtin_kvx_catwo(b, a);
-}
-float32x8_t __attribute ((noinline))
-kvx_float32x8_xload(const void *ptr) {
-    return __builtin_kvx_xload256(ptr, ".us");
-}
-float32x8_t __attribute ((noinline))
-kvx_float32x8_xloadc(const void *ptr, float32x8_t b, uint64_t c) {
-    return __builtin_kvx_xloadc256(ptr, b, c, ".us.weqz");
-}
-void __attribute ((noinline))
-kvx_float32x8_xstore(void *ptr, float32x8_t a) {
-    __builtin_kvx_xstore256(a, ptr, 0);
-}
-void __attribute ((noinline))
-kvx_float32x8_xstorec(void *ptr, float32x8_t a, uint64_t c) {
-    __builtin_kvx_xstorec256(a, ptr, c, ".deqz");
 }

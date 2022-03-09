@@ -74,6 +74,16 @@ kvx_int64_addx16(int64_t a, int64_t b)
     return a + (b << 4);
 }
 int64_t __attribute ((noinline))
+kvx_int64_addx32(int64_t a, int64_t b)
+{
+    return a + (b << 5);
+}
+int64_t __attribute ((noinline))
+kvx_int64_addx64(int64_t a, int64_t b)
+{
+    return a + (b << 6);
+}
+int64_t __attribute ((noinline))
 kvx_int64_sbfx2(int64_t a, int64_t b)
 {
     return a - b*2;
@@ -92,6 +102,16 @@ int64_t __attribute ((noinline))
 kvx_int64_sbfx16(int64_t a, int64_t b)
 {
     return a - b*16;
+}
+int64_t __attribute ((noinline))
+kvx_int64_sbfx32(int64_t a, int64_t b)
+{
+    return a - b*32;
+}
+int64_t __attribute ((noinline))
+kvx_int64_sbfx64(int64_t a, int64_t b)
+{
+    return a - b*64;
 }
 int64_t __attribute ((noinline))
 kvx_int64_mul(int64_t a, int64_t b)
@@ -223,27 +243,27 @@ kvx_int64_loads(const char *p)
 int64_t __attribute ((noinline))
 kvx_int64_loadv(const char *p)
 {
-    return __builtin_kvx_loadd(p, ".v");
+    return __builtin_kvx_loadd(p, "", 1);
 }
 int64_t __attribute ((noinline))
-kvx_int64_loadc(const char *p, int64_t b, long c)
+kvx_int64_loadc(int64_t b, const char *p, long c)
 {
-    return __builtin_kvx_loadcd(p, b, c, ".us.wnez");
+    return __builtin_kvx_loadcd(b, p, c, ".us.wnez");
 }
 int64_t __attribute ((noinline))
-kvx_int64_loadcv(const char *p, int64_t b, long c)
+kvx_int64_loadcv(int64_t b, const char *p, long c)
 {
-    return __builtin_kvx_loadcd(p, b, c, ".v.wnez");
+    return __builtin_kvx_loadcd(b, p, c, ".wnez");
 }
 void __attribute ((noinline))
 kvx_int64_store(char *p, int64_t b)
 {
-    __builtin_kvx_stored(b, p, "");
+    __builtin_kvx_stored(b, p, 0);
 }
 void __attribute ((noinline))
 kvx_int64_storev(char *p, int64_t b)
 {
-    __builtin_kvx_stored(b, p, ".v");
+    __builtin_kvx_stored(b, p, 1);
 }
 void __attribute ((noinline))
 kvx_int64_storec(char *p, int64_t b, long c)
@@ -253,7 +273,7 @@ kvx_int64_storec(char *p, int64_t b, long c)
 void __attribute ((noinline))
 kvx_int64_storecv(char *p, int64_t b, long c)
 {
-    __builtin_kvx_storecd(b, p, c, ".v.dnez");
+    __builtin_kvx_storecd(b, p, c, ".dnez");
 }
 int64_t __attribute ((noinline))
 kvx_int64_shr(int64_t a, int b)
