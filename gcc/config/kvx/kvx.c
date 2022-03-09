@@ -3926,15 +3926,9 @@ kvx_expand_chunk_shift (rtx target, rtx source1, rtx source2, int shift)
 }
 
 /* Emit a barrier, that is appropriate for memory model MODEL, at the
-   start of a sequence implementing an atomic operation. We always use
-   a very conservative memory model since the KV3 has a relaxed memory
-   consistency model, meaning that all loads and stores are scheduled
-   out-of-order at different memory addresses. Only simple load/store
-   operations are performed with more usual memory constraints (if
-   MOVE is true). */
-
+   start of a sequence implementing an atomic operation.  */
 void
-kvx_emit_pre_barrier (rtx model, bool move)
+kvx_emit_pre_barrier (rtx model)
 {
   const enum memmodel mm = memmodel_from_int (INTVAL (model));
   switch (mm & MEMMODEL_BASE_MASK) // treat sync operations as atomic ones
@@ -3942,48 +3936,63 @@ kvx_emit_pre_barrier (rtx model, bool move)
     case MEMMODEL_RELAXED:
     case MEMMODEL_CONSUME:
     case MEMMODEL_ACQUIRE:
-      /* No barrier is required for RELAXED, CONSUME, and ACQUIRE
-       * memory models with MOVE operations (loads/stores). Be
-       * conservative for any other cases, emit a fence.  */
-      if (move)
-	break;
-    /* Total order does fence before. */
-    case MEMMODEL_SEQ_CST:
-    /* Must commit pending stores in memory before store/atomic in memory. */
+      // No pre barrier is required for RELAXED, CONSUME, and ACQUIRE.
+      break;
     case MEMMODEL_RELEASE:
     case MEMMODEL_ACQ_REL:
-      emit_insn (gen_mem_thread_fence (model));
-      break;
+      // FENCE.W.
+      {
+	rtx modifier = KV3_1 ? gen_rtx_CONST_STRING (VOIDmode, "")
+			     : gen_rtx_CONST_STRING (VOIDmode, ".w");
+	emit_insn (gen_kvx_fence (modifier));
+	break;
+      }
+    case MEMMODEL_SEQ_CST:
+      // FENCE.
+      {
+	rtx modifier = gen_rtx_CONST_STRING (VOIDmode, "");
+	emit_insn (gen_kvx_fence (modifier));
+	break;
+      }
     default:
       gcc_unreachable ();
     }
 }
 
 /* Emit a barrier, that is appropriate for memory model MODEL, at the
-   end of a sequence implementing an atomic operation. See
-   kvx_emit_pre_barrier () for MOVE. */
-
+   end of a sequence implementing an atomic operation.  */
 void
-kvx_emit_post_barrier (rtx model, bool move)
+kvx_emit_post_barrier (rtx model)
 {
   const enum memmodel mm = memmodel_from_int (INTVAL (model));
   switch (mm & MEMMODEL_BASE_MASK) // treat sync operations as atomic ones
     {
     case MEMMODEL_RELAXED:
-    case MEMMODEL_ACQUIRE:
     case MEMMODEL_RELEASE:
-    case MEMMODEL_ACQ_REL:
-      /* no barrier is required for RELAXED, ACQUIRE, RELEASE, and ACQ_REL
-       * memory models with MOVE operations (loads/stores). Be
-       * conservative for any other cases, emit a fence.  */
-      if (move)
-	break;
-    /* Total order does fence after. */
-    case MEMMODEL_SEQ_CST:
-    /* Make sure load is return before moving on. */
-    case MEMMODEL_CONSUME:
-      emit_insn (gen_mem_thread_fence (model));
+      // No post barrier is required for RELAXED, and ACQUIRE .
       break;
+    case MEMMODEL_ACQUIRE:
+    case MEMMODEL_ACQ_REL:
+      // Clobber MEM to prevent moving around load and stores.
+      {
+	emit_insn (gen_kvx_mem_clobber ());
+	break;
+      }
+    case MEMMODEL_SEQ_CST:
+      // FENCE.
+      {
+	rtx modifier = gen_rtx_CONST_STRING (VOIDmode, "");
+	emit_insn (gen_kvx_fence (modifier));
+	break;
+      }
+    case MEMMODEL_CONSUME:
+      // FENCE.R.
+      {
+	rtx modifier = KV3_1 ? gen_rtx_CONST_STRING (VOIDmode, "")
+			     : gen_rtx_CONST_STRING (VOIDmode, ".r");
+	emit_insn (gen_kvx_fence (modifier));
+	break;
+      }
     default:
       gcc_unreachable ();
     }
@@ -4126,7 +4135,7 @@ kvx_expand_atomic_op (enum rtx_code code, rtx target, bool after, rtx mem,
     emit_move_insn (op_res_copy, op_res);
 
   /* Handle pre fence right before acswap. */
-  kvx_emit_pre_barrier (model, true);
+  kvx_emit_pre_barrier (model);
 
   /* Update memory with op result iff memory hasn't been modified since:
      if CURR_MEM_VAL == MEM then update MEM with NEW_MEM_VAL else try again. */
@@ -4135,7 +4144,7 @@ kvx_expand_atomic_op (enum rtx_code code, rtx target, bool after, rtx mem,
 			    : gen_kvx_acswapd (tmp, mem, modifier));
 
   /* Handle post fence right after acswap. */
-  kvx_emit_post_barrier (model, true);
+  kvx_emit_post_barrier (model);
 
   /* ACSWAP insn returns 0x0 (fail) or 0x1 (success) in the low part of TMP:
      - if successful: MEM is updated, do not loop
@@ -4204,13 +4213,13 @@ kvx_expand_atomic_test_and_set (rtx operands[])
   emit_insn (gen_iorsi3 (newval, oldval, mask));
 
   /* Handle pre fence right before acswap. */
-  kvx_emit_pre_barrier (model, true);
+  kvx_emit_pre_barrier (model);
 
   rtx modifier = gen_rtx_CONST_STRING (VOIDmode, "");
   emit_insn (gen_kvx_acswapw (tmp, memsi, modifier));
 
   /* Handle post fence right after acswap. */
-  kvx_emit_post_barrier (model, true);
+  kvx_emit_post_barrier (model);
 
   /* ACSWAP returns 0x0 (fail) or 0x1 (success) in the low part of TMP:
      - if successful: MEM is updated, do not loop,
