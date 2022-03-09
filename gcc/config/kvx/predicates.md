@@ -233,6 +233,17 @@
   return modifier[0] == '.' && modifier[1] == 'u';
 })
 
+(define_predicate "masked_modifier"
+  (match_code "const_string")
+{
+  const char *modifier = XSTR (op, 0);
+  if (modifier[0] == '.' && modifier[1] == 'm')
+    return true;
+  for (modifier++; *modifier; modifier++)
+    if (*modifier == '.') break;
+  return modifier[0] == '.' && modifier[1] == 'm';
+})
+
 (define_predicate "store_multiple_operation"
   (and (match_code "parallel")
        (match_test "kvx_store_multiple_operation_p (op)")))
