@@ -148,8 +148,8 @@ extern bool kvx_expand_vec_perm_const (rtx target, rtx source1, rtx source2, rtx
 
 extern rtx kvx_expand_chunk_shift (rtx target, rtx source1, rtx source2, int shift);
 
-extern void kvx_emit_pre_barrier (rtx, bool);
-extern void kvx_emit_post_barrier (rtx, bool);
+extern void kvx_emit_pre_barrier (rtx);
+extern void kvx_emit_post_barrier (rtx);
 extern void kvx_expand_compare_and_swap (rtx op[]);
 extern void kvx_expand_atomic_op (enum rtx_code, rtx, bool, rtx, rtx, rtx);
 extern void kvx_expand_atomic_test_and_set (rtx op[]);

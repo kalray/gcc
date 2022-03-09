@@ -45,7 +45,7 @@
    (match_operand:SI 2 "const_int_operand" "")] ;; model
   ""
   {
-    kvx_emit_pre_barrier(operands[2], true);
+    kvx_emit_pre_barrier (operands[2]);
     switch (<MODE>mode) {
       case E_TImode: emit_insn (gen_lqu (operands[0], operands[1]));  break;
       case E_DImode: emit_insn (gen_ldu (operands[0], operands[1]));  break;
@@ -54,7 +54,7 @@
       case E_QImode: emit_insn (gen_lbzu (operands[0], operands[1])); break;
       default: gcc_unreachable ();
       }
-    kvx_emit_post_barrier(operands[2], true);
+    kvx_emit_post_barrier (operands[2]);
     DONE;
   }
 )
@@ -66,9 +66,9 @@
    (match_operand:SI 2 "const_int_operand" "")] ;; model
   ""
   {
-    kvx_emit_pre_barrier(operands[2], true);
+    kvx_emit_pre_barrier (operands[2]);
     emit_move_insn (operands[0], operands[1]);
-    kvx_emit_post_barrier(operands[2], true);
+    kvx_emit_post_barrier (operands[2]);
     DONE;
   }
 )
@@ -162,11 +162,15 @@
 
 ;; Thread fence with memory model semantics.
 (define_expand "mem_thread_fence"
-  [(match_operand:SI 0 "const_int_operand" "")] ;; model
+  [(match_operand:SI 0 "const_int_operand" "")]
   ""
   {
-    rtx modifier = gen_rtx_CONST_STRING (VOIDmode, "");
-    emit_insn (gen_kvx_fence (modifier));
+    enum memmodel model = memmodel_base (INTVAL (operands[0]));
+    if (model != MEMMODEL_RELAXED)
+      {
+        rtx modifier = gen_rtx_CONST_STRING (VOIDmode, "");
+        emit_insn (gen_kvx_fence (modifier));
+      }
     DONE;
   }
 )
@@ -180,6 +184,12 @@
        barrier in order to synchronize a thread with itself. */
     DONE;
   }
+)
+
+;; Clobber memory contents to prevent moving around load and stores.
+(define_expand "kvx_mem_clobber"
+  [(clobber (mem:BLK (scratch)))]
+  ""
 )
 
 
