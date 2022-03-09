@@ -280,7 +280,7 @@ kvx_int32x8_shru7(int32x8_t a)
 int32x8_t __attribute ((noinline))
 kvx_int32x8_load(int32x8_t *p)
 {
-    return __builtin_kvx_load256(p, ".v.s");
+    return __builtin_kvx_load256(p, ".s", 1);
 }
 void __attribute ((noinline))
 kvx_int32x8_store(int32x8_t *p, int32x8_t a)
@@ -559,20 +559,4 @@ kvx_int32x8_catwo(int32x4_t a, int32x4_t b) {
 int32x8_t __attribute ((noinline))
 kvx_int32x8_scatwo(int32x4_t a, int32x4_t b) {
     return __builtin_kvx_catwo(b, a);
-}
-int32x8_t __attribute ((noinline))
-kvx_int32x8_xload(const void *ptr) {
-    return __builtin_kvx_xload256(ptr, ".us");
-}
-int32x8_t __attribute ((noinline))
-kvx_int32x8_xloadc(const void *ptr, int32x8_t b, uint64_t c) {
-    return __builtin_kvx_xloadc256(ptr, b, c, ".us.weqz");
-}
-void __attribute ((noinline))
-kvx_int32x8_xstore(void *ptr, int32x8_t a) {
-    __builtin_kvx_xstore256(a, ptr, 0);
-}
-void __attribute ((noinline))
-kvx_int32x8_xstorec(void *ptr, int32x8_t a, uint64_t c) {
-    __builtin_kvx_xstorec256(a, ptr, c, ".deqz");
 }

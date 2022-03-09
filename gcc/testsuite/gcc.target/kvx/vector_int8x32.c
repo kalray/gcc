@@ -280,7 +280,7 @@ kvx_int8x32_shru7(int8x32_t a)
 int8x32_t __attribute ((noinline))
 kvx_int8x32_load(int8x32_t *p)
 {
-    return __builtin_kvx_load256(p, ".v.s");
+    return __builtin_kvx_load256(p, ".s", 1);
 }
 void __attribute ((noinline))
 kvx_int8x32_store(int8x32_t *p, int8x32_t a)
@@ -539,20 +539,4 @@ kvx_int8x32_catbv(int8x16_t a, int8x16_t b) {
 int8x32_t __attribute ((noinline))
 kvx_int8x32_scatbv(int8x16_t a, int8x16_t b) {
     return __builtin_kvx_catbv(b, a);
-}
-int8x32_t __attribute ((noinline))
-kvx_int8x32_xload(const void *ptr) {
-    return __builtin_kvx_xload256(ptr, ".us");
-}
-int8x32_t __attribute ((noinline))
-kvx_int8x32_xloadc(const void *ptr, int8x32_t b, uint64_t c) {
-    return __builtin_kvx_xloadc256(ptr, b, c, ".us.weqz");
-}
-void __attribute ((noinline))
-kvx_int8x32_xstore(void *ptr, int8x32_t a) {
-    __builtin_kvx_xstore256(a, ptr, 0);
-}
-void __attribute ((noinline))
-kvx_int8x32_xstorec(void *ptr, int8x32_t a, uint64_t c) {
-    __builtin_kvx_xstorec256(a, ptr, c, ".deqz");
 }

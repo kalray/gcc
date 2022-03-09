@@ -195,6 +195,16 @@ kvx_float16x8_gt(float16x8_t a, float16x8_t b)
     return a > b;
 }
 int16x8_t __attribute__ ((noinline))
+kvx_float16x8_eqs(float16x8_t a, float16_t b)
+{
+    return a == b-(float16x8_t){};
+}
+int16x8_t __attribute__ ((noinline))
+kvx_float16x8_gts(float16x8_t a, float16_t b)
+{
+    return a > b-(float16x8_t){};
+}
+int16x8_t __attribute__ ((noinline))
 kvx_float16x8_nez(float16x8_t a)
 {
     return a != 0.0;

@@ -280,7 +280,7 @@ kvx_int8x8_shru7(int8x8_t a)
 int8x8_t __attribute ((noinline))
 kvx_int8x8_load(int8x8_t *p)
 {
-    return __builtin_kvx_load64(p, ".v.s");
+    return __builtin_kvx_load64(p, ".s", 1);
 }
 void __attribute ((noinline))
 kvx_int8x8_store(int8x8_t *p, int8x8_t a)
