@@ -734,8 +734,6 @@ kvx_extension_mode_p (enum machine_mode mode)
     case E_V16OImode:
     // 8192-bit coprocessor modes
     case E_V32OImode:
-    // 16384-bit coprocessor modes
-    case E_V64OImode:
       return true;
     default:
       break;
@@ -5789,6 +5787,9 @@ kvx_insn_cost (rtx_insn *insn, bool speed)
     }
 
   enum attr_type type = get_attr_type (insn);
+  if (type == TYPE_ALU_NOP)
+    return 0;
+
   int cost = get_attr_length (insn) - 4;
   gcc_assert (cost >= 0);
 
