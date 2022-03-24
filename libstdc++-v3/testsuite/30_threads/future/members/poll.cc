@@ -19,6 +19,7 @@
 // { dg-do run { target c++11 } }
 // { dg-additional-options "-pthread" { target pthread } }
 // { dg-require-gthreads "" }
+// { dg-skip-if "Disabled on KVX (timing can fail on simulator)" { "kvx-*-*" }  { "*" } { "" } }
 
 #include <future>
 #include <chrono>
