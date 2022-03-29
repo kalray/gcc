@@ -2678,6 +2678,9 @@ final_scan_insn_1 (rtx_insn *insn, FILE *file, int optimize_p ATTRIBUTE_UNUSED,
 		if (*loc.file && loc.line)
 		  fprintf (asm_out_file, "%s 0 \"\" 2\n", ASM_COMMENT_START);
 #endif
+
+		if (targetm.asm_out.final_postscan_insn)
+		  targetm.asm_out.final_postscan_insn (file, insn, NULL, 0);
 	      }
 	    break;
 	  }
