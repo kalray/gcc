@@ -2102,7 +2102,7 @@ kv3_print_insn(kv3opc_t *op) {
   case Bundling_kv3_TINY:
   case Bundling_kv3_TINY_X:
   case Bundling_kv3_TINY_Y:
-    insn_type="LITE           ";
+    insn_type="TINY           ";
     break;
   case Bundling_kv3_MAU:
   case Bundling_kv3_MAU_X:
