@@ -645,6 +645,18 @@ enum kvx_builtin
   KVX_BUILTIN_LWF,
   KVX_BUILTIN_LDF,
 
+  KVX_BUILTIN_LBO,
+  KVX_BUILTIN_LBX,
+  KVX_BUILTIN_LBV,
+  KVX_BUILTIN_LHQ,
+  KVX_BUILTIN_LHO,
+  KVX_BUILTIN_LHX,
+  KVX_BUILTIN_LWP,
+  KVX_BUILTIN_LWO,
+  KVX_BUILTIN_LWQ,
+  KVX_BUILTIN_LDP,
+  KVX_BUILTIN_LDQ,
+
   KVX_BUILTIN_LOADBZ,
   KVX_BUILTIN_LOADHZ,
   KVX_BUILTIN_LOADWZ,
@@ -1498,6 +1510,18 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN_VA (LWF, "lwf", FLOAT32, CVPTR, VARIANT/*, BOOL*/); // Deprecated
   ADD_KVX_BUILTIN_VA (LDF, "ldf", FLOAT64, CVPTR, VARIANT/*, BOOL*/); // Deprecated
 
+  ADD_KVX_BUILTIN_VA (LBO, "lbo", V8QI, CVPTR, VARIANT/*, BOOL*/); // Deprecated
+  ADD_KVX_BUILTIN_VA (LBX, "lbx", V16QI, CVPTR, VARIANT/*, BOOL*/); // Deprecated
+  ADD_KVX_BUILTIN_VA (LBV, "lbv", V32QI, CVPTR, VARIANT/*, BOOL*/); // Deprecated
+  ADD_KVX_BUILTIN_VA (LHQ, "lhq", V4HI, CVPTR, VARIANT/*, BOOL*/); // Deprecated
+  ADD_KVX_BUILTIN_VA (LHO, "lho", V8HI, CVPTR, VARIANT/*, BOOL*/); // Deprecated
+  ADD_KVX_BUILTIN_VA (LHX, "lhx", V16HI, CVPTR, VARIANT/*, BOOL*/); // Deprecated
+  ADD_KVX_BUILTIN_VA (LWP, "lwp", V2SI, CVPTR, VARIANT/*, BOOL*/); // Deprecated
+  ADD_KVX_BUILTIN_VA (LWQ, "lwq", V4SI, CVPTR, VARIANT/*, BOOL*/); // Deprecated
+  ADD_KVX_BUILTIN_VA (LWO, "lwo", V8SI, CVPTR, VARIANT/*, BOOL*/); // Deprecated
+  ADD_KVX_BUILTIN_VA (LDP, "ldp", V2DI, CVPTR, VARIANT/*, BOOL*/); // Deprecated
+  ADD_KVX_BUILTIN_VA (LDQ, "ldq", V4DI, CVPTR, VARIANT/*, BOOL*/); // Deprecated
+
   ADD_KVX_BUILTIN_VA (LOADBZ, "loadbz", UINT64, CVPTR, VARIANT/*, BOOL*/); // Scalar
   ADD_KVX_BUILTIN_VA (LOADHZ, "loadhz", UINT64, CVPTR, VARIANT/*, BOOL*/); // Scalar
   ADD_KVX_BUILTIN_VA (LOADWZ, "loadwz", UINT64, CVPTR, VARIANT/*, BOOL*/); // Scalar
@@ -2167,21 +2191,21 @@ build_xbuffer_arg (tree arg, const char *name)
     error ("__builtin_kvx_%s is not available for kv3-1.", name);
   const char *xbuffer = tree_string_constant (arg);
   static const char *table[] = {
-    "$a0..a1", "$a2..a3", "$a4..a5", "$a6..a7", 
-    "$a8..a9", "$a10..a11", "$a12..a13", "$a14..a15", 
-    "$a16..a17", "$a18..a19", "$a20..a21", "$a22..a23", 
-    "$a24..a25", "$a26..a27", "$a28..a29", "$a30..a31", 
-    "$a32..a33", "$a34..a35", "$a36..a37", "$a38..a39", 
-    "$a40..a41", "$a42..a43", "$a44..a45", "$a46..a47", 
-    "$a48..a49", "$a50..a51", "$a52..a53", "$a54..a55", 
-    "$a56..a57", "$a58..a59", "$a60..a61", "$a62..a63", 
-    "$a0..a3", "$a4..a7", "$a8..a11", "$a12..a15", 
-    "$a16..a19", "$a20..a23", "$a24..a27", "$a28..a31", 
-    "$a32..a35", "$a36..a39", "$a40..a43", "$a44..a47", 
-    "$a48..a51", "$a52..a55", "$a56..a59", "$a60..a63", 
-    "$a0..a7", "$a8..a15", "$a16..a23", "$a24..a31", 
-    "$a32..a39", "$a40..a47", "$a48..a55", "$a56..a63", 
-    "$a0..a15", "$a16..a31", "$a32..a47", "$a48..a63", 
+    "$a0..a1", "$a2..a3", "$a4..a5", "$a6..a7",
+    "$a8..a9", "$a10..a11", "$a12..a13", "$a14..a15",
+    "$a16..a17", "$a18..a19", "$a20..a21", "$a22..a23",
+    "$a24..a25", "$a26..a27", "$a28..a29", "$a30..a31",
+    "$a32..a33", "$a34..a35", "$a36..a37", "$a38..a39",
+    "$a40..a41", "$a42..a43", "$a44..a45", "$a46..a47",
+    "$a48..a49", "$a50..a51", "$a52..a53", "$a54..a55",
+    "$a56..a57", "$a58..a59", "$a60..a61", "$a62..a63",
+    "$a0..a3", "$a4..a7", "$a8..a11", "$a12..a15",
+    "$a16..a19", "$a20..a23", "$a24..a27", "$a28..a31",
+    "$a32..a35", "$a36..a39", "$a40..a43", "$a44..a47",
+    "$a48..a51", "$a52..a55", "$a56..a59", "$a60..a63",
+    "$a0..a7", "$a8..a15", "$a16..a23", "$a24..a31",
+    "$a32..a39", "$a40..a47", "$a48..a55", "$a56..a63",
+    "$a0..a15", "$a16..a31", "$a32..a47", "$a48..a63",
     "$a0..a31", "$a32..a63", "$a0..a63",
   };
   for (int i = 0; i < (int) (sizeof (table) / sizeof (*table)); i++)
@@ -3415,6 +3439,18 @@ KVX_EXPAND_BUILTIN_LOAD (lhf, HFmode, HFmode)
 KVX_EXPAND_BUILTIN_LOAD (lwf, SFmode, SFmode)
 KVX_EXPAND_BUILTIN_LOAD (ldf, DFmode, DFmode)
 
+KVX_EXPAND_BUILTIN_LOAD (lbo, V8QImode, V8QImode)
+KVX_EXPAND_BUILTIN_LOAD (lbx, V16QImode, V16QImode)
+KVX_EXPAND_BUILTIN_LOAD (lbv, V32QImode, V32QImode)
+KVX_EXPAND_BUILTIN_LOAD (lhq, V4HImode, V4HImode)
+KVX_EXPAND_BUILTIN_LOAD (lho, V8HImode, V8HImode)
+KVX_EXPAND_BUILTIN_LOAD (lhx, V16HImode, V16HImode)
+KVX_EXPAND_BUILTIN_LOAD (lwp, V2SImode, V2SImode)
+KVX_EXPAND_BUILTIN_LOAD (lwq, V4SImode, V4SImode)
+KVX_EXPAND_BUILTIN_LOAD (lwo, V8SImode, V8SImode)
+KVX_EXPAND_BUILTIN_LOAD (ldp, V2DImode, V2DImode)
+KVX_EXPAND_BUILTIN_LOAD (ldq, V4DImode, V4DImode)
+
 KVX_EXPAND_BUILTIN_LOAD (loadbz, DImode, QImode)
 KVX_EXPAND_BUILTIN_LOAD (loadhz, DImode, HImode)
 KVX_EXPAND_BUILTIN_LOAD (loadwz, DImode, SImode)
@@ -4414,6 +4450,18 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_LWF: return kvx_expand_builtin_lwf (target, exp);
     case KVX_BUILTIN_LDF: return kvx_expand_builtin_ldf (target, exp);
 
+    case KVX_BUILTIN_LBO: return kvx_expand_builtin_lbo (target, exp);
+    case KVX_BUILTIN_LBX: return kvx_expand_builtin_lbx (target, exp);
+    case KVX_BUILTIN_LBV: return kvx_expand_builtin_lbv (target, exp);
+    case KVX_BUILTIN_LHQ: return kvx_expand_builtin_lhq (target, exp);
+    case KVX_BUILTIN_LHO: return kvx_expand_builtin_lho (target, exp);
+    case KVX_BUILTIN_LHX: return kvx_expand_builtin_lhx (target, exp);
+    case KVX_BUILTIN_LWP: return kvx_expand_builtin_lwp (target, exp);
+    case KVX_BUILTIN_LWQ: return kvx_expand_builtin_lwq (target, exp);
+    case KVX_BUILTIN_LWO: return kvx_expand_builtin_lwo (target, exp);
+    case KVX_BUILTIN_LDP: return kvx_expand_builtin_ldp (target, exp);
+    case KVX_BUILTIN_LDQ: return kvx_expand_builtin_ldq (target, exp);
+
     case KVX_BUILTIN_LOADBZ: return kvx_expand_builtin_loadbz (target, exp);
     case KVX_BUILTIN_LOADHZ: return kvx_expand_builtin_loadhz (target, exp);
     case KVX_BUILTIN_LOADWZ: return kvx_expand_builtin_loadwz (target, exp);
@@ -4528,5 +4576,36 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     }
   internal_error ("unknown builtin code");
   return NULL_RTX;
+}
+
+tree
+kvx_resolve_overloaded_builtin (location_t loc,
+				tree ob_fndecl,
+				void *passed_arglist)
+{
+  vec<tree, va_gc> *arglist = static_cast<vec<tree, va_gc> *> (passed_arglist);
+  unsigned int in_args_num = vec_safe_length (arglist);
+  unsigned int fcode = DECL_FUNCTION_CODE (ob_fndecl);
+
+  switch (fcode)
+    {
+    case KVX_BUILTIN_LBO:
+    case KVX_BUILTIN_LBX:
+    case KVX_BUILTIN_LBV:
+    case KVX_BUILTIN_LHQ:
+    case KVX_BUILTIN_LHO:
+    case KVX_BUILTIN_LHX:
+    case KVX_BUILTIN_LWP:
+    case KVX_BUILTIN_LWQ:
+    case KVX_BUILTIN_LWO:
+    case KVX_BUILTIN_LDP:
+    case KVX_BUILTIN_LDQ:
+      warning (OPT_Wdeprecated, "%qF is deprecated.", ob_fndecl);
+      break;
+    default:
+      break;
+    }
+
+  return NULL_TREE;
 }
 

@@ -6832,6 +6832,9 @@ kvx_ctrapsi4 (void)
 #undef TARGET_EXPAND_BUILTIN
 #define TARGET_EXPAND_BUILTIN kvx_expand_builtin
 
+#undef TARGET_RESOLVE_OVERLOADED_BUILTIN
+#define TARGET_RESOLVE_OVERLOADED_BUILTIN kvx_resolve_overloaded_builtin
+
 #undef TARGET_CANNOT_FORCE_CONST_MEM
 #define TARGET_CANNOT_FORCE_CONST_MEM kvx_cannot_force_const_mem
 
@@ -7013,6 +7016,8 @@ void kvx_init_builtins (void);
 tree kvx_builtin_decl (unsigned code, bool initialize_p);
 rtx kvx_expand_builtin (tree exp, rtx target, rtx subtarget,
 			enum machine_mode mode, int ignore);
+tree kvx_resolve_overloaded_builtin (location_t loc, tree ob_fndecl,
+				     void *passed_arglist);
 
 struct gcc_target targetm = TARGET_INITIALIZER;
 
