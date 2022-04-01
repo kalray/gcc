@@ -472,6 +472,17 @@
   [(set_attr "type" "alu_thin,alu_thin_x")
    (set_attr "length" "     4,         8")]
 )
+;; multiplicative version of addx2<suffix>
+(define_insn "*addx2<suffix>_m"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (plus:SIDI (mult:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
+                              (const_int 2))
+                   (match_operand:SIDI 2 "register_s32_operand" "r,B32")))]
+  ""
+  "addx2<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
 ;; zero-extend version of *addx2si
 (define_insn "*addx2si_zext"
   [(set (match_operand:DI 0 "register_operand" "=r,r")
@@ -492,6 +503,17 @@
   ""
   "addx4<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_thin,alu_thin_x")
+   (set_attr "length" "     4,         8")]
+)
+;; multiplicative version of addx4<suffix>
+(define_insn "*addx4<suffix>_m"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (plus:SIDI (mult:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
+                              (const_int 4))
+                   (match_operand:SIDI 2 "register_s32_operand" "r,B32")))]
+  ""
+  "addx4<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite_x")
    (set_attr "length" "     4,         8")]
 )
 ;; zero-extend version of *addx4si
@@ -516,6 +538,17 @@
   [(set_attr "type" "alu_thin,alu_thin_x")
    (set_attr "length" "     4,         8")]
 )
+;; multiplicative version of addx8<suffix>
+(define_insn "*addx8<suffix>_m"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (plus:SIDI (mult:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
+                              (const_int 8))
+                   (match_operand:SIDI 2 "register_s32_operand" "r,B32")))]
+  ""
+  "addx8<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
 ;; zero-extend version of *addx8si
 (define_insn "*addx8si_zext"
   [(set (match_operand:DI 0 "register_operand" "=r,r")
@@ -536,6 +569,17 @@
   ""
   "addx16<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_thin,alu_thin_x")
+   (set_attr "length" "     4,         8")]
+)
+;; multiplicative version of addx16<suffix>
+(define_insn "*addx16<suffix>_m"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (plus:SIDI (mult:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
+                              (const_int 16))
+                   (match_operand:SIDI 2 "register_s32_operand" "r,B32")))]
+  ""
+  "addx16<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite_x")
    (set_attr "length" "     4,         8")]
 )
 ;; zero-extend version of *addx16si
@@ -591,6 +635,94 @@
   "KV3_2"
   "addx64w %0 = %1, %2"
   [(set_attr "type" "alu_tiny,alu_tiny_x")
+   (set_attr "length" "     4,         8")]
+)
+
+(define_insn "*addx32<suffix>"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (plus:SIDI (ashift:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
+                                (const_int 5))
+                   (match_operand:SIDI 2 "register_s32_operand" "r,B32")))]
+  "KV3_2"
+  "addx32<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
+;; multiplicative version of addx32<suffix>
+(define_insn_and_split "*addx32<suffix>_m"
+  [(set (match_operand:SIDI 0 "register_operand" "=&r,&r")
+        (plus:SIDI (mult:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
+                              (const_int 32))
+                   (match_operand:SIDI 2 "register_s32_operand" "r,B32")))]
+  "KV3_1"
+  "#"
+  "KV3_1"
+  [(set (match_dup 0) (ashift:SIDI (match_dup 1) (const_int 5)))
+   (set (match_dup 0) (plus:SIDI (match_dup 0) (match_dup 2)))]
+)
+(define_insn "*addx32<suffix>_m"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (plus:SIDI (mult:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
+                              (const_int 32))
+                   (match_operand:SIDI 2 "register_s32_operand" "r,B32")))]
+  "KV3_2"
+  "addx32<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
+;; zero-extend version of *addx32si
+(define_insn "*addx32si_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r,r")
+        (zero_extend:DI (plus:SI (ashift:SI (match_operand:SI 1 "register_operand" "r,r")
+                                            (const_int 5))
+                                 (match_operand:SI 2 "register_s32_operand" "r,B32"))))]
+  "KV3_2"
+  "addx32w %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
+
+(define_insn "*addx64<suffix>"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (plus:SIDI (ashift:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
+                                (const_int 6))
+                   (match_operand:SIDI 2 "register_s32_operand" "r,B32")))]
+  "KV3_2"
+  "addx64<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
+;; multiplicative version of addx64<suffix>
+(define_insn_and_split "*addx64<suffix>_m"
+  [(set (match_operand:SIDI 0 "register_operand" "=&r,&r")
+        (plus:SIDI (mult:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
+                              (const_int 64))
+                   (match_operand:SIDI 2 "register_s32_operand" "r,B32")))]
+  "KV3_1"
+  "#"
+  "KV3_1"
+  [(set (match_dup 0) (ashift:SIDI (match_dup 1) (const_int 6)))
+   (set (match_dup 0) (plus:SIDI (match_dup 0) (match_dup 2)))]
+)
+(define_insn "*addx64<suffix>_m"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (plus:SIDI (mult:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
+                              (const_int 64))
+                   (match_operand:SIDI 2 "register_s32_operand" "r,B32")))]
+  "KV3_2"
+  "addx64<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
+;; zero-extend version of *addx64si
+(define_insn "*addx64si_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r,r")
+        (zero_extend:DI (plus:SI (ashift:SI (match_operand:SI 1 "register_operand" "r,r")
+                                            (const_int 6))
+                                 (match_operand:SI 2 "register_s32_operand" "r,B32"))))]
+  "KV3_2"
+  "addx64w %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite_x")
    (set_attr "length" "     4,         8")]
 )
 
@@ -723,6 +855,50 @@
   "KV3_2"
   "sbfx64w %0 = %2, %1"
   [(set_attr "type" "alu_tiny,alu_tiny_x")
+   (set_attr "length" "     4,         8")]
+)
+
+(define_insn "*sbfx32<suffix>"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (minus:SIDI (match_operand:SIDI 1 "register_s32_operand" "r,B32")
+                    (ashift:SIDI (match_operand:SIDI 2 "register_operand" "r,r")
+                                 (const_int 5))))]
+  "KV3_2"
+  "sbfx32<suffix> %0 = %2, %1"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
+;; zero-extend version of *sbfx32si
+(define_insn "*sbfx32si_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r,r")
+        (zero_extend:DI (minus:SI (match_operand:SI 1 "register_s32_operand" "r,B32")
+                                  (ashift:SI (match_operand:SI 2 "register_operand" "r,r")
+                                             (const_int 5)))))]
+  "KV3_2"
+  "sbfx32w %0 = %2, %1"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
+
+(define_insn "*sbfx64<suffix>"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (minus:SIDI (match_operand:SIDI 1 "register_s32_operand" "r,B32")
+                    (ashift:SIDI (match_operand:SIDI 2 "register_operand" "r,r")
+                                 (const_int 6))))]
+  "KV3_2"
+  "sbfx64<suffix> %0 = %2, %1"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "     4,         8")]
+)
+;; zero-extend version of *sbfx64si
+(define_insn "*sbfx64si_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r,r")
+        (zero_extend:DI (minus:SI (match_operand:SI 1 "register_s32_operand" "r,B32")
+                                  (ashift:SI (match_operand:SI 2 "register_operand" "r,r")
+                                             (const_int 6)))))]
+  "KV3_2"
+  "sbfx64w %0 = %2, %1"
+  [(set_attr "type" "alu_lite,alu_lite_x")
    (set_attr "length" "     4,         8")]
 )
 

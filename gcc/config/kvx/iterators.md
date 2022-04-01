@@ -357,6 +357,8 @@
 
 (define_mode_iterator SIDI [SI DI])
 
+(define_mode_iterator DISI [DI SI])
+
 ;; insns length for materializing a symbol depending on pointer size,
 ;; using make insn. Alternatives using these should only be enabled
 ;; for valid pointer modes: SI or DI. Anything else is an error.
@@ -393,7 +395,19 @@
   SI SF DI DF TI
 ])
 
-;; Iterator for the modes that fit in a GPR for CMOVED.
+;; Iterator for the integer modes that fit in a GPR.
+(define_mode_iterator WI [
+  QI HI SI DI
+  V8QI V4HI V2SI
+])
+
+;; Iterator for the floating-point modes that fit in a GPR.
+(define_mode_iterator WF [
+  HF SF DF HC SC
+  V4HF V2SF
+])
+
+;; Iterator for the modes that fit in a GPR.
 (define_mode_iterator FITGPR [
   QI HI HF SI SF DI DF HC SC
   V8QI V4HI V4HF V2SI V2SF
