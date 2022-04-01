@@ -525,6 +525,12 @@ extern void kvx_profile_hook (void);
 /* Set MAX_CONDITIONAL_EXECUTE to 2*BRANCH_COST */
 #define MAX_CONDITIONAL_EXECUTE 12
 
+#define IFCVT_MODIFY_INSN(CE_INFO, PATTERN, INSN)                              \
+  ((PATTERN) = kvx_ifcvt_modify_insn (CE_INFO, PATTERN, INSN))
+
+#define IFCVT_MACHDEP_INIT(ce_info)                                            \
+  (kvx_ifcvt_machdep_init (ce_info, ifcvt_after_combine))
+
 /* ********** PIC ********** */
 
 #define GOT_SYMBOL_NAME "*_GLOBAL_OFFSET_TABLE_"
@@ -770,5 +776,9 @@ extern void kvx_profile_hook (void);
 extern GTY (()) rtx kvx_link_reg_rtx;
 
 extern GTY (()) rtx kvx_divmod_zero;
+
+
+enum kvx_ifcvt_ce { KVX_IFCVT_, KVX_IFCVT_CE1, KVX_IFCVT_CE2, KVX_IFCVT_CE3 };
+extern GTY (()) enum kvx_ifcvt_ce kvx_ifcvt_ce_level;
 
 #endif

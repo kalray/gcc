@@ -8,12 +8,12 @@
      "Coprocessor registers.")
 
 (define_constraint "SYM"
-  "An immediate or symbol operand"
+  "An immediate or symbol operand."
   (ior (match_code "const_double,const_int")
        (match_test "kvx_symbol_operand(op,mode)")))
 
 (define_constraint "REF"
-  "A label reference"
+  "A code label reference."
   (match_code "label_ref"))
 
 (define_constraint "S01"
@@ -35,17 +35,17 @@
        (match_test "ival >= -512 && ival <= 511")))
 
 (define_constraint "H16"
-  "A real value that fits on 16bits"
+  "A real value that fits on 16bits."
   (and (match_code "const_double")
        (match_test "kvx_float_fits_bits(rval,16,mode)")))
 
 (define_constraint "H32"
-  "A real value that fits on 32bits"
+  "A real value that fits on 32bits."
   (and (match_code "const_double")
        (match_test "kvx_float_fits_bits(rval,32,mode)")))
 
 (define_constraint "H43"
-  "A real value that fits on 43bits"
+  "A real value that fits on 43bits."
   (and (match_code "const_double")
        (match_test "kvx_float_fits_bits(rval,43,mode)")))
 
@@ -107,82 +107,114 @@
        (match_test "kvx_has_43bit_vector_const_p (op)")))
 
 (define_constraint "SX2"
-  "A 64-bit vector constant made of two identical 32-bit values"
+  "A 64-bit vector constant made of two identical 32-bit values."
   (and (match_code "const_vector")
        (match_test "kvx_has_32x2bit_vector_const_p (op)")))
 
 (define_memory_constraint "a"
-  "Memory operands with 10-bit immediates or register"
+  "Memory operands with 10-bit immediate or register."
   (and (match_code "mem")
        (match_test "kvx_has_10bit_imm_or_reg_p (op)")))
 
 (define_memory_constraint "b"
-  "Memory operands with 37-bit immediates"
+  "Memory operands with 37-bit immediate."
   (and (match_code "mem")
        (match_test "kvx_has_37bit_immediate_p (op)")))
 
 (define_memory_constraint "c"
-  "Memory operands with pointer register"
+  "Memory operands with pointer register."
   (and (match_code "mem")
-       (match_test "REG_P (XEXP (op, 0))")))
+       (match_test "general_register_operand (XEXP (op, 0), Pmode)")))
 
 (define_memory_constraint "d"
-  "Memory operands with 27-bit immediates"
+  "Memory operands with 27-bit immediate."
   (and (match_code "mem")
        (match_test "kvx_has_27bit_immediate_p (op)")))
 
 (define_memory_constraint "e"
-  "Memory operands with 54-bit immediates"
+  "Memory operands with 54-bit immediate."
   (and (match_code "mem")
        (match_test "kvx_has_54bit_immediate_p (op)")))
 
-(define_memory_constraint "u"
-  "Uncached memory operands"
+(define_memory_constraint "Ca"
+  "Cached memory operands with 10-bit immediate or register."
   (and (match_code "mem")
-       (match_test "kvx_is_uncached_mem_op_p (op)")))
-
-(define_memory_constraint "Cm"
-  "Cached memory operands with 64-bit immediates"
-  (and (match_code "mem")
-       (match_test "kvx_has_64bit_immediate_p (op)")
+       (match_test "kvx_has_10bit_imm_or_reg_p (op)")
        (match_test "!kvx_is_uncached_mem_op_p (op)")))
 
 (define_memory_constraint "Cb"
-  "Cached memory operands with 37-bit immediates"
+  "Cached memory operands with 37-bit immediate."
   (and (match_code "mem")
        (match_test "kvx_has_37bit_immediate_p (op)")
        (match_test "!kvx_is_uncached_mem_op_p (op)")))
 
-(define_memory_constraint "Ca"
-  "Cached memory operands with 10-bit immediates or register"
+(define_memory_constraint "Cc"
+  "Cached memory operands with pointer register."
   (and (match_code "mem")
-       (match_test "kvx_has_10bit_imm_or_reg_p (op)")
+       (match_test "general_register_operand (XEXP (op, 0), Pmode)")
        (match_test "!kvx_is_uncached_mem_op_p (op)")))
 
+(define_memory_constraint "Cd"
+  "Cached memory operands with 27-bit immediate."
+  (and (match_code "mem")
+       (match_test "kvx_has_27bit_immediate_p (op)")
+       (match_test "!kvx_is_uncached_mem_op_p (op)")))
+
+(define_memory_constraint "Ce"
+  "Cached memory operands with 54-bit immediate."
+  (and (match_code "mem")
+       (match_test "kvx_has_54bit_immediate_p (op)")
+       (match_test "!kvx_is_uncached_mem_op_p (op)")))
+
+(define_memory_constraint "Cm"
+  "Cached memory operands with 64-bit immediate."
+  (and (match_code "mem")
+       (match_test "kvx_has_64bit_immediate_p (op)")
+       (match_test "!kvx_is_uncached_mem_op_p (op)")))
+
+(define_memory_constraint "Za"
+  "Uncached memory operands with 10-bit immediate or register."
+  (and (match_code "mem")
+       (match_test "kvx_has_10bit_imm_or_reg_p (op)")
+       (match_test "kvx_is_uncached_mem_op_p (op)")))
+
+(define_memory_constraint "Zb"
+  "Uncached memory operands with 37-bit immediate."
+  (and (match_code "mem")
+       (match_test "kvx_has_37bit_immediate_p (op)")
+       (match_test "kvx_is_uncached_mem_op_p (op)")))
+
+(define_memory_constraint "Zc"
+  "Uncached memory operands with pointer register."
+  (and (match_code "mem")
+       (match_test "general_register_operand (XEXP (op, 0), Pmode)")
+       (match_test "kvx_is_uncached_mem_op_p (op)")))
+
+(define_memory_constraint "Zd"
+  "Uncached memory operands with 27-bit immediate."
+  (and (match_code "mem")
+       (match_test "kvx_has_27bit_immediate_p (op)")
+       (match_test "kvx_is_uncached_mem_op_p (op)")))
+
+(define_memory_constraint "Ze"
+  "Uncached memory operands with 54-bit immediate."
+  (and (match_code "mem")
+       (match_test "kvx_has_54bit_immediate_p (op)")
+       (match_test "kvx_is_uncached_mem_op_p (op)")))
+
 (define_memory_constraint "Zm"
-  "Uncached memory operands with 64-bit immediates"
+  "Uncached memory operands with 64-bit immediate."
   (and (match_code "mem")
        (match_test "kvx_has_64bit_immediate_p (op)")
        (match_test "kvx_is_uncached_mem_op_p (op)")))
 
-(define_memory_constraint "Zb"
-  "Uncached memory operands with 37-bit immediates"
-  (and (match_code "mem")
-       (match_test "kvx_has_37bit_immediate_p (op)")
-       (match_test "kvx_is_uncached_mem_op_p (op)")))
-
-(define_memory_constraint "Za"
-  "Uncached memory operands with 10-bit immediates or register"
-  (and (match_code "mem")
-       (match_test "kvx_has_10bit_imm_or_reg_p (op)")
-       (match_test "kvx_is_uncached_mem_op_p (op)")))
-
 (define_address_constraint "Aa"
-  "Memory address with 10-bit immediates or register"
+  "Memory address with 10-bit immediate or register."
   (and (match_test "address_operand (op, mode)")
        (match_test "kvx_has_10bit_imm_or_reg_p (op)")))
 
 (define_address_constraint "Ab"
-  "Memory address with 37-bit immediates"
+  "Memory address with 37-bit immediate."
   (and (match_test "address_operand (op, mode)")
        (match_test "kvx_has_37bit_immediate_p (op)")))
+

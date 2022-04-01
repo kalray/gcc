@@ -83,6 +83,15 @@
   (zero_extend "u")
 ])
 
+;; Code iterator for the even/odd conditional patterns.
+(define_code_iterator EQNE [eq ne])
+
+;; Code attribute to generate "even" or "odd".
+(define_code_attr evenodd [
+  (eq "even")
+  (ne "odd")
+])
+
 ;; Unary arithmetic code iterator for expanding VXQI patterns.
 (define_code_iterator UNARITH [
   neg
@@ -393,7 +402,7 @@
   SI SF DI DF TI
 ])
 
-;; Iterator for the modes that fit in a GPR for CMOVED.
+;; Iterator for the modes that fit in a GPR.
 (define_mode_iterator FITGPR [
   QI HI HF SI SF DI DF HC SC
   V8QI V4HI V4HF V2SI V2SF
