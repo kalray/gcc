@@ -63,4 +63,33 @@
       builtin_assert ("system=clusteros");                                     \
     }                                                                          \
   while (0)
+
+/* fixincludes installs include-fixed/limits.h that is problematic.
+ * We use limits.h from newlib instead, that will then recurse to it.
+ * Unfortunately, this is mostly duplicated from cppdefault.c.
+ * Note that Linux also has include dir issues with musl and
+ * they do the same to solve their problems.
+ */
+#ifdef SYSROOT_HEADERS_SUFFIX_SPEC
+#define KVX_COS_SYSHDR_SUF_SPEC 1
+#else
+#define KVX_COS_SYSHDR_SUF_SPEC 0
+#endif
+#undef INCLUDE_DEFAULTS
+#define INCLUDE_DEFAULTS                                                        \
+  {                                                                             \
+    {GPLUSPLUS_INCLUDE_DIR, "G++", 1, 1, GPLUSPLUS_INCLUDE_DIR_ADD_SYSROOT, 0}, \
+      {GPLUSPLUS_TOOL_INCLUDE_DIR,	  "G++", 1, 1,                          \
+       GPLUSPLUS_INCLUDE_DIR_ADD_SYSROOT, 1},                                   \
+      {GPLUSPLUS_BACKWARD_INCLUDE_DIR,	  "G++", 1, 1,                          \
+       GPLUSPLUS_INCLUDE_DIR_ADD_SYSROOT, 0},                                   \
+      {GCC_INCLUDE_DIR, "GCC", 0, 0, 0, 0},                                     \
+      {CROSS_INCLUDE_DIR, "GCC", 0, 0, 0, 0},                                   \
+      {TOOL_INCLUDE_DIR, "BINUTILS", 0, 1, 0, 0},                               \
+      {FIXED_INCLUDE_DIR, "GCC", 0, 0, 0, KVX_COS_SYSHDR_SUF_SPEC},             \
+    {                                                                           \
+      0, 0, 0, 0, 0, 0                                                          \
+    }                                                                           \
+  }
+
 #endif /* GCC_KVX_MPPA_COS */
