@@ -315,8 +315,7 @@
 (define_insn "kvx_xload256"
   [(set (match_operand:EXT256 0 "register_operand" "=x,x,x")
         (unspec:EXT256 [(match_operand:EXT256 1 "memory_operand" "a,b,m")
-                        (match_operand 2 "" "")] UNSPEC_XLOAD256))
-   (use (match_dup 1))]
+                        (match_operand 2 "" "")] UNSPEC_XLOAD256))]
   ""
   "xlo%2%X1 %0 = %1"
   [(set_attr_alternative "type"
@@ -329,52 +328,38 @@
 (define_insn_and_split "kvx_xload512"
   [(set (match_operand:EXT512 0 "register_operand" "=x,x,x")
         (unspec:EXT512 [(match_operand:EXT512 1 "memory_operand" "a,b,m")
-                        (match_operand 2 "" "")] UNSPEC_XLOAD512))
-   (use (match_dup 1))]
+                        (match_operand 2 "" "")] UNSPEC_XLOAD512))]
   ""
   "#"
   "reload_completed"
-  [(parallel
-    [(set (subreg:EXT256 (match_dup 0) 0)
-          (unspec:EXT256 [(subreg:EXT256 (match_dup 1) 0)
-                          (match_dup 2)] UNSPEC_XLOAD256))
-     (use (subreg:EXT256 (match_dup 1) 0))])
-   (parallel
-    [(set (subreg:EXT256 (match_dup 0) 32)
-          (unspec:EXT256 [(subreg:EXT256 (match_dup 1) 32)
-                          (match_dup 2)] UNSPEC_XLOAD256))
-     (use (subreg:EXT256 (match_dup 1) 32))])]
+  [(set (subreg:EXT256 (match_dup 0) 0)
+        (unspec:EXT256 [(subreg:EXT256 (match_dup 1) 0)
+                        (match_dup 2)] UNSPEC_XLOAD256))
+   (set (subreg:EXT256 (match_dup 0) 32)
+        (unspec:EXT256 [(subreg:EXT256 (match_dup 1) 32)
+                        (match_dup 2)] UNSPEC_XLOAD256))]
   ""
 )
 
 (define_insn_and_split "kvx_xload1024"
   [(set (match_operand:EXT1024 0 "register_operand" "=x,x,x")
         (unspec:EXT1024 [(match_operand:EXT1024 1 "memory_operand" "a,b,m")
-                         (match_operand 2 "" "")] UNSPEC_XLOAD1024))
-   (use (match_dup 1))]
+                         (match_operand 2 "" "")] UNSPEC_XLOAD1024))]
   ""
   "#"
   "reload_completed"
-  [(parallel
-    [(set (subreg:EXT256 (match_dup 0) 0)
-          (unspec:EXT256 [(subreg:EXT256 (match_dup 1) 0)
-                          (match_dup 2)] UNSPEC_XLOAD256))
-     (use (subreg:EXT256 (match_dup 1) 0))])
-   (parallel
-    [(set (subreg:EXT256 (match_dup 0) 32)
-          (unspec:EXT256 [(subreg:EXT256 (match_dup 1) 32)
-                          (match_dup 2)] UNSPEC_XLOAD256))
-     (use (subreg:EXT256 (match_dup 1) 32))])
-   (parallel
-    [(set (subreg:EXT256 (match_dup 0) 64)
-          (unspec:EXT256 [(subreg:EXT256 (match_dup 1) 64)
-                          (match_dup 2)] UNSPEC_XLOAD256))
-     (use (subreg:EXT256 (match_dup 1) 64))])
-   (parallel
-    [(set (subreg:EXT256 (match_dup 0) 96)
-          (unspec:EXT256 [(subreg:EXT256 (match_dup 1) 96)
-                          (match_dup 2)] UNSPEC_XLOAD256))
-     (use (subreg:EXT256 (match_dup 1) 96))])]
+  [(set (subreg:EXT256 (match_dup 0) 0)
+        (unspec:EXT256 [(subreg:EXT256 (match_dup 1) 0)
+                        (match_dup 2)] UNSPEC_XLOAD256))
+   (set (subreg:EXT256 (match_dup 0) 32)
+        (unspec:EXT256 [(subreg:EXT256 (match_dup 1) 32)
+                        (match_dup 2)] UNSPEC_XLOAD256))
+   (set (subreg:EXT256 (match_dup 0) 64)
+        (unspec:EXT256 [(subreg:EXT256 (match_dup 1) 64)
+                        (match_dup 2)] UNSPEC_XLOAD256))
+   (set (subreg:EXT256 (match_dup 0) 96)
+        (unspec:EXT256 [(subreg:EXT256 (match_dup 1) 96)
+                        (match_dup 2)] UNSPEC_XLOAD256))]
   ""
 )
 
@@ -385,8 +370,7 @@
   [(set (match_operand:EXT512 0 "register_operand" "=x,x,x")
         (unspec:EXT512 [(match_operand:EXT512 1 "register_operand" "0,0,0")
                         (match_operand:EXT256 2 "memory_operand" "a,b,m")
-                        (match_operand 3 "" "")] UNSPEC_XLOAD256))
-   (use (match_dup 2))]
+                        (match_operand 3 "" "")] UNSPEC_XLOAD256))]
   ""
   "xlo%3%X2 %0 = %2"
   [(set_attr_alternative "type"
@@ -401,8 +385,7 @@
         (unspec:EXT512 [(match_operand:EXT512 1 "register_operand" "0,0,0")
                         (match_operand:EXT256 2 "memfoiled_operand" "c,d,e")
                         (match_operand:DI 3 "register_operand" "r,r,r")
-                        (match_operand 4 "" "")] UNSPEC_XLOAD256))
-   (use (match_dup 2))]
+                        (match_operand 4 "" "")] UNSPEC_XLOAD256))]
   ""
   "xlo%4%X2 %3? %0 = %O2"
   [(set_attr_alternative "type"
@@ -419,8 +402,7 @@
   [(set (match_operand:EXT1024 0 "register_operand" "=x,x,x")
         (unspec:EXT1024 [(match_operand:EXT1024 1 "register_operand" "0,0,0")
                          (match_operand:EXT256 2 "memory_operand" "a,b,m")
-                         (match_operand 3 "" "")] UNSPEC_XLOAD256))
-   (use (match_dup 2))]
+                         (match_operand 3 "" "")] UNSPEC_XLOAD256))]
   ""
   "xlo%3%X2 %0 = %2"
   [(set_attr_alternative "type"
@@ -435,8 +417,7 @@
         (unspec:EXT1024 [(match_operand:EXT1024 1 "register_operand" "0,0,0")
                          (match_operand:EXT256 2 "memfoiled_operand" "c,d,e")
                          (match_operand:DI 3 "register_operand" "r,r,r")
-                         (match_operand 4 "" "")] UNSPEC_XLOAD256))
-   (use (match_dup 2))]
+                         (match_operand 4 "" "")] UNSPEC_XLOAD256))]
   ""
   "xlo%4%X2 %3? %0 = %O2"
   [(set_attr_alternative "type"
@@ -570,8 +551,7 @@
         (unspec:EXT256 [(match_operand:EXT256 1 "register_operand" "0,0,0")
                         (match_operand:EXT256 2 "memfoiled_operand" "c,d,e")
                         (match_operand:DI 3 "register_operand" "r,r,r")
-                        (match_operand 4 "" "")] UNSPEC_XLOAD256))
-   (use (match_dup 2))]
+                        (match_operand 4 "" "")] UNSPEC_XLOAD256))]
   ""
   "xlo%4%X2 %3? %0 = %O2"
   [(set_attr_alternative "type"
@@ -642,8 +622,7 @@
 
 (define_insn "kvx_xstore256"
   [(set (match_operand:EXT256 1 "memory_operand"  "=a,b,m")
-        (unspec:EXT256 [(match_operand:EXT256 0 "register_operand" "x,x,x")] UNSPEC_XSTORE256))
-   (clobber (match_dup 1))]
+        (unspec:EXT256 [(match_operand:EXT256 0 "register_operand" "x,x,x")] UNSPEC_XSTORE256))]
   ""
   "xso%X1 %1 = %0"
   [(set_attr "type" "lsu_crrp_store,lsu_crrp_store_x,lsu_crrp_store_y")
@@ -652,45 +631,31 @@
 
 (define_insn_and_split "kvx_xstore512"
   [(set (match_operand:EXT512 1 "memory_operand"  "=a,b,m")
-        (unspec:EXT512 [(match_operand:EXT512 0 "register_operand" "x,x,x")] UNSPEC_XSTORE512))
-   (clobber (match_dup 1))]
+        (unspec:EXT512 [(match_operand:EXT512 0 "register_operand" "x,x,x")] UNSPEC_XSTORE512))]
   ""
   "#"
   "reload_completed"
-  [(parallel
-    [(set (subreg:EXT256 (match_dup 1) 0)
-          (unspec:EXT256 [(subreg:EXT256 (match_dup 0) 0)] UNSPEC_XSTORE256))
-     (clobber (subreg:EXT256 (match_dup 1) 0))])
-   (parallel
-    [(set (subreg:EXT256 (match_dup 1) 32)
-          (unspec:EXT256 [(subreg:EXT256 (match_dup 0) 32)] UNSPEC_XSTORE256))
-     (clobber (subreg:EXT256 (match_dup 1) 32))])]
+  [(set (subreg:EXT256 (match_dup 1) 0)
+        (unspec:EXT256 [(subreg:EXT256 (match_dup 0) 0)] UNSPEC_XSTORE256))
+   (set (subreg:EXT256 (match_dup 1) 32)
+        (unspec:EXT256 [(subreg:EXT256 (match_dup 0) 32)] UNSPEC_XSTORE256))]
   ""
 )
 
 (define_insn_and_split "kvx_xstore1024"
   [(set (match_operand:EXT1024 1 "memory_operand"  "=a,b,m")
-        (unspec:EXT1024 [(match_operand:EXT1024 0 "register_operand" "x,x,x")] UNSPEC_XSTORE1024))
-   (clobber (match_dup 1))]
+        (unspec:EXT1024 [(match_operand:EXT1024 0 "register_operand" "x,x,x")] UNSPEC_XSTORE1024))]
   ""
   "#"
   "reload_completed"
-  [(parallel
-    [(set (subreg:EXT256 (match_dup 1) 0)
-          (unspec:EXT256 [(subreg:EXT256 (match_dup 0) 0)] UNSPEC_XSTORE256))
-     (clobber (subreg:EXT256 (match_dup 1) 0))])
-   (parallel
-    [(set (subreg:EXT256 (match_dup 1) 32)
-          (unspec:EXT256 [(subreg:EXT256 (match_dup 0) 32)] UNSPEC_XSTORE256))
-     (clobber (subreg:EXT256 (match_dup 1) 32))])
-   (parallel
-    [(set (subreg:EXT256 (match_dup 1) 64)
-          (unspec:EXT256 [(subreg:EXT256 (match_dup 0) 64)] UNSPEC_XSTORE256))
-     (clobber (subreg:EXT256 (match_dup 1) 64))])
-   (parallel
-    [(set (subreg:EXT256 (match_dup 1) 96)
-          (unspec:EXT256 [(subreg:EXT256 (match_dup 0) 96)] UNSPEC_XSTORE256))
-     (clobber (subreg:EXT256 (match_dup 1) 96))])]
+  [(set (subreg:EXT256 (match_dup 1) 0)
+        (unspec:EXT256 [(subreg:EXT256 (match_dup 0) 0)] UNSPEC_XSTORE256))
+   (set (subreg:EXT256 (match_dup 1) 32)
+        (unspec:EXT256 [(subreg:EXT256 (match_dup 0) 32)] UNSPEC_XSTORE256))
+   (set (subreg:EXT256 (match_dup 1) 64)
+        (unspec:EXT256 [(subreg:EXT256 (match_dup 0) 64)] UNSPEC_XSTORE256))
+   (set (subreg:EXT256 (match_dup 1) 96)
+        (unspec:EXT256 [(subreg:EXT256 (match_dup 0) 96)] UNSPEC_XSTORE256))]
   ""
 )
 
@@ -769,8 +734,7 @@
         (unspec:EXTBUFF [(match_operand:EXTBUFF 1 "register_operand" "0,0,0")
                          (match_operand:EXT256 2 "memfoiled_operand" "c,d,e")
                          (match_operand:DI 3 "register_operand" "r,r,r")
-                         (match_operand 4 "" "")] UNSPEC_XPRELOAD))
-   (use (match_dup 2))]
+                         (match_operand 4 "" "")] UNSPEC_XPRELOAD))]
   ""
   "xlo%4%X2 %b0, %3 = %O2"
   [(set_attr "type" "lsu,lsu_x,lsu_y")
