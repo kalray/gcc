@@ -2087,6 +2087,8 @@ kvx_init_expanders (void)
     kvx_divmod_zero = const1_rtx;
 
   kvx_xundef_counter = 0;
+
+  kvx_ifcvt_ce_level = KVX_IFCVT_;
 }
 
 /* Handle an attribute requiring a FUNCTION_DECL;
@@ -2903,9 +2905,7 @@ symbolic_reference_mentioned_p (rtx op)
 }
 
 /* Returns TRUE if OP is (const (unspec ([] UNSPEC_*))) or
-   (unspec ([] UNSPEC_*)) with unspec type compatible with PIC
-   code
-*/
+   (unspec ([] UNSPEC_*)) with unspec type compatible with PIC code.  */
 bool
 kvx_legitimate_pic_symbolic_ref_p (rtx op)
 {
@@ -4594,7 +4594,7 @@ kvx_dependencies_fprint (FILE *file, rtx_insn *insn)
 {
   dep_t dep;
   sd_iterator_def sd_it;
-  fprintf (file, "forward dependences(# %d)\n", INSN_UID (insn));
+  fprintf (file, "forward dependences (insn %d)\n", INSN_UID (insn));
   FOR_EACH_DEP (insn, SD_LIST_FORW, sd_it, dep)
     {
       enum reg_note dep_type = DEP_TYPE (dep);
@@ -4607,9 +4607,9 @@ kvx_dependencies_fprint (FILE *file, rtx_insn *insn)
 	dtype = "output";
       if (dep_type == REG_DEP_CONTROL)
 	dtype = "control";
-      fprintf (file, "\t%s -> (# %d)\n", dtype, INSN_UID (DEP_CON (dep)));
+      fprintf (file, "\t%s -> (insn %d)\n", dtype, INSN_UID (DEP_CON (dep)));
     }
-  fprintf (file, "backward dependences(# %d)\n", INSN_UID (insn));
+  fprintf (file, "backward dependences (insn %d)\n", INSN_UID (insn));
   FOR_EACH_DEP (insn, SD_LIST_BACK, sd_it, dep)
     {
       enum reg_note dep_type = DEP_TYPE (dep);
@@ -4622,7 +4622,7 @@ kvx_dependencies_fprint (FILE *file, rtx_insn *insn)
 	dtype = "output";
       if (dep_type == REG_DEP_CONTROL)
 	dtype = "control";
-      fprintf (file, "\t%s <- (# %d)\n", dtype, INSN_UID (DEP_PRO (dep)));
+      fprintf (file, "\t%s <- (insn %d)\n", dtype, INSN_UID (DEP_PRO (dep)));
     }
 }
 
@@ -6770,6 +6770,385 @@ kvx_have_conditional_execution (void)
   return reload_completed;
 }
 
+enum kvx_ifcvt_ce kvx_ifcvt_ce_level;
+static struct kvx_ifcvt
+{
+  enum kvx_ifcvt_ce ce_level;
+  int block_count;
+  unsigned def_counter;
+  sbitmap block_visited;
+  rtx_insn *recog_insn;
+  recog_data_d recog_data;
+} kvx_ifcvt;
+static void
+kvx_ifcvt_ctor (void)
+{
+  if (dump_file)
+    fprintf(dump_file, "KVX_IFCVT_CTOR(%s, CE%d)\n",
+	    current_function_name(), (int)kvx_ifcvt_ce_level);
+  memset (&kvx_ifcvt, 0, sizeof (struct kvx_ifcvt));
+  kvx_ifcvt.ce_level = kvx_ifcvt_ce_level;
+  kvx_ifcvt.block_count = last_basic_block_for_fn (cfun);
+  kvx_ifcvt.block_visited = sbitmap_alloc (kvx_ifcvt.block_count);
+  bitmap_clear (kvx_ifcvt.block_visited);
+  kvx_ifcvt.recog_insn = make_insn_raw (NULL_RTX);
+  SET_NEXT_INSN (kvx_ifcvt.recog_insn) = 0;
+  SET_PREV_INSN (kvx_ifcvt.recog_insn) = 0;
+  INSN_LOCATION (kvx_ifcvt.recog_insn) = UNKNOWN_LOCATION;
+}
+static void
+kvx_ifcvt_reset (void)
+{
+  if (dump_file)
+    fprintf(dump_file, "KVX_IFCVT_RESET(%s, CE%d)\n",
+	    current_function_name(), (int)kvx_ifcvt.ce_level);
+}
+static void
+kvx_ifcvt_dtor (void)
+{
+  if (dump_file)
+    fprintf(dump_file, "KVX_IFCVT_DTOR(%s, CE%d)\n",
+	    current_function_name(), (int)kvx_ifcvt.ce_level);
+  if (kvx_ifcvt.block_visited)
+    sbitmap_free (kvx_ifcvt.block_visited);
+  memset (&kvx_ifcvt, 0, sizeof (struct kvx_ifcvt));
+}
+
+/* Get the test of a register the conditional jump at the end of BLOCK.  */
+static rtx
+kvx_ifcvt_get_reg_cond (basic_block block, rtx *_reg)
+{
+  rtx_insn *jump = BB_END (block);
+  if (!any_condjump_p (jump))
+    return NULL_RTX;
+
+  rtx set = pc_set (jump);
+  rtx cond = XEXP (SET_SRC (set), 0);
+  rtx tested = XEXP (cond, 0);
+  if (GET_CODE (tested) == ZERO_EXTRACT)
+    tested = XEXP (tested, 0);
+  if (REG_P (tested))
+    {
+      if (_reg)
+	*_reg = tested;
+      return cond;
+    }
+
+  return NULL_RTX;
+}
+
+/* Try to recognize an insn with this PATTERN.  If SPLIT is FALSE, reject
+ * patterns whose ASM template is '#' (pattern must be split).  */
+static int
+kvx_ifcvt_ce2_recog_pattern (rtx pattern, bool split)
+{
+  kvx_ifcvt.recog_data = recog_data;
+  PATTERN (kvx_ifcvt.recog_insn) = pattern;
+  int icode = recog (pattern, kvx_ifcvt.recog_insn, 0);
+  if (icode >= 0)
+    {
+      if (!split)
+	{
+	  const char *templ = get_insn_template (icode, kvx_ifcvt.recog_insn);
+	  if (templ[0] == '#' && templ[1] == '\0')
+	    icode = -1;
+	}
+    }
+  PATTERN (kvx_ifcvt.recog_insn) = NULL_RTX;
+  recog_data = kvx_ifcvt.recog_data;
+  return icode;
+}
+
+/* Check that INSN is a move that can be changed to conditional move.  */
+static bool
+kvx_ifcvt_ce2_cond_move_ce3 (rtx_insn *insn, rtx reg_cond, basic_block block)
+{
+  rtx pattern = PATTERN (insn);
+  gcc_checking_assert (GET_CODE (pattern) == SET);
+
+  rtx set_src = SET_SRC (pattern);
+  rtx set_dest = SET_DEST (pattern);
+
+  if (register_operand (set_dest, VOIDmode)
+      && (CONSTANT_P (set_src) || register_operand (set_src, VOIDmode)))
+    {
+      rtx new_pattern = gen_rtx_COND_EXEC (VOIDmode, reg_cond, pattern);
+      int recog = kvx_ifcvt_ce2_recog_pattern (new_pattern, true);
+      return recog >= 0;
+    }
+
+  return false;
+}
+
+/* Check that INSN is a memory access that can be (pseudo-)predicated.  */
+static bool
+kvx_ifcvt_ce2_cond_mem_ce3 (rtx_insn *insn, rtx reg_cond, basic_block block)
+{
+  rtx pattern = PATTERN (insn);
+  gcc_checking_assert (GET_CODE (pattern) == SET);
+
+  rtx set_src = SET_SRC (pattern);
+  rtx set_dest = SET_DEST (pattern);
+  enum rtx_code dest_code = GET_CODE (set_dest);
+  enum rtx_code src_code = GET_CODE (set_src);
+
+  // Cases of loads with zero extension or sign extension.
+  if ((src_code == ZERO_EXTEND || src_code == SIGN_EXTEND)
+      && MEM_P (XEXP (set_src, 0)))
+    {
+      set_src = XEXP (set_src, 0);
+      src_code = MEM;
+    }
+
+  // Find MEM and reject MEM to MEM moves.
+  if (src_code == MEM && dest_code == MEM)
+    return false;
+
+  rtx mem = 0;
+  if (src_code == MEM)
+    mem = set_src;
+  if (dest_code == MEM)
+    mem = set_dest;
+  if (!mem)
+    return false;
+
+  bool memsimple = memsimple_operand (mem, VOIDmode);
+  if (!memsimple)
+    return false;
+
+  rtx new_pattern = gen_rtx_COND_EXEC (VOIDmode, reg_cond, pattern);
+  int recog = kvx_ifcvt_ce2_recog_pattern (new_pattern, true);
+  return recog >= 0;
+}
+
+/* Check that BLOCK only contains valid candidates for CE3 if-conversion.  */
+static bool
+kvx_ifcvt_ce2_candidate_ce3 (basic_block block, rtx reg_cond)
+{
+  int index = block->index;
+  if ((unsigned) index >= (unsigned) kvx_ifcvt.block_count
+      || bitmap_bit_p (kvx_ifcvt.block_visited, index))
+    return false;
+  bitmap_set_bit (kvx_ifcvt.block_visited, index);
+
+  if (dump_file)
+    fprintf(dump_file, "KVX_IFCVT ce2_candidate_ce3 block_%d in %s\n", index, current_function_name());
+
+  int count = 0;
+  rtx_insn *insn = 0;
+  FOR_BB_INSNS (block, insn)
+    {
+      if (NONJUMP_INSN_P (insn))
+	{
+	  rtx pattern = PATTERN (insn);
+	  if (count++ >= MAX_CONDITIONAL_EXECUTE)
+	    {
+	      if (dump_file)
+		fprintf(dump_file, "KVX_IFCVT not candidate (%d > MAX_CONDITIONAL)\n", count);
+	      return false;
+	    }
+	  if (GET_CODE (pattern) != SET)
+	    {
+	      if (dump_file)
+		fprintf(dump_file, "KVX_IFCVT not candidate (insn %d not as SET)\n", INSN_UID (insn));
+	      return false;
+	    }
+
+	  // Check if insn can be converted to conditional move.
+	  if (kvx_ifcvt_ce2_cond_move_ce3 (insn, reg_cond, block))
+	    {
+	      if (dump_file)
+		fprintf(dump_file, "KVX_IFCVT cond_move (insn %d)\n", INSN_UID (insn));
+	      continue;
+	    }
+
+	  // Check if insn can be converted to conditional memory access.
+	  if (contains_mem_rtx_p (pattern))
+	    {
+	      if (kvx_ifcvt_ce2_cond_mem_ce3 (insn, reg_cond, block))
+		{
+		  if (dump_file)
+		    fprintf(dump_file, "KVX_IFCVT cond_mem (insn %d)\n", INSN_UID (insn));
+		  continue;
+		}
+	      if (dump_file)
+		fprintf(dump_file, "KVX_IFCVT not candidate (insn %d is not cond_mem)\n", INSN_UID (insn));
+	      return false;
+	    }
+
+	  if (dump_file)
+	    fprintf(dump_file, "KVX_IFCVT not candidate (insn %d arith)\n", INSN_UID (insn));
+	  return false;
+	}
+      else if (INSN_P (insn))
+	{
+	  if (dump_file && !CALL_P(insn))
+	    fprintf(dump_file, "KVX_IFCVT not candidate (jump_insn %d)\n", INSN_UID (insn));
+	  return false;
+	}
+    }
+
+  return count;
+}
+
+/* Part of IFCVT_MACHDEP_INIT done in CE2.  */
+void
+kvx_ifcvt_ce2_machdep_init (basic_block test_bb, basic_block then_bb,
+			    basic_block else_bb, basic_block join_bb)
+{
+  // Check basic block candidates and prepare for conditional execution.  */
+  rtx tested_reg = NULL_RTX;
+  rtx reg_cond = kvx_ifcvt_get_reg_cond (test_bb, &tested_reg);
+  if (!reg_cond)
+    return;
+
+  bool candidate = true;
+
+  if (candidate && then_bb)
+    candidate &= kvx_ifcvt_ce2_candidate_ce3 (then_bb, reg_cond);
+
+  if (candidate && else_bb)
+    candidate &= kvx_ifcvt_ce2_candidate_ce3 (else_bb, reg_cond);
+
+  if (dump_file)
+    {
+      if (!candidate)
+	fprintf (dump_file, "KVX_IFCVT not a CE3 candidate:\n");
+      else
+	fprintf (dump_file, "KVX_IFCVT is a CE3 candidate:\n");
+      fprintf (dump_file, "\ttest-block %d\n", test_bb ? test_bb->index : -1);
+      fprintf (dump_file, "\tthen-block %d\n", then_bb ? then_bb->index : -1);
+      fprintf (dump_file, "\telse-block %d\n", else_bb ? else_bb->index : -1);
+      fprintf (dump_file, "\tjoin-block %d\n", join_bb ? join_bb->index : -1);
+    }
+
+  if (!candidate)
+    return;
+
+  if (then_bb)
+    {
+      // Find the last insertion point in then_bb.
+      rtx_insn *last_insn = BB_END (then_bb);
+      if (JUMP_P (last_insn))
+	last_insn = PREV_INSN (last_insn);
+
+      // Insert a use of the tested register in then_bb to pull its live range.
+      emit_insn_after (gen_rtx_USE (VOIDmode, tested_reg), last_insn);
+      df_set_bb_dirty (then_bb);
+    }
+
+  if (else_bb)
+    {
+      // Find the last insertion point in else_bb.
+      rtx_insn *last_insn = BB_END (else_bb);
+      if (JUMP_P (last_insn))
+	last_insn = PREV_INSN (last_insn);
+
+      // Insert a use of the tested register in else_bb to pull its live range.
+      rtx tested_reg = XEXP (reg_cond, 0);
+      emit_insn_after (gen_rtx_USE (VOIDmode, tested_reg), last_insn);
+      df_set_bb_dirty (else_bb);
+    }
+}
+
+/* Implements IFCVT_MACHDEP_INIT.
+   Called from (find_if_header), so in CE1, CE2, CE3. In CE1, do nothing as the
+   mapping to conditional moves is on-going. In CE2 identified by after_combine
+   and not reload_completed, prepare the if-conversion to be applied in CE3.  */
+void
+kvx_ifcvt_machdep_init (struct ce_if_block *ce_info, bool after_combine)
+{
+
+  kvx_ifcvt_ce_level = reload_completed ? KVX_IFCVT_CE3
+					: (after_combine ? KVX_IFCVT_CE2
+							 : KVX_IFCVT_CE1);
+
+  // Nothing else to do in CE1 of if -fno-if-conversion2.
+  if (kvx_ifcvt_ce_level < KVX_IFCVT_CE2 || !flag_if_conversion2)
+    return;
+
+  // Detect IF-THEN-ELSE-JOIN as in (noce_find_if_block) in ifcvt.c.
+  basic_block test_bb = ce_info->test_bb;
+  basic_block then_bb = 0, else_bb = 0, join_bb = 0;
+  /* Recognize an IF-THEN-ELSE-JOIN block.  */
+  if (single_pred_p (ce_info->then_bb)
+      && single_succ_p (ce_info->then_bb)
+      && single_pred_p (ce_info->else_bb)
+      && single_succ_p (ce_info->else_bb)
+      && single_succ (ce_info->then_bb) == single_succ (ce_info->else_bb))
+    {
+      then_bb = ce_info->then_bb;
+      else_bb = ce_info->else_bb;
+      join_bb = single_succ (then_bb);
+    }
+  /* Recognize an IF-THEN-JOIN block.  */
+  else if (single_pred_p (ce_info->then_bb)
+	   && single_succ_p (ce_info->then_bb)
+	   && single_succ (ce_info->then_bb) == ce_info->else_bb)
+    {
+      then_bb = ce_info->then_bb;
+      else_bb = NULL_BLOCK;
+      join_bb = ce_info->else_bb;
+    }
+  /* Recognize an IF-ELSE-JOIN block.  We can have those because the order
+     of basic blocks in cfglayout mode does not matter, so the fallthrough
+     edge can go to any basic block (and not just to bb->next_bb, like in
+     cfgrtl mode).  */
+  else if (single_pred_p (ce_info->else_bb)
+	   && single_succ_p (ce_info->else_bb)
+	   && single_succ (ce_info->else_bb) == ce_info->then_bb)
+    {
+      then_bb = NULL_BLOCK;
+      else_bb = ce_info->else_bb;
+      join_bb = ce_info->then_bb;
+    }
+  else
+    /* Not a form we can handle.  */
+    return;
+  /* The edges of the THEN and ELSE blocks cannot have complex edges.  */
+  if (then_bb
+      && single_succ_edge (then_bb)->flags & EDGE_COMPLEX)
+    return;
+  if (else_bb
+      && single_succ_edge (else_bb)->flags & EDGE_COMPLEX)
+    return;
+
+  if (dump_file)
+    {
+      fprintf (dump_file, "KVX_IFCVT MACHDEP_INIT(%s, CE%d):\n",
+	      current_function_name(), kvx_ifcvt_ce_level);
+      fprintf (dump_file, "\ttest-block %d\n", test_bb ? test_bb->index : -1);
+      fprintf (dump_file, "\tthen-block %d\n", then_bb ? then_bb->index : -1);
+      fprintf (dump_file, "\telse-block %d\n", else_bb ? else_bb->index : -1);
+      fprintf (dump_file, "\tjoin-block %d\n", join_bb ? join_bb->index : -1);
+    }
+
+  // First time in CE2 or CE3, construct kvx_ifcvt else reset.
+  if (kvx_ifcvt.ce_level < kvx_ifcvt_ce_level)
+    {
+      if (kvx_ifcvt.ce_level > KVX_IFCVT_)
+	kvx_ifcvt_dtor();
+      kvx_ifcvt_ctor ();
+    }
+  else
+    kvx_ifcvt_reset ();
+
+  if (kvx_ifcvt_ce_level == KVX_IFCVT_CE2)
+    kvx_ifcvt_ce2_machdep_init (test_bb, then_bb, else_bb, join_bb);
+}
+
+/* Implements IFCVT_MODIFY_INSN.
+   Called from (cond_exec_process_insns), from (cond_exec_process_if_block).
+   So pass is CE3 after register allocation. This function is passed PATTERN
+   which is a COND_EXEC.  */
+rtx
+kvx_ifcvt_modify_insn (ce_if_block *ce_info ATTRIBUTE_UNUSED,
+		       rtx pattern, rtx_insn *insn)
+{
+  return pattern;
+}
+
+/* Implements TARGET_ASM_FUNCTION_PROLOGUE.  */
 static void
 kvx_function_prologue (FILE *file ATTRIBUTE_UNUSED)
 {
@@ -6780,6 +7159,8 @@ static void
 kvx_function_epilogue (FILE *file ATTRIBUTE_UNUSED)
 {
   kvx_sched2_dtor ();
+  if (kvx_ifcvt.ce_level > KVX_IFCVT_)
+    kvx_ifcvt_dtor();
 }
 
 /* NULL if INSN insn is valid within a low-overhead loop.
@@ -7163,10 +7544,6 @@ kvx_machine_dependent_reorg (void)
 {
   compute_bb_for_insn ();
 
-  /* If optimizing, we'll have split before scheduling.  */
-  if (optimize == 0)
-    split_all_insns ();
-
   /* Doloop optimization. */
   if (optimize)
     reorg_loops (true, &kvx_doloop_hooks);
@@ -7341,7 +7718,7 @@ kvx_option_override (void)
 	  case OPT_fstack_limit_symbol_:
 	    kvx_handle_stack_limit_symbol_option (opt->arg);
 	    break;
-        case OPT_fshaker_seed_:
+	case OPT_fshaker_seed_:
 	  break;
 	  default:
 	    gcc_unreachable ();

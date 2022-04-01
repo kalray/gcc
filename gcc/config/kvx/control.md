@@ -2,7 +2,7 @@
 
 (define_insn "cstoresi4"
   [(set (match_operand:SI 0 "register_operand" "=r,r")
-        (match_operator:SI   1 "comparison_operator"
+        (match_operator:SI 1 "comparison_operator"
          [(match_operand:SI 2 "register_operand" "r,r")
           (match_operand:SI 3 "kvx_r_any32_operand" "r,i")]))]
   ""
@@ -13,7 +13,7 @@
 ;; zero-extend version of cstoresi4
 (define_insn "*cstoresi4_zext"
   [(set (match_operand:DI 0 "register_operand" "=r,r")
-        (match_operator:DI   1 "comparison_operator"
+        (match_operator:DI 1 "comparison_operator"
          [(match_operand:SI 2 "register_operand" "r,r")
           (match_operand:SI 3 "kvx_r_any32_operand" "r,i")]))]
   ""
@@ -32,46 +32,25 @@
   [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
    (set_attr "length"      "4,       4,         8,        12")]
 )
+;; any-extend versions of cstoredi4
+(define_insn "*extend2_cstoredi4"
+  [(set (match_operand:DI 0 "register_operand" "=r,r")
+        (match_operator:DI 1 "comparison_operator"
+         [(ANY_EXTEND:DI (match_operand:SI 2 "register_operand" "r,r"))
+          (match_operand:DI 3 "register_s32_operand" "r,B32")]))]
+  ""
+  "comp<unsx>wd.%1 %0 = %2, %3"
+  [(set_attr "type" "alu_thin,alu_thin_x")
+   (set_attr "length"      "4,         8")]
+)
 
-;; sign-extend versions of cstoresi4
-(define_insn "*sext_cstoredi4"
-  [(set (match_operand:DI 0 "register_operand" "=r,r")
-        (match_operator:DI 1 "comparison_operator"
-         [(sign_extend:DI (match_operand:SI 2 "register_operand" "r,r"))
-          (match_operand:DI 3 "register_s32_operand" "r,B32")]))]
-  ""
-  "compwd.%1 %0 = %2, %3"
-  [(set_attr "type" "alu_thin,alu_thin_x")
-   (set_attr "length"      "4,         8")]
-)
-(define_insn "*sext_swap_cstoredi4"
+(define_insn "*extend3_cstoredi4"
   [(set (match_operand:DI 0 "register_operand" "=r")
         (match_operator:DI 1 "comparison_operator"
           [(match_operand:DI 2 "register_operand" "r")]))
-           (sign_extend:DI (match_operand:SI 3 "register_operand" "r"))]
+           (ANY_EXTEND:DI (match_operand:SI 3 "register_operand" "r"))]
   ""
-  "compwd.%S1 %0 = %3, %2"
-  [(set_attr "type" "alu_thin")
-   (set_attr "length"      "4")]
-)
-;; zero-extend versions of cstoresi4
-(define_insn "*zext_cstoredi4"
-  [(set (match_operand:DI 0 "register_operand" "=r,r")
-        (match_operator:DI 1 "comparison_operator"
-         [(zero_extend:DI (match_operand:SI 2 "register_operand" "r,r"))
-          (match_operand:DI 3 "register_s32_operand" "r,B32")]))]
-  ""
-  "compuwd.%1 %0 = %2, %3"
-  [(set_attr "type" "alu_thin,alu_thin_x")
-   (set_attr "length"      "4,         8")]
-)
-(define_insn "*zext_swap_cstoredi4"
-  [(set (match_operand:DI 0 "register_operand" "=r")
-        (match_operator:DI 1 "comparison_operator"
-          [(match_operand:DI 2 "register_operand" "r")]))
-           (zero_extend:DI (match_operand:SI 3 "register_operand" "r"))]
-  ""
-  "compuwd.%S1 %0 = %3, %2"
+  "comp<unsx>wd.%S1 %0 = %3, %2"
   [(set_attr "type" "alu_thin")
    (set_attr "length"      "4")]
 )
@@ -143,27 +122,15 @@
   [(set_attr "type" "bcu")]
 )
 
-(define_insn "*cb<mode>.odd"
+(define_insn "*cb<mode>.<EQNE:evenodd>"
   [(set (pc)
-        (if_then_else (ne (zero_extract:SIDI (match_operand:SIDI 0 "register_operand" "r")
-                                             (const_int 1) (const_int 0))
-                          (const_int 0))
+        (if_then_else (EQNE (zero_extract:SIDI (match_operand:SIDI 0 "register_operand" "r")
+                                               (const_int 1) (const_int 0))
+                            (const_int 0))
                       (label_ref (match_operand 1))
                       (pc)))]
   ""
-  "cb.odd %0? %1"
-  [(set_attr "type" "bcu")]
-)
-
-(define_insn "*cb<mode>.even"
-  [(set (pc)
-        (if_then_else (eq (zero_extract:SIDI (match_operand:SIDI 0 "register_operand" "r")
-                                             (const_int 1) (const_int 0))
-                          (const_int 0))
-                      (label_ref (match_operand 1))
-                      (pc)))]
-  ""
-  "cb.even %0? %1"
+  "cb.<EQNE:evenodd> %0? %1"
   [(set_attr "type" "bcu")]
 )
 
@@ -1103,28 +1070,15 @@
    (set_attr "length"      "4,       4,         8,        12")]
 )
 
-(define_insn "*cmov<SIDI:mode>.<FITGPR:mode>.odd"
+(define_insn "*cmov<SIDI:mode>.<FITGPR:mode>.<EQNE:evenodd>"
   [(set (match_operand:FITGPR 0 "register_operand" "=r,r,r,r")
-        (if_then_else:FITGPR (ne (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r,r,r,r")
-                                                    (const_int 1) (const_int 0))
-                                 (const_int 0))
+        (if_then_else:FITGPR (EQNE (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r,r,r,r")
+                                                      (const_int 1) (const_int 0))
+                                   (const_int 0))
                              (match_operand:FITGPR 1 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")
                              (match_operand:FITGPR 3 "register_operand" "0,0,0,0")))]
   ""
-  "cmoved.odd %2? %0 = %1"
-  [(set_attr "type" "alu_thin,alu_thin,alu_thin_x,alu_thin_y")
-   (set_attr "length"      "4,       4,         8,        12")]
-)
-
-(define_insn "*cmov<SIDI:mode>.<FITGPR:mode>.even"
-  [(set (match_operand:FITGPR 0 "register_operand" "=r,r,r,r")
-        (if_then_else:FITGPR (eq (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r,r,r,r")
-                                                    (const_int 1) (const_int 0))
-                                 (const_int 0))
-                             (match_operand:FITGPR 1 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")
-                             (match_operand:FITGPR 3 "register_operand" "0,0,0,0")))]
-  ""
-  "cmoved.even %2? %0 = %1"
+  "cmoved.<EQNE:evenodd> %2? %0 = %1"
   [(set_attr "type" "alu_thin,alu_thin,alu_thin_x,alu_thin_y")
    (set_attr "length"      "4,       4,         8,        12")]
 )
@@ -1142,28 +1096,15 @@
    (set_attr "length"         "8")]
 )
 
-(define_insn "*cmov<SIDI:mode>.<ALL128:mode>.odd"
+(define_insn "*cmov<SIDI:mode>.<ALL128:mode>.<EQNE:evenodd>"
   [(set (match_operand:ALL128 0 "register_operand" "=r")
-        (if_then_else:ALL128 (ne (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r")
-                                                    (const_int 1) (const_int 0))
-                                 (const_int 0))
+        (if_then_else:ALL128 (EQNE (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r")
+                                                      (const_int 1) (const_int 0))
+                                   (const_int 0))
                              (match_operand:ALL128 1 "register_operand" "r")
                              (match_operand:ALL128 3 "register_operand" "0")))]
   ""
-  "cmoved.odd %2? %x0 = %x1\n\tcmoved.odd %2? %y0 = %y1"
-  [(set_attr "type" "alu_thin_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*cmov<SIDI:mode>.<ALL128:mode>.even"
-  [(set (match_operand:ALL128 0 "register_operand" "=r")
-        (if_then_else:ALL128 (eq (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r")
-                                                    (const_int 1) (const_int 0))
-                                 (const_int 0))
-                             (match_operand:ALL128 1 "register_operand" "r")
-                             (match_operand:ALL128 3 "register_operand" "0")))]
-  ""
-  "cmoved.even %2? %x0 = %x1\n\tcmoved.even %2? %y0 = %y1"
+  "cmoved.<EQNE:evenodd> %2? %x0 = %x1\n\tcmoved.<EQNE:evenodd> %2? %y0 = %y1"
   [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
@@ -1206,85 +1147,43 @@
    (set_attr "length"        "16")]
 )
 
-(define_insn_and_split "*cmov<SIDI:mode>.<ALL256:mode>.odd"
+(define_insn_and_split "*cmov<SIDI:mode>.<ALL256:mode>.<EQNE:evenodd>"
   [(set (match_operand:ALL256 0 "register_operand" "=&r")
-        (if_then_else:ALL256 (ne (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r")
-                                                    (const_int 1) (const_int 0))
-                                 (const_int 0))
+        (if_then_else:ALL256 (EQNE (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r")
+                                                      (const_int 1) (const_int 0))
+                                   (const_int 0))
                              (match_operand:ALL256 1 "register_operand" "r")
                              (match_operand:ALL256 3 "register_operand" "0")))]
   "KV3_1"
   "#"
   "KV3_1 && reload_completed"
   [(set (subreg:<HALF> (match_dup 0) 0)
-        (if_then_else:<HALF> (ne (zero_extract:SIDI (match_dup 2)
-                                                    (const_int 1) (const_int 0))
-                                 (const_int 0))
+        (if_then_else:<HALF> (EQNE (zero_extract:SIDI (match_dup 2)
+                                                      (const_int 1) (const_int 0))
+                                   (const_int 0))
                              (subreg:<HALF> (match_dup 1) 0)
                              (subreg:<HALF> (match_dup 3) 0)))
    (set (subreg:<HALF> (match_dup 0) 16)
-        (if_then_else:<HALF> (ne (zero_extract:SIDI (match_dup 2)
-                                                    (const_int 1) (const_int 0))
-                                 (const_int 0))
+        (if_then_else:<HALF> (EQNE (zero_extract:SIDI (match_dup 2)
+                                                      (const_int 1) (const_int 0))
+                                   (const_int 0))
                              (subreg:<HALF> (match_dup 1) 16)
                              (subreg:<HALF> (match_dup 3) 16)))]
   ""
   [(set_attr "type" "alu_thin_x2")]
 )
 
-(define_insn "*cmov<SIDI:mode>.<ALL256:mode>.odd"
+(define_insn "*cmov<SIDI:mode>.<ALL256:mode>.<EQNE:evenodd>"
   [(set (match_operand:ALL256 0 "register_operand" "=r")
-        (if_then_else:ALL256 (ne (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r")
-                                                    (const_int 1) (const_int 0))
-                                 (const_int 0))
+        (if_then_else:ALL256 (EQNE (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r")
+                                                      (const_int 1) (const_int 0))
+                                   (const_int 0))
                              (match_operand:ALL256 1 "register_operand" "r")
                              (match_operand:ALL256 3 "register_operand" "0")))]
   "KV3_2"
   {
-    return "cmoved.odd %2? %x0 = %x1\n\tcmoved.odd %2? %y0 = %y1\n\t"
-           "cmoved.odd %2? %z0 = %z1\n\tcmoved.odd %2? %t0 = %t1";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn_and_split "*cmov<SIDI:mode>.<ALL256:mode>.even"
-  [(set (match_operand:ALL256 0 "register_operand" "=&r")
-        (if_then_else:ALL256 (eq (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r")
-                                                    (const_int 1) (const_int 0))
-                                 (const_int 0))
-                             (match_operand:ALL256 1 "register_operand" "r")
-                             (match_operand:ALL256 3 "register_operand" "0")))]
-  "KV3_1"
-  "#"
-  "KV3_1 && reload_completed"
-  [(set (subreg:<HALF> (match_dup 0) 0)
-        (if_then_else:<HALF> (eq (zero_extract:SIDI (match_dup 2)
-                                                    (const_int 1) (const_int 0))
-                                 (const_int 0))
-                             (subreg:<HALF> (match_dup 1) 0)
-                             (subreg:<HALF> (match_dup 3) 0)))
-   (set (subreg:<HALF> (match_dup 0) 16)
-        (if_then_else:<HALF> (eq (zero_extract:SIDI (match_dup 2)
-                                                    (const_int 1) (const_int 0))
-                                 (const_int 0))
-                             (subreg:<HALF> (match_dup 1) 16)
-                             (subreg:<HALF> (match_dup 3) 16)))]
-  ""
-  [(set_attr "type" "alu_thin_x2")]
-)
-
-(define_insn "*cmov<SIDI:mode>.<ALL256:mode>.even"
-  [(set (match_operand:ALL256 0 "register_operand" "=r")
-        (if_then_else:ALL256 (eq (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r")
-                                                    (const_int 1) (const_int 0))
-                                 (const_int 0))
-                             (match_operand:ALL256 1 "register_operand" "r")
-                             (match_operand:ALL256 3 "register_operand" "0")))]
-  "KV3_2"
-  {
-    return "cmoved.even %2? %x0 = %x1\n\tcmoved.even %2? %y0 = %y1\n\t"
-           "cmoved.even %2? %z0 = %z1\n\tcmoved.even %2? %t0 = %t1";
+    return "cmoved.<EQNE:evenodd> %2? %x0 = %x1\n\tcmoved.<EQNE:evenodd> %2? %y0 = %y1\n\t"
+           "cmoved.<EQNE:evenodd> %2? %z0 = %z1\n\tcmoved.<EQNE:evenodd> %2? %t0 = %t1";
   }
   [(set_attr "type" "alu_tiny_x4")
    (set_attr "length"        "16")]
@@ -1320,76 +1219,38 @@
   [(set_attr "type" "alu_lite_x2")]
 )
 
-(define_insn_and_split "*cmov<SIDI:mode>.<ALL512:mode>.odd"
+(define_insn_and_split "*cmov<SIDI:mode>.<ALL512:mode>.<EQNE:evenodd>"
   [(set (match_operand:ALL512 0 "register_operand" "=&r")
-        (if_then_else:ALL512 (ne (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r")
-                                                    (const_int 1) (const_int 0))
-                                 (const_int 0))
+        (if_then_else:ALL512 (EQNE (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r")
+                                                      (const_int 1) (const_int 0))
+                                   (const_int 0))
                              (match_operand:ALL512 1 "register_operand" "r")
                              (match_operand:ALL512 3 "register_operand" "0")))]
   ""
   "#"
   "reload_completed"
   [(set (subreg:<QUART> (match_dup 0) 0)
-        (if_then_else:<QUART> (ne (zero_extract:SIDI (match_dup 2)
-                                                     (const_int 1) (const_int 0))
-                                  (const_int 0))
+        (if_then_else:<QUART> (EQNE (zero_extract:SIDI (match_dup 2)
+                                                       (const_int 1) (const_int 0))
+                                    (const_int 0))
                               (subreg:<QUART> (match_dup 1) 0)
                               (subreg:<QUART> (match_dup 3) 0)))
    (set (subreg:<QUART> (match_dup 0) 16)
-        (if_then_else:<QUART> (ne (zero_extract:SIDI (match_dup 2)
-                                                     (const_int 1) (const_int 0))
-                                  (const_int 0))
+        (if_then_else:<QUART> (EQNE (zero_extract:SIDI (match_dup 2)
+                                                       (const_int 1) (const_int 0))
+                                    (const_int 0))
                               (subreg:<QUART> (match_dup 1) 16)
                               (subreg:<QUART> (match_dup 3) 16)))
    (set (subreg:<QUART> (match_dup 0) 32)
-        (if_then_else:<QUART> (ne (zero_extract:SIDI (match_dup 2)
-                                                     (const_int 1) (const_int 0))
-                                  (const_int 0))
+        (if_then_else:<QUART> (EQNE (zero_extract:SIDI (match_dup 2)
+                                                       (const_int 1) (const_int 0))
+                                    (const_int 0))
                               (subreg:<QUART> (match_dup 1) 32)
                               (subreg:<QUART> (match_dup 3) 32)))
    (set (subreg:<QUART> (match_dup 0) 48)
-        (if_then_else:<QUART> (ne (zero_extract:SIDI (match_dup 2)
-                                                     (const_int 1) (const_int 0))
-                                  (const_int 0))
-                              (subreg:<QUART> (match_dup 1) 48)
-                              (subreg:<QUART> (match_dup 3) 48)))]
-  ""
-  [(set_attr "type" "alu_thin_x2")]
-)
-
-(define_insn_and_split "*cmov<SIDI:mode>.<ALL512:mode>.even"
-  [(set (match_operand:ALL512 0 "register_operand" "=&r")
-        (if_then_else:ALL512 (eq (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r")
-                                                    (const_int 1) (const_int 0))
-                                 (const_int 0))
-                             (match_operand:ALL512 1 "register_operand" "r")
-                             (match_operand:ALL512 3 "register_operand" "0")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:<QUART> (match_dup 0) 0)
-        (if_then_else:<QUART> (eq (zero_extract:SIDI (match_dup 2)
-                                                     (const_int 1) (const_int 0))
-                                  (const_int 0))
-                              (subreg:<QUART> (match_dup 1) 0)
-                              (subreg:<QUART> (match_dup 3) 0)))
-   (set (subreg:<QUART> (match_dup 0) 16)
-        (if_then_else:<QUART> (eq (zero_extract:SIDI (match_dup 2)
-                                                     (const_int 1) (const_int 0))
-                                  (const_int 0))
-                              (subreg:<QUART> (match_dup 1) 16)
-                              (subreg:<QUART> (match_dup 3) 16)))
-   (set (subreg:<QUART> (match_dup 0) 32)
-        (if_then_else:<QUART> (eq (zero_extract:SIDI (match_dup 2)
-                                                     (const_int 1) (const_int 0))
-                                  (const_int 0))
-                              (subreg:<QUART> (match_dup 1) 32)
-                              (subreg:<QUART> (match_dup 3) 32)))
-   (set (subreg:<QUART> (match_dup 0) 48)
-        (if_then_else:<QUART> (eq (zero_extract:SIDI (match_dup 2)
-                                                     (const_int 1) (const_int 0))
-                                  (const_int 0))
+        (if_then_else:<QUART> (EQNE (zero_extract:SIDI (match_dup 2)
+                                                       (const_int 1) (const_int 0))
+                                    (const_int 0))
                               (subreg:<QUART> (match_dup 1) 48)
                               (subreg:<QUART> (match_dup 3) 48)))]
   ""
@@ -1806,6 +1667,19 @@
    (set_attr "length"      "4,       4,         8,        12")]
 )
 
+(define_insn "*cond_exec_move<FITGPR:mode>.<EQNE:evenodd>"
+  [(cond_exec
+     (EQNE (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r,r,r,r")
+                              (const_int 1) (const_int 0))
+           (const_int 0))
+     (set (match_operand:FITGPR 0 "register_operand" "=r,r,r,r")
+          (match_operand:FITGPR 1 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")))]
+  ""
+  "cmoved.<EQNE:evenodd> %2? %0 = %1"
+  [(set_attr "type" "alu_thin,alu_thin,alu_thin_x,alu_thin_y")
+   (set_attr "length"      "4,       4,         8,        12")]
+)
+
 
 ;; COND_EXEC STORE
 
@@ -1822,20 +1696,46 @@
    (set_attr "length"            "4,               8,              12")]
 )
 
+(define_insn "*cond_exec_store<ALLIFV:mode>.<EQNE:evenodd>"
+  [(cond_exec
+     (EQNE (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r,r,r")
+                              (const_int 1) (const_int 0))
+           (const_int 0))
+     (set (match_operand:ALLIFV 0 "memsimple_operand" "=c,d,e")
+          (match_operand:ALLIFV 1 "register_operand" "r,r,r")))]
+  ""
+  "s<ALLIFV:lsusize>%X0.<EQNE:evenodd> %2? %O0 = %1"
+  [(set_attr "type" "lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
+   (set_attr "length"            "4,               8,              12")]
+)
+
 
 ;; COND_EXEC LOAD
 
 (define_insn "*cond_exec_load<ALLIFV:mode>"
   [(cond_exec
      (match_operator 2 "zero_comparison_operator"
-      [(match_operand:SIDI 3 "register_operand" "r,r,r")
+      [(match_operand:SIDI 3 "register_operand" "r,r,r,r,r,r")
        (const_int 0)])
-     (set (match_operand:ALLIFV 0 "register_operand" "=r,r,r")
-          (match_operand:ALLIFV 1 "memsimple_operand" "c,d,e")))]
+     (set (match_operand:ALLIFV 0 "register_operand" "=r,r,r,r,r,r")
+          (match_operand:ALLIFV 1 "memsimple_operand" "Cc,Cd,Ce,Zc,Zd,Ze")))]
   ""
   "l<ALLIFV:lsusizezx>%V1.<SIDI:suffix>%2z %3? %0 = %O1"
-  [(set_attr "type" "lsu_auxw_load,lsu_auxw_load_x,lsu_auxw_load_y")
-   (set_attr "length"           "4,              8,             12")]
+  [(set_attr "type" "lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_y, lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y")
+   (set_attr "length"           "4,               8,              12,                      4,                        8,                       12")]
+)
+
+(define_insn "*cond_exec_load<ALLIFV:mode>.<EQNE:evenodd>"
+  [(cond_exec
+     (EQNE (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r,r,r,r,r,r")
+                              (const_int 1) (const_int 0))
+           (const_int 0))
+     (set (match_operand:ALLIFV 0 "register_operand" "=r,r,r,r,r,r")
+          (match_operand:ALLIFV 1 "memsimple_operand" "Cc,Cd,Ce,Zc,Zd,Ze")))]
+  ""
+  "l<ALLIFV:lsusizezx>%V1.<EQNE:evenodd> %2? %0 = %O1"
+  [(set_attr "type" "lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_y, lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y")
+   (set_attr "length"           "4,               8,              12,                      4,                        8,                       12")]
 )
 
 
@@ -1844,14 +1744,27 @@
 (define_insn "*cond_exec_load<SHORT:mode><ANY_EXTEND:lsux>"
   [(cond_exec
      (match_operator 2 "zero_comparison_operator"
-      [(match_operand:SIDI 3 "register_operand" "r,r,r")
+      [(match_operand:SIDI 3 "register_operand" "r,r,r,r,r,r")
        (const_int 0)])
-     (set (match_operand:DI 0 "register_operand" "=r,r,r")
-          (ANY_EXTEND:DI (match_operand:SHORT 1 "memsimple_operand" "c,d,e"))))]
+     (set (match_operand:DI 0 "register_operand" "=r,r,r,r,r,r")
+          (ANY_EXTEND:DI (match_operand:SHORT 1 "memsimple_operand" "Cc,Cd,Ce,Zc,Zd,Ze"))))]
   ""
   "l<SHORT:lsusize><ANY_EXTEND:lsux>%V1.<SIDI:suffix>%2z %3? %0 = %O1"
-  [(set_attr "type" "lsu_auxw_load,lsu_auxw_load_x,lsu_auxw_load_y")
-   (set_attr "length"           "4,              8,             12")]
+  [(set_attr "type" "lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_y, lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y")
+   (set_attr "length"           "4,               8,              12,                      4,                        8,                       12")]
+)
+
+(define_insn "*cond_exec_load<SHORT:mode><ANY_EXTEND:lsux>.<EQNE:evenodd>"
+  [(cond_exec
+     (EQNE (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r,r,r,r,r,r")
+                              (const_int 1) (const_int 0))
+           (const_int 0))
+     (set (match_operand:DI 0 "register_operand" "=r,r,r,r,r,r")
+          (ANY_EXTEND:DI (match_operand:SHORT 1 "memsimple_operand" "Cc,Cd,Ce,Zc,Zd,Ze"))))]
+  ""
+  "l<SHORT:lsusize><ANY_EXTEND:lsux>%V1.<EQNE:evenodd> %2? %0 = %O1"
+  [(set_attr "type" "lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_y, lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y")
+   (set_attr "length"           "4,               8,              12,                      4,                        8,                       12")]
 )
 
 

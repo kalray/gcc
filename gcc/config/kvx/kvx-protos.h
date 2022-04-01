@@ -71,6 +71,9 @@ extern void kvx_expand_helper_pic_call (rtx retval, rtx fnaddr, rtx callarg,
 extern bool kvx_modifier_enabled_p (const char * mod, rtx x);
 extern rtx kvx_modifier_rounding (rtx x);
 
+extern rtx kvx_ifcvt_modify_insn (struct ce_if_block *, rtx, rtx_insn *);
+extern void kvx_ifcvt_machdep_init (struct ce_if_block *, bool after_combine);
+
 extern void kvx_print_operand (FILE *file, rtx x, int code);
 
 extern void kvx_print_operand_address (FILE *file, rtx x);

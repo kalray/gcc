@@ -46,7 +46,8 @@
   ""
   {
     kvx_emit_pre_barrier (operands[2]);
-    emit_insn (gen_kvx_al<suffix>u (operands[0], operands[1]));
+    set_mem_addr_space (operands[1], KVX_ADDR_SPACE_BYPASS);
+    emit_move_insn (operands[0], operands[1]);
     kvx_emit_post_barrier (operands[2]);
     DONE;
   }
@@ -185,56 +186,7 @@
   ""
 )
 
-
-;; Atomic Loads
-
-(define_insn "kvx_albu"
-   [(set (match_operand:QI 0 "register_operand" "=r,r,r")
-         (unspec:QI [(match_operand:QI 1 "memory_operand" "a,b,m")] UNSPEC_ALOAD))]
-   ""
-   "lbz.u%X1 %0 = %1"
-  [(set_attr "length" "4, 8, 12")
-   (set_attr "type" "lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y")]
-)
-
-(define_insn "kvx_alhu"
-   [(set (match_operand:HI 0 "register_operand" "=r,r,r")
-         (unspec:HI [(match_operand:HI 1 "memory_operand" "a,b,m")] UNSPEC_ALOAD))]
-   ""
-   "lhz.u%X1 %0 = %1"
-  [(set_attr "length" "4, 8, 12")
-   (set_attr "type" "lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y")]
-)
-
-(define_insn "kvx_alwu"
-   [(set (match_operand:SI 0 "register_operand" "=r,r,r")
-         (unspec:SI [(match_operand:SI 1 "memory_operand" "a,b,m")] UNSPEC_ALOAD))]
-   ""
-   "lwz.u%X1 %0 = %1"
-  [(set_attr "length" "4,8,12")
-   (set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")]
-)
-
-(define_insn "kvx_aldu"
-   [(set (match_operand:DI 0 "register_operand" "=r,r,r")
-         (unspec:DI [(match_operand:DI 1 "memory_operand" "a,b,m")] UNSPEC_ALOAD))]
-   ""
-   "ld.u%X1 %0 = %1"
-  [(set_attr "length" "4, 8, 12")
-   (set_attr "type" "lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y")]
-)
-
-(define_insn "kvx_alqu"
-   [(set (match_operand:TI 0 "register_operand" "=r,r,r")
-         (unspec:TI [(match_operand:TI 1 "memory_operand" "a,b,m")] UNSPEC_ALOAD))]
-   ""
-   "lq.u%X1 %0 = %1"
-  [(set_attr "length" "4, 8, 12")
-   (set_attr "type"   "lsu_auxw_load_uncached, lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")]
-)
-
 ;; Atomic Load
-
 (define_insn "kvx_al<lsusize>"
   [(set (match_operand:SIDI 0 "register_operand" "=r,r,r")
      (unspec_volatile:SIDI [(match_operand:SIDI 1 "mematomic_operand" "c,d,e")
@@ -247,7 +199,6 @@
 )
 
 ;; Atomic Store
-
 (define_insn "kvx_as<lsusize>"
   [(set (match_operand:SIDI 1 "mematomic_operand"  "=c,d,e")
         (unspec_volatile:SIDI [(match_operand:SIDI 0 "register_operand" "r,r,r")
