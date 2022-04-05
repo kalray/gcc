@@ -92,4 +92,13 @@
     }                                                                           \
   }
 
+/* Static library linking does not pull
+ * weak symbols in final executable so
+ * we force dependencies to be strong (undefined).
+ * For instance, libstdc++ and libgcc have
+ * weak references on pthread functions and
+ * we do not want that as it causes link problems.
+ */
+#define GTHREAD_USE_WEAK 0
+
 #endif /* GCC_KVX_MPPA_COS */
