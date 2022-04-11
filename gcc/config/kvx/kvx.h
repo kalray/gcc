@@ -457,7 +457,7 @@ extern void kvx_profile_hook (void);
 /* ********** Trampolines ********** */
 
 /* Length in units of the trampoline for entering a nested function.  */
-#define TRAMPOLINE_SIZE 12
+#define TRAMPOLINE_SIZE (12 /* make */ + 12 /* make */ + 4 /* igoto */)
 
 #define TARGET_CONSTANT_ALIGNMENT constant_alignment_word_strings
 
