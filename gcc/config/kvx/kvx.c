@@ -124,8 +124,12 @@ struct GTY (()) machine_function
 
   kvx_frame_info frame;
 
-  /* If true, the current function has a STATIC_CHAIN.  */
-  int static_chain_on_stack;
+  /* If true, the current function has a STATIC_CHAIN slot within its stack
+   * frame.  Functions which are nested should have one.  A function which only
+   * calls a nested function needs not this slot.  This slot is used to store
+   * the value of $r31, which is the registers in which the calling functions
+   * store the address to its static chain. */
+  int static_chain_needed;
 
   rtx stack_check_block_label;
   rtx stack_check_block_seq, stack_check_block_last;
@@ -147,7 +151,7 @@ struct GTY (()) machine_function
 				| padding1      |
 				|               |
 				+---------------+
-Argument Pointer / Virt. FP-->| [Static chain]| [256-bits aligned]
+Argument Pointer / Virt. FP-->  | [Static chain]| [256-bits aligned]
 				+---------------+
 				| Local         |
 				| Variable      |
@@ -207,8 +211,7 @@ kvx_compute_frame_info (void)
     inc_sp_offset
       += UNITS_PER_WORD * (KV3_ARG_REG_SLOTS - crtl->args.info.next_arg_reg);
 
-  /* FIXME AUTO: trampoline are broken T6775 */
-  if (cfun->machine->static_chain_on_stack)
+  if (cfun->machine->static_chain_needed)
     inc_sp_offset += UNITS_PER_WORD;
 
   HOST_WIDE_INT local_vars_sz = get_frame_size ();
@@ -280,7 +283,7 @@ kvx_compute_frame_info (void)
 
   frame->arg_pointer_offset
     = frame->virt_frame_pointer_offset + frame->padding1
-      + (cfun->machine->static_chain_on_stack ? UNITS_PER_WORD : 0);
+      + (cfun->machine->static_chain_needed ? UNITS_PER_WORD : 0);
 
   frame->frame_size = inc_sp_offset;
   frame->laid_out = true;
@@ -327,12 +330,13 @@ kvx_debug_frame_info (struct kvx_frame_info *fi)
       DFI_FIELD (
 	"padding1", fi->padding1,
 	fi->virt_frame_pointer_offset.to_constant ()
-	  + (cfun->machine->static_chain_on_stack ? UNITS_PER_WORD : 0),
-	"",
-	cfun->machine->static_chain_on_stack ? "" : "<- virt frame pointer");
+		   + (cfun->machine->static_chain_needed ? UNITS_PER_WORD : 0),
+		 "",
+		 cfun->machine->static_chain_needed ? ""
+						    : "<- virt frame pointer");
       DFI_SEP;
     }
-  if (cfun->machine->static_chain_on_stack)
+  if (cfun->machine->static_chain_needed)
     {
       DFI_FIELD ("static chain", (long) UNITS_PER_WORD,
 		 fi->virt_frame_pointer_offset.to_constant (), "",
@@ -429,14 +433,95 @@ kvx_first_parm_offset (tree decl ATTRIBUTE_UNUSED)
 }
 
 static rtx
-kvx_static_chain (const_tree fndecl, bool incoming_p ATTRIBUTE_UNUSED)
+kvx_static_chain (const_tree ARG_UNUSED (fndecl), bool incoming_p)
 {
-  if (!DECL_STATIC_CHAIN (fndecl))
-    return NULL;
+  if (incoming_p)
+    {
+      cfun->machine->static_chain_needed = 1;
+      return gen_frame_mem (Pmode, frame_pointer_rtx);
+    }
+  else
+    {
+      return gen_rtx_REG (Pmode, 31);
+    }
+}
 
-  cfun->machine->static_chain_on_stack = 1;
+/*
+ * Takes a location MEM and write a make opcode in the stack which
+ * loads the ADDR into the general purpose register REGNO.
+ * Returns the number of byte written on the stack.
+ */
+static int
+kvx_emit_make_of_addr (rtx loc, rtx addr, unsigned int regno)
+{
+  int offset = 0;
+  rtx mem;
+  unsigned long mask_extend27 = 0xffffffe000000000U,
+		mask_upper27 = 0x0000001ffffffc00U,
+		mask_lower10 = 0x00000000000003ffU;
 
-  return frame_pointer_rtx;
+  rtx addr_lower10 = copy_to_reg (addr);
+  mem = adjust_address (loc, Pmode, offset);
+  emit_insn (gen_anddi3 (addr_lower10, addr_lower10, GEN_INT (mask_lower10)));
+  emit_insn (gen_ashldi3 (addr_lower10, addr_lower10, GEN_INT (6U)));
+  emit_insn (
+    gen_add2_insn (addr_lower10, GEN_INT (((0xe0 << 8) + (regno << 2)) << 16)));
+  emit_move_insn (mem, addr_lower10);
+  offset += 4;
+
+  rtx addr_upper27 = copy_to_reg (addr);
+  mem = adjust_address (loc, Pmode, offset);
+  emit_insn (gen_anddi3 (addr_upper27, addr_upper27, GEN_INT (mask_upper27)));
+  emit_insn (gen_lshrdi3 (addr_upper27, addr_upper27, GEN_INT (10)));
+  emit_insn (gen_add2_insn (addr_upper27, GEN_INT (0x8 << 28)));
+  emit_move_insn (mem, addr_upper27);
+  offset += 4;
+
+  rtx addr_extend27 = copy_to_reg (addr);
+  emit_insn (
+    gen_anddi3 (addr_extend27, addr_extend27, GEN_INT (mask_extend27)));
+  emit_insn (gen_lshrdi3 (addr_extend27, addr_extend27, GEN_INT (37)));
+  mem = adjust_address (loc, Pmode, offset);
+  emit_move_insn (mem, addr_extend27);
+  offset += 4;
+
+  return offset;
+}
+
+/*
+     This hook is called to initialize a trampoline.  M_TRAMP is an RTX
+     for the memory block for the trampoline; FNDECL is the
+     'FUNCTION_DECL' for the nested function; STATIC_CHAIN is an RTX for
+     the static chain value that should be passed to the function when
+     it is called.
+
+     If the target requires any other actions, such as flushing caches
+     or enabling stack execution, these actions should be performed
+     after initializing the trampoline proper.
+*/
+static void
+kvx_trampoline_init (rtx m_tramp, tree fndecl, rtx chain_value)
+{
+  rtx mem, fnaddr = XEXP (DECL_RTL (fndecl), 0);
+  int offset = 0;
+
+  // make $31 = static_chain_addr
+  mem = adjust_address (m_tramp, Pmode, offset);
+  offset += kvx_emit_make_of_addr (mem, chain_value, 31);
+
+  // make $30 = fnaddr
+  mem = adjust_address (m_tramp, Pmode, offset);
+  offset += kvx_emit_make_of_addr (mem, fnaddr, 30);
+
+  // igoto $r30
+  mem = adjust_address (m_tramp, SImode, offset);
+  emit_move_insn (mem, gen_int_mode (0x0fd8001e, SImode));
+  offset += 4;
+
+  emit_insn (gen_kvx_i1invals (chain_value));
+  emit_insn (gen_kvx_fence (gen_rtx_CONST_STRING (VOIDmode, "")));
+
+  gcc_assert (offset <= TRAMPOLINE_SIZE);
 }
 
 static const char *
@@ -2389,6 +2474,18 @@ kvx_expand_prologue (void)
       RTX_FRAME_RELATED_P (insn) = 1;
 
       add_reg_note (insn, REG_CFA_ADJUST_CFA, copy_rtx (PATTERN (insn)));
+
+      /* We need a static chain (ie, we are generating the prologue of
+       * a nested function.), we move the value of $r31 into the
+       * STATIC_CHAIN stac frame slot (at $sp + virt_frame_ptr_offset) */
+      if (cfun->machine->static_chain_needed)
+	{
+	  insn = emit_move_insn (
+	    gen_frame_mem (Pmode,
+			   plus_constant (Pmode, stack_pointer_rtx,
+					  frame->virt_frame_pointer_offset)),
+	    gen_rtx_REG (Pmode, 31));
+	}
     }
 
   /* Save registers */
@@ -7003,9 +7100,11 @@ kvx_ctrapsi4 (void)
 #undef TARGET_STARTING_FRAME_OFFSET
 #define TARGET_STARTING_FRAME_OFFSET kvx_starting_frame_offset
 
-/* FIXME AUTO: trampoline are broken T6775 */
 #undef TARGET_STATIC_CHAIN
 #define TARGET_STATIC_CHAIN kvx_static_chain
+
+#undef TARGET_TRAMPOLINE_INIT
+#define TARGET_TRAMPOLINE_INIT kvx_trampoline_init
 
 #undef TARGET_DELAY_SCHED2
 #define TARGET_DELAY_SCHED2 (true)
