@@ -294,23 +294,25 @@ kvx_debug_frame_info (struct kvx_frame_info *fi)
   fprintf (dump_file, "\nKVX Frame info:\n");
 
   fprintf (dump_file,
-	   " |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX| %li/0 (caller frame) <- $sp "
+	   " |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX| %ld/0 (caller frame) <- $sp "
 	   "(incoming) %s \n",
-	   fi->frame_size.to_constant(),
+	   fi->frame_size.to_constant (),
 	   cfun->stdarg && crtl->args.info.next_arg_reg < KV3_ARG_REG_SLOTS
 	     ? ""
 	     : "and virt frame pointer");
 
 #define DFI_SEP fprintf (dump_file, " +------------------------------+    \n")
 
-#define DFI_FIELD(f, size, bottom, decorate_up, decorate_down)                   \
-  fprintf (dump_file,                                                            \
-	   " |                              | %li/%li %s  \n"                      \
-	   " |%30s|                              \n"                             \
-	   " |size: %24li| %li/%li  %s\n",                                          \
-	   (bottom) + (size) -UNITS_PER_WORD,                                    \
-	   fi->frame_size.to_constant() - ((bottom) + (size) -UNITS_PER_WORD), decorate_up, f, \
-	   (size), (bottom), fi->frame_size.to_constant() - (bottom), decorate_down)
+#define DFI_FIELD(f, size, bottom, decorate_up, decorate_down)                 \
+  fprintf (dump_file,                                                          \
+	   " |                              | %ld/%ld %s  \n"                  \
+	   " |%30s|                              \n"                           \
+	   " |size: %24ld| %ld/%ld  %s\n",                                     \
+	   (bottom) + (size) -UNITS_PER_WORD,                                  \
+	   (fi->frame_size.to_constant ())                                     \
+	     - ((bottom) + (size) -UNITS_PER_WORD),                            \
+	   decorate_up, f, (size), (bottom),                                   \
+	   (fi->frame_size.to_constant ()) - (bottom), decorate_down)
 
   DFI_SEP;
   if (cfun->stdarg && crtl->args.info.next_arg_reg < KV3_ARG_REG_SLOTS)
@@ -324,7 +326,7 @@ kvx_debug_frame_info (struct kvx_frame_info *fi)
     {
       DFI_FIELD (
 	"padding1", fi->padding1,
-	fi->virt_frame_pointer_offset.to_constant()
+	fi->virt_frame_pointer_offset.to_constant ()
 	  + (cfun->machine->static_chain_on_stack ? UNITS_PER_WORD : 0),
 	"",
 	cfun->machine->static_chain_on_stack ? "" : "<- virt frame pointer");
@@ -332,15 +334,18 @@ kvx_debug_frame_info (struct kvx_frame_info *fi)
     }
   if (cfun->machine->static_chain_on_stack)
     {
-      DFI_FIELD ("static chain", (long int)UNITS_PER_WORD, fi->virt_frame_pointer_offset.to_constant(),
-		 "", "<- virt frame pointer");
+      DFI_FIELD ("static chain", (long) UNITS_PER_WORD,
+		 fi->virt_frame_pointer_offset.to_constant (), "",
+		 "<- virt frame pointer");
       DFI_SEP;
     }
 
   if (get_frame_size () > 0)
     {
-      DFI_FIELD ("locals", get_frame_size ().to_constant(),
-		 fi->virt_frame_pointer_offset.to_constant() - get_frame_size ().to_constant(), "", "");
+      DFI_FIELD ("locals", get_frame_size ().to_constant (),
+		 fi->virt_frame_pointer_offset.to_constant ()
+		   - get_frame_size ().to_constant (),
+		 "", "");
       DFI_SEP;
     }
   if (fi->padding2 > 0)
@@ -361,15 +366,14 @@ kvx_debug_frame_info (struct kvx_frame_info *fi)
       EXECUTE_IF_SET_IN_HARD_REG_SET (fi->saved_regs, 0, regno, rsi)
       stacked_regs[fi->reg_rel_offset[regno] / UNITS_PER_WORD] = regno;
 
-      for (unsigned int i = (fi->saved_regs_size / UNITS_PER_WORD) - 1; i != 0;
-	   i--)
-	fprintf (dump_file, " |%30s| %li/-\n", reg_names[stacked_regs[i]],
-		 (fi->hard_frame_pointer_offset
-		  + fi->reg_rel_offset[stacked_regs[i]]).to_constant());
+      for (int i = (fi->saved_regs_size / UNITS_PER_WORD) - 1; i != 0; i--)
+	fprintf (dump_file, " |%30s| %ld/-\n", reg_names[stacked_regs[i]],
+		 fi->hard_frame_pointer_offset.to_constant ()
+		   + fi->reg_rel_offset[stacked_regs[i]]);
 
-      fprintf (dump_file, " |%21s (%li)%4s| %li/- %s\n", "saved regs",
+      fprintf (dump_file, " |%21s (%ld)%4s| %ld/- %s\n", "saved regs",
 	       fi->saved_regs_size, reg_names[stacked_regs[0]],
-	       fi->hard_frame_pointer_offset.to_constant(),
+	       fi->hard_frame_pointer_offset.to_constant (),
 	       frame_pointer_needed ? "<- hard frame pointer ($fp)" : "");
 
       DFI_SEP;
@@ -384,13 +388,13 @@ kvx_debug_frame_info (struct kvx_frame_info *fi)
 	}
       else
 	{
-	  DFI_FIELD ("padding3", fi->padding3, (long int)0, "", "<- $sp (callee)");
+	  DFI_FIELD ("padding3", fi->padding3, 0L, "", "<- $sp (callee)");
 	  DFI_SEP;
 	}
     }
   if (crtl->outgoing_args_size > 0)
     {
-      DFI_FIELD ("outgoing", crtl->outgoing_args_size.to_constant(), (long int)0, "",
+      DFI_FIELD ("outgoing", crtl->outgoing_args_size.to_constant (), 0L, "",
 		 "<- $sp (callee)");
       DFI_SEP;
     }
@@ -399,7 +403,8 @@ kvx_debug_frame_info (struct kvx_frame_info *fi)
   unsigned regno;
   hard_reg_set_iterator rsi;
   EXECUTE_IF_SET_IN_HARD_REG_SET (fi->saved_regs, 0, regno, rsi)
-  fprintf (dump_file, " $%s [%li]", reg_names[regno], fi->reg_rel_offset[regno]);
+  fprintf (dump_file, " $%s [%ld]", reg_names[regno],
+	   fi->reg_rel_offset[regno]);
 
   fprintf (dump_file, "\n");
 
@@ -431,7 +436,7 @@ kvx_static_chain (const_tree fndecl, bool incoming_p ATTRIBUTE_UNUSED)
 
   cfun->machine->static_chain_on_stack = 1;
 
-  return gen_frame_mem (Pmode, frame_pointer_rtx);
+  return frame_pointer_rtx;
 }
 
 static const char *
@@ -519,7 +524,7 @@ kvx_split_mem (rtx x, rtx *base_out, rtx *offset_out, bool strict)
    TRUE. If the packing could not be done, returns FALSE.
  */
 bool
-kvx_pack_load_store (rtx operands[], unsigned int nops)
+kvx_pack_load_store (rtx operands[], int nops)
 {
   rtx set_dests[KVX_MAX_PACKED_LSU];
   rtx set_srcs[KVX_MAX_PACKED_LSU];
@@ -565,15 +570,15 @@ kvx_pack_load_store (rtx operands[], unsigned int nops)
   unsigned int min_regno = REGNO (operands[op_offset]);
 
   /* Find first regno for destination (load)/source (store) */
-  for (unsigned int i = 1; i < nops; i++)
+  for (int i = 1; i < nops; i++)
     if (REGNO (operands[i * 2 + op_offset]) < min_regno)
       min_regno = REGNO (operands[i * 2 + op_offset]);
 
   /* Sort operands based on regno */
-  for (unsigned int i = 0; i < nops; i++)
+  for (int i = 0; i < nops; i++)
     {
-      const unsigned int regno = REGNO (operands[i * 2 + op_offset]);
-      const unsigned int idx = 2 * (regno - min_regno);
+      const int regno = REGNO (operands[i * 2 + op_offset]);
+      const int idx = 2 * (regno - min_regno);
 
       /* Registers are not consecutive */
       if (idx >= (2 * nops))
@@ -601,7 +606,7 @@ kvx_pack_load_store (rtx operands[], unsigned int nops)
     {
       bool mod_before_last = false;
       /* Check the base register is modified in the last load */
-      for (unsigned int i = 0; i < (nops - 1); i++)
+      for (int i = 0; i < (nops - 1); i++)
 	{
 	  if (REGNO (operands[2 * i + op_offset]) == base_regno)
 	    {
@@ -614,7 +619,7 @@ kvx_pack_load_store (rtx operands[], unsigned int nops)
     }
 
   unsigned int next_offset = INTVAL (base_offset) + UNITS_PER_WORD;
-  for (unsigned int i = 1; i < nops; i++)
+  for (int i = 1; i < nops; i++)
     {
       rtx elem = XEXP (sorted_operands[2 * i + 1 - op_offset], 0);
 
@@ -1460,9 +1465,9 @@ kvx_float_to_half_as_int (unsigned fbits)
     return sign;			     // becomes +/-0
   val = (fbits & 0x7fffffff) >> 23;	     // tmp exp for subnormal calc
   return sign
-    | ((((fbits & 0x7fffff) | 0x800000)    // add subnormal bit
-	+ (0x800000 >> (val - 102)))       // round depending on cut off
-	    >> (126 - val));               // div by 2^(1-(exp-127+15)) and >> 13 | exp=0
+	 | ((((fbits & 0x7fffff) | 0x800000) // add subnormal bit
+	     + (0x800000 >> (val - 102)))    // round depending on cut off
+	    >> (126 - val)); // div by 2^(1-(exp-127+15)) and >> 13 | exp=0
 }
 
 static bool kvx_print_offset_zero;
@@ -1979,13 +1984,11 @@ kvx_register_saved_on_entry (int regno)
    (caller-saved and non fixed reg). Returns NULL_RTX and emits an
    error if no such register can be found. */
 static rtx
-kvx_get_callersaved_nonfixed_reg (machine_mode mode, unsigned int n)
+kvx_get_callersaved_nonfixed_reg (machine_mode ARG_UNUSED (mode), int n)
 {
-  int regno;
-  unsigned int i;
   // start at R16 as as everything before that may be used.
   // We should be able to use the veneer regs if not fixed.
-  for (i = 0, regno = 16; regno < FIRST_PSEUDO_REGISTER; regno++)
+  for (int i = 0, regno = 16; regno < FIRST_PSEUDO_REGISTER; regno++)
     {
       bool candidate = call_used_regs[regno] && !fixed_regs[regno]
 		       && REGNO_REG_CLASS (regno) != XCR_REGS;
@@ -2347,7 +2350,7 @@ kvx_expand_prologue (void)
 {
   kvx_compute_frame_info ();
   struct kvx_frame_info *frame = &cfun->machine->frame;
-  HOST_WIDE_INT size = frame->frame_size;
+  HOST_WIDE_INT size = frame->frame_size.to_constant ();
   rtx insn;
 
   if (flag_stack_usage_info)
@@ -4865,7 +4868,7 @@ kvx_has_43bit_vector_const_p (rtx x)
 }
 
 bool
-kvx_has_32x2bit_vector_const_p (rtx x ATTRIBUTE_UNUSED)
+kvx_has_32x2bit_vector_const_p (rtx ARG_UNUSED (x))
 {
   //HOST_WIDE_INT value = kvx_const_vector_value (x, 0);
   // Need the dual immediate syntax to be fixed in assembler.
@@ -4889,7 +4892,8 @@ kvx_expand_load_store_multiple (rtx operands[], bool is_load)
       || ((count == 2) && (regno & 1)) || ((count == 4) && (regno & 3))
       || !MEM_P (operands[mem_op_idx]) || !REG_P (operands[reg_op_idx])
       || (TARGET_STRICT_ALIGN
-	  && MEM_ALIGN (operands[mem_op_idx]) < (unsigned)(count * UNITS_PER_WORD))
+	  && ((int) MEM_ALIGN (operands[mem_op_idx]))
+	       < (count * UNITS_PER_WORD))
       || MEM_VOLATILE_P (operands[mem_op_idx])
       || REGNO (operands[reg_op_idx]) > KV3_GPR_LAST_REGNO)
     return false;
@@ -4998,7 +5002,8 @@ kvx_load_store_multiple_operation_p (rtx op, bool is_uncached, bool is_load)
   rtx first_reg
     = is_load ? SET_DEST (XVECEXP (op, 0, 0)) : SET_SRC (XVECEXP (op, 0, 0));
 
-  if (TARGET_STRICT_ALIGN && MEM_ALIGN (first_mem) < (unsigned)(count * UNITS_PER_WORD))
+  if (TARGET_STRICT_ALIGN
+      && ((int) MEM_ALIGN (first_mem)) < (count * UNITS_PER_WORD))
     return false;
 
   unsigned int dest_regno = REGNO (first_reg);
@@ -6361,7 +6366,7 @@ kvx_handle_fixed_reg_option (const char *arg)
 static void
 kvx_option_override (void)
 {
-  unsigned int i;
+  int i;
   cl_deferred_option *opt;
   vec<cl_deferred_option> *v = (vec<cl_deferred_option> *) kvx_deferred_options;
 

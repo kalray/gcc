@@ -91,7 +91,7 @@ extern bool kvx_legitimate_pic_symbolic_ref_p (rtx op);
 
 extern bool kvx_split_mem (rtx x, rtx *base_out, rtx *offset_out, bool strict);
 
-extern bool kvx_pack_load_store (rtx operands[], unsigned int nops);
+extern bool kvx_pack_load_store (rtx operands[], int nops);
 
 extern bool kvx_is_farcall_p (rtx);
 
