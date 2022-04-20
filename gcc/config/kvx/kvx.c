@@ -1151,7 +1151,7 @@ static rtx
 kvx_function_arg (cumulative_args_t cum_v, const function_arg_info &arg)
 {
   struct kvx_arg_info info = {0, 0, 0};
-  return kvx_get_arg_info (&info, cum_v, arg.mode, arg.type, arg.named);
+  return kvx_get_arg_info (&info, cum_v, arg);
 }
 
 /* Implements TARGET_ARG_PARTIAL_BYTES.
@@ -1162,7 +1162,7 @@ static int
 kvx_arg_partial_bytes (cumulative_args_t cum_v, const function_arg_info &arg)
 {
   struct kvx_arg_info info = {0, 0, 0};
-  rtx reg = kvx_get_arg_info (&info, cum_v, arg.mode, arg.type, arg.named);
+  rtx reg = kvx_get_arg_info (&info, cum_v, arg);
   if (reg != NULL_RTX && info.num_regs > 0 && info.num_stack > 0)
     {
       return info.num_regs * UNITS_PER_WORD;
@@ -1175,7 +1175,7 @@ kvx_function_arg_advance (cumulative_args_t cum_v, const function_arg_info &arg)
 {
   CUMULATIVE_ARGS *cum = get_cumulative_args (cum_v);
   struct kvx_arg_info info = {0, 0, 0};
-  kvx_get_arg_info (&info, cum_v, arg.mode, arg.type, arg.named);
+  kvx_get_arg_info (&info, cum_v, arg);
 
   if (info.num_regs > 0)
     {
