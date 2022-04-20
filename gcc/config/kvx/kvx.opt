@@ -2,20 +2,20 @@ HeaderInclude
 config/kvx/kvx-opts.h
 
 ffixed-reg
-Target RejectNegative Report Joined Var(kvx_deferred_options) Defer
+Target RejectNegative Joined Var(kvx_deferred_options) Defer
 Set the passed register range as fixed
 
 fstack-limit-register=
-Common RejectNegative Report Joined Var(kvx_deferred_options) Defer
+Common RejectNegative Joined Var(kvx_deferred_options) Defer
 
 fstack-limit-symbol=
-Common RejectNegative Report Joined Var(kvx_deferred_options) Defer
+Common RejectNegative Joined Var(kvx_deferred_options) Defer
 
 fshaker-seed=
 Target RejectNegative Report Joined Var(kvx_deferred_options) Defer
 
 march=
-Target RejectNegative Joined Report Enum(kvx_arch_type) Var(kvx_arch_name) Init(KVX_ARCH_KV3_1)
+Target RejectNegative Joined Enum(kvx_arch_type) Var(kvx_arch_name) Init(KVX_ARCH_KV3_1)
 -march=ARCHITECTURE  Compile for specified ARCHITECTURE
 
 Enum
@@ -29,35 +29,35 @@ EnumValue
 Enum(kvx_arch_type) String(kv3-2) Value(KVX_ARCH_KV3_2)
 
 mfarcall
-Target Report Var(KVX_FARCALL)
+Target Var(KVX_FARCALL)
 Avoid all range limits on call instructions
 
 m32
-Target Report Mask(32)
+Target Mask(32)
 Use 32 bits pointers.
 
 mdump-costs
-Target Report Var(DUMP_COSTS) Init(0)
+Target Var(DUMP_COSTS) Init(0)
 Dump calls to target-dependent cost functions
 
 fhwloop
-Target Report Mask(HWLOOP)
+Target Mask(HWLOOP)
 Enable hwloop generation when optimizing (active by default)
 
 fsched2-dates
-Target Report Mask(SCHED2_DATES)
+Target Mask(SCHED2_DATES)
 Display sched2 schedule dates in assembly output (active by default)
 
 fdivmod0-trap
-Target Report Mask(DIVMOD0_TRAP)
+Target Mask(DIVMOD0_TRAP)
 Trigger trap in case of integer division/modulus by zero (active by default).
 
 fstrict-align
-Target Report Mask(STRICT_ALIGN)
+Target Mask(STRICT_ALIGN)
 Do not generate misaligned memory accesses 
 
 fstack-check-use-tls
-Target RejectNegative Report Mask(STACK_CHECK_USE_TLS)
+Target RejectNegative Mask(STACK_CHECK_USE_TLS)
 Use a TLS slot named __stack_end to store the stack boundary instead of $sr1
 
 mabi=
