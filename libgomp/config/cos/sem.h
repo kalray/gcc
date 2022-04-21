@@ -153,5 +153,14 @@ gomp_sem_destroy (gomp_sem_t *sem)
 {
   gomp_sem_write_set (sem, 0);
 }
+
+static inline int
+gomp_sem_getcount (gomp_sem_t *sem)
+{
+  __bypass volatile uintptr_t *ptr = (void *) sem;
+  uintptr_t count = *ptr;
+
+  return count;
+}
 #endif /* doesn't HAVE_BROKEN_POSIX_SEMAPHORES  */
 #endif /* GOMP_SEM_H  */
