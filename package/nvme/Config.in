@@ -5,3 +5,5 @@ config BR2_PACKAGE_NVME
 	  Express (optimized PCI Express SSD interface) devices.
 
 	  https://github.com/linux-nvme/nvme-cli
+
+	select BR2_PACKAGE_JSON_C

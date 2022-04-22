@@ -4,10 +4,12 @@
 #
 ################################################################################
 
-NVME_VERSION = 1.12
+NVME_VERSION = 1.16
 NVME_SITE = $(call github,linux-nvme,nvme-cli,v$(NVME_VERSION))
 NVME_LICENSE = GPL-2.0+
 NVME_LICENSE_FILES = LICENSE
+
+NVME_DEPENDENCIES += json-c
 
 # Yes, LIBUUID=0 means libuuid support enabled.
 # LIBUUID=1 means libuuid support disabled.
