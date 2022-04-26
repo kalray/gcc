@@ -36,36 +36,52 @@
 #include "varasm.h"
 #include "emit-rtl.h"
 #include "tree.h"
-#include "rtl.h"
-#include "rtl-iter.h"
-#include "regs.h"
+#include "gimple.h"
+#include "cfghooks.h"
+#include "cfgloop.h"
+#include "df.h"
 #include "tm_p.h"
+#include "stringpool.h"
+#include "attribs.h"
+#include "optabs.h"
+#include "regs.h"
+#include "recog.h"
+#include "rtl-iter.h"
 #include "explow.h"
 #include "output.h"
 #include "expr.h"
 #include "builtins.h"
 #include "diagnostic.h"
+#include "cgraph.h"
 #include "insn-codes.h"
-#include "optabs.h"
-#include "df.h"
+#include "insn-attr.h"
 #include "hard-reg-set.h"
+#include "optabs.h"
 #include "poly-int.h"
 #include "langhooks.h"
 #include "sched-int.h"
-#include "recog.h"
 #include "ddg.h"
 #include "attribs.h"
 #include "hw-doloop.h"
-#include "cfgrtl.h"
-#include "cfghooks.h"
 #include "sel-sched.h"
+#include "cfgrtl.h"
 #include "opts.h"
 #include "calls.h"
-
+#include "alias.h"
+#include "fold-const.h"
+#include "stor-layout.h"
+#include "flags.h"
+#include "reload.h"
+#include "gimplify.h"
+#include "dwarf2.h"
+#include "dumpfile.h"
+#include "tm-constrs.h"
+#include "ifcvt.h"
 #include "target.h"
-#include "target-def.h"
 #include "kvx-protos.h"
 #include "kvx-opts.h"
+/* This file should be included last.  */
+#include "target-def.h"
 
 #undef TARGET_HAVE_TLS
 #define TARGET_HAVE_TLS (true)
@@ -1445,6 +1461,7 @@ kvx_vector_mode_supported_p (enum machine_mode mode)
     case E_V2SImode:
     case E_V4HFmode:
     case E_V2SFmode:
+    case E_V1DImode:
     // 128-bit modes
     case E_V16QImode:
     case E_V8HImode:
@@ -1520,6 +1537,7 @@ kvx_pass_by_reference (cumulative_args_t cum ATTRIBUTE_UNUSED, const function_ar
   /* Arguments which are variable sized or larger than 4 registers are
      passed by reference */
   return size < 0 || ((size > (4 * UNITS_PER_WORD)) && arg.mode == BLKmode);
+  return (size > (4 * UNITS_PER_WORD) || size < 0);
 }
 
 static const char *kvx_unspec_tls_asm_op[]
@@ -3351,6 +3369,9 @@ kvx_get_chunk_mode (enum machine_mode mode)
 {
   switch (mode)
     {
+    // 64-bit modes
+    case E_V1DImode:
+      return DImode;
     // 128-bit modes
     case E_V16QImode:
       return V8QImode;
@@ -6180,7 +6201,7 @@ kvx_invalid_within_doloop (const rtx_insn *insn)
    In case of loop counter reload the doloop_end pattern was already split.  */
 
 static void
-hwloop_fail (hwloop_info loop)
+kvx_hwloop_fail (hwloop_info loop)
 {
   if (recog_memoized (loop->loop_end) != CODE_FOR_doloop_end_si
       && recog_memoized (loop->loop_end) != CODE_FOR_doloop_end_di)
@@ -6211,7 +6232,7 @@ hwloop_fail (hwloop_info loop)
    loop counter.  Otherwise, return NULL_RTX.  */
 
 static rtx
-hwloop_pattern_reg (rtx_insn *insn)
+kvx_hwloop_pattern_reg (rtx_insn *insn)
 {
   if (!JUMP_P (insn)
       || (recog_memoized (insn) != CODE_FOR_doloop_end_si
@@ -6226,7 +6247,7 @@ hwloop_pattern_reg (rtx_insn *insn)
 }
 
 static bool
-hwloop_optimize (hwloop_info loop)
+kvx_hwloop_optimize (hwloop_info loop)
 {
   int i;
   edge entry_edge;
@@ -6354,7 +6375,7 @@ hwloop_optimize (hwloop_info loop)
 }
 
 static struct hw_doloop_hooks kvx_doloop_hooks
-  = {hwloop_pattern_reg, hwloop_optimize, hwloop_fail};
+  = { kvx_hwloop_pattern_reg, kvx_hwloop_optimize, kvx_hwloop_fail };
 
 /* Implements TARGET_MACHINE_DEPENDENT_REORG.  */
 static void

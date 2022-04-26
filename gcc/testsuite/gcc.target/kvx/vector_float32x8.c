@@ -339,10 +339,18 @@ kvx_float32x8_shift(float32x8_t a, float32_t b)
     return __builtin_kvx_shiftfwo(a, 1, b);
 }
 float32x8_t __attribute ((noinline))
-kvx_float32x8_catfwo(float32x4_t a, float32x4_t b) {
-    return __builtin_kvx_catwo(a, b);
+kvx_float32x8_cat256(float32x4_t a, float32x4_t b) {
+    return __builtin_kvx_cat256(a, b);
 }
 float32x8_t __attribute ((noinline))
-kvx_float32x8_scatfwo(float32x4_t a, float32x4_t b) {
-    return __builtin_kvx_catwo(b, a);
+kvx_float32x8_scat256(float32x4_t a, float32x4_t b) {
+    return __builtin_kvx_cat256(b, a);
+}
+float32x4_t __attribute ((noinline))
+kvx_float32x8_low128(float32x8_t a) {
+    return __builtin_kvx_low128(a);
+}
+float32x4_t __attribute ((noinline))
+kvx_float32x8_high128(float32x8_t a) {
+    return __builtin_kvx_high128(a);
 }
