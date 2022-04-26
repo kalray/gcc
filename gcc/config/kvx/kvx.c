@@ -32,7 +32,6 @@
 #include "backend.h"
 #include "target.h"
 #include "rtl.h"
-#include "rtl-iter.h"
 #include "tree.h"
 #include "memmodel.h"
 #include "gimple.h"
@@ -41,11 +40,12 @@
 #include "df.h"
 #include "tm_p.h"
 #include "stringpool.h"
+#include "attribs.h"
 #include "optabs.h"
 #include "regs.h"
 #include "emit-rtl.h"
 #include "recog.h"
-#include "attribs.h"
+#include "cgraph.h"
 #include "diagnostic.h"
 #include "insn-attr.h"
 #include "alias.h"
@@ -63,71 +63,19 @@
 #include "params.h"
 #include "gimplify.h"
 #include "dwarf2.h"
-#include "gimple-iterator.h"
-#include "tree-vectorizer.h"
-#include "cfgrtl.h"
-
 #include "dumpfile.h"
 #include "builtins.h"
+#include "rtl-iter.h"
 #include "tm-constrs.h"
 #include "sched-int.h"
-#include "target-globals.h"
-#include "common/common-target.h"
-#include "selftest.h"
-#include "selftest-rtl.h"
-
-#include "config.h"
-#include "system.h"
-#include "coretypes.h"
-#include "tm.h"
-
-#include "calls.h"
-#include "function.h"
-#include "cfgloop.h"
-#include "cppdefault.h"
-#include "cpplib.h"
-#include "diagnostic.h"
-#include "incpath.h"
-
-#include "basic-block.h"
-#include "bitmap.h"
-#include "hard-reg-set.h"
-#include "df.h"
-#include "tree.h"
-#include "rtl.h"
-#include "expr.h"
-#include "function.h"
-#include "ggc.h"
-#include "insn-attr.h"
-#include "insn-codes.h"
-#include "insn-modes.h"
-#include "langhooks.h"
-#include "libfuncs.h"
-#include "output.h"
-#include "hw-doloop.h"
-#include "opts.h"
-#include "params.h"
-#include "emit-rtl.h"
-//#include "recog.h"
-#include "regs.h"
-
 #include "sel-sched.h"
-#include "toplev.h"
-#include "stor-layout.h"
-#include "varasm.h"
-
-#include "tm_p.h"
-#include "target.h"
-#include "target-def.h"
-#include "ira.h"
+#include "hw-doloop.h"
+#include "cfgrtl.h"
 #include "ddg.h"
+#include "ifcvt.h"
 
-#include "kvx-protos.h"
-#include "kvx-opts.h"
-
-#include <stdlib.h>
-#include <unistd.h>
-#include <libgen.h>
+/* This file should be included last.  */
+#include "target-def.h"
 
 #undef TARGET_HAVE_TLS
 #define TARGET_HAVE_TLS (true)
@@ -1510,6 +1458,7 @@ kvx_vector_mode_supported_p (enum machine_mode mode)
     case E_V2SImode:
     case E_V4HFmode:
     case E_V2SFmode:
+    case E_V1DImode:
     // 128-bit modes
     case E_V16QImode:
     case E_V8HImode:
@@ -1586,7 +1535,7 @@ kvx_pass_by_reference (cumulative_args_t cum ATTRIBUTE_UNUSED,
 
   /* Arguments which are variable sized or larger than 4 registers are
      passed by reference */
-  return size < 0 || ((size > (4 * UNITS_PER_WORD)) && mode == BLKmode);
+  return (size > (4 * UNITS_PER_WORD) || size < 0);
 }
 
 static const char *kvx_unspec_tls_asm_op[]
@@ -3417,6 +3366,9 @@ kvx_get_chunk_mode (enum machine_mode mode)
 {
   switch (mode)
     {
+    // 64-bit modes
+    case E_V1DImode:
+      return DImode;
     // 128-bit modes
     case E_V16QImode:
       return V8QImode;
@@ -6243,7 +6195,7 @@ kvx_invalid_within_doloop (const rtx_insn *insn)
    In case of loop counter reload the doloop_end pattern was already split.  */
 
 static void
-hwloop_fail (hwloop_info loop)
+kvx_hwloop_fail (hwloop_info loop)
 {
   if (recog_memoized (loop->loop_end) != CODE_FOR_doloop_end_si
       && recog_memoized (loop->loop_end) != CODE_FOR_doloop_end_di)
@@ -6274,7 +6226,7 @@ hwloop_fail (hwloop_info loop)
    loop counter.  Otherwise, return NULL_RTX.  */
 
 static rtx
-hwloop_pattern_reg (rtx_insn *insn)
+kvx_hwloop_pattern_reg (rtx_insn *insn)
 {
   if (!JUMP_P (insn)
       || (recog_memoized (insn) != CODE_FOR_doloop_end_si
@@ -6289,7 +6241,7 @@ hwloop_pattern_reg (rtx_insn *insn)
 }
 
 static bool
-hwloop_optimize (hwloop_info loop)
+kvx_hwloop_optimize (hwloop_info loop)
 {
   int i;
   edge entry_edge;
@@ -6417,7 +6369,7 @@ hwloop_optimize (hwloop_info loop)
 }
 
 static struct hw_doloop_hooks kvx_doloop_hooks
-  = {hwloop_pattern_reg, hwloop_optimize, hwloop_fail};
+  = { kvx_hwloop_pattern_reg, kvx_hwloop_optimize, kvx_hwloop_fail };
 
 /* Implements TARGET_MACHINE_DEPENDENT_REORG.  */
 static void

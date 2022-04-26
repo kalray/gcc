@@ -410,10 +410,18 @@ kvx_float32x4_shift(float32x4_t a, float32_t b)
     return __builtin_kvx_shiftfwq(a, 1, b);
 }
 float32x4_t __attribute ((noinline))
-kvx_float32x4_catfwq(float32x2_t a, float32x2_t b) {
-    return __builtin_kvx_catwq(a, b);
+kvx_float32x4_cat128(float32x2_t a, float32x2_t b) {
+    return __builtin_kvx_cat128(a, b);
 }
 float32x4_t __attribute ((noinline))
-kvx_float32x4_scatfwq(float32x2_t a, float32x2_t b) {
-    return __builtin_kvx_catwq(b, a);
+kvx_float32x4_scat128(float32x2_t a, float32x2_t b) {
+    return __builtin_kvx_cat128(b, a);
+}
+float32x2_t __attribute ((noinline))
+kvx_float32x4_low64(float32x4_t a) {
+    return __builtin_kvx_low64(a);
+}
+float32x2_t __attribute ((noinline))
+kvx_float32x4_high64(float32x4_t a) {
+    return __builtin_kvx_high64(a);
 }
