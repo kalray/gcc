@@ -46,12 +46,12 @@
   (and (match_code "const_double")
        (match_test "kvx_float_fits_bits(rval,43,mode)")))
 
-(define_constraint "I16"  
+(define_constraint "I16"
   "A signed 16-bit non symbolic constant."
   (and (match_code "const_int")
        (match_test "SIGNED_INT_FITS_N_BITS (ival, 16)")))
 
-(define_constraint "I32"  
+(define_constraint "I32"
   "A signed 32-bit non symbolic constant."
   (and (match_code "const_int")
        (match_test "SIGNED_INT_FITS_N_BITS (ival, 32)")))
