@@ -33,6 +33,17 @@
    (set_attr "length" "     4,            4,              8,             12,                     4,                       8,                      12,             4,               8,              12,       4,         8,        12")]
 )
 
+(define_insn "*movv1di_imm"
+  [(set (match_operand:V1DI 0 "register_operand" "=r,r")
+        (subreg:V1DI (match_operand:DI 1 "symbolic_operand" "r,i") 0))]
+  ""
+  "@
+   copyd %0 = %1
+   make %0 = %1"
+  [(set_attr "type" "alu_tiny,alu_tiny_y")
+   (set_attr "length"      "4,        12")]
+)
+
 
 ;; 128-bit Vector Moves
 
@@ -194,6 +205,7 @@
     DONE;
   }
 )
+
 
 ;; Vector Set/Extract/Init/Perm/Shr
 

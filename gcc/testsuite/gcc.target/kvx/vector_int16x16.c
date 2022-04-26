@@ -533,10 +533,18 @@ kvx_int16x16_shift(int16x16_t a, int16_t b)
     return __builtin_kvx_shifthx(a, 1, b);
 }
 int16x16_t __attribute ((noinline))
-kvx_int16x16_cathx(int16x8_t a, int16x8_t b) {
-    return __builtin_kvx_cathx(a, b);
+kvx_int16x16_cat256(int16x8_t a, int16x8_t b) {
+    return __builtin_kvx_cat256(a, b);
 }
 int16x16_t __attribute ((noinline))
-kvx_int16x16_scathx(int16x8_t a, int16x8_t b) {
-    return __builtin_kvx_cathx(b, a);
+kvx_int16x16_scat256(int16x8_t a, int16x8_t b) {
+    return __builtin_kvx_cat256(b, a);
+}
+int16x8_t __attribute ((noinline))
+kvx_int16x16_low128(int16x16_t a) {
+    return __builtin_kvx_low128(a);
+}
+int16x8_t __attribute ((noinline))
+kvx_int16x16_high128(int16x16_t a) {
+    return __builtin_kvx_high128(a);
 }

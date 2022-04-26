@@ -533,10 +533,18 @@ kvx_int64x4_shift(int64x4_t a, int64_t b)
     return __builtin_kvx_shiftdq(a, 1, b);
 }
 int64x4_t __attribute ((noinline))
-kvx_int64x4_catdq(int64x2_t a, int64x2_t b) {
-    return __builtin_kvx_catdq(a, b);
+kvx_int64x4_cat256(int64x2_t a, int64x2_t b) {
+    return __builtin_kvx_cat256(a, b);
 }
 int64x4_t __attribute ((noinline))
-kvx_int64x4_scatdq(int64x2_t a, int64x2_t b) {
-    return __builtin_kvx_catdq(b, a);
+kvx_int64x4_scat256(int64x2_t a, int64x2_t b) {
+    return __builtin_kvx_cat256(b, a);
+}
+int64x2_t __attribute ((noinline))
+kvx_int64x4_low128(int64x4_t a) {
+    return __builtin_kvx_low128(a);
+}
+int64x2_t __attribute ((noinline))
+kvx_int64x4_high128(int64x4_t a) {
+    return __builtin_kvx_high128(a);
 }

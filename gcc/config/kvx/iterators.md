@@ -1,4 +1,4 @@
-;; Mapping between GCC modes and suffixes used by LSU insns
+;; Mapping between modes and suffixes used by LSU instruction mnemonics.
 (define_mode_attr lsusize [
   (QI "b")
   (HI "h")
@@ -301,7 +301,7 @@
 ;; Iterator for all 64-bit modes.
 (define_mode_iterator ALL64 [
   DI DF SC
-  V8QI V4HI V4HF V2SI V2SF
+  V8QI V4HI V4HF V2SI V2SF V1DI
 ])
 
 ;; Iterator for the 8-bit x8 vector modes.
@@ -321,7 +321,7 @@
 
 ;; Iterator for the 64-bit vector modes.
 (define_mode_iterator SIMD64 [
-  V8QI V4HI V4HF V2SI V2SF
+  V8QI V4HI V4HF V2SI V2SF V1DI
 ])
 
 ;; Iterator for all 128-bit modes.
@@ -381,6 +381,7 @@
   (V4HF    "hq")
   (V2SI    "wp")
   (V2SF    "wp")
+  (V1DI    "du")
   (V16QI   "bx")
   (V8HI    "ho")
   (V8HF    "ho")
@@ -409,6 +410,7 @@
   (V4HF    "fhq")
   (V2SI    "wp")
   (V2SF    "fwp")
+  (V1DI    "du")
   (V16QI   "bx")
   (V8HI    "ho")
   (V8HF    "fho")
@@ -989,6 +991,7 @@
   (V4HF    "V8HF")
   (V2SI    "V4SI")
   (V2SF    "V4SF")
+  (V1DI    "V2DI")
   (DI      "V2DI")
   (DF      "V2DF")
   (V16QI   "V32QI")
@@ -998,16 +1001,47 @@
   (V4SF    "V8SF")
   (V2DI    "V4DI")
   (V2DF    "V4DF")
+  (V2DI    "V4DI")
 ])
 
-;; Attribute to get the quadruple MODE of a vector mode.
-(define_mode_attr QMODE [
+;; Attribute to get the tetra MODE of a vector mode.
+(define_mode_attr TMODE [
   (V8QI    "V32QI")
   (V4HI    "V16HI")
   (V4HF    "V16HF")
   (V2SI    "V8SI")
   (V2SF    "V8SF")
+  (V1DI    "V4DI")
   (DI      "V4DI")
   (DF      "V4DF")
+])
+
+
+;; Modes for core and extension data move builtins
+(define_mode_iterator V64 [ V1DI ])
+(define_mode_iterator V128 [ V2DI ])
+(define_mode_iterator V256 [ V4DI ])
+
+(define_mode_iterator X256 [ V1OI ])
+(define_mode_iterator X512 [ V2OI ])
+(define_mode_iterator X1024 [ V4OI ])
+(define_mode_iterator X2048 [ V8OI ])
+(define_mode_iterator X4096 [ V16OI ])
+(define_mode_iterator X8192 [ V32OI ])
+(define_mode_iterator XBUFF [
+  V2OI V4OI V8OI V16OI V32OI
+])
+
+;; Attribute to map data move mode to bit size.
+(define_mode_attr bitsize [
+  (V1DI    "64")
+  (V2DI    "128")
+  (V4DI    "256")
+  (V1OI    "256")
+  (V2OI    "512")
+  (V4OI    "1024")
+  (V8OI    "2048")
+  (V16OI   "4096")
+  (V32OI   "8192")
 ])
 

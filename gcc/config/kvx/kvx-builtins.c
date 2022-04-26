@@ -21,6 +21,7 @@
 #define IN_TARGET_CODE 1
 
 #include "config.h"
+#define INCLUDE_STRING
 #include "system.h"
 #include "coretypes.h"
 #include "tm.h"
@@ -40,8 +41,6 @@
 #include "explow.h"
 #include "expr.h"
 #include "langhooks.h"
-#include "gimple-iterator.h"
-#include "case-cfn-macros.h"
 #include "emit-rtl.h"
 
 enum kvx_builtin
@@ -282,11 +281,33 @@ enum kvx_builtin
   KVX_BUILTIN_CATBV,
   KVX_BUILTIN_CATHO,
   KVX_BUILTIN_CATHX,
-  KVX_BUILTIN_CATWP,
   KVX_BUILTIN_CATWQ,
   KVX_BUILTIN_CATWO,
-  KVX_BUILTIN_CATDP,
   KVX_BUILTIN_CATDQ,
+
+  KVX_BUILTIN_CAT128,
+  KVX_BUILTIN_CAT256,
+  KVX_BUILTIN_XCAT512,
+  KVX_BUILTIN_XCAT1024,
+  KVX_BUILTIN_XCAT2048,
+  KVX_BUILTIN_XCAT4096,
+  KVX_BUILTIN_XCAT8192,
+
+  KVX_BUILTIN_LOW64,
+  KVX_BUILTIN_LOW128,
+  KVX_BUILTIN_XLOW256,
+  KVX_BUILTIN_XLOW512,
+  KVX_BUILTIN_XLOW1024,
+  KVX_BUILTIN_XLOW2048,
+  KVX_BUILTIN_XLOW4096,
+
+  KVX_BUILTIN_HIGH64,
+  KVX_BUILTIN_HIGH128,
+  KVX_BUILTIN_XHIGH256,
+  KVX_BUILTIN_XHIGH512,
+  KVX_BUILTIN_XHIGH1024,
+  KVX_BUILTIN_XHIGH2048,
+  KVX_BUILTIN_XHIGH4096,
 
   KVX_BUILTIN_SELECTBO,
   KVX_BUILTIN_SELECTBX,
@@ -761,10 +782,23 @@ enum kvx_builtin
   KVX_BUILTIN_XACCESS4096O,
   KVX_BUILTIN_XACCESS8192O,
 
-  KVX_BUILTIN_XSWAP256,
-  KVX_BUILTIN_XMT44D,
-
+  KVX_BUILTIN_XFSCALEWO,
   KVX_BUILTIN_XMMA484BW,
+  KVX_BUILTIN_XMMA4164BW,
+  KVX_BUILTIN_XMADD44BW0,
+  KVX_BUILTIN_XMADD44BW1,
+  KVX_BUILTIN_XMADDIFWO,
+  KVX_BUILTIN_XMSBFIFWO,
+  KVX_BUILTIN_XFFMA44HW,
+  KVX_BUILTIN_XFMMA444HW,
+  KVX_BUILTIN_XFMMA484HW,
+  KVX_BUILTIN_XFNARROW44WH,
+  KVX_BUILTIN_XCLAMPWO,
+  KVX_BUILTIN_XTRUNC48WB,
+  KVX_BUILTIN_XSX48BW,
+  KVX_BUILTIN_XZX48BW,
+  KVX_BUILTIN_XMT44D,
+  KVX_BUILTIN_XSWAP256,
 
   KVX_BUILTIN__COUNT
 };
@@ -841,20 +875,33 @@ kvx_init_builtins (void)
   add_builtin_type ("__kvx_v2df", V2DF);
   add_builtin_type ("__kvx_v4df", V4DF);
 
-  tree OI = make_signed_type (256);
+  tree DI = make_unsigned_type (64);
+  tree V64 = build_opaque_vector_type (DI, 1);
+  tree V128 = build_opaque_vector_type (DI, 2);
+  tree V256 = build_opaque_vector_type (DI, 4);
+#define V64mode V1DImode
+#define V128mode V2DImode
+#define V256mode V4DImode
+
+  add_builtin_type ("__kvx_v64", V64);
+  add_builtin_type ("__kvx_v128", V128);
+  add_builtin_type ("__kvx_v256", V256);
+
+  tree OI = make_unsigned_type (256);
   tree X256 = build_vector_type (OI, 1);
   tree X512 = build_vector_type (OI, 2);
   tree X1024 = build_vector_type (OI, 4);
   tree X2048 = build_vector_type (OI, 8);
   tree X4096 = build_vector_type (OI, 16);
   tree X8192 = build_vector_type (OI, 32);
+#define X256mode V1OImode
+#define X512mode V2OImode
+#define X1024mode V4OImode
+#define X2048mode V8OImode
+#define X4096mode V16OImode
+#define X8192mode V32OImode
 
   tree _X256 = build_pointer_type (X256);
-  tree _X512 = build_pointer_type (X512);
-  tree _X1024 = build_pointer_type (X1024);
-  tree _X2048 = build_pointer_type (X2048);
-  tree _X4096 = build_pointer_type (X4096);
-  tree _X8192 = build_pointer_type (X8192);
 
   add_builtin_type ("__kvx_x256", X256);
   add_builtin_type ("__kvx_x512", X512);
@@ -1140,15 +1187,37 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (SHIFTFDP, "shiftfdp", V2DF, V2DF, INT32, FLOAT64); // Vector
   ADD_KVX_BUILTIN (SHIFTFDQ, "shiftfdq", V4DF, V4DF, INT32, FLOAT64); // Vector
 
-  ADD_KVX_BUILTIN (CATBX, "catbx", V16QI, V8QI, V8QI); // Vector
-  ADD_KVX_BUILTIN (CATBV, "catbv", V32QI, V16QI, V16QI); // Vector
-  ADD_KVX_BUILTIN (CATHO, "catho", V8HI, V4HI, V4HI); // Vector
-  ADD_KVX_BUILTIN (CATHX, "cathx", V16HI, V8HI, V8HI); // Vector
-  ADD_KVX_BUILTIN (CATWP, "catwp", V2SI, INT32, INT32); // Deprecated
-  ADD_KVX_BUILTIN (CATWQ, "catwq", V4SI, V2SI, V2SI); // Vector
-  ADD_KVX_BUILTIN (CATWO, "catwo", V8SI, V4SI, V4SI); // Vector
-  ADD_KVX_BUILTIN (CATDP, "catdp", V2DI, INT64, INT64); // Deprecated
-  ADD_KVX_BUILTIN (CATDQ, "catdq", V4DI, V2DI, V2DI); // Vector
+  ADD_KVX_BUILTIN (CATBX, "catbx", V128, V64, V64); // Deprecated
+  ADD_KVX_BUILTIN (CATBV, "catbv", V256, V128, V128); // Deprecated
+  ADD_KVX_BUILTIN (CATHO, "catho", V128, V64, V64); // Deprecated
+  ADD_KVX_BUILTIN (CATHX, "cathx", V256, V128, V128); // Deprecated
+  ADD_KVX_BUILTIN (CATWQ, "catwq", V128, V64, V64); // Deprecated
+  ADD_KVX_BUILTIN (CATWO, "catwo", V256, V128, V128); // Deprecated
+  ADD_KVX_BUILTIN (CATDQ, "catdq", V256, V128, V128); // Deprecated
+
+  ADD_KVX_BUILTIN (CAT128, "cat128", V128, V64, V64); // Vector
+  ADD_KVX_BUILTIN (CAT256, "cat256", V256, V128, V128); // Vector
+  ADD_KVX_BUILTIN (XCAT512, "xcat512", X512, X256, X256); // Extension
+  ADD_KVX_BUILTIN (XCAT1024, "xcat1024", X1024, X512, X512); // Extension
+  ADD_KVX_BUILTIN (XCAT2048, "xcat2048", X2048, X1024, X1024); // Extension
+  ADD_KVX_BUILTIN (XCAT4096, "xcat4096", X4096, X2048, X2048); // Extension
+  ADD_KVX_BUILTIN (XCAT8192, "xcat8192", X8192, X4096, X4096); // Extension kv3-2
+
+  ADD_KVX_BUILTIN (LOW64, "low64", V64, V128); // Vector
+  ADD_KVX_BUILTIN (LOW128, "low128", V128, V256); // Vector
+  ADD_KVX_BUILTIN (XLOW256, "xlow256", X256, X512); // Extension
+  ADD_KVX_BUILTIN (XLOW512, "xlow512", X512, X1024); // Extension
+  ADD_KVX_BUILTIN (XLOW1024, "xlow1024", X1024, X2048); // Extension
+  ADD_KVX_BUILTIN (XLOW2048, "xlow2048", X2048, X4096); // Extension
+  ADD_KVX_BUILTIN (XLOW4096, "xlow4096", X4096, X8192); // Extension
+
+  ADD_KVX_BUILTIN (HIGH64, "high64", V64, V128); // Vector
+  ADD_KVX_BUILTIN (HIGH128, "high128", V128, V256); // Vector
+  ADD_KVX_BUILTIN (XHIGH256, "xhigh256", X256, X512); // Extension
+  ADD_KVX_BUILTIN (XHIGH512, "xhigh512", X512, X1024); // Extension
+  ADD_KVX_BUILTIN (XHIGH1024, "xhigh1024", X1024, X2048); // Extension
+  ADD_KVX_BUILTIN (XHIGH2048, "xhigh2048", X2048, X4096); // Extension
+  ADD_KVX_BUILTIN (XHIGH4096, "xhigh4096", X4096, X8192); // Extension
 
   ADD_KVX_BUILTIN (SELECTBO, "selectbo", V8QI, V8QI, V8QI, V8QI, SIMDCOND); // Vector
   ADD_KVX_BUILTIN (SELECTBX, "selectbx", V16QI, V16QI, V16QI, V16QI, SIMDCOND); // Vector
@@ -1530,9 +1599,9 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN_VA (LOADHF, "loadhf", FLOAT16, CVPTR, VARIANT/*, BOOL*/); // Scalar
   ADD_KVX_BUILTIN_VA (LOADWF, "loadwf", FLOAT32, CVPTR, VARIANT/*, BOOL*/); // Scalar
   ADD_KVX_BUILTIN_VA (LOADDF, "loaddf", FLOAT64, CVPTR, VARIANT/*, BOOL*/); // Scalar
-  ADD_KVX_BUILTIN_VA (LOAD64, "load64", V8QI, CVPTR, VARIANT/*, BOOL*/); // Vector
-  ADD_KVX_BUILTIN_VA (LOAD128, "load128", V16QI, CVPTR, VARIANT/*, BOOL*/); // Vector
-  ADD_KVX_BUILTIN_VA (LOAD256, "load256", V32QI, CVPTR, VARIANT/*, BOOL*/); // Vector
+  ADD_KVX_BUILTIN_VA (LOAD64, "load64", V64, CVPTR, VARIANT/*, BOOL*/); // Vector
+  ADD_KVX_BUILTIN_VA (LOAD128, "load128", V128, CVPTR, VARIANT/*, BOOL*/); // Vector
+  ADD_KVX_BUILTIN_VA (LOAD256, "load256", V256, CVPTR, VARIANT/*, BOOL*/); // Vector
   ADD_KVX_BUILTIN_VA (XLOAD256, "xload256", X256, CVPTR, VARIANT/*, BOOL*/); // Extension
   ADD_KVX_BUILTIN_VA (XLOAD512, "xload512", X512, CVPTR, VARIANT/*, BOOL*/); // Extension
   ADD_KVX_BUILTIN_VA (XLOAD1024, "xload1024", X1024, CVPTR, VARIANT/*, BOOL*/); // Extension
@@ -1545,9 +1614,9 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN_VA (LOADCHF, "loadchf", FLOAT16, FLOAT16, CVPTR, UINT64, LOADCOND/*, BOOL*/); // Scalar
   ADD_KVX_BUILTIN_VA (LOADCWF, "loadcwf", FLOAT32, FLOAT32, CVPTR, UINT64, LOADCOND/*, BOOL*/); // Scalar
   ADD_KVX_BUILTIN_VA (LOADCDF, "loadcdf", FLOAT64, FLOAT64, CVPTR, UINT64, LOADCOND/*, BOOL*/); // Scalar
-  ADD_KVX_BUILTIN_VA (LOADC64, "loadc64", V8QI, V8QI, CVPTR, UINT64, LOADCOND/*, BOOL*/); // Vector
-  ADD_KVX_BUILTIN_VA (LOADC128, "loadc128", V16QI, V16QI, CVPTR, UINT64, LOADCOND/*, BOOL*/); // Vector
-  ADD_KVX_BUILTIN_VA (LOADC256, "loadc256", V32QI, V32QI, CVPTR, UINT64, LOADCOND/*, BOOL*/); // Vector
+  ADD_KVX_BUILTIN_VA (LOADC64, "loadc64", V64, V64, CVPTR, UINT64, LOADCOND/*, BOOL*/); // Vector
+  ADD_KVX_BUILTIN_VA (LOADC128, "loadc128", V128, V128, CVPTR, UINT64, LOADCOND/*, BOOL*/); // Vector
+  ADD_KVX_BUILTIN_VA (LOADC256, "loadc256", V256, V256, CVPTR, UINT64, LOADCOND/*, BOOL*/); // Vector
   ADD_KVX_BUILTIN_VA (XLOADC256, "xloadc256", X256, X256, CVPTR, UINT64, LOADCOND/*, BOOL*/); // Extension
   ADD_KVX_BUILTIN_VA (XLOADC512, "xloadc512", X512, X512, CVPTR, UINT64, LOADCOND/*, BOOL*/); // Extension
   ADD_KVX_BUILTIN_VA (XLOADC1024, "xloadc1024", X1024, X1024, CVPTR, UINT128, LOADCOND/*, BOOL*/); // Extension
@@ -1560,9 +1629,9 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN_VA (STOREHF, "storehf", VOID, FLOAT16, VPTR/*, BOOL*/); // Scalar
   ADD_KVX_BUILTIN_VA (STOREWF, "storewf", VOID, FLOAT32, VPTR/*, BOOL*/); // Scalar
   ADD_KVX_BUILTIN_VA (STOREDF, "storedf", VOID, FLOAT64, VPTR/*, BOOL*/); // Scalar
-  ADD_KVX_BUILTIN_VA (STORE64, "store64", VOID, V8QI, VPTR/*, BOOL*/); // Vector
-  ADD_KVX_BUILTIN_VA (STORE128, "store128", VOID, V16QI, VPTR/*, BOOL*/); // Vector
-  ADD_KVX_BUILTIN_VA (STORE256, "store256", VOID, V32QI, VPTR/*, BOOL*/); // Vector
+  ADD_KVX_BUILTIN_VA (STORE64, "store64", VOID, V64, VPTR/*, BOOL*/); // Vector
+  ADD_KVX_BUILTIN_VA (STORE128, "store128", VOID, V128, VPTR/*, BOOL*/); // Vector
+  ADD_KVX_BUILTIN_VA (STORE256, "store256", VOID, V256, VPTR/*, BOOL*/); // Vector
   ADD_KVX_BUILTIN_VA (XSTORE256, "xstore256", VOID, X256, VPTR/*, BOOL*/); // Extension
   ADD_KVX_BUILTIN_VA (XSTORE512, "xstore512", VOID, X512, VPTR/*, BOOL*/); // Extension
   ADD_KVX_BUILTIN_VA (XSTORE1024, "xstore1024", VOID, X1024, VPTR/*, BOOL*/); // Extension
@@ -1575,9 +1644,9 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN_VA (STORECHF, "storechf", VOID, FLOAT16, VPTR, UINT64, STORECOND/*, BOOL*/); // Scalar
   ADD_KVX_BUILTIN_VA (STORECWF, "storecwf", VOID, FLOAT32, VPTR, UINT64, STORECOND/*, BOOL*/); // Scalar
   ADD_KVX_BUILTIN_VA (STORECDF, "storecdf", VOID, FLOAT64, VPTR, UINT64, STORECOND/*, BOOL*/); // Scalar
-  ADD_KVX_BUILTIN_VA (STOREC64, "storec64", VOID, V8QI, VPTR, UINT64, STORECOND/*, BOOL*/); // Vector
-  ADD_KVX_BUILTIN_VA (STOREC128, "storec128", VOID, V16QI, VPTR, UINT64, STORECOND/*, BOOL*/); // Vector
-  ADD_KVX_BUILTIN_VA (STOREC256, "storec256", VOID, V32QI, VPTR, UINT64, STORECOND/*, BOOL*/); // Vector
+  ADD_KVX_BUILTIN_VA (STOREC64, "storec64", VOID, V64, VPTR, UINT64, STORECOND/*, BOOL*/); // Vector
+  ADD_KVX_BUILTIN_VA (STOREC128, "storec128", VOID, V128, VPTR, UINT64, STORECOND/*, BOOL*/); // Vector
+  ADD_KVX_BUILTIN_VA (STOREC256, "storec256", VOID, V256, VPTR, UINT64, STORECOND/*, BOOL*/); // Vector
   ADD_KVX_BUILTIN_VA (XSTOREC256, "xstorec256", VOID, X256, VPTR, UINT64, STORECOND/*, BOOL*/); // Extension
   ADD_KVX_BUILTIN_VA (XSTOREC512, "xstorec512", VOID, X512, VPTR, UINT64, STORECOND/*, BOOL*/); // Extension
   ADD_KVX_BUILTIN_VA (XSTOREC1024, "xstorec1024", VOID, X1024, VPTR, UINT128, STORECOND/*, BOOL*/); // Extension
@@ -1620,16 +1689,29 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (XALIGN4096O, "xalign4096o", X256, X4096, UINT64); // Extension kv3-2
   ADD_KVX_BUILTIN (XALIGN8192O, "xalign8192o", X256, X8192, UINT64); // Extension kv3-2
 
-  ADD_KVX_BUILTIN (XACCESS512O, "xaccess512o", V32QI, X512, UINT64); // Extension kv3-2
-  ADD_KVX_BUILTIN (XACCESS1024O, "xaccess1024o", V32QI, X1024, UINT64); // Extension kv3-2
-  ADD_KVX_BUILTIN (XACCESS2048O, "xaccess2048o", V32QI, X2048, UINT64); // Extension kv3-2
-  ADD_KVX_BUILTIN (XACCESS4096O, "xaccess4096o", V32QI, X4096, UINT64); // Extension kv3-2
-  ADD_KVX_BUILTIN (XACCESS8192O, "xaccess8192o", V32QI, X8192, UINT64); // Extension kv3-2
+  ADD_KVX_BUILTIN (XACCESS512O, "xaccess512o", V4DI, X512, UINT64); // Extension kv3-2
+  ADD_KVX_BUILTIN (XACCESS1024O, "xaccess1024o", V4DI, X1024, UINT64); // Extension kv3-2
+  ADD_KVX_BUILTIN (XACCESS2048O, "xaccess2048o", V4DI, X2048, UINT64); // Extension kv3-2
+  ADD_KVX_BUILTIN (XACCESS4096O, "xaccess4096o", V4DI, X4096, UINT64); // Extension kv3-2
+  ADD_KVX_BUILTIN (XACCESS8192O, "xaccess8192o", V4DI, X8192, UINT64); // Extension kv3-2
 
-  ADD_KVX_BUILTIN (XSWAP256, "xswap256", V32QI, _X256, V32QI); // Extension
-  ADD_KVX_BUILTIN (XMT44D, "xmt44d", X1024, X1024); // Extension
-
+  ADD_KVX_BUILTIN (XFSCALEWO, "xfscalewo", X256, X256, UINT64, FLOATINGS); // Extension kv3-2
   ADD_KVX_BUILTIN (XMMA484BW, "xmma484bw", X512, X256, X256, X512, XMATMUL); // Extension
+  ADD_KVX_BUILTIN (XMMA4164BW, "xmma4164bw", X512, X512, X512, X512, XMATMUL); // Extension kv3-2
+  ADD_KVX_BUILTIN (XMADD44BW0, "xmadd44bw0", X512, X256, X256, X512, EXTENDMUL); // Extension kv3-2
+  ADD_KVX_BUILTIN (XMADD44BW1, "xmadd44bw1", X512, X256, X256, X512, EXTENDMUL); // Extension kv3-2
+  ADD_KVX_BUILTIN (XMADDIFWO, "xmaddifwo", X256, X256, X256, X256, FLOATINGS); // Extension kv3-2
+  ADD_KVX_BUILTIN (XMSBFIFWO, "xmsbfifwo", X256, X256, X256, X256, FLOATINGS); // Extension kv3-2
+  ADD_KVX_BUILTIN (XFFMA44HW, "xffma44hw", X512, X256, X256, X512, FLOATINGS); // Extension kv3-2
+  ADD_KVX_BUILTIN (XFMMA444HW, "xfmma444hw", X512, X256, X256, X512, FLOATINGS); // Extension kv3-2
+  ADD_KVX_BUILTIN (XFMMA484HW, "xfmma484hw", X512, X512, X512, X512, FLOATINGS); // Extension kv3-2
+  ADD_KVX_BUILTIN (XFNARROW44WH, "xfnarrow44wh", X256, X512, FLOATINGS); // Extension kv3-2
+  ADD_KVX_BUILTIN (XCLAMPWO, "xclampwo", X256, X256, X256); // Extension kv3-2
+  ADD_KVX_BUILTIN (XTRUNC48WB, "xtrunc48wb", X256, X1024); // Extension kv3-2
+  ADD_KVX_BUILTIN (XSX48BW, "xsx48bw", X1024, X256); // Extension kv3-2
+  ADD_KVX_BUILTIN (XZX48BW, "xzx48bw", X1024, X256); // Extension kv3-2
+  ADD_KVX_BUILTIN (XMT44D, "xmt44d", X1024, X1024); // Extension
+  ADD_KVX_BUILTIN (XSWAP256, "xswap256", V4DI, _X256, V4DI); // Extension
 
 }
 
@@ -2175,49 +2257,6 @@ build_accesses_arg (tree arg, const char *name)
 }
 
 static rtx
-buils_xbuffer_reg (const char *name)
-{
-  int first_regno = -1, last_regno = -1;
-  sscanf (name, "$a%d..a%d", &first_regno, &last_regno);
-  int nelems = last_regno - first_regno + 1;
-  machine_mode mode = mode_for_vector (OImode, nelems).require ();
-  return gen_rtx_REG (mode, KV3_C0_REGNO + first_regno * 4);
-}
-
-static rtx
-build_xbuffer_arg (tree arg, const char *name)
-{
-  if (KV3_1)
-    error ("__builtin_kvx_%s is not available for kv3-1.", name);
-  const char *xbuffer = tree_string_constant (arg);
-  static const char *table[] = {
-    "$a0..a1", "$a2..a3", "$a4..a5", "$a6..a7",
-    "$a8..a9", "$a10..a11", "$a12..a13", "$a14..a15",
-    "$a16..a17", "$a18..a19", "$a20..a21", "$a22..a23",
-    "$a24..a25", "$a26..a27", "$a28..a29", "$a30..a31",
-    "$a32..a33", "$a34..a35", "$a36..a37", "$a38..a39",
-    "$a40..a41", "$a42..a43", "$a44..a45", "$a46..a47",
-    "$a48..a49", "$a50..a51", "$a52..a53", "$a54..a55",
-    "$a56..a57", "$a58..a59", "$a60..a61", "$a62..a63",
-    "$a0..a3", "$a4..a7", "$a8..a11", "$a12..a15",
-    "$a16..a19", "$a20..a23", "$a24..a27", "$a28..a31",
-    "$a32..a35", "$a36..a39", "$a40..a43", "$a44..a47",
-    "$a48..a51", "$a52..a55", "$a56..a59", "$a60..a63",
-    "$a0..a7", "$a8..a15", "$a16..a23", "$a24..a31",
-    "$a32..a39", "$a40..a47", "$a48..a55", "$a56..a63",
-    "$a0..a15", "$a16..a31", "$a32..a47", "$a48..a63",
-    "$a0..a31", "$a32..a63", "$a0..a63",
-  };
-  for (int i = 0; i < (int) (sizeof (table) / sizeof (*table)); i++)
-    {
-      if (!strcmp (xbuffer, table[i]))
-	return buils_xbuffer_reg (table[i]);
-    }
-  error ("__builtin_kvx_%s xbuffer \"%s\" not recognized.", name, xbuffer);
-  return 0;
-}
-
-static rtx
 build_xpreload_arg (tree arg, const char *name)
 {
   if (KV3_1)
@@ -2334,10 +2373,14 @@ verify_sfr_regno (int regno, const char *name, const char *where)
   return gcc_regno;
 }
 
+#define KV3_N_ONLY 0
+
 #define KVX_EXPAND_BUILTIN_0_VOID(name, name2)                                 \
   static rtx kvx_expand_builtin_##name (rtx target ATTRIBUTE_UNUSED,           \
                                         tree args ATTRIBUTE_UNUSED)            \
   {                                                                            \
+    if (KV3_N_ONLY)                                                            \
+      error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
     emit_insn (gen_##name2 ());                                                \
     return NULL_RTX;                                                           \
   }
@@ -2345,6 +2388,8 @@ verify_sfr_regno (int regno, const char *name, const char *where)
 #define KVX_EXPAND_BUILTIN_1_VOID(name, name2, smode)                          \
   static rtx kvx_expand_builtin_##name (rtx target ATTRIBUTE_UNUSED, tree args)\
   {                                                                            \
+    if (KV3_N_ONLY)                                                            \
+      error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     arg1 = force_reg (smode, arg1);                                            \
     emit_insn (gen_##name2 (arg1));                                            \
@@ -2354,6 +2399,8 @@ verify_sfr_regno (int regno, const char *name, const char *where)
 #define KVX_EXPAND_BUILTIN_2_VOID(name, name2, smode)                          \
   static rtx kvx_expand_builtin_##name (rtx target ATTRIBUTE_UNUSED, tree args)\
   {                                                                            \
+    if (KV3_N_ONLY)                                                            \
+      error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
     arg1 = force_reg (smode, arg1);                                            \
@@ -2365,6 +2412,8 @@ verify_sfr_regno (int regno, const char *name, const char *where)
 #define KVX_EXPAND_BUILTIN_3_CACHELEVEL(name, name2, smode)                    \
   static rtx kvx_expand_builtin_##name (rtx target ATTRIBUTE_UNUSED, tree args)\
   {                                                                            \
+    if (KV3_N_ONLY)                                                            \
+      error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
     rtx arg3 = build_cachelev_arg (CALL_EXPR_ARG (args, 2), #name);            \
@@ -2377,6 +2426,8 @@ verify_sfr_regno (int regno, const char *name, const char *where)
 #define KVX_EXPAND_BUILTIN_2_STANDARD(name, name2, tmode, smode)               \
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
+    if (KV3_N_ONLY)                                                            \
+      error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     arg1 = force_reg (smode, arg1);                                            \
     if (!target)                                                               \
@@ -2390,6 +2441,8 @@ verify_sfr_regno (int regno, const char *name, const char *where)
 #define KVX_EXPAND_BUILTIN_2_MODIFIERS(validate, name, name2, tmode, smode)    \
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
+    if (KV3_N_ONLY)                                                            \
+      error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = build_##validate##_arg (CALL_EXPR_ARG (args, 1), #name);        \
     arg1 = force_reg (smode, arg1);                                            \
@@ -2418,6 +2471,8 @@ verify_sfr_regno (int regno, const char *name, const char *where)
 #define KVX_EXPAND_BUILTIN_3_STANDARD(name, name2, tmode, smode)               \
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
+    if (KV3_N_ONLY)                                                            \
+      error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
     arg1 = force_reg (smode, arg1);                                            \
@@ -2433,6 +2488,8 @@ verify_sfr_regno (int regno, const char *name, const char *where)
 #define KVX_EXPAND_BUILTIN_3_MODIFIERS(validate, name, name2, tmode, smode)    \
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
+    if (KV3_N_ONLY)                                                            \
+      error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
     rtx arg3 = build_##validate##_arg (CALL_EXPR_ARG (args, 2), #name);        \
@@ -2467,6 +2524,8 @@ verify_sfr_regno (int regno, const char *name, const char *where)
 #define KVX_EXPAND_BUILTIN_3_MODIFIERS_S(validate, name, name2, tmode, smode)  \
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
+    if (KV3_N_ONLY)                                                            \
+      error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
     rtx arg3 = build_##validate##_arg (CALL_EXPR_ARG (args, 2), #name);        \
@@ -2487,6 +2546,8 @@ verify_sfr_regno (int regno, const char *name, const char *where)
 #define KVX_EXPAND_BUILTIN_4_STANDARD(name, name2, tmode, smode)               \
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
+    if (KV3_N_ONLY)                                                            \
+      error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
     rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));                        \
@@ -2504,6 +2565,8 @@ verify_sfr_regno (int regno, const char *name, const char *where)
 #define KVX_EXPAND_BUILTIN_4_MODIFIERS(validate, name, name2, tmode, smode)    \
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
+    if (KV3_N_ONLY)                                                            \
+      error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
     rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));                        \
@@ -2530,6 +2593,8 @@ verify_sfr_regno (int regno, const char *name, const char *where)
 #define KVX_EXPAND_BUILTIN_SHIFT(name, name2, tmode, smode)                    \
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
+    if (KV3_N_ONLY)                                                            \
+      error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
     int bits = __builtin_ctz (GET_MODE_NUNITS (tmode));                        \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
@@ -2549,6 +2614,8 @@ verify_sfr_regno (int regno, const char *name, const char *where)
 #define KVX_EXPAND_BUILTIN_SELECT(name, name2, tmode, cmode)                   \
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
+    if (KV3_N_ONLY)                                                            \
+      error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
     machine_mode imode = GET_MODE_INNER (cmode);                               \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
@@ -2568,6 +2635,8 @@ verify_sfr_regno (int regno, const char *name, const char *where)
 #define KVX_EXPAND_BUILTIN_FCONVERT(name, name2, tmode, smode)                 \
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
+    if (KV3_N_ONLY)                                                            \
+      error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
     rtx arg3 = build_floatings_arg (CALL_EXPR_ARG (args, 2), #name);           \
@@ -2578,6 +2647,45 @@ verify_sfr_regno (int regno, const char *name, const char *where)
       target = force_reg (tmode, target);                                      \
     arg1 = force_reg (smode, arg1);                                            \
     emit_insn (gen_##name2 (target, arg1, arg2, arg3));                        \
+    return target;                                                             \
+  }
+
+#define KVX_EXPAND_BUILTIN_FSCALE(name, name2, tmode, smode)                   \
+  static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
+  {                                                                            \
+    if (KV3_N_ONLY)                                                            \
+      error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
+    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
+    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
+    rtx arg3 = build_floatings_arg (CALL_EXPR_ARG (args, 2), #name);           \
+    arg1 = force_reg (smode, arg1);                                            \
+    arg2 = force_reg (DImode, arg2);                                           \
+    if (!target)                                                               \
+      target = gen_reg_rtx (tmode);                                            \
+    else                                                                       \
+      target = force_reg (tmode, target);                                      \
+    emit_insn (gen_##name2 (target, arg1, arg2, arg3));                        \
+    return target;                                                             \
+  }
+
+
+#define KVX_EXPAND_BUILTIN_XMATMUL(name, name2, tmode, smode)                  \
+  static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
+  {                                                                            \
+    if (KV3_N_ONLY)                                                            \
+      error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
+    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
+    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
+    rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));                        \
+    rtx arg4 = build_xmatmul_arg (CALL_EXPR_ARG (args, 3), #name);             \
+    arg1 = force_reg (smode, arg1);                                            \
+    arg2 = force_reg (smode, arg2);                                            \
+    arg3 = force_reg (tmode, arg3);                                            \
+    if (!target)                                                               \
+      target = gen_reg_rtx (tmode);                                            \
+    else                                                                       \
+      target = force_reg (tmode, target);                                      \
+    emit_insn (gen_##name2 (target, arg1, arg2, arg3, arg4));                  \
     return target;                                                             \
   }
 
@@ -2883,15 +2991,39 @@ KVX_EXPAND_BUILTIN_SHIFT (shiftfwo, kvx_shiftfwo, V8SFmode, SFmode)
 KVX_EXPAND_BUILTIN_SHIFT (shiftfdp, kvx_shiftfdp, V2DFmode, DFmode)
 KVX_EXPAND_BUILTIN_SHIFT (shiftfdq, kvx_shiftfdq, V4DFmode, DFmode)
 
-KVX_EXPAND_BUILTIN_3_STANDARD (catbx, kvx_catbx, V16QImode, V8QImode)
-KVX_EXPAND_BUILTIN_3_STANDARD (catbv, kvx_catbv, V32QImode, V16QImode)
-KVX_EXPAND_BUILTIN_3_STANDARD (catho, kvx_catho, V8HImode, V4HImode)
-KVX_EXPAND_BUILTIN_3_STANDARD (cathx, kvx_cathx, V16HImode, V8HImode)
-KVX_EXPAND_BUILTIN_3_STANDARD (catwp, kvx_catwp, V2SImode, SImode)
-KVX_EXPAND_BUILTIN_3_STANDARD (catwq, kvx_catwq, V4SImode, V2SImode)
-KVX_EXPAND_BUILTIN_3_STANDARD (catwo, kvx_catwo, V8SImode, V4SImode)
-KVX_EXPAND_BUILTIN_3_STANDARD (catdp, kvx_catdp, V2DImode, DImode)
-KVX_EXPAND_BUILTIN_3_STANDARD (catdq, kvx_catdq, V4DImode, V2DImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (catbx, kvx_cat128, V128mode, V64mode)
+KVX_EXPAND_BUILTIN_3_STANDARD (catbv, kvx_cat256, V4DImode, V128mode)
+KVX_EXPAND_BUILTIN_3_STANDARD (catho, kvx_cat128, V128mode, V64mode)
+KVX_EXPAND_BUILTIN_3_STANDARD (cathx, kvx_cat256, V4DImode, V128mode)
+KVX_EXPAND_BUILTIN_3_STANDARD (catwq, kvx_cat128, V128mode, V64mode)
+KVX_EXPAND_BUILTIN_3_STANDARD (catwo, kvx_cat256, V4DImode, V128mode)
+KVX_EXPAND_BUILTIN_3_STANDARD (catdq, kvx_cat256, V4DImode, V128mode)
+
+KVX_EXPAND_BUILTIN_3_STANDARD (cat128, kvx_cat128, V128mode, V64mode)
+KVX_EXPAND_BUILTIN_3_STANDARD (cat256, kvx_cat256, V256mode, V128mode)
+KVX_EXPAND_BUILTIN_3_STANDARD (xcat512, kvx_xcat512, X512mode, X256mode)
+KVX_EXPAND_BUILTIN_3_STANDARD (xcat1024, kvx_xcat1024, X1024mode, X512mode)
+KVX_EXPAND_BUILTIN_3_STANDARD (xcat2048, kvx_xcat2048, X2048mode, X1024mode)
+KVX_EXPAND_BUILTIN_3_STANDARD (xcat4096, kvx_xcat4096, X4096mode, X2048mode)
+#define KV3_N_ONLY (!KV3_2 * 2)
+KVX_EXPAND_BUILTIN_3_STANDARD (xcat8192, kvx_xcat8192, X8192mode, X4096mode)
+#define KV3_N_ONLY 0
+
+KVX_EXPAND_BUILTIN_2_STANDARD (low64, kvx_low64, V64mode, V128mode)
+KVX_EXPAND_BUILTIN_2_STANDARD (low128, kvx_low128, V128mode, V256mode)
+KVX_EXPAND_BUILTIN_2_STANDARD (xlow256, kvx_xlow256, X256mode, X512mode)
+KVX_EXPAND_BUILTIN_2_STANDARD (xlow512, kvx_xlow512, X512mode, X1024mode)
+KVX_EXPAND_BUILTIN_2_STANDARD (xlow1024, kvx_xlow1024, X1024mode, X2048mode)
+KVX_EXPAND_BUILTIN_2_STANDARD (xlow2048, kvx_xlow2048, X2048mode, X4096mode)
+KVX_EXPAND_BUILTIN_2_STANDARD (xlow4096, kvx_xlow4096, X4096mode, X8192mode)
+
+KVX_EXPAND_BUILTIN_2_STANDARD (high64, kvx_high64, V64mode, V128mode)
+KVX_EXPAND_BUILTIN_2_STANDARD (high128, kvx_high128, V128mode, V256mode)
+KVX_EXPAND_BUILTIN_2_STANDARD (xhigh256, kvx_xhigh256, X256mode, X512mode)
+KVX_EXPAND_BUILTIN_2_STANDARD (xhigh512, kvx_xhigh512, X512mode, X1024mode)
+KVX_EXPAND_BUILTIN_2_STANDARD (xhigh1024, kvx_xhigh1024, X1024mode, X2048mode)
+KVX_EXPAND_BUILTIN_2_STANDARD (xhigh2048, kvx_xhigh2048, X2048mode, X4096mode)
+KVX_EXPAND_BUILTIN_2_STANDARD (xhigh4096, kvx_xhigh4096, X4096mode, X8192mode)
 
 KVX_EXPAND_BUILTIN_SELECT (selectbo, kvx_selectbo, V8QImode, V8QImode)
 KVX_EXPAND_BUILTIN_SELECT (selectbx, kvx_selectbx, V16QImode, V16QImode)
@@ -3317,6 +3449,8 @@ KVX_EXPAND_BUILTIN_1_VOID (dzerol, kvx_dzerol, Pmode)
 #define KVX_EXPAND_BUILTIN_ALOAD(name, name2, tmode, mmode)                    \
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
+    if (KV3_N_ONLY)                                                            \
+      error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
     int nargs = call_expr_nargs (args);                                        \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = nargs >= 2?                                                     \
@@ -3340,6 +3474,8 @@ KVX_EXPAND_BUILTIN_ALOAD (alclrd, kvx_alclrd, DImode, DImode)
 #define KVX_EXPAND_BUILTIN_ALADD(name, name2, tmode, mmode)                    \
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
+    if (KV3_N_ONLY)                                                            \
+      error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
     int nargs = call_expr_nargs (args);                                        \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
@@ -3362,6 +3498,8 @@ KVX_EXPAND_BUILTIN_ALADD (aladdd, kvx_aladdd, DImode, DImode)
 #define KVX_EXPAND_BUILTIN_ACSWAP(name, name2, tmode, mmode)                   \
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
+    if (KV3_N_ONLY)                                                            \
+      error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
     int nargs = call_expr_nargs (args);                                        \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
@@ -3389,6 +3527,8 @@ KVX_EXPAND_BUILTIN_ACSWAP (acswapd, kvx_acswapd, DImode, DImode)
 #define KVX_EXPAND_BUILTIN_ASTORE(name, name2, tmode, mmode)                   \
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
+    if (KV3_N_ONLY)                                                            \
+      error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
     int nargs = call_expr_nargs (args);                                        \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
@@ -3407,6 +3547,8 @@ KVX_EXPAND_BUILTIN_ASTORE (asd, kvx_asd, DImode, DImode)
 #define KVX_EXPAND_BUILTIN_LOAD(name, tmode, mmode)                            \
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
+    if (KV3_N_ONLY)                                                            \
+      error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
     int nargs = call_expr_nargs (args);                                        \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = build_variant_arg (CALL_EXPR_ARG (args, 1), #name);             \
@@ -3459,16 +3601,18 @@ KVX_EXPAND_BUILTIN_LOAD (loadq, TImode, TImode)
 KVX_EXPAND_BUILTIN_LOAD (loadhf, HFmode, HFmode)
 KVX_EXPAND_BUILTIN_LOAD (loadwf, SFmode, SFmode)
 KVX_EXPAND_BUILTIN_LOAD (loaddf, DFmode, DFmode)
-KVX_EXPAND_BUILTIN_LOAD (load64, V8QImode, V8QImode)
-KVX_EXPAND_BUILTIN_LOAD (load128, V16QImode, V16QImode)
-KVX_EXPAND_BUILTIN_LOAD (load256, V32QImode, V32QImode)
-KVX_EXPAND_BUILTIN_LOAD (xload256, V1OImode, V1OImode)
-KVX_EXPAND_BUILTIN_LOAD (xload512, V2OImode, V2OImode)
-KVX_EXPAND_BUILTIN_LOAD (xload1024, V4OImode, V4OImode)
+KVX_EXPAND_BUILTIN_LOAD (load64, V64mode, V64mode)
+KVX_EXPAND_BUILTIN_LOAD (load128, V128mode, V128mode)
+KVX_EXPAND_BUILTIN_LOAD (load256, V256mode, V256mode)
+KVX_EXPAND_BUILTIN_LOAD (xload256, X256mode, X256mode)
+KVX_EXPAND_BUILTIN_LOAD (xload512, X512mode, X512mode)
+KVX_EXPAND_BUILTIN_LOAD (xload1024, X1024mode, X1024mode)
 
 #define KVX_EXPAND_BUILTIN_LOADC(name, tmode, mmode)                           \
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
+    if (KV3_N_ONLY)                                                            \
+      error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
     int nargs = call_expr_nargs (args);                                        \
     machine_mode cmode = GET_MODE_SIZE (mmode) > 64 ? TImode : DImode;         \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
@@ -3502,16 +3646,18 @@ KVX_EXPAND_BUILTIN_LOADC (loadcq, TImode, TImode)
 KVX_EXPAND_BUILTIN_LOADC (loadchf, HFmode, HFmode)
 KVX_EXPAND_BUILTIN_LOADC (loadcwf, SFmode, SFmode)
 KVX_EXPAND_BUILTIN_LOADC (loadcdf, DFmode, DFmode)
-KVX_EXPAND_BUILTIN_LOADC (loadc64, V8QImode, V8QImode)
-KVX_EXPAND_BUILTIN_LOADC (loadc128, V16QImode, V16QImode)
-KVX_EXPAND_BUILTIN_LOADC (loadc256, V32QImode, V32QImode)
-KVX_EXPAND_BUILTIN_LOADC (xloadc256, V1OImode, V1OImode)
-KVX_EXPAND_BUILTIN_LOADC (xloadc512, V2OImode, V2OImode)
-KVX_EXPAND_BUILTIN_LOADC (xloadc1024, V4OImode, V4OImode)
+KVX_EXPAND_BUILTIN_LOADC (loadc64, V64mode, V64mode)
+KVX_EXPAND_BUILTIN_LOADC (loadc128, V128mode, V128mode)
+KVX_EXPAND_BUILTIN_LOADC (loadc256, V256mode, V256mode)
+KVX_EXPAND_BUILTIN_LOADC (xloadc256, X256mode, X256mode)
+KVX_EXPAND_BUILTIN_LOADC (xloadc512, X512mode, X512mode)
+KVX_EXPAND_BUILTIN_LOADC (xloadc1024, X1024mode, X1024mode)
 
 #define KVX_EXPAND_BUILTIN_STORE(name, tmode, mmode)                           \
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
+    if (KV3_N_ONLY)                                                            \
+      error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
     int nargs = call_expr_nargs (args);                                        \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
@@ -3537,16 +3683,18 @@ KVX_EXPAND_BUILTIN_STORE (storeq, TImode, TImode)
 KVX_EXPAND_BUILTIN_STORE (storehf, HFmode, HFmode)
 KVX_EXPAND_BUILTIN_STORE (storewf, SFmode, SFmode)
 KVX_EXPAND_BUILTIN_STORE (storedf, DFmode, DFmode)
-KVX_EXPAND_BUILTIN_STORE (store64, V8QImode, V8QImode)
-KVX_EXPAND_BUILTIN_STORE (store128, V16QImode, V16QImode)
-KVX_EXPAND_BUILTIN_STORE (store256, V32QImode, V32QImode)
-KVX_EXPAND_BUILTIN_STORE (xstore256, V1OImode, V1OImode)
-KVX_EXPAND_BUILTIN_STORE (xstore512, V2OImode, V2OImode)
-KVX_EXPAND_BUILTIN_STORE (xstore1024, V4OImode, V4OImode)
+KVX_EXPAND_BUILTIN_STORE (store64, V64mode, V64mode)
+KVX_EXPAND_BUILTIN_STORE (store128, V128mode, V128mode)
+KVX_EXPAND_BUILTIN_STORE (store256, V256mode, V256mode)
+KVX_EXPAND_BUILTIN_STORE (xstore256, X256mode, X256mode)
+KVX_EXPAND_BUILTIN_STORE (xstore512, X512mode, X512mode)
+KVX_EXPAND_BUILTIN_STORE (xstore1024, X1024mode, X1024mode)
 
 #define KVX_EXPAND_BUILTIN_STOREC(name, tmode, mmode)                          \
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
+    if (KV3_N_ONLY)                                                            \
+      error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
     int nargs = call_expr_nargs (args);                                        \
     machine_mode cmode = GET_MODE_SIZE (mmode) > 64 ? TImode : DImode;         \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
@@ -3576,12 +3724,12 @@ KVX_EXPAND_BUILTIN_STOREC (storecq, TImode, TImode)
 KVX_EXPAND_BUILTIN_STOREC (storechf, HFmode, HFmode)
 KVX_EXPAND_BUILTIN_STOREC (storecwf, SFmode, SFmode)
 KVX_EXPAND_BUILTIN_STOREC (storecdf, DFmode, DFmode)
-KVX_EXPAND_BUILTIN_STOREC (storec64, V8QImode, V8QImode)
-KVX_EXPAND_BUILTIN_STOREC (storec128, V16QImode, V16QImode)
-KVX_EXPAND_BUILTIN_STOREC (storec256, V32QImode, V32QImode)
-KVX_EXPAND_BUILTIN_STOREC (xstorec256, V1OImode, V1OImode)
-KVX_EXPAND_BUILTIN_STOREC (xstorec512, V2OImode, V2OImode)
-KVX_EXPAND_BUILTIN_STOREC (xstorec1024, V4OImode, V4OImode)
+KVX_EXPAND_BUILTIN_STOREC (storec64, V64mode, V64mode)
+KVX_EXPAND_BUILTIN_STOREC (storec128, V128mode, V128mode)
+KVX_EXPAND_BUILTIN_STOREC (storec256, V256mode, V256mode)
+KVX_EXPAND_BUILTIN_STOREC (xstorec256, X256mode, X256mode)
+KVX_EXPAND_BUILTIN_STOREC (xstorec512, X512mode, X512mode)
+KVX_EXPAND_BUILTIN_STOREC (xstorec1024, X1024mode, X1024mode)
 
 static rtx
 kvx_expand_builtin_xloads512 (rtx target, tree args)
@@ -3590,8 +3738,8 @@ kvx_expand_builtin_xloads512 (rtx target, tree args)
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
   rtx arg3 = build_xloadh_arg (CALL_EXPR_ARG (args, 2), "xloads512");
-  arg1 = force_reg (V2OImode, arg1);
-  arg2 = gen_rtx_MEM (V1OImode, force_reg (Pmode, arg2));
+  arg1 = force_reg (X512mode, arg1);
+  arg2 = gen_rtx_MEM (X256mode, force_reg (Pmode, arg2));
   if (nargs > 3)
     {
       rtx arg4 = expand_normal (CALL_EXPR_ARG (args, 3));
@@ -3599,9 +3747,9 @@ kvx_expand_builtin_xloads512 (rtx target, tree args)
       MEM_VOLATILE_P (arg2) = (INTVAL (arg4) != 0);
     }
   if (!target)
-    target = gen_reg_rtx (V2OImode);
+    target = gen_reg_rtx (X512mode);
   else
-    target = force_reg (V2OImode, target);
+    target = force_reg (X512mode, target);
   emit_insn (gen_kvx_xloads512 (target, arg1, arg2, arg3));
   return target;
 }
@@ -3613,8 +3761,8 @@ kvx_expand_builtin_xloads1024 (rtx target, tree args)
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
   rtx arg3 = build_xloadq_arg (CALL_EXPR_ARG (args, 2), "xloads1024");
-  arg1 = force_reg (V4OImode, arg1);
-  arg2 = gen_rtx_MEM (V1OImode, force_reg (Pmode, arg2));
+  arg1 = force_reg (X1024mode, arg1);
+  arg2 = gen_rtx_MEM (X256mode, force_reg (Pmode, arg2));
   if (nargs > 3)
     {
       rtx arg4 = expand_normal (CALL_EXPR_ARG (args, 3));
@@ -3622,9 +3770,9 @@ kvx_expand_builtin_xloads1024 (rtx target, tree args)
       MEM_VOLATILE_P (arg2) = (INTVAL (arg4) != 0);
     }
   if (!target)
-    target = gen_reg_rtx (V4OImode);
+    target = gen_reg_rtx (X1024mode);
   else
-    target = force_reg (V4OImode, target);
+    target = force_reg (X1024mode, target);
   emit_insn (gen_kvx_xloads1024 (target, arg1, arg2, arg3));
   return target;
 }
@@ -3637,8 +3785,8 @@ kvx_expand_builtin_xloadsc512 (rtx target, tree args)
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
   rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
   rtx arg4 = build_xloadhc_arg (CALL_EXPR_ARG (args, 3), "xloadsc512");
-  arg1 = force_reg (V2OImode, arg1);
-  arg2 = gen_rtx_MEM (V1OImode, force_reg (Pmode, arg2));
+  arg1 = force_reg (X512mode, arg1);
+  arg2 = gen_rtx_MEM (X256mode, force_reg (Pmode, arg2));
   arg3 = force_reg (DImode, arg3);
   if (nargs > 4)
     {
@@ -3647,9 +3795,9 @@ kvx_expand_builtin_xloadsc512 (rtx target, tree args)
       MEM_VOLATILE_P (arg2) = (INTVAL (arg5) != 0);
     }
   if (!target)
-    target = gen_reg_rtx (V2OImode);
+    target = gen_reg_rtx (X512mode);
   else
-    target = force_reg (V2OImode, target);
+    target = force_reg (X512mode, target);
   emit_insn (gen_kvx_xloadsc512 (target, arg1, arg2, arg3, arg4));
   return target;
 }
@@ -3662,8 +3810,8 @@ kvx_expand_builtin_xloadsc1024 (rtx target, tree args)
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
   rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
   rtx arg4 = build_xloadqc_arg (CALL_EXPR_ARG (args, 3), "xloadsc1024");
-  arg1 = force_reg (V4OImode, arg1);
-  arg2 = gen_rtx_MEM (V1OImode, force_reg (Pmode, arg2));
+  arg1 = force_reg (X1024mode, arg1);
+  arg2 = gen_rtx_MEM (X256mode, force_reg (Pmode, arg2));
   arg3 = force_reg (DImode, arg3);
   if (nargs > 4)
     {
@@ -3672,9 +3820,9 @@ kvx_expand_builtin_xloadsc1024 (rtx target, tree args)
       MEM_VOLATILE_P (arg2) = (INTVAL (arg5) != 0);
     }
   if (!target)
-    target = gen_reg_rtx (V4OImode);
+    target = gen_reg_rtx (X1024mode);
   else
-    target = force_reg (V4OImode, target);
+    target = force_reg (X1024mode, target);
   emit_insn (gen_kvx_xloadsc1024 (target, arg1, arg2, arg3, arg4));
   return target;
 }
@@ -3682,6 +3830,8 @@ kvx_expand_builtin_xloadsc1024 (rtx target, tree args)
 #define KVX_EXPAND_BUILTIN_XPRELOAD(name, name2, bmode, mmode)                 \
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
+    if (KV3_N_ONLY)                                                            \
+      error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
     int nargs = call_expr_nargs (args);                                        \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
@@ -3704,29 +3854,33 @@ kvx_expand_builtin_xloadsc1024 (rtx target, tree args)
     return target;                                                             \
   }
 
-KVX_EXPAND_BUILTIN_XPRELOAD (xpreload512, kvx_xpreloadv2oi, V2OImode, V1OImode)
-KVX_EXPAND_BUILTIN_XPRELOAD (xpreload1024, kvx_xpreloadv4oi, V4OImode, V1OImode)
-KVX_EXPAND_BUILTIN_XPRELOAD (xpreload2048, kvx_xpreloadv8oi, V8OImode, V1OImode)
-KVX_EXPAND_BUILTIN_XPRELOAD (xpreload4096, kvx_xpreloadv16oi, V16OImode, V1OImode)
-KVX_EXPAND_BUILTIN_XPRELOAD (xpreload8192, kvx_xpreloadv32oi, V32OImode, V1OImode)
+KVX_EXPAND_BUILTIN_XPRELOAD (xpreload512, kvx_xpreload512, X512mode, X256mode)
+KVX_EXPAND_BUILTIN_XPRELOAD (xpreload1024, kvx_xpreload1024, X1024mode, X256mode)
+KVX_EXPAND_BUILTIN_XPRELOAD (xpreload2048, kvx_xpreload2048, X2048mode, X256mode)
+KVX_EXPAND_BUILTIN_XPRELOAD (xpreload4096, kvx_xpreload4096, X4096mode, X256mode)
+KVX_EXPAND_BUILTIN_XPRELOAD (xpreload8192, kvx_xpreload8192, X8192mode, X256mode)
 
 #define KVX_EXPAND_BUILTIN_XUNDEF(name, name2, tmode)                          \
   static rtx kvx_expand_builtin_##name (rtx target, tree args ATTRIBUTE_UNUSED)\
   {                                                                            \
+    if (KV3_N_ONLY)                                                            \
+      error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
     emit_insn (gen_##name2 (target));                                          \
     return target;                                                             \
   }
 
-KVX_EXPAND_BUILTIN_XUNDEF (xundef256, kvx_xundefv1oi, V2OImode)
-KVX_EXPAND_BUILTIN_XUNDEF (xundef512, kvx_xundefv2oi, V2OImode)
-KVX_EXPAND_BUILTIN_XUNDEF (xundef1024, kvx_xundefv4oi, V4OImode)
-KVX_EXPAND_BUILTIN_XUNDEF (xundef2048, kvx_xundefv8oi, V8OImode)
-KVX_EXPAND_BUILTIN_XUNDEF (xundef4096, kvx_xundefv16oi, V16OImode)
-KVX_EXPAND_BUILTIN_XUNDEF (xundef8192, kvx_xundefv32oi, V32OImode)
+KVX_EXPAND_BUILTIN_XUNDEF (xundef256, kvx_xundef256, X256mode)
+KVX_EXPAND_BUILTIN_XUNDEF (xundef512, kvx_xundef512, X512mode)
+KVX_EXPAND_BUILTIN_XUNDEF (xundef1024, kvx_xundef1024, X1024mode)
+KVX_EXPAND_BUILTIN_XUNDEF (xundef2048, kvx_xundef2048, X2048mode)
+KVX_EXPAND_BUILTIN_XUNDEF (xundef4096, kvx_xundef4096, X4096mode)
+KVX_EXPAND_BUILTIN_XUNDEF (xundef8192, kvx_xundef8192, X8192mode)
 
 #define KVX_EXPAND_BUILTIN_XZERO(name, name2, tmode)                           \
   static rtx kvx_expand_builtin_##name (rtx target, tree args ATTRIBUTE_UNUSED)\
   {                                                                            \
+    if (KV3_N_ONLY)                                                            \
+      error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
     rtx arg1 = gen_reg_rtx (DImode);                                           \
     emit_move_insn (arg1, const0_rtx);                                         \
     if (!target)                                                               \
@@ -3737,16 +3891,18 @@ KVX_EXPAND_BUILTIN_XUNDEF (xundef8192, kvx_xundefv32oi, V32OImode)
     return target;                                                             \
   }
 
-KVX_EXPAND_BUILTIN_XZERO (xzero256, kvx_xsplatd256, V1OImode)
-KVX_EXPAND_BUILTIN_XZERO (xzero512, kvx_xsplatd512, V2OImode)
-KVX_EXPAND_BUILTIN_XZERO (xzero1024, kvx_xsplatd1024, V4OImode)
-KVX_EXPAND_BUILTIN_XZERO (xzero2048, kvx_xsplatd2048, V8OImode)
-KVX_EXPAND_BUILTIN_XZERO (xzero4096, kvx_xsplatd4096, V16OImode)
-KVX_EXPAND_BUILTIN_XZERO (xzero8192, kvx_xsplatd8192, V32OImode)
+KVX_EXPAND_BUILTIN_XZERO (xzero256, kvx_xsplatd256, X256mode)
+KVX_EXPAND_BUILTIN_XZERO (xzero512, kvx_xsplatd512, X512mode)
+KVX_EXPAND_BUILTIN_XZERO (xzero1024, kvx_xsplatd1024, X1024mode)
+KVX_EXPAND_BUILTIN_XZERO (xzero2048, kvx_xsplatd2048, X2048mode)
+KVX_EXPAND_BUILTIN_XZERO (xzero4096, kvx_xsplatd4096, X4096mode)
+KVX_EXPAND_BUILTIN_XZERO (xzero8192, kvx_xsplatd8192, X8192mode)
 
 #define KVX_EXPAND_BUILTIN_XSPLATD(name, name2, tmode)                         \
   static rtx kvx_expand_builtin_##name (rtx target, tree args ATTRIBUTE_UNUSED)\
   {                                                                            \
+    if (KV3_N_ONLY)                                                            \
+      error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     arg1 = force_reg (DImode, arg1);                                           \
     if (!target)                                                               \
@@ -3757,16 +3913,18 @@ KVX_EXPAND_BUILTIN_XZERO (xzero8192, kvx_xsplatd8192, V32OImode)
     return target;                                                             \
   }
 
-KVX_EXPAND_BUILTIN_XSPLATD (xsplatd256, kvx_xsplatd256, V1OImode)
-KVX_EXPAND_BUILTIN_XSPLATD (xsplatd512, kvx_xsplatd512, V2OImode)
-KVX_EXPAND_BUILTIN_XSPLATD (xsplatd1024, kvx_xsplatd1024, V4OImode)
-KVX_EXPAND_BUILTIN_XSPLATD (xsplatd2048, kvx_xsplatd2048, V8OImode)
-KVX_EXPAND_BUILTIN_XSPLATD (xsplatd4096, kvx_xsplatd4096, V16OImode)
-KVX_EXPAND_BUILTIN_XSPLATD (xsplatd8192, kvx_xsplatd8192, V32OImode)
+KVX_EXPAND_BUILTIN_XSPLATD (xsplatd256, kvx_xsplatd256, X256mode)
+KVX_EXPAND_BUILTIN_XSPLATD (xsplatd512, kvx_xsplatd512, X512mode)
+KVX_EXPAND_BUILTIN_XSPLATD (xsplatd1024, kvx_xsplatd1024, X1024mode)
+KVX_EXPAND_BUILTIN_XSPLATD (xsplatd2048, kvx_xsplatd2048, X2048mode)
+KVX_EXPAND_BUILTIN_XSPLATD (xsplatd4096, kvx_xsplatd4096, X4096mode)
+KVX_EXPAND_BUILTIN_XSPLATD (xsplatd8192, kvx_xsplatd8192, X8192mode)
 
 #define KVX_EXPAND_BUILTIN_XALIGN(name, name2, tmode, bmode)                   \
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
+    if (KV3_N_ONLY)                                                            \
+      error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
     arg1 = force_reg (bmode, arg1);                                            \
@@ -3779,23 +3937,42 @@ KVX_EXPAND_BUILTIN_XSPLATD (xsplatd8192, kvx_xsplatd8192, V32OImode)
     return target;                                                             \
   }
 
-KVX_EXPAND_BUILTIN_XALIGN (xalign512o, kvx_xalignov2oi, V1OImode, V2OImode)
-KVX_EXPAND_BUILTIN_XALIGN (xalign1024o, kvx_xalignov4oi, V1OImode, V4OImode)
-KVX_EXPAND_BUILTIN_XALIGN (xalign2048o, kvx_xalignov8oi, V1OImode, V8OImode)
-KVX_EXPAND_BUILTIN_XALIGN (xalign4096o, kvx_xalignov16oi, V1OImode, V16OImode)
-KVX_EXPAND_BUILTIN_XALIGN (xalign8192o, kvx_xalignov32oi, V1OImode, V32OImode)
+KVX_EXPAND_BUILTIN_XALIGN (xalign512o, kvx_xalign512o, X256mode, X512mode)
+KVX_EXPAND_BUILTIN_XALIGN (xalign1024o, kvx_xalign1024o, X256mode, X1024mode)
+KVX_EXPAND_BUILTIN_XALIGN (xalign2048o, kvx_xalign2048o, X256mode, X2048mode)
+KVX_EXPAND_BUILTIN_XALIGN (xalign4096o, kvx_xalign4096o, X256mode, X4096mode)
+KVX_EXPAND_BUILTIN_XALIGN (xalign8192o, kvx_xalign8192o, X256mode, X8192mode)
 
-KVX_EXPAND_BUILTIN_XALIGN (xaccess512o, kvx_xaccessov2oi, V32QImode, V2OImode)
-KVX_EXPAND_BUILTIN_XALIGN (xaccess1024o, kvx_xaccessov4oi, V32QImode, V4OImode)
-KVX_EXPAND_BUILTIN_XALIGN (xaccess2048o, kvx_xaccessov8oi, V32QImode, V8OImode)
-KVX_EXPAND_BUILTIN_XALIGN (xaccess4096o, kvx_xaccessov16oi, V32QImode, V16OImode)
-KVX_EXPAND_BUILTIN_XALIGN (xaccess8192o, kvx_xaccessov32oi, V32QImode, V32OImode)
+KVX_EXPAND_BUILTIN_XALIGN (xaccess512o, kvx_xaccess512o, V256mode, X512mode)
+KVX_EXPAND_BUILTIN_XALIGN (xaccess1024o, kvx_xaccess1024o, V256mode, X1024mode)
+KVX_EXPAND_BUILTIN_XALIGN (xaccess2048o, kvx_xaccess2048o, V256mode, X2048mode)
+KVX_EXPAND_BUILTIN_XALIGN (xaccess4096o, kvx_xaccess4096o, V256mode, X4096mode)
+KVX_EXPAND_BUILTIN_XALIGN (xaccess8192o, kvx_xaccess8192o, V256mode, X8192mode)
+
+KVX_EXPAND_BUILTIN_XMATMUL (xmma484bw, kvx_xmma484bw, X512mode, X256mode)
+#define KV3_N_ONLY (!KV3_2 * 2)
+KVX_EXPAND_BUILTIN_FSCALE (xfscalewo, kvx_xfscalewo, X256mode, X256mode)
+KVX_EXPAND_BUILTIN_XMATMUL (xmma4164bw, kvx_xmma4164bw, X512mode, X512mode)
+KVX_EXPAND_BUILTIN_4_EXTENDMUL (xmadd44bw0, kvx_xmadd44bw0, X512mode, X256mode)
+KVX_EXPAND_BUILTIN_4_EXTENDMUL (xmadd44bw1, kvx_xmadd44bw1, X512mode, X256mode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (xmaddifwo, kvx_xmaddifwo, X256mode, X256mode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (xmsbfifwo, kvx_xmsbfifwo, X256mode, X256mode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (xffma44hw, kvx_xffma44hw, X512mode, X256mode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (xfmma444hw, kvx_xfmma444hw, X512mode, X256mode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (xfmma484hw, kvx_xfmma484hw, X512mode, X512mode)
+KVX_EXPAND_BUILTIN_2_FLOATINGS (xfnarrow44wh, kvx_xfnarrow44wh, X256mode, X512mode)
+KVX_EXPAND_BUILTIN_3_STANDARD (xclampwo, kvx_xclampwo, X256mode, X256mode)
+KVX_EXPAND_BUILTIN_2_STANDARD (xtrunc48wb, kvx_xtrunc48wb, X256mode, X1024mode)
+KVX_EXPAND_BUILTIN_2_STANDARD (xsx48bw, kvx_xsx48bw, X1024mode, X256mode)
+KVX_EXPAND_BUILTIN_2_STANDARD (xzx48bw, kvx_xzx48bw, X1024mode, X256mode)
+#define KV3_N_ONLY 0
+KVX_EXPAND_BUILTIN_2_STANDARD (xmt44d, kvx_xmt44d, X1024mode, X1024mode)
 
 static rtx
 kvx_expand_builtin_xswap256 (rtx target, tree args)
 {
-  machine_mode bmode = V1OImode;
-  machine_mode tmode = V32QImode;
+  machine_mode bmode = X256mode;
+  machine_mode tmode = V256mode;
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
   arg1 = gen_rtx_MEM (bmode, force_reg (Pmode, arg1));
@@ -3805,39 +3982,6 @@ kvx_expand_builtin_xswap256 (rtx target, tree args)
   else
     target = force_reg (tmode, target);
   emit_insn (gen_kvx_xswap256 (target, arg1, arg2));
-  return target;
-}
-
-static rtx
-kvx_expand_builtin_xmt44d (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  arg1 = force_reg (V4OImode, arg1);
-  if (!target)
-    target = gen_reg_rtx (V4OImode);
-  else
-    target = force_reg (V4OImode, target);
-  emit_insn (gen_kvx_xmt44d (target, arg1));
-  return target;
-}
-
-static rtx
-kvx_expand_builtin_xmma484bw (rtx target, tree args)
-{
-  machine_mode tmode = V2OImode;
-  machine_mode smode = V1OImode;
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-  rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
-  rtx arg4 = build_xmatmul_arg (CALL_EXPR_ARG (args, 3), "xmma484bw");
-  arg1 = force_reg (smode, arg1);
-  arg2 = force_reg (smode, arg2);
-  arg3 = force_reg (tmode, arg3);
-  if (!target)
-    target = gen_reg_rtx (tmode);
-  else
-    target = force_reg (tmode, target);
-  emit_insn (gen_kvx_xmma484bw (target, arg1, arg2, arg3, arg4));
   return target;
 }
 
@@ -4087,11 +4231,33 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_CATBV: return kvx_expand_builtin_catbv (target, exp);
     case KVX_BUILTIN_CATHO: return kvx_expand_builtin_catho (target, exp);
     case KVX_BUILTIN_CATHX: return kvx_expand_builtin_cathx (target, exp);
-    case KVX_BUILTIN_CATWP: return kvx_expand_builtin_catwp (target, exp);
     case KVX_BUILTIN_CATWQ: return kvx_expand_builtin_catwq (target, exp);
     case KVX_BUILTIN_CATWO: return kvx_expand_builtin_catwo (target, exp);
-    case KVX_BUILTIN_CATDP: return kvx_expand_builtin_catdp (target, exp);
     case KVX_BUILTIN_CATDQ: return kvx_expand_builtin_catdq (target, exp);
+
+    case KVX_BUILTIN_CAT128: return kvx_expand_builtin_cat128 (target, exp);
+    case KVX_BUILTIN_CAT256: return kvx_expand_builtin_cat256 (target, exp);
+    case KVX_BUILTIN_XCAT512: return kvx_expand_builtin_xcat512 (target, exp);
+    case KVX_BUILTIN_XCAT1024: return kvx_expand_builtin_xcat1024 (target, exp);
+    case KVX_BUILTIN_XCAT2048: return kvx_expand_builtin_xcat2048 (target, exp);
+    case KVX_BUILTIN_XCAT4096: return kvx_expand_builtin_xcat4096 (target, exp);
+    case KVX_BUILTIN_XCAT8192: return kvx_expand_builtin_xcat8192 (target, exp);
+
+    case KVX_BUILTIN_LOW64: return kvx_expand_builtin_low64 (target, exp);
+    case KVX_BUILTIN_LOW128: return kvx_expand_builtin_low128 (target, exp);
+    case KVX_BUILTIN_XLOW256: return kvx_expand_builtin_xlow256 (target, exp);
+    case KVX_BUILTIN_XLOW512: return kvx_expand_builtin_xlow512 (target, exp);
+    case KVX_BUILTIN_XLOW1024: return kvx_expand_builtin_xlow1024 (target, exp);
+    case KVX_BUILTIN_XLOW2048: return kvx_expand_builtin_xlow2048 (target, exp);
+    case KVX_BUILTIN_XLOW4096: return kvx_expand_builtin_xlow4096 (target, exp);
+
+    case KVX_BUILTIN_HIGH64: return kvx_expand_builtin_high64 (target, exp);
+    case KVX_BUILTIN_HIGH128: return kvx_expand_builtin_high128 (target, exp);
+    case KVX_BUILTIN_XHIGH256: return kvx_expand_builtin_xhigh256 (target, exp);
+    case KVX_BUILTIN_XHIGH512: return kvx_expand_builtin_xhigh512 (target, exp);
+    case KVX_BUILTIN_XHIGH1024: return kvx_expand_builtin_xhigh1024 (target, exp);
+    case KVX_BUILTIN_XHIGH2048: return kvx_expand_builtin_xhigh2048 (target, exp);
+    case KVX_BUILTIN_XHIGH4096: return kvx_expand_builtin_xhigh4096 (target, exp);
 
     case KVX_BUILTIN_SELECTBO: return kvx_expand_builtin_selectbo (target, exp);
     case KVX_BUILTIN_SELECTBX: return kvx_expand_builtin_selectbx (target, exp);
@@ -4566,10 +4732,23 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_XACCESS4096O: return kvx_expand_builtin_xaccess4096o (target, exp);
     case KVX_BUILTIN_XACCESS8192O: return kvx_expand_builtin_xaccess8192o (target, exp);
 
-    case KVX_BUILTIN_XSWAP256: return kvx_expand_builtin_xswap256 (target, exp);
-    case KVX_BUILTIN_XMT44D: return kvx_expand_builtin_xmt44d (target, exp);
-
+    case KVX_BUILTIN_XFSCALEWO: return kvx_expand_builtin_xfscalewo (target, exp);
+    case KVX_BUILTIN_XMMA4164BW: return kvx_expand_builtin_xmma4164bw (target, exp);
     case KVX_BUILTIN_XMMA484BW: return kvx_expand_builtin_xmma484bw (target, exp);
+    case KVX_BUILTIN_XMADD44BW0: return kvx_expand_builtin_xmadd44bw0 (target, exp);
+    case KVX_BUILTIN_XMADD44BW1: return kvx_expand_builtin_xmadd44bw1 (target, exp);
+    case KVX_BUILTIN_XMADDIFWO: return kvx_expand_builtin_xmaddifwo (target, exp);
+    case KVX_BUILTIN_XMSBFIFWO: return kvx_expand_builtin_xmsbfifwo (target, exp);
+    case KVX_BUILTIN_XFFMA44HW: return kvx_expand_builtin_xffma44hw (target, exp);
+    case KVX_BUILTIN_XFMMA444HW: return kvx_expand_builtin_xfmma444hw (target, exp);
+    case KVX_BUILTIN_XFMMA484HW: return kvx_expand_builtin_xfmma484hw (target, exp);
+    case KVX_BUILTIN_XFNARROW44WH: return kvx_expand_builtin_xfnarrow44wh (target, exp);
+    case KVX_BUILTIN_XCLAMPWO: return kvx_expand_builtin_xclampwo (target, exp);
+    case KVX_BUILTIN_XTRUNC48WB: return kvx_expand_builtin_xtrunc48wb (target, exp);
+    case KVX_BUILTIN_XSX48BW: return kvx_expand_builtin_xsx48bw (target, exp);
+    case KVX_BUILTIN_XZX48BW: return kvx_expand_builtin_xzx48bw (target, exp);
+    case KVX_BUILTIN_XMT44D: return kvx_expand_builtin_xmt44d (target, exp);
+    case KVX_BUILTIN_XSWAP256: return kvx_expand_builtin_xswap256 (target, exp);
 
     default:
       break;
@@ -4587,23 +4766,51 @@ kvx_resolve_overloaded_builtin (location_t loc,
   unsigned int in_args_num = vec_safe_length (arglist);
   unsigned int fcode = DECL_FUNCTION_CODE (ob_fndecl);
 
+  const char *newname = 0;
+  int bitwidth = 0;
   switch (fcode)
     {
+    case KVX_BUILTIN_CATBX:
+    case KVX_BUILTIN_CATHO:
+    case KVX_BUILTIN_CATWQ:
+      bitwidth = 128;
+      newname = "cat";
+      break;
+    case KVX_BUILTIN_CATBV:
+    case KVX_BUILTIN_CATHX:
+    case KVX_BUILTIN_CATWO:
+    case KVX_BUILTIN_CATDQ:
+      bitwidth = 256;
+      newname = "cat";
+      break;
     case KVX_BUILTIN_LBO:
-    case KVX_BUILTIN_LBX:
-    case KVX_BUILTIN_LBV:
     case KVX_BUILTIN_LHQ:
-    case KVX_BUILTIN_LHO:
-    case KVX_BUILTIN_LHX:
     case KVX_BUILTIN_LWP:
+      bitwidth = 64;
+      newname = "load";
+      break;
+    case KVX_BUILTIN_LBX:
+    case KVX_BUILTIN_LHO:
     case KVX_BUILTIN_LWQ:
-    case KVX_BUILTIN_LWO:
     case KVX_BUILTIN_LDP:
+      bitwidth = 128;
+      newname = "load";
+      break;
+    case KVX_BUILTIN_LBV:
+    case KVX_BUILTIN_LHX:
+    case KVX_BUILTIN_LWO:
     case KVX_BUILTIN_LDQ:
-      warning (OPT_Wdeprecated, "%qF is deprecated.", ob_fndecl);
+      bitwidth = 256;
+      newname = "load";
       break;
     default:
       break;
+    }
+
+  if (newname)
+    {
+      warning (OPT_Wdeprecated, "%qF is deprecated, use %s%s%d instead.",
+	       ob_fndecl, "__builtin_kvx_", newname, bitwidth);
     }
 
   return NULL_TREE;

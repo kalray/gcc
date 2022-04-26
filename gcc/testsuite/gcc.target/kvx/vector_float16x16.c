@@ -220,10 +220,18 @@ kvx_float16x16_shift(float16x16_t a, float16_t b)
     return __builtin_kvx_shiftfhx(a, 1, b);
 }
 float16x16_t __attribute ((noinline))
-kvx_float16x16_catfhx(float16x8_t a, float16x8_t b) {
-    return __builtin_kvx_cathx(a, b);
+kvx_float16x16_cat256(float16x8_t a, float16x8_t b) {
+    return __builtin_kvx_cat256(a, b);
 }
 float16x16_t __attribute ((noinline))
-kvx_float16x16_scatfhx(float16x8_t a, float16x8_t b) {
-    return __builtin_kvx_cathx(b, a);
+kvx_float16x16_scat256(float16x8_t a, float16x8_t b) {
+    return __builtin_kvx_cat256(b, a);
+}
+float16x8_t __attribute ((noinline))
+kvx_float16x16_low128(float16x16_t a) {
+    return __builtin_kvx_low128(a);
+}
+float16x8_t __attribute ((noinline))
+kvx_float16x16_high128(float16x16_t a) {
+    return __builtin_kvx_high128(a);
 }
