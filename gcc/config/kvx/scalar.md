@@ -13,7 +13,7 @@
    (set (match_dup 3)
         (ltu:SIDI (match_dup 0) (match_dup 1)))
    (set (match_dup 0)
-        (if_then_else:SIDI 
+        (if_then_else:SIDI
             (ne (match_dup 3) (const_int 0))
             (const_int -1)
             (match_dup 0)))]
@@ -77,7 +77,7 @@
    (set (match_dup 4)
         (ne:SIDI (match_dup 3) (match_dup 1)))
    (set (match_dup 0)
-        (if_then_else:SIDI 
+        (if_then_else:SIDI
             (ne (match_dup 4) (const_int 0))
             (const_int -1)
             (match_dup 0)))]
@@ -3150,96 +3150,5 @@
   ""
   "fnarrowdw %0 = %1"
   [(set_attr "type" "alu_full")]
-)
-
-
-;; KVX_LBX, KVX_LHX, KVX_LWX
-
-(define_insn "kvx_lbz"
- [(set (match_operand:DI 0 "register_operand" "=r,r,r")
-       (unspec:DI [(match_operand:QI 1 "memory_operand" "a,b,m")
-                   (match_operand 2 "" "")] UNSPEC_LBZ))
-   (use (match_dup 1))]
-  ""
-  "lbz%2%X1 %0 = %1"
-  [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
-   (set_attr "length"                    "4,                       8,                      12")]
-)
-
-(define_insn "kvx_lbs"
- [(set (match_operand:DI 0 "register_operand" "=r,r,r")
-       (unspec:DI [(match_operand:QI 1 "memory_operand" "a,b,m")
-                   (match_operand 2 "" "")] UNSPEC_LBS))
-   (use (match_dup 1))]
-  ""
-  "lbs%2%X1 %0 = %1"
-  [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
-   (set_attr "length"                    "4,                       8,                      12")]
-)
-
-(define_insn "kvx_lhz"
- [(set (match_operand:DI 0 "register_operand" "=r,r,r")
-       (unspec:DI [(match_operand:HI 1 "memory_operand" "a,b,m")
-                   (match_operand 2 "" "")] UNSPEC_LHZ))
-   (use (match_dup 1))]
-  ""
-  "lhz%2%X1 %0 = %1"
-  [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
-   (set_attr "length"                    "4,                       8,                      12")]
-)
-
-(define_insn "kvx_lhs"
- [(set (match_operand:DI 0 "register_operand" "=r,r,r")
-       (unspec:DI [(match_operand:HI 1 "memory_operand" "a,b,m")
-                   (match_operand 2 "" "")] UNSPEC_LHS))
-   (use (match_dup 1))]
-  ""
-  "lhs%2%X1 %0 = %1"
-  [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
-   (set_attr "length"                    "4,                       8,                      12")]
-)
-
-(define_insn "kvx_lwz"
- [(set (match_operand:DI 0 "register_operand" "=r,r,r")
-       (unspec:DI [(match_operand:SI 1 "memory_operand" "a,b,m")
-                   (match_operand 2 "" "")] UNSPEC_LWZ))
-   (use (match_dup 1))]
-  ""
-  "lwz%2%X1 %0 = %1"
-  [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
-   (set_attr "length"                    "4,                       8,                      12")]
-)
-
-(define_insn "kvx_lws"
- [(set (match_operand:DI 0 "register_operand" "=r,r,r")
-       (unspec:DI [(match_operand:SI 1 "memory_operand" "a,b,m")
-                   (match_operand 2 "" "")] UNSPEC_LWS))
-   (use (match_dup 1))]
-  ""
-  "lws%2%X1 %0 = %1"
-  [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
-   (set_attr "length"                    "4,                       8,                      12")]
-)
-
-(define_insn "kvx_lhf"
- [(set (match_operand:HF 0 "register_operand" "=r,r,r")
-       (unspec:HF [(match_operand:HF 1 "memory_operand" "a,b,m")
-                   (match_operand 2 "" "")] UNSPEC_LHF))
-   (use (match_dup 1))]
-  ""
-  "lhz%2%X1 %0 = %1"
-  [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
-   (set_attr "length"                    "4,                       8,                      12")]
-)
-
-(define_insn "kvx_lwf"
- [(set (match_operand:SF 0 "register_operand" "=r,r,r")
-       (unspec:SF [(match_operand:SF 1 "memory_operand" "a,b,m")
-                   (match_operand 2 "" "")] UNSPEC_LWF))
-   (use (match_dup 1))]
-  ""
-  "lwz%2%X1 %0 = %1"
-  [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
-   (set_attr "length"                    "4,                       8,                      12")]
 )
 
