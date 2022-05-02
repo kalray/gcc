@@ -370,9 +370,11 @@
 
 ;; Attribute for arithmetic scalar and vector suffixes.
 (define_mode_attr suffix [
+  (QI      "b")
   (HI      "h")
   (SI      "w")
   (DI      "d")
+  (TI      "q")
   (HF      "h")
   (SF      "w")
   (DF      "d")
@@ -410,7 +412,7 @@
   (V4HF    "fhq")
   (V2SI    "wp")
   (V2SF    "fwp")
-  (V1DI    "du")
+  (V1DI    "d_")
   (V16QI   "bx")
   (V8HI    "ho")
   (V8HF    "fho")
