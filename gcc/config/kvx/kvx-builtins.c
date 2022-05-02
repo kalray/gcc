@@ -605,12 +605,6 @@ enum kvx_builtin
   KVX_BUILTIN_GET,
   KVX_BUILTIN_WFXL,
   KVX_BUILTIN_WFXM,
-  KVX_BUILTIN_LBSU,
-  KVX_BUILTIN_LBZU,
-  KVX_BUILTIN_LHSU,
-  KVX_BUILTIN_LHZU,
-  KVX_BUILTIN_LDU,
-  KVX_BUILTIN_LWZU,
   KVX_BUILTIN_SET,
   KVX_BUILTIN_AWAIT,
   KVX_BUILTIN_SLEEP,
@@ -629,6 +623,15 @@ enum kvx_builtin
   KVX_BUILTIN_STSUDP,
   KVX_BUILTIN_SBMM8,
   KVX_BUILTIN_SBMMT8,
+
+  KVX_BUILTIN_LBZU,
+  KVX_BUILTIN_LBSU,
+  KVX_BUILTIN_LHZU,
+  KVX_BUILTIN_LHSU,
+  KVX_BUILTIN_LWSU,
+  KVX_BUILTIN_LWZU,
+  KVX_BUILTIN_LDU,
+  KVX_BUILTIN_LQU,
 
   KVX_BUILTIN_D1INVAL,
   KVX_BUILTIN_I1INVAL,
@@ -1515,12 +1518,6 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (GET, "get", UINT64, INT32); // Control
   ADD_KVX_BUILTIN (WFXL, "wfxl", VOID, UINT8, UINT64); // Control
   ADD_KVX_BUILTIN (WFXM, "wfxm", VOID, UINT8, UINT64); // Control
-  ADD_KVX_BUILTIN (LBSU, "lbsu", INT8, CVPTR); // Deprecated
-  ADD_KVX_BUILTIN (LBZU, "lbzu", UINT8, CVPTR); // Deprecated
-  ADD_KVX_BUILTIN (LHSU, "lhsu", INT16, CVPTR); // Deprecated
-  ADD_KVX_BUILTIN (LHZU, "lhzu", UINT16, CVPTR); // Deprecated
-  ADD_KVX_BUILTIN (LDU, "ldu", UINT64, CVPTR); // Deprecated
-  ADD_KVX_BUILTIN (LWZU, "lwzu", UINT32, CVPTR); // Deprecated
   ADD_KVX_BUILTIN (SET, "set", VOID, INT32, UINT64); // Control
   ADD_KVX_BUILTIN (AWAIT, "await", VOID); // Control
   ADD_KVX_BUILTIN (SLEEP, "sleep", VOID); // Control
@@ -1539,6 +1536,15 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (STSUDP, "stsudp", V2DI, V2DI, V2DI); // Scalar
   ADD_KVX_BUILTIN (SBMM8, "sbmm8", UINT64, UINT64, UINT64); // Scalar
   ADD_KVX_BUILTIN (SBMMT8, "sbmmt8", UINT64, UINT64, UINT64); // Scalar
+
+  ADD_KVX_BUILTIN (LBZU, "lbzu", UINT8, CVPTR); // Deprecated
+  ADD_KVX_BUILTIN (LBSU, "lbsu", INT8, CVPTR); // Deprecated
+  ADD_KVX_BUILTIN (LHZU, "lhzu", UINT16, CVPTR); // Deprecated
+  ADD_KVX_BUILTIN (LHSU, "lhsu", INT16, CVPTR); // Deprecated
+  ADD_KVX_BUILTIN (LWZU, "lwzu", UINT32, CVPTR); // Deprecated
+  ADD_KVX_BUILTIN (LWSU, "lwsu", INT32, CVPTR); // Deprecated
+  ADD_KVX_BUILTIN (LDU, "ldu", UINT64, CVPTR); // Deprecated
+  ADD_KVX_BUILTIN (LQU, "lqu", UINT128, CVPTR); // Deprecated
 
   ADD_KVX_BUILTIN (D1INVAL, "d1inval", VOID); // Memory
   ADD_KVX_BUILTIN (I1INVAL, "i1inval", VOID); // Memory
@@ -3318,107 +3324,35 @@ KVX_EXPAND_BUILTIN_2_SILENT (fsrsrd, kvx_fsrsrd, DFmode, DFmode)
 KVX_EXPAND_BUILTIN_2_SILENT (fsrsrdp, kvx_fsrsrdp, V2DFmode, V2DFmode)
 KVX_EXPAND_BUILTIN_2_SILENT (fsrsrdq, kvx_fsrsrdq, V4DFmode, V4DFmode)
 
-static rtx
-kvx_expand_builtin_lbsu (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  arg1 = gen_rtx_MEM (QImode, force_reg (Pmode, arg1));
-
-  if (!target)
-    target = gen_reg_rtx (QImode);
-  else
-    target = force_reg (QImode, target);
-
-  emit_insn (gen_lbsu (target, arg1));
-
-  return target;
-}
-
-static rtx
-kvx_expand_builtin_lbzu (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  arg1 = gen_rtx_MEM (QImode, force_reg (Pmode, arg1));
-
-  if (!target)
-    target = gen_reg_rtx (QImode);
-  else
-    target = force_reg (QImode, target);
-
-  emit_insn (gen_lbzu (target, arg1));
-
-  return target;
-}
-
-static rtx
-kvx_expand_builtin_ldu (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  arg1 = gen_rtx_MEM (DImode, force_reg (Pmode, arg1));
-
-  if (!target)
-    target = gen_reg_rtx (DImode);
-  else
-    target = force_reg (DImode, target);
-
-  emit_insn (gen_ldu (target, arg1));
-
-  return target;
-}
-
-static rtx
-kvx_expand_builtin_lhsu (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  arg1 = gen_rtx_MEM (HImode, force_reg (Pmode, arg1));
-
-  if (!target)
-    target = gen_reg_rtx (HImode);
-  else
-    target = force_reg (HImode, target);
-
-  emit_insn (gen_lhsu (target, arg1));
-
-  return target;
-}
-
-static rtx
-kvx_expand_builtin_lhzu (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  arg1 = gen_rtx_MEM (HImode, force_reg (Pmode, arg1));
-
-  if (!target)
-    target = gen_reg_rtx (HImode);
-  else
-    target = force_reg (HImode, target);
-
-  emit_insn (gen_lhzu (target, arg1));
-
-  return target;
-}
-
-static rtx
-kvx_expand_builtin_lwzu (rtx target, tree args)
-{
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  arg1 = gen_rtx_MEM (SImode, force_reg (Pmode, arg1));
-
-  if (!target)
-    target = gen_reg_rtx (SImode);
-  else
-    target = force_reg (SImode, target);
-
-  emit_insn (gen_lwzu (target, arg1));
-
-  return target;
-}
-
 KVX_EXPAND_BUILTIN_3_STANDARD (stsuw, kvx_stsuw, SImode, SImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (stsud, kvx_stsud, DImode, DImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (stsudp, kvx_stsudp, V2DImode, V2DImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (sbmm8, kvx_sbmm8, DImode, DImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (sbmmt8, kvx_sbmmt8, DImode, DImode)
+
+#define KVX_EXPAND_BUILTIN_LOADU(name, name2, tmode, mmode)                    \
+  static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
+  {                                                                            \
+    if (KV3_N_ONLY)                                                            \
+      error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
+    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
+    arg1 = gen_rtx_MEM (mmode, force_reg (Pmode, arg1));                       \
+    if (!target)                                                               \
+      target = gen_reg_rtx (tmode);                                            \
+    else                                                                       \
+      target = force_reg (tmode, target);                                      \
+    emit_insn (gen_##name2 (target, arg1));                                    \
+    return target;                                                             \
+  }
+
+KVX_EXPAND_BUILTIN_LOADU (lbzu, kvx_lbzu, QImode, QImode)
+KVX_EXPAND_BUILTIN_LOADU (lbsu, kvx_lbsu, QImode, QImode)
+KVX_EXPAND_BUILTIN_LOADU (lhzu, kvx_lhzu, HImode, HImode)
+KVX_EXPAND_BUILTIN_LOADU (lhsu, kvx_lhsu, HImode, HImode)
+KVX_EXPAND_BUILTIN_LOADU (lwzu, kvx_lwzu, SImode, SImode)
+KVX_EXPAND_BUILTIN_LOADU (lwsu, kvx_lwsu, SImode, SImode)
+KVX_EXPAND_BUILTIN_LOADU (ldu, kvx_ldu, DImode, DImode)
+KVX_EXPAND_BUILTIN_LOADU (lqu, kvx_lqu, TImode, TImode)
 
 KVX_EXPAND_BUILTIN_0_VOID (d1inval, kvx_d1inval)
 KVX_EXPAND_BUILTIN_0_VOID (i1inval, kvx_i1inval)
@@ -4555,12 +4489,6 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_GET: return kvx_expand_builtin_get (target, exp);
     case KVX_BUILTIN_WFXL: return kvx_expand_builtin_wfxl (target, exp);
     case KVX_BUILTIN_WFXM: return kvx_expand_builtin_wfxm (target, exp);
-    case KVX_BUILTIN_LBSU: return kvx_expand_builtin_lbsu (target, exp);
-    case KVX_BUILTIN_LBZU: return kvx_expand_builtin_lbzu (target, exp);
-    case KVX_BUILTIN_LDU: return kvx_expand_builtin_ldu (target, exp);
-    case KVX_BUILTIN_LHSU: return kvx_expand_builtin_lhsu (target, exp);
-    case KVX_BUILTIN_LHZU: return kvx_expand_builtin_lhzu (target, exp);
-    case KVX_BUILTIN_LWZU: return kvx_expand_builtin_lwzu (target, exp);
     case KVX_BUILTIN_SET: return kvx_expand_builtin_set (target, exp);
     case KVX_BUILTIN_AWAIT: return kvx_expand_builtin_await (target, exp);
     case KVX_BUILTIN_SLEEP: return kvx_expand_builtin_sleep (target, exp);
@@ -4579,6 +4507,15 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_STSUDP: return kvx_expand_builtin_stsudp (target, exp);
     case KVX_BUILTIN_SBMM8: return kvx_expand_builtin_sbmm8 (target, exp);
     case KVX_BUILTIN_SBMMT8: return kvx_expand_builtin_sbmmt8 (target, exp);
+
+    case KVX_BUILTIN_LBZU: return kvx_expand_builtin_lbzu (target, exp);
+    case KVX_BUILTIN_LBSU: return kvx_expand_builtin_lbsu (target, exp);
+    case KVX_BUILTIN_LHZU: return kvx_expand_builtin_lhzu (target, exp);
+    case KVX_BUILTIN_LHSU: return kvx_expand_builtin_lhsu (target, exp);
+    case KVX_BUILTIN_LWZU: return kvx_expand_builtin_lwzu (target, exp);
+    case KVX_BUILTIN_LWSU: return kvx_expand_builtin_lwsu (target, exp);
+    case KVX_BUILTIN_LDU: return kvx_expand_builtin_ldu (target, exp);
+    case KVX_BUILTIN_LQU: return kvx_expand_builtin_lqu (target, exp);
 
     case KVX_BUILTIN_D1INVAL: return kvx_expand_builtin_d1inval (target, exp);
     case KVX_BUILTIN_I1INVAL: return kvx_expand_builtin_i1inval (target, exp);
