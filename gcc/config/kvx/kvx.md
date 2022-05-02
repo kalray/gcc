@@ -637,72 +637,20 @@
   }
 )
 
-(define_insn "lqu"
-   [(set (match_operand:TI 0 "register_operand" "=r,r,r")
-         (unspec:TI [(match_operand:TI 1 "memory_operand" "a,b,m")] UNSPEC_LQU))
-    (clobber (mem:BLK (scratch)))
-   ]
-   ""
-   "lq.u%X1 %0 = %1"
-[(set_attr "length" "4, 8, 12")
- (set_attr "type"   "lsu_auxw_load_uncached, lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")]
-)
+;; Uncached Loads (Deprecated)
 
-(define_insn "ldu"
-   [(set (match_operand:DI 0 "register_operand" "=r,r,r")
-         (unspec:DI [(match_operand:DI 1 "memory_operand" "a,b,m")] UNSPEC_LDU))
+(define_insn "kvx_lbzu"
+   [(set (match_operand:QI 0 "register_operand" "=r,r,r")
+         (unspec:QI [(match_operand:QI 1 "memory_operand" "a,b,m")] UNSPEC_LBZU))
     (clobber (mem:BLK (scratch)))
    ]
    ""
-   "ld.u%X1 %0 = %1"
-[(set_attr "length" "4, 8, 12")
- (set_attr "type" "lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y")]
-)
-
-(define_insn "lwzu"
-   [(set (match_operand:SI 0 "register_operand" "=r,r,r")
-         (unspec:SI [(match_operand:SI 1 "memory_operand" "a,b,m")] UNSPEC_LWZU))
-    (clobber (mem:BLK (scratch)))
-   ]
-   ""
-   "lwz.u%X1 %0 = %1"
+   "lbz.u%X1 %0 = %1"
 [(set_attr "length" "4,8,12")
  (set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")]
 )
 
-(define_insn "lhsu"
-   [(set (match_operand:HI 0 "register_operand" "=r,r,r")
-         (unspec:HI [(match_operand:HI 1 "memory_operand" "a,b,m")] UNSPEC_LHSU))
-    (clobber (mem:BLK (scratch)))
-   ]
-   ""
-   "lhs.u%X1 %0 = %1"
-[(set_attr "length" "4, 8, 12")
- (set_attr "type" "lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y")]
-)
-
-(define_insn "lhzu"
-   [(set (match_operand:HI 0 "register_operand" "=r,r,r")
-         (unspec:HI [(match_operand:HI 1 "memory_operand" "a,b,m")] UNSPEC_LHZU))
-    (clobber (mem:BLK (scratch)))
-   ]
-   ""
-   "lhz.u%X1 %0 = %1"
-[(set_attr "length" "4, 8, 12")
- (set_attr "type" "lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y")]
-)
-
-;; FIXME AUTO: add size info for 'reg[reg]' addressing (currently falling back to lsu.x)
-(define_insn "*l<mode><ANY_EXTEND:lsux>"
-   [(set (match_operand:DI 0 "register_operand"                 "=r,  r,  r,  r,  r,  r")
-         (ANY_EXTEND:DI (match_operand:SHORT 1 "memory_operand" "Ca, Cb, Cm, Za, Zb, Zm")))]
-   ""
-   "l<SHORT:lsusize><ANY_EXTEND:lsux>%V1 %0 = %1"
-[(set_attr "length" "            4,               8,              12,                      4,                        8,                       12")
- (set_attr "type"   "lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_y, lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y")]
-)
-
-(define_insn "lbsu"
+(define_insn "kvx_lbsu"
    [(set (match_operand:QI 0 "register_operand"           "=r, r, r")
          (unspec:QI [(match_operand:QI 1 "memory_operand" " a, b, m")] UNSPEC_LBSU))
     (clobber (mem:BLK (scratch)))
@@ -713,15 +661,80 @@
  (set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")]
 )
 
-(define_insn "lbzu"
-   [(set (match_operand:QI 0 "register_operand" "=r,r,r")
-         (unspec:QI [(match_operand:QI 1 "memory_operand" "a,b,m")] UNSPEC_LBZU))
+(define_insn "kvx_lhzu"
+   [(set (match_operand:HI 0 "register_operand" "=r,r,r")
+         (unspec:HI [(match_operand:HI 1 "memory_operand" "a,b,m")] UNSPEC_LHZU))
     (clobber (mem:BLK (scratch)))
    ]
    ""
-   "lbz.u%X1 %0 = %1"
+   "lhz.u%X1 %0 = %1"
+[(set_attr "length" "4, 8, 12")
+ (set_attr "type" "lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y")]
+)
+
+(define_insn "kvx_lhsu"
+   [(set (match_operand:HI 0 "register_operand" "=r,r,r")
+         (unspec:HI [(match_operand:HI 1 "memory_operand" "a,b,m")] UNSPEC_LHSU))
+    (clobber (mem:BLK (scratch)))
+   ]
+   ""
+   "lhs.u%X1 %0 = %1"
+[(set_attr "length" "4, 8, 12")
+ (set_attr "type" "lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y")]
+)
+
+(define_insn "kvx_lwzu"
+   [(set (match_operand:SI 0 "register_operand" "=r,r,r")
+         (unspec:SI [(match_operand:SI 1 "memory_operand" "a,b,m")] UNSPEC_LWZU))
+    (clobber (mem:BLK (scratch)))
+   ]
+   ""
+   "lwz.u%X1 %0 = %1"
 [(set_attr "length" "4,8,12")
  (set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")]
+)
+
+(define_insn "kvx_lwsu"
+   [(set (match_operand:SI 0 "register_operand" "=r,r,r")
+         (unspec:SI [(match_operand:SI 1 "memory_operand" "a,b,m")] UNSPEC_LWZU))
+    (clobber (mem:BLK (scratch)))
+   ]
+   ""
+   "lws.u%X1 %0 = %1"
+[(set_attr "length" "4,8,12")
+ (set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")]
+)
+
+(define_insn "kvx_ldu"
+   [(set (match_operand:DI 0 "register_operand" "=r,r,r")
+         (unspec:DI [(match_operand:DI 1 "memory_operand" "a,b,m")] UNSPEC_LDU))
+    (clobber (mem:BLK (scratch)))
+   ]
+   ""
+   "ld.u%X1 %0 = %1"
+[(set_attr "length" "4, 8, 12")
+ (set_attr "type" "lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y")]
+)
+
+(define_insn "kvx_lqu"
+   [(set (match_operand:TI 0 "register_operand" "=r,r,r")
+         (unspec:TI [(match_operand:TI 1 "memory_operand" "a,b,m")] UNSPEC_LQU))
+    (clobber (mem:BLK (scratch)))
+   ]
+   ""
+   "lq.u%X1 %0 = %1"
+[(set_attr "length" "4, 8, 12")
+ (set_attr "type"   "lsu_auxw_load_uncached, lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")]
+)
+
+;; FIXME AUTO: add size info for 'reg[reg]' addressing (currently falling back to lsu.x)
+(define_insn "*l<mode><ANY_EXTEND:lsux>"
+   [(set (match_operand:DI 0 "register_operand"                 "=r,  r,  r,  r,  r,  r")
+         (ANY_EXTEND:DI (match_operand:SHORT 1 "memory_operand" "Ca, Cb, Cm, Za, Zb, Zm")))]
+   ""
+   "l<SHORT:lsusize><ANY_EXTEND:lsux>%V1 %0 = %1"
+[(set_attr "length" "            4,               8,              12,                      4,                        8,                       12")
+ (set_attr "type"   "lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_y, lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y")]
 )
 
 ;; FIXME AUTO: add size info for 'reg[reg]' addressing (currently falling back to lsu.x)
