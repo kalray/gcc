@@ -1712,7 +1712,7 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (XFMMA444HW, "xfmma444hw", X512, X256, X256, X512, FLOATINGS); // Extension kv3-2
   ADD_KVX_BUILTIN (XFMMA484HW, "xfmma484hw", X512, X512, X512, X512, FLOATINGS); // Extension kv3-2
   ADD_KVX_BUILTIN (XFNARROW44WH, "xfnarrow44wh", X256, X512, FLOATINGS); // Extension kv3-2
-  ADD_KVX_BUILTIN (XCLAMPWO, "xclampwo", X256, X256, X256); // Extension kv3-2
+  ADD_KVX_BUILTIN (XCLAMPWO, "xclampwo", X256, X256, X256, X256); // Extension kv3-2
   ADD_KVX_BUILTIN (XTRUNC48WB, "xtrunc48wb", X256, X1024); // Extension kv3-2
   ADD_KVX_BUILTIN (XSX48BW, "xsx48bw", X1024, X256); // Extension kv3-2
   ADD_KVX_BUILTIN (XZX48BW, "xzx48bw", X1024, X256); // Extension kv3-2
@@ -3799,7 +3799,11 @@ KVX_EXPAND_BUILTIN_XPRELOAD (xpreload8192, kvx_xpreload8192, X8192mode, X256mode
   {                                                                            \
     if (KV3_N_ONLY)                                                            \
       error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
-    emit_insn (gen_##name2 (target));                                          \
+    if (!target)                                                               \
+      target = gen_reg_rtx (tmode);                                            \
+    else                                                                       \
+      target = force_reg (tmode, target);                                      \
+    emit_insn (gen_##name2 (target, CONST0_RTX (tmode)));                      \
     return target;                                                             \
   }
 
@@ -3895,7 +3899,7 @@ KVX_EXPAND_BUILTIN_4_FLOATINGS (xffma44hw, kvx_xffma44hw, X512mode, X256mode)
 KVX_EXPAND_BUILTIN_4_FLOATINGS (xfmma444hw, kvx_xfmma444hw, X512mode, X256mode)
 KVX_EXPAND_BUILTIN_4_FLOATINGS (xfmma484hw, kvx_xfmma484hw, X512mode, X512mode)
 KVX_EXPAND_BUILTIN_2_FLOATINGS (xfnarrow44wh, kvx_xfnarrow44wh, X256mode, X512mode)
-KVX_EXPAND_BUILTIN_3_STANDARD (xclampwo, kvx_xclampwo, X256mode, X256mode)
+KVX_EXPAND_BUILTIN_4_STANDARD (xclampwo, kvx_xclampwo, X256mode, X256mode)
 KVX_EXPAND_BUILTIN_2_STANDARD (xtrunc48wb, kvx_xtrunc48wb, X256mode, X1024mode)
 KVX_EXPAND_BUILTIN_2_STANDARD (xsx48bw, kvx_xsx48bw, X1024mode, X256mode)
 KVX_EXPAND_BUILTIN_2_STANDARD (xzx48bw, kvx_xzx48bw, X1024mode, X256mode)

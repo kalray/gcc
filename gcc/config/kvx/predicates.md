@@ -222,6 +222,13 @@
   return REGNO_REG_CLASS (regno) == XCR_REGS;
 })
 
+(define_predicate "float16_inner_mode"
+  (match_code "reg,subreg")
+{
+  machine_mode inner_mode = GET_MODE_INNER (GET_MODE (op));
+  return inner_mode == HFmode;
+})
+
 (define_predicate "uncached_modifier"
   (match_code "const_string")
 {
