@@ -79,7 +79,7 @@
 #undef TARGET_HAVE_TLS
 #define TARGET_HAVE_TLS (true)
 
-static bool scheduling = false;
+static bool kvx_scheduling = false;
 
 rtx kvx_link_reg_rtx;
 
@@ -1029,7 +1029,7 @@ kvx_conditional_register_usage (void)
       // On the kv3-1, only 48 coprocessor registers are available.
       unsigned int regno = KV3_XCR_FIRST_REGNO + (48 * 4);
       for (; regno <= KV3_XCR_LAST_REGNO; regno++)
-        fixed_regs[regno] = call_used_regs[regno] = 1;
+	fixed_regs[regno] = call_used_regs[regno] = 1;
     }
 }
 
@@ -1725,11 +1725,22 @@ kvx_print_operand (FILE *file, rtx x, int code)
     case REG:
       if (REGNO (operand) >= FIRST_PSEUDO_REGISTER)
 	error ("incorrect hard register number %d", REGNO (operand));
-      else if (force_breg)
+      else if (extension_register_operand (operand, VOIDmode))
 	{
-	  int nwords = GET_MODE_SIZE (GET_MODE (x)) / UNITS_PER_WORD;
-	  fprintf (file, "$%s..%s", kvx_xvr_reg_name (REGNO (operand)),
-		   kvx_xvr_reg_name (REGNO (operand) + nwords - 4));
+	  if (force_xreg)
+	    fprintf (file, "$%s", kvx_xvr_reg_name (REGNO (operand)));
+	  else if (force_breg)
+	    {
+	      int nwords = GET_MODE_SIZE (GET_MODE (x)) / UNITS_PER_WORD;
+	      fprintf (file, "$%s..%s", kvx_xvr_reg_name (REGNO (operand)),
+		       kvx_xvr_reg_name (REGNO (operand) + nwords - 4));
+	    }
+	  else if (GET_MODE_SIZE (GET_MODE (x)) == UNITS_PER_WORD * 16)
+	    fprintf (file, "$%s", kvx_xmr_reg_name (REGNO (operand)));
+	  else if (GET_MODE_SIZE (GET_MODE (x)) == UNITS_PER_WORD * 8)
+	    fprintf (file, "$%s", kvx_xwr_reg_name (REGNO (operand)));
+	  else
+	    fprintf (file, "$%s", kvx_xvr_reg_name (REGNO (operand)));
 	}
       else if (force_qreg)
 	fprintf (file, "$%s", kvx_qgr_reg_name (REGNO (operand)));
@@ -1769,15 +1780,6 @@ kvx_print_operand (FILE *file, rtx x, int code)
 	    fprintf (file, "$%s", kvx_pgr_reg_name (REGNO (operand)));
 	  else
 	    fprintf (file, "$%s", reg_names[REGNO (operand)]);
-	}
-      else if (extension_register_operand (operand, VOIDmode))
-	{
-	  if (GET_MODE_SIZE (GET_MODE (x)) == UNITS_PER_WORD * 16)
-	    fprintf (file, "$%s", kvx_xmr_reg_name (REGNO (operand)));
-	  else if (GET_MODE_SIZE (GET_MODE (x)) == UNITS_PER_WORD * 8)
-	    fprintf (file, "$%s", kvx_xwr_reg_name (REGNO (operand)));
-	  else
-	    fprintf (file, "$%s", kvx_xvr_reg_name (REGNO (operand)));
 	}
       else
 	gcc_unreachable ();
@@ -2864,6 +2866,10 @@ kvx_legitimate_pic_symbolic_ref_p (rtx op)
 {
   /* Unwrap CONST */
   if (GET_CODE (op) == CONST)
+    op = XEXP (op, 0);
+
+  /* Unwrap PLUS */
+  if (GET_CODE (op) == PLUS && CONST_INT_P (XEXP (op, 1)))
     op = XEXP (op, 0);
 
   /* Valid ref are wrapped in UNSPEC */
@@ -4286,29 +4292,40 @@ kvx_expand_atomic_test_and_set (rtx operands[])
 }
 
 int
-kv3_mau_lsu_double_port_bypass_p (rtx_insn *producer, rtx_insn *consumer)
+kvx_stored_value_bypass_p (rtx_insn *prod_insn, rtx_insn *cons_insn)
 {
-  rtx produced = SET_DEST (single_set (producer));
-  rtx consumed = PATTERN (consumer);
+  rtx prod_set = single_set (prod_insn);
+  if (!prod_set)
+    return 0;
 
-  if (GET_CODE (consumed) == PARALLEL)
-    consumed = XVECEXP (consumed, 0, 0);
-  consumed = SET_DEST (consumed);
+  rtx cons_set = single_set (cons_insn);
+  if (!cons_set)
+    return 0;
 
+  rtx produced = SET_DEST (prod_set);
+  rtx consumed = SET_SRC (cons_set);
+
+  // Only bypass on the stored value.
   return reg_overlap_mentioned_p (produced, consumed);
 }
 
-static int kvx_sched2_max_uid;
-static int kvx_sched2_prev_uid;
-#define KVX_SCHED2_HEAD_OF_SCHED_REGION -1
-static short *kvx_sched2_insn_cycle;
-static unsigned char *kvx_sched2_insn_flags;
-#define KVX_SCHED2_INSN_HEAD 1
-#define KVX_SCHED2_INSN_START 2
-#define KVX_SCHED2_INSN_STOP 4
-#define KVX_SCHED2_INSN_TAIL 8
-#define KVX_SCHED2_INSN_STALL 16
-static int kvx_sched2_verbose;
+int
+kvx_accumulator_bypass_p (rtx_insn *prod_insn, rtx_insn *cons_insn)
+{
+  rtx prod_set = single_set (prod_insn);
+  if (!prod_set)
+    return 0;
+
+  rtx cons_set = single_set (cons_insn);
+  if (!cons_set)
+    return 0;
+
+  rtx produced = SET_DEST (prod_set);
+  rtx consumed = SET_DEST (cons_set);
+
+  // Depends on renaming constraint so only works in SCHED2.
+  return reg_overlap_mentioned_p (produced, consumed);
+}
 
 static void
 kvx_dependencies_fprint (FILE *file, rtx_insn *insn) ATTRIBUTE_UNUSED;
@@ -4370,34 +4387,35 @@ kvx_sched_variable_issue (FILE *file ATTRIBUTE_UNUSED,
   return more - 1;
 }
 
+/* Implements TARGET_SCHED_ADJUST_COST.  */
 static int
-kvx_sched_adjust_cost (rtx_insn *insn, int dep_type, rtx_insn *dep_insn,
+kvx_sched_adjust_cost (rtx_insn *cons_insn, int dep_type, rtx_insn *prod_insn,
 		       int cost, unsigned int dw ATTRIBUTE_UNUSED)
 {
   if (dep_type == REG_DEP_TRUE)
     {
       // Use (set_of) instead of (reg_overlap_mentioned_p) to catch cases in
       // SCHED2 of producing a register pair and consuming a single register.
-      if (JUMP_P (insn))
+      if (JUMP_P (cons_insn))
 	// Reduce cost except for the dependence carrying the tested value.
-	// Case of carrying is when DEP_INSN modifies a REG used by INSN.
+	// Case of carrying is when PROD_INSN modifies a REG used by CONS_INSN.
 	{
-	  rtx x = PATTERN (insn);
+	  rtx x = PATTERN (cons_insn);
 	  if (GET_CODE (x) == PARALLEL)
 	    x = XVECEXP (x, 0, 0);
 	  if (GET_CODE (x) == SET)
 	    {
 	      x = SET_SRC (x);
-	    if (GET_CODE (x) == IF_THEN_ELSE)
-	      x = XEXP (XEXP (x, 0), 0);
-	    if (GET_CODE (x) == ZERO_EXTRACT)
-	      x = XEXP (x, 0);
-	    if (!REG_P (x) || !set_of (x, dep_insn))
-	      cost = 0;
+	      if (GET_CODE (x) == IF_THEN_ELSE)
+		x = XEXP (XEXP (x, 0), 0);
+	      if (GET_CODE (x) == ZERO_EXTRACT)
+		x = XEXP (x, 0);
+	      if (!REG_P (x) || !set_of (x, prod_insn))
+		cost = 0;
 	    }
 	  else if (ANY_RETURN_P (x))
 	    {
-	      rtx y = PATTERN (dep_insn);
+	      rtx y = PATTERN (prod_insn);
 	      if (GET_CODE (y) == PARALLEL)
 		y = XVECEXP (y, 0, 0);
 	      if (GET_CODE (y) == SET)
@@ -4406,42 +4424,58 @@ kvx_sched_adjust_cost (rtx_insn *insn, int dep_type, rtx_insn *dep_insn,
 		cost = 0;
 	    }
 	}
-      else if (CALL_P (insn))
+      else if (CALL_P (cons_insn))
 	// Reduce cost except for the dependence carrying the call target.
-	// Case of carrying is when DEP_INSN modifies a REG used by INSN.
+	// Case of carrying is when PROD_INSN modifies a REG used by CONS_INSN.
 	{
-	  rtx x = PATTERN (insn);
+	  rtx x = PATTERN (cons_insn);
 	  if (GET_CODE (x) == PARALLEL)
 	    x = XVECEXP (x, 0, 0);
 	  if (GET_CODE (x) == SET)
 	    x = SET_SRC (x);
 	  if (GET_CODE (x) == CALL)
 	    x = XEXP (XEXP (x, 0), 0);
-	  if (!REG_P (x) || !set_of (x, dep_insn))
+	  if (!REG_P (x) || !set_of (x, prod_insn))
 	    cost = 0;
 	}
-      else if (recog_memoized (dep_insn) >= 0)
-	// If the producer is a MAU that sets HF inner mode, decrement cost.
+      else if (recog_memoized (prod_insn) >= 0
+	       && recog_memoized (cons_insn) >= 0)
+	// Adjust cost between instructions based on their type attribute.
 	{
-	  enum attr_type type = get_attr_type (dep_insn);
-	  if (type >= TYPE_MAU && type < TYPE_BCU)
+	  rtx prod_set = single_set (prod_insn);
+	  rtx cons_set = single_set (cons_insn);
+	  enum attr_type prod_type = get_attr_type (prod_insn);
+	  // If the producer is a load feeding the target of a conditional
+	  // or a scatter load, set cost to 1 instead of the load latency.
+	  if (prod_type >= TYPE_LSU_LOAD && prod_type < TYPE_LSU_AUXR_STORE)
 	    {
-	      rtx x = SET_DEST (single_set (dep_insn));
-	      machine_mode inner_mode = GET_MODE_INNER (GET_MODE (x));
-	      if (inner_mode == HFmode)
-		cost--;
+	      rtx x = prod_set ? SET_DEST (prod_set) : 0;
+	      rtx op = cons_set ? SET_SRC (cons_set) : 0;
+	      if (x && op && GET_CODE (op) == UNSPEC)
+		{
+		  int unspec = XINT (op, 1);
+		  if (SUBREG_P (x))
+		    x = SUBREG_REG (x);
+		  rtx y = XVECEXP (op, 0, 0);
+		  if (SUBREG_P (y))
+		    y = SUBREG_REG (y);
+		  if (x == y
+		      && (unspec == UNSPEC_LOADC || unspec == UNSPEC_XLOADC
+			  || unspec == UNSPEC_XLOADS))
+		    cost = 1;
+		}
 	    }
 	}
     }
   else if (dep_type == REG_DEP_ANTI)
     {
       cost = 0;
-      if (JUMP_P (dep_insn) || CALL_P (dep_insn))
+      if (JUMP_P (prod_insn) || CALL_P (prod_insn))
 	// Consumer INSN must issue after a JUMP or CALL producer.
 	{
 	  cost = 1;
 	}
-      else if (GET_CODE (PATTERN (dep_insn)) == CLOBBER)
+      else if (GET_CODE (PATTERN (prod_insn)) == CLOBBER)
 	// Delay consumer INSN of CLOBBER for non-zero number of clock cycles.
 	// This corrects the rewriting of dependencies by chain_to_prev_insn().
 	// Problem appears in cases the CLOBBER of an INSF is located after the
@@ -4450,12 +4484,11 @@ kvx_sched_adjust_cost (rtx_insn *insn, int dep_type, rtx_insn *dep_insn,
 	  cost = 1;
 	  dep_t dep;
 	  sd_iterator_def sd_it;
-	  FOR_EACH_DEP (dep_insn, SD_LIST_BACK, sd_it, dep)
+	  FOR_EACH_DEP (prod_insn, SD_LIST_BACK, sd_it, dep)
 	    {
 	      if (DEP_TYPE (dep) == REG_DEP_TRUE)
 		{
 		  rtx_insn *pro_insn = DEP_PRO (dep);
-		  // FIXME GCC9: added 'true' arg here.
 		  int pro_cost = insn_cost (pro_insn, true);
 		  if (cost < pro_cost)
 		    cost = pro_cost;
@@ -4466,7 +4499,7 @@ kvx_sched_adjust_cost (rtx_insn *insn, int dep_type, rtx_insn *dep_insn,
   else if (dep_type == REG_DEP_OUTPUT)
     {
       cost = 1;
-      if (JUMP_P (insn) || CALL_P (insn))
+      if (JUMP_P (cons_insn) || CALL_P (cons_insn))
 	// Consumer is JUMP or CALL, producer can issue at same clock cycle.
 	{
 	  cost = 0;
@@ -4496,18 +4529,51 @@ kvx_sched_dependencies_evaluation_hook (rtx_insn *head, rtx_insn *tail)
     }
 }
 
+/* SCHED2 data structure. */
+static struct kvx_sched2
+{
+  int max_uid;
+  int prev_uid;
+  short *insn_cycle;
+  unsigned char *insn_flags;
+} kvx_sched2;
+#define KVX_SCHED2_INSN_HEAD 1
+#define KVX_SCHED2_INSN_START 2
+#define KVX_SCHED2_INSN_STOP 4
+#define KVX_SCHED2_INSN_TAIL 8
+#define KVX_SCHED2_INSN_STALL 16
+static void
+kvx_sched2_ctor (int max_uid)
+{
+  kvx_sched2.max_uid = max_uid;
+  kvx_sched2.prev_uid = -1;
+  kvx_sched2.insn_cycle = XNEWVEC (short, kvx_sched2.max_uid);
+  memset (kvx_sched2.insn_cycle, -1, sizeof (short) * kvx_sched2.max_uid);
+  kvx_sched2.insn_flags = XCNEWVEC (unsigned char, kvx_sched2.max_uid);
+}
+static void
+kvx_sched2_dtor (void)
+{
+  kvx_sched2.max_uid = 0;
+  kvx_sched2.prev_uid = -1;
+  XDELETEVEC (kvx_sched2.insn_cycle);
+  kvx_sched2.insn_cycle = 0;
+  XDELETEVEC (kvx_sched2.insn_flags);
+  kvx_sched2.insn_flags = 0;
+}
+
 static void
 kvx_sched_init (FILE *file ATTRIBUTE_UNUSED, int verbose ATTRIBUTE_UNUSED,
 		int max_ready ATTRIBUTE_UNUSED)
 {
   if (reload_completed)
     {
-      if ((unsigned) kvx_sched2_prev_uid < (unsigned) kvx_sched2_max_uid)
+      if ((unsigned) kvx_sched2.prev_uid < (unsigned) kvx_sched2.max_uid)
 	{
-	  kvx_sched2_insn_flags[kvx_sched2_prev_uid]
+	  kvx_sched2.insn_flags[kvx_sched2.prev_uid]
 	    |= KVX_SCHED2_INSN_STOP | KVX_SCHED2_INSN_TAIL;
 	}
-      kvx_sched2_prev_uid = KVX_SCHED2_HEAD_OF_SCHED_REGION;
+      kvx_sched2.prev_uid = -1;
     }
 }
 
@@ -4516,9 +4582,9 @@ kvx_sched_finish (FILE *file ATTRIBUTE_UNUSED, int verbose ATTRIBUTE_UNUSED)
 {
   if (reload_completed)
     {
-      if ((unsigned) kvx_sched2_prev_uid < (unsigned) kvx_sched2_max_uid)
+      if ((unsigned) kvx_sched2.prev_uid < (unsigned) kvx_sched2.max_uid)
 	{
-	  kvx_sched2_insn_flags[kvx_sched2_prev_uid]
+	  kvx_sched2.insn_flags[kvx_sched2.prev_uid]
 	    |= KVX_SCHED2_INSN_STOP | KVX_SCHED2_INSN_TAIL;
 	}
     }
@@ -4528,17 +4594,9 @@ static void
 kvx_sched_init_global (FILE *file ATTRIBUTE_UNUSED,
 		       int verbose ATTRIBUTE_UNUSED, int old_max_uid)
 {
-  scheduling = true;
+  kvx_scheduling = true;
   if (reload_completed)
-    {
-      /* Allocate here, deallocate in kvx_function_epilogue(). */
-      kvx_sched2_max_uid = old_max_uid;
-      kvx_sched2_prev_uid = KVX_SCHED2_HEAD_OF_SCHED_REGION;
-      kvx_sched2_insn_cycle = XNEWVEC (short, kvx_sched2_max_uid);
-      memset (kvx_sched2_insn_cycle, -1, sizeof (short) * kvx_sched2_max_uid);
-      kvx_sched2_insn_flags = XCNEWVEC (unsigned char, kvx_sched2_max_uid);
-      kvx_sched2_verbose = verbose;
-    }
+    kvx_sched2_ctor (old_max_uid);
 }
 
 static void
@@ -4555,37 +4613,37 @@ kvx_sched_dfa_new_cycle (FILE *dump ATTRIBUTE_UNUSED,
 {
   // Use this hook to record the cycle and flags of INSN in SCHED2.
   int uid = INSN_UID (insn);
-  if ((unsigned) uid < (unsigned) kvx_sched2_max_uid
+  if ((unsigned) uid < (unsigned) kvx_sched2.max_uid
       && GET_CODE (PATTERN (insn)) != USE
       && GET_CODE (PATTERN (insn)) != CLOBBER)
     {
-      int prev_uid = kvx_sched2_prev_uid;
+      int prev_uid = kvx_sched2.prev_uid;
       if (prev_uid < 0)
 	{
 	  // Head of the scheduling region, start a new bundle.
-	  kvx_sched2_insn_flags[uid]
+	  kvx_sched2.insn_flags[uid]
 	    = KVX_SCHED2_INSN_HEAD | KVX_SCHED2_INSN_START;
 	}
-      else if (clock > kvx_sched2_insn_cycle[prev_uid])
+      else if (clock > kvx_sched2.insn_cycle[prev_uid])
 	{
 	  // Advanced clock, stop previous bundle and start a new one.
-	  kvx_sched2_insn_flags[prev_uid] |= KVX_SCHED2_INSN_STOP;
-	  kvx_sched2_insn_flags[uid] = KVX_SCHED2_INSN_START;
+	  kvx_sched2.insn_flags[prev_uid] |= KVX_SCHED2_INSN_STOP;
+	  kvx_sched2.insn_flags[uid] = KVX_SCHED2_INSN_START;
 	}
-      else if (kvx_sched2_insn_flags[prev_uid] & KVX_SCHED2_INSN_STOP)
+      else if (kvx_sched2.insn_flags[prev_uid] & KVX_SCHED2_INSN_STOP)
 	{
 	  // Previous bundle was stopped for some reason, start a new one.
-	  kvx_sched2_insn_flags[uid] |= KVX_SCHED2_INSN_START;
+	  kvx_sched2.insn_flags[uid] |= KVX_SCHED2_INSN_START;
 	}
 
       if (JUMP_P (insn) || CALL_P (insn))
 	{
 	  // JUMP or CALL, stop the current bundle regardless of clock.
-	  kvx_sched2_insn_flags[uid] |= KVX_SCHED2_INSN_STOP;
+	  kvx_sched2.insn_flags[uid] |= KVX_SCHED2_INSN_STOP;
 	}
 
-      kvx_sched2_insn_cycle[uid] = clock;
-      kvx_sched2_prev_uid = uid;
+      kvx_sched2.insn_cycle[uid] = clock;
+      kvx_sched2.prev_uid = uid;
     }
   return 0;
 }
@@ -4670,7 +4728,7 @@ kvx_sched_sms_res_mii (struct ddg *g)
 	    }
 	  else if (type >= TYPE_BCU && type < TYPE_TCA)
 	    bcu_count++;
-	  else if (type == TYPE_TCA)
+	  else if (type >= TYPE_TCA && type <= TYPE_TCA_FLOAT)
 	    tca_count++;
 	  else
 	    gcc_unreachable ();
@@ -5356,15 +5414,15 @@ kvx_fix_debug_for_bundles (void)
 	      && GET_CODE (PATTERN (insn)) != CLOBBER)
 	    {
 	      int uid = INSN_UID (insn);
-	      if ((unsigned) uid >= (unsigned) kvx_sched2_max_uid
-		  || kvx_sched2_insn_cycle[uid] < 0)
+	      if ((unsigned) uid >= (unsigned) kvx_sched2.max_uid
+		  || kvx_sched2.insn_cycle[uid] < 0)
 		{
 		  if (!start_insn)
 		    start_insn = stop_insn = insn;
 		}
 	      else
 		{
-		  unsigned flags = kvx_sched2_insn_flags[uid];
+		  unsigned flags = kvx_sched2.insn_flags[uid];
 		  if (flags & KVX_SCHED2_INSN_HEAD)
 		    cur_cfa_reg = REGNO (stack_pointer_rtx);
 		  if (flags & KVX_SCHED2_INSN_START)
@@ -5387,36 +5445,42 @@ kvx_fix_debug_for_bundles (void)
     gcc_assert (!start_insn && !stop_insn);
 }
 
-/* Adjust for the stall effects of AUXR RAW on issue cycle. */
+/* Fix the INSN issue cycle accounting for the KV3_1 stall effects of AUXR RAW.
+   We maintain a scoreboard to compute the cumulative delay implied by stalls
+   based on an array of last write dates.  */
 static void
-kvx_sched2_insn_issue (rtx_insn *insn, rtx *opvec, int noperands)
+kvx_sched2_fix_insn_issue (rtx_insn *insn, rtx *opvec, int noperands)
 {
   int uid = INSN_UID (insn);
+  gcc_assert ((unsigned) uid < (unsigned) kvx_sched2.max_uid);
 
+  // Scoreboard structure, initialized at each SCHE2 region.
   static struct
   {
     int delay;
-    short write[KV3_MDS_REGISTERS];
+    short write[KV3_GPR_LAST_REGNO + 1];
   } scoreboard;
-  if (kvx_sched2_insn_flags[uid] & KVX_SCHED2_INSN_HEAD)
+  if (kvx_sched2.insn_flags[uid] & KVX_SCHED2_INSN_HEAD)
     {
       scoreboard.delay = 0;
       memset (scoreboard.write, -1, sizeof (scoreboard.write));
+      gcc_assert (KV3_GPR_FIRST_REGNO == 0);
     }
 
   if (NONDEBUG_INSN_P (insn))
     {
       int stall = 0;
-      int cycle = kvx_sched2_insn_cycle[uid] + scoreboard.delay;
-      // Keep TYPE tests in sync with the order of the types.md file.
+      int cycle = kvx_sched2.insn_cycle[uid] + scoreboard.delay;
       enum attr_type type = get_attr_type (insn);
-      if (type >= TYPE_MAU_AUXR && type <= TYPE_MAU_AUXR_FPU && noperands > 3
-	  && REG_P (opvec[3]))
+      // Keep TYPE tests in sync with the order of the types.md file.
+      if (type >= TYPE_MAU_AUXR && type <= TYPE_MAU_AUXR_FP16
+	  && noperands > 3 && REG_P (opvec[3]))
 	{
 	  int regno = REGNO (opvec[3]);
 	  int regno_quad = (regno & -4);
 	  machine_mode mode = GET_MODE (opvec[3]);
 	  unsigned mode_size = GET_MODE_SIZE (mode);
+	  gcc_assert (regno <= KV3_GPR_LAST_REGNO);
 	  if (mode_size <= UNITS_PER_WORD)
 	    {
 	      for (int i = 0; i < 4; i += 2)
@@ -5453,22 +5517,23 @@ kvx_sched2_insn_issue (rtx_insn *insn, rtx *opvec, int noperands)
 	}
 
       if (stall)
-	kvx_sched2_insn_flags[uid] |= KVX_SCHED2_INSN_STALL;
-      kvx_sched2_insn_cycle[uid] = cycle + stall;
+	kvx_sched2.insn_flags[uid] |= KVX_SCHED2_INSN_STALL;
+      kvx_sched2.insn_cycle[uid] = cycle + stall;
       scoreboard.delay += stall;
     }
 }
 
+/* Implements TARGET_ASM_FINAL_POSTSCAN_INSN.  */
 static void
 kvx_asm_final_postscan_insn (FILE *file, rtx_insn *insn,
 			     rtx *opvec ATTRIBUTE_UNUSED,
 			     int noperands ATTRIBUTE_UNUSED)
 {
-  if (kvx_sched2_insn_cycle)
+  if (kvx_sched2.insn_cycle)
     {
       int uid = INSN_UID (insn);
-      if ((unsigned) uid >= (unsigned) kvx_sched2_max_uid
-	  || kvx_sched2_insn_cycle[uid] < 0)
+      if ((unsigned) uid >= (unsigned) kvx_sched2.max_uid
+	  || kvx_sched2.insn_cycle[uid] < 0)
 	{
 	  if (TARGET_SCHED2_DATES)
 	    fprintf (file, "\t;;\t# (unscheduled)\n");
@@ -5476,8 +5541,9 @@ kvx_asm_final_postscan_insn (FILE *file, rtx_insn *insn,
 	    fprintf (file, "\t;;\n");
 	  return;
 	}
-      kvx_sched2_insn_issue (insn, opvec, noperands);
-      if (kvx_sched2_insn_flags[uid] & KVX_SCHED2_INSN_STOP)
+      if (KV3_1)
+	kvx_sched2_fix_insn_issue (insn, opvec, noperands);
+      if (kvx_sched2.insn_flags[uid] & KVX_SCHED2_INSN_STOP)
 	{
 	  if (TARGET_SCHED2_DATES)
 	    {
@@ -5485,9 +5551,9 @@ kvx_asm_final_postscan_insn (FILE *file, rtx_insn *insn,
 		  && recog_memoized (insn) != CODE_FOR_doloop_end_di)
 		{
 		  const char *stalled = "";
-		  if (kvx_sched2_insn_flags[uid] & KVX_SCHED2_INSN_STALL)
+		  if (kvx_sched2.insn_flags[uid] & KVX_SCHED2_INSN_STALL)
 		    stalled = "(stalled)";
-		  int cycle = kvx_sched2_insn_cycle[uid];
+		  int cycle = kvx_sched2.insn_cycle[uid];
 		  fprintf (file, "\t;;\t# (end cycle %d)%s\n", cycle, stalled);
 		}
 	    }
@@ -5496,7 +5562,7 @@ kvx_asm_final_postscan_insn (FILE *file, rtx_insn *insn,
 	  return;
 	}
     }
-  if (!kvx_sched2_insn_cycle || !scheduling)
+  if (!kvx_sched2.insn_cycle || !kvx_scheduling)
     {
       fprintf (file, "\t;;\n");
       return;
@@ -5616,7 +5682,9 @@ kvx_rtx_costs (rtx x, machine_mode mode, int outer_code,
 {
   int latency = 1;
   bool float_mode_p = FLOAT_MODE_P (mode);
-  int nwords = (GET_MODE_SIZE (mode) + UNITS_PER_WORD - 1) / UNITS_PER_WORD;
+  unsigned mode_size = GET_MODE_SIZE (mode);
+  int lsucount = mode_size ? (mode_size + 31) / 32 : 1;
+  int nwords = (mode_size + UNITS_PER_WORD - 1) / UNITS_PER_WORD;
   nwords = nwords >= 1 ? nwords : 1;
 
   if (DUMP_COSTS)
@@ -5670,7 +5738,7 @@ kvx_rtx_costs (rtx x, machine_mode mode, int outer_code,
 
     case MEM:
       latency = opno ? 3 : 1;
-      *total = kvx_type_lsu_cost (1, (latency - 1), speed);
+      *total = kvx_type_lsu_cost (lsucount, (latency - 1), speed);
       goto end_recurse;
 
     // RTX_COMPARE:
@@ -5873,10 +5941,7 @@ kvx_rtx_costs (rtx x, machine_mode mode, int outer_code,
 	case UNSPEC_SBMMT8:
 	case UNSPEC_SBMM8S:
 	case UNSPEC_SBMM8XY:
-	case UNSPEC_SRS32:
-	case UNSPEC_SRS64:
-	case UNSPEC_SRS128:
-	case UNSPEC_SRS256:
+	case UNSPEC_SRS:
 	  *total = kvx_type_tiny_cost (nwords, 0, speed);
 	  goto end_recurse;
 	default:
@@ -6018,14 +6083,16 @@ kvx_insn_cost (rtx_insn *insn, bool speed)
     {
       int penalty = (2 - 1);
       if (type == TYPE_MAU_FPU || type == TYPE_MAU_AUXR_FPU)
-	penalty = (4 - 1); // FIXME (3 - 1) in case of FP16.
+	penalty = (4 - 1);
+      else if (type == TYPE_MAU_FP16 || type == TYPE_MAU_AUXR_FP16)
+	penalty = (3 - 1);
       cost += kvx_type_mau_cost (1, penalty, speed);
     }
   else if (type >= TYPE_BCU && type < TYPE_TCA)
     {
       cost += kvx_type_bcu_cost (1, 0, speed);
     }
-  else if (type == TYPE_TCA)
+  else if (type >= TYPE_TCA && type <= TYPE_TCA_FLOAT)
     {
       cost += kvx_type_tca_cost (1, 3, speed);
     }
@@ -6045,13 +6112,16 @@ kvx_insn_cost (rtx_insn *insn, bool speed)
   return cost;
 }
 
-/* Used by register allocation.  */
+/* Implements TARGET_REGISTER_MOVE_COST.  (Used by register allocation.)  */
 static int
 kvx_register_move_cost (machine_mode mode, reg_class_t from ATTRIBUTE_UNUSED,
 			reg_class_t to ATTRIBUTE_UNUSED)
 {
   int nwords = (GET_MODE_SIZE (mode) + UNITS_PER_WORD - 1) / UNITS_PER_WORD;
+  if (kvx_extension_mode_p (mode))
+    nwords = GET_MODE_NUNITS (mode);
   nwords = nwords >= 1 ? nwords : 1;
+
   // Set word MOVE cost to 2, add 1 per extra word.
   int cost = 1 + nwords;
 
@@ -6067,14 +6137,16 @@ kvx_register_move_cost (machine_mode mode, reg_class_t from ATTRIBUTE_UNUSED,
   return cost;
 }
 
-/* Used by register allocation.  */
+/* Implements TARGET_MEMORY_MOVE_COST. (Used by register allocation.)  */
 static int
 kvx_memory_move_cost (machine_mode mode, reg_class_t rclass ATTRIBUTE_UNUSED,
 		      bool in)
 {
   // Assume in-cache load latency is 3 cycles.
   int penalty = in ? (3 - 1) : 0;
-  int cost = kvx_type_lsu_cost (1, penalty, true);
+  unsigned mode_size = GET_MODE_SIZE (mode);
+  int lsucount = mode_size ? (mode_size + 31) / 32 : 1;
+  int cost = kvx_type_lsu_cost (lsucount, penalty, true);
 
   if (DUMP_COSTS)
     {
@@ -6086,6 +6158,17 @@ kvx_memory_move_cost (machine_mode mode, reg_class_t rclass ATTRIBUTE_UNUSED,
 
   gcc_assert (cost > 0);
   return cost;
+}
+
+/* Implements TARGET_COMPUTE_PRESSURE_CLASSES.  */
+static int
+kvx_compute_pressure_classes (reg_class *classes)
+{
+  // Register pressure matters in GPR_REGS and XCR_REGS.
+  int n = 0;
+  classes[n++] = GPR_REGS;
+  classes[n++] = XCR_REGS;
+  return n;
 }
 
 static bool
@@ -6248,19 +6331,13 @@ kvx_addr_space_convert (rtx op, tree from_type, tree to_type ATTRIBUTE_UNUSED)
 static void
 kvx_function_prologue (FILE *file ATTRIBUTE_UNUSED)
 {
-  dfa_start ();
 }
 
+/* Implements TARGET_ASM_FUNCTION_EPILOGUE.  */
 static void
 kvx_function_epilogue (FILE *file ATTRIBUTE_UNUSED)
 {
-  kvx_sched2_max_uid = 0;
-  kvx_sched2_prev_uid = KVX_SCHED2_HEAD_OF_SCHED_REGION;
-  XDELETEVEC (kvx_sched2_insn_cycle);
-  XDELETEVEC (kvx_sched2_insn_flags);
-  kvx_sched2_insn_cycle = 0;
-  kvx_sched2_insn_flags = 0;
-  dfa_finish ();
+  kvx_sched2_dtor ();
 }
 
 /* NULL if INSN insn is valid within a low-overhead loop.
@@ -6509,10 +6586,8 @@ kvx_machine_dependent_reorg (void)
       timevar_pop (TV_SCHED2);
     }
 
-  if (scheduling)
-    {
-      kvx_fix_debug_for_bundles ();
-    }
+  if (kvx_scheduling)
+    kvx_fix_debug_for_bundles ();
 
   /* This is needed. Else final pass will crash on debug_insn-s */
   if (flag_var_tracking)
@@ -7117,6 +7192,9 @@ kvx_ctrapsi4 (void)
 
 #undef TARGET_MEMORY_MOVE_COST
 #define TARGET_MEMORY_MOVE_COST kvx_memory_move_cost
+
+#undef TARGET_COMPUTE_PRESSURE_CLASSES
+#define TARGET_COMPUTE_PRESSURE_CLASSES kvx_compute_pressure_classes
 
 #undef TARGET_SCHED_ISSUE_RATE
 #define TARGET_SCHED_ISSUE_RATE kvx_sched_issue_rate
