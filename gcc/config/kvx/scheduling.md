@@ -199,7 +199,9 @@
 (define_insn_reservation "kv3_mau_auxr_x" 2 (eq_attr "type" "mau_auxr_x") "kv3_mau_auxr_x_r")
 (define_insn_reservation "kv3_mau_auxr_y" 2 (eq_attr "type" "mau_auxr_y") "kv3_mau_auxr_y_r")
 (define_insn_reservation "kv3_mau_fpu" 4 (eq_attr "type" "mau_fpu") "kv3_mau_r")
+(define_insn_reservation "kv3_mau_fp16" 3 (eq_attr "type" "mau_fp16") "kv3_mau_r")
 (define_insn_reservation "kv3_mau_auxr_fpu" 4 (eq_attr "type" "mau_auxr_fpu") "kv3_auxr_u + kv3_mau_u + kv3_issue_r")
+(define_insn_reservation "kv3_mau_auxr_fp16" 3 (eq_attr "type" "mau_auxr_fp16") "kv3_auxr_u + kv3_mau_u + kv3_issue_r")
 ;;
 (define_insn_reservation "kv3_bcu" 1 (eq_attr "type" "bcu") "kv3_bcu_r")
 (define_insn_reservation "kv3_bcu_get" 1 (eq_attr "type" "bcu_get") "kv3_bcu_tiny_tiny_mau_r")
@@ -207,16 +209,39 @@
 (define_insn_reservation "kv3_bcu_crrp_crwl_crwh" 1 (eq_attr "type" "bcu_crrp_crwl_crwh") "kv3_bcu_crrp_crwl_crwh_r")
 ;;
 (define_insn_reservation "kv3_tca" 1 (eq_attr "type" "tca") "kv3_tca_r")
+(define_insn_reservation "kv3_tca_int" 3 (eq_attr "type" "tca_int") "kv3_tca_r")
+(define_insn_reservation "kv3_tca_float" 4 (eq_attr "type" "tca_float") "kv3_tca_r")
 
 ;; The BCU reads GPRs one cycle earlier than arithmetic instructions.
-(define_bypass 2 "kv3_alu_full*,kv3_alu_lite*,kv3_alu_thin*,kv3_alu_tiny*" "kv3_bcu,kv3_bcu_get")
-(define_bypass 3 "kv3_mau,kv3_mau_x,kv3_mau_auxr" "kv3_bcu,kv3_bcu_get")
-(define_bypass 5 "kv3_mau_fpu,kv3_mau_auxr_fpu" "kv3_bcu,kv3_bcu_get")
-(define_bypass 4 "kv3_lsu_auxw_load,kv3_lsu_auxw_load_x" "kv3_bcu,kv3_bcu_get")
+(define_bypass 2 "kv3_alu_full*,kv3_alu_lite*,kv3_alu_thin*,kv3_alu_tiny*"
+                 "kv3_bcu,kv3_bcu_get,kv3_bcu_tiny_auxw_crrp,kv3_bcu_crrp_crwl_crwh")
+(define_bypass 3 "kv3_mau,kv3_mau_x,kv3_mau_auxr"
+                 "kv3_bcu,kv3_bcu_get,kv3_bcu_tiny_auxw_crrp,kv3_bcu_crrp_crwl_crwh")
+(define_bypass 5 "kv3_mau_fpu,kv3_mau_auxr_fpu"
+                 "kv3_bcu,kv3_bcu_get,kv3_bcu_tiny_auxw_crrp,kv3_bcu_crrp_crwl_crwh")
+(define_bypass 4 "kv3_mau_fp16,kv3_mau_auxr_fp16"
+                 "kv3_bcu,kv3_bcu_get,kv3_bcu_tiny_auxw_crrp,kv3_bcu_crrp_crwl_crwh")
+(define_bypass 4 "kv3_lsu_auxw_load,kv3_lsu_auxw_load_x"
+                 "kv3_bcu,kv3_bcu_get,kv3_bcu_tiny_auxw_crrp,kv3_bcu_crrp_crwl_crwh")
 ;; The stores read their input one cycle later than arithmetic instructions.
-(define_bypass 3 "kv3_mau_fpu,kv3_mau_auxr_fpu" "kv3_lsu_auxr_store,kv3_lsu_auxr_store_x,kv3_lsu_auxr_store_y")
-(define_bypass 1 "kv3_mau,kv3_mau_x,kv3_mau_auxr" "kv3_lsu_auxr_store,kv3_lsu_auxr_store_x,kv3_lsu_auxr_store_y")
-(define_bypass 2 "kv3_lsu_auxw_load,kv3_lsu_auxw_load_x" "kv3_lsu_auxr_store,kv3_lsu_auxr_store_x,kv3_lsu_auxr_store_y")
-;; The auxr port shared by MAU and LSU allows a bypass when used as accumulator in a MAC operation.
-(define_bypass 1 "kv3_mau,kv3_mau_x" "kv3_mau_auxr" "kv3_mau_lsu_double_port_bypass_p")
+(define_bypass 3 "kv3_mau_fpu,kv3_mau_auxr_fpu"
+                 "kv3_lsu_auxr_store,kv3_lsu_auxr_store_x,kv3_lsu_auxr_store_y"
+                 "kvx_stored_value_bypass_p")
+(define_bypass 2 "kv3_mau_fp16,kv3_mau_auxr_fp16"
+                 "kv3_lsu_auxr_store,kv3_lsu_auxr_store_x,kv3_lsu_auxr_store_y"
+                 "kvx_stored_value_bypass_p")
+(define_bypass 1 "kv3_mau,kv3_mau_x,kv3_mau_auxr"
+                 "kv3_lsu_auxr_store,kv3_lsu_auxr_store_x,kv3_lsu_auxr_store_y"
+                 "kvx_stored_value_bypass_p")
+(define_bypass 2 "kv3_lsu_auxw_load,kv3_lsu_auxw_load_x"
+                 "kv3_lsu_auxr_store,kv3_lsu_auxr_store_x,kv3_lsu_auxr_store_y"
+                 "kvx_stored_value_bypass_p")
+;; The auxr port shared by MAU and LSU have a bypass to the accumulator in a MAC operation.
+(define_bypass 1 "kv3_mau,kv3_mau_x"
+                 "kv3_mau_auxr"
+                 "kvx_accumulator_bypass_p")
+;; The coprocessor integer MAC operations have a bypass to the accumulator.
+(define_bypass 3 "kv3_tca_int"
+                 "kv3_tca_int"
+                 "kvx_accumulator_bypass_p")
 
