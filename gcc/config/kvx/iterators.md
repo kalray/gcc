@@ -184,35 +184,35 @@
 ])
 
 ;; Int iterator for the AVG operators of VXQI patterns.
-(define_int_iterator UNSPEC_AVG [
-  UNSPEC_AVGWP
-  UNSPEC_AVGUWP
-  UNSPEC_AVGRWP
-  UNSPEC_AVGRUWP
+(define_int_iterator UNSPEC_AVGI [
+  UNSPEC_AVG
+  UNSPEC_AVGU
+  UNSPEC_AVGR
+  UNSPEC_AVGRU
 ])
 
 ;; Int attribute for the AVG prefix of VXQI patterns.
 (define_int_attr avgpre [
-  (UNSPEC_AVGWP "avg")
-  (UNSPEC_AVGUWP "uavg")
-  (UNSPEC_AVGRWP "avg")
-  (UNSPEC_AVGRUWP "uavg")
+  (UNSPEC_AVG "avg")
+  (UNSPEC_AVGU "uavg")
+  (UNSPEC_AVGR "avg")
+  (UNSPEC_AVGRU "uavg")
 ])
 
 ;; Int attribute for the AVG postfix of VXQI patterns.
 (define_int_attr avgpost [
-  (UNSPEC_AVGWP "3_floor")
-  (UNSPEC_AVGUWP "3_floor")
-  (UNSPEC_AVGRWP "3_ceil")
-  (UNSPEC_AVGRUWP "3_ceil")
+  (UNSPEC_AVG "3_floor")
+  (UNSPEC_AVGU "3_floor")
+  (UNSPEC_AVGR "3_ceil")
+  (UNSPEC_AVGRU "3_ceil")
 ])
 
 ;; Int attribute for the AVG rounding of VXQI patterns.
 (define_int_attr avground [
-  (UNSPEC_AVGWP "false")
-  (UNSPEC_AVGUWP "false")
-  (UNSPEC_AVGRWP "true")
-  (UNSPEC_AVGRUWP "true")
+  (UNSPEC_AVG "false")
+  (UNSPEC_AVGU "false")
+  (UNSPEC_AVGR "true")
+  (UNSPEC_AVGRU "true")
 ])
 
 ;; Iterator for all integer modes (up to 64-bit)
@@ -958,20 +958,6 @@
   V8QI
   V16QI
   V32QI
-])
-
-;; UNSPEC_SELECT for the vector QI modes.
-(define_mode_attr UNSPEC_SELECT [
-  (V8QI   "UNSPEC_SELECT64")
-  (V16QI  "UNSPEC_SELECT128")
-  (V32QI  "UNSPEC_SELECT256")
-])
-
-;; UNSPEC_SRS for the vector QI modes.
-(define_mode_attr UNSPEC_SRS [
-  (V8QI   "UNSPEC_SRS64")
-  (V16QI  "UNSPEC_SRS128")
-  (V32QI  "UNSPEC_SRS256")
 ])
 
 ;; Iterator for the widening QI vector modes.

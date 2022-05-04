@@ -249,7 +249,6 @@
       return "set %0 = %1";
     case 15:
       return "pcrel %0 = %T1";
-
     default:
       gcc_unreachable ();
     }
@@ -641,7 +640,7 @@
 
 (define_insn "kvx_lbzu"
    [(set (match_operand:QI 0 "register_operand" "=r,r,r")
-         (unspec:QI [(match_operand:QI 1 "memory_operand" "a,b,m")] UNSPEC_LBZU))
+         (unspec:QI [(match_operand:QI 1 "memory_operand" "a,b,m")] UNSPEC_LOADU))
     (clobber (mem:BLK (scratch)))
    ]
    ""
@@ -652,7 +651,7 @@
 
 (define_insn "kvx_lbsu"
    [(set (match_operand:QI 0 "register_operand"           "=r, r, r")
-         (unspec:QI [(match_operand:QI 1 "memory_operand" " a, b, m")] UNSPEC_LBSU))
+         (unspec:QI [(match_operand:QI 1 "memory_operand" " a, b, m")] UNSPEC_LOADU))
     (clobber (mem:BLK (scratch)))
    ]
    ""
@@ -663,7 +662,7 @@
 
 (define_insn "kvx_lhzu"
    [(set (match_operand:HI 0 "register_operand" "=r,r,r")
-         (unspec:HI [(match_operand:HI 1 "memory_operand" "a,b,m")] UNSPEC_LHZU))
+         (unspec:HI [(match_operand:HI 1 "memory_operand" "a,b,m")] UNSPEC_LOADU))
     (clobber (mem:BLK (scratch)))
    ]
    ""
@@ -674,7 +673,7 @@
 
 (define_insn "kvx_lhsu"
    [(set (match_operand:HI 0 "register_operand" "=r,r,r")
-         (unspec:HI [(match_operand:HI 1 "memory_operand" "a,b,m")] UNSPEC_LHSU))
+         (unspec:HI [(match_operand:HI 1 "memory_operand" "a,b,m")] UNSPEC_LOADU))
     (clobber (mem:BLK (scratch)))
    ]
    ""
@@ -685,7 +684,7 @@
 
 (define_insn "kvx_lwzu"
    [(set (match_operand:SI 0 "register_operand" "=r,r,r")
-         (unspec:SI [(match_operand:SI 1 "memory_operand" "a,b,m")] UNSPEC_LWZU))
+         (unspec:SI [(match_operand:SI 1 "memory_operand" "a,b,m")] UNSPEC_LOADU))
     (clobber (mem:BLK (scratch)))
    ]
    ""
@@ -696,7 +695,7 @@
 
 (define_insn "kvx_lwsu"
    [(set (match_operand:SI 0 "register_operand" "=r,r,r")
-         (unspec:SI [(match_operand:SI 1 "memory_operand" "a,b,m")] UNSPEC_LWZU))
+         (unspec:SI [(match_operand:SI 1 "memory_operand" "a,b,m")] UNSPEC_LOADU))
     (clobber (mem:BLK (scratch)))
    ]
    ""
@@ -707,7 +706,7 @@
 
 (define_insn "kvx_ldu"
    [(set (match_operand:DI 0 "register_operand" "=r,r,r")
-         (unspec:DI [(match_operand:DI 1 "memory_operand" "a,b,m")] UNSPEC_LDU))
+         (unspec:DI [(match_operand:DI 1 "memory_operand" "a,b,m")] UNSPEC_LOADU))
     (clobber (mem:BLK (scratch)))
    ]
    ""
@@ -718,7 +717,7 @@
 
 (define_insn "kvx_lqu"
    [(set (match_operand:TI 0 "register_operand" "=r,r,r")
-         (unspec:TI [(match_operand:TI 1 "memory_operand" "a,b,m")] UNSPEC_LQU))
+         (unspec:TI [(match_operand:TI 1 "memory_operand" "a,b,m")] UNSPEC_LOADU))
     (clobber (mem:BLK (scratch)))
    ]
    ""
