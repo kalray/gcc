@@ -1,42 +1,20 @@
 
 ;; KVX_UNDEF
 
-(define_expand "kvx_xundef<bitsize>"
-  [(match_operand:X256 0 "register_operand" "")]
-  ""
-  {
-    emit_clobber (operands[0]);
-    DONE;
-  }
-)
-
-(define_expand "kvx_xundef<bitsize>"
-  [(match_operand:XBUFF 0 "register_operand" "")]
-  ""
-  {
-    emit_clobber (operands[0]);
-    DONE;
-  }
-)
-
-(define_insn_and_split "*kvx_xundef256"
+(define_insn "kvx_xundef256"
   [(set (match_operand:X256 0 "register_operand" "=x")
         (match_operand:X256 1 "const_zero_operand" ""))]
   ""
-  "#"
-  "reload_completed"
-  [(const_int 0)]
-  ""
+  "xcopyo %0 = %0"
+  [(set_attr "type" "bcu_crrp_crwl_crwh")]
 )
 
-(define_insn_and_split "*kvx_xundef<bitsize>"
+(define_insn "kvx_xundef<bitsize>"
   [(set (match_operand:XBUFF 0 "register_operand" "=x")
         (match_operand:XBUFF 1 "const_zero_operand" ""))]
   ""
-  "#"
-  "reload_completed"
-  [(const_int 0)]
-  ""
+  "xcopyo %x0 = %x0"
+  [(set_attr "type" "bcu_crrp_crwl_crwh")]
 )
 
 
@@ -572,7 +550,7 @@
 (define_insn "kvx_xload256"
   [(set (match_operand:X256 0 "register_operand" "=x,x,x")
         (unspec:X256 [(match_operand:X256 1 "memory_operand" "a,b,m")
-                        (match_operand 2 "" "")] UNSPEC_XLOAD256))]
+                        (match_operand 2 "" "")] UNSPEC_XLOAD))]
   ""
   "xlo%2%X1 %0 = %1"
   [(set_attr_alternative "type"
@@ -585,38 +563,38 @@
 (define_insn_and_split "kvx_xload512"
   [(set (match_operand:X512 0 "register_operand" "=x,x,x")
         (unspec:X512 [(match_operand:X512 1 "memory_operand" "a,b,m")
-                        (match_operand 2 "" "")] UNSPEC_XLOAD512))]
+                        (match_operand 2 "" "")] UNSPEC_XLOAD))]
   ""
   "#"
   "reload_completed"
   [(set (subreg:X256 (match_dup 0) 0)
         (unspec:X256 [(subreg:X256 (match_dup 1) 0)
-                        (match_dup 2)] UNSPEC_XLOAD256))
+                        (match_dup 2)] UNSPEC_XLOAD))
    (set (subreg:X256 (match_dup 0) 32)
         (unspec:X256 [(subreg:X256 (match_dup 1) 32)
-                        (match_dup 2)] UNSPEC_XLOAD256))]
+                        (match_dup 2)] UNSPEC_XLOAD))]
   ""
 )
 
 (define_insn_and_split "kvx_xload1024"
   [(set (match_operand:X1024 0 "register_operand" "=x,x,x")
         (unspec:X1024 [(match_operand:X1024 1 "memory_operand" "a,b,m")
-                         (match_operand 2 "" "")] UNSPEC_XLOAD1024))]
+                         (match_operand 2 "" "")] UNSPEC_XLOAD))]
   ""
   "#"
   "reload_completed"
   [(set (subreg:X256 (match_dup 0) 0)
         (unspec:X256 [(subreg:X256 (match_dup 1) 0)
-                        (match_dup 2)] UNSPEC_XLOAD256))
+                        (match_dup 2)] UNSPEC_XLOAD))
    (set (subreg:X256 (match_dup 0) 32)
         (unspec:X256 [(subreg:X256 (match_dup 1) 32)
-                        (match_dup 2)] UNSPEC_XLOAD256))
+                        (match_dup 2)] UNSPEC_XLOAD))
    (set (subreg:X256 (match_dup 0) 64)
         (unspec:X256 [(subreg:X256 (match_dup 1) 64)
-                        (match_dup 2)] UNSPEC_XLOAD256))
+                        (match_dup 2)] UNSPEC_XLOAD))
    (set (subreg:X256 (match_dup 0) 96)
         (unspec:X256 [(subreg:X256 (match_dup 1) 96)
-                        (match_dup 2)] UNSPEC_XLOAD256))]
+                        (match_dup 2)] UNSPEC_XLOAD))]
   ""
 )
 
@@ -627,7 +605,7 @@
   [(set (match_operand:X512 0 "register_operand" "=x,x,x")
         (unspec:X512 [(match_operand:X512 1 "register_operand" "0,0,0")
                         (match_operand:X256 2 "memory_operand" "a,b,m")
-                        (match_operand 3 "" "")] UNSPEC_XLOAD256))]
+                        (match_operand 3 "" "")] UNSPEC_XLOADS))]
   ""
   "xlo%3%X2 %0 = %2"
   [(set_attr_alternative "type"
@@ -642,7 +620,7 @@
         (unspec:X512 [(match_operand:X512 1 "register_operand" "0,0,0")
                         (match_operand:X256 2 "memfoiled_operand" "c,d,e")
                         (match_operand:DI 3 "register_operand" "r,r,r")
-                        (match_operand 4 "" "")] UNSPEC_XLOAD256))]
+                        (match_operand 4 "" "")] UNSPEC_XLOADS))]
   ""
   "xlo%4%X2 %3? %0 = %O2"
   [(set_attr_alternative "type"
@@ -659,7 +637,7 @@
   [(set (match_operand:X1024 0 "register_operand" "=x,x,x")
         (unspec:X1024 [(match_operand:X1024 1 "register_operand" "0,0,0")
                          (match_operand:X256 2 "memory_operand" "a,b,m")
-                         (match_operand 3 "" "")] UNSPEC_XLOAD256))]
+                         (match_operand 3 "" "")] UNSPEC_XLOADS))]
   ""
   "xlo%3%X2 %0 = %2"
   [(set_attr_alternative "type"
@@ -674,7 +652,7 @@
         (unspec:X1024 [(match_operand:X1024 1 "register_operand" "0,0,0")
                          (match_operand:X256 2 "memfoiled_operand" "c,d,e")
                          (match_operand:DI 3 "register_operand" "r,r,r")
-                         (match_operand 4 "" "")] UNSPEC_XLOAD256))]
+                         (match_operand 4 "" "")] UNSPEC_XLOADS))]
   ""
   "xlo%4%X2 %3? %0 = %O2"
   [(set_attr_alternative "type"
@@ -806,9 +784,9 @@
 (define_insn "kvx_xloadc256"
   [(set (match_operand:X256 0 "register_operand" "=x,x,x")
         (unspec:X256 [(match_operand:X256 1 "register_operand" "0,0,0")
-                        (match_operand:X256 2 "memfoiled_operand" "c,d,e")
-                        (match_operand:DI 3 "register_operand" "r,r,r")
-                        (match_operand 4 "" "")] UNSPEC_XLOAD256))]
+                      (match_operand:X256 2 "memfoiled_operand" "c,d,e")
+                      (match_operand:DI 3 "register_operand" "r,r,r")
+                      (match_operand 4 "" "")] UNSPEC_XLOADC))]
   ""
   "xlo%4%X2 %3? %0 = %O2"
   [(set_attr_alternative "type"
@@ -879,7 +857,7 @@
 
 (define_insn "kvx_xstore256"
   [(set (match_operand:X256 1 "memory_operand"  "=a,b,m")
-        (unspec:X256 [(match_operand:X256 0 "register_operand" "x,x,x")] UNSPEC_XSTORE256))]
+        (unspec:X256 [(match_operand:X256 0 "register_operand" "x,x,x")] UNSPEC_XSTORE))]
   ""
   "xso%X1 %1 = %0"
   [(set_attr "type" "lsu_crrp_store,lsu_crrp_store_x,lsu_crrp_store_y")
@@ -888,31 +866,31 @@
 
 (define_insn_and_split "kvx_xstore512"
   [(set (match_operand:X512 1 "memory_operand"  "=a,b,m")
-        (unspec:X512 [(match_operand:X512 0 "register_operand" "x,x,x")] UNSPEC_XSTORE512))]
+        (unspec:X512 [(match_operand:X512 0 "register_operand" "x,x,x")] UNSPEC_XSTORE))]
   ""
   "#"
   "reload_completed"
   [(set (subreg:X256 (match_dup 1) 0)
-        (unspec:X256 [(subreg:X256 (match_dup 0) 0)] UNSPEC_XSTORE256))
+        (unspec:X256 [(subreg:X256 (match_dup 0) 0)] UNSPEC_XSTORE))
    (set (subreg:X256 (match_dup 1) 32)
-        (unspec:X256 [(subreg:X256 (match_dup 0) 32)] UNSPEC_XSTORE256))]
+        (unspec:X256 [(subreg:X256 (match_dup 0) 32)] UNSPEC_XSTORE))]
   ""
 )
 
 (define_insn_and_split "kvx_xstore1024"
   [(set (match_operand:X1024 1 "memory_operand"  "=a,b,m")
-        (unspec:X1024 [(match_operand:X1024 0 "register_operand" "x,x,x")] UNSPEC_XSTORE1024))]
+        (unspec:X1024 [(match_operand:X1024 0 "register_operand" "x,x,x")] UNSPEC_XSTORE))]
   ""
   "#"
   "reload_completed"
   [(set (subreg:X256 (match_dup 1) 0)
-        (unspec:X256 [(subreg:X256 (match_dup 0) 0)] UNSPEC_XSTORE256))
+        (unspec:X256 [(subreg:X256 (match_dup 0) 0)] UNSPEC_XSTORE))
    (set (subreg:X256 (match_dup 1) 32)
-        (unspec:X256 [(subreg:X256 (match_dup 0) 32)] UNSPEC_XSTORE256))
+        (unspec:X256 [(subreg:X256 (match_dup 0) 32)] UNSPEC_XSTORE))
    (set (subreg:X256 (match_dup 1) 64)
-        (unspec:X256 [(subreg:X256 (match_dup 0) 64)] UNSPEC_XSTORE256))
+        (unspec:X256 [(subreg:X256 (match_dup 0) 64)] UNSPEC_XSTORE))
    (set (subreg:X256 (match_dup 1) 96)
-        (unspec:X256 [(subreg:X256 (match_dup 0) 96)] UNSPEC_XSTORE256))]
+        (unspec:X256 [(subreg:X256 (match_dup 0) 96)] UNSPEC_XSTORE))]
   ""
 )
 
@@ -923,7 +901,7 @@
   [(set (match_operand:X256 1 "memfoiled_operand"  "=c,d,e")
         (unspec:X256 [(match_operand:X256 0 "register_operand" "x,x,x")
                         (match_operand:DI 2 "register_operand" "r,r,r")
-                        (match_operand 3 "" "")] UNSPEC_XSTORE256))
+                        (match_operand 3 "" "")] UNSPEC_XSTOREC))
    (clobber (match_dup 1))]
   ""
   "xso%3%X1 %2? %O1 = %0"
@@ -989,9 +967,9 @@
 (define_insn "kvx_xpreload<XBUFF:bitsize>"
   [(set (match_operand:XBUFF 0 "register_operand" "=x,x,x")
         (unspec:XBUFF [(match_operand:XBUFF 1 "register_operand" "0,0,0")
-                         (match_operand:X256 2 "memfoiled_operand" "c,d,e")
-                         (match_operand:DI 3 "register_operand" "r,r,r")
-                         (match_operand 4 "" "")] UNSPEC_XPRELOAD))]
+                       (match_operand:X256 2 "memfoiled_operand" "c,d,e")
+                       (match_operand:DI 3 "register_operand" "r,r,r")
+                       (match_operand 4 "" "")] UNSPEC_XPRELOAD))]
   "KV3_2"
   "xlo%4%X2 %b0, %3 = %O2"
   [(set_attr "type" "lsu,lsu_x,lsu_y")
@@ -1004,7 +982,7 @@
 (define_insn "kvx_xalign<XBUFF:bitsize>o"
   [(set (match_operand:X256 0 "register_operand" "=x")
         (unspec:X256 [(match_operand:XBUFF 1 "register_operand" "x")
-                        (match_operand:DI 2 "register_operand" "r")] UNSPEC_XALIGN256))]
+                      (match_operand:DI 2 "register_operand" "r")] UNSPEC_XALIGN256))]
   "KV3_2"
   "xaligno %0 = %b1, %2"
   [(set_attr "type" "bcu_crrp_crwl_crwh")]
@@ -1081,7 +1059,7 @@
                       (match_operand:X512 3 "register_operand" "x")] UNSPEC_XMMA484BW))]
   "KV3_1"
   "xmma484bw %0 = %3, %1, %2"
-  [(set_attr "type" "tca")]
+  [(set_attr "type" "tca_int")]
 )
 
 (define_insn "kvx_xmmau484bw_1"
@@ -1091,7 +1069,7 @@
                       (match_operand:X512 3 "register_operand" "x")] UNSPEC_XMMAU484BW))]
   "KV3_1"
   "xmma484ubw %0 = %3, %1, %2"
-  [(set_attr "type" "tca")]
+  [(set_attr "type" "tca_int")]
 )
 
 (define_insn "kvx_xmmasu484bw_1"
@@ -1101,7 +1079,7 @@
                       (match_operand:X512 3 "register_operand" "x")] UNSPEC_XMMASU484BW))]
   "KV3_1"
   "xmma484subw %0 = %3, %1, %2"
-  [(set_attr "type" "tca")]
+  [(set_attr "type" "tca_int")]
 )
 
 (define_insn "kvx_xmmaus484bw_1"
@@ -1111,7 +1089,7 @@
                       (match_operand:X512 3 "register_operand" "x")] UNSPEC_XMMAUS484BW))]
   "KV3_1"
   "xmma484usbw %0 = %3, %1, %2"
-  [(set_attr "type" "tca")]
+  [(set_attr "type" "tca_int")]
 )
 
 (define_insn "kvx_xmma484bw_2"
@@ -1121,7 +1099,7 @@
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMMA484BW))]
   "KV3_2"
   "xmma484bw %0 = %1, %2"
-  [(set_attr "type" "tca")]
+  [(set_attr "type" "tca_int")]
 )
 
 (define_insn "kvx_xmmau484bw_2"
@@ -1131,7 +1109,7 @@
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMMAU484BW))]
   "KV3_2"
   "xmmau484bw %0 = %1, %2"
-  [(set_attr "type" "tca")]
+  [(set_attr "type" "tca_int")]
 )
 
 (define_insn "kvx_xmmasu484bw_2"
@@ -1141,7 +1119,7 @@
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMMASU484BW))]
   "KV3_2"
   "xmmasu484bw %0 = %1, %2"
-  [(set_attr "type" "tca")]
+  [(set_attr "type" "tca_int")]
 )
 
 (define_insn "kvx_xmmaus484bw_2"
@@ -1151,7 +1129,7 @@
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMMAUS484BW))]
   "KV3_2"
   "xmmaus484bw %0 = %1, %2"
-  [(set_attr "type" "tca")]
+  [(set_attr "type" "tca_int")]
 )
 
 
@@ -1187,7 +1165,7 @@
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMMA4164BW))]
   "KV3_2"
   "xmma4164bw %0 = %1, %2"
-  [(set_attr "type" "tca")]
+  [(set_attr "type" "tca_int")]
 )
 
 (define_insn "kvx_xmmau4164bw_2"
@@ -1197,7 +1175,7 @@
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMMAU4164BW))]
   "KV3_2"
   "xmmau4164bw %0 = %1, %2"
-  [(set_attr "type" "tca")]
+  [(set_attr "type" "tca_int")]
 )
 
 (define_insn "kvx_xmmasu4164bw_2"
@@ -1207,7 +1185,7 @@
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMMASU4164BW))]
   "KV3_2"
   "xmmasu4164bw %0 = %1, %2"
-  [(set_attr "type" "tca")]
+  [(set_attr "type" "tca_int")]
 )
 
 (define_insn "kvx_xmmaus4164bw_2"
@@ -1217,7 +1195,7 @@
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMMAUS4164BW))]
   "KV3_2"
   "xmmaus4164bw %0 = %1, %2"
-  [(set_attr "type" "tca")]
+  [(set_attr "type" "tca_int")]
 )
 
 
@@ -1251,7 +1229,7 @@
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMADD44BW0))]
   "KV3_2"
   "xmadd44bw0 %0 = %1, %2"
-  [(set_attr "type" "tca")]
+  [(set_attr "type" "tca_int")]
 )
 
 (define_insn "kvx_xmaddu44bw0_2"
@@ -1261,7 +1239,7 @@
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMADDU44BW0))]
   "KV3_2"
   "xmaddu44bw0 %0 = %1, %2"
-  [(set_attr "type" "tca")]
+  [(set_attr "type" "tca_int")]
 )
 
 (define_insn "kvx_xmaddsu44bw0_2"
@@ -1271,7 +1249,7 @@
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMADDSU44BW0))]
   "KV3_2"
   "xmaddsu44bw0 %0 = %1, %2"
-  [(set_attr "type" "tca")]
+  [(set_attr "type" "tca_int")]
 )
 
 (define_expand "kvx_xmadd44bw1"
@@ -1302,7 +1280,7 @@
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMADD44BW1))]
   "KV3_2"
   "xmadd44bw1 %0 = %1, %2"
-  [(set_attr "type" "tca")]
+  [(set_attr "type" "tca_int")]
 )
 
 (define_insn "kvx_xmaddu44bw1_2"
@@ -1312,7 +1290,7 @@
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMADDU44BW1))]
   "KV3_2"
   "xmaddu44bw1 %0 = %1, %2"
-  [(set_attr "type" "tca")]
+  [(set_attr "type" "tca_int")]
 )
 
 (define_insn "kvx_xmaddsu44bw1_2"
@@ -1322,7 +1300,7 @@
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMADDSU44BW1))]
   "KV3_2"
   "xmaddsu44bw1 %0 = %1, %2"
-  [(set_attr "type" "tca")]
+  [(set_attr "type" "tca_int")]
 )
 
 
@@ -1336,7 +1314,7 @@
                       (match_operand 4 "" "")] UNSPEC_XMADDIFWO))]
   "KV3_2"
   "xmaddifwo%4 %0 = %1, %2"
-  [(set_attr "type" "tca")]
+  [(set_attr "type" "tca_int")]
 )
 
 (define_insn "kvx_xmsbfifwo"
@@ -1347,7 +1325,7 @@
                       (match_operand 4 "" "")] UNSPEC_XMSBFIFWO))]
   "KV3_2"
   "xmsbfifwo%4 %0 = %1, %2"
-  [(set_attr "type" "tca")]
+  [(set_attr "type" "tca_int")]
 )
 
 (define_insn "kvx_xffma44hw"
@@ -1358,7 +1336,7 @@
                       (match_operand 4 "" "")] UNSPEC_XFFMA44HW))]
   "KV3_2"
   "xffma44hw%4 %0 = %1, %2"
-  [(set_attr "type" "tca")]
+  [(set_attr "type" "tca_float")]
 )
 
 
@@ -1372,7 +1350,7 @@
                       (match_operand 4 "" "")] UNSPEC_XFMMA444HW))]
   "KV3_2"
   "xfmma444hw%4 %0 = %1, %2"
-  [(set_attr "type" "tca")]
+  [(set_attr "type" "tca_float")]
 )
 
 (define_insn "kvx_xfmma484hw"
@@ -1383,7 +1361,7 @@
                       (match_operand 4 "" "")] UNSPEC_XFMMA484HW))]
   "KV3_2"
   "xfmma484hw%4 %0 = %1, %2"
-  [(set_attr "type" "tca")]
+  [(set_attr "type" "tca_float")]
 )
 
 
@@ -1395,16 +1373,17 @@
                       (match_operand 2 "" "")] UNSPEC_XFNARROW44WH))]
   "KV3_2"
   "xfnarrow44wh%2 %0 = %1"
-  [(set_attr "type" "tca")]
+  [(set_attr "type" "tca_float")]
 )
 
 (define_insn "kvx_xclampwo"
   [(set (match_operand:X256 0 "register_operand" "=x")
         (unspec:X256 [(match_operand:X256 1 "register_operand" "x")
-                      (match_operand:X256 2 "register_operand" "x")] UNSPEC_XCLAMPWO))]
+                      (match_operand:X256 2 "register_operand" "x")
+                      (match_operand:X256 3 "register_operand" "0")] UNSPEC_XCLAMPWO))]
   "KV3_2"
   "xclampwo %0 = %1, %2"
-  [(set_attr "type" "tca")]
+  [(set_attr "type" "tca_int")]
 )
 
 
@@ -1415,7 +1394,7 @@
         (unspec:X256 [(match_operand:X1024 1 "register_operand" "x")] UNSPEC_XTRUNC48WB))]
   "KV3_2"
   "xtrunc48wb %0 = %1"
-  [(set_attr "type" "tca")]
+  [(set_attr "type" "tca_int")]
 )
 
 (define_insn "kvx_xsx48bw"
@@ -1423,7 +1402,7 @@
         (unspec:X1024 [(match_operand:X256 1 "register_operand" "x")] UNSPEC_XSX48BW))]
   "KV3_2"
   "xsx48bw %0 = %1"
-  [(set_attr "type" "tca")]
+  [(set_attr "type" "tca_int")]
 )
 
 (define_insn "kvx_xzx48bw"
@@ -1431,7 +1410,7 @@
         (unspec:X1024 [(match_operand:X256 1 "register_operand" "x")] UNSPEC_XZX48BW))]
   "KV3_2"
   "xzx48bw %0 = %1"
-  [(set_attr "type" "tca")]
+  [(set_attr "type" "tca_int")]
 )
 
 
@@ -1469,6 +1448,6 @@
         (unspec:X1024 [(match_operand:X1024 1 "register_operand" "x")] UNSPEC_XMT44D))]
   ""
   "xmt44d %0 = %1"
-  [(set_attr "type" "tca")]
+  [(set_attr "type" "tca_int")]
 )
 

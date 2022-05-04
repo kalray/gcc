@@ -781,7 +781,7 @@
 (define_expand "<avgpre><mode><avgpost>"
   [(set (match_operand:VXQI 0 "register_operand" "")
         (unspec:VXQI [(match_operand:VXQI 1 "register_operand" "")
-                      (match_operand:VXQI 2 "register_operand" "")] UNSPEC_AVG))]
+                      (match_operand:VXQI 2 "register_operand" "")] UNSPEC_AVGI))]
   ""
   {
     unsigned mode_size = GET_MODE_SIZE (<MODE>mode);
@@ -1399,7 +1399,7 @@
 (define_insn "sshr<mode>3"
   [(set (match_operand:S64I 0 "register_operand" "=r,r")
         (unspec:S64I [(match_operand:S64I 1 "register_operand" "r,r")
-                      (match_operand:SI 2 "sat_shift_operand" "r,U06")] UNSPEC_SRS64))]
+                      (match_operand:SI 2 "sat_shift_operand" "r,U06")] UNSPEC_SRS))]
   ""
   "srs<suffix>s %0 = %1, %2"
   [(set_attr "type" "alu_thin,alu_thin")
@@ -1409,7 +1409,7 @@
 (define_insn "avg<mode>3_floor"
   [(set (match_operand:S64I 0 "register_operand" "=r")
         (unspec:S64I [(match_operand:S64I 1 "register_operand" "r")
-                      (match_operand:S64I 2 "register_operand" "r")] UNSPEC_AVGWP))]
+                      (match_operand:S64I 2 "register_operand" "r")] UNSPEC_AVG))]
   ""
   "avg<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_lite")]
@@ -1418,7 +1418,7 @@
 (define_insn "avg<mode>3_ceil"
   [(set (match_operand:S64I 0 "register_operand" "=r")
         (unspec:S64I [(match_operand:S64I 1 "register_operand" "r")
-                      (match_operand:S64I 2 "register_operand" "r")] UNSPEC_AVGRWP))]
+                      (match_operand:S64I 2 "register_operand" "r")] UNSPEC_AVGR))]
   ""
   "avgr<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_lite")]
@@ -1427,7 +1427,7 @@
 (define_insn "uavg<mode>3_floor"
   [(set (match_operand:S64I 0 "register_operand" "=r")
         (unspec:S64I [(match_operand:S64I 1 "register_operand" "r")
-                      (match_operand:S64I 2 "register_operand" "r")] UNSPEC_AVGUWP))]
+                      (match_operand:S64I 2 "register_operand" "r")] UNSPEC_AVGU))]
   ""
   "avgu<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_lite")]
@@ -1436,7 +1436,7 @@
 (define_insn "uavg<mode>3_ceil"
   [(set (match_operand:S64I 0 "register_operand" "=r")
         (unspec:S64I [(match_operand:S64I 1 "register_operand" "r")
-                      (match_operand:S64I 2 "register_operand" "r")] UNSPEC_AVGRUWP))]
+                      (match_operand:S64I 2 "register_operand" "r")] UNSPEC_AVGRU))]
   ""
   "avgru<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_lite")]
@@ -1722,7 +1722,7 @@
 [(parallel
   [(set (match_operand:S64M 0 "register_operand")
         (unspec:S64M [(match_operand:<WIDE> 1 "register_operand")
-                      (match_dup 2) (match_dup 3)] UNSPEC_TRUNC64))
+                      (match_dup 2) (match_dup 3)] UNSPEC_TRUNC))
    (clobber (match_dup 4))]
 )]
   ""
@@ -1743,7 +1743,7 @@
   [(set (match_operand:S64M 0 "register_operand" "=r")
         (unspec:S64M [(match_operand:<WIDE> 1 "register_operand" "r")
                       (match_operand:DI 2 "register_operand" "r")
-                      (match_operand:DI 3 "register_operand" "r")] UNSPEC_TRUNC64))
+                      (match_operand:DI 3 "register_operand" "r")] UNSPEC_TRUNC))
    (clobber (match_scratch:<WIDE> 4 "=r"))]
   ""
   "#"
@@ -1762,7 +1762,7 @@
 [(parallel
   [(set (match_operand:S64M 0 "register_operand")
         (unspec:S64M [(match_operand:<WIDE> 1 "register_operand")
-                      (match_dup 2) (match_dup 3)] UNSPEC_FRACT64))
+                      (match_dup 2) (match_dup 3)] UNSPEC_FRACT))
    (clobber (match_dup 4))]
 )]
   ""
@@ -1783,7 +1783,7 @@
   [(set (match_operand:S64M 0 "register_operand" "=r")
         (unspec:S64M [(match_operand:<WIDE> 1 "register_operand" "r")
                       (match_operand:DI 2 "register_operand" "r")
-                      (match_operand:DI 3 "register_operand" "r")] UNSPEC_FRACT64))
+                      (match_operand:DI 3 "register_operand" "r")] UNSPEC_FRACT))
    (clobber (match_scratch:<WIDE> 4 "=r"))]
   ""
   "#"
@@ -2014,7 +2014,7 @@
 (define_expand "kvx_qxwdp"
   [(set (match_operand:V2DI 0 "register_operand")
         (unspec:V2DI [(match_operand:V2SI 1 "register_operand")
-        (match_dup 2)] UNSPEC_QXWDP))]
+                      (match_dup 2)] UNSPEC_QXWDP))]
   ""
   {
     operands[2] = gen_reg_rtx (DImode);
@@ -2108,7 +2108,7 @@
 
 (define_insn "kvx_truncldw"
   [(set (match_operand:V2SI 0 "register_operand" "=r")
-        (unspec:V2SI [(match_operand:DI 1 "register_operand" "r")] UNSPEC_ZXWD))]
+        (unspec:V2SI [(match_operand:DI 1 "register_operand" "r")] UNSPEC_TRUNCL))]
   ""
   "zxwd %0 = %1"
   [(set_attr "type" "alu_tiny")]
@@ -2116,7 +2116,7 @@
 
 (define_insn "kvx_truncmdw"
   [(set (match_operand:V2SI 0 "register_operand" "=r")
-        (unspec:V2SI [(match_operand:DI 1 "register_operand" "r") (const_int 32)] UNSPEC_SLLD))]
+        (unspec:V2SI [(match_operand:DI 1 "register_operand" "r") (const_int 32)] UNSPEC_TRUNCM))]
   ""
   "slld %0 = %1, 32"
   [(set_attr "type" "alu_tiny")]
@@ -2331,7 +2331,7 @@
 (define_insn "sshr<mode>3"
   [(set (match_operand:S128I 0 "register_operand" "=r,r")
         (unspec:S128I [(match_operand:S128I 1 "register_operand" "r,r")
-                       (match_operand:SI 2 "sat_shift_operand" "r,U06")] UNSPEC_SRS128))]
+                       (match_operand:SI 2 "sat_shift_operand" "r,U06")] UNSPEC_SRS))]
   ""
   "srs<chunkxs> %x0 = %x1, %2\n\tsrs<chunkxs> %y0 = %y1, %2"
   [(set_attr "type" "alu_thin_x2,alu_thin_x2")
@@ -2341,7 +2341,7 @@
 (define_insn "avg<mode>3_floor"
   [(set (match_operand:S128I 0 "register_operand" "=r")
         (unspec:S128I [(match_operand:S128I 1 "register_operand" "r")
-                       (match_operand:S128I 2 "register_operand" "r")] UNSPEC_AVGWQ))]
+                       (match_operand:S128I 2 "register_operand" "r")] UNSPEC_AVG))]
   ""
   "avg<chunkx> %x0 = %x1, %x2\n\tavg<chunkx> %y0 = %y1, %y2"
   [(set_attr "type" "alu_lite_x2")
@@ -2351,7 +2351,7 @@
 (define_insn "avg<mode>3_ceil"
   [(set (match_operand:S128I 0 "register_operand" "=r")
         (unspec:S128I [(match_operand:S128I 1 "register_operand" "r")
-                       (match_operand:S128I 2 "register_operand" "r")] UNSPEC_AVGRWQ))]
+                       (match_operand:S128I 2 "register_operand" "r")] UNSPEC_AVGR))]
   ""
   "avgr<chunkx> %x0 = %x1, %x2\n\tavgr<chunkx> %y0 = %y1, %y2"
   [(set_attr "type" "alu_lite_x2")
@@ -2361,7 +2361,7 @@
 (define_insn "uavg<mode>3_floor"
   [(set (match_operand:S128I 0 "register_operand" "=r")
         (unspec:S128I [(match_operand:S128I 1 "register_operand" "r")
-                       (match_operand:S128I 2 "register_operand" "r")] UNSPEC_AVGUWQ))]
+                       (match_operand:S128I 2 "register_operand" "r")] UNSPEC_AVGU))]
   ""
   "avgu<chunkx> %x0 = %x1, %x2\n\tavgu<chunkx> %y0 = %y1, %y2"
   [(set_attr "type" "alu_lite_x2")
@@ -2371,7 +2371,7 @@
 (define_insn "uavg<mode>3_ceil"
   [(set (match_operand:S128I 0 "register_operand" "=r")
         (unspec:S128I [(match_operand:S128I 1 "register_operand" "r")
-                       (match_operand:S128I 2 "register_operand" "r")] UNSPEC_AVGRUWQ))]
+                       (match_operand:S128I 2 "register_operand" "r")] UNSPEC_AVGRU))]
   ""
   "avgru<chunkx> %x0 = %x1, %x2\n\tavgru<chunkx> %y0 = %y1, %y2"
   [(set_attr "type" "alu_lite_x2")
@@ -3692,7 +3692,7 @@
 (define_insn "sshrv2di3"
   [(set (match_operand:V2DI 0 "register_operand" "=r,r")
         (unspec:V2DI [(match_operand:V2DI 1 "register_operand" "r,r")
-                      (match_operand:SI 2 "sat_shift_operand" "r,U06")] UNSPEC_SRS128))]
+                      (match_operand:SI 2 "sat_shift_operand" "r,U06")] UNSPEC_SRS))]
   ""
   "srsd %x0 = %x1, %2\n\tsrsd %y0 = %y1, %2"
   [(set_attr "type" "alu_thin_x2,alu_thin_x2")
@@ -3702,7 +3702,7 @@
 (define_insn "kvx_stsudp"
   [(set (match_operand:V2DI 0 "register_operand" "=r")
         (unspec:V2DI [(match_operand:V2DI 1 "register_operand" "r")
-                      (match_operand:V2DI 2 "register_operand" "r")] UNSPEC_STSUDP))]
+                      (match_operand:V2DI 2 "register_operand" "r")] UNSPEC_STSU))]
   ""
   "stsud %x0 = %x1, %x2\n\tstsud %y0 = %y1, %y2"
   [(set_attr "type" "alu_thin_x2")
@@ -3854,16 +3854,16 @@
 (define_insn_and_split "sshr<mode>3"
   [(set (match_operand:S256I 0 "register_operand" "=&r,r")
         (unspec:S256I [(match_operand:S256I 1 "register_operand" "r,r")
-                       (match_operand:SI 2 "sat_shift_operand" "r,U06")] UNSPEC_SRS256))]
+                       (match_operand:SI 2 "sat_shift_operand" "r,U06")] UNSPEC_SRS))]
   ""
   "#"
   "reload_completed"
   [(set (subreg:<HALF> (match_dup 0) 0)
         (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 0)
-                        (match_dup 2)] UNSPEC_SRS128))
+                        (match_dup 2)] UNSPEC_SRS))
    (set (subreg:<HALF> (match_dup 0) 16)
         (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 16)
-                        (match_dup 2)] UNSPEC_SRS128))]
+                        (match_dup 2)] UNSPEC_SRS))]
   ""
   [(set_attr "type" "alu_lite_x2,alu_lite_x2")]
 )
@@ -3871,16 +3871,16 @@
 (define_insn_and_split "avg<mode>3_floor"
   [(set (match_operand:S256I 0 "register_operand" "=r")
         (unspec:S256I [(match_operand:S256I 1 "register_operand" "r")
-                       (match_operand:S256I 2 "register_operand" "r")] UNSPEC_AVGWO))]
+                       (match_operand:S256I 2 "register_operand" "r")] UNSPEC_AVG))]
   ""
   "#"
   "reload_completed"
   [(set (subreg:<HALF> (match_dup 0) 0)
         (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 0)
-                        (subreg:<HALF> (match_dup 2) 0)] UNSPEC_AVGWQ))
+                        (subreg:<HALF> (match_dup 2) 0)] UNSPEC_AVG))
    (set (subreg:<HALF> (match_dup 0) 16)
         (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 16)
-                        (subreg:<HALF> (match_dup 2) 16)] UNSPEC_AVGWQ))]
+                        (subreg:<HALF> (match_dup 2) 16)] UNSPEC_AVG))]
   ""
   [(set_attr "type" "alu_lite_x2")]
 )
@@ -3888,16 +3888,16 @@
 (define_insn_and_split "avg<mode>3_ceil"
   [(set (match_operand:S256I 0 "register_operand" "=r")
         (unspec:S256I [(match_operand:S256I 1 "register_operand" "r")
-                       (match_operand:S256I 2 "register_operand" "r")] UNSPEC_AVGRWO))]
+                       (match_operand:S256I 2 "register_operand" "r")] UNSPEC_AVGR))]
   ""
   "#"
   "reload_completed"
   [(set (subreg:<HALF> (match_dup 0) 0)
         (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 0)
-                        (subreg:<HALF> (match_dup 2) 0)] UNSPEC_AVGRWQ))
+                        (subreg:<HALF> (match_dup 2) 0)] UNSPEC_AVGR))
    (set (subreg:<HALF> (match_dup 0) 16)
         (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 16)
-                        (subreg:<HALF> (match_dup 2) 16)] UNSPEC_AVGRWQ))]
+                        (subreg:<HALF> (match_dup 2) 16)] UNSPEC_AVGR))]
   ""
   [(set_attr "type" "alu_lite_x2")]
 )
@@ -3905,16 +3905,16 @@
 (define_insn_and_split "uavg<mode>3_floor"
   [(set (match_operand:S256I 0 "register_operand" "=r")
         (unspec:S256I [(match_operand:S256I 1 "register_operand" "r")
-                       (match_operand:S256I 2 "register_operand" "r")] UNSPEC_AVGUWO))]
+                       (match_operand:S256I 2 "register_operand" "r")] UNSPEC_AVGU))]
   ""
   "#"
   "reload_completed"
   [(set (subreg:<HALF> (match_dup 0) 0)
         (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 0)
-                        (subreg:<HALF> (match_dup 2) 0)] UNSPEC_AVGUWQ))
+                        (subreg:<HALF> (match_dup 2) 0)] UNSPEC_AVGU))
    (set (subreg:<HALF> (match_dup 0) 16)
         (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 16)
-                        (subreg:<HALF> (match_dup 2) 16)] UNSPEC_AVGUWQ))]
+                        (subreg:<HALF> (match_dup 2) 16)] UNSPEC_AVGU))]
   ""
   [(set_attr "type" "alu_lite_x2")]
 )
@@ -3922,16 +3922,16 @@
 (define_insn_and_split "uavg<mode>3_ceil"
   [(set (match_operand:S256I 0 "register_operand" "=r")
         (unspec:S256I [(match_operand:S256I 1 "register_operand" "r")
-                       (match_operand:S256I 2 "register_operand" "r")] UNSPEC_AVGRUWO))]
+                       (match_operand:S256I 2 "register_operand" "r")] UNSPEC_AVGRU))]
   ""
   "#"
   "reload_completed"
   [(set (subreg:<HALF> (match_dup 0) 0)
         (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 0)
-                        (subreg:<HALF> (match_dup 2) 0)] UNSPEC_AVGRUWQ))
+                        (subreg:<HALF> (match_dup 2) 0)] UNSPEC_AVGRU))
    (set (subreg:<HALF> (match_dup 0) 16)
         (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 16)
-                        (subreg:<HALF> (match_dup 2) 16)] UNSPEC_AVGRUWQ))]
+                        (subreg:<HALF> (match_dup 2) 16)] UNSPEC_AVGRU))]
   ""
   [(set_attr "type" "alu_lite_x2")]
 )
@@ -5444,16 +5444,16 @@
 (define_insn_and_split "sshrv4di3"
   [(set (match_operand:V4DI 0 "register_operand" "=&r,r")
         (unspec:V4DI [(match_operand:V4DI 1 "register_operand" "r,r")
-                      (match_operand:SI 2 "sat_shift_operand" "r,U06")] UNSPEC_SRS256))]
+                      (match_operand:SI 2 "sat_shift_operand" "r,U06")] UNSPEC_SRS))]
   ""
   "#"
   "reload_completed"
   [(set (subreg:V2DI (match_dup 0) 0)
         (unspec:V2DI [(subreg:V2DI (match_dup 1) 0)
-                      (match_dup 2)] UNSPEC_SRS128))
+                      (match_dup 2)] UNSPEC_SRS))
    (set (subreg:V2DI (match_dup 0) 16)
         (unspec:V2DI [(subreg:V2DI (match_dup 1) 16)
-                      (match_dup 2)] UNSPEC_SRS128))]
+                      (match_dup 2)] UNSPEC_SRS))]
   ""
   [(set_attr "type" "alu_lite_x2,alu_lite_x2")]
 )
@@ -5502,7 +5502,8 @@
                    (match_operand:S64F 2 "register_operand" "r")))]
   ""
   "fadd<suffix> %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set (attr "type")
+     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "mau_fp16") (const_string "mau_fpu")))]
 )
 
 (define_insn "sub<mode>3"
@@ -5511,7 +5512,8 @@
                     (match_operand:S64F 2 "register_operand" "r")))]
   ""
   "fsbf<suffix> %0 = %2, %1"
-  [(set_attr "type" "mau_fpu")]
+  [(set (attr "type")
+     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "mau_fp16") (const_string "mau_fpu")))]
 )
 
 (define_insn "mul<mode>3"
@@ -5520,7 +5522,8 @@
                    (match_operand:S64F 2 "register_operand" "r")))]
   ""
   "fmul<suffix> %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set (attr "type")
+     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "mau_fp16") (const_string "mau_fpu")))]
 )
 
 (define_insn "fma<mode>4"
@@ -5530,7 +5533,8 @@
                   (match_operand:S64F 3 "register_operand" "0")))]
   ""
   "ffma<suffix> %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set (attr "type")
+     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "mau_auxr_fp16") (const_string "mau_auxr_fpu")))]
 )
 
 (define_insn "fnma<mode>4"
@@ -5540,7 +5544,8 @@
                   (match_operand:S64F 3 "register_operand" "0")))]
   ""
   "ffms<suffix> %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set (attr "type")
+     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "mau_auxr_fp16") (const_string "mau_auxr_fpu")))]
 )
 
 (define_insn "fmin<mode>3"
@@ -5602,7 +5607,7 @@
   [(set (match_operand:SF 0 "register_operand" "=r")
         (unspec:SF [(match_operand:V2SF 1 "register_operand" "r")
                     (match_operand:V2SF 2 "register_operand" "r")
-                    (match_operand 3 "" "")] UNSPEC_FDOT2W))]
+                    (match_operand 3 "" "")] UNSPEC_FDOT2))]
   ""
   "fdot2w%3 %0 = %1, %2"
   [(set_attr "type" "mau_fpu")]
@@ -5612,7 +5617,7 @@
   [(set (match_operand:DF 0 "register_operand" "=r")
         (unspec:DF [(match_operand:V2SF 1 "register_operand" "r")
                     (match_operand:V2SF 2 "register_operand" "r")
-                    (match_operand 3 "" "")] UNSPEC_FDOT2WD))]
+                    (match_operand 3 "" "")] UNSPEC_FDOT2))]
   ""
   "fdot2wd%3 %0 = %1, %2"
   [(set_attr "type" "mau_fpu")]
@@ -5622,7 +5627,7 @@
   [(set (match_operand:V2DF 0 "register_operand" "=r")
         (unspec:V2DF [(match_operand:V4SF 1 "register_operand" "r")
                       (match_operand:V4SF 2 "register_operand" "r")
-                      (match_operand 3 "" "")] UNSPEC_FDOT2WDP))]
+                      (match_operand 3 "" "")] UNSPEC_FDOT2))]
   ""
   "fdot2wdp%3 %0 = %1, %2"
   [(set_attr "type" "mau_auxr_fpu")]
@@ -5632,7 +5637,7 @@
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
                       (match_operand:V4SF 2 "register_operand" "r")
-                      (match_operand 3 "" "")] UNSPEC_FDOT2WZP))]
+                      (match_operand 3 "" "")] UNSPEC_FDOT2))]
   ""
   "fdot2wzp%3 %0 = %1, %2"
   [(set_attr "type" "mau_auxr_fpu")]
@@ -5696,7 +5701,7 @@
 (define_insn "kvx_fcdivwp_insn"
   [(set (match_operand:V2SF 0 "register_operand" "=r")
         (unspec:V2SF [(match_operand:V4SF 1 "register_operand" "r")
-                      (match_operand 2 "" "")] UNSPEC_FCDIVWP))]
+                      (match_operand 2 "" "")] UNSPEC_FCDIV))]
   ""
   "fcdivwp%2 %0 = %1"
   [(set_attr "type" "alu_lite")]
@@ -5882,7 +5887,8 @@
                    (match_operand:S128F 3 "register_operand" "0")))]
   "KV3_2"
   "ffma<suffix> %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set (attr "type")
+     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "mau_auxr_fp16") (const_string "mau_auxr_fpu")))]
 )
 
 (define_expand "fnma<mode>4"
@@ -5926,7 +5932,8 @@
                    (match_operand:S128F 3 "register_operand" "0")))]
   "KV3_2"
   "ffms<suffix> %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set (attr "type")
+     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "mau_auxr_fp16") (const_string "mau_auxr_fpu")))]
 )
 
 
@@ -6070,7 +6077,7 @@
                    (match_operand:V8HF 2 "register_operand" "r")))]
   "KV3_2"
   "faddho %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "mau_auxr_fp16")]
 )
 
 (define_expand "subv8hf3"
@@ -6109,7 +6116,7 @@
                     (match_operand:V8HF 2 "register_operand" "r")))]
   "KV3_2"
   "fsbfho %0 = %2, %1"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "mau_fp16")]
 )
 
 (define_expand "mulv8hf3"
@@ -6148,7 +6155,7 @@
                    (match_operand:V8HF 2 "register_operand" "r")))]
   "KV3_2"
   "fmulho %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "mau_fp16")]
 )
 
 
