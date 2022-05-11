@@ -2023,7 +2023,7 @@ static rtx
 build_xloadh_arg (tree arg, const char *name)
 {
   if (KV3_1)
-    error ("__builtin_kvx_%s is not available for kv3-1.", name);
+    error ("__builtin_kvx_%s is not available for the kv3-1.", name);
   const char *modifier = tree_string_constant (arg);
   static const char *table[] = {
     ".h0", ".h0.s", ".h0.u", ".h0.us",
@@ -2104,7 +2104,7 @@ static rtx
 build_xloadhc_arg (tree arg, const char *name)
 {
   if (KV3_1)
-    error ("__builtin_kvx_%s is not available for kv3-1.", name);
+    error ("__builtin_kvx_%s is not available for the kv3-1.", name);
   const char *modifier = tree_string_constant (arg);
   static const char *table[] = {
     ".h0.dnez", ".h0.deqz", ".h0.wnez", ".h0.weqz", ".h0.mt", ".h0.mf", ".h0.mtc", ".h0.mfc",
@@ -2192,7 +2192,7 @@ static rtx
 build_coherency_arg (tree arg, const char *name)
 {
   if (KV3_1)
-    error ("__builtin_kvx_%s is not available for kv3-1.", name);
+    error ("__builtin_kvx_%s is not available for the kv3-1.", name);
   const char *modifier = tree_string_constant (arg);
   // Masked stores are only available for the kv3-2.
   static const char *table[] = {
@@ -2211,7 +2211,7 @@ static rtx
 build_boolcasco_arg (tree arg, const char *name)
 {
   if (KV3_1)
-    error ("__builtin_kvx_%s modifiers not available for kv3-1.", name);
+    error ("__builtin_kvx_%s modifiers not available for the kv3-1.", name);
   const char *modifier = tree_string_constant (arg);
   static const char *table[] = {
     "", ".g", ".s",
@@ -2230,7 +2230,7 @@ static rtx
 build_cachelev_arg (tree arg, const char *name)
 {
   if (KV3_1)
-    error ("__builtin_kvx_%s is not available for kv3-1.", name);
+    error ("__builtin_kvx_%s is not available for the kv3-1.", name);
   const char *modifier = tree_string_constant (arg);
   static const char *table[] = {
     ".l1", ".l2",
@@ -2248,7 +2248,7 @@ static rtx
 build_accesses_arg (tree arg, const char *name)
 {
   if (KV3_1)
-    error ("__builtin_kvx_%s is not available for kv3-1.", name);
+    error ("__builtin_kvx_%s is not available for the kv3-1.", name);
   const char *modifier = tree_string_constant (arg);
   static const char *table[] = {
     "", ".w", ".r",
@@ -2266,7 +2266,7 @@ static rtx
 build_xpreload_arg (tree arg, const char *name)
 {
   if (KV3_1)
-    error ("__builtin_kvx_%s is not available for kv3-1.", name);
+    error ("__builtin_kvx_%s is not available for the kv3-1.", name);
   const char *modifier = tree_string_constant (arg);
   static const char *table[] = {
     "", ".s", ".u", ".us",

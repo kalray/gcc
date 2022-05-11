@@ -3486,6 +3486,11 @@ kvx_expand_vector_extract (rtx target, rtx source, rtx where)
   gcc_unreachable ();
 }
 
+#define KVX_SBMM8_SPLATB0D 0x0101010101010101ULL
+#define KVX_SBMM8_SPLATH0D 0x0201020102010201ULL
+#define KVX_SBMM8_SPLATW0D 0x0804020108040201ULL
+#define KVX_SBMM8_IDENTITY 0x8040201008040201ULL
+
 /* Splat a value of mode smaller than a word into a word size vector chunk.
  * This is used both for initializing a vector from a scalar, and for the
  * vector arithmetic patterns that operate a vector with a scalar.  */
@@ -3505,13 +3510,13 @@ kvx_expand_chunk_splat (rtx target, rtx source, machine_mode inner_mode)
   switch (inner_size)
     {
     case 1:
-      constant = 0x0101010101010101LL;
+      constant = KVX_SBMM8_SPLATB0D;
       break;
     case 2:
-      constant = 0x0201020102010201LL;
+      constant = KVX_SBMM8_SPLATH0D;
       break;
     case 4:
-      constant = 0x0804020108040201LL;
+      constant = KVX_SBMM8_SPLATW0D;
       break;
     default:
       gcc_unreachable ();
@@ -3757,16 +3762,16 @@ kvx_expand_vec_perm_const_emit_insf (rtx target, rtx source1, rtx source2,
   int nwords = GET_MODE_SIZE (vector_mode) / UNITS_PER_WORD;
   HOST_WIDE_INT constant1 = kvx_expand_vec_perm.values[orig1][dest].dword;
   HOST_WIDE_INT constant2 = kvx_expand_vec_perm.values[orig2][dest].dword;
-  HOST_WIDE_INT constant0 = 0x8040201008040201ULL, constanti = 0;
+  HOST_WIDE_INT constanti = 0;
   int origm = -1, origi = -1;
 
-  // The move constant is the one with a subset of bits of constant0.
-  if ((constant1 & constant0) == constant1)
+  // The move constant is the one with a subset of bits of KVX_SBMM8_IDENTITY.
+  if ((constant1 & KVX_SBMM8_IDENTITY) == constant1)
     {
       origm = orig1, origi = orig2;
       constanti = constant2;
     }
-  else if ((constant2 & constant0) == constant2)
+  else if ((constant2 & KVX_SBMM8_IDENTITY) == constant2)
     {
       origm = orig2, origi = orig1;
       constanti = constant1;
@@ -3775,10 +3780,11 @@ kvx_expand_vec_perm_const_emit_insf (rtx target, rtx source1, rtx source2,
   if (!constanti)
     return NULL_RTX;
 
-  // The insert constant must be constant0 shifted left and truncated.
+  // The insert constant must be KVX_SBMM8_IDENTITY shifted left and truncated.
   int shift = __builtin_ctzll (constanti);
   int count = __builtin_popcountll (constanti);
-  HOST_WIDE_INT maski = (-1ULL >> __builtin_clzll (constanti)) & (constant0 << shift);
+  HOST_WIDE_INT maski
+    = (-1ULL >> __builtin_clzll (constanti)) & (KVX_SBMM8_IDENTITY << shift);
 
   // For speed we prevent the generation of extract as SBMM8 is faster.
   //if (optimize_insn_for_speed_p () && (shift & 7))
@@ -3830,7 +3836,6 @@ kvx_expand_vec_perm_const_emit (rtx target, rtx source1, rtx source2)
 
   for (int dest = 0; dest < nwords; dest++)
     {
-      HOST_WIDE_INT constant0 = 0x8040201008040201ULL;
       int orig0 = -1, orig1 = -1, orig2 = -1, nconst = 0;
 
       for (int orig = 0; orig < range; orig++)
@@ -3838,7 +3843,7 @@ kvx_expand_vec_perm_const_emit (rtx target, rtx source1, rtx source2)
 	  HOST_WIDE_INT constant = kvx_expand_vec_perm.values[orig][dest].dword;
 	  if (constant)
 	    {
-	      if (constant == constant0)
+	      if (constant == KVX_SBMM8_IDENTITY)
 		orig0 = orig;
 	      else if (orig1 < 0)
 		orig1 = orig;
@@ -3853,6 +3858,12 @@ kvx_expand_vec_perm_const_emit (rtx target, rtx source1, rtx source2)
 						  dest, orig0))
 	continue;
 
+      // Force source1 and source2 in registers since we may insert into them.
+      if (source1)
+	source1 = force_reg (vector_mode, source1);
+      if (source2)
+	source2 = force_reg (vector_mode, source2);
+
       if (nconst == 2
 	  && kvx_expand_vec_perm_const_emit_insf (target, source1, source2,
 						  dest, orig1, orig2))
@@ -3866,7 +3877,7 @@ kvx_expand_vec_perm_const_emit (rtx target, rtx source1, rtx source2)
 	  if (constant)
 	    {
 	      rtx tmp = gen_reg_rtx (DImode);
-	      rtx source = force_reg (vector_mode, orig >= nwords ? source2 : source1);
+	      rtx source = orig >= nwords ? source2 : source1;
 	      int offset = orig >= nwords? orig - nwords: orig;
 	      rtx op1 = simplify_gen_subreg (DImode, source, vector_mode, offset*UNITS_PER_WORD);
 	      rtx op2 = force_reg (DImode, GEN_INT (constant));
@@ -3887,10 +3898,6 @@ kvx_expand_vec_perm_const_emit (rtx target, rtx source1, rtx source2)
 bool
 kvx_expand_vec_perm_const (rtx target, rtx source1, rtx source2, rtx selector)
 {
-  // used during testing
-  if (!target)
-    return true;
-
   machine_mode vector_mode = GET_MODE (target);
   machine_mode inner_mode = GET_MODE_INNER (vector_mode);
   int nwords = GET_MODE_SIZE (vector_mode) / UNITS_PER_WORD;
@@ -3941,21 +3948,33 @@ kvx_expand_vec_perm_const (rtx target, rtx source1, rtx source2, rtx selector)
   kvx_expand_vec_perm_print (stderr, vector_mode);
 #endif
 
+  bool overlap = reg_overlap_mentioned_p (target, source1);
+  if (which != 1)
+    overlap |= reg_overlap_mentioned_p (target, source2);
+
+  rtx temporary = target;
+  if (overlap)
+    temporary = gen_reg_rtx (vector_mode);
+
   if (which == 1)
-    kvx_expand_vec_perm_const_emit (target, source1, NULL_RTX);
+    kvx_expand_vec_perm_const_emit (temporary, source1, NULL_RTX);
   else
-    kvx_expand_vec_perm_const_emit (target, source1, source2);
+    kvx_expand_vec_perm_const_emit (temporary, source1, source2);
+
+  if (overlap)
+    emit_move_insn (target, temporary);
 
   return true;
 }
 
+/* Implements TARGET_VECTORIZE_VEC_PERM_CONST.  */
 static bool
 kvx_vectorize_vec_perm_const (machine_mode vmode, rtx target, rtx op0,
 			      rtx op1, const vec_perm_indices &sel)
 {
   opt_machine_mode smode = mode_for_int_vector (vmode);
   rtx sel_rtx = vec_perm_indices_to_rtx (smode.else_void (), sel);
-  return kvx_expand_vec_perm_const(target, op0, op1, sel_rtx);
+  return target ? kvx_expand_vec_perm_const (target, op0, op1, sel_rtx) : true;
 }
 
 /* Helper to implement vector cross-element right shift. Two source chunks are
@@ -7354,8 +7373,7 @@ kvx_ctrapsi4 (void)
 #define TARGET_DELAY_VARTRACK (true)
 
 #undef TARGET_VECTORIZE_VEC_PERM_CONST
-#define TARGET_VECTORIZE_VEC_PERM_CONST		\
-  kvx_vectorize_vec_perm_const
+#define TARGET_VECTORIZE_VEC_PERM_CONST kvx_vectorize_vec_perm_const
 
 void kvx_init_builtins (void);
 tree kvx_builtin_decl (unsigned code, bool initialize_p);
