@@ -249,7 +249,6 @@
       return "set %0 = %1";
     case 15:
       return "pcrel %0 = %T1";
-
     default:
       gcc_unreachable ();
     }
