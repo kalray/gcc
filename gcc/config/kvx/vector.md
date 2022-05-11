@@ -571,7 +571,7 @@
 
 (define_insn_and_split "*dup128"
   [(set (match_operand:SIMD128 0 "register_operand" "=&r")
-        (vec_duplicate:SIMD128 (match_operand:<CHUNK> 1 "general_operand" "r")))]
+        (vec_duplicate:SIMD128 (match_operand:<CHUNK> 1 "nonmemory_operand" "r")))]
   ""
   "copyd %x0 = %1\n\tcopyd %y0 = %1"
   ""
@@ -584,7 +584,7 @@
 
 (define_insn_and_split "*dup256"
   [(set (match_operand:SIMD256 0 "register_operand" "=&r")
-        (vec_duplicate:SIMD256 (match_operand:<CHUNK> 1 "general_operand" "r")))]
+        (vec_duplicate:SIMD256 (match_operand:<CHUNK> 1 "nonmemory_operand" "r")))]
   ""
   "copyd %x0 = %1\n\tcopyd %y0 = %1\n\tcopyd %z0 = %1\n\tcopyd %t0 = %1"
   ""
@@ -1028,7 +1028,7 @@
 (define_insn "add<mode>3"
   [(set (match_operand:S64I 0 "register_operand" "=r")
         (plus:S64I (match_operand:S64I 1 "register_operand" "r")
-                   (match_operand:S64I 2 "nonmemory_operand" "r")))]
+                   (match_operand:S64I 2 "register_operand" "r")))]
   ""
   "add<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_tiny")]
@@ -1037,7 +1037,7 @@
 (define_insn "ssadd<mode>3"
   [(set (match_operand:S64I 0 "register_operand" "=r")
         (ss_plus:S64I (match_operand:S64I 1 "register_operand" "r")
-                      (match_operand:S64I 2 "nonmemory_operand" "r")))]
+                      (match_operand:S64I 2 "register_operand" "r")))]
   ""
   "adds<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_lite")]
@@ -1071,7 +1071,7 @@
   [(set (match_operand:S64I 0 "register_operand" "=r")
         (plus:S64I (ashift:S64I (match_operand:S64I 1 "register_operand" "r")
                                 (const_int 1))
-                   (match_operand:S64I 2 "nonmemory_operand" "r")))]
+                   (match_operand:S64I 2 "register_operand" "r")))]
   ""
   "addx2<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_lite")]
@@ -1081,7 +1081,7 @@
   [(set (match_operand:S64I 0 "register_operand" "=r")
         (plus:S64I (ashift:S64I (match_operand:S64I 1 "register_operand" "r")
                                 (const_int 2))
-                   (match_operand:S64I 2 "nonmemory_operand" "r")))]
+                   (match_operand:S64I 2 "register_operand" "r")))]
   ""
   "addx4<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_lite")]
@@ -1091,7 +1091,7 @@
   [(set (match_operand:S64I 0 "register_operand" "=r")
         (plus:S64I (ashift:S64I (match_operand:S64I 1 "register_operand" "r")
                                 (const_int 3))
-                   (match_operand:S64I 2 "nonmemory_operand" "r")))]
+                   (match_operand:S64I 2 "register_operand" "r")))]
   ""
   "addx8<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_lite")]
@@ -1101,7 +1101,7 @@
   [(set (match_operand:S64I 0 "register_operand" "=r")
         (plus:S64I (ashift:S64I (match_operand:S64I 1 "register_operand" "r")
                                 (const_int 4))
-                   (match_operand:S64I 2 "nonmemory_operand" "r")))]
+                   (match_operand:S64I 2 "register_operand" "r")))]
   ""
   "addx16<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_lite")]
@@ -1109,7 +1109,7 @@
 
 (define_insn "sub<mode>3"
   [(set (match_operand:S64I 0 "register_operand" "=r")
-        (minus:S64I (match_operand:S64I 1 "nonmemory_operand" "r")
+        (minus:S64I (match_operand:S64I 1 "register_operand" "r")
                     (match_operand:S64I 2 "register_operand" "r")))]
   ""
   "sbf<suffix> %0 = %2, %1"
@@ -1118,7 +1118,7 @@
 
 (define_insn "sssub<mode>3"
   [(set (match_operand:S64I 0 "register_operand" "=r")
-        (ss_minus:S64I (match_operand:S64I 1 "nonmemory_operand" "r")
+        (ss_minus:S64I (match_operand:S64I 1 "register_operand" "r")
                        (match_operand:S64I 2 "register_operand" "r")))]
   ""
   "sbfs<suffix> %0 = %2, %1"
@@ -1146,7 +1146,7 @@
 
 (define_insn "*sbfx2<suffix>"
   [(set (match_operand:S64I 0 "register_operand" "=r")
-        (minus:S64I (match_operand:S64I 1 "nonmemory_operand" "r")
+        (minus:S64I (match_operand:S64I 1 "register_operand" "r")
                     (ashift:S64I (match_operand:S64I 2 "register_operand" "r")
                                  (const_int 1))))]
   ""
@@ -1156,7 +1156,7 @@
 
 (define_insn "*sbfx4<suffix>"
   [(set (match_operand:S64I 0 "register_operand" "=r")
-        (minus:S64I (match_operand:S64I 1 "nonmemory_operand" "r")
+        (minus:S64I (match_operand:S64I 1 "register_operand" "r")
                     (ashift:S64I (match_operand:S64I 2 "register_operand" "r")
                                  (const_int 2))))]
   ""
@@ -1166,7 +1166,7 @@
 
 (define_insn "*sbfx8<suffix>"
   [(set (match_operand:S64I 0 "register_operand" "=r")
-        (minus:S64I (match_operand:S64I 1 "nonmemory_operand" "r")
+        (minus:S64I (match_operand:S64I 1 "register_operand" "r")
                     (ashift:S64I (match_operand:S64I 2 "register_operand" "r")
                                  (const_int 3))))]
   ""
@@ -1176,7 +1176,7 @@
 
 (define_insn "*sbfx16<suffix>"
   [(set (match_operand:S64I 0 "register_operand" "=r")
-        (minus:S64I (match_operand:S64I 1 "nonmemory_operand" "r")
+        (minus:S64I (match_operand:S64I 1 "register_operand" "r")
                     (ashift:S64I (match_operand:S64I 2 "register_operand" "r")
                                  (const_int 4))))]
   ""
@@ -1187,7 +1187,7 @@
 (define_insn "mul<mode>3"
   [(set (match_operand:S64I 0 "register_operand" "=r")
         (mult:S64I (match_operand:S64I 1 "register_operand" "r")
-                   (match_operand:S64I 2 "nonmemory_operand" "r")))]
+                   (match_operand:S64I 2 "register_operand" "r")))]
   ""
   "mul<suffix> %0 = %1, %2"
   [(set_attr "type" "mau")]
@@ -1196,7 +1196,7 @@
 (define_insn "smin<mode>3"
   [(set (match_operand:S64I 0 "register_operand" "=r")
         (smin:S64I (match_operand:S64I 1 "register_operand" "r")
-                   (match_operand:S64I 2 "nonmemory_operand" "r")))]
+                   (match_operand:S64I 2 "register_operand" "r")))]
   ""
   "min<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_tiny")]
@@ -1205,7 +1205,7 @@
 (define_insn "smax<mode>3"
   [(set (match_operand:S64I 0 "register_operand" "=r")
         (smax:S64I (match_operand:S64I 1 "register_operand" "r")
-                   (match_operand:S64I 2 "nonmemory_operand" "r")))]
+                   (match_operand:S64I 2 "register_operand" "r")))]
   ""
   "max<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_tiny")]
@@ -1214,7 +1214,7 @@
 (define_insn "umin<mode>3"
   [(set (match_operand:S64I 0 "register_operand" "=r")
         (umin:S64I (match_operand:S64I 1 "register_operand" "r")
-                   (match_operand:S64I 2 "nonmemory_operand" "r")))]
+                   (match_operand:S64I 2 "register_operand" "r")))]
   ""
   "minu<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_tiny")]
@@ -1223,7 +1223,7 @@
 (define_insn "umax<mode>3"
   [(set (match_operand:S64I 0 "register_operand" "=r")
         (umax:S64I (match_operand:S64I 1 "register_operand" "r")
-                   (match_operand:S64I 2 "nonmemory_operand" "r")))]
+                   (match_operand:S64I 2 "register_operand" "r")))]
   ""
   "maxu<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_tiny")]
@@ -1235,7 +1235,7 @@
 (define_insn "and<mode>3"
   [(set (match_operand:S64L 0 "register_operand" "=r")
         (and:S64L (match_operand:S64L 1 "register_operand" "r")
-                  (match_operand:S64L 2 "nonmemory_operand" "r")))]
+                  (match_operand:S64L 2 "register_operand" "r")))]
   ""
   "andd %0 = %1, %2"
   [(set_attr "type" "alu_tiny")]
@@ -1244,7 +1244,7 @@
 (define_insn "*nand<mode>3"
   [(set (match_operand:S64L 0 "register_operand" "=r")
         (ior:S64L (not:S64L (match_operand:S64L 1 "register_operand" "r"))
-                  (not:S64L (match_operand:S64L 2 "nonmemory_operand" "r"))))]
+                  (not:S64L (match_operand:S64L 2 "register_operand" "r"))))]
   ""
   "nandd %0 = %1, %2"
   [(set_attr "type" "alu_tiny")]
@@ -1253,7 +1253,7 @@
 (define_insn "*andn<mode>3"
   [(set (match_operand:S64L 0 "register_operand" "=r")
         (and:S64L (not:S64L (match_operand:S64L 1 "register_operand" "r"))
-                  (match_operand:S64L 2 "nonmemory_operand" "r")))]
+                  (match_operand:S64L 2 "register_operand" "r")))]
   ""
   "andnd %0 = %1, %2"
   [(set_attr "type" "alu_tiny")]
@@ -1262,7 +1262,7 @@
 (define_insn "ior<mode>3"
   [(set (match_operand:S64L 0 "register_operand" "=r")
         (ior:S64L (match_operand:S64L 1 "register_operand" "r")
-                  (match_operand:S64L 2 "nonmemory_operand" "r")))]
+                  (match_operand:S64L 2 "register_operand" "r")))]
   ""
   "ord %0 = %1, %2"
   [(set_attr "type" "alu_tiny")]
@@ -1271,7 +1271,7 @@
 (define_insn "*nior<mode>3"
   [(set (match_operand:S64L 0 "register_operand" "=r")
         (and:S64L (not:S64L (match_operand:S64L 1 "register_operand" "r"))
-                  (not:S64L (match_operand:S64L 2 "nonmemory_operand" "r"))))]
+                  (not:S64L (match_operand:S64L 2 "register_operand" "r"))))]
   ""
   "nord %0 = %1, %2"
   [(set_attr "type" "alu_tiny")]
@@ -1280,7 +1280,7 @@
 (define_insn "*iorn<mode>3"
   [(set (match_operand:S64L 0 "register_operand" "=r")
         (ior:S64L (not:S64L (match_operand:S64L 1 "register_operand" "r"))
-                  (match_operand:S64L 2 "nonmemory_operand" "r")))]
+                  (match_operand:S64L 2 "register_operand" "r")))]
   ""
   "ornd %0 = %1, %2"
   [(set_attr "type" "alu_tiny")]
@@ -1289,7 +1289,7 @@
 (define_insn "xor<mode>3"
   [(set (match_operand:S64L 0 "register_operand" "=r")
         (xor:S64L (match_operand:S64L 1 "register_operand" "r")
-                  (match_operand:S64L 2 "nonmemory_operand" "r")))]
+                  (match_operand:S64L 2 "register_operand" "r")))]
   ""
   "xord %0 = %1, %2"
   [(set_attr "type" "alu_tiny")]
@@ -1298,7 +1298,7 @@
 (define_insn "*nxor<mode>3"
   [(set (match_operand:S64L 0 "register_operand" "=r")
         (not:S64L (xor:S64L (match_operand:S64L 1 "register_operand" "r")
-                            (match_operand:S64L 2 "nonmemory_operand" "r"))))]
+                            (match_operand:S64L 2 "register_operand" "r"))))]
   ""
   "nxord %0 = %1, %2"
   [(set_attr "type" "alu_tiny")]
@@ -1310,7 +1310,7 @@
 (define_insn "madd<mode><mode>4"
   [(set (match_operand:S64I 0 "register_operand" "=r")
         (plus:S64I (mult:S64I (match_operand:S64I 1 "register_operand" "r")
-                              (match_operand:S64I 2 "nonmemory_operand" "r"))
+                              (match_operand:S64I 2 "register_operand" "r"))
                    (match_operand:S64I 3 "register_operand" "0")))]
   ""
   "madd<suffix> %0 = %1, %2"
@@ -1906,7 +1906,7 @@
 (define_insn "maddv4hiv4si4"
   [(set (match_operand:V4SI 0 "register_operand" "=r")
         (plus:V4SI (sign_extend:V4SI (mult:V4HI (match_operand:V4HI 1 "register_operand" "r")
-                                                (match_operand:V4HI 2 "nonmemory_operand" "r")))
+                                                (match_operand:V4HI 2 "register_operand" "r")))
                    (match_operand:V4SI 3 "register_operand" "0")))]
   ""
   "maddhwq %0 = %1, %2"
@@ -1916,7 +1916,7 @@
 (define_insn "umaddv4hiv4si4"
   [(set (match_operand:V4SI 0 "register_operand" "=r")
         (plus:V4SI (zero_extend:V4SI (mult:V4HI (match_operand:V4HI 1 "register_operand" "r")
-                                                (match_operand:V4HI 2 "nonmemory_operand" "r")))
+                                                (match_operand:V4HI 2 "register_operand" "r")))
                    (match_operand:V4SI 3 "register_operand" "0")))]
   ""
   "madduhwq %0 = %1, %2"
@@ -2213,8 +2213,8 @@
 (define_insn "*compn<suffix>_s2"
   [(set (match_operand:<MASK> 0 "register_operand" "=r")
         (match_operator:<MASK> 1 "comparison_operator"
-         [(vec_duplicate:S128I (match_operand:<CHUNK> 2 "register_operand" "r"))
-          (match_operand:S128I 3 "nonmemory_operand" "r")]))]
+         [(vec_duplicate:S128I (match_operand:<CHUNK> 2 "nonmemory_operand" "r"))
+          (match_operand:S128I 3 "register_operand" "r")]))]
   ""
   "compn<chunkx>.%1 %x0 = %2, %x3\n\tcompn<chunkx>.%1 %y0 = %2, %y3"
   [(set_attr "type" "alu_tiny_x2")
@@ -2555,7 +2555,7 @@
 (define_insn "add<mode>3"
   [(set (match_operand:V128J 0 "register_operand" "=r")
         (plus:V128J (match_operand:V128J 1 "register_operand" "r")
-                    (match_operand:V128J 2 "nonmemory_operand" "r")))]
+                    (match_operand:V128J 2 "register_operand" "r")))]
   ""
   "add<chunkx> %x0 = %x1, %x2\n\tadd<chunkx> %y0 = %y1, %y2"
   [(set_attr "type" "alu_tiny_x2")
@@ -2585,7 +2585,7 @@
 (define_insn "ssadd<mode>3"
   [(set (match_operand:V128J 0 "register_operand" "=r")
         (ss_plus:V128J (match_operand:V128J 1 "register_operand" "r")
-                       (match_operand:V128J 2 "nonmemory_operand" "r")))]
+                       (match_operand:V128J 2 "register_operand" "r")))]
   ""
   "adds<chunkx> %x0 = %x1, %x2\n\tadds<chunkx> %y0 = %y1, %y2"
   [(set_attr "type" "alu_lite_x2")
@@ -2638,8 +2638,8 @@
 
 (define_insn_and_split "*usadd<mode>3_s1"
   [(set (match_operand:V128J 0 "register_operand" "=&r")
-        (us_plus:V128J (vec_duplicate:V128J (match_operand:<CHUNK> 1 "register_operand" "r"))
-                       (match_operand:V128J 2 "nonmemory_operand" "r")))
+        (us_plus:V128J (vec_duplicate:V128J (match_operand:<CHUNK> 1 "nonmemory_operand" "r"))
+                       (match_operand:V128J 2 "register_operand" "r")))
    (clobber (match_scratch:V128J 3 "=&r"))
    (clobber (match_scratch:V128J 4 "=&r"))]
   "KV3_1"
@@ -2678,7 +2678,7 @@
   [(set (match_operand:V128J 0 "register_operand" "=r")
         (plus:V128J (ashift:V128J (match_operand:V128J 1 "register_operand" "r")
                                   (const_int 1))
-                    (match_operand:V128J 2 "nonmemory_operand" "r")))]
+                    (match_operand:V128J 2 "register_operand" "r")))]
   ""
   "addx2<chunkx> %x0 = %x1, %x2\n\taddx2<chunkx> %y0 = %y1, %y2"
   [(set_attr "type" "alu_lite_x2")
@@ -2689,7 +2689,7 @@
   [(set (match_operand:V128J 0 "register_operand" "=r")
         (plus:V128J (ashift:V128J (match_operand:V128J 1 "register_operand" "r")
                                   (const_int 2))
-                    (match_operand:V128J 2 "nonmemory_operand" "r")))]
+                    (match_operand:V128J 2 "register_operand" "r")))]
   ""
   "addx4<chunkx> %x0 = %x1, %x2\n\taddx4<chunkx> %y0 = %y1, %y2"
   [(set_attr "type" "alu_lite_x2")
@@ -2700,7 +2700,7 @@
   [(set (match_operand:V128J 0 "register_operand" "=r")
         (plus:V128J (ashift:V128J (match_operand:V128J 1 "register_operand" "r")
                                   (const_int 3))
-                    (match_operand:V128J 2 "nonmemory_operand" "r")))]
+                    (match_operand:V128J 2 "register_operand" "r")))]
   ""
   "addx8<chunkx> %x0 = %x1, %x2\n\taddx8<chunkx> %y0 = %y1, %y2"
   [(set_attr "type" "alu_lite_x2")
@@ -2711,7 +2711,7 @@
   [(set (match_operand:V128J 0 "register_operand" "=r")
         (plus:V128J (ashift:V128J (match_operand:V128J 1 "register_operand" "r")
                                   (const_int 4))
-                    (match_operand:V128J 2 "nonmemory_operand" "r")))]
+                    (match_operand:V128J 2 "register_operand" "r")))]
   ""
   "addx16<chunkx> %x0 = %x1, %x2\n\taddx16<chunkx> %y0 = %y1, %y2"
   [(set_attr "type" "alu_lite_x2")
@@ -2720,7 +2720,7 @@
 
 (define_insn "sub<mode>3"
   [(set (match_operand:V128J 0 "register_operand" "=r")
-        (minus:V128J (match_operand:V128J 1 "nonmemory_operand" "r")
+        (minus:V128J (match_operand:V128J 1 "register_operand" "r")
                      (match_operand:V128J 2 "register_operand" "r")))]
   ""
   "sbf<chunkx> %x0 = %x2, %x1\n\tsbf<chunkx> %y0 = %y2, %y1"
@@ -2750,7 +2750,7 @@
 
 (define_insn "sssub<mode>3"
   [(set (match_operand:V128J 0 "register_operand" "=r")
-        (ss_minus:V128J (match_operand:V128J 1 "nonmemory_operand" "r")
+        (ss_minus:V128J (match_operand:V128J 1 "register_operand" "r")
                         (match_operand:V128J 2 "register_operand" "r")))]
   ""
   "sbfs<chunkx> %x0 = %x2, %x1\n\tsbfs<chunkx> %y0 = %y2, %y1"
@@ -2818,8 +2818,8 @@
 
 (define_insn_and_split "*ussub<mode>3_s2"
   [(set (match_operand:V128J 0 "register_operand" "=&r")
-        (us_minus:V128J (match_operand:V128J 1 "nonmemory_operand" "r")
-                        (vec_duplicate:V128J (match_operand:<CHUNK> 2 "register_operand" "r"))))
+        (us_minus:V128J (match_operand:V128J 1 "register_operand" "r")
+                        (vec_duplicate:V128J (match_operand:<CHUNK> 2 "nonmemory_operand" "r"))))
    (clobber (match_scratch:V128J 3 "=&r"))
    (clobber (match_scratch:V128J 4 "=&r"))]
   "KV3_1"
@@ -2837,7 +2837,7 @@
 
 (define_insn "*sbfx2<suffix>"
   [(set (match_operand:V128J 0 "register_operand" "=r")
-        (minus:V128J (match_operand:V128J 1 "nonmemory_operand" "r")
+        (minus:V128J (match_operand:V128J 1 "register_operand" "r")
                      (ashift:V128J (match_operand:V128J 2 "register_operand" "r")
                                    (const_int 1))))]
   ""
@@ -2848,7 +2848,7 @@
 
 (define_insn "*sbfx4<suffix>"
   [(set (match_operand:V128J 0 "register_operand" "=r")
-        (minus:V128J (match_operand:V128J 1 "nonmemory_operand" "r")
+        (minus:V128J (match_operand:V128J 1 "register_operand" "r")
                      (ashift:V128J (match_operand:V128J 2 "register_operand" "r")
                                    (const_int 2))))]
   ""
@@ -2859,7 +2859,7 @@
 
 (define_insn "*sbfx8<suffix>"
   [(set (match_operand:V128J 0 "register_operand" "=r")
-        (minus:V128J (match_operand:V128J 1 "nonmemory_operand" "r")
+        (minus:V128J (match_operand:V128J 1 "register_operand" "r")
                      (ashift:V128J (match_operand:V128J 2 "register_operand" "r")
                                    (const_int 3))))]
   ""
@@ -2870,7 +2870,7 @@
 
 (define_insn "*sbfx16<suffix>"
   [(set (match_operand:V128J 0 "register_operand" "=r")
-        (minus:V128J (match_operand:V128J 1 "nonmemory_operand" "r")
+        (minus:V128J (match_operand:V128J 1 "register_operand" "r")
                      (ashift:V128J (match_operand:V128J 2 "register_operand" "r")
                                    (const_int 4))))]
   ""
@@ -2882,7 +2882,7 @@
 (define_insn "smin<mode>3"
   [(set (match_operand:V128J 0 "register_operand" "=r")
         (smin:V128J (match_operand:V128J 1 "register_operand" "r")
-                    (match_operand:V128J 2 "nonmemory_operand" "r")))]
+                    (match_operand:V128J 2 "register_operand" "r")))]
   ""
   "min<chunkx> %x0 = %x1, %x2\n\tmin<chunkx> %y0 = %y1, %y2"
   [(set_attr "type" "alu_tiny_x2")
@@ -2912,7 +2912,7 @@
 (define_insn "smax<mode>3"
   [(set (match_operand:V128J 0 "register_operand" "=r")
         (smax:V128J (match_operand:V128J 1 "register_operand" "r")
-                    (match_operand:V128J 2 "nonmemory_operand" "r")))]
+                    (match_operand:V128J 2 "register_operand" "r")))]
   ""
   "max<chunkx> %x0 = %x1, %x2\n\tmax<chunkx> %y0 = %y1, %y2"
   [(set_attr "type" "alu_tiny_x2")
@@ -2942,7 +2942,7 @@
 (define_insn "umin<mode>3"
   [(set (match_operand:V128J 0 "register_operand" "=r")
         (umin:V128J (match_operand:V128J 1 "register_operand" "r")
-                    (match_operand:V128J 2 "nonmemory_operand" "r")))]
+                    (match_operand:V128J 2 "register_operand" "r")))]
   ""
   "minu<chunkx> %x0 = %x1, %x2\n\tminu<chunkx> %y0 = %y1, %y2"
   [(set_attr "type" "alu_tiny_x2")
@@ -2972,7 +2972,7 @@
 (define_insn "umax<mode>3"
   [(set (match_operand:V128J 0 "register_operand" "=r")
         (umax:V128J (match_operand:V128J 1 "register_operand" "r")
-                    (match_operand:V128J 2 "nonmemory_operand" "r")))]
+                    (match_operand:V128J 2 "register_operand" "r")))]
   ""
   "maxu<chunkx> %x0 = %x1, %x2\n\tmaxu<chunkx> %y0 = %y1, %y2"
   [(set_attr "type" "alu_tiny_x2")
@@ -3005,7 +3005,7 @@
 (define_insn "and<mode>3"
   [(set (match_operand:V128L 0 "register_operand" "=r")
         (and:V128L (match_operand:V128L 1 "register_operand" "r")
-                   (match_operand:V128L 2 "nonmemory_operand" "r")))]
+                   (match_operand:V128L 2 "register_operand" "r")))]
   ""
   "andd %x0 = %x1, %x2\n\tandd %y0 = %y1, %y2"
   [(set_attr "type" "alu_tiny_x2")
@@ -3015,7 +3015,7 @@
 (define_insn "*nand<mode>3"
   [(set (match_operand:V128L 0 "register_operand" "=r")
         (ior:V128L (not:V128L (match_operand:V128L 1 "register_operand" "r"))
-                   (not:V128L (match_operand:V128L 2 "nonmemory_operand" "r"))))]
+                   (not:V128L (match_operand:V128L 2 "register_operand" "r"))))]
   ""
   "nandd %x0 = %x1, %x2\n\tnandd %y0 = %y1, %y2"
   [(set_attr "type" "alu_tiny_x2")
@@ -3025,7 +3025,7 @@
 (define_insn "*andn<mode>3"
   [(set (match_operand:V128L 0 "register_operand" "=r")
         (and:V128L (not:V128L (match_operand:V128L 1 "register_operand" "r"))
-                   (match_operand:V128L 2 "nonmemory_operand" "r")))]
+                   (match_operand:V128L 2 "register_operand" "r")))]
   ""
   "andnd %x0 = %x1, %x2\n\tandnd %y0 = %y1, %y2"
   [(set_attr "type" "alu_tiny_x2")
@@ -3035,7 +3035,7 @@
 (define_insn "ior<mode>3"
   [(set (match_operand:V128L 0 "register_operand" "=r")
         (ior:V128L (match_operand:V128L 1 "register_operand" "r")
-                   (match_operand:V128L 2 "nonmemory_operand" "r")))]
+                   (match_operand:V128L 2 "register_operand" "r")))]
   ""
   "ord %x0 = %x1, %x2\n\tord %y0 = %y1, %y2"
   [(set_attr "type" "alu_tiny_x2")
@@ -3045,7 +3045,7 @@
 (define_insn "*nior<mode>3"
   [(set (match_operand:V128L 0 "register_operand" "=r")
         (and:V128L (not:V128L (match_operand:V128L 1 "register_operand" "r"))
-                   (not:V128L (match_operand:V128L 2 "nonmemory_operand" "r"))))]
+                   (not:V128L (match_operand:V128L 2 "register_operand" "r"))))]
   ""
   "nord %x0 = %x1, %x2\n\tnord %y0 = %y1, %y2"
   [(set_attr "type" "alu_tiny_x2")
@@ -3055,7 +3055,7 @@
 (define_insn "*iorn<mode>3"
   [(set (match_operand:V128L 0 "register_operand" "=r")
         (ior:V128L (not:V128L (match_operand:V128L 1 "register_operand" "r"))
-                   (match_operand:V128L 2 "nonmemory_operand" "r")))]
+                   (match_operand:V128L 2 "register_operand" "r")))]
   ""
   "ornd %x0 = %x1, %x2\n\tornd %y0 = %y1, %y2"
   [(set_attr "type" "alu_tiny_x2")
@@ -3065,7 +3065,7 @@
 (define_insn "xor<mode>3"
   [(set (match_operand:V128L 0 "register_operand" "=r")
         (xor:V128L (match_operand:V128L 1 "register_operand" "r")
-                   (match_operand:V128L 2 "nonmemory_operand" "r")))]
+                   (match_operand:V128L 2 "register_operand" "r")))]
   ""
   "xord %x0 = %x1, %x2\n\txord %y0 = %y1, %y2"
   [(set_attr "type" "alu_tiny_x2")
@@ -3075,7 +3075,7 @@
 (define_insn "*nxor<mode>3"
   [(set (match_operand:V128L 0 "register_operand" "=r")
         (not:V128L (xor:V128L (match_operand:V128L 1 "register_operand" "r")
-                              (match_operand:V128L 2 "nonmemory_operand" "r"))))]
+                              (match_operand:V128L 2 "register_operand" "r"))))]
   ""
   "nxord %x0 = %x1, %x2\n\tnxord %y0 = %y1, %y2"
   [(set_attr "type" "alu_tiny_x2")
@@ -3088,7 +3088,7 @@
 (define_insn_and_split "madd<mode><mode>4"
   [(set (match_operand:V128J 0 "register_operand" "=r")
         (plus:V128J (mult:V128J (match_operand:V128J 1 "register_operand" "r")
-                                (match_operand:V128J 2 "nonmemory_operand" "r"))
+                                (match_operand:V128J 2 "register_operand" "r"))
                     (match_operand:V128J 3 "register_operand" "0")))]
   ""
   "#"
@@ -3378,7 +3378,7 @@
 (define_insn_and_split "mul<mode>3"
   [(set (match_operand:V128I 0 "register_operand" "=r")
         (mult:V128I (match_operand:V128I 1 "register_operand" "r")
-                    (match_operand:V128I 2 "nonmemory_operand" "r")))]
+                    (match_operand:V128I 2 "register_operand" "r")))]
   ""
   "#"
   "reload_completed"
@@ -3483,7 +3483,7 @@
 (define_insn "mulv4si3"
   [(set (match_operand:V4SI 0 "register_operand" "=r")
         (mult:V4SI (match_operand:V4SI 1 "register_operand" "r")
-                   (match_operand:V4SI 2 "nonmemory_operand" "r")))]
+                   (match_operand:V4SI 2 "register_operand" "r")))]
   ""
   "mulwq %0 = %1, %2"
   [(set_attr "type" "mau_auxr")]
@@ -3542,8 +3542,8 @@
 (define_insn_and_split "*compndp_s2"
   [(set (match_operand:V2DI 0 "register_operand" "=&r")
         (match_operator:V2DI 1 "comparison_operator"
-         [(vec_duplicate:V2DI (match_operand:DI 2 "register_operand" "r"))
-          (match_operand:V2DI 3 "nonmemory_operand" "r")]))]
+         [(vec_duplicate:V2DI (match_operand:DI 2 "nonmemory_operand" "r"))
+          (match_operand:V2DI 3 "register_operand" "r")]))]
   "KV3_1"
   "#"
   "KV3_1 && reload_completed"
@@ -3574,8 +3574,8 @@
 (define_insn "*compdp_s2"
   [(set (match_operand:V2DI 0 "register_operand" "=r")
         (neg:V2DI (match_operator:V2DI 1 "comparison_operator"
-                   [(vec_duplicate:V2DI (match_operand:DI 2 "register_operand" "r"))
-                    (match_operand:V2DI 3 "nonmemory_operand" "r")])))]
+                   [(vec_duplicate:V2DI (match_operand:DI 2 "nonmemory_operand" "r"))
+                    (match_operand:V2DI 3 "register_operand" "r")])))]
   ""
   "compd.%1 %x0 = %2, %x3\n\tcompd.%1 %y0 = %2, %y3"
   [(set_attr "type" "alu_tiny_x2")
@@ -3729,8 +3729,8 @@
 (define_insn "*compn<suffix>_s2"
   [(set (match_operand:<MASK> 0 "register_operand" "=r")
         (match_operator:<MASK> 1 "comparison_operator"
-         [(vec_duplicate:S256I (match_operand:<CHUNK> 2 "register_operand" "r"))
-          (match_operand:S256I 3 "nonmemory_operand" "r")]))]
+         [(vec_duplicate:S256I (match_operand:<CHUNK> 2 "nonmemory_operand" "r"))
+          (match_operand:S256I 3 "register_operand" "r")]))]
   ""
   {
     return "compn<chunkx>.%1 %x0 = %2, %x3\n\tcompn<chunkx>.%1 %y0 = %2, %y3\n\t"
@@ -3942,7 +3942,7 @@
 (define_insn_and_split "mul<mode>3"
   [(set (match_operand:V256I 0 "register_operand" "=r")
         (mult:V256I (match_operand:V256I 1 "register_operand" "r")
-                    (match_operand:V256I 2 "nonmemory_operand" "r")))]
+                    (match_operand:V256I 2 "register_operand" "r")))]
   ""
   "#"
   "reload_completed"
@@ -4014,7 +4014,7 @@
 (define_insn "add<mode>3"
   [(set (match_operand:V256J 0 "register_operand" "=r")
         (plus:V256J (match_operand:V256J 1 "register_operand" "r")
-                    (match_operand:V256J 2 "nonmemory_operand" "r")))]
+                    (match_operand:V256J 2 "register_operand" "r")))]
   ""
   {
     return "add<chunkx> %x0 = %x1, %x2\n\tadd<chunkx> %y0 = %y1, %y2\n\t"
@@ -4053,7 +4053,7 @@
 (define_insn_and_split "ssadd<mode>3"
   [(set (match_operand:V256J 0 "register_operand" "=r")
         (ss_plus:V256J (match_operand:V256J 1 "register_operand" "r")
-                       (match_operand:V256J 2 "nonmemory_operand" "r")))]
+                       (match_operand:V256J 2 "register_operand" "r")))]
   ""
   "#"
   "reload_completed"
@@ -4104,7 +4104,7 @@
 (define_insn_and_split "usadd<mode>3"
   [(set (match_operand:V256J 0 "register_operand" "=r")
         (us_plus:V256J (match_operand:V256J 1 "register_operand" "r")
-                       (match_operand:V256J 2 "nonmemory_operand" "r")))
+                       (match_operand:V256J 2 "register_operand" "r")))
    (clobber (match_scratch:V256J 3 "=&r"))
    (clobber (match_scratch:V256J 4 "=&r"))]
   ""
@@ -4127,8 +4127,8 @@
 
 (define_insn_and_split "*usadd<mode>3_s1"
   [(set (match_operand:V256J 0 "register_operand" "=&r")
-        (us_plus:V256J (vec_duplicate:V256J (match_operand:<CHUNK> 1 "register_operand" "r"))
-                       (match_operand:V256J 2 "nonmemory_operand" "r")))
+        (us_plus:V256J (vec_duplicate:V256J (match_operand:<CHUNK> 1 "nonmemory_operand" "r"))
+                       (match_operand:V256J 2 "register_operand" "r")))
    (clobber (match_scratch:V256J 3 "=&r"))
    (clobber (match_scratch:V256J 4 "=&r"))]
   "KV3_1"
@@ -4167,7 +4167,7 @@
   [(set (match_operand:V256J 0 "register_operand" "=r")
         (plus:V256J (ashift:V256J (match_operand:V256J 1 "register_operand" "r")
                                   (const_int 1))
-                    (match_operand:V256J 2 "nonmemory_operand" "r")))]
+                    (match_operand:V256J 2 "register_operand" "r")))]
   ""
   "#"
   "reload_completed"
@@ -4187,7 +4187,7 @@
   [(set (match_operand:V256J 0 "register_operand" "=r")
         (plus:V256J (ashift:V256J (match_operand:V256J 1 "register_operand" "r")
                                   (const_int 2))
-                    (match_operand:V256J 2 "nonmemory_operand" "r")))]
+                    (match_operand:V256J 2 "register_operand" "r")))]
   ""
   "#"
   "reload_completed"
@@ -4207,7 +4207,7 @@
   [(set (match_operand:V256J 0 "register_operand" "=r")
         (plus:V256J (ashift:V256J (match_operand:V256J 1 "register_operand" "r")
                                   (const_int 3))
-                    (match_operand:V256J 2 "nonmemory_operand" "r")))]
+                    (match_operand:V256J 2 "register_operand" "r")))]
   ""
   "#"
   "reload_completed"
@@ -4227,7 +4227,7 @@
   [(set (match_operand:V256J 0 "register_operand" "=r")
         (plus:V256J (ashift:V256J (match_operand:V256J 1 "register_operand" "r")
                                   (const_int 4))
-                    (match_operand:V256J 2 "nonmemory_operand" "r")))]
+                    (match_operand:V256J 2 "register_operand" "r")))]
   ""
   "#"
   "reload_completed"
@@ -4245,7 +4245,7 @@
 
 (define_insn "sub<mode>3"
   [(set (match_operand:V256J 0 "register_operand" "=r")
-        (minus:V256J (match_operand:V256J 1 "nonmemory_operand" "r")
+        (minus:V256J (match_operand:V256J 1 "register_operand" "r")
                      (match_operand:V256J 2 "register_operand" "r")))]
   ""
   {
@@ -4284,7 +4284,7 @@
 
 (define_insn_and_split "sssub<mode>3"
   [(set (match_operand:V256J 0 "register_operand" "=r")
-        (ss_minus:V256J (match_operand:V256J 1 "nonmemory_operand" "r")
+        (ss_minus:V256J (match_operand:V256J 1 "register_operand" "r")
                         (match_operand:V256J 2 "register_operand" "r")))]
   ""
   "#"
@@ -4335,7 +4335,7 @@
 
 (define_insn_and_split "ussub<mode>3"
   [(set (match_operand:V256J 0 "register_operand" "=r")
-        (us_minus:V256J (match_operand:V256J 1 "nonmemory_operand" "r")
+        (us_minus:V256J (match_operand:V256J 1 "register_operand" "r")
                         (match_operand:V256J 2 "register_operand" "r")))
    (clobber (match_scratch:V256J 3 "=&r"))]
   ""
@@ -4373,8 +4373,8 @@
 
 (define_insn_and_split "*ussub<mode>3_s2"
   [(set (match_operand:V256J 0 "register_operand" "=&r")
-        (us_minus:V256J (match_operand:V256J 1 "nonmemory_operand" "r")
-                        (vec_duplicate:V256J (match_operand:<CHUNK> 2 "register_operand" "r"))))
+        (us_minus:V256J (match_operand:V256J 1 "register_operand" "r")
+                        (vec_duplicate:V256J (match_operand:<CHUNK> 2 "nonmemory_operand" "r"))))
    (clobber (match_scratch:V256J 3 "=&r"))
    (clobber (match_scratch:V256J 4 "=&r"))]
   "KV3_1"
@@ -4392,7 +4392,7 @@
 
 (define_insn_and_split "*sbfx2<suffix>"
   [(set (match_operand:V256J 0 "register_operand" "=r")
-        (minus:V256J (match_operand:V256J 1 "nonmemory_operand" "r")
+        (minus:V256J (match_operand:V256J 1 "register_operand" "r")
                      (ashift:V256J (match_operand:V256J 2 "register_operand" "r")
                                    (const_int 1))))]
   ""
@@ -4412,7 +4412,7 @@
 
 (define_insn_and_split "*sbfx4<suffix>"
   [(set (match_operand:V256J 0 "register_operand" "=r")
-        (minus:V256J (match_operand:V256J 1 "nonmemory_operand" "r")
+        (minus:V256J (match_operand:V256J 1 "register_operand" "r")
                      (ashift:V256J (match_operand:V256J 2 "register_operand" "r")
                                    (const_int 2))))]
   ""
@@ -4432,7 +4432,7 @@
 
 (define_insn_and_split "*sbfx8<suffix>"
   [(set (match_operand:V256J 0 "register_operand" "=r")
-        (minus:V256J (match_operand:V256J 1 "nonmemory_operand" "r")
+        (minus:V256J (match_operand:V256J 1 "register_operand" "r")
                      (ashift:V256J (match_operand:V256J 2 "register_operand" "r")
                                    (const_int 3))))]
   ""
@@ -4452,7 +4452,7 @@
 
 (define_insn_and_split "*sbfx16<suffix>"
   [(set (match_operand:V256J 0 "register_operand" "=r")
-        (minus:V256J (match_operand:V256J 1 "nonmemory_operand" "r")
+        (minus:V256J (match_operand:V256J 1 "register_operand" "r")
                      (ashift:V256J (match_operand:V256J 2 "register_operand" "r")
                                    (const_int 4))))]
   ""
@@ -4473,7 +4473,7 @@
 (define_insn "smin<mode>3"
   [(set (match_operand:V256J 0 "register_operand" "=r")
         (smin:V256J (match_operand:V256J 1 "register_operand" "r")
-                    (match_operand:V256J 2 "nonmemory_operand" "r")))]
+                    (match_operand:V256J 2 "register_operand" "r")))]
   ""
   {
     return "min<chunkx> %x0 = %x1, %x2\n\tmin<chunkx> %y0 = %y1, %y2\n\t"
@@ -4512,7 +4512,7 @@
 (define_insn "smax<mode>3"
   [(set (match_operand:V256J 0 "register_operand" "=r")
         (smax:V256J (match_operand:V256J 1 "register_operand" "r")
-                    (match_operand:V256J 2 "nonmemory_operand" "r")))]
+                    (match_operand:V256J 2 "register_operand" "r")))]
   ""
   {
     return "max<chunkx> %x0 = %x1, %x2\n\tmax<chunkx> %y0 = %y1, %y2\n\t"
@@ -4551,7 +4551,7 @@
 (define_insn "umin<mode>3"
   [(set (match_operand:V256J 0 "register_operand" "=r")
         (umin:V256J (match_operand:V256J 1 "register_operand" "r")
-                    (match_operand:V256J 2 "nonmemory_operand" "r")))]
+                    (match_operand:V256J 2 "register_operand" "r")))]
   ""
   {
     return "minu<chunkx> %x0 = %x1, %x2\n\tminu<chunkx> %y0 = %y1, %y2\n\t"
@@ -4590,7 +4590,7 @@
 (define_insn "umax<mode>3"
   [(set (match_operand:V256J 0 "register_operand" "=r")
         (umax:V256J (match_operand:V256J 1 "register_operand" "r")
-                    (match_operand:V256J 2 "nonmemory_operand" "r")))]
+                    (match_operand:V256J 2 "register_operand" "r")))]
   ""
   {
     return "maxu<chunkx> %x0 = %x1, %x2\n\tmaxu<chunkx> %y0 = %y1, %y2\n\t"
@@ -4632,7 +4632,7 @@
 (define_insn "and<mode>3"
   [(set (match_operand:V256L 0 "register_operand" "=r")
         (and:V256L (match_operand:V256L 1 "register_operand" "r")
-                   (match_operand:V256L 2 "nonmemory_operand" "r")))]
+                   (match_operand:V256L 2 "register_operand" "r")))]
   ""
   {
     return "andd %x0 = %x1, %x2\n\tandd %y0 = %y1, %y2\n\t"
@@ -4645,7 +4645,7 @@
 (define_insn "*nand<suffix>3"
   [(set (match_operand:V256L 0 "register_operand" "=r")
         (ior:V256L (not:V256L (match_operand:V256L 1 "register_operand" "r"))
-                   (not:V256L (match_operand:V256L 2 "nonmemory_operand" "r"))))]
+                   (not:V256L (match_operand:V256L 2 "register_operand" "r"))))]
   ""
   {
     return "nandd %x0 = %x1, %x2\n\tnandd %y0 = %y1, %y2\n\t"
@@ -4658,7 +4658,7 @@
 (define_insn "*andn<suffix>3"
   [(set (match_operand:V256L 0 "register_operand" "=r")
         (and:V256L (not:V256L (match_operand:V256L 1 "register_operand" "r"))
-                   (match_operand:V256L 2 "nonmemory_operand" "r")))]
+                   (match_operand:V256L 2 "register_operand" "r")))]
   ""
   {
     return "andnd %x0 = %x1, %x2\n\tandnd %y0 = %y1, %y2\n\t"
@@ -4671,7 +4671,7 @@
 (define_insn "ior<mode>3"
   [(set (match_operand:V256L 0 "register_operand" "=r")
         (ior:V256L (match_operand:V256L 1 "register_operand" "r")
-                   (match_operand:V256L 2 "nonmemory_operand" "r")))]
+                   (match_operand:V256L 2 "register_operand" "r")))]
   ""
   {
     return "ord %x0 = %x1, %x2\n\tord %y0 = %y1, %y2\n\t"
@@ -4684,7 +4684,7 @@
 (define_insn "*nior<suffix>3"
   [(set (match_operand:V256L 0 "register_operand" "=r")
         (and:V256L (not:V256L (match_operand:V256L 1 "register_operand" "r"))
-                   (not:V256L (match_operand:V256L 2 "nonmemory_operand" "r"))))]
+                   (not:V256L (match_operand:V256L 2 "register_operand" "r"))))]
   ""
   {
     return "nord %x0 = %x1, %x2\n\tnord %y0 = %y1, %y2\n\t"
@@ -4697,7 +4697,7 @@
 (define_insn "*iorn<suffix>3"
   [(set (match_operand:V256L 0 "register_operand" "=r")
         (ior:V256L (not:V256L (match_operand:V256L 1 "register_operand" "r"))
-                   (match_operand:V256L 2 "nonmemory_operand" "r")))]
+                   (match_operand:V256L 2 "register_operand" "r")))]
   ""
   {
     return "ornd %x0 = %x1, %x2\n\tornd %y0 = %y1, %y2\n\t"
@@ -4710,7 +4710,7 @@
 (define_insn "xor<mode>3"
   [(set (match_operand:V256L 0 "register_operand" "=r")
         (xor:V256L (match_operand:V256L 1 "register_operand" "r")
-                   (match_operand:V256L 2 "nonmemory_operand" "r")))]
+                   (match_operand:V256L 2 "register_operand" "r")))]
   ""
   {
     return "xord %x0 = %x1, %x2\n\txord %y0 = %y1, %y2\n\t"
@@ -4723,7 +4723,7 @@
 (define_insn "*nxor<suffix>3"
   [(set (match_operand:V256L 0 "register_operand" "=r")
         (not:V256L (xor:V256L (match_operand:V256L 1 "register_operand" "r")
-                              (match_operand:V256L 2 "nonmemory_operand" "r"))))]
+                              (match_operand:V256L 2 "register_operand" "r"))))]
   ""
   {
     return "nxord %x0 = %x1, %x2\n\tnxord %y0 = %y1, %y2\n\t"
@@ -4739,7 +4739,7 @@
 (define_insn_and_split "madd<mode><mode>4"
   [(set (match_operand:V256J 0 "register_operand" "=r")
         (plus:V256J (mult:V256J (match_operand:V256J 1 "register_operand" "r")
-                                (match_operand:V256J 2 "nonmemory_operand" "r"))
+                                (match_operand:V256J 2 "register_operand" "r"))
                     (match_operand:V256J 3 "register_operand" "0")))]
   ""
   "#"
@@ -5192,7 +5192,7 @@
 (define_insn_and_split "mulv8si3"
   [(set (match_operand:V8SI 0 "register_operand" "=r")
         (mult:V8SI (match_operand:V8SI 1 "register_operand" "r")
-                    (match_operand:V8SI 2 "nonmemory_operand" "r")))]
+                    (match_operand:V8SI 2 "register_operand" "r")))]
   ""
   "#"
   "reload_completed"
@@ -5242,8 +5242,8 @@
 (define_insn_and_split "*compndq_s2"
   [(set (match_operand:V4DI 0 "register_operand" "=&r")
         (match_operator:V4DI 1 "comparison_operator"
-         [(vec_duplicate:V4DI (match_operand:DI 2 "register_operand" "r"))
-          (match_operand:V4DI 3 "nonmemory_operand" "r")]))]
+         [(vec_duplicate:V4DI (match_operand:DI 2 "nonmemory_operand" "r"))
+          (match_operand:V4DI 3 "register_operand" "r")]))]
   "KV3_1"
   "#"
   "KV3_1 && reload_completed"
@@ -5274,8 +5274,8 @@
 (define_insn "*compdq_s2"
   [(set (match_operand:V4DI 0 "register_operand" "=r")
         (neg:V4DI (match_operator:V4DI 1 "comparison_operator"
-                   [(vec_duplicate:V4DI (match_operand:DI 2 "register_operand" "r"))
-                    (match_operand:V4DI 3 "nonmemory_operand" "r")])))]
+                   [(vec_duplicate:V4DI (match_operand:DI 2 "nonmemory_operand" "r"))
+                    (match_operand:V4DI 3 "register_operand" "r")])))]
   ""
   {
     return "compd.%1 %x0 = %2, %x3\n\tcompd.%1 %y0 = %2, %y3\n\t"
@@ -5800,7 +5800,7 @@
 (define_insn "*fcompn<suffix>_s2"
   [(set (match_operand:<MASK> 0 "register_operand" "=r")
         (match_operator:<MASK> 1 "float_comparison_operator"
-         [(vec_duplicate:S128F (match_operand:<CHUNK> 2 "register_operand" "r"))
+         [(vec_duplicate:S128F (match_operand:<CHUNK> 2 "nonmemory_operand" "r"))
           (match_operand:S128F 3 "register_operand" "r")]))]
   ""
   "fcompn<chunkx>.%F1 %x0 = %2, %x3\n\tfcompn<chunkx>.%F1 %y0 = %2, %y3"
@@ -5812,7 +5812,7 @@
   [(set (match_operand:<MASK> 0 "register_operand" "=r")
         (match_operator:<MASK> 1 "float_comparison_operator"
          [(match_operand:S128F 2 "register_operand" "r")
-          (vec_duplicate:S128F (match_operand:<CHUNK> 3 "register_operand" "r"))]))]
+          (vec_duplicate:S128F (match_operand:<CHUNK> 3 "nonmemory_operand" "r"))]))]
   ""
   "fcompn<chunkx>.%F1 %x0 = %x2, %3\n\tfcompn<chunkx>.%F1 %y0 = %y2, %3"
   [(set_attr "type" "alu_thin_x2")
@@ -6310,7 +6310,7 @@
 (define_insn_and_split "*fcompndp_s2"
   [(set (match_operand:V2DI 0 "register_operand" "=&r")
         (match_operator:V2DI 1 "float_comparison_operator"
-         [(vec_duplicate:V2DF (match_operand:DF 2 "register_operand" "r"))
+         [(vec_duplicate:V2DF (match_operand:DF 2 "nonmemory_operand" "r"))
           (match_operand:V2DF 3 "register_operand" "r")]))]
   "KV3_1"
   "#"
@@ -6327,7 +6327,7 @@
   [(set (match_operand:V2DI 0 "register_operand" "=&r")
         (match_operator:V2DI 1 "float_comparison_operator"
          [(match_operand:V2DF 2 "register_operand" "r")
-          (vec_duplicate:V2DF (match_operand:DF 3 "register_operand" "r"))]))]
+          (vec_duplicate:V2DF (match_operand:DF 3 "nonmemory_operand" "r"))]))]
   "KV3_1"
   "#"
   "KV3_1 && reload_completed"
@@ -6342,7 +6342,7 @@
 (define_insn "*fcompdp_s2"
   [(set (match_operand:V2DI 0 "register_operand" "=r")
         (neg:V2DI (match_operator:V2DI 1 "float_comparison_operator"
-                   [(vec_duplicate:V2DF (match_operand:DF 2 "register_operand" "r"))
+                   [(vec_duplicate:V2DF (match_operand:DF 2 "nonmemory_operand" "r"))
                     (match_operand:V2DF 3 "register_operand" "r")])))]
   ""
   "fcompd.%F1 %x0 = %2, %x3\n\tfcompd.%F1 %y0 = %2, %y3"
@@ -6354,7 +6354,7 @@
   [(set (match_operand:V2DI 0 "register_operand" "=r")
         (neg:V2DI (match_operator:V2DI 1 "float_comparison_operator"
                    [(match_operand:V2DF 2 "register_operand" "r")
-                    (vec_duplicate:V2DF (match_operand:DF 3 "register_operand" "r"))])))]
+                    (vec_duplicate:V2DF (match_operand:DF 3 "nonmemory_operand" "r"))])))]
   ""
   "fcompd.%F1 %x0 = %x2, %3\n\tfcompd.%F1 %y0 = %y2, %3"
   [(set_attr "type" "alu_thin_x2")
@@ -6586,7 +6586,7 @@
 (define_insn_and_split "*fcompn<suffix>_s2"
   [(set (match_operand:<MASK> 0 "register_operand" "=&r")
         (match_operator:<MASK> 1 "float_comparison_operator"
-         [(vec_duplicate:S256F (match_operand:<CHUNK> 2 "register_operand" "r"))
+         [(vec_duplicate:S256F (match_operand:<CHUNK> 2 "nonmemory_operand" "r"))
           (match_operand:S256F 3 "register_operand" "r")]))]
   ""
   "#"
@@ -6607,7 +6607,7 @@
   [(set (match_operand:<MASK> 0 "register_operand" "=&r")
         (match_operator:<MASK> 1 "float_comparison_operator"
          [(match_operand:S256F 2 "register_operand" "r")
-          (vec_duplicate:S256F (match_operand:<CHUNK> 3 "register_operand" "r"))]))]
+          (vec_duplicate:S256F (match_operand:<CHUNK> 3 "nonmemory_operand" "r"))]))]
   ""
   "#"
   "reload_completed"
@@ -7239,7 +7239,7 @@
 (define_insn_and_split "*fcompndq_s2"
   [(set (match_operand:V4DI 0 "register_operand" "=&r")
         (match_operator:V4DI 1 "float_comparison_operator"
-         [(vec_duplicate:V4DF (match_operand:DF 2 "register_operand" "r"))
+         [(vec_duplicate:V4DF (match_operand:DF 2 "nonmemory_operand" "r"))
           (match_operand:V4DF 3 "register_operand" "r")]))]
   "KV3_1"
   "#"
@@ -7260,7 +7260,7 @@
   [(set (match_operand:V4DI 0 "register_operand" "=&r")
         (match_operator:V4DI 1 "float_comparison_operator"
          [(match_operand:V4DF 2 "register_operand" "r")
-          (vec_duplicate:V4DF (match_operand:DF 3 "register_operand" "r"))]))]
+          (vec_duplicate:V4DF (match_operand:DF 3 "nonmemory_operand" "r"))]))]
   "KV3_1"
   "#"
   "KV3_1 && reload_completed"
