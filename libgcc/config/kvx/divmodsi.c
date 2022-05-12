@@ -132,8 +132,8 @@ __udivmodsi4 (uint32_t a, uint32_t b, uint32_t *c)
 int32_t
 __divsi3 (int32_t a, int32_t b)
 {
-  uint32_t absa = a < 0 ? -a : a;
-  uint32_t absb = b < 0 ? -b : b;
+  uint32_t absa = __builtin_kvx_absw (a, "");
+  uint32_t absb = __builtin_kvx_absw (b, "");
   uint32x2_t divmod = uint32_divmod (absa, absb);
   int32_t result = (int32_t) divmod[0];
   if ((a ^ b) < 0)
@@ -144,8 +144,8 @@ __divsi3 (int32_t a, int32_t b)
 int32_t
 __modsi3 (int32_t a, int32_t b)
 {
-  uint32_t absa = a < 0 ? -a : a;
-  uint32_t absb = b < 0 ? -b : b;
+  uint32_t absa = __builtin_kvx_absw (a, "");
+  uint32_t absb = __builtin_kvx_absw (b, "");
   uint32x2_t divmod = uint32_divmod (absa, absb);
   int32_t result = (int32_t) divmod[1];
   if (a < 0)
