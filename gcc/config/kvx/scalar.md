@@ -599,6 +599,14 @@
         operands[2] = gen_rtx_CONST_INT (VOIDmode, __builtin_ctzll (constant));
         emit_insn (gen_sshrsi3 (operands[0], operands[1], operands[2]));
       }
+    else if (optimize_size)
+      {
+        rtx dest = emit_library_call_value (gen_rtx_SYMBOL_REF (Pmode, "__divsi3"),
+                                            operands[0], LCT_CONST, SImode,
+                                            operands[1], SImode, operands[2], SImode);
+        if (dest != operands[0])
+          emit_move_insn (operands[0], dest);
+      }
     else
       {
         operands[2] = force_reg (SImode, operands[2]);
@@ -633,6 +641,14 @@
         rtx temp = gen_reg_rtx (SImode);
         emit_insn (gen_ashlsi3 (temp, quo, operands[2]));
         emit_insn (gen_subsi3 (operands[0], operands[1], temp));
+      }
+    else if (optimize_size)
+      {
+        rtx dest = emit_library_call_value (gen_rtx_SYMBOL_REF (Pmode, "__modsi3"),
+                                            operands[0], LCT_CONST, SImode,
+                                            operands[1], SImode, operands[2], SImode);
+        if (dest != operands[0])
+          emit_move_insn (operands[0], dest);
       }
     else
       {
@@ -1744,6 +1760,14 @@
         operands[2] = gen_rtx_CONST_INT (VOIDmode, __builtin_ctzll (constant));
         emit_insn (gen_sshrdi3 (operands[0], operands[1], operands[2]));
       }
+    else if (optimize_size)
+      {
+        rtx dest = emit_library_call_value (gen_rtx_SYMBOL_REF (Pmode, "__divdi3"),
+                                            operands[0], LCT_CONST, DImode,
+                                            operands[1], DImode, operands[2], DImode);
+        if (dest != operands[0])
+          emit_move_insn (operands[0], dest);
+      }
     else
       {
         operands[2] = force_reg (DImode, operands[2]);
@@ -1778,6 +1802,14 @@
         rtx temp = gen_reg_rtx (DImode);
         emit_insn (gen_ashldi3 (temp, quo, operands[2]));
         emit_insn (gen_subdi3 (operands[0], operands[1], temp));
+      }
+    else if (optimize_size)
+      {
+        rtx dest = emit_library_call_value (gen_rtx_SYMBOL_REF (Pmode, "__moddi3"),
+                                            operands[0], LCT_CONST, DImode,
+                                            operands[1], DImode, operands[2], DImode);
+        if (dest != operands[0])
+          emit_move_insn (operands[0], dest);
       }
     else
       {
