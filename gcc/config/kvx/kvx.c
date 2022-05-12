@@ -6584,32 +6584,66 @@ kvx_handle_fixed_reg_option (const char *arg)
   return true;
 }
 
+static bool
+kvx_handle_stack_limit_register_option (const char *arg)
+{
+  if (kvx_have_stack_checking ())
+    {
+      int reg = decode_reg_name (arg);
+      if (reg < 0)
+        error ("unrecognized register name %qs", arg);
+      /* Only allow $sr as stack-limit register */
+      else if (strncmp (arg, "sr", 2))
+        {
+          error ("only $sr can be used as stack-limit register");
+        }
+      else
+        {
+          /* Deactivate previous OPT_fstack_limit_symbol_ options.  */
+          opt_fstack_limit_symbol_arg = NULL;
+          opt_fstack_limit_register_no = reg;
+        }
+
+      return true;
+    }
+  else
+    {
+      error ("-fstack-limit-* is not supported.");
+    }
+
+  return false;
+}
+
 /* Implements TARGET_OPTION_OVERRIDE.  */
 static void
 kvx_option_override (void)
 {
   int i;
   cl_deferred_option *opt;
-  vec<cl_deferred_option> *v = (vec<cl_deferred_option> *) kvx_deferred_options;
+  vec < cl_deferred_option > *v =
+    (vec < cl_deferred_option > *)kvx_deferred_options;
 
   if (v)
     FOR_EACH_VEC_ELT (*v, i, opt)
-      {
-	switch (opt->opt_index)
-	  {
-	  case OPT_ffixed_reg:
-	    kvx_handle_fixed_reg_option (opt->arg);
-	    break;
-	  default:
-	    gcc_unreachable ();
-	  }
-      }
+    {
+      switch (opt->opt_index)
+        {
+        case OPT_ffixed_reg:
+          kvx_handle_fixed_reg_option (opt->arg);
+          break;
+        case OPT_fstack_limit_register_:
+          kvx_handle_stack_limit_register_option (opt->arg);
+          break;
+        default:
+          gcc_unreachable ();
+        }
+    }
 
   kvx_arch_schedule = ARCH_KV3_1;
   if (KV3_2)
     kvx_arch_schedule = ARCH_KV3_2;
 
-  const char *KVX_COST_FACTOR =  getenv("KVX_COST_FACTOR");
+  const char *KVX_COST_FACTOR = getenv ("KVX_COST_FACTOR");
   if (KVX_COST_FACTOR)
     kvx_cost_factor = atoi (KVX_COST_FACTOR);
 }
