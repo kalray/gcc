@@ -98,10 +98,24 @@
   ss_minus
   us_minus
   ;; mult
+  ;; div
+  ;; mod
+  ;; udiv
+  ;; umod
   smin
   smax
   umin
   umax
+])
+
+(define_code_iterator BINDIV [
+  div
+  udiv
+])
+
+(define_code_iterator BINMOD [
+  mod
+  umod
 ])
 
 ;; Binary shift left code iterator for expanding VXQI patterns.
@@ -129,6 +143,10 @@
   (minus "sub")
   (ss_minus "sssub")
   (us_minus "ussub")
+  (div "div")
+  (mod "mod")
+  (udiv "udiv")
+  (umod "umod")
   (smin "smin")
   (smax "smax")
   (umin "umin")
@@ -166,6 +184,8 @@
 
 ;; Code attribute for setting the 8 msbs of 16-bit lanes.
 (define_code_attr set8msb [
+  (div "true")
+  (udiv "false")
   (lshiftrt "false")
   (ashiftrt "true")
   (rotatert "true")

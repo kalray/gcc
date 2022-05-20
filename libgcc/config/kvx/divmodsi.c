@@ -28,29 +28,7 @@
  * -- Benoit Dupont de Dinechin (benoit.dinechin@kalray.eu)
  */
 
-typedef __INT32_TYPE__ int32_t;
-typedef __UINT32_TYPE__ uint32_t;
-typedef uint32_t uint32x2_t __attribute ((vector_size (2 * sizeof (uint32_t))));
-
-typedef __INT64_TYPE__ int64_t;
-typedef __UINT64_TYPE__ uint64_t;
-typedef uint64_t uint64x2_t __attribute ((vector_size (2 * sizeof (uint64_t))));
-
-uint32_t __udivsi3 (uint32_t a, uint32_t b);
-uint32_t __umodsi3 (uint32_t a, uint32_t b);
-uint32_t __udivmodsi4 (uint32_t a, uint32_t b, uint32_t *c);
-int32_t __divsi3 (int32_t a, int32_t b);
-int32_t __modsi3 (int32_t a, int32_t b);
-
-#ifndef __linux__
-/*
- * Setting this symbol non-zero changes the behavior of divmod by zero.
- * The default behavior is to terminate the application with a trap.
- * This feature is needed by the OpenCL-C division where the result is
- * undefined instead of crashing the user application.
- */
-extern char *_KVX_NO_DIVMOD0_TRAP __attribute__ ((weak));
-#endif
+#include "divmodtypes.h"
 
 #if 0
 static inline uint32x2_t
@@ -84,15 +62,17 @@ div0:
 static inline uint32x2_t
 uint32_divmod (uint32_t a, uint32_t b)
 {
+  double double1 = 1.0;
   float floatb = __builtin_kvx_floatuw (b, 0,  ".rn.s");
-  float floatrec =  __builtin_kvx_frecw(floatb, ".rn.s");
+  float floatrec = __builtin_kvx_frecw (floatb, ".rn.s");
   if (b == 0) goto div0;
-  double doublerec = __builtin_kvx_fwidenwd (floatrec, ".s");
-  double alpha = __builtin_kvx_ffmsxwd(floatrec, floatb, 1.0, ".rn.s");
-  double beta = __builtin_kvx_ffmad(alpha, doublerec, doublerec, ".rn.s");
   double doublea = __builtin_kvx_floatud (a, 0, ".rn.s");
-  double gamma = __builtin_kvx_fmuld(doublea, beta, ".rn.s");
-  uint32_t quo = __builtin_kvx_fixedud(gamma, 0, ".rn.s");
+  double doubleb = __builtin_kvx_floatud (b, 0, ".rn.s");
+  double doublerec = __builtin_kvx_fwidenwd (floatrec, ".s");
+  double alpha = __builtin_kvx_ffmsd (doublerec, doubleb, double1, ".rn.s");
+  double beta = __builtin_kvx_ffmad (alpha, doublerec, doublerec, ".rn.s");
+  double gamma = __builtin_kvx_fmuld (doublea, beta, ".rn.s");
+  uint32_t quo = __builtin_kvx_fixedud (gamma, 0, ".rn.s");
   int32_t rem = a - quo*b;
   uint32_t cond = rem >> 31;
   uint32_t q = quo + cond;
@@ -107,26 +87,28 @@ div0:
 }
 #endif
 
+#if !defined(TEST_V2SI) && !defined(TEST_V4SI)
+
 uint32_t
 __udivsi3 (uint32_t a, uint32_t b)
 {
   uint32x2_t divmod = uint32_divmod (a, b);
-  return (uint32_t) divmod[0];
+  return (uint32_t)divmod[0];
 }
 
 uint32_t
 __umodsi3 (uint32_t a, uint32_t b)
 {
   uint32x2_t divmod = uint32_divmod (a, b);
-  return (uint32_t) divmod[1];
+  return (uint32_t)divmod[1];
 }
 
 uint32_t
 __udivmodsi4 (uint32_t a, uint32_t b, uint32_t *c)
 {
   uint32x2_t divmod = uint32_divmod (a, b);
-  *c = (uint32_t) divmod[1];
-  return (uint32_t) divmod[0];
+  *c = (uint32_t)divmod[1];
+  return (uint32_t)divmod[0];
 }
 
 int32_t
@@ -135,7 +117,7 @@ __divsi3 (int32_t a, int32_t b)
   uint32_t absa = __builtin_kvx_absw (a, "");
   uint32_t absb = __builtin_kvx_absw (b, "");
   uint32x2_t divmod = uint32_divmod (absa, absb);
-  int32_t result = (int32_t) divmod[0];
+  int32_t result = (int32_t)divmod[0];
   if ((a ^ b) < 0)
     result = -result;
   return result;
@@ -147,8 +129,11 @@ __modsi3 (int32_t a, int32_t b)
   uint32_t absa = __builtin_kvx_absw (a, "");
   uint32_t absb = __builtin_kvx_absw (b, "");
   uint32x2_t divmod = uint32_divmod (absa, absb);
-  int32_t result = (int32_t) divmod[1];
+  int32_t result = (int32_t)divmod[1];
   if (a < 0)
     result = -result;
   return result;
 }
+
+#endif // TEST_V2SI, TEST_V4SI
+

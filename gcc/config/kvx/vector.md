@@ -786,6 +786,90 @@
   }
 )
 
+(define_expand "mul<mode>3"
+  [(set (match_operand:VXQI 0 "register_operand" "")
+        (mult:VXQI (match_operand:VXQI 1 "register_operand" "")
+                   (match_operand:VXQI 2 "register_operand" "")))]
+  ""
+  {
+    unsigned mode_size = GET_MODE_SIZE (<MODE>mode);
+    for (unsigned offset = 0; offset < mode_size; offset += UNITS_PER_WORD)
+      {
+        rtx op2 = simplify_gen_subreg (V4HImode, operands[2], <MODE>mode, offset);
+        rtx op1 = simplify_gen_subreg (V4HImode, operands[1], <MODE>mode, offset);
+        rtx op0 = simplify_gen_subreg (V4HImode, operands[0], <MODE>mode, offset);
+        rtx op2o = gen_reg_rtx (V4HImode), op2e = op2;
+        emit_insn (gen_rtx_SET (op2o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op2), UNSPEC_ZXOBHQ)));
+        rtx op1o = gen_reg_rtx (V4HImode), op1e = op1;
+        emit_insn (gen_rtx_SET (op1o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXOBHQ)));
+        rtx op0o = gen_reg_rtx (V4HImode), op0e = gen_reg_rtx (V4HImode);
+        emit_insn (gen_mulv4hi3 (op0o, op1o, op2o));
+        emit_insn (gen_mulv4hi3 (op0e, op1e, op2e));
+        emit_insn (gen_rtx_SET (op0e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0e), UNSPEC_ZXEBHQ)));
+        emit_insn (gen_rtx_SET (op0, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, op0o, op0e), UNSPEC_OROEBO)));
+      }
+    DONE;
+  }
+)
+
+(define_expand "<prefix><mode>3"
+  [(set (match_operand:VXQI 0 "register_operand" "")
+        (BINDIV:VXQI (match_operand:VXQI 1 "register_operand" "")
+                       (match_operand:VXQI 2 "register_operand" "")))]
+  ""
+  {
+    unsigned mode_size = GET_MODE_SIZE (<MODE>mode);
+    for (unsigned offset = 0; offset < mode_size; offset += UNITS_PER_WORD)
+      {
+        rtx op2 = simplify_gen_subreg (V4HImode, operands[2], <MODE>mode, offset);
+        rtx op1 = simplify_gen_subreg (V4HImode, operands[1], <MODE>mode, offset);
+        rtx op0 = simplify_gen_subreg (V4HImode, operands[0], <MODE>mode, offset);
+        rtx op2o = gen_reg_rtx (V4HImode), op2e = gen_reg_rtx (V4HImode);
+        emit_insn (gen_rtx_SET (op2o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op2), UNSPEC_QXOBHQ)));
+        emit_insn (gen_rtx_SET (op2e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op2), UNSPEC_QXEBHQ)));
+        rtx op1o = gen_reg_rtx (V4HImode), op1e = gen_reg_rtx (V4HImode);
+        emit_insn (gen_rtx_SET (op1o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXOBHQ)));
+        emit_insn (gen_rtx_SET (op1e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXEBHQ)));
+        rtx op0o = gen_reg_rtx (V4HImode), op0e = gen_reg_rtx (V4HImode);
+        emit_insn (gen_<prefix>v4hi3 (op0o, op1o, op2o));
+        emit_insn (gen_<prefix>v4hi3 (op0e, op1e, op2e));
+        emit_insn (gen_rtx_SET (op0o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0o), UNSPEC_QXEBHQ)));
+        if (<set8msb>)
+          emit_insn (gen_rtx_SET (op0e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0e), UNSPEC_ZXEBHQ)));
+        emit_insn (gen_rtx_SET (op0, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, op0o, op0e), UNSPEC_OROEBO)));
+      }
+    DONE;
+  }
+)
+
+(define_expand "<prefix><mode>3"
+  [(set (match_operand:VXQI 0 "register_operand" "")
+        (BINMOD:VXQI (match_operand:VXQI 1 "register_operand" "")
+                       (match_operand:VXQI 2 "register_operand" "")))]
+  ""
+  {
+    unsigned mode_size = GET_MODE_SIZE (<MODE>mode);
+    for (unsigned offset = 0; offset < mode_size; offset += UNITS_PER_WORD)
+      {
+        rtx op2 = simplify_gen_subreg (V4HImode, operands[2], <MODE>mode, offset);
+        rtx op1 = simplify_gen_subreg (V4HImode, operands[1], <MODE>mode, offset);
+        rtx op0 = simplify_gen_subreg (V4HImode, operands[0], <MODE>mode, offset);
+        rtx op2o = gen_reg_rtx (V4HImode), op2e = gen_reg_rtx (V4HImode);
+        emit_insn (gen_rtx_SET (op2o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op2), UNSPEC_QXOBHQ)));
+        emit_insn (gen_rtx_SET (op2e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op2), UNSPEC_QXEBHQ)));
+        rtx op1o = gen_reg_rtx (V4HImode), op1e = gen_reg_rtx (V4HImode);
+        emit_insn (gen_rtx_SET (op1o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXOBHQ)));
+        emit_insn (gen_rtx_SET (op1e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXEBHQ)));
+        rtx op0o = gen_reg_rtx (V4HImode), op0e = gen_reg_rtx (V4HImode);
+        emit_insn (gen_<prefix>v4hi3 (op0o, op1o, op2o));
+        emit_insn (gen_<prefix>v4hi3 (op0e, op1e, op2e));
+        emit_insn (gen_rtx_SET (op0e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0e), UNSPEC_ZXOBHQ)));
+        emit_insn (gen_rtx_SET (op0, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, op0o, op0e), UNSPEC_OROEBO)));
+      }
+    DONE;
+  }
+)
+
 (define_expand "<ABS:abdn><mode>3"
   [(set (match_operand:VXQI 0 "register_operand" "")
         (ABS:VXQI (minus:VXQI (match_operand:VXQI 2 "nonmemory_operand" "")
@@ -846,32 +930,6 @@
         emit_insn (gen_<avgpre>v4hi<avgpost> (op0e, op1e, op2e));
         emit_insn (gen_rtx_SET (op0o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0o), UNSPEC_QXOBHQ)));
         emit_insn (gen_rtx_SET (op0e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0e), UNSPEC_ZXOBHQ)));
-        emit_insn (gen_rtx_SET (op0, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, op0o, op0e), UNSPEC_OROEBO)));
-      }
-    DONE;
-  }
-)
-
-(define_expand "mul<mode>3"
-  [(set (match_operand:VXQI 0 "register_operand" "")
-        (mult:VXQI (match_operand:VXQI 1 "register_operand" "")
-                   (match_operand:VXQI 2 "register_operand" "")))]
-  ""
-  {
-    unsigned mode_size = GET_MODE_SIZE (<MODE>mode);
-    for (unsigned offset = 0; offset < mode_size; offset += UNITS_PER_WORD)
-      {
-        rtx op2 = simplify_gen_subreg (V4HImode, operands[2], <MODE>mode, offset);
-        rtx op1 = simplify_gen_subreg (V4HImode, operands[1], <MODE>mode, offset);
-        rtx op0 = simplify_gen_subreg (V4HImode, operands[0], <MODE>mode, offset);
-        rtx op2o = gen_reg_rtx (V4HImode), op2e = op2;
-        emit_insn (gen_rtx_SET (op2o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op2), UNSPEC_ZXOBHQ)));
-        rtx op1o = gen_reg_rtx (V4HImode), op1e = op1;
-        emit_insn (gen_rtx_SET (op1o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXOBHQ)));
-        rtx op0o = gen_reg_rtx (V4HImode), op0e = gen_reg_rtx (V4HImode);
-        emit_insn (gen_mulv4hi3 (op0o, op1o, op2o));
-        emit_insn (gen_mulv4hi3 (op0e, op1e, op2e));
-        emit_insn (gen_rtx_SET (op0e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0e), UNSPEC_ZXEBHQ)));
         emit_insn (gen_rtx_SET (op0, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, op0o, op0e), UNSPEC_OROEBO)));
       }
     DONE;
@@ -1229,6 +1287,66 @@
   ""
   "mul<suffix> %0 = %1, %2"
   [(set_attr "type" "mau")]
+)
+
+(define_expand "div<mode>3"
+  [(set (match_operand:S64I 0 "register_operand" "")
+        (div:S64I (match_operand:S64I 1 "register_operand" "")
+                  (match_operand:S64I 2 "register_operand" "")))]
+  ""
+  {
+    rtx dest = emit_library_call_value (gen_rtx_SYMBOL_REF (Pmode, "__div<mode>3"),
+                                        operands[0], LCT_CONST, <MODE>mode,
+                                        operands[1], <MODE>mode, operands[2], <MODE>mode);
+    if (dest != operands[0])
+      emit_move_insn (operands[0], dest);
+    DONE;
+  }
+)
+
+(define_expand "mod<mode>3"
+  [(set (match_operand:S64I 0 "register_operand" "")
+        (mod:S64I (match_operand:S64I 1 "register_operand" "")
+                  (match_operand:S64I 2 "register_operand" "")))]
+  ""
+  {
+    rtx dest = emit_library_call_value (gen_rtx_SYMBOL_REF (Pmode, "__mod<mode>3"),
+                                        operands[0], LCT_CONST, <MODE>mode,
+                                        operands[1], <MODE>mode, operands[2], <MODE>mode);
+    if (dest != operands[0])
+      emit_move_insn (operands[0], dest);
+    DONE;
+  }
+)
+
+(define_expand "udiv<mode>3"
+  [(set (match_operand:S64I 0 "register_operand" "")
+        (udiv:S64I (match_operand:S64I 1 "register_operand" "")
+                   (match_operand:S64I 2 "register_operand" "")))]
+  ""
+  {
+    rtx dest = emit_library_call_value (gen_rtx_SYMBOL_REF (Pmode, "__udiv<mode>3"),
+                                        operands[0], LCT_CONST, <MODE>mode,
+                                        operands[1], <MODE>mode, operands[2], <MODE>mode);
+    if (dest != operands[0])
+      emit_move_insn (operands[0], dest);
+    DONE;
+  }
+)
+
+(define_expand "umod<mode>3"
+  [(set (match_operand:S64I 0 "register_operand" "")
+        (umod:S64I (match_operand:S64I 1 "register_operand" "")
+                   (match_operand:S64I 2 "register_operand" "")))]
+  ""
+  {
+    rtx dest = emit_library_call_value (gen_rtx_SYMBOL_REF (Pmode, "__umod<mode>3"),
+                                        operands[0], LCT_CONST, <MODE>mode,
+                                        operands[1], <MODE>mode, operands[2], <MODE>mode);
+    if (dest != operands[0])
+      emit_move_insn (operands[0], dest);
+    DONE;
+  }
 )
 
 (define_insn "smin<mode>3"
@@ -2519,6 +2637,66 @@
   "sbfx16<chunkx> %x0 = %x2, %x1\n\tsbfx16<chunkx> %y0 = %y2, %y1"
   [(set_attr "type" "alu_lite_x2")
    (set_attr "length"         "8")]
+)
+
+(define_expand "div<mode>3"
+  [(set (match_operand:V128J 0 "register_operand" "")
+        (div:V128J (match_operand:V128J 1 "register_operand" "")
+                   (match_operand:V128J 2 "register_operand" "")))]
+  ""
+  {
+    rtx dest = emit_library_call_value (gen_rtx_SYMBOL_REF (Pmode, "__div<mode>3"),
+                                        operands[0], LCT_CONST, <MODE>mode,
+                                        operands[1], <MODE>mode, operands[2], <MODE>mode);
+    if (dest != operands[0])
+      emit_move_insn (operands[0], dest);
+    DONE;
+  }
+)
+
+(define_expand "mod<mode>3"
+  [(set (match_operand:V128J 0 "register_operand" "")
+        (mod:V128J (match_operand:V128J 1 "register_operand" "")
+                   (match_operand:V128J 2 "register_operand" "")))]
+  ""
+  {
+    rtx dest = emit_library_call_value (gen_rtx_SYMBOL_REF (Pmode, "__mod<mode>3"),
+                                        operands[0], LCT_CONST, <MODE>mode,
+                                        operands[1], <MODE>mode, operands[2], <MODE>mode);
+    if (dest != operands[0])
+      emit_move_insn (operands[0], dest);
+    DONE;
+  }
+)
+
+(define_expand "udiv<mode>3"
+  [(set (match_operand:V128J 0 "register_operand" "")
+        (udiv:V128J (match_operand:V128J 1 "register_operand" "")
+                    (match_operand:V128J 2 "register_operand" "")))]
+  ""
+  {
+    rtx dest = emit_library_call_value (gen_rtx_SYMBOL_REF (Pmode, "__udiv<mode>3"),
+                                        operands[0], LCT_CONST, <MODE>mode,
+                                        operands[1], <MODE>mode, operands[2], <MODE>mode);
+    if (dest != operands[0])
+      emit_move_insn (operands[0], dest);
+    DONE;
+  }
+)
+
+(define_expand "umod<mode>3"
+  [(set (match_operand:V128J 0 "register_operand" "")
+        (umod:V128J (match_operand:V128J 1 "register_operand" "")
+                    (match_operand:V128J 2 "register_operand" "")))]
+  ""
+  {
+    rtx dest = emit_library_call_value (gen_rtx_SYMBOL_REF (Pmode, "__umod<mode>3"),
+                                        operands[0], LCT_CONST, <MODE>mode,
+                                        operands[1], <MODE>mode, operands[2], <MODE>mode);
+    if (dest != operands[0])
+      emit_move_insn (operands[0], dest);
+    DONE;
+  }
 )
 
 (define_insn "smin<mode>3"
@@ -3992,6 +4170,66 @@
                                      (const_int 4))))]
   ""
   [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_expand "div<mode>3"
+  [(set (match_operand:V256J 0 "register_operand" "")
+        (div:V256J (match_operand:V256J 1 "register_operand" "")
+                   (match_operand:V256J 2 "register_operand" "")))]
+  ""
+  {
+    rtx dest = emit_library_call_value (gen_rtx_SYMBOL_REF (Pmode, "__div<mode>3"),
+                                        operands[0], LCT_CONST, <MODE>mode,
+                                        operands[1], <MODE>mode, operands[2], <MODE>mode);
+    if (dest != operands[0])
+      emit_move_insn (operands[0], dest);
+    DONE;
+  }
+)
+
+(define_expand "mod<mode>3"
+  [(set (match_operand:V256J 0 "register_operand" "")
+        (mod:V256J (match_operand:V256J 1 "register_operand" "")
+                   (match_operand:V256J 2 "register_operand" "")))]
+  ""
+  {
+    rtx dest = emit_library_call_value (gen_rtx_SYMBOL_REF (Pmode, "__mod<mode>3"),
+                                        operands[0], LCT_CONST, <MODE>mode,
+                                        operands[1], <MODE>mode, operands[2], <MODE>mode);
+    if (dest != operands[0])
+      emit_move_insn (operands[0], dest);
+    DONE;
+  }
+)
+
+(define_expand "udiv<mode>3"
+  [(set (match_operand:V256J 0 "register_operand" "")
+        (udiv:V256J (match_operand:V256J 1 "register_operand" "")
+                    (match_operand:V256J 2 "register_operand" "")))]
+  ""
+  {
+    rtx dest = emit_library_call_value (gen_rtx_SYMBOL_REF (Pmode, "__udiv<mode>3"),
+                                        operands[0], LCT_CONST, <MODE>mode,
+                                        operands[1], <MODE>mode, operands[2], <MODE>mode);
+    if (dest != operands[0])
+      emit_move_insn (operands[0], dest);
+    DONE;
+  }
+)
+
+(define_expand "umod<mode>3"
+  [(set (match_operand:V256J 0 "register_operand" "")
+        (umod:V256J (match_operand:V256J 1 "register_operand" "")
+                    (match_operand:V256J 2 "register_operand" "")))]
+  ""
+  {
+    rtx dest = emit_library_call_value (gen_rtx_SYMBOL_REF (Pmode, "__umod<mode>3"),
+                                        operands[0], LCT_CONST, <MODE>mode,
+                                        operands[1], <MODE>mode, operands[2], <MODE>mode);
+    if (dest != operands[0])
+      emit_move_insn (operands[0], dest);
+    DONE;
+  }
 )
 
 (define_insn "smin<mode>3"

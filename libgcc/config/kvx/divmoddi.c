@@ -56,25 +56,7 @@
  * -- Benoit Dupont de Dinechin (benoit.dinechin@kalray.eu)
  */
 
-typedef __INT64_TYPE__ int64_t;
-typedef __UINT64_TYPE__ uint64_t;
-typedef uint64_t uint64x2_t __attribute ((vector_size (2 * sizeof (uint64_t))));
-
-uint64_t __udivdi3 (uint64_t a, uint64_t b);
-uint64_t __umoddi3 (uint64_t a, uint64_t b);
-uint64_t __udivmoddi4 (uint64_t a, uint64_t b, uint64_t *c);
-int64_t __divdi3 (int64_t a, int64_t b);
-int64_t __moddi3 (int64_t a, int64_t b);
-
-#ifndef __linux__
-/*
- * Setting this symbol non-zero changes the behavior of divmod by zero.
- * The default behavior is to terminate the application with a trap.
- * This feature is needed by the OpenCL-C division where the result is
- * undefined instead of crashing the user application.
- */
-extern char *_KVX_NO_DIVMOD0_TRAP __attribute__ ((weak));
-#endif
+#include "divmodtypes.h"
 
 #if 0
 static inline uint64x2_t
@@ -116,36 +98,47 @@ div0:
 static inline uint64x2_t
 uint64_divmod (uint64_t a, uint64_t b)
 {
-  uint64_t q = 0, r = a;
+  double double1 = 1.0;
+  int64_t bbig = (int64_t)b < 0;
+  int64_t bin01 = (uint64_t)b <= 1;
+  int64_t special = bbig | bin01;
+  // uint64_t q = bbig ? a >= b : a;
+  uint64_t q = __builtin_kvx_selectd (a >= b, a, bbig, ".dnez");
+  // uint64_t r = bbig ? a - (b&-q) : 0;
+  uint64_t r = __builtin_kvx_selectd (a - (b & -q), 0, bbig, ".dnez");
   double doublea = __builtin_kvx_floatud (a, 0,  ".rn.s");
   double doubleb = __builtin_kvx_floatud (b, 0, ".rn.s");
   float floatb = __builtin_kvx_fnarrowdw (doubleb, ".rn.s");
-  float floatrec = __builtin_kvx_frecw(floatb, ".rn.s");
+  float floatrec = __builtin_kvx_frecw (floatb, ".rn.s");
   if (b == 0) goto div0;
-  if (b > a) goto end;
   double doublerec = __builtin_kvx_fwidenwd (floatrec, ".s");
-  uint64_t q0 = __builtin_kvx_fixedud(doublerec * doublea, 0, ".rn.s");
+  double doubleq0 = __builtin_kvx_fmuld (doublea, doublerec, ".rn.s");
+  uint64_t q0 = __builtin_kvx_fixedud (doubleq0, 0, ".rn.s");
   int64_t a1 = a - q0 * b;
-  double alpha = __builtin_kvx_ffmsd(doubleb, doublerec, 1.0, ".rn.s");
-  double beta = __builtin_kvx_ffmad(alpha, doublerec, doublerec, ".rn.s");
+  double alpha = __builtin_kvx_ffmsd (doubleb, doublerec, double1, ".rn.s");
+  double beta = __builtin_kvx_ffmad (alpha, doublerec, doublerec, ".rn.s");
   double doublea1 = __builtin_kvx_floatd (a1, 0, ".rn.s");
-  double gamma = __builtin_kvx_fmuld(beta, doublea1, ".rn.s");
-  int64_t q1 = __builtin_kvx_fixedd(gamma, 0, ".rn.s");
+  double gamma = __builtin_kvx_fmuld (beta, doublea1, ".rn.s");
+  int64_t q1 = __builtin_kvx_fixedd (gamma, 0, ".rn.s");
   int64_t rem = a1 - q1 * b;
   uint64_t quo = q0 + q1;
   uint64_t cond = rem >> 63;
-  q = quo + cond;
-  r = rem + (b & cond);
-end:
+  // q = !special ? quo + cond : q;
+  q = __builtin_kvx_selectd (quo + cond, q, special, ".deqz");
+  // r = !special ? rem + (b & cond) : r;
+  r = __builtin_kvx_selectd (rem + (b & cond), r, special, ".deqz");
   return (uint64x2_t){q, r};
+
 div0:
 #ifndef __linux__
   if (&_KVX_NO_DIVMOD0_TRAP)
-    return (uint64x2_t){0, 0};
+    return 0 - (uint64x2_t){};
 #endif
   __builtin_trap ();
 }
 #endif
+
+#if !defined(TEST_V2DI) && !defined(TEST_V4DI)
 
 uint64_t
 __udivdi3 (uint64_t a, uint64_t b)
@@ -190,4 +183,6 @@ __moddi3 (int64_t a, int64_t b)
     divmod[1] = -divmod[1];
   return divmod[1];
 }
+
+#endif // TEST_V2DI, TEST_V4DI
 
