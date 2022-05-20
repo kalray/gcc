@@ -525,7 +525,17 @@ kvx_int8x32_avg_ru(int8x32_t a, int8x32_t b)
 int8x32_t __attribute ((noinline))
 kvx_int8x32_select(int8x32_t a, int8x32_t b, int8x32_t c)
 {
-    return __builtin_kvx_selectbv(a, b, c, 0);
+    return __builtin_kvx_selectbv(a, b, c, ".nez");
+}
+uint64_t __attribute__ ((noinline))
+kvx_int8x32_any_eqz(int8x32_t a)
+{
+    return __builtin_kvx_anybv(a, ".eqz");
+}
+uint64_t __attribute__ ((noinline))
+kvx_int8x32_any_nez(int8x32_t a)
+{
+    return __builtin_kvx_anybv(a, ".nez");
 }
 int8x32_t __attribute ((noinline))
 kvx_int8x32_shift(int8x32_t a, int8_t b)

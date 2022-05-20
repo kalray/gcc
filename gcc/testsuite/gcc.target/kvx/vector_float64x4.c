@@ -280,7 +280,17 @@ kvx_float64x4_fsdivdq(float64x4_t a, float64x4_t b)
 float64x4_t __attribute ((noinline))
 kvx_float64x4_select(float64x4_t a, float64x4_t b, int64x4_t c)
 {
-    return __builtin_kvx_selectdq(a, b, c, 0);
+    return __builtin_kvx_selectdq(a, b, c, ".nez");
+}
+uint64_t __attribute__ ((noinline))
+kvx_float64x4_any_eqz(float64x4_t a)
+{
+    return __builtin_kvx_anydq(a, ".eqz");
+}
+uint64_t __attribute__ ((noinline))
+kvx_float64x4_any_nez(float64x4_t a)
+{
+    return __builtin_kvx_anydq(a, ".nez");
 }
 float64x4_t __attribute ((noinline))
 kvx_float64x4_shift(float64x4_t a, float64_t b)

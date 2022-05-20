@@ -625,7 +625,17 @@ kvx_int32x2_satudwp(int64x2_t a)
 int32x2_t __attribute ((noinline))
 kvx_int32x2_select(int32x2_t a, int32x2_t b, int32x2_t c)
 {
-    return __builtin_kvx_selectwp(a, b, c, 0);
+    return __builtin_kvx_selectwp(a, b, c, ".nez");
+}
+uint64_t __attribute__ ((noinline))
+kvx_int32x2_any_eqz(int32x2_t a)
+{
+    return __builtin_kvx_anywp(a, ".eqz");
+}
+uint64_t __attribute__ ((noinline))
+kvx_int32x2_any_nez(int32x2_t a)
+{
+    return __builtin_kvx_anywp(a, ".nez");
 }
 int32x2_t __attribute ((noinline))
 kvx_int32x2_shift(int32x2_t a, int32_t b)

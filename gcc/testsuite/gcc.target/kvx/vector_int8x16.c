@@ -560,7 +560,17 @@ kvx_int8x16_satuhbx(int16x16_t a)
 int8x16_t __attribute ((noinline))
 kvx_int8x16_select(int8x16_t a, int8x16_t b, int8x16_t c)
 {
-    return __builtin_kvx_selectbx(a, b, c, 0);
+    return __builtin_kvx_selectbx(a, b, c, ".nez");
+}
+uint64_t __attribute__ ((noinline))
+kvx_int8x16_any_eqz(int8x16_t a)
+{
+    return __builtin_kvx_anybx(a, ".eqz");
+}
+uint64_t __attribute__ ((noinline))
+kvx_int8x16_any_nez(int8x16_t a)
+{
+    return __builtin_kvx_anybx(a, ".nez");
 }
 int8x16_t __attribute ((noinline))
 kvx_int8x16_shift(int8x16_t a, int8_t b)
