@@ -237,7 +237,17 @@ kvx_float16x8_fnarrowwho(float32x8_t a)
 float16x8_t __attribute ((noinline))
 kvx_float16x8_select(float16x8_t a, float16x8_t b, int16x8_t c)
 {
-    return __builtin_kvx_selectho(a, b, c, 0);
+    return __builtin_kvx_selectho(a, b, c, ".nez");
+}
+uint64_t __attribute__ ((noinline))
+kvx_float16x8_any_eqz(float16x8_t a)
+{
+    return __builtin_kvx_anyho(a, ".eqz");
+}
+uint64_t __attribute__ ((noinline))
+kvx_float16x8_any_nez(float16x8_t a)
+{
+    return __builtin_kvx_anyho(a, ".nez");
 }
 float16x8_t __attribute ((noinline))
 kvx_float16x8_shift(float16x8_t a, float16_t b)

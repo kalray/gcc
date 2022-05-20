@@ -237,7 +237,17 @@ kvx_float16x4_fnarrowwhq(float32x4_t a)
 float16x4_t __attribute ((noinline))
 kvx_float16x4_select(float16x4_t a, float16x4_t b, int16x4_t c)
 {
-    return __builtin_kvx_selecthq(a, b, c, 0);
+    return __builtin_kvx_selecthq(a, b, c, ".nez");
+}
+uint64_t __attribute__ ((noinline))
+kvx_float16x4_any_eqz(float16x4_t a)
+{
+    return __builtin_kvx_anyhq(a, ".eqz");
+}
+uint64_t __attribute__ ((noinline))
+kvx_float16x4_any_nez(float16x4_t a)
+{
+    return __builtin_kvx_anyhq(a, ".nez");
 }
 float16x4_t __attribute ((noinline))
 kvx_float16x4_shift(float16x4_t a, float16_t b)
