@@ -525,7 +525,17 @@ kvx_int64x2_bitcnt_tz(int64x2_t a)
 int64x2_t __attribute ((noinline))
 kvx_int64x2_select(int64x2_t a, int64x2_t b, int64x2_t c)
 {
-    return __builtin_kvx_selectdp(a, b, c, 0);
+    return __builtin_kvx_selectdp(a, b, c, ".nez");
+}
+uint64_t __attribute__ ((noinline))
+kvx_int64x2_any_eqz(int64x2_t a)
+{
+    return __builtin_kvx_anydp(a, ".eqz");
+}
+uint64_t __attribute__ ((noinline))
+kvx_int64x2_any_nez(int64x2_t a)
+{
+    return __builtin_kvx_anydp(a, ".nez");
 }
 int64x2_t __attribute ((noinline))
 kvx_int64x2_shift(int64x2_t a, int64_t b)

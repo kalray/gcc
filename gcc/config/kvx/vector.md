@@ -207,6 +207,44 @@
 )
 
 
+;; 512-bit Vector Moves
+
+(define_expand "mov<mode>"
+  [(set (match_operand:ALL512 0 "nonimmediate_operand" "")
+        (match_operand:ALL512 1 "general_operand" ""))]
+  ""
+  {
+    if (MEM_P (operands[0]))
+      operands[1] = force_reg (<MODE>mode, operands[1]);
+  }
+)
+
+(define_insn_and_split "*mov<mode>"
+  [(set (match_operand:ALL512 0 "nonimmediate_operand" "=r,&r,&r,&r,&r,&r,&r,a,b,m")
+        (match_operand:ALL512 1 "nonimmediate_operand"  "r,Ca,Cb,Cm,Za,Zb,Zm,r,r,r"))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0) (subreg:<HALF> (match_dup 1) 0))
+   (set (subreg:<HALF> (match_dup 0) 32) (subreg:<HALF> (match_dup 1) 32))]
+  {
+  }
+)
+
+(define_insn_and_split "*make<mode>"
+    [(set (match_operand:ALL512 0 "register_operand" "=r")
+          (match_operand:ALL512 1 "immediate_operand" "i"))]
+  ""
+  "#"
+  "reload_completed"
+  [(const_int 0)]
+  {
+    kvx_make_512bit_const (operands[0], operands[1]);
+    DONE;
+  }
+)
+
+
 ;; Vector Set/Extract/Init/Perm/Shr
 
 (define_expand "vec_set<mode>"
@@ -1651,190 +1689,6 @@
 )
 
 
-;; S64M (V8QI V4HI)
-
-(define_expand "kvx_zx<widenx>"
-  [(set (match_operand:<WIDE> 0 "register_operand")
-        (unspec:<WIDE> [(match_operand:S64M 1 "register_operand")
-                        (match_dup 2) (match_dup 3)] UNSPEC_ZX64))]
-  ""
-  {
-    operands[2] = gen_reg_rtx (DImode);
-    rtx valuev8qi_l ATTRIBUTE_UNUSED = GEN_INT (0x0008000400020001);
-    rtx valuev4hi_l ATTRIBUTE_UNUSED = GEN_INT (0x0000080400000201);
-    emit_insn (gen_rtx_SET (operands[2], value<mode>_l));
-    operands[3] = gen_reg_rtx (DImode);
-    rtx valuev8qi_m ATTRIBUTE_UNUSED = GEN_INT (0x0080004000200010);
-    rtx valuev4hi_m ATTRIBUTE_UNUSED = GEN_INT (0x0000804000002010);
-    emit_insn (gen_rtx_SET (operands[3], value<mode>_m));
-  }
-)
-
-(define_insn "*kvx_zx<widenx>"
-  [(set (match_operand:<WIDE> 0 "register_operand" "=r")
-        (unspec:<WIDE> [(match_operand:S64M 1 "register_operand" "r")
-                        (match_operand:DI 2 "register_operand" "r")
-                        (match_operand:DI 3 "register_operand" "r")] UNSPEC_ZX64))]
-  ""
-  "sbmm8 %x0 = %1, %2\n\tsbmm8 %y0 = %1, %3"
-  [(set_attr "type" "alu_thin_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "kvx_sx<widenx>"
-  [(set (match_operand:<WIDE> 0 "register_operand" "=r")
-        (unspec:<WIDE> [(match_operand:S64M 1 "register_operand" "r")] UNSPEC_SX64))]
-  ""
-  "sxl<hwidenx> %x0 = %1\n\tsxm<hwidenx> %y0 = %1"
-  [(set_attr "type" "alu_thin_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_expand "kvx_qx<widenx>"
-  [(set (match_operand:<WIDE> 0 "register_operand")
-        (unspec:<WIDE> [(match_operand:S64M 1 "register_operand")
-                        (match_dup 2) (match_dup 3)] UNSPEC_QX64))]
-  ""
-  {
-    operands[2] = gen_reg_rtx (DImode);
-    rtx valuev8qi_l ATTRIBUTE_UNUSED = GEN_INT (0x0800040002000100);
-    rtx valuev4hi_l ATTRIBUTE_UNUSED = GEN_INT (0x0804000002010000);
-    emit_insn (gen_rtx_SET (operands[2], value<mode>_l));
-    operands[3] = gen_reg_rtx (DImode);
-    rtx valuev8qi_m ATTRIBUTE_UNUSED = GEN_INT (0x8000400020001000);
-    rtx valuev4hi_m ATTRIBUTE_UNUSED = GEN_INT (0x8040000020100000);
-    emit_insn (gen_rtx_SET (operands[3], value<mode>_m));
-  }
-)
-
-(define_insn "*kvx_qx<widenx>"
-  [(set (match_operand:<WIDE> 0 "register_operand" "=r")
-        (unspec:<WIDE> [(match_operand:S64M 1 "register_operand" "r")
-                        (match_operand:DI 2 "register_operand" "r")
-                        (match_operand:DI 3 "register_operand" "r")] UNSPEC_QX64))]
-  ""
-  "sbmm8 %x0 = %1, %2\n\tsbmm8 %y0 = %1, %3"
-  [(set_attr "type" "alu_thin_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_expand "kvx_trunc<truncx>"
-[(parallel
-  [(set (match_operand:S64M 0 "register_operand")
-        (unspec:S64M [(match_operand:<WIDE> 1 "register_operand")
-                      (match_dup 2) (match_dup 3)] UNSPEC_TRUNC))
-   (clobber (match_dup 4))]
-)]
-  ""
-  {
-    operands[2] = gen_reg_rtx (DImode);
-    rtx valuev8qi_l ATTRIBUTE_UNUSED = GEN_INT (0x0000000040100401);
-    rtx valuev4hi_l ATTRIBUTE_UNUSED = GEN_INT (0x0000000020100201);
-    emit_insn (gen_rtx_SET (operands[2], value<mode>_l));
-    operands[3] = gen_reg_rtx (DImode);
-    rtx valuev8qi_m ATTRIBUTE_UNUSED = GEN_INT (0x4010040100000000);
-    rtx valuev4hi_m ATTRIBUTE_UNUSED = GEN_INT (0x2010020100000000);
-    emit_insn (gen_rtx_SET (operands[3], value<mode>_m));
-    operands[4] = gen_rtx_SCRATCH (<WIDE>mode);
-  }
-)
-
-(define_insn_and_split "*kvx_trunc<truncx>"
-  [(set (match_operand:S64M 0 "register_operand" "=r")
-        (unspec:S64M [(match_operand:<WIDE> 1 "register_operand" "r")
-                      (match_operand:DI 2 "register_operand" "r")
-                      (match_operand:DI 3 "register_operand" "r")] UNSPEC_TRUNC))
-   (clobber (match_scratch:<WIDE> 4 "=r"))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (match_dup 4)
-        (unspec:<WIDE> [(match_dup 1) (match_dup 2) (match_dup 3)] UNSPEC_SBMM8XY))
-   (set (match_dup 0)
-        (unspec:S64M [(subreg:S64M (match_dup 4) 0)
-                      (subreg:S64M (match_dup 4) 8)] UNSPEC_XORD))]
-  ""
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_expand "kvx_fract<truncx>"
-[(parallel
-  [(set (match_operand:S64M 0 "register_operand")
-        (unspec:S64M [(match_operand:<WIDE> 1 "register_operand")
-                      (match_dup 2) (match_dup 3)] UNSPEC_FRACT))
-   (clobber (match_dup 4))]
-)]
-  ""
-  {
-    operands[2] = gen_reg_rtx (DImode);
-    rtx valuev8qi_l ATTRIBUTE_UNUSED = GEN_INT (0x0000000080200802);
-    rtx valuev4hi_l ATTRIBUTE_UNUSED = GEN_INT (0x0000000080400804);
-    emit_insn (gen_rtx_SET (operands[2], value<mode>_l));
-    operands[3] = gen_reg_rtx (DImode);
-    rtx valuev8qi_m ATTRIBUTE_UNUSED = GEN_INT (0x8020080200000000);
-    rtx valuev4hi_m ATTRIBUTE_UNUSED = GEN_INT (0x8040080400000000);
-    emit_insn (gen_rtx_SET (operands[3], value<mode>_m));
-    operands[4] = gen_rtx_SCRATCH (<WIDE>mode);
-  }
-)
-
-(define_insn_and_split "*kvx_fract<truncx>"
-  [(set (match_operand:S64M 0 "register_operand" "=r")
-        (unspec:S64M [(match_operand:<WIDE> 1 "register_operand" "r")
-                      (match_operand:DI 2 "register_operand" "r")
-                      (match_operand:DI 3 "register_operand" "r")] UNSPEC_FRACT))
-   (clobber (match_scratch:<WIDE> 4 "=r"))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (match_dup 4)
-        (unspec:<WIDE> [(match_dup 1) (match_dup 2) (match_dup 3)] UNSPEC_SBMM8XY))
-   (set (match_dup 0)
-        (unspec:S64M [(subreg:S64M (match_dup 4) 0)
-                      (subreg:S64M (match_dup 4) 8)] UNSPEC_XORD))]
-  ""
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_expand "kvx_sat<truncx>"
-  [(match_operand:S64M 0 "register_operand")
-   (match_operand:<WIDE> 1 "register_operand")]
-  ""
-  {
-    rtx saturated = gen_reg_rtx (<WIDE>mode);
-    rtx lshift = GEN_INT (GET_MODE_UNIT_BITSIZE (<MODE>mode));
-    emit_insn (gen_ssashl<wide>3 (saturated, operands[1], lshift));
-    emit_insn (gen_kvx_fract<truncx> (operands[0], saturated));
-    DONE;
-  }
-)
-
-(define_expand "kvx_satu<truncx>"
-  [(match_operand:S64M 0 "register_operand")
-   (match_operand:<WIDE> 1 "register_operand")]
-  ""
-  {
-    rtx zero = gen_reg_rtx (<HWIDE>mode);
-    rtx lower = gen_reg_rtx (<WIDE>mode);
-    rtx upper = gen_reg_rtx (<WIDE>mode);
-    rtx maxvalv4hi ATTRIBUTE_UNUSED = gen_rtx_CONST_VECTOR (V4HImode,
-                                           gen_rtvec (4, GEN_INT (0xFF), GEN_INT (0xFF),
-                                                         GEN_INT (0xFF), GEN_INT (0xFF)));
-    rtx maxvalv2si ATTRIBUTE_UNUSED = gen_rtx_CONST_VECTOR (V2SImode,
-                                           gen_rtvec (2, GEN_INT (0xFFFF), GEN_INT (0xFFFF)));
-    rtx zero_chunk = gen_rtx_VEC_DUPLICATE (<WIDE>mode, zero);
-    rtx maxval_chunk = gen_rtx_VEC_DUPLICATE (<WIDE>mode, maxval<hwide>);
-    emit_insn (gen_rtx_SET (zero, CONST0_RTX (<HWIDE>mode)));
-    emit_insn (gen_rtx_SET (lower, gen_rtx_SMAX (<WIDE>mode, operands[1], zero_chunk)));
-    emit_insn (gen_rtx_SET (upper, gen_rtx_SMIN (<WIDE>mode, lower, maxval_chunk)));
-    emit_insn (gen_kvx_trunc<truncx> (operands[0], upper));
-    DONE;
-  }
-)
-
-
 ;; V4HI
 
 (define_insn_and_split "rotlv4hi3"
@@ -1982,218 +1836,6 @@
   ""
   "muluwdp %0 = %1, %2"
   [(set_attr "type" "mau")]
-)
-
-(define_insn "kvx_zipwp"
-  [(set (match_operand:V2SI 0 "register_operand" "=r")
-        (vec_concat:V2SI (match_operand:SI 1 "register_operand" "0")
-                         (match_operand:SI 2 "register_operand" "r")))]
-  ""
-  "insf %0 = %2, 63, 32"
-  [(set_attr "type" "alu_thin")]
-)
-
-(define_insn "kvx_zxwdp"
-  [(set (match_operand:V2DI 0 "register_operand" "=r")
-        (unspec:V2DI [(match_operand:V2SI 1 "register_operand" "r")] UNSPEC_ZXWDP))]
-  ""
-  "zxwd %x0 = %1\n\tsrld %y0 = %1, 32"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "kvx_sxwdp"
-  [(set (match_operand:V2DI 0 "register_operand" "=r")
-        (unspec:V2DI [(match_operand:V2SI 1 "register_operand" "r")] UNSPEC_SXWDP))]
-  ""
-  "sxwd %x0 = %1\n\tsrad %y0 = %1, 32"
-  [(set_attr "type" "alu_thin_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_expand "kvx_qxwdp"
-  [(set (match_operand:V2DI 0 "register_operand")
-        (unspec:V2DI [(match_operand:V2SI 1 "register_operand")
-                      (match_dup 2)] UNSPEC_QXWDP))]
-  ""
-  {
-    operands[2] = gen_reg_rtx (DImode);
-    emit_insn (gen_rtx_SET (operands[2], GEN_INT (0xFFFFFFFF00000000)));
-  }
-)
-
-(define_insn_and_split "*kvx_qxwdp"
-  [(set (match_operand:V2DI 0 "register_operand" "=&r")
-        (unspec:V2DI [(match_operand:V2SI 1 "register_operand" "r")
-                      (match_operand:DI 2 "register_operand" "r")] UNSPEC_QXWDP))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:DI (match_dup 0) 0)
-        (unspec:DI [(match_dup 1) (const_int 32)] UNSPEC_SLLD))
-   (set (subreg:DI (match_dup 0) 8)
-        (unspec:DI [(match_dup 2) (match_dup 1)] UNSPEC_ANDD))]
-  ""
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_expand "kvx_truncdwp"
-  [(match_operand:V2SI 0 "register_operand")
-   (match_operand:V2DI 1 "register_operand")]
-  ""
-  {
-    rtx op0_l = gen_reg_rtx (V2SImode);
-    rtx op0_m = gen_reg_rtx (V2SImode);
-    rtx op1_l = simplify_gen_subreg (DImode, operands[1], V2DImode, 0);
-    rtx op1_m = simplify_gen_subreg (DImode, operands[1], V2DImode, 8);
-    emit_insn (gen_kvx_truncldw (op0_l, op1_l));
-    emit_insn (gen_kvx_truncmdw (op0_m, op1_m));
-    rtx xord = gen_rtx_UNSPEC (V2SImode, gen_rtvec (2, op0_l, op0_m), UNSPEC_XORD);
-    emit_insn (gen_rtx_SET (operands[0], xord));
-    DONE;
-  }
-)
-
-(define_expand "kvx_fractdwp"
-  [(match_operand:V2SI 0 "register_operand")
-   (match_operand:V2DI 1 "register_operand")]
-  ""
-  {
-    rtx op0_l = gen_reg_rtx (V2SImode);
-    rtx op0_m = gen_reg_rtx (V2SImode);
-    rtx op1_l = simplify_gen_subreg (DImode, operands[1], V2DImode, 0);
-    rtx op1_m = simplify_gen_subreg (DImode, operands[1], V2DImode, 8);
-    emit_insn (gen_kvx_fractldw (op0_l, op1_l));
-    emit_insn (gen_kvx_fractmdw (op0_m, op1_m));
-    rtx xord = gen_rtx_UNSPEC (V2SImode, gen_rtvec (2, op0_l, op0_m), UNSPEC_XORD);
-    emit_insn (gen_rtx_SET (operands[0], xord));
-    DONE;
-  }
-)
-
-(define_expand "kvx_satdwp"
-  [(match_operand:V2SI 0 "register_operand")
-   (match_operand:V2DI 1 "register_operand")]
-  ""
-  {
-    rtx op0_l = gen_reg_rtx (V2SImode);
-    rtx op0_m = gen_reg_rtx (V2SImode);
-    rtx op1_l = simplify_gen_subreg (DImode, operands[1], V2DImode, 0);
-    rtx op1_m = simplify_gen_subreg (DImode, operands[1], V2DImode, 8);
-    emit_insn (gen_kvx_satldw (op0_l, op1_l));
-    emit_insn (gen_kvx_satmdw (op0_m, op1_m));
-    rtx xord = gen_rtx_UNSPEC (V2SImode, gen_rtvec (2, op0_l, op0_m), UNSPEC_XORD);
-    emit_insn (gen_rtx_SET (operands[0], xord));
-    DONE;
-  }
-)
-
-(define_expand "kvx_satudwp"
-  [(match_operand:V2SI 0 "register_operand")
-   (match_operand:V2DI 1 "register_operand")]
-  ""
-  {
-    rtx op0_l = gen_reg_rtx (V2SImode);
-    rtx op0_m = gen_reg_rtx (V2SImode);
-    rtx op1_l = simplify_gen_subreg (DImode, operands[1], V2DImode, 0);
-    rtx op1_m = simplify_gen_subreg (DImode, operands[1], V2DImode, 8);
-    emit_insn (gen_kvx_satuldw (op0_l, op1_l));
-    emit_insn (gen_kvx_satumdw (op0_m, op1_m));
-    rtx xord = gen_rtx_UNSPEC (V2SImode, gen_rtvec (2, op0_l, op0_m), UNSPEC_XORD);
-    emit_insn (gen_rtx_SET (operands[0], xord));
-    DONE;
-  }
-)
-
-(define_insn "kvx_truncldw"
-  [(set (match_operand:V2SI 0 "register_operand" "=r")
-        (unspec:V2SI [(match_operand:DI 1 "register_operand" "r")] UNSPEC_TRUNCL))]
-  ""
-  "zxwd %0 = %1"
-  [(set_attr "type" "alu_tiny")]
-)
-
-(define_insn "kvx_truncmdw"
-  [(set (match_operand:V2SI 0 "register_operand" "=r")
-        (unspec:V2SI [(match_operand:DI 1 "register_operand" "r") (const_int 32)] UNSPEC_TRUNCM))]
-  ""
-  "slld %0 = %1, 32"
-  [(set_attr "type" "alu_tiny")]
-)
-
-(define_insn "kvx_fractldw"
-  [(set (match_operand:V2SI 0 "register_operand" "=r")
-        (unspec:V2SI [(match_operand:DI 1 "register_operand" "r") (const_int 32)] UNSPEC_SRLD))]
-  ""
-  "srld %0 = %1, 32"
-  [(set_attr "type" "alu_tiny")]
-)
-
-(define_expand "kvx_fractmdw"
-  [(match_operand:V2SI 0 "register_operand")
-   (match_operand:DI 1 "register_operand")]
-  ""
-  {
-    rtx mask = gen_reg_rtx (DImode);
-    emit_insn (gen_rtx_SET (mask, GEN_INT (0xFFFFFFFF00000000)));
-    rtx opnd1 = simplify_gen_subreg (V2SImode, operands[1], DImode, 0);
-    rtx andd = gen_rtx_UNSPEC (V2SImode, gen_rtvec (2, opnd1, mask), UNSPEC_ANDD);
-    emit_insn (gen_rtx_SET (operands[0], andd));
-    DONE;
-  }
-)
-
-(define_expand "kvx_satldw"
-  [(match_operand:V2SI 0 "register_operand" "=r")
-   (match_operand:DI 1 "register_operand" "r")]
-  ""
-  {
-    rtx saturated = gen_reg_rtx (DImode);
-    emit_insn (gen_ssashldi3 (saturated, operands[1], GEN_INT (32)));
-    emit_insn (gen_kvx_fractldw (operands[0], saturated));
-    DONE;
-  }
-)
-
-(define_expand "kvx_satmdw"
-  [(match_operand:V2SI 0 "register_operand" "=r")
-   (match_operand:DI 1 "register_operand" "r")]
-  ""
-  {
-    rtx saturated = gen_rtx_SUBREG (DImode, operands[0], 0);
-    emit_insn (gen_ssashldi3 (saturated, operands[1], GEN_INT (32)));
-    DONE;
-  }
-)
-
-(define_expand "kvx_satuldw"
-  [(match_operand:V2SI 0 "register_operand" "=r")
-   (match_operand:DI 1 "register_operand" "r")]
-  ""
-  {
-    rtx maxval = gen_reg_rtx (DImode);
-    emit_insn (gen_rtx_SET (maxval, GEN_INT (0xFFFFFFFF)));
-    rtx lower = gen_reg_rtx (DImode), upper = gen_rtx_SUBREG (DImode, operands[0], 0);
-    emit_insn (gen_smaxdi3 (lower, operands[1], const0_rtx));
-    emit_insn (gen_smindi3 (upper, lower, maxval));
-    DONE;
-  }
-)
-
-(define_expand "kvx_satumdw"
-  [(match_operand:V2SI 0 "register_operand" "=r")
-   (match_operand:DI 1 "register_operand" "r")]
-  ""
-  {
-    rtx maxval = gen_reg_rtx (DImode);
-    emit_insn (gen_rtx_SET (maxval, GEN_INT (0xFFFFFFFF)));
-    rtx lower = gen_reg_rtx (DImode), upper = gen_reg_rtx (DImode);
-    emit_insn (gen_smaxdi3 (lower, operands[1], const0_rtx));
-    emit_insn (gen_smindi3 (upper, lower, maxval));
-    emit_insn (gen_kvx_truncmdw (operands[0], upper));
-    DONE;
-  }
 )
 
 
@@ -3265,114 +2907,6 @@
 )
 
 
-;; S128K (V16QI V8HI V4SI)
-
-(define_expand "kvx_zx<widenx>"
-  [(match_operand:<WIDE> 0 "register_operand")
-   (match_operand:S128K 1 "register_operand")]
-  ""
-  {
-    rtx op1_l = gen_rtx_SUBREG (<HALF>mode, operands[1], 0);
-    rtx op1_m = gen_rtx_SUBREG (<HALF>mode, operands[1], 8);
-    rtx op0_l = gen_rtx_SUBREG (<HWIDE>mode, operands[0], 0);
-    rtx op0_m = gen_rtx_SUBREG (<HWIDE>mode, operands[0], 16);
-    emit_insn (gen_kvx_zx<hwidenx> (op0_l, op1_l));
-    emit_insn (gen_kvx_zx<hwidenx> (op0_m, op1_m));
-    DONE;
-  }
-)
-
-(define_expand "kvx_sx<widenx>"
-  [(match_operand:<WIDE> 0 "register_operand")
-   (match_operand:S128K 1 "register_operand")]
-  ""
-  {
-    rtx op1_l = gen_rtx_SUBREG (<HALF>mode, operands[1], 0);
-    rtx op1_m = gen_rtx_SUBREG (<HALF>mode, operands[1], 8);
-    rtx op0_l = gen_rtx_SUBREG (<HWIDE>mode, operands[0], 0);
-    rtx op0_m = gen_rtx_SUBREG (<HWIDE>mode, operands[0], 16);
-    emit_insn (gen_kvx_sx<hwidenx> (op0_l, op1_l));
-    emit_insn (gen_kvx_sx<hwidenx> (op0_m, op1_m));
-    DONE;
-  }
-)
-
-(define_expand "kvx_qx<widenx>"
-  [(match_operand:<WIDE> 0 "register_operand")
-   (match_operand:S128K 1 "register_operand")]
-  ""
-  {
-    rtx op1_l = gen_rtx_SUBREG (<HALF>mode, operands[1], 0);
-    rtx op1_m = gen_rtx_SUBREG (<HALF>mode, operands[1], 8);
-    rtx op0_l = gen_rtx_SUBREG (<HWIDE>mode, operands[0], 0);
-    rtx op0_m = gen_rtx_SUBREG (<HWIDE>mode, operands[0], 16);
-    emit_insn (gen_kvx_qx<hwidenx> (op0_l, op1_l));
-    emit_insn (gen_kvx_qx<hwidenx> (op0_m, op1_m));
-    DONE;
-  }
-)
-
-(define_expand "kvx_trunc<truncx>"
-  [(match_operand:S128K 0 "register_operand")
-   (match_operand:<WIDE> 1 "register_operand")]
-  ""
-  {
-    rtx op1_l = gen_rtx_SUBREG (<HWIDE>mode, operands[1], 0);
-    rtx op1_m = gen_rtx_SUBREG (<HWIDE>mode, operands[1], 16);
-    rtx op0_l = gen_rtx_SUBREG (<HALF>mode, operands[0], 0);
-    rtx op0_m = gen_rtx_SUBREG (<HALF>mode, operands[0], 8);
-    emit_insn (gen_kvx_trunc<htruncx> (op0_l, op1_l));
-    emit_insn (gen_kvx_trunc<htruncx> (op0_m, op1_m));
-    DONE;
-  }
-)
-
-(define_expand "kvx_fract<truncx>"
-  [(match_operand:S128K 0 "register_operand")
-   (match_operand:<WIDE> 1 "register_operand")]
-  ""
-  {
-    rtx op1_l = gen_rtx_SUBREG (<HWIDE>mode, operands[1], 0);
-    rtx op1_m = gen_rtx_SUBREG (<HWIDE>mode, operands[1], 16);
-    rtx op0_l = gen_rtx_SUBREG (<HALF>mode, operands[0], 0);
-    rtx op0_m = gen_rtx_SUBREG (<HALF>mode, operands[0], 8);
-    emit_insn (gen_kvx_fract<htruncx> (op0_l, op1_l));
-    emit_insn (gen_kvx_fract<htruncx> (op0_m, op1_m));
-    DONE;
-  }
-)
-
-(define_expand "kvx_sat<truncx>"
-  [(match_operand:S128K 0 "register_operand")
-   (match_operand:<WIDE> 1 "register_operand")]
-  ""
-  {
-    rtx op1_l = gen_rtx_SUBREG (<HWIDE>mode, operands[1], 0);
-    rtx op1_m = gen_rtx_SUBREG (<HWIDE>mode, operands[1], 16);
-    rtx op0_l = gen_rtx_SUBREG (<HALF>mode, operands[0], 0);
-    rtx op0_m = gen_rtx_SUBREG (<HALF>mode, operands[0], 8);
-    emit_insn (gen_kvx_sat<htruncx> (op0_l, op1_l));
-    emit_insn (gen_kvx_sat<htruncx> (op0_m, op1_m));
-    DONE;
-  }
-)
-
-(define_expand "kvx_satu<truncx>"
-  [(match_operand:S128K 0 "register_operand")
-   (match_operand:<WIDE> 1 "register_operand")]
-  ""
-  {
-    rtx op1_l = gen_rtx_SUBREG (<HWIDE>mode, operands[1], 0);
-    rtx op1_m = gen_rtx_SUBREG (<HWIDE>mode, operands[1], 16);
-    rtx op0_l = gen_rtx_SUBREG (<HALF>mode, operands[0], 0);
-    rtx op0_m = gen_rtx_SUBREG (<HALF>mode, operands[0], 8);
-    emit_insn (gen_kvx_satu<htruncx> (op0_l, op1_l));
-    emit_insn (gen_kvx_satu<htruncx> (op0_m, op1_m));
-    DONE;
-  }
-)
-
-
 ;; V128I (V8HI V2DI)
 
 (define_insn_and_split "mul<mode>3"
@@ -3697,16 +3231,6 @@
   "srsd %x0 = %x1, %2\n\tsrsd %y0 = %y1, %2"
   [(set_attr "type" "alu_thin_x2,alu_thin_x2")
    (set_attr "length" "        8,          8")]
-)
-
-(define_insn "kvx_stsudp"
-  [(set (match_operand:V2DI 0 "register_operand" "=r")
-        (unspec:V2DI [(match_operand:V2DI 1 "register_operand" "r")
-                      (match_operand:V2DI 2 "register_operand" "r")] UNSPEC_STSU))]
-  ""
-  "stsud %x0 = %x1, %x2\n\tstsud %y0 = %y1, %y2"
-  [(set_attr "type" "alu_thin_x2")
-   (set_attr "length"         "8")]
 )
 
 
@@ -5279,7 +4803,7 @@
   ""
   {
     return "compd.%1 %x0 = %2, %x3\n\tcompd.%1 %y0 = %2, %y3\n\t"
-           "compd.%1 %z0 = %2, z%3\n\tcompd.%1 %t0 = %2, %t3";
+           "compd.%1 %z0 = %2, %z3\n\tcompd.%1 %t0 = %2, %t3";
   }
   [(set_attr "type" "alu_tiny_x4")
    (set_attr "length"        "16")]

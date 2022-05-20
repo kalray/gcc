@@ -560,7 +560,17 @@ kvx_int8x8_satuhbo(int16x8_t a)
 int8x8_t __attribute ((noinline))
 kvx_int8x8_select(int8x8_t a, int8x8_t b, int8x8_t c)
 {
-    return __builtin_kvx_selectbo(a, b, c, 0);
+    return __builtin_kvx_selectbo(a, b, c, ".nez");
+}
+uint64_t __attribute__ ((noinline))
+kvx_int8x8_any_eqz(int8x8_t a)
+{
+    return __builtin_kvx_anybo(a, ".eqz");
+}
+uint64_t __attribute__ ((noinline))
+kvx_int8x8_any_nez(int8x8_t a)
+{
+    return __builtin_kvx_anybo(a, ".nez");
 }
 int8x8_t __attribute ((noinline))
 kvx_int8x8_shift(int8x8_t a, int8_t b)

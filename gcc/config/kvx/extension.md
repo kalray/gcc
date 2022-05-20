@@ -671,7 +671,7 @@
 
 (define_insn "kvx_xsplatd256"
   [(set (match_operand:X256 0 "register_operand" "=x")
-        (unspec:X256 [(match_operand:DI 1 "register_operand" "r")] UNSPEC_XSPLATD256))]
+        (unspec:X256 [(match_operand:DI 1 "register_operand" "r")] UNSPEC_XSPLATD))]
   ""
   "xmovetq %0.lo = %1, %1\n\txmovetq %0.hi = %1, %1";
   [(set_attr "type" "alu_thin_x2_crwl_crwh")
@@ -680,12 +680,12 @@
 
 (define_insn_and_split "kvx_xsplatd512"
   [(set (match_operand:X512 0 "register_operand" "=x")
-        (unspec [(match_operand:DI 1 "register_operand" "r")] UNSPEC_XSPLATD256))]
+        (unspec:X512 [(match_operand:DI 1 "register_operand" "r")] UNSPEC_XSPLATD))]
   ""
   "#"
   ""
   [(set (subreg:X256 (match_dup 0) 0)
-        (unspec:X256 [(match_dup 1)] UNSPEC_XSPLATD256))
+        (unspec:X256 [(match_dup 1)] UNSPEC_XSPLATD))
    (set (subreg:X256 (match_dup 0) 32)
         (subreg:X256 (match_dup 0) 0))]
   ""
@@ -693,12 +693,12 @@
 
 (define_insn_and_split "kvx_xsplatd1024"
   [(set (match_operand:X1024 0 "register_operand" "=x")
-        (unspec [(match_operand:DI 1 "register_operand" "r")] UNSPEC_XSPLATD256))]
+        (unspec:X1024 [(match_operand:DI 1 "register_operand" "r")] UNSPEC_XSPLATD))]
   ""
   "#"
   ""
   [(set (subreg:X256 (match_dup 0) 0)
-        (unspec:X256 [(match_dup 1)] UNSPEC_XSPLATD256))
+        (unspec:X256 [(match_dup 1)] UNSPEC_XSPLATD))
    (set (subreg:X256 (match_dup 0) 32)
         (subreg:X256 (match_dup 0) 0))
    (set (subreg:X256 (match_dup 0) 64)
@@ -710,12 +710,12 @@
 
 (define_insn_and_split "kvx_xsplatd2048"
   [(set (match_operand:X2048 0 "register_operand" "=x")
-        (unspec [(match_operand:DI 1 "register_operand" "r")] UNSPEC_XSPLATD256))]
+        (unspec:X2048 [(match_operand:DI 1 "register_operand" "r")] UNSPEC_XSPLATD))]
   ""
   "#"
   ""
   [(set (subreg:X256 (match_dup 0) 0)
-        (unspec:X256 [(match_dup 1)] UNSPEC_XSPLATD256))
+        (unspec:X256 [(match_dup 1)] UNSPEC_XSPLATD))
    (set (subreg:X256 (match_dup 0) 32)
         (subreg:X256 (match_dup 0) 0))
    (set (subreg:X256 (match_dup 0) 64)
@@ -729,12 +729,12 @@
 
 (define_insn_and_split "kvx_xsplatd4096"
   [(set (match_operand:X4096 0 "register_operand" "=x")
-        (unspec [(match_operand:DI 1 "register_operand" "r")] UNSPEC_XSPLATD256))]
+        (unspec:X4096 [(match_operand:DI 1 "register_operand" "r")] UNSPEC_XSPLATD))]
   ""
   "#"
   ""
   [(set (subreg:X256 (match_dup 0) 0)
-        (unspec:X256 [(match_dup 1)] UNSPEC_XSPLATD256))
+        (unspec:X256 [(match_dup 1)] UNSPEC_XSPLATD))
    (set (subreg:X256 (match_dup 0) 32)
         (subreg:X256 (match_dup 0) 0))
    (set (subreg:X256 (match_dup 0) 64)
@@ -752,12 +752,12 @@
 
 (define_insn_and_split "kvx_xsplatd8192"
   [(set (match_operand:X8192 0 "register_operand" "=x")
-        (unspec [(match_operand:DI 1 "register_operand" "r")] UNSPEC_XSPLATD256))]
+        (unspec:X8192 [(match_operand:DI 1 "register_operand" "r")] UNSPEC_XSPLATD))]
   ""
   "#"
   ""
   [(set (subreg:X256 (match_dup 0) 0)
-        (unspec:X256 [(match_dup 1)] UNSPEC_XSPLATD256))
+        (unspec:X256 [(match_dup 1)] UNSPEC_XSPLATD))
    (set (subreg:X256 (match_dup 0) 32)
         (subreg:X256 (match_dup 0) 0))
    (set (subreg:X256 (match_dup 0) 64)

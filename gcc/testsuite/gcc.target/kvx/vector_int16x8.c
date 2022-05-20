@@ -605,7 +605,17 @@ kvx_int16x8_satuwho(int32x8_t a)
 int16x8_t __attribute ((noinline))
 kvx_int16x8_select(int16x8_t a, int16x8_t b, int16x8_t c)
 {
-    return __builtin_kvx_selectho(a, b, c, 0);
+    return __builtin_kvx_selectho(a, b, c, ".nez");
+}
+uint64_t __attribute__ ((noinline))
+kvx_int16x8_any_eqz(int16x8_t a)
+{
+    return __builtin_kvx_anyho(a, ".eqz");
+}
+uint64_t __attribute__ ((noinline))
+kvx_int16x8_any_nez(int16x8_t a)
+{
+    return __builtin_kvx_anyho(a, ".nez");
 }
 int16x8_t __attribute ((noinline))
 kvx_int16x8_shift(int16x8_t a, int16_t b)

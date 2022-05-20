@@ -525,7 +525,17 @@ kvx_int16x16_avg_ru(int16x16_t a, int16x16_t b)
 int16x16_t __attribute ((noinline))
 kvx_int16x16_select(int16x16_t a, int16x16_t b, int16x16_t c)
 {
-    return __builtin_kvx_selecthx(a, b, c, 0);
+    return __builtin_kvx_selecthx(a, b, c, ".nez");
+}
+uint64_t __attribute__ ((noinline))
+kvx_int16x16_any_eqz(int16x16_t a)
+{
+    return __builtin_kvx_anyhx(a, ".eqz");
+}
+uint64_t __attribute__ ((noinline))
+kvx_int16x16_any_nez(int16x16_t a)
+{
+    return __builtin_kvx_anyhx(a, ".nez");
 }
 int16x16_t __attribute ((noinline))
 kvx_int16x16_shift(int16x16_t a, int16_t b)

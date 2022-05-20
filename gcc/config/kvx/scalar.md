@@ -376,7 +376,7 @@
    (set_attr "length" "     4,         8")]
 )
 
-(define_insn "*land<suffix>"
+(define_insn "kvx_land<suffix>"
   [(set (match_operand:SIDI 0 "register_operand" "=r,r")
         (and:SIDI (ne:SIDI (match_operand:SIDI 1 "register_operand" "%r,r") (const_int 0))
                   (ne:SIDI (match_operand:SIDI 2 "register_s32_operand" "r,B32") (const_int 0))))]
@@ -386,7 +386,7 @@
    (set_attr "length" "     4,         8")]
 )
 
-(define_insn "*lnand<suffix>"
+(define_insn "kvx_lnand<suffix>"
   [(set (match_operand:SIDI 0 "register_operand" "=r,r")
         (ior:SIDI (eq:SIDI (match_operand:SIDI 1 "register_operand" "%r,r") (const_int 0))
                   (eq:SIDI (match_operand:SIDI 2 "register_s32_operand" "r,B32") (const_int 0))))]
@@ -396,7 +396,7 @@
    (set_attr "length" "     4,         8")]
 )
 
-(define_insn "*lor<suffix>"
+(define_insn "kvx_lor<suffix>"
   [(set (match_operand:SIDI 0 "register_operand" "=r,r")
         (ne:SIDI (ior:SIDI (match_operand:SIDI 1 "register_operand" "%r,r")
                            (match_operand:SIDI 2 "register_s32_operand" "r,B32"))
@@ -407,7 +407,7 @@
    (set_attr "length" "     4,         8")]
 )
 
-(define_insn "*lnor<suffix>"
+(define_insn "kvx_lnor<suffix>"
   [(set (match_operand:SIDI 0 "register_operand" "=r,r")
         (eq:SIDI (ior:SIDI (match_operand:SIDI 1 "register_operand" "%r,r")
                            (match_operand:SIDI 2 "register_s32_operand" "r,B32"))
@@ -619,8 +619,9 @@
         emit_insn (gen_udivsi3 (operands[0], absa, absb));
         rtx negated = gen_reg_rtx (SImode);
         emit_insn (gen_negsi2 (negated, operands[0]));
-        rtx wltz = gen_rtx_CONST_STRING (VOIDmode, ".wltz");
-        emit_insn (gen_kvx_selectw (operands[0], negated, operands[0], sign, wltz));
+        rtx select = gen_rtx_IF_THEN_ELSE (SImode, gen_rtx_LT (VOIDmode, sign, const0_rtx),
+                                           negated, operands[0]);
+        emit_insn (gen_rtx_SET (operands[0], select));
       }
     DONE;
   }
@@ -660,8 +661,9 @@
         emit_insn (gen_umodsi3 (operands[0], absa, absb));
         rtx negated = gen_reg_rtx (SImode);
         emit_insn (gen_negsi2 (negated, operands[0]));
-        rtx wltz = gen_rtx_CONST_STRING (VOIDmode, ".wltz");
-        emit_insn (gen_kvx_selectw (operands[0], negated, operands[0], operands[1], wltz));
+        rtx select = gen_rtx_IF_THEN_ELSE (SImode, gen_rtx_LT (VOIDmode, operands[1], const0_rtx),
+                                           negated, operands[0]);
+        emit_insn (gen_rtx_SET (operands[0], select));
       }
     DONE;
   }
@@ -1780,8 +1782,9 @@
         emit_insn (gen_udivdi3 (operands[0], absa, absb));
         rtx negated = gen_reg_rtx (DImode);
         emit_insn (gen_negdi2 (negated, operands[0]));
-        rtx dltz = gen_rtx_CONST_STRING (VOIDmode, ".dltz");
-        emit_insn (gen_kvx_selectd (operands[0], negated, operands[0], sign, dltz));
+        rtx select = gen_rtx_IF_THEN_ELSE (DImode, gen_rtx_LT (VOIDmode, sign, const0_rtx),
+                                           negated, operands[0]);
+        emit_insn (gen_rtx_SET (operands[0], select));
       }
     DONE;
   }
@@ -1821,8 +1824,9 @@
         emit_insn (gen_umoddi3 (operands[0], absa, absb));
         rtx negated = gen_reg_rtx (DImode);
         emit_insn (gen_negdi2 (negated, operands[0]));
-        rtx dltz = gen_rtx_CONST_STRING (VOIDmode, ".dltz");
-        emit_insn (gen_kvx_selectd (operands[0], negated, operands[0], operands[1], dltz));
+        rtx select = gen_rtx_IF_THEN_ELSE (DImode, gen_rtx_LT (VOIDmode, operands[1], const0_rtx),
+                                           negated, operands[0]);
+        emit_insn (gen_rtx_SET (operands[0], select));
       }
     DONE;
   }
