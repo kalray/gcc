@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-LIBC_TEST_VERSION = 445dc15f0758be6b4666149c1aca8af2a69209df
+LIBC_TEST_VERSION = b7ec467969a53756258778fa7d9b045f912d1c93
 LIBC_TEST_SITE = git://nsz.repo.hu:49100/repo/libc-test
 LIBC_TEST_LICENSE = standard MIT license, BSD (src/math/ucb/*), GPL (src/math/crlibm/*)
 LIBC_TEST_LICENSE_FILES = COPYRIGHT
