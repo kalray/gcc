@@ -331,7 +331,17 @@ kvx_float32x8_store(float32x8_t *p, float32x8_t a)
 float32x8_t __attribute ((noinline))
 kvx_float32x8_select(float32x8_t a, float32x8_t b, int32x8_t c)
 {
-    return __builtin_kvx_selectwo(a, b, c, 0);
+    return __builtin_kvx_selectwo(a, b, c, ".nez");
+}
+uint64_t __attribute__ ((noinline))
+kvx_float32x8_any_eqz(float32x8_t a)
+{
+    return __builtin_kvx_anywo(a, ".eqz");
+}
+uint64_t __attribute__ ((noinline))
+kvx_float32x8_any_nez(float32x8_t a)
+{
+    return __builtin_kvx_anywo(a, ".nez");
 }
 float32x8_t __attribute ((noinline))
 kvx_float32x8_shift(float32x8_t a, float32_t b)

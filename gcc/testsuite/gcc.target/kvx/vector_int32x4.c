@@ -625,7 +625,17 @@ kvx_int32x4_satudwq(int64x4_t a)
 int32x4_t __attribute ((noinline))
 kvx_int32x4_select(int32x4_t a, int32x4_t b, int32x4_t c)
 {
-    return __builtin_kvx_selectwq(a, b, c, 0);
+    return __builtin_kvx_selectwq(a, b, c, ".nez");
+}
+uint64_t __attribute__ ((noinline))
+kvx_int32x4_any_eqz(int32x4_t a)
+{
+    return __builtin_kvx_anywq(a, ".eqz");
+}
+uint64_t __attribute__ ((noinline))
+kvx_int32x4_any_nez(int32x4_t a)
+{
+    return __builtin_kvx_anywq(a, ".nez");
 }
 int32x4_t __attribute ((noinline))
 kvx_int32x4_shift(int32x4_t a, int32_t b)

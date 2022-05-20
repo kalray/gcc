@@ -1400,6 +1400,8 @@ kvx_scalar_mode_supported_p (scalar_mode mode)
     return true;
 
   int precision = GET_MODE_PRECISION (mode);
+  if (precision > 128)
+    return false;
 
   switch (GET_MODE_CLASS (mode))
     {
@@ -1477,6 +1479,14 @@ kvx_vector_mode_supported_p (enum machine_mode mode)
     case E_V16HFmode:
     case E_V8SFmode:
     case E_V4DFmode:
+    // 512-bit modes
+    case E_V64QImode:
+    case E_V32HImode:
+    case E_V16SImode:
+    case E_V8DImode:
+    case E_V32HFmode:
+    case E_V16SFmode:
+    case E_V8DFmode:
       return true;
     default:
       break;
@@ -3042,6 +3052,13 @@ kvx_get_predicate_mode (enum machine_mode mode)
       return V8SImode;
     case E_V4DFmode:
       return V4DImode;
+    // 512-bit modes
+    case E_V32HFmode:
+      return E_V32HImode;
+    case E_V16SFmode:
+      return E_V16SImode;
+    case E_V8DFmode:
+      return E_V8DImode;
     // Scalar modes
     case E_HFmode:
     case E_SFmode:
@@ -3380,6 +3397,21 @@ kvx_get_chunk_mode (enum machine_mode mode)
       return V2SFmode;
     case E_V4DFmode:
       return DFmode;
+    // 512-bit modes
+    case E_V64QImode:
+      return V8QImode;
+    case E_V32HImode:
+      return V4HImode;
+    case E_V16SImode:
+      return V2SImode;
+    case E_V8DImode:
+      return DImode;
+    case E_V32HFmode:
+      return V4HFmode;
+    case E_V16SFmode:
+      return V2SFmode;
+    case E_V8DFmode:
+      return DFmode;
     // Other modes
     default:
       break;
@@ -3676,16 +3708,16 @@ kvx_expand_vector_init (rtx target, rtx source)
 }
 
 /* Collect the SBMM8 immdiate values to implement a swizzle or a shuffle.
-   As the largest vector type is 32 bytes and the word is 8 bytes, there
-   are at most 4 words to operate in the destination vector. This corresponds
-   to the [4] rows in values. A shuffle has up to two vector inputs,
-   this corresponds to the [8] columns in values.  */
+   As the largest vector type is 64 bytes and the word is 8 bytes, there
+   are at most 8 words to operate in the destination vector. This corresponds
+   to the row [8] dimension in values. A shuffle has up to two vector inputs,
+   this corresponds to the [16] columns in values.  */
 struct {
-  unsigned char from[32];
+  unsigned short from[64];
   union {
     unsigned char bytes[UNITS_PER_WORD];
     unsigned long long dword;
-  } values[8][4];
+  } values[16][8];
 } kvx_expand_vec_perm;
 
 void
@@ -3882,8 +3914,8 @@ kvx_expand_vec_perm_const (rtx target, rtx source1, rtx source2, rtx selector)
   int ibytes = GET_MODE_SIZE (inner_mode);
   unsigned idx_mask = 2*nunits - 1, which = 0;
 
-  gcc_assert (nwords <= 4);
-  gcc_assert (nunits*ibytes <= 32);
+  gcc_assert (nwords <= 8);
+  gcc_assert (nunits * ibytes <= 64);
   memset (&kvx_expand_vec_perm, 0, sizeof (kvx_expand_vec_perm));
 
   // Fill the kvx_expand_vec_perm.from[] array, where each byte of the
@@ -3949,6 +3981,9 @@ static bool
 kvx_vectorize_vec_perm_const (machine_mode vmode, rtx target, rtx op0,
 			      rtx op1, const vec_perm_indices &sel)
 {
+  if (GET_MODE_SIZE (vmode) > 64)
+    return false;
+
   opt_machine_mode smode = related_int_vector_mode (vmode);
   rtx sel_rtx = vec_perm_indices_to_rtx (smode.else_void (), sel);
   return target ? kvx_expand_vec_perm_const (target, op0, op1, sel_rtx) : true;
@@ -5713,9 +5748,7 @@ kvx_rtx_costs (rtx x, machine_mode mode, int outer_code,
 	  *total = speed ? 2 : 8;
       }
       if (outer_code == SET)
-	{
-	  *total += kvx_type_tiny_cost (nwords, 0, speed);
-	}
+	*total += 2 * nwords;
       goto end_recurse;
 
     case CONST_WIDE_INT:
@@ -5928,8 +5961,12 @@ kvx_rtx_costs (rtx x, machine_mode mode, int outer_code,
     case SET:
       if (REG_SUBREG_P (SET_SRC (x)) && REG_SUBREG_P (SET_DEST (x)))
 	{
-	  // Set word MOVE cost to 2, add 1 per extra word.
-	  *total = 1 + nwords;
+	  if (nwords <= 4)
+	    // Set word MOVE cost to 2, add 1 per extra word.
+	    *total = 1 + nwords;
+	  else
+	    // Set word MOVE cost of 2 per word for subreg split.
+	    *total = 2 * nwords;
 	  goto end_recurse;
 	}
       break;
@@ -6122,8 +6159,13 @@ kvx_register_move_cost (machine_mode mode, reg_class_t from ATTRIBUTE_UNUSED,
     nwords = GET_MODE_NUNITS (mode);
   nwords = nwords >= 1 ? nwords : 1;
 
-  // Set word MOVE cost to 2, add 1 per extra word.
-  int cost = 1 + nwords;
+  int cost = 0;
+  if (nwords <= 4)
+    // Set word MOVE cost to 2, add 1 per extra word.
+    cost = 1 + nwords;
+  else
+    // Set word MOVE cost of 2 per word for subreg split.
+    cost = 2 * nwords;
 
   if (DUMP_COSTS)
     {
@@ -7043,6 +7085,41 @@ kvx_make_256bit_const (rtx dst, rtx src)
   emit_insn (gen_movdi (dst_1, GEN_INT (value_1)));
   emit_insn (gen_movdi (dst_2, GEN_INT (value_2)));
   emit_insn (gen_movdi (dst_3, GEN_INT (value_3)));
+}
+
+/* Make a 512bit constant from SRC into DST in DI chunks.  */
+void
+kvx_make_512bit_const (rtx dst, rtx src)
+{
+  gcc_assert (GET_CODE (src) == CONST_VECTOR);
+
+  HOST_WIDE_INT value_0 = kvx_const_vector_value (src, 0);
+  HOST_WIDE_INT value_1 = kvx_const_vector_value (src, 1);
+  HOST_WIDE_INT value_2 = kvx_const_vector_value (src, 2);
+  HOST_WIDE_INT value_3 = kvx_const_vector_value (src, 3);
+  HOST_WIDE_INT value_4 = kvx_const_vector_value (src, 4);
+  HOST_WIDE_INT value_5 = kvx_const_vector_value (src, 5);
+  HOST_WIDE_INT value_6 = kvx_const_vector_value (src, 6);
+  HOST_WIDE_INT value_7 = kvx_const_vector_value (src, 7);
+
+  enum machine_mode mode = GET_MODE (dst);
+  rtx dst_0 = simplify_gen_subreg (DImode, dst, mode, 0);
+  rtx dst_1 = simplify_gen_subreg (DImode, dst, mode, 8);
+  rtx dst_2 = simplify_gen_subreg (DImode, dst, mode, 16);
+  rtx dst_3 = simplify_gen_subreg (DImode, dst, mode, 24);
+  rtx dst_4 = simplify_gen_subreg (DImode, dst, mode, 32);
+  rtx dst_5 = simplify_gen_subreg (DImode, dst, mode, 40);
+  rtx dst_6 = simplify_gen_subreg (DImode, dst, mode, 48);
+  rtx dst_7 = simplify_gen_subreg (DImode, dst, mode, 56);
+
+  emit_insn (gen_movdi (dst_0, GEN_INT (value_0)));
+  emit_insn (gen_movdi (dst_1, GEN_INT (value_1)));
+  emit_insn (gen_movdi (dst_2, GEN_INT (value_2)));
+  emit_insn (gen_movdi (dst_3, GEN_INT (value_3)));
+  emit_insn (gen_movdi (dst_4, GEN_INT (value_4)));
+  emit_insn (gen_movdi (dst_5, GEN_INT (value_5)));
+  emit_insn (gen_movdi (dst_6, GEN_INT (value_6)));
+  emit_insn (gen_movdi (dst_7, GEN_INT (value_7)));
 }
 
 /* Returns TRUE if OP is a symbol and has the farcall attribute or if
