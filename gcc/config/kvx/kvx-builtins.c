@@ -647,6 +647,8 @@ enum kvx_builtin
   KVX_BUILTIN_STSUW,
   KVX_BUILTIN_STSUD,
   KVX_BUILTIN_STSUDP,
+  KVX_BUILTIN_STSUDQ,
+  KVX_BUILTIN_STSUDO,
   KVX_BUILTIN_SBMM8,
   KVX_BUILTIN_SBMMT8,
 
@@ -1622,6 +1624,8 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (STSUW, "stsuw", UINT32, UINT32, UINT32); // Scalar
   ADD_KVX_BUILTIN (STSUD, "stsud", UINT64, UINT64, UINT64); // Scalar
   ADD_KVX_BUILTIN (STSUDP, "stsudp", V2DI, V2DI, V2DI); // Vector
+  ADD_KVX_BUILTIN (STSUDQ, "stsudq", V4DI, V4DI, V4DI); // Vector
+  ADD_KVX_BUILTIN (STSUDO, "stsudo", V8DI, V8DI, V8DI); // Vector
   ADD_KVX_BUILTIN (SBMM8, "sbmm8", UINT64, UINT64, UINT64); // Scalar
   ADD_KVX_BUILTIN (SBMMT8, "sbmmt8", UINT64, UINT64, UINT64); // Scalar
 
@@ -1783,11 +1787,11 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (XALIGN4096O, "xalign4096o", X256, X4096, UINT64); // Extension kv3-2
   ADD_KVX_BUILTIN (XALIGN8192O, "xalign8192o", X256, X8192, UINT64); // Extension kv3-2
 
-  ADD_KVX_BUILTIN (XACCESS512O, "xaccess512o", V4DI, X512, UINT64); // Extension kv3-2
-  ADD_KVX_BUILTIN (XACCESS1024O, "xaccess1024o", V4DI, X1024, UINT64); // Extension kv3-2
-  ADD_KVX_BUILTIN (XACCESS2048O, "xaccess2048o", V4DI, X2048, UINT64); // Extension kv3-2
-  ADD_KVX_BUILTIN (XACCESS4096O, "xaccess4096o", V4DI, X4096, UINT64); // Extension kv3-2
-  ADD_KVX_BUILTIN (XACCESS8192O, "xaccess8192o", V4DI, X8192, UINT64); // Extension kv3-2
+  ADD_KVX_BUILTIN (XACCESS512O, "xaccess512o", V256, X512, UINT64); // Extension kv3-2
+  ADD_KVX_BUILTIN (XACCESS1024O, "xaccess1024o", V256, X1024, UINT64); // Extension kv3-2
+  ADD_KVX_BUILTIN (XACCESS2048O, "xaccess2048o", V256, X2048, UINT64); // Extension kv3-2
+  ADD_KVX_BUILTIN (XACCESS4096O, "xaccess4096o", V256, X4096, UINT64); // Extension kv3-2
+  ADD_KVX_BUILTIN (XACCESS8192O, "xaccess8192o", V256, X8192, UINT64); // Extension kv3-2
 
   ADD_KVX_BUILTIN (XFSCALEWO, "xfscalewo", X256, X256, UINT64, FLOATINGS); // Extension kv3-2
   ADD_KVX_BUILTIN (XMMA484BW, "xmma484bw", X512, X256, X256, X512, XMATMUL); // Extension
@@ -3531,6 +3535,8 @@ KVX_EXPAND_BUILTIN_2_SILENT (fsrsrdq, kvx_fsrsrdq, V4DFmode, V4DFmode)
 KVX_EXPAND_BUILTIN_3_STANDARD (stsuw, kvx_stsuw, SImode, SImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (stsud, kvx_stsud, DImode, DImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (stsudp, kvx_stsudp, V2DImode, V2DImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (stsudq, kvx_stsudq, V4DImode, V4DImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (stsudo, kvx_stsudo, V8DImode, V8DImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (sbmm8, kvx_sbmm8, DImode, DImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (sbmmt8, kvx_sbmmt8, DImode, DImode)
 
@@ -4742,6 +4748,8 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_STSUW: return kvx_expand_builtin_stsuw (target, exp);
     case KVX_BUILTIN_STSUD: return kvx_expand_builtin_stsud (target, exp);
     case KVX_BUILTIN_STSUDP: return kvx_expand_builtin_stsudp (target, exp);
+    case KVX_BUILTIN_STSUDQ: return kvx_expand_builtin_stsudq (target, exp);
+    case KVX_BUILTIN_STSUDO: return kvx_expand_builtin_stsudo (target, exp);
     case KVX_BUILTIN_SBMM8: return kvx_expand_builtin_sbmm8 (target, exp);
     case KVX_BUILTIN_SBMMT8: return kvx_expand_builtin_sbmmt8 (target, exp);
 

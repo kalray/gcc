@@ -2361,6 +2361,48 @@
   [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
+
+(define_insn_and_split "kvx_stsudq"
+  [(set (match_operand:V4DI 0 "register_operand" "=r")
+        (unspec:V4DI [(match_operand:V4DI 1 "register_operand" "r")
+                      (match_operand:V4DI 2 "register_operand" "r")] UNSPEC_STSU))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V2DI (match_dup 0) 0)
+        (unspec:V2DI [(subreg:V2DI (match_dup 1) 0)
+                      (subreg:V2DI (match_dup 2) 0)] UNSPEC_STSU))
+   (set (subreg:V2DI (match_dup 0) 16)
+        (unspec:V2DI [(subreg:V2DI (match_dup 1) 16)
+                      (subreg:V2DI (match_dup 2) 16)] UNSPEC_STSU))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn_and_split "kvx_stsudo"
+  [(set (match_operand:V8DI 0 "register_operand" "=r")
+        (unspec:V8DI [(match_operand:V8DI 1 "register_operand" "r")
+                      (match_operand:V8DI 2 "register_operand" "r")] UNSPEC_STSU))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V2DI (match_dup 0) 0)
+        (unspec:V2DI [(subreg:V2DI (match_dup 1) 0)
+                      (subreg:V2DI (match_dup 2) 0)] UNSPEC_STSU))
+   (set (subreg:V2DI (match_dup 0) 16)
+        (unspec:V2DI [(subreg:V2DI (match_dup 1) 16)
+                      (subreg:V2DI (match_dup 2) 16)] UNSPEC_STSU))
+   (set (subreg:V2DI (match_dup 0) 32)
+        (unspec:V2DI [(subreg:V2DI (match_dup 1) 32)
+                      (subreg:V2DI (match_dup 2) 32)] UNSPEC_STSU))
+   (set (subreg:V2DI (match_dup 0) 48)
+        (unspec:V2DI [(subreg:V2DI (match_dup 1) 48)
+                      (subreg:V2DI (match_dup 2) 48)] UNSPEC_STSU))]
+  ""
+  [(set_attr "type" "alu_full")]
+)
+
+
 ;; FREC*
 
 (define_insn "*kvx_frecw"
