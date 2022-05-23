@@ -8,6 +8,9 @@ Set the passed register range as fixed
 fstack-limit-register=
 Common RejectNegative Report Joined Var(kvx_deferred_options) Defer
 
+fstack-limit-symbol=
+Common RejectNegative Report Joined Var(kvx_deferred_options) Defer
+
 march=
 Target RejectNegative Joined Report Enum(kvx_arch_type) Var(kvx_arch_name) Init(KVX_ARCH_KV3_1)
 -march=ARCHITECTURE  Compile for specified ARCHITECTURE

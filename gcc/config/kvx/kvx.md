@@ -435,18 +435,6 @@
 [(set_attr "type" "all")]
 )
 
-(define_insn "ctrapsi4"
-      [(trap_if (match_operator 0 "comparison_operator"
-                [(match_operand 1 "register_operand")
-                 (match_operand 2 "immediate_operand")])
-                (match_operand 3 "const_int_operand" "i"))]
-  "kvx_have_stack_checking()"
-  {
-    return kvx_ctrapsi4();
-  }
-[(set_attr "type" "bcu")]
-)
-
 (define_insn "kvx_fence"
   [(unspec [(match_operand 0 "" "")] UNSPEC_FENCE)
    (clobber (mem:BLK (scratch)))]
