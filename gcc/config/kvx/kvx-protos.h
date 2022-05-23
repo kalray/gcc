@@ -25,12 +25,16 @@ void expand_builtin_trap (void);
 
 #ifdef HAVE_ATTR_arch
 extern enum attr_arch kvx_arch_schedule;
-#endif
+#endif /* HAVE_ATTR_arch */
 
 extern bool kvx_is_farcall_p (rtx op);
 extern bool kvx_cannot_change_mode_class (enum machine_mode from,
 					  enum machine_mode to,
 					  enum reg_class reg_class);
+
+/* Pass management. */
+
+extern rtl_opt_pass *make_pass_prologue_stack_limit (gcc::context *);
 
 #ifdef RTX_CODE
 #include "tree-pass.h"
@@ -164,7 +168,7 @@ extern bool kvx_float_fits_bits (const REAL_VALUE_TYPE *r, unsigned bitsz,
 
 extern poly_int64 kvx_initial_elimination_offset (int, int);
 
-char *kvx_ctrapsi4 (void);
+extern int kvx_get_real_frame_size (function *);
 
 /*
  */
@@ -187,5 +191,5 @@ extern GTY (()) rtx kvx_link_reg_rtx;
 
 extern GTY (()) rtx kvx_divmod_zero;
 
-#endif
-#endif
+#endif /* RTX_CODE */
+#endif /* kvx-protos.h */

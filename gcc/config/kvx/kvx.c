@@ -298,6 +298,12 @@ kvx_compute_frame_info (void)
   frame->laid_out = true;
 }
 
+int
+kvx_get_real_frame_size (function *fun)
+{
+  return reload_completed ? fun->machine->frame.frame_size.to_constant () : -1;
+}
+
 static void
 kvx_debug_frame_info (struct kvx_frame_info *fi)
 {
@@ -2434,7 +2440,7 @@ kvx_initial_elimination_offset (int from, int to)
 /* Return TRUE if target supports -fstack-limit-register */
 
 bool
-kvx_have_stack_checking (void)
+kvx_has_stack_checking (void)
 {
 #ifdef GCC_KVX_MPPA_COS
   return true;
@@ -2458,31 +2464,6 @@ kvx_expand_prologue (void)
 
   if (size > 0)
     {
-
-      if (crtl->limit_stack)
-	{
-	  if (kvx_have_stack_checking ())
-	    {
-	      rtx new_stack_pointer_rtx
-		= kvx_get_callersaved_nonfixed_reg (Pmode, 0);
-	      rtx stack_limit_reg = kvx_get_callersaved_nonfixed_reg (Pmode, 1);
-
-	      emit_move_insn (stack_limit_reg, stack_limit_rtx);
-	      emit_insn (gen_add3_insn (new_stack_pointer_rtx,
-					stack_pointer_rtx, GEN_INT (-size)));
-	      emit_insn (gen_sub3_insn (new_stack_pointer_rtx, stack_limit_reg,
-					new_stack_pointer_rtx));
-	      emit_insn (
-		gen_ctrapsi4 (gen_rtx_GT (VOIDmode, new_stack_pointer_rtx,
-					  const0_rtx),
-			      new_stack_pointer_rtx, const0_rtx, GEN_INT (0)));
-	    }
-	  else
-	    {
-	      error ("-fstack-limit-* is not supported.");
-	    }
-	}
-
       insn = emit_insn (gen_add2_insn (stack_pointer_rtx, GEN_INT (-size)));
       RTX_FRAME_RELATED_P (insn) = 1;
 
@@ -2512,10 +2493,8 @@ kvx_expand_prologue (void)
 		       GEN_INT (frame->hard_frame_pointer_offset)));
 
       RTX_FRAME_RELATED_P (insn) = 1;
-      add_reg_note (
-	insn, REG_CFA_DEF_CFA,
-	gen_rtx_PLUS (
-	  Pmode, hard_frame_pointer_rtx,
+      add_reg_note (insn, REG_CFA_DEF_CFA,
+		    gen_rtx_PLUS (Pmode, hard_frame_pointer_rtx,
 				  GEN_INT (
 				    size - frame->hard_frame_pointer_offset)));
     }
@@ -6681,9 +6660,36 @@ kvx_handle_fixed_reg_option (const char *arg)
 }
 
 static bool
+kvx_handle_stack_limit_symbol_option (const char *arg)
+{
+  if (kvx_has_stack_checking ())
+    {
+      /* Only allow $sr as stack-limit register */
+      if (strncmp (arg, "__cos_stack_limit", 17))
+	{
+	  error ("only `__cos_stack_limit' can be used as stack-limit symbol");
+	}
+      else
+	{
+	  /* Deactivate previous OPT_fstack_limit_register_ options.  */
+	  opt_fstack_limit_symbol_arg = arg;
+	  opt_fstack_limit_register_no = -1;
+	}
+
+      return true;
+    }
+  else
+    {
+      error ("-fstack-limit-* is not supported.");
+    }
+
+  return false;
+}
+
+static bool
 kvx_handle_stack_limit_register_option (const char *arg)
 {
-  if (kvx_have_stack_checking ())
+  if (kvx_has_stack_checking ())
     {
       int reg = decode_reg_name (arg);
       if (reg < 0)
@@ -6730,10 +6736,13 @@ kvx_option_override (void)
         case OPT_fstack_limit_register_:
           kvx_handle_stack_limit_register_option (opt->arg);
           break;
-        default:
-          gcc_unreachable ();
-        }
-    }
+	  case OPT_fstack_limit_symbol_:
+	    kvx_handle_stack_limit_symbol_option (opt->arg);
+	    break;
+	  default:
+	    gcc_unreachable ();
+	  }
+      }
 
   kvx_arch_schedule = ARCH_KV3_1;
   if (KV3_2)
@@ -7087,26 +7096,6 @@ kvx_constant_alignment (const_tree exp, HOST_WIDE_INT align)
 	   && (align) < BITS_PER_WORD )
 	  ? BITS_PER_WORD : (align));
 }
-
-/* Returns asm template for ctrapsi4 */
-char *
-kvx_ctrapsi4 (void)
-{
-  static char asm_template[] = "cb.@%R0z %1? 1f\n\t"
-			       ";;\n\t"
-			       "get $r0 = $pc\n\t"
-			       "copyd $r1 = $r12\n\t"
-			       ";;\n\t"
-			       "call __stack_overflow_detected\n\t"
-			       ";;\n\t"
-			       "1:\n\t";
-  char *width = strchr (asm_template, '@');
-
-  if (width)
-    *width = TARGET_32 ? 'w' : 'd';
-  return asm_template;
-}
-
 
 /* Initialize the GCC target structure.  */
 
