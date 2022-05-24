@@ -1,5 +1,5 @@
 
-;; KVX_UNDEF
+;; KVX_XUNDEF
 
 (define_insn "kvx_xundef256"
   [(set (match_operand:X256 0 "register_operand" "=x")
@@ -39,8 +39,8 @@
 )
 
 (define_insn "*mov<mode>"
-  [(set (match_operand:X256 0 "nonimmediate_operand" "=x,x,x,x,a,b,m,r,x")
-        (match_operand:X256 1 "nonimmediate_operand"  "x,a,b,m,x,x,x,x,r"))]
+  [(set (match_operand:X256 0 "nonimmediate_operand" "=x,x,x,x,a,b,m,r,x,r")
+        (match_operand:X256 1 "nonimmediate_operand"  "x,a,b,m,x,x,x,x,r,r"))]
   "KV3_1"
   {
     switch (which_alternative)
@@ -55,17 +55,19 @@
         return "xmovefo %0 = %1";
       case 8:
         return "xmovetq %0.lo = %x1, %y1\n\txmovetq %0.hi = %z1, %t1";
+      case 9:
+        return "copyo %0 = %1";
       default:
         gcc_unreachable ();
       }
   }
-  [(set_attr "type" "bcu_crrp_crwl_crwh,lsu_load_uncached,lsu_load_uncached_x,lsu_load_uncached_y,lsu_crrp_store,lsu_crrp_store_x,lsu_crrp_store_y,bcu_tiny_auxw_crrp,alu_lite_x2_crwl_crwh")
-   (set_attr "length"                "4,                4,                  8,                 12,             4,               8,              12,                 4,                    8")]
+  [(set_attr "type" "bcu_crrp_crwl_crwh,lsu_load_uncached,lsu_load_uncached_x,lsu_load_uncached_y,lsu_crrp_store,lsu_crrp_store_x,lsu_crrp_store_y,bcu_tiny_auxw_crrp,alu_lite_x2_crwl_crwh,lsu_auxr_auxw")
+   (set_attr "length"                "4,                4,                  8,                 12,             4,               8,              12,                 4,                    8,            4")]
 )
 
 (define_insn "*mov<mode>"
-  [(set (match_operand:X256 0 "nonimmediate_operand" "=x, x, x, x, x, x, x,a,b,m,r,x")
-        (match_operand:X256 1 "nonimmediate_operand"  "x,Ca,Cb,Cm,Za,Zb,Zm,x,x,x,x,r"))]
+  [(set (match_operand:X256 0 "nonimmediate_operand" "=x, x, x, x, x, x, x,a,b,m,r,x,r")
+        (match_operand:X256 1 "nonimmediate_operand"  "x,Ca,Cb,Cm,Za,Zb,Zm,x,x,x,x,r,r"))]
   "KV3_2"
   {
     switch (which_alternative)
@@ -80,12 +82,14 @@
         return "xmovefo %0 = %1";
       case 11:
         return "xmovetq %0.lo = %x1, %y1\n\txmovetq %0.hi = %z1, %t1";
+      case 12:
+        return "copyo %0 = %1";
       default:
         gcc_unreachable ();
       }
   }
-  [(set_attr "type" "bcu_crrp_crwl_crwh,lsu_load,lsu_load_x,lsu_load_y,lsu_load_uncached,lsu_load_uncached_x,lsu_load_uncached_y,lsu_crrp_store,lsu_crrp_store_x,lsu_crrp_store_y,bcu_tiny_auxw_crrp,alu_thin_x2_crwl_crwh")
-   (set_attr "length"                "4,       4,         8,        12,                4,                  8,                 12,             4,               8,              12,                 4,                    8")]
+  [(set_attr "type" "bcu_crrp_crwl_crwh,lsu_load,lsu_load_x,lsu_load_y,lsu_load_uncached,lsu_load_uncached_x,lsu_load_uncached_y,lsu_crrp_store,lsu_crrp_store_x,lsu_crrp_store_y,bcu_tiny_auxw_crrp,alu_thin_x2_crwl_crwh,lsu_auxr_auxw")
+   (set_attr "length"                "4,       4,         8,        12,                4,                  8,                 12,             4,               8,              12,                 4,                    8,            4")]
 )
 
 (define_insn "*xmovef<mode>"
@@ -670,7 +674,7 @@
         (unspec:X256 [(match_operand:DI 1 "register_operand" "r")] UNSPEC_XSPLATD256))]
   ""
   "xmovetq %0.lo = %1, %1\n\txmovetq %0.hi = %1, %1";
-  [(set_attr "type" "alu_lite_x2_crwl_crwh")
+  [(set_attr "type" "alu_thin_x2_crwl_crwh")
    (set_attr "length"                   "8")]
 )
 
@@ -1411,6 +1415,34 @@
   "KV3_2"
   "xzx48bw %0 = %1"
   [(set_attr "type" "tca_int")]
+)
+
+
+;; KVX_XSENDO, KVX_XRECVO, KVX_XSENDRECVO
+
+(define_insn "kvx_xsendo"
+  [(unspec_volatile [(match_operand:X256 0 "register_operand" "x")
+                     (match_operand 1 "" "")] UNSPEC_XSENDO)]
+  "KV3_2"
+  "xsendo%1 %0"
+  [(set_attr "type" "alu_tiny_crrp")]
+)
+
+(define_insn "kvx_xrecvo"
+  [(set (match_operand:X256 0 "register_operand" "=x")
+        (unspec_volatile:X256 [(match_operand 1 "" "")] UNSPEC_XRECVO))]
+  "KV3_2"
+  "xrecvo%1 %0"
+  [(set_attr "type" "alu_tiny_crwl_crwh")]
+)
+
+(define_insn "kvx_xsendrecvo"
+  [(set (match_operand:X256 0 "register_operand" "=x")
+        (unspec_volatile:X256 [(match_operand:X256 1 "register_operand" "x")
+                               (match_operand 2 "" "")] UNSPEC_XSENDRECVO))]
+  "KV3_2"
+  "xsendrecvo%2 %0, %1"
+  [(set_attr "type" "alu_tiny_crrp_crwl_crwh")]
 )
 
 

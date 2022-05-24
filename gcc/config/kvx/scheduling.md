@@ -68,6 +68,9 @@
 (define_reservation "kv3_alu_nop_r" "kv3_issue_r")
 ;;
 (define_reservation "kv3_alu_tiny_r" "kv3_tiny_r + kv3_issue_r")
+(define_reservation "kv3_alu_tiny_crrp_r" "kv3_tiny_r + kv3_crrp_u + kv3_issue_r")
+(define_reservation "kv3_alu_tiny_crwl_crwh_r" "kv3_tiny_r + kv3_crwl_u + kv3_crwh_u + kv3_issue_r")
+(define_reservation "kv3_alu_tiny_crrp_crwl_crwh_r" "kv3_tiny_r + kv3_crrp_u + kv3_crwl_u + kv3_crwh_u + kv3_issue_r")
 (define_reservation "kv3_alu_tiny_x_r" "kv3_tiny_r + kv3_issue_x2_r")
 (define_reservation "kv3_alu_tiny_y_r" "kv3_tiny_r + kv3_issue_x3_r")
 (define_reservation "kv3_alu_tiny_x2_r" "kv3_tiny_x2_r + kv3_issue_x2_r")
@@ -122,6 +125,9 @@
 (define_insn_reservation "kv3_alu_nop" 1 (eq_attr "type" "alu_nop") "kv3_alu_nop_r")
 ;;
 (define_insn_reservation "kv3_alu_tiny" 1 (eq_attr "type" "alu_tiny") "kv3_alu_tiny_r")
+(define_insn_reservation "kv3_alu_tiny_crrp" 1 (eq_attr "type" "alu_tiny_crrp") "kv3_alu_tiny_crrp_r")
+(define_insn_reservation "kv3_alu_tiny_crwl_crwh" 1 (eq_attr "type" "alu_tiny_crwl_crwh") "kv3_alu_tiny_crwl_crwh_r")
+(define_insn_reservation "kv3_alu_tiny_crrp_crwl_crwh" 1 (eq_attr "type" "alu_tiny_crrp_crwl_crwh") "kv3_alu_tiny_crrp_crwl_crwh_r")
 (define_insn_reservation "kv3_alu_tiny_x" 1 (eq_attr "type" "alu_tiny_x") "kv3_alu_tiny_x_r")
 (define_insn_reservation "kv3_alu_tiny_y" 1 (eq_attr "type" "alu_tiny_y") "kv3_alu_tiny_y_r")
 (define_insn_reservation "kv3_alu_tiny_x2" 1 (eq_attr "type" "alu_tiny_x2") "kv3_alu_tiny_x2_r")
@@ -240,8 +246,22 @@
 (define_bypass 1 "kv3_mau,kv3_mau_x"
                  "kv3_mau_auxr"
                  "kvx_accumulator_bypass_p")
-;; The coprocessor integer MAC operations have a bypass to the accumulator.
-(define_bypass 3 "kv3_tca_int"
+;; The coprocessor has a bypass between the BILAU accumulations.
+(define_bypass 1 "kv3_tca_int"
                  "kv3_tca_int"
+                 "kvx_accumulator_bypass_p")
+;; The coprocessor does not have a bypass from any E1 source to the BILAU accumulators.
+(define_bypass 3 "kv3_bcu*"
+                 "kv3_tca_int"
+                 "kvx_accumulator_bypass_p")
+(define_bypass 3 "kv3_alu*"
+                 "kv3_tca_int"
+                 "kvx_accumulator_bypass_p")
+;; The coprocessor does not have a bypass from any E1 source to the BLAU accumulators.
+(define_bypass 4 "kv3_tca"
+                 "kv3_tca_float"
+                 "kvx_accumulator_bypass_p")
+(define_bypass 4 "kv3_alu*"
+                 "kv3_tca_float"
                  "kvx_accumulator_bypass_p")
 

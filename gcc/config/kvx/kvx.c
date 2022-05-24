@@ -3490,7 +3490,7 @@ kvx_expand_vector_extract (rtx target, rtx source, rtx where)
 /* Splat a value of mode smaller than a word into a word size vector chunk.
  * This is used both for initializing a vector from a scalar, and for the
  * vector arithmetic patterns that operate a vector with a scalar.  */
-rtx
+void
 kvx_expand_chunk_splat (rtx target, rtx source, machine_mode inner_mode)
 {
   HOST_WIDE_INT constant = 0;
@@ -3498,7 +3498,10 @@ kvx_expand_chunk_splat (rtx target, rtx source, machine_mode inner_mode)
   unsigned inner_size = GET_MODE_SIZE (inner_mode);
 
   if (inner_size == UNITS_PER_WORD)
-    return source;
+    {
+      emit_move_insn (target, source);
+      return;
+    }
 
   if (!REG_P (source) && !SUBREG_P (source))
     source = force_reg (inner_mode, source);
@@ -3521,7 +3524,6 @@ kvx_expand_chunk_splat (rtx target, rtx source, machine_mode inner_mode)
   rtx op1 = gen_lowpart (inner_mode, source);
   rtx sbmm8 = gen_rtx_UNSPEC (chunk_mode, gen_rtvec (2, op1, op2), UNSPEC_SBMM8);
   emit_insn (gen_rtx_SET (target, sbmm8));
-  return target;
 }
 
 /* Helper function for kvx_expand_vector_init () in case inner mode size < 64 bits.
@@ -3603,7 +3605,7 @@ kvx_expand_vector_duplicate (rtx target, rtx source)
   machine_mode chunk_mode = kvx_get_chunk_mode (vector_mode);
 
   rtx chunk = gen_reg_rtx (chunk_mode);
-  chunk = kvx_expand_chunk_splat (chunk, source, inner_mode);
+  kvx_expand_chunk_splat (chunk, source, inner_mode);
 
   unsigned vector_size = GET_MODE_SIZE (vector_mode);
   if (vector_size > UNITS_PER_WORD)

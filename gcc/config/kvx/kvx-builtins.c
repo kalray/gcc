@@ -801,6 +801,9 @@ enum kvx_builtin
   KVX_BUILTIN_XSX48BW,
   KVX_BUILTIN_XZX48BW,
   KVX_BUILTIN_XMT44D,
+  KVX_BUILTIN_XSENDO,
+  KVX_BUILTIN_XRECVO,
+  KVX_BUILTIN_XSENDRECVO,
   KVX_BUILTIN_XSWAP256,
 
   KVX_BUILTIN__COUNT
@@ -956,6 +959,8 @@ kvx_init_builtins (void)
 #define XLOADQC STRING
 #define XPRELOAD STRING
 #define XMATMUL STRING
+#define CHANNEL STRING
+#define CHANNELS STRING
 #define UNUSED STRING
 
   ADD_KVX_BUILTIN (ADDCD, "addcd", UINT64, UINT64, UINT64, CARRY); // Scalar
@@ -1717,6 +1722,10 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (XSX48BW, "xsx48bw", X1024, X256); // Extension kv3-2
   ADD_KVX_BUILTIN (XZX48BW, "xzx48bw", X1024, X256); // Extension kv3-2
   ADD_KVX_BUILTIN (XMT44D, "xmt44d", X1024, X1024); // Extension
+  ADD_KVX_BUILTIN (XSENDO, "xsendo", VOID, X256, CHANNEL); // Extension
+  ADD_KVX_BUILTIN (XRECVO, "xrecvo", X256, CHANNEL); // Extension
+  ADD_KVX_BUILTIN (XSENDRECVO, "xsendrecvo", X256, X256, CHANNELS); // Extension
+
   ADD_KVX_BUILTIN (XSWAP256, "xswap256", V4DI, _X256, V4DI); // Extension
 
 }
@@ -2302,6 +2311,38 @@ build_xmatmul_arg (tree arg, const char *name)
 }
 
 static rtx
+build_channel_arg (tree arg, const char *name)
+{
+  const char *modifier = tree_string_constant (arg);
+  static const char *table[] = {
+    ".f", ".b",
+  };
+  for (int i = 0; i < (int) (sizeof (table) / sizeof (*table)); i++)
+    {
+      if (!strcmp (modifier, table[i]))
+	return gen_rtx_CONST_STRING (VOIDmode, table[i]);
+    }
+  error ("__builtin_kvx_%s modifier \"%s\" not recognized.", name, modifier);
+  return 0;
+}
+
+static rtx
+build_channels_arg (tree arg, const char *name)
+{
+  const char *modifier = tree_string_constant (arg);
+  static const char *table[] = {
+    ".f.f", ".f.b", ".b.f", ".b.b",
+  };
+  for (int i = 0; i < (int) (sizeof (table) / sizeof (*table)); i++)
+    {
+      if (!strcmp (modifier, table[i]))
+	return gen_rtx_CONST_STRING (VOIDmode, table[i]);
+    }
+  error ("__builtin_kvx_%s modifier \"%s\" not recognized.", name, modifier);
+  return 0;
+}
+
+static rtx
 verify_const_bool_arg (rtx arg, const char *name, const char *where)
 {
   if (GET_CODE (arg) == CONST_INT && GET_MODE (arg) == VOIDmode)
@@ -2402,6 +2443,32 @@ verify_sfr_regno (int regno, const char *name, const char *where)
     return NULL_RTX;                                                           \
   }
 
+#define KVX_EXPAND_BUILTIN_XSENDO(name, name2, smode)                          \
+  static rtx kvx_expand_builtin_##name (rtx target ATTRIBUTE_UNUSED, tree args)\
+  {                                                                            \
+    if (KV3_N_ONLY)                                                            \
+      error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
+    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
+    rtx arg2 = build_channel_arg (CALL_EXPR_ARG (args, 1), #name);             \
+    arg1 = force_reg (smode, arg1);                                            \
+    emit_insn (gen_##name2 (arg1, arg2));                                      \
+    return NULL_RTX;                                                           \
+  }
+
+#define KVX_EXPAND_BUILTIN_XRECVO(name, name2, tmode)                          \
+  static rtx kvx_expand_builtin_##name (rtx target ATTRIBUTE_UNUSED, tree args)\
+  {                                                                            \
+    if (KV3_N_ONLY)                                                            \
+      error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
+    rtx arg1 = build_channel_arg (CALL_EXPR_ARG (args, 0), #name);             \
+    if (!target)                                                               \
+      target = gen_reg_rtx (tmode);                                            \
+    else                                                                       \
+      target = force_reg (tmode, target);                                      \
+    emit_insn (gen_##name2 (target, arg1));                                    \
+    return target;                                                           \
+  }
+
 #define KVX_EXPAND_BUILTIN_2_VOID(name, name2, smode)                          \
   static rtx kvx_expand_builtin_##name (rtx target ATTRIBUTE_UNUSED, tree args)\
   {                                                                            \
@@ -2473,6 +2540,8 @@ verify_sfr_regno (int regno, const char *name, const char *where)
   KVX_EXPAND_BUILTIN_2_MODIFIERS(floatings, name, name2, tmode, smode)
 #define KVX_EXPAND_BUILTIN_2_SILENT(name, name2, tmode, smode)                 \
   KVX_EXPAND_BUILTIN_2_MODIFIERS(silent, name, name2, tmode, smode)
+#define KVX_EXPAND_BUILTIN_2_CHANNELS(name, name2, tmode, smode)               \
+  KVX_EXPAND_BUILTIN_2_MODIFIERS(channels, name, name2, tmode, smode)
 
 #define KVX_EXPAND_BUILTIN_3_STANDARD(name, name2, tmode, smode)               \
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
@@ -2499,8 +2568,16 @@ verify_sfr_regno (int regno, const char *name, const char *where)
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
     rtx arg3 = build_##validate##_arg (CALL_EXPR_ARG (args, 2), #name);        \
-    arg1 = force_reg (smode, arg1);                                            \
-    arg2 = force_reg (smode, arg2);                                            \
+    if (smode != VOIDmode)                                                     \
+      {                                                                        \
+        arg1 = force_reg (smode, arg1);                                        \
+        arg2 = force_reg (smode, arg2);                                        \
+      }                                                                        \
+    else                                                                       \
+      {                                                                        \
+        arg1 = force_reg (tmode, arg1);                                        \
+        arg2 = force_not_mem (arg2);                                           \
+      }                                                                        \
     if (!target)                                                               \
       target = gen_reg_rtx (tmode);                                            \
     else                                                                       \
@@ -2526,28 +2603,10 @@ verify_sfr_regno (int regno, const char *name, const char *where)
   KVX_EXPAND_BUILTIN_3_MODIFIERS(transpose, name, name2, tmode, smode)
 #define KVX_EXPAND_BUILTIN_3_SILENT(name, name2, tmode, smode)                 \
   KVX_EXPAND_BUILTIN_3_MODIFIERS(silent, name, name2, tmode, smode)
-
-#define KVX_EXPAND_BUILTIN_3_MODIFIERS_S(validate, name, name2, tmode, smode)  \
-  static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
-  {                                                                            \
-    if (KV3_N_ONLY)                                                            \
-      error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
-    rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
-    rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
-    rtx arg3 = build_##validate##_arg (CALL_EXPR_ARG (args, 2), #name);        \
-    arg1 = force_reg (tmode, arg1);                                            \
-    arg2 = force_not_mem (arg2);                                               \
-    if (!target)                                                               \
-      target = gen_reg_rtx (tmode);                                            \
-    else                                                                       \
-      target = force_reg (tmode, target);                                      \
-    emit_insn (gen_##name2 (target, arg1, arg2, arg3));                        \
-    return target;                                                             \
-  }
 #define KVX_EXPAND_BUILTIN_3_SHIFTLEFT(name, name2, tmode, smode)              \
-  KVX_EXPAND_BUILTIN_3_MODIFIERS_S(shiftleft, name, kvx_##name, tmode, smode)
+  KVX_EXPAND_BUILTIN_3_MODIFIERS(shiftleft, name, kvx_##name, tmode, smode)
 #define KVX_EXPAND_BUILTIN_3_SHIFTRIGHT(name, name2, tmode, smode)             \
-  KVX_EXPAND_BUILTIN_3_MODIFIERS_S(shiftright, name, kvx_##name, tmode, smode)
+  KVX_EXPAND_BUILTIN_3_MODIFIERS(shiftright, name, kvx_##name, tmode, smode)
 
 #define KVX_EXPAND_BUILTIN_4_STANDARD(name, name2, tmode, smode)               \
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
@@ -2765,8 +2824,8 @@ KVX_EXPAND_BUILTIN_1_VOID (syncgroup, kvx_syncgroup, DImode)
 
 KVX_EXPAND_BUILTIN_2_STANDARD (waitit, kvx_waitit, SImode, SImode);
 
-KVX_EXPAND_BUILTIN_3_CARRY (addcd, kvx_addcd, DImode, DImode)
-KVX_EXPAND_BUILTIN_3_CARRY (sbfcd, kvx_sbfcd, DImode, DImode)
+KVX_EXPAND_BUILTIN_3_CARRY (addcd, kvx_addcd, DImode, VOIDmode)
+KVX_EXPAND_BUILTIN_3_CARRY (sbfcd, kvx_sbfcd, DImode, VOIDmode)
 
 KVX_EXPAND_BUILTIN_3_SATURATE (addbo, kvx_addbo, V8QImode, V8QImode)
 KVX_EXPAND_BUILTIN_3_SATURATE (addbx, kvx_addbx, V16QImode, V16QImode)
@@ -2920,33 +2979,33 @@ KVX_EXPAND_BUILTIN_3_STANDARD (maxud, umaxdi3, DImode, DImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (maxudp, umaxv2di3, V2DImode, V2DImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (maxudq, umaxv4di3, V4DImode, V4DImode)
 
-KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shlbos, kvx_shlbos, V8QImode, SImode)
-KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shlbxs, kvx_shlbxs, V16QImode, SImode)
-KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shlbvs, kvx_shlbvs, V32QImode, SImode)
-KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shlhqs, kvx_shlhqs, V4HImode, SImode)
-KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shlhos, kvx_shlhos, V8HImode, SImode)
-KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shlhxs, kvx_shlhxs, V16HImode, SImode)
-KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shlw, kvx_shlw, SImode, SImode)
-KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shlwps, kvx_shlwps, V2SImode, SImode)
-KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shlwqs, kvx_shlwqs, V4SImode, SImode)
-KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shlwos, kvx_shlwos, V8SImode, SImode)
-KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shld, kvx_shld, DImode, SImode)
-KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shldps, kvx_shldps, V2DImode, SImode)
-KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shldqs, kvx_shldqs, V4DImode, SImode)
+KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shlbos, kvx_shlbos, V8QImode, VOIDmode)
+KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shlbxs, kvx_shlbxs, V16QImode, VOIDmode)
+KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shlbvs, kvx_shlbvs, V32QImode, VOIDmode)
+KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shlhqs, kvx_shlhqs, V4HImode, VOIDmode)
+KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shlhos, kvx_shlhos, V8HImode, VOIDmode)
+KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shlhxs, kvx_shlhxs, V16HImode, VOIDmode)
+KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shlw, kvx_shlw, SImode, VOIDmode)
+KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shlwps, kvx_shlwps, V2SImode, VOIDmode)
+KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shlwqs, kvx_shlwqs, V4SImode, VOIDmode)
+KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shlwos, kvx_shlwos, V8SImode, VOIDmode)
+KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shld, kvx_shld, DImode, VOIDmode)
+KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shldps, kvx_shldps, V2DImode, VOIDmode)
+KVX_EXPAND_BUILTIN_3_SHIFTLEFT (shldqs, kvx_shldqs, V4DImode, VOIDmode)
 
-KVX_EXPAND_BUILTIN_3_SHIFTRIGHT (shrbos, kvx_shrbos, V8QImode, SImode)
-KVX_EXPAND_BUILTIN_3_SHIFTRIGHT (shrbxs, kvx_shrbxs, V16QImode, SImode)
-KVX_EXPAND_BUILTIN_3_SHIFTRIGHT (shrbvs, kvx_shrbvs, V32QImode, SImode)
-KVX_EXPAND_BUILTIN_3_SHIFTRIGHT (shrhqs, kvx_shrhqs, V4HImode, SImode)
-KVX_EXPAND_BUILTIN_3_SHIFTRIGHT (shrhos, kvx_shrhos, V8HImode, SImode)
-KVX_EXPAND_BUILTIN_3_SHIFTRIGHT (shrhxs, kvx_shrhxs, V16HImode, SImode)
-KVX_EXPAND_BUILTIN_3_SHIFTRIGHT (shrw, kvx_shrw, SImode, SImode)
-KVX_EXPAND_BUILTIN_3_SHIFTRIGHT (shrwps, kvx_shrwps, V2SImode, SImode)
-KVX_EXPAND_BUILTIN_3_SHIFTRIGHT (shrwqs, kvx_shrwqs, V4SImode, SImode)
-KVX_EXPAND_BUILTIN_3_SHIFTRIGHT (shrwos, kvx_shrwos, V8SImode, SImode)
-KVX_EXPAND_BUILTIN_3_SHIFTRIGHT (shrd, kvx_shrd, DImode, SImode)
-KVX_EXPAND_BUILTIN_3_SHIFTRIGHT (shrdps, kvx_shrdps, V2DImode, SImode)
-KVX_EXPAND_BUILTIN_3_SHIFTRIGHT (shrdqs, kvx_shrdqs, V4DImode, SImode)
+KVX_EXPAND_BUILTIN_3_SHIFTRIGHT (shrbos, kvx_shrbos, V8QImode, VOIDmode)
+KVX_EXPAND_BUILTIN_3_SHIFTRIGHT (shrbxs, kvx_shrbxs, V16QImode, VOIDmode)
+KVX_EXPAND_BUILTIN_3_SHIFTRIGHT (shrbvs, kvx_shrbvs, V32QImode, VOIDmode)
+KVX_EXPAND_BUILTIN_3_SHIFTRIGHT (shrhqs, kvx_shrhqs, V4HImode, VOIDmode)
+KVX_EXPAND_BUILTIN_3_SHIFTRIGHT (shrhos, kvx_shrhos, V8HImode, VOIDmode)
+KVX_EXPAND_BUILTIN_3_SHIFTRIGHT (shrhxs, kvx_shrhxs, V16HImode, VOIDmode)
+KVX_EXPAND_BUILTIN_3_SHIFTRIGHT (shrw, kvx_shrw, SImode, VOIDmode)
+KVX_EXPAND_BUILTIN_3_SHIFTRIGHT (shrwps, kvx_shrwps, V2SImode, VOIDmode)
+KVX_EXPAND_BUILTIN_3_SHIFTRIGHT (shrwqs, kvx_shrwqs, V4SImode, VOIDmode)
+KVX_EXPAND_BUILTIN_3_SHIFTRIGHT (shrwos, kvx_shrwos, V8SImode, VOIDmode)
+KVX_EXPAND_BUILTIN_3_SHIFTRIGHT (shrd, kvx_shrd, DImode, VOIDmode)
+KVX_EXPAND_BUILTIN_3_SHIFTRIGHT (shrdps, kvx_shrdps, V2DImode, VOIDmode)
+KVX_EXPAND_BUILTIN_3_SHIFTRIGHT (shrdqs, kvx_shrdqs, V4DImode, VOIDmode)
 
 KVX_EXPAND_BUILTIN_2_STANDARD (clzw, clzsi2, SImode, SImode)
 KVX_EXPAND_BUILTIN_2_STANDARD (clzd, clzdi2, DImode, DImode)
@@ -3903,6 +3962,9 @@ KVX_EXPAND_BUILTIN_4_STANDARD (xclampwo, kvx_xclampwo, X256mode, X256mode)
 KVX_EXPAND_BUILTIN_2_STANDARD (xtrunc48wb, kvx_xtrunc48wb, X256mode, X1024mode)
 KVX_EXPAND_BUILTIN_2_STANDARD (xsx48bw, kvx_xsx48bw, X1024mode, X256mode)
 KVX_EXPAND_BUILTIN_2_STANDARD (xzx48bw, kvx_xzx48bw, X1024mode, X256mode)
+KVX_EXPAND_BUILTIN_XSENDO (xsendo, kvx_xsendo, X256mode)
+KVX_EXPAND_BUILTIN_XRECVO (xrecvo, kvx_xrecvo, X256mode)
+KVX_EXPAND_BUILTIN_2_CHANNELS (xsendrecvo, kvx_xsendrecvo, X256mode, X256mode)
 #define KV3_N_ONLY 0
 KVX_EXPAND_BUILTIN_2_STANDARD (xmt44d, kvx_xmt44d, X1024mode, X1024mode)
 
@@ -4689,6 +4751,9 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_XSX48BW: return kvx_expand_builtin_xsx48bw (target, exp);
     case KVX_BUILTIN_XZX48BW: return kvx_expand_builtin_xzx48bw (target, exp);
     case KVX_BUILTIN_XMT44D: return kvx_expand_builtin_xmt44d (target, exp);
+    case KVX_BUILTIN_XSENDO: return kvx_expand_builtin_xsendo (target, exp);
+    case KVX_BUILTIN_XRECVO: return kvx_expand_builtin_xrecvo (target, exp);
+    case KVX_BUILTIN_XSENDRECVO: return kvx_expand_builtin_xsendrecvo (target, exp);
     case KVX_BUILTIN_XSWAP256: return kvx_expand_builtin_xswap256 (target, exp);
 
     default:
