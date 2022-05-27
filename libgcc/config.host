@@ -921,15 +921,15 @@ iq2000*-*-elf*)
         ;;
 kvx-*-linux*)
   extra_parts="$extra_parts crtbegin.o crtend.o"
-	tmake_file="$tmake_file ${cpu_type}/t-kvx t-softfp-sfdf t-libgcc-pic t-softfp "
+	tmake_file="$tmake_file t-softfp-sfdf t-libgcc-pic t-softfp ${cpu_type}/t-kvx "
   ;;
 kvx-*-cos)
   extra_parts="$extra_parts crtbegin.o crtend.o crti.o crtn.o crtcxa.o crtcxa_s.o"
-	tmake_file="$tmake_file kvx/t-kvx t-softfp-sfdf t-libgcc-pic t-softfp "
+	tmake_file="$tmake_file t-softfp-sfdf t-libgcc-pic t-softfp ${cpu_type}/t-kvx "
 	;;
 kvx-*-*)
   extra_parts="$extra_parts crtbegin.o crtend.o crti.o crtn.o"
-	tmake_file="$tmake_file kvx/t-kvx t-softfp-sfdf t-softfp "
+	tmake_file="$tmake_file t-softfp-sfdf t-softfp ${cpu_type}/t-kvx "
 	;;
 lm32-*-elf*)
         extra_parts="$extra_parts crti.o crtn.o"
