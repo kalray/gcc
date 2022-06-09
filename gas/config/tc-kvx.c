@@ -3280,6 +3280,10 @@ kvx_end(void)
     i_ehdrp = elf_elfheader(stdoutput);
     i_ehdrp->e_ident[EI_ABIVERSION] = kvx_abi;
     i_ehdrp->e_ident[EI_OSABI] = kvx_osabi;
+
+    if (inside_bundle && insncnt != 0)
+      as_bad ("unexpected end-of-file while processing a bundle."
+          "  Please check that ;; is on its own line.");
 }
 
 static void
