@@ -17,6 +17,10 @@ DHCPCD_CONFIG_OPTS = \
 	--os=linux \
 	--privsepuser=dhcpcd
 
+ifeq ($(BR2_kvx),y)
+DHCPCD_CONFIG_OPTS += --disable-privsep
+endif
+
 # AUDIT_ARCH_{OPENRISC,SH,SHEL,SH64,SHEL64} are only available with kernel >= 3.7
 ifeq ($(BR2_or1k)$(BR2_sh):$(BR2_TOOLCHAIN_HEADERS_AT_LEAST_3_7),y:)
 DHCPCD_CONFIG_OPTS += --disable-privsep
