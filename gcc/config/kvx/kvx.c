@@ -5617,6 +5617,33 @@ kvx_sched2_fix_insn_issue (rtx_insn *insn, rtx *opvec, int noperands)
     }
 }
 
+static rtx_insn * _cur_final_insn;
+
+void
+kvx_final_prescan_insn (rtx_insn *insn)
+{
+  _cur_final_insn = insn;
+}
+
+const char *
+kvx_asm_output_opcode (FILE *stream, const char * code)
+{
+  if (kvx_sched2.insn_cycle && _cur_final_insn)
+    {
+      int uid = INSN_UID (_cur_final_insn);
+
+      if ((unsigned) uid >= (unsigned) kvx_sched2.max_uid
+	  || kvx_sched2.insn_cycle[uid] < 0)
+	{
+	  if (TARGET_SCHED2_DATES)
+	    fprintf (stream, ";;\t# (unscheduled)\n\t");
+	  else
+	    fprintf (stream, ";;\n\t");
+	}
+    }
+  return code;
+}
+
 /* Implements TARGET_ASM_FINAL_POSTSCAN_INSN.  */
 static void
 kvx_asm_final_postscan_insn (FILE *file, rtx_insn *insn,
@@ -5626,6 +5653,7 @@ kvx_asm_final_postscan_insn (FILE *file, rtx_insn *insn,
   if (kvx_sched2.insn_cycle)
     {
       int uid = INSN_UID (insn);
+
       if ((unsigned) uid >= (unsigned) kvx_sched2.max_uid
 	  || kvx_sched2.insn_cycle[uid] < 0)
 	{
@@ -6840,6 +6868,8 @@ kvx_option_override (void)
 	  case OPT_fstack_limit_symbol_:
 	    kvx_handle_stack_limit_symbol_option (opt->arg);
 	    break;
+        case OPT_fshaker_seed_:
+	  break;
 	  default:
 	    gcc_unreachable ();
 	  }
@@ -7501,6 +7531,7 @@ kvx_constant_alignment (const_tree exp, HOST_WIDE_INT align)
 
 #undef TARGET_VECTORIZE_VEC_PERM_CONST
 #define TARGET_VECTORIZE_VEC_PERM_CONST kvx_vectorize_vec_perm_const
+
 
 void kvx_init_builtins (void);
 tree kvx_builtin_decl (unsigned code, bool initialize_p);
