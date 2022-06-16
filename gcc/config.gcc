@@ -577,6 +577,7 @@ kvx-*-*)
 	case ${target} in
 		kvx-*-cos*)
 			extra_objs="${extra_objs} kvx-prologue-stack-limit.o"
+			extra_objs="${extra_objs} kvx-shaker.o"
 			;;
 		*)
 			;;

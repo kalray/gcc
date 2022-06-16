@@ -35,6 +35,12 @@ extern bool kvx_cannot_change_mode_class (enum machine_mode from,
 /* Pass management. */
 
 extern rtl_opt_pass *make_pass_prologue_stack_limit (gcc::context *);
+extern rtl_opt_pass *make_pass_kvx_shaker (gcc::context *);
+
+/* kvx-shaker */
+
+void kvx_final_prescan_insn (rtx_insn *insn);
+const char * kvx_asm_output_opcode (FILE *stream, const char * code);
 
 #ifdef RTX_CODE
 #include "tree-pass.h"

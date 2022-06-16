@@ -5,6 +5,10 @@ kvx-prologue-stack-limit.o: $(srcdir)/config/kvx/kvx-prologue-stack-limit.c
 	$(COMPILE) $<
 	$(POSTCOMPILE)
 
+kvx-shaker.o: $(srcdir)/config/kvx/kvx-shaker.c
+	$(COMPILE) $<
+	$(POSTCOMPILE)
+
 MULTILIB_EXTRA_OPTS = fdata-sections ffunction-sections
 MULTILIB_OPTIONS = m32 march=kv3-2
 MULTILIB_DIRNAMES = 32 kv3-2

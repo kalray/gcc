@@ -25,3 +25,4 @@ along with GCC; see the file COPYING3.  If not see
  */
 
 	INSERT_PASS_AFTER (pass_thread_prologue_and_epilogue, 1, pass_prologue_stack_limit);
+	INSERT_PASS_AFTER (pass_machine_reorg, 1, pass_kvx_shaker);
