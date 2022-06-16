@@ -35,6 +35,13 @@ enum kvx_abi_type
   (TEST_REGNO (num, <, 64, strict)                                             \
    || TEST_REGNO (num, ==, (KV3_FRAME_POINTER_VIRT_REGNO), strict))
 
+/* ******** kvx shaker ******** */
+#define ASM_OUTPUT_OPCODE(STREAM, PTR)	\
+  (PTR = kvx_asm_output_opcode (STREAM, PTR))
+
+#define FINAL_PRESCAN_INSN(INSN, OPVEC, NOPERANDS) \
+  kvx_final_prescan_insn (INSN)
+
 /* ********** Driver ********** */
 
 #define TARGET_CPU_CPP_BUILTINS()                                              \
