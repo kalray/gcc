@@ -3023,6 +3023,31 @@
   }
 )
 
+(define_expand "roundevensf2"
+  [(set (match_operand:SF 0 "register_operand" "")
+        (match_operand:SF 1 "register_operand" ""))]
+  ""
+  {
+   rtx cs_val = gen_reg_rtx (DImode);
+   rtx tempsi = gen_reg_rtx (SImode);
+   rtx tempsf = gen_reg_rtx (SFmode);
+   rtx cs = gen_rtx_REG (DImode, 68);
+   rtx rn = gen_rtx_CONST_STRING (VOIDmode, ".rn");
+   rtx deqz = gen_rtx_CONST_STRING (VOIDmode, ".deqz");
+   /* 1. Reset the error bits (IO and XIO) we check in CS */
+   emit_insn (gen_kvx_get (cs_val, cs));
+   emit_insn (gen_anddi3 (cs_val, cs_val, GEN_INT (0xfffffffffffffdfd)));
+   emit_insn (gen_kvx_set (cs, cs_val));
+   /* 2. Convert floating point to fixed point */
+   emit_insn (gen_kvx_fixedw (tempsi, operands[1], const0_rtx, rn));
+   emit_insn (gen_kvx_get (cs_val, cs));
+   emit_insn (gen_anddi3 (cs_val, cs_val, GEN_INT (0x202)));
+   /* 3. Convert back to floating point, and take into account corner cases. */
+   emit_insn (gen_kvx_floatw (tempsf, tempsi, const0_rtx, rn));
+   emit_insn (gen_kvx_selectfw (operands[0], tempsf, operands[1], cs_val, deqz));
+   DONE;
+   })
+
 ;; DF
 
 (define_insn "adddf3"
@@ -3187,4 +3212,29 @@
   "fnarrowdw %0 = %1"
   [(set_attr "type" "alu_full")]
 )
+
+(define_expand "roundevendf2"
+  [(set (match_operand:DF 0 "register_operand" "")
+        (match_operand:DF 1 "register_operand" ""))]
+  ""
+  {
+   rtx cs_val = gen_reg_rtx (DImode);
+   rtx tempdi = gen_reg_rtx (DImode);
+   rtx tempdf = gen_reg_rtx (DFmode);
+   rtx cs = gen_rtx_REG (DImode, 68);
+   rtx rn = gen_rtx_CONST_STRING (VOIDmode, ".rn");
+   rtx deqz = gen_rtx_CONST_STRING (VOIDmode, ".deqz");
+   /* 1. Reset the error bits (IO and XIO) we check in CS */
+   emit_insn (gen_kvx_get (cs_val, cs));
+   emit_insn (gen_anddi3 (cs_val, cs_val, GEN_INT (0xfffffffffffffdfd)));
+   emit_insn (gen_kvx_set (cs, cs_val));
+   /* 2. Convert floating point to fixed point */
+   emit_insn (gen_kvx_fixedd (tempdi, operands[1], const0_rtx, rn));
+   emit_insn (gen_kvx_get (cs_val, cs));
+   emit_insn (gen_anddi3 (cs_val, cs_val, GEN_INT (2)));
+   /* 3. Convert back to floating point, and take into account corner cases. */
+   emit_insn (gen_kvx_floatd (tempdf, tempdi, const0_rtx, rn));
+   emit_insn (gen_kvx_selectfd (operands[0], tempdf, operands[1], cs_val, deqz));
+   DONE;
+   })
 
