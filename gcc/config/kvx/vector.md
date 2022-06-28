@@ -220,8 +220,8 @@
 )
 
 (define_insn_and_split "*mov<mode>"
-  [(set (match_operand:ALL512 0 "nonimmediate_operand" "=r,&r,&r,&r,&r,&r,&r,a,b,m")
-        (match_operand:ALL512 1 "nonimmediate_operand"  "r,Ca,Cb,Cm,Za,Zb,Zm,r,r,r"))]
+  [(set (match_operand:ALL512 0 "nonimmediate_operand" "=r,&r,&r,&r,a,b,m")
+        (match_operand:ALL512 1 "nonimmediate_operand"  "r, a, b, m,r,r,r"))]
   ""
   "#"
   "reload_completed"
