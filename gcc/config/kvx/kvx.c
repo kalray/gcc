@@ -1003,6 +1003,12 @@ kvx_legitimate_address_p (machine_mode mode, rtx x, bool strict)
     return true;
 
   /*
+   * Memory accesses of size > 32 are splitted, ensure simple addressing mode.
+   */
+  if (GET_MODE_SIZE (mode) > 32)
+    return false;
+
+  /*
    * ld reg = reg[reg]
    */
   if (GET_CODE (x) == PLUS
@@ -1545,7 +1551,6 @@ kvx_pass_by_reference (cumulative_args_t cum ATTRIBUTE_UNUSED, const function_ar
 
   /* Arguments which are variable sized or larger than 4 registers are
      passed by reference */
-  return size < 0 || ((size > (4 * UNITS_PER_WORD)) && arg.mode == BLKmode);
   return (size > (4 * UNITS_PER_WORD) || size < 0);
 }
 
