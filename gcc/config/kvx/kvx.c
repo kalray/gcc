@@ -1587,6 +1587,90 @@ kvx_float_to_half_as_int (unsigned fbits)
 	    >> (126 - val)); // div by 2^(1-(exp-127+15)) and >> 13 | exp=0
 }
 
+/**
+ *  This helper function checks whether the modifier `mod' is present
+ *  in `x'.  `x' should be either a CONST_STRING or a concatenation of
+ *  CONST_STRINGs.
+ *  NB. It is assumed that all CONST_STRING appearing as subexpressions
+ *  are semantically valid modifiers. That is, they are of the form
+ *  `.xxx' where xxx is a string of arbitrary length.
+ */
+bool
+kvx_modifier_enabled_p (const char * mod, rtx x)
+{
+  bool res = false;
+  int len = strlen (mod);
+  int code = GET_CODE (x);
+  if (code == CONST_STRING)
+    {
+      const char *xstr = XSTR (x, 0);
+      if (xstr[0] == '.')
+        {
+          int win_start = 1;
+          while (!res)
+            {
+              int win_sz = 0;
+              for (;
+                   xstr[win_start + win_sz]
+                   && xstr[win_start + win_sz] != '.'; ++win_sz);
+              res = len == win_sz + 1 && !strncmp (xstr + win_start - 1, mod, win_sz + 1);
+              if (xstr[win_start + win_sz] == '.')
+                win_start += win_sz + 1;
+              else
+                break;
+            }
+        }
+    }
+  else if (code == CONCAT)
+    res = kvx_modifier_enabled_p (mod, XEXP (x, 0))
+      || kvx_modifier_enabled_p (mod, XEXP (x, 1));
+  return res;
+}
+
+/**
+ *  This helper function extract the rounding mode requested by the modifier.
+ *  The modifier stored in `rtx x' should be either a CONST_STRING or a
+ *  concatenation of CONST_STRING.
+ *  NB. It is assumed that all rounding modifiers do begin by ".r", and that all
+ *  CONST_STRING subexpressions are valid modifiers.
+ *  /!\ If multiple rounding modifiers are present the first one found (wrt deep
+ *  first strategy) will be returned.
+ */
+rtx
+kvx_modifier_rounding (rtx x)
+{
+  int code = GET_CODE (x);
+  rtx res = NULL;
+  if (code == CONST_STRING)
+    {
+      const char *xstr = XSTR (x, 0);
+      if (xstr[0] == '.')
+        {
+          int win_start = 1;
+          while (!res)
+            {
+              int win_sz = 0;
+              for (;
+                   xstr[win_start + win_sz]
+                   && xstr[win_start + win_sz] != '.'; ++win_sz);
+              if (win_sz == 2 && xstr[win_start] == 'r')
+                res = gen_rtx_CONST_STRING (VOIDmode, xstr + win_start - 1);
+              else if (xstr[win_start + win_sz] == '.')
+                win_start += win_sz + 1;
+              else
+                break;
+            }
+        }
+    }
+  else if (code == CONCAT)
+    {
+      res = kvx_modifier_rounding (XEXP (x, 0));
+      res = res ? res : kvx_modifier_rounding (XEXP (x, 1));
+    }
+
+  return res ? res : gen_rtx_CONST_STRING (VOIDmode, "");
+}
+
 static bool kvx_print_offset_zero;
 
 void
@@ -1873,6 +1957,16 @@ kvx_print_operand (FILE *file, rtx x, int code)
       /* Case for modifier strings */
       fputs (XSTR (operand, 0), file);
       return;
+
+    case CONCAT:
+      {
+	/* Case to concatenate modifier strings */
+	rtx left = XEXP (operand, 0);
+	rtx right = XEXP (operand, 1);
+	kvx_print_operand (file, left, code);
+	kvx_print_operand (file, right, code);
+	return;
+      }
 
       default: {
 	int is_unspec = 0, unspec;

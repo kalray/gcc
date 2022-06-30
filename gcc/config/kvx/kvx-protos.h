@@ -60,6 +60,9 @@ extern void kvx_expand_stack_check (rtx addr);
 extern void kvx_expand_helper_pic_call (rtx retval, rtx fnaddr, rtx callarg,
 					int sibcall);
 
+extern bool kvx_modifier_enabled_p (const char * mod, rtx x);
+extern rtx kvx_modifier_rounding (rtx x);
+
 extern void kvx_print_operand (FILE *file, rtx x, int code);
 
 extern void kvx_print_operand_address (FILE *file, rtx x);
