@@ -465,6 +465,14 @@ enum kvx_builtin
   KVX_BUILTIN_FMULDC,
   KVX_BUILTIN_FMULDCP,
 
+  KVX_BUILTIN_FDIVWC,
+  KVX_BUILTIN_FDIVWCP,
+  KVX_BUILTIN_FDIVWCQ,
+  KVX_BUILTIN_FDIVWCO,
+  KVX_BUILTIN_FDIVDC,
+  KVX_BUILTIN_FDIVDCP,
+  KVX_BUILTIN_FDIVDCQ,
+
   KVX_BUILTIN_FFMAH,
   KVX_BUILTIN_FFMAHQ,
   KVX_BUILTIN_FFMAHO,
@@ -1441,6 +1449,14 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (FMULWCQ, "fmulwcq", V8SF, V8SF, V8SF, CONJUGATE); // Vector
   ADD_KVX_BUILTIN (FMULDC, "fmuldc", V2DF, V2DF, V2DF, CONJUGATE); // Vector
   ADD_KVX_BUILTIN (FMULDCP, "fmuldcp", V4DF, V4DF, V4DF, CONJUGATE); // Vector
+
+  ADD_KVX_BUILTIN (FDIVWC, "fdivwc", V2SF, V2SF, V2SF, CONJUGATE); // Vector
+  ADD_KVX_BUILTIN (FDIVWCP, "fdivwcp", V4SF, V4SF, V4SF, CONJUGATE); // Vector
+  ADD_KVX_BUILTIN (FDIVWCQ, "fdivwcq", V8SF, V8SF, V8SF, CONJUGATE); // Vector
+  ADD_KVX_BUILTIN (FDIVWCO, "fdivwco", V16SF, V16SF, V16SF, CONJUGATE); // Vector
+  ADD_KVX_BUILTIN (FDIVDC, "fdivdc",  V2DF, V2DF, V2DF, CONJUGATE); // Vector
+  ADD_KVX_BUILTIN (FDIVDCP, "fdivdcp", V4DF, V4DF, V4DF, CONJUGATE); // Vector
+  ADD_KVX_BUILTIN (FDIVDCQ, "fdivdcq", V8DF, V8DF, V8DF, CONJUGATE); // Vector
 
   ADD_KVX_BUILTIN (FFMAH, "ffmah", FLOAT16, FLOAT16, FLOAT16, FLOAT16, FLOATINGS); // Scalar
   ADD_KVX_BUILTIN (FFMAHQ, "ffmahq", V4HF, V4HF, V4HF, V4HF, FLOATINGS); // Vector
@@ -3369,6 +3385,14 @@ KVX_EXPAND_BUILTIN_3_CONJUGATE (fmulwcq, kvx_fmulwcq, V8SFmode, V8SFmode)
 KVX_EXPAND_BUILTIN_3_CONJUGATE (fmuldc, kvx_fmuldc, V2DFmode, V2DFmode)
 KVX_EXPAND_BUILTIN_3_CONJUGATE (fmuldcp, kvx_fmuldcp, V4DFmode, V4DFmode)
 
+KVX_EXPAND_BUILTIN_3_CONJUGATE (fdivwc, kvx_fdivwc, V2SFmode, V2SFmode)
+KVX_EXPAND_BUILTIN_3_CONJUGATE (fdivwcp, kvx_fdivwcp, V4SFmode, V4SFmode)
+KVX_EXPAND_BUILTIN_3_CONJUGATE (fdivwcq, kvx_fdivwcq, V8SFmode, V8SFmode)
+KVX_EXPAND_BUILTIN_3_CONJUGATE (fdivwco, kvx_fdivwco, V16SFmode, V16SFmode)
+KVX_EXPAND_BUILTIN_3_CONJUGATE (fdivdc, kvx_fdivdc, V2DFmode, V2DFmode)
+KVX_EXPAND_BUILTIN_3_CONJUGATE (fdivdcp, kvx_fdivdcp, V4DFmode, V4DFmode)
+KVX_EXPAND_BUILTIN_3_CONJUGATE (fdivdcq, kvx_fdivdcq, V8DFmode, V8DFmode)
+
 KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmah, kvx_ffmah, HFmode, HFmode)
 KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmahq, kvx_ffmahq, V4HFmode, V4HFmode)
 KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmaho, kvx_ffmaho, V8HFmode, V8HFmode)
@@ -4565,6 +4589,14 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_FMULWCQ: return kvx_expand_builtin_fmulwcq (target, exp);
     case KVX_BUILTIN_FMULDC: return kvx_expand_builtin_fmuldc (target, exp);
     case KVX_BUILTIN_FMULDCP: return kvx_expand_builtin_fmuldcp (target, exp);
+
+    case KVX_BUILTIN_FDIVWC: return kvx_expand_builtin_fdivwc (target, exp);
+    case KVX_BUILTIN_FDIVWCP: return kvx_expand_builtin_fdivwcp (target, exp);
+    case KVX_BUILTIN_FDIVWCQ: return kvx_expand_builtin_fdivwcq (target, exp);
+    case KVX_BUILTIN_FDIVWCO: return kvx_expand_builtin_fdivwco (target, exp);
+    case KVX_BUILTIN_FDIVDC: return kvx_expand_builtin_fdivdc (target, exp);
+    case KVX_BUILTIN_FDIVDCP: return kvx_expand_builtin_fdivdcp (target, exp);
+    case KVX_BUILTIN_FDIVDCQ: return kvx_expand_builtin_fdivdcq (target, exp);
 
     case KVX_BUILTIN_FFMAH: return kvx_expand_builtin_ffmah (target, exp);
     case KVX_BUILTIN_FFMAHQ: return kvx_expand_builtin_ffmahq (target, exp);

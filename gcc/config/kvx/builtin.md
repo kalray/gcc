@@ -3198,16 +3198,15 @@
   ""
   {
     rtx modifiers = operands[3];
-    const char *xstr = XSTR (modifiers, 0);
-    bool conjugate = xstr && xstr[0] == '.' && xstr[1] == 'c';
+    bool conjugate = kvx_modifier_enabled_p (".c", modifiers);
     if (conjugate)
-      modifiers = gen_rtx_CONST_STRING (VOIDmode, xstr + 2);
-    rtx real_0 = gen_rtx_SUBREG (DFmode, operands[0], 0);
-    rtx imag_0 = gen_rtx_SUBREG (DFmode, operands[0], 8);
-    rtx real_1 = gen_rtx_SUBREG (DFmode, operands[1], 0);
-    rtx imag_1 = gen_rtx_SUBREG (DFmode, operands[1], 8);
-    rtx real_2 = gen_rtx_SUBREG (DFmode, operands[2], 0);
-    rtx imag_2 = gen_rtx_SUBREG (DFmode, operands[2], 8);
+      modifiers = kvx_modifier_rounding (modifiers);
+    rtx real_0 = simplify_gen_subreg (DFmode, operands[0], V2DFmode, 0);
+    rtx imag_0 = simplify_gen_subreg (DFmode, operands[0], V2DFmode, 8);
+    rtx real_1 = simplify_gen_subreg (DFmode, operands[1], V2DFmode, 0);
+    rtx imag_1 = simplify_gen_subreg (DFmode, operands[1], V2DFmode, 8);
+    rtx real_2 = simplify_gen_subreg (DFmode, operands[2], V2DFmode, 0);
+    rtx imag_2 = simplify_gen_subreg (DFmode, operands[2], V2DFmode, 8);
     rtx real_t = gen_reg_rtx (DFmode), imag_t = gen_reg_rtx (DFmode);
     if (conjugate)
       {
@@ -3286,10 +3285,9 @@
   ""
   {
     rtx modifiers = operands[3];
-    const char *xstr = XSTR (modifiers, 0);
-    bool conjugate = xstr && xstr[0] == '.' && xstr[1] == 'c';
+    bool conjugate = kvx_modifier_enabled_p (".c", modifiers);
     if (conjugate)
-      modifiers = gen_rtx_CONST_STRING (VOIDmode, xstr + 2);
+      modifiers = kvx_modifier_rounding (modifiers);
     for (int i = 0; i < 2; i++)
       {
         rtx real_0 = gen_rtx_SUBREG (DFmode, operands[0], i*16+0);
@@ -3371,6 +3369,246 @@
   ""
 )
 
+;; FDIV*C
+
+(define_expand "kvx_fdivwc"
+  [(match_operand:V2SF 0 "register_operand")
+   (match_operand:V2SF 1 "register_operand")
+   (match_operand:V2SF 2 "register_operand")
+   (match_operand 3 "" "")]
+  ""
+  {
+     bool conjugate = kvx_modifier_enabled_p (".c", operands[3]);
+     rtx rnd = kvx_modifier_rounding (operands[3]);
+     rtx conj = gen_rtx_CONST_STRING (VOIDmode, ".c");
+     rtx conj_rnd = gen_rtx_CONCAT (VOIDmode, conj, rnd);
+     rtx bmag = gen_reg_rtx (SFmode);
+     rtx bmag_inv = gen_reg_rtx (SFmode);
+     rtx bmag_inv_splat = gen_reg_rtx (V2SFmode);
+     rtx a_conjb = gen_reg_rtx (V2SFmode);
+     if (conjugate)
+       {
+         rtx cplx1_rtx = gen_reg_rtx (V2SFmode);
+         rtx const0f_reg = gen_reg_rtx (SFmode);
+         rtx const1f_reg = gen_reg_rtx (SFmode);
+         emit_insn (gen_rtx_SET (const0f_reg, CONST0_RTX (SFmode)));
+         emit_insn (gen_rtx_SET (const1f_reg, CONST1_RTX (SFmode)));
+         emit_insn (gen_kvx_catfwp (cplx1_rtx, const1f_reg, const0f_reg));
+         emit_insn (gen_kvx_fmulwc (operands[1], operands[1], cplx1_rtx, conj_rnd));
+       }
+     if (KV3_1)
+       emit_insn (gen_kvx_ffdmaw (bmag, operands[2], operands[2], rnd));
+     else
+       emit_insn (gen_kvx_ffdmaw_2 (bmag, operands[2], operands[2], rnd));
+
+     emit_insn (gen_kvx_frecw (bmag_inv, bmag, rnd));
+     emit_insn (gen_kvx_catfwp (bmag_inv_splat, bmag_inv, bmag_inv));
+     emit_insn (gen_kvx_fmulwc (a_conjb, operands[2], operands[1], conj_rnd));
+     emit_insn (gen_kvx_fmulwp (operands[0], a_conjb, bmag_inv_splat, rnd));
+     DONE;
+  })
+
+(define_expand "kvx_fdivwcp"
+  [(match_operand:V4SF 0 "register_operand")
+   (match_operand:V4SF 1 "register_operand")
+   (match_operand:V4SF 2 "register_operand")
+   (match_operand 3 "" "")]
+  ""
+  {
+    if (KV3_1)
+      emit_insn (gen_kvx_fdivwcp_1 (operands[0], operands[1], operands[2], operands[3]));
+    if (KV3_2)
+      emit_insn (gen_kvx_fdivwcp_2 (operands[0], operands[1], operands[2], operands[3]));
+    DONE;
+  })
+
+(define_expand "kvx_fdivwcp_1"
+  [(match_operand:V4SF 0 "register_operand")
+   (match_operand:V4SF 1 "register_operand")
+   (match_operand:V4SF 2 "register_operand")
+   (match_operand 3 "" "")]
+
+  "KV3_1"
+  {
+    rtx high1 = simplify_gen_subreg (V2SFmode, operands[1], V4SFmode, 0);
+    rtx high2 = simplify_gen_subreg (V2SFmode, operands[2], V4SFmode, 0);
+    rtx high = gen_reg_rtx (V2SFmode);
+    emit_insn (gen_kvx_fdivwc (high, high1, high2, operands[3]));
+    rtx low1 = simplify_gen_subreg (V2SFmode, operands[1], V4SFmode, 8);
+    rtx low2 = simplify_gen_subreg (V2SFmode, operands[2], V4SFmode, 8);
+    rtx low = gen_reg_rtx (V2SFmode);
+    emit_insn (gen_kvx_fdivwc (low, low1, low2, operands[3]));
+    emit_insn (gen_kvx_catfwq (operands[0], high, low));
+    DONE;
+  })
+
+(define_expand "kvx_fdivwcp_2"
+  [(match_operand:V4SF 0 "register_operand")
+   (match_operand:V4SF 1 "register_operand")
+   (match_operand:V4SF 2 "register_operand")
+   (match_operand 3 "" "")]
+
+  "KV3_2"
+  {
+     bool conjugate = kvx_modifier_enabled_p (".c", operands[3]);
+     rtx rnd = kvx_modifier_rounding (operands[3]);
+     rtx conj = gen_rtx_CONST_STRING (VOIDmode, ".c");
+     rtx conj_rnd = gen_rtx_CONCAT (VOIDmode, conj, rnd);
+     rtx b = simplify_gen_subreg (V2SFmode, operands[2], V4SFmode, 0);
+     rtx d = simplify_gen_subreg (V2SFmode, operands[2], V4SFmode, 8);
+     rtx bmag = gen_reg_rtx (SFmode);
+     rtx dmag = gen_reg_rtx (SFmode);
+     rtx bdmag = gen_reg_rtx (V2SFmode);
+     rtx bdmag_inv = gen_reg_rtx (V2SFmode);
+     rtx bdmag_inv_splat = gen_reg_rtx (V4SFmode);
+     rtx ac_conjbd = gen_reg_rtx (V4SFmode);
+     if (conjugate)
+       {
+         rtx cplx1_rtx = gen_reg_rtx (V2SFmode);
+         rtx cplx1p_rtx = gen_reg_rtx (V4SFmode);
+         rtx const0f_reg = gen_reg_rtx (SFmode);
+         rtx const1f_reg = gen_reg_rtx (SFmode);
+         emit_insn (gen_rtx_SET (const0f_reg, CONST0_RTX (SFmode)));
+         emit_insn (gen_rtx_SET (const1f_reg, CONST1_RTX (SFmode)));
+         emit_insn (gen_kvx_catfwp (cplx1_rtx, const1f_reg, const0f_reg));
+         emit_insn (gen_kvx_catfwq (cplx1p_rtx, cplx1_rtx, cplx1_rtx));
+         emit_insn (gen_kvx_fmulwcp (operands[1], operands[1], cplx1p_rtx, conj_rnd));
+       }
+     emit_insn (gen_kvx_ffdmaw_2 (bmag, b, b, rnd));
+     emit_insn (gen_kvx_ffdmaw_2 (dmag, d, d, rnd));
+     emit_insn (gen_kvx_catfwp (bdmag, bmag, dmag));
+
+     emit_insn (gen_kvx_frecwp (bdmag_inv, bdmag, rnd));
+     emit_insn (gen_kvx_catfwq (bdmag_inv_splat, bdmag_inv, bdmag_inv));
+     emit_insn (gen_kvx_fmt22w (bdmag_inv_splat, bdmag_inv_splat));
+     emit_insn (gen_kvx_fmulwcp (ac_conjbd, operands[2], operands[1], conj_rnd));
+     emit_insn (gen_kvx_fmulwq (operands[0], ac_conjbd, bdmag_inv_splat, rnd));
+     DONE;
+  })
+
+(define_expand "kvx_fdivwcq"
+  [(match_operand:V8SF 0 "register_operand")
+   (match_operand:V8SF 1 "register_operand")
+   (match_operand:V8SF 2 "register_operand")
+   (match_operand 3 "" "")]
+
+  ""
+  {
+     rtx high1 = simplify_gen_subreg (V4SFmode, operands[1], V8SFmode, 0);
+     rtx high2 = simplify_gen_subreg (V4SFmode, operands[2], V8SFmode, 0);
+     rtx high = gen_reg_rtx (V4SFmode);
+     emit_insn (gen_kvx_fdivwcp (high, high1, high2, operands[3]));
+     rtx low1 = simplify_gen_subreg (V4SFmode, operands[1], V8SFmode, 16);
+     rtx low2 = simplify_gen_subreg (V4SFmode, operands[2], V8SFmode, 16);
+     rtx low = gen_reg_rtx (V4SFmode);
+     emit_insn (gen_kvx_fdivwcp (low, low1, low2, operands[3]));
+     rtx high0 = simplify_gen_subreg (V4SFmode, operands[0], V8SFmode, 0);
+     rtx low0 = simplify_gen_subreg (V4SFmode, operands[0], V8SFmode, 16);
+     emit_insn (gen_rtx_SET (high0, high));
+     emit_insn (gen_rtx_SET (low0, low));
+     DONE;
+  })
+
+(define_expand "kvx_fdivwco"
+  [(match_operand:V16SF 0 "register_operand")
+   (match_operand:V16SF 1 "register_operand")
+   (match_operand:V16SF 2 "register_operand")
+   (match_operand 3 "" "")]
+  ""
+  {
+     rtx high1 = simplify_gen_subreg (V8SFmode, operands[1], V16SFmode, 0);
+     rtx high2 = simplify_gen_subreg (V8SFmode, operands[2], V16SFmode, 0);
+     rtx high = gen_reg_rtx (V8SFmode);
+     emit_insn (gen_kvx_fdivwcq (high, high1, high2, operands[3]));
+     rtx low1 = simplify_gen_subreg (V8SFmode, operands[1], V16SFmode, 32);
+     rtx low2 = simplify_gen_subreg (V8SFmode, operands[2], V16SFmode, 32);
+     rtx low = gen_reg_rtx (V8SFmode);
+     emit_insn (gen_kvx_fdivwcq (low, low1, low2, operands[3]));
+     rtx high0 = simplify_gen_subreg (V8SFmode, operands[0], V16SFmode, 0);
+     rtx low0 = simplify_gen_subreg (V8SFmode, operands[0], V16SFmode, 32);
+     emit_insn (gen_rtx_SET (high0, high));
+     emit_insn (gen_rtx_SET (low0, low));
+     DONE;
+  })
+
+(define_expand "kvx_fdivdc"
+  [(match_operand:V2DF 0 "register_operand")
+   (match_operand:V2DF 1 "register_operand")
+   (match_operand:V2DF 2 "register_operand")
+   (match_operand 3 "" "")]
+  ""
+  {
+     bool conjugate = kvx_modifier_enabled_p (".c", operands[3]);
+     rtx rnd = kvx_modifier_rounding (operands[3]);
+     rtx conj = gen_rtx_CONST_STRING (VOIDmode, ".c");
+     rtx conj_rnd = gen_rtx_CONCAT (VOIDmode, conj, rnd);
+     rtx cplx1_rtx = gen_reg_rtx (V2DFmode);
+     rtx const0f_reg = gen_reg_rtx (DFmode);
+     rtx const1f_reg = gen_reg_rtx (DFmode);
+     emit_insn (gen_rtx_SET (const0f_reg, CONST0_RTX (DFmode)));
+     emit_insn (gen_rtx_SET (const1f_reg, CONST1_RTX (DFmode)));
+     rtx real_2 = simplify_gen_subreg (DFmode, operands[2], V2DFmode, 0);
+     rtx imag_2 = simplify_gen_subreg (DFmode, operands[2], V2DFmode, 8);
+     rtx bmag_inv = gen_reg_rtx (DFmode);
+     rtx bmag_inv_splat = gen_reg_rtx (V2DFmode);
+     rtx a_conjb = gen_reg_rtx (V2DFmode);
+     if (conjugate)
+       {
+         emit_insn (gen_kvx_catfdp (cplx1_rtx, const1f_reg, const0f_reg));
+         emit_insn (gen_kvx_fmuldc (operands[1], operands[1], cplx1_rtx, conj_rnd));
+       }
+     emit_insn (gen_kvx_fmuld (bmag_inv, real_2, real_2, rnd));
+     emit_insn (gen_kvx_ffmad (bmag_inv, imag_2, imag_2, bmag_inv, rnd));
+     emit_insn (gen_divdf3 (bmag_inv, const1f_reg, bmag_inv));
+     emit_insn (gen_kvx_catfdp (bmag_inv_splat, bmag_inv, bmag_inv));
+     emit_insn (gen_kvx_fmuldc (a_conjb, operands[2], operands[1], conj_rnd));
+     emit_insn (gen_kvx_fmuldp (operands[0], a_conjb, bmag_inv_splat, rnd));
+     DONE;
+  })
+
+(define_expand "kvx_fdivdcp"
+  [(match_operand:V4DF 0 "register_operand")
+   (match_operand:V4DF 1 "register_operand")
+   (match_operand:V4DF 2 "register_operand")
+   (match_operand 3 "" "")]
+  ""
+  {
+     rtx high1 = simplify_gen_subreg (V2DFmode, operands[1], V4DFmode, 0);
+     rtx high2 = simplify_gen_subreg (V2DFmode, operands[2], V4DFmode, 0);
+     rtx high = gen_reg_rtx (V2DFmode);
+     emit_insn (gen_kvx_fdivdc (high, high1, high2, operands[3]));
+     rtx low1 = simplify_gen_subreg (V2DFmode, operands[1], V4DFmode, 16);
+     rtx low2 = simplify_gen_subreg (V2DFmode, operands[2], V4DFmode, 16);
+     rtx low = gen_reg_rtx (V2DFmode);
+     emit_insn (gen_kvx_fdivdc (low, low1, low2, operands[3]));
+     rtx high0 = simplify_gen_subreg (V2DFmode, operands[0], V4DFmode, 0);
+     rtx low0 = simplify_gen_subreg (V2DFmode, operands[0], V4DFmode, 16);
+     emit_insn (gen_rtx_SET (high0, high));
+     emit_insn (gen_rtx_SET (low0, low));
+     DONE;
+  })
+
+(define_expand "kvx_fdivdcq"
+  [(match_operand:V8DF 0 "register_operand")
+   (match_operand:V8DF 1 "register_operand")
+   (match_operand:V8DF 2 "register_operand")
+   (match_operand 3 "" "")]
+  ""
+  {
+     rtx high1 = simplify_gen_subreg (V4DFmode, operands[1], V8DFmode, 0);
+     rtx high2 = simplify_gen_subreg (V4DFmode, operands[2], V8DFmode, 0);
+     rtx high = gen_reg_rtx (V4DFmode);
+     emit_insn (gen_kvx_fdivdcp (high, high1, high2, operands[3]));
+     rtx low1 = simplify_gen_subreg (V4DFmode, operands[1], V8DFmode, 32);
+     rtx low2 = simplify_gen_subreg (V4DFmode, operands[2], V8DFmode, 32);
+     rtx low = gen_reg_rtx (V4DFmode);
+     emit_insn (gen_kvx_fdivdcp (low, low1, low2, operands[3]));
+     rtx high0 = simplify_gen_subreg (V4DFmode, operands[0], V8DFmode, 0);
+     rtx low0 = simplify_gen_subreg (V4DFmode, operands[0], V8DFmode, 32);
+     emit_insn (gen_rtx_SET (high0, high));
+     emit_insn (gen_rtx_SET (low0, low));
+     DONE;
+  })
 
 ;; FFMA*
 
