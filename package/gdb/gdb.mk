@@ -13,7 +13,7 @@ GDB_SITE = $(call github,foss-for-synopsys-dwc-arc-processors,binutils-gdb,$(GDB
 GDB_SOURCE = gdb-$(GDB_VERSION).tar.gz
 GDB_FROM_GIT = y
 else ifeq ($(BR2_kvx),y)
-GDB_SITE = $(call github,kalray,gdb-binutils,$(GDB_VERSION))
+GDB_SITE = $(call github,kalray,gdb,$(GDB_VERSION))
 GDB_SOURCE = gdb-$(GDB_VERSION).tar.gz
 GDB_FROM_GIT = y
 endif
