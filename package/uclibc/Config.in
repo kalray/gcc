@@ -153,4 +153,9 @@ config BR2_UCLIBC_X86_TYPE
 	                        BR2_x86_nocona || BR2_x86_core2 || BR2_x86_corei7
 	depends on BR2_UCLIBC_TARGET_ARCH = "i386"
 
+config BR2_UCLIBC_VERSION
+	string
+	default "cd59b0cce07781e20102cb2094144ab9c65c7d65" if BR2_kvx
+	default "1.0.38"
+
 endif # BR2_TOOLCHAIN_BUILDROOT_UCLIBC
