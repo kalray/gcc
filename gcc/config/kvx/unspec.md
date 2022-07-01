@@ -22,6 +22,7 @@
         UNSPEC_DPURGESW
         UNSPEC_DFLUSHSW
         UNSPEC_FENCE
+        UNSPEC_READY
         UNSPEC_DZEROL
 
         UNSPEC_GET

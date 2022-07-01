@@ -861,7 +861,8 @@
 
 (define_insn "kvx_xstore256"
   [(set (match_operand:X256 1 "memory_operand"  "=a,b,m")
-        (unspec:X256 [(match_operand:X256 0 "register_operand" "x,x,x")] UNSPEC_XSTORE))]
+        (unspec:X256 [(match_operand:X256 0 "register_operand" "x,x,x")] UNSPEC_XSTORE))
+   (use (match_operand:SI 2 "nonmemory_operand" ""))]
   ""
   "xso%X1 %1 = %0"
   [(set_attr "type" "lsu_crrp_store,lsu_crrp_store_x,lsu_crrp_store_y")
@@ -870,31 +871,45 @@
 
 (define_insn_and_split "kvx_xstore512"
   [(set (match_operand:X512 1 "memory_operand"  "=a,b,m")
-        (unspec:X512 [(match_operand:X512 0 "register_operand" "x,x,x")] UNSPEC_XSTORE))]
+        (unspec:X512 [(match_operand:X512 0 "register_operand" "x,x,x")] UNSPEC_XSTORE))
+   (use (match_operand:SI 2 "nonmemory_operand" ""))]
   ""
   "#"
   "reload_completed"
-  [(set (subreg:X256 (match_dup 1) 0)
-        (unspec:X256 [(subreg:X256 (match_dup 0) 0)] UNSPEC_XSTORE))
-   (set (subreg:X256 (match_dup 1) 32)
-        (unspec:X256 [(subreg:X256 (match_dup 0) 32)] UNSPEC_XSTORE))]
+  [(parallel
+    [(set (subreg:X256 (match_dup 1) 0)
+          (unspec:X256 [(subreg:X256 (match_dup 0) 0)] UNSPEC_XSTORE))
+     (use (match_operand:SI 2 "nonmemory_operand" ""))])
+   (parallel
+    [(set (subreg:X256 (match_dup 1) 32)
+          (unspec:X256 [(subreg:X256 (match_dup 0) 32)] UNSPEC_XSTORE))
+     (use (match_operand:SI 2 "nonmemory_operand" ""))])]
   ""
 )
 
 (define_insn_and_split "kvx_xstore1024"
   [(set (match_operand:X1024 1 "memory_operand"  "=a,b,m")
-        (unspec:X1024 [(match_operand:X1024 0 "register_operand" "x,x,x")] UNSPEC_XSTORE))]
+        (unspec:X1024 [(match_operand:X1024 0 "register_operand" "x,x,x")] UNSPEC_XSTORE))
+   (use (match_operand:SI 2 "nonmemory_operand" ""))]
   ""
   "#"
   "reload_completed"
-  [(set (subreg:X256 (match_dup 1) 0)
-        (unspec:X256 [(subreg:X256 (match_dup 0) 0)] UNSPEC_XSTORE))
-   (set (subreg:X256 (match_dup 1) 32)
-        (unspec:X256 [(subreg:X256 (match_dup 0) 32)] UNSPEC_XSTORE))
-   (set (subreg:X256 (match_dup 1) 64)
-        (unspec:X256 [(subreg:X256 (match_dup 0) 64)] UNSPEC_XSTORE))
-   (set (subreg:X256 (match_dup 1) 96)
-        (unspec:X256 [(subreg:X256 (match_dup 0) 96)] UNSPEC_XSTORE))]
+  [(parallel
+    [(set (subreg:X256 (match_dup 1) 0)
+          (unspec:X256 [(subreg:X256 (match_dup 0) 0)] UNSPEC_XSTORE))
+     (use (match_operand:SI 2 "nonmemory_operand" ""))])
+   (parallel
+    [(set (subreg:X256 (match_dup 1) 32)
+          (unspec:X256 [(subreg:X256 (match_dup 0) 32)] UNSPEC_XSTORE))
+     (use (match_operand:SI 2 "nonmemory_operand" ""))])
+   (parallel
+    [(set (subreg:X256 (match_dup 1) 64)
+          (unspec:X256 [(subreg:X256 (match_dup 0) 64)] UNSPEC_XSTORE))
+     (use (match_operand:SI 2 "nonmemory_operand" ""))])
+   (parallel
+    [(set (subreg:X256 (match_dup 1) 96)
+          (unspec:X256 [(subreg:X256 (match_dup 0) 96)] UNSPEC_XSTORE))
+     (use (match_operand:SI 2 "nonmemory_operand" ""))])]
   ""
 )
 
@@ -906,6 +921,7 @@
         (unspec:X256 [(match_operand:X256 0 "register_operand" "x,x,x")
                         (match_operand:DI 2 "register_operand" "r,r,r")
                         (match_operand 3 "" "")] UNSPEC_XSTOREC))
+   (use (match_operand:SI 4 "nonmemory_operand" ""))
    (clobber (match_dup 1))]
   ""
   "xso%3%X1 %2? %O1 = %0"
@@ -917,7 +933,8 @@
   [(match_operand:X512 0 "register_operand" "")
    (match_operand:X512 1 "memfoiled_operand" "")
    (match_operand:DI 2 "register_operand" "")
-   (match_operand 3 "" "")]
+   (match_operand 3 "" "")
+   (match_operand:SI 4 "nonmemory_operand" "")]
   ""
   {
     rtx masks[2];
@@ -931,7 +948,7 @@
       {
         rtx opnd0 = simplify_gen_subreg (V1OImode, operands[0], <MODE>mode, i*32);
         rtx opnd1 = simplify_gen_subreg (V1OImode, operands[1], <MODE>mode, i*32);
-        emit_insn (gen_kvx_xstorec256 (opnd0, opnd1, masks[i], operands[3]));
+        emit_insn (gen_kvx_xstorec256 (opnd0, opnd1, masks[i], operands[3], operands[4]));
       }
     DONE;
   }
@@ -941,7 +958,8 @@
   [(match_operand:X1024 0 "register_operand" "")
    (match_operand:X1024 1 "memfoiled_operand" "")
    (match_operand:TI 2 "register_operand" "")
-   (match_operand 3 "" "")]
+   (match_operand 3 "" "")
+   (match_operand:SI 4 "nonmemory_operand" "")]
   ""
   {
     rtx masks[4];
@@ -959,7 +977,7 @@
       {
         rtx opnd0 = simplify_gen_subreg (V1OImode, operands[0], <MODE>mode, i*32);
         rtx opnd1 = simplify_gen_subreg (V1OImode, operands[1], <MODE>mode, i*32);
-        emit_insn (gen_kvx_xstorec256 (opnd0, opnd1, masks[i], operands[3]));
+        emit_insn (gen_kvx_xstorec256 (opnd0, opnd1, masks[i], operands[3], operands[4]));
       }
     DONE;
   }

@@ -10,12 +10,12 @@ signed int kvx_avgw_cst(signed int a) {
 }
 
 signed int kvx_avgw_builtin(signed int a, signed int b) {
-    return __builtin_kvx_avgw(a, b, 0);
+    return __builtin_kvx_avgw(a, b, "");
 }
 /* { dg-final { scan-assembler-times "avgw \\\$r0 = \\\$r0, \\\$r1" 1 } } */
 
 signed int kvx_avgw_builtin_cst(signed int a) {
-    return __builtin_kvx_avgw(a, 0xdeadbeef, 0);
+    return __builtin_kvx_avgw(a, 0xdeadbeef, "");
 }
 /* { dg-final { scan-assembler-times "avgw \\\$r0 = \\\$r0, 0xffffffffdeadbeef" 1 } } */
 
