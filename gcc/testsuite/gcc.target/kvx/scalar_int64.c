@@ -305,7 +305,7 @@ kvx_int64_shru7(int64_t a)
 int64_t __attribute ((noinline))
 kvx_int64_neg_(int64_t a)
 {
-    return __builtin_kvx_negd(a, 0);
+    return __builtin_kvx_negd(a, "");
 }
 int64_t __attribute ((noinline))
 kvx_int64_neg_s(int64_t a)
@@ -325,7 +325,7 @@ kvx_int64_abs_s(int64_t a)
 int64_t __attribute ((noinline))
 kvx_int64_abd_(int64_t a, int64_t b)
 {
-    return __builtin_kvx_abdd(a, b, 0);
+    return __builtin_kvx_abdd(a, b, "");
 }
 int64_t __attribute ((noinline))
 kvx_int64_abd_s(int64_t a, int64_t b)
@@ -335,12 +335,12 @@ kvx_int64_abd_s(int64_t a, int64_t b)
 int64_t __attribute ((noinline))
 kvx_int64_abds_(int64_t a, int64_t b)
 {
-    return __builtin_kvx_abdd(a, b, 0);
+    return __builtin_kvx_abdd(a, b, "");
 }
 int64_t __attribute ((noinline))
 kvx_int64_abd0_(int64_t a)
 {
-    return __builtin_kvx_abdd(a, 0, 0);
+    return __builtin_kvx_abdd(a, 0, "");
 }
 int64_t __attribute ((noinline))
 kvx_int64_abd0_s(int64_t a)
@@ -360,7 +360,7 @@ kvx_int64_add_us(int64_t a, int64_t b)
 int64_t __attribute ((noinline))
 kvx_int64_adds_(int64_t a, int64_t b)
 {
-    return __builtin_kvx_addd(a, b, 0);
+    return __builtin_kvx_addd(a, b, "");
 }
 int64_t __attribute ((noinline))
 kvx_int64_adds_s(int64_t a, int64_t b)
@@ -385,7 +385,7 @@ kvx_int64_sbf_us(int64_t a, int64_t b)
 int64_t __attribute ((noinline))
 kvx_int64_sbfs_(int64_t a, int64_t b)
 {
-    return __builtin_kvx_sbfd(a, b, 0);
+    return __builtin_kvx_sbfd(a, b, "");
 }
 int64_t __attribute ((noinline))
 kvx_int64_sbfs_s(int64_t a, int64_t b)
@@ -440,12 +440,12 @@ kvx_int64_maxus(int64_t a, int64_t b)
 int64_t __attribute ((noinline))
 kvx_int64_shls_(int64_t a, int64_t b)
 {
-    return __builtin_kvx_shld(a, b, 0);
+    return __builtin_kvx_shld(a, b, "");
 }
 int64_t __attribute ((noinline))
 kvx_int64_shl3_(int64_t a)
 {
-    return __builtin_kvx_shld(a, 3, 0);
+    return __builtin_kvx_shld(a, 3, "");
 }
 int64_t __attribute ((noinline))
 kvx_int64_shls_s(int64_t a, int64_t b)
@@ -480,12 +480,12 @@ kvx_int64_shl1_r(int64_t a)
 int64_t __attribute ((noinline))
 kvx_int64_shrs_(int64_t a, int64_t b)
 {
-    return __builtin_kvx_shrd(a, b, 0);
+    return __builtin_kvx_shrd(a, b, "");
 }
 int64_t __attribute ((noinline))
 kvx_int64_shr5_(int64_t a)
 {
-    return __builtin_kvx_shrd(a, 5, 0);
+    return __builtin_kvx_shrd(a, 5, "");
 }
 int64_t __attribute ((noinline))
 kvx_int64_shrs_a(int64_t a, int64_t b)
@@ -520,7 +520,7 @@ kvx_int64_shr1_r(int64_t a)
 int64_t __attribute ((noinline))
 kvx_int64_bitcnt_(int64_t a)
 {
-    return __builtin_kvx_bitcntd(a, 0);
+    return __builtin_kvx_bitcntd(a, "");
 }
 int64_t __attribute ((noinline))
 kvx_int64_bitcnt_lz(int64_t a)

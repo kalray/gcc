@@ -680,6 +680,7 @@ enum kvx_builtin
   KVX_BUILTIN_DPURGESW,
   KVX_BUILTIN_DFLUSHSW,
   KVX_BUILTIN_FENCE,
+  KVX_BUILTIN_READY,
   KVX_BUILTIN_DZEROL,
 
   KVX_BUILTIN_ALW,
@@ -1061,33 +1062,33 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (SBFDP, "sbfdp", V2DI, V2DI, V2DI, SATURATE); // Vector
   ADD_KVX_BUILTIN (SBFDQ, "sbfdq", V4DI, V4DI, V4DI, SATURATE); // Vector
 
-  ADD_KVX_BUILTIN (NEGBO, "negbo", V8QI, V8QI, SIGNEDSAT);	// Vector
-  ADD_KVX_BUILTIN (NEGBX, "negbx", V16QI, V16QI, SIGNEDSAT);	// Vector
-  ADD_KVX_BUILTIN (NEGBV, "negbv", V32QI, V32QI, SIGNEDSAT);	// Vector
-  ADD_KVX_BUILTIN (NEGHQ, "neghq", V4HI, V4HI, SIGNEDSAT);	// Vector
-  ADD_KVX_BUILTIN (NEGHO, "negho", V8HI, V8HI, SIGNEDSAT);	// Vector
+  ADD_KVX_BUILTIN (NEGBO, "negbo", V8QI, V8QI, SIGNEDSAT); // Vector
+  ADD_KVX_BUILTIN (NEGBX, "negbx", V16QI, V16QI, SIGNEDSAT); // Vector
+  ADD_KVX_BUILTIN (NEGBV, "negbv", V32QI, V32QI, SIGNEDSAT); // Vector
+  ADD_KVX_BUILTIN (NEGHQ, "neghq", V4HI, V4HI, SIGNEDSAT); // Vector
+  ADD_KVX_BUILTIN (NEGHO, "negho", V8HI, V8HI, SIGNEDSAT); // Vector
   ADD_KVX_BUILTIN (NEGHX, "neghx", V16HI, V16HI, SIGNEDSAT); // Vector
   ADD_KVX_BUILTIN (NEGW, "negw", INT32, INT32, SIGNEDSAT); // Scalar
-  ADD_KVX_BUILTIN (NEGWP, "negwp", V2SI, V2SI, SIGNEDSAT);	// Vector
-  ADD_KVX_BUILTIN (NEGWQ, "negwq", V4SI, V4SI, SIGNEDSAT);	// Vector
-  ADD_KVX_BUILTIN (NEGWO, "negwo", V8SI, V8SI, SIGNEDSAT);	// Vector
+  ADD_KVX_BUILTIN (NEGWP, "negwp", V2SI, V2SI, SIGNEDSAT); // Vector
+  ADD_KVX_BUILTIN (NEGWQ, "negwq", V4SI, V4SI, SIGNEDSAT); // Vector
+  ADD_KVX_BUILTIN (NEGWO, "negwo", V8SI, V8SI, SIGNEDSAT); // Vector
   ADD_KVX_BUILTIN (NEGD, "negd", INT64, INT64, SIGNEDSAT); // Scalar
-  ADD_KVX_BUILTIN (NEGDP, "negdp", V2DI, V2DI, SIGNEDSAT);	// Vector
-  ADD_KVX_BUILTIN (NEGDQ, "negdq", V4DI, V4DI, SIGNEDSAT);	// Vector
+  ADD_KVX_BUILTIN (NEGDP, "negdp", V2DI, V2DI, SIGNEDSAT); // Vector
+  ADD_KVX_BUILTIN (NEGDQ, "negdq", V4DI, V4DI, SIGNEDSAT); // Vector
 
-  ADD_KVX_BUILTIN (ABSBO, "absbo", V8QI, V8QI, SIGNEDSAT);	// Vector
-  ADD_KVX_BUILTIN (ABSBX, "absbx", V16QI, V16QI, SIGNEDSAT);	// Vector
-  ADD_KVX_BUILTIN (ABSBV, "absbv", V32QI, V32QI, SIGNEDSAT);	// Vector
-  ADD_KVX_BUILTIN (ABSHQ, "abshq", V4HI, V4HI, SIGNEDSAT);	// Vector
-  ADD_KVX_BUILTIN (ABSHO, "absho", V8HI, V8HI, SIGNEDSAT);	// Vector
+  ADD_KVX_BUILTIN (ABSBO, "absbo", V8QI, V8QI, SIGNEDSAT); // Vector
+  ADD_KVX_BUILTIN (ABSBX, "absbx", V16QI, V16QI, SIGNEDSAT); // Vector
+  ADD_KVX_BUILTIN (ABSBV, "absbv", V32QI, V32QI, SIGNEDSAT); // Vector
+  ADD_KVX_BUILTIN (ABSHQ, "abshq", V4HI, V4HI, SIGNEDSAT); // Vector
+  ADD_KVX_BUILTIN (ABSHO, "absho", V8HI, V8HI, SIGNEDSAT); // Vector
   ADD_KVX_BUILTIN (ABSHX, "abshx", V16HI, V16HI, SIGNEDSAT); // Vector
   ADD_KVX_BUILTIN (ABSW, "absw", INT32, INT32, SIGNEDSAT); // Scalar
-  ADD_KVX_BUILTIN (ABSWP, "abswp", V2SI, V2SI, SIGNEDSAT);	// Vector
-  ADD_KVX_BUILTIN (ABSWQ, "abswq", V4SI, V4SI, SIGNEDSAT);	// Vector
-  ADD_KVX_BUILTIN (ABSWO, "abswo", V8SI, V8SI, SIGNEDSAT);	// Vector
+  ADD_KVX_BUILTIN (ABSWP, "abswp", V2SI, V2SI, SIGNEDSAT); // Vector
+  ADD_KVX_BUILTIN (ABSWQ, "abswq", V4SI, V4SI, SIGNEDSAT); // Vector
+  ADD_KVX_BUILTIN (ABSWO, "abswo", V8SI, V8SI, SIGNEDSAT); // Vector
   ADD_KVX_BUILTIN (ABSD, "absd", INT64, INT64, SIGNEDSAT); // Scalar
-  ADD_KVX_BUILTIN (ABSDP, "absdp", V2DI, V2DI, SIGNEDSAT);	// Vector
-  ADD_KVX_BUILTIN (ABSDQ, "absdq", V4DI, V4DI, SIGNEDSAT);	// Vector
+  ADD_KVX_BUILTIN (ABSDP, "absdp", V2DI, V2DI, SIGNEDSAT); // Vector
+  ADD_KVX_BUILTIN (ABSDQ, "absdq", V4DI, V4DI, SIGNEDSAT); // Vector
 
   ADD_KVX_BUILTIN (ABDBO, "abdbo", V8QI, V8QI, V8QI, SIGNEDSAT); // Vector
   ADD_KVX_BUILTIN (ABDBX, "abdbx", V16QI, V16QI, V16QI, SIGNEDSAT); // Vector
@@ -1665,6 +1666,7 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (DPURGESW, "dpurgesw", VOID, UINT64, UINT64, CACHELEV); // Memory kv3-2
   ADD_KVX_BUILTIN (DFLUSHSW, "dflushsw", VOID, UINT64, UINT64, CACHELEV); // Memory kv3-2
   ADD_KVX_BUILTIN_VA (FENCE, "fence", VOID/*, ACCESSES*/); // Memory
+  ADD_KVX_BUILTIN_VA (READY, "ready", BOOL); // Memory
   ADD_KVX_BUILTIN (DZEROL, "dzerol", VOID, VPTR); // Deprecated
   ADD_KVX_BUILTIN (D1INVAL, "dinval", VOID); // Deprecated
   ADD_KVX_BUILTIN (I1INVAL, "iinval", VOID); // Deprecated
@@ -1842,17 +1844,19 @@ kvx_builtin_decl (unsigned code, bool initialize_p ATTRIBUTE_UNUSED)
 }
 
 static inline const char *
-tree_string_constant (tree arg)
+kvx_tree_string_constant (tree arg, const char *name)
 {
   tree offset_tree = 0;
   arg = string_constant (arg, &offset_tree, 0, 0);
-  return arg ? TREE_STRING_POINTER (arg) : "";
+  if (!arg)
+    error ("__builtin_kvx_%s requires a constant string modifier", name);
+  return TREE_STRING_POINTER (arg);
 }
 
 static rtx
 build_carry_arg (tree arg, const char *name)
 {
-  const char *modifier = tree_string_constant (arg);
+  const char *modifier = kvx_tree_string_constant (arg, name);
   static const char *table[] = {
     "", ".i",
   };
@@ -1868,7 +1872,7 @@ build_carry_arg (tree arg, const char *name)
 static rtx
 build_average_arg (tree arg, const char *name)
 {
-  const char *modifier = tree_string_constant (arg);
+  const char *modifier = kvx_tree_string_constant (arg, name);
   static const char *table[] = {
     "", ".r", ".u", ".ru",
   };
@@ -1884,7 +1888,7 @@ build_average_arg (tree arg, const char *name)
 static rtx
 build_saturate_arg (tree arg, const char *name)
 {
-  const char *modifier = tree_string_constant (arg);
+  const char *modifier = kvx_tree_string_constant (arg, name);
   static const char *table[] = {
     "", ".s", ".us",
   };
@@ -1900,7 +1904,7 @@ build_saturate_arg (tree arg, const char *name)
 static rtx
 build_signedsat_arg (tree arg, const char *name)
 {
-  const char *modifier = tree_string_constant (arg);
+  const char *modifier = kvx_tree_string_constant (arg, name);
   static const char *table[] = {
     "", ".s",
   };
@@ -1916,7 +1920,7 @@ build_signedsat_arg (tree arg, const char *name)
 static rtx
 build_extendmul_arg (tree arg, const char *name)
 {
-  const char *modifier = tree_string_constant (arg);
+  const char *modifier = kvx_tree_string_constant (arg, name);
   static const char *table[] = {
     "", ".u", ".su",
   };
@@ -1932,7 +1936,7 @@ build_extendmul_arg (tree arg, const char *name)
 static rtx
 build_widenint_arg (tree arg, const char *name)
 {
-  const char *modifier = tree_string_constant (arg);
+  const char *modifier = kvx_tree_string_constant (arg, name);
   static const char *table[] = {
     "", ".z", ".q",
   };
@@ -1948,7 +1952,7 @@ build_widenint_arg (tree arg, const char *name)
 static rtx
 build_narrowint_arg (tree arg, const char *name)
 {
-  const char *modifier = tree_string_constant (arg);
+  const char *modifier = kvx_tree_string_constant (arg, name);
   static const char *table[] = {
     "", ".q", ".s", ".us",
   };
@@ -1964,7 +1968,7 @@ build_narrowint_arg (tree arg, const char *name)
 static rtx
 build_shiftleft_arg (tree arg, const char *name)
 {
-  const char *modifier = tree_string_constant (arg);
+  const char *modifier = kvx_tree_string_constant (arg, name);
   static const char *table[] = {
     "", ".s", ".us", ".r",
   };
@@ -1980,7 +1984,7 @@ build_shiftleft_arg (tree arg, const char *name)
 static rtx
 build_shiftright_arg (tree arg, const char *name)
 {
-  const char *modifier = tree_string_constant (arg);
+  const char *modifier = kvx_tree_string_constant (arg, name);
   static const char *table[] = {
     "", ".a", ".as", ".r",
   };
@@ -1996,7 +2000,7 @@ build_shiftright_arg (tree arg, const char *name)
 static rtx
 build_counting_arg (tree arg, const char *name)
 {
-  const char *modifier = tree_string_constant (arg);
+  const char *modifier = kvx_tree_string_constant (arg, name);
   static const char *table[] = {
     "", ".lz", ".ls", ".tz",
   };
@@ -2012,7 +2016,7 @@ build_counting_arg (tree arg, const char *name)
 static rtx
 build_lanewise_arg (tree arg, const char *name)
 {
-  const char *modifier = tree_string_constant (arg);
+  const char *modifier = kvx_tree_string_constant (arg, name);
   static const char *table[] = {
     ".nez", ".eqz",
   };
@@ -2029,7 +2033,7 @@ static rtx
 build_simdcond_arg (tree arg, const char *name, machine_mode cmode)
 {
   machine_mode imode = GET_MODE_INNER (cmode);
-  const char *modifier = tree_string_constant (arg);
+  const char *modifier = kvx_tree_string_constant (arg, name);
   static const char *table[] = {
     ".nez", ".eqz", ".ltz", ".gez", ".lez", ".gtz", ".odd", ".even",
   };
@@ -2050,7 +2054,7 @@ build_simdcond_arg (tree arg, const char *name, machine_mode cmode)
 static rtx
 build_movecond_arg (tree arg, const char *name, ...)
 {
-  const char *modifier = tree_string_constant (arg);
+  const char *modifier = kvx_tree_string_constant (arg, name);
   static const char *table[] = {
     ".wnez", ".weqz", ".wltz", ".wgez", ".wlez", ".wgtz", ".odd", ".even",
     ".dnez", ".deqz", ".dltz", ".dgez", ".dlez", ".dgtz", ".odd", ".even",
@@ -2067,7 +2071,7 @@ build_movecond_arg (tree arg, const char *name, ...)
 static rtx
 build_floatings_arg (tree arg, const char *name)
 {
-  const char *modifier = tree_string_constant (arg);
+  const char *modifier = kvx_tree_string_constant (arg, name);
   static const char *table[] = {
     "", ".rn", ".ru", ".rd", ".rz",
     ".s", ".rn.s", ".ru.s", ".rd.s", ".rz.s",
@@ -2084,7 +2088,7 @@ build_floatings_arg (tree arg, const char *name)
 static rtx
 build_conjugate_arg (tree arg, const char *name)
 {
-  const char *modifier = tree_string_constant (arg);
+  const char *modifier = kvx_tree_string_constant (arg, name);
   static const char *table[] = {
     "", ".rn", ".ru", ".rd", ".rz",
     ".s", ".rn.s", ".ru.s", ".rd.s", ".rz.s",
@@ -2103,7 +2107,7 @@ build_conjugate_arg (tree arg, const char *name)
 static rtx
 build_transpose_arg (tree arg, const char *name)
 {
-  const char *modifier = tree_string_constant (arg);
+  const char *modifier = kvx_tree_string_constant (arg, name);
   // Skip the leading ".nn" if any, it is the default.
   if (!strncmp (modifier, ".nn", 3))
     modifier += 3;
@@ -2129,7 +2133,7 @@ build_transpose_arg (tree arg, const char *name)
 static rtx
 build_silent_arg (tree arg, const char *name)
 {
-  const char *modifier = tree_string_constant (arg);
+  const char *modifier = kvx_tree_string_constant (arg, name);
   static const char *table[] = {
     "", ".s",
   };
@@ -2145,7 +2149,7 @@ build_silent_arg (tree arg, const char *name)
 static rtx
 build_variant_arg (tree arg, const char *name)
 {
-  const char *modifier = tree_string_constant (arg);
+  const char *modifier = kvx_tree_string_constant (arg, name);
   // If kv3-1 coprocessor builtin, modifier must include ".u" or ".us".
   if (KV3_1 && *name == 'x')
     if (modifier[0] == 0 || (modifier[0] == '.' && modifier[1] != 'u'))
@@ -2167,7 +2171,7 @@ build_xloadh_arg (tree arg, const char *name)
 {
   if (KV3_1)
     error ("__builtin_kvx_%s is not available for the kv3-1.", name);
-  const char *modifier = tree_string_constant (arg);
+  const char *modifier = kvx_tree_string_constant (arg, name);
   static const char *table[] = {
     ".h0", ".h0.s", ".h0.u", ".h0.us",
     ".h1", ".h1.s", ".h1.u", ".h1.us",
@@ -2184,7 +2188,7 @@ build_xloadh_arg (tree arg, const char *name)
 static rtx
 build_xloadq_arg (tree arg, const char *name)
 {
-  const char *modifier = tree_string_constant (arg);
+  const char *modifier = kvx_tree_string_constant (arg, name);
   // If kv3-1 coprocessor builtin, modifier must include ".u" or ".us".
   if (KV3_1)
     if (modifier[3] == 0 || (modifier[3] == '.' && modifier[4] != 'u'))
@@ -2207,7 +2211,7 @@ build_xloadq_arg (tree arg, const char *name)
 static rtx
 build_loadcond_arg (tree arg, const char *name)
 {
-  const char *modifier = tree_string_constant (arg);
+  const char *modifier = kvx_tree_string_constant (arg, name);
   // If kv3-1 coprocessor builtin, modifier must include ".u" or ".us".
   if (KV3_1 && *name == 'x')
     if (modifier[0] == 0 || (modifier[0] == '.' && modifier[1] != 'u'))
@@ -2248,7 +2252,7 @@ build_xloadhc_arg (tree arg, const char *name)
 {
   if (KV3_1)
     error ("__builtin_kvx_%s is not available for the kv3-1.", name);
-  const char *modifier = tree_string_constant (arg);
+  const char *modifier = kvx_tree_string_constant (arg, name);
   static const char *table[] = {
     ".h0.dnez", ".h0.deqz", ".h0.wnez", ".h0.weqz", ".h0.mt", ".h0.mf", ".h0.mtc", ".h0.mfc",
     ".h0.s.dnez", ".h0.s.deqz", ".h0.s.wnez", ".h0.s.weqz", ".h0.s.mt", ".h0.s.mf", ".h0.s.mtc", ".h0.s.mfc",
@@ -2271,7 +2275,7 @@ build_xloadhc_arg (tree arg, const char *name)
 static rtx
 build_xloadqc_arg (tree arg, const char *name)
 {
-  const char *modifier = tree_string_constant (arg);
+  const char *modifier = kvx_tree_string_constant (arg, name);
   static const char *table[] = {
     ".q0.dnez", ".q0.deqz", ".q0.wnez", ".q0.weqz", ".q0.mt", ".q0.mf", ".q0.mtc", ".q0.mfc",
     ".q0.s.dnez", ".q0.s.deqz", ".q0.s.wnez", ".q0.s.weqz", ".q0.s.mt", ".q0.s.mf", ".q0.s.mtc", ".q0.s.mfc",
@@ -2308,7 +2312,7 @@ build_xloadqc_arg (tree arg, const char *name)
 static rtx
 build_storecond_arg (tree arg, const char *name)
 {
-  const char *modifier = tree_string_constant (arg);
+  const char *modifier = kvx_tree_string_constant (arg, name);
   static const char *table[] = {
     // kv3-1 SD, SQ, SO, XSO and kv3-2 SD, SQ, SO
     ".dnez", ".deqz", ".dltz", ".dgez", ".dlez", ".dgtz", ".odd",
@@ -2334,10 +2338,9 @@ build_storecond_arg (tree arg, const char *name)
 static rtx
 build_coherency_arg (tree arg, const char *name)
 {
-  if (KV3_1)
-    error ("__builtin_kvx_%s is not available for the kv3-1.", name);
-  const char *modifier = tree_string_constant (arg);
-  // Masked stores are only available for the kv3-2.
+  const char *modifier = kvx_tree_string_constant (arg, name);
+  if (KV3_1 && modifier[0])
+    error ("__builtin_kvx_%s modifier \"%s\" is for the kv3-2.", name, modifier);
   static const char *table[] = {
     "", ".g", ".s",
   };
@@ -2353,9 +2356,9 @@ build_coherency_arg (tree arg, const char *name)
 static rtx
 build_boolcasco_arg (tree arg, const char *name)
 {
-  if (KV3_1)
-    error ("__builtin_kvx_%s modifiers not available for the kv3-1.", name);
-  const char *modifier = tree_string_constant (arg);
+  const char *modifier = kvx_tree_string_constant (arg, name);
+  if (KV3_1 && modifier[0])
+    error ("__builtin_kvx_%s modifier \"%s\" is for the kv3-2.", name, modifier);
   static const char *table[] = {
     "", ".g", ".s",
     ".v", ".v.g", ".v.s",
@@ -2372,9 +2375,9 @@ build_boolcasco_arg (tree arg, const char *name)
 static rtx
 build_cachelev_arg (tree arg, const char *name)
 {
-  if (KV3_1)
-    error ("__builtin_kvx_%s is not available for the kv3-1.", name);
-  const char *modifier = tree_string_constant (arg);
+  const char *modifier = kvx_tree_string_constant (arg, name);
+  if (KV3_1 && modifier[0])
+    error ("__builtin_kvx_%s modifier \"%s\" is for the kv3-2.", name, modifier);
   static const char *table[] = {
     ".l1", ".l2",
   };
@@ -2390,9 +2393,9 @@ build_cachelev_arg (tree arg, const char *name)
 static rtx
 build_accesses_arg (tree arg, const char *name)
 {
-  if (KV3_1)
-    error ("__builtin_kvx_%s is not available for the kv3-1.", name);
-  const char *modifier = tree_string_constant (arg);
+  const char *modifier = kvx_tree_string_constant (arg, name);
+  if (KV3_1 && modifier[0])
+    error ("__builtin_kvx_%s modifier \"%s\" is for the kv3-2.", name, modifier);
   static const char *table[] = {
     "", ".w", ".r",
   };
@@ -2410,7 +2413,7 @@ build_xpreload_arg (tree arg, const char *name)
 {
   if (KV3_1)
     error ("__builtin_kvx_%s is not available for the kv3-1.", name);
-  const char *modifier = tree_string_constant (arg);
+  const char *modifier = kvx_tree_string_constant (arg, name);
   static const char *table[] = {
     "", ".s", ".u", ".us",
     ".b", ".b.s", ".b.u", ".b.us",
@@ -2431,7 +2434,7 @@ build_xpreload_arg (tree arg, const char *name)
 static rtx
 build_xmatmul_arg (tree arg, const char *name)
 {
-  const char *modifier = tree_string_constant (arg);
+  const char *modifier = kvx_tree_string_constant (arg, name);
   static const char *table[] = {
     "", ".u", ".su", ".us",
   };
@@ -2447,7 +2450,7 @@ build_xmatmul_arg (tree arg, const char *name)
 static rtx
 build_channel_arg (tree arg, const char *name)
 {
-  const char *modifier = tree_string_constant (arg);
+  const char *modifier = kvx_tree_string_constant (arg, name);
   static const char *table[] = {
     ".f", ".b",
   };
@@ -2463,7 +2466,7 @@ build_channel_arg (tree arg, const char *name)
 static rtx
 build_channels_arg (tree arg, const char *name)
 {
-  const char *modifier = tree_string_constant (arg);
+  const char *modifier = kvx_tree_string_constant (arg, name);
   static const char *table[] = {
     ".f.f", ".f.b", ".b.f", ".b.b",
   };
@@ -2486,6 +2489,22 @@ verify_const_bool_arg (rtx arg, const char *name, const char *where)
 	return arg;
     }
   error ("__builtin_kvx_%s expects a boolean immediate in %s argument.", name,
+	 where);
+  return 0;
+}
+
+static rtx
+verify_const_ready_arg (rtx arg, const char *name, const char *where)
+{
+  if (GET_CODE (arg) == CONST_INT && GET_MODE (arg) == VOIDmode)
+    {
+      unsigned long long tmp = INTVAL (arg);
+      if (tmp == 0LL || tmp == 1LL)
+	return arg;
+    }
+  if (GET_MODE (arg) == SImode)
+    return arg;
+  error ("__builtin_kvx_%s expects a boolean value in %s argument.", name,
 	 where);
   return 0;
 }
@@ -3606,10 +3625,43 @@ kvx_expand_builtin_fence (rtx target, tree args)
 {
   int nargs = call_expr_nargs (args);
   rtx arg1 = nargs >= 1?
-             build_accesses_arg (CALL_EXPR_ARG (args, 0), "fence"):
+	     build_accesses_arg (CALL_EXPR_ARG (args, 0), "fence"):
 	     gen_rtx_CONST_STRING (VOIDmode, "");
   emit_insn (gen_kvx_fence (arg1));
   return NULL_RTX;
+}
+
+static rtx
+kvx_expand_builtin_ready (rtx target, tree args)
+{
+  rtx arguments[4];
+  int nargs = call_expr_nargs (args);
+  for (int i = 0; i < nargs; i++)
+    {
+      arguments[i] = expand_normal (CALL_EXPR_ARG (args, i));
+      machine_mode mode = GET_MODE (arguments[i]);
+      arguments[i] = force_reg (mode, arguments[i]);
+      arguments[i] = simplify_gen_subreg (DImode, arguments[i], mode, 0);
+    }
+  if (!target)
+    target = gen_reg_rtx (SImode);
+  else
+    target = force_reg (SImode, target);
+  rtvec vec = 0;
+  if (nargs == 0)
+    return target;
+  if (nargs == 1)
+    vec = gen_rtvec (1, arguments[0]);
+  else if (nargs == 2)
+    vec = gen_rtvec (2, arguments[0], arguments[1]);
+  else if (nargs == 3)
+    vec = gen_rtvec (3, arguments[0], arguments[1], arguments[2]);
+  else if (nargs == 4)
+    vec = gen_rtvec (4, arguments[0], arguments[1], arguments[2], arguments[3]);
+  else
+    error ("__builtin_kvx_ready must have one to four arguments.");
+  emit_insn (gen_rtx_SET (target, gen_rtx_UNSPEC (SImode, vec, UNSPEC_READY)));
+  return target;
 }
 
 KVX_EXPAND_BUILTIN_1_VOID (dzerol, kvx_dzerol, Pmode)
@@ -3675,6 +3727,12 @@ KVX_EXPAND_BUILTIN_ALADD (aladdd, kvx_aladdd, DImode, DImode)
     rtx arg4 = nargs >= 4?                                                     \
                build_boolcasco_arg (CALL_EXPR_ARG (args, 3), #name):           \
                gen_rtx_CONST_STRING (VOIDmode, "");                            \
+    rtx arg5 = const0_rtx;                                                     \
+    if (nargs > 4)                                                             \
+      {                                                                        \
+        arg5 = expand_normal (CALL_EXPR_ARG (args, 4));                        \
+        arg5 = verify_const_ready_arg (arg5, #name, "fifth");                  \
+      }                                                                        \
     arg1 = gen_rtx_MEM (mmode, force_reg (Pmode, arg1));                       \
     rtx new_old = gen_reg_rtx (TImode);                                        \
     if (!target)                                                               \
@@ -3683,7 +3741,7 @@ KVX_EXPAND_BUILTIN_ALADD (aladdd, kvx_aladdd, DImode, DImode)
       target = force_reg (tmode, target);                                      \
     emit_move_insn (gen_rtx_SUBREG (tmode, new_old, 0), arg2);                 \
     emit_move_insn (gen_rtx_SUBREG (tmode, new_old, 8), arg3);                 \
-    emit_insn (gen_##name2 (new_old, arg1, arg4));                             \
+    emit_insn (gen_##name2 (new_old, arg1, arg4, arg5));                       \
     rtx result = gen_lowpart_SUBREG (tmode, new_old);                          \
     emit_move_insn (target, result);                                           \
     return target;                                                             \
@@ -3717,7 +3775,7 @@ KVX_EXPAND_BUILTIN_ASTORE (asd, kvx_asd, DImode, DImode)
   {                                                                            \
     if (KV3_N_ONLY)                                                            \
       error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
-    int nargs = call_expr_nargs (args);                                        \
+    int nargs = call_expr_nargs (args), volatile_p = 0;                        \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = build_variant_arg (CALL_EXPR_ARG (args, 1), #name);             \
     arg1 = gen_rtx_MEM (mmode, force_reg (Pmode, arg1));                       \
@@ -3725,10 +3783,11 @@ KVX_EXPAND_BUILTIN_ASTORE (asd, kvx_asd, DImode, DImode)
       {                                                                        \
         rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));                    \
         arg3 = verify_const_bool_arg (arg3, #name, "third");                   \
-        if (GET_MODE_SIZE (mmode) > 32 && INTVAL (arg3))                       \
-          error ("volatile not allowed for memory access sizes > 32.");        \
-        MEM_VOLATILE_P (arg1) = (INTVAL (arg3) != 0);                          \
+        volatile_p |= (INTVAL (arg3) != 0);                                    \
       }                                                                        \
+    if (GET_MODE_SIZE (mmode) > 32 && volatile_p)                              \
+      error ("volatile not allowed for memory access sizes > 32.");            \
+    MEM_VOLATILE_P (arg1) = volatile_p;                                        \
     if (!target)                                                               \
       target = gen_reg_rtx (tmode);                                            \
     else                                                                       \
@@ -3781,7 +3840,7 @@ KVX_EXPAND_BUILTIN_LOAD (xload1024, X1024mode, X1024mode)
   {                                                                            \
     if (KV3_N_ONLY)                                                            \
       error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
-    int nargs = call_expr_nargs (args);                                        \
+    int nargs = call_expr_nargs (args), volatile_p = 0;                        \
     machine_mode cmode = GET_MODE_SIZE (mmode) > 64 ? TImode : DImode;         \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
@@ -3794,10 +3853,11 @@ KVX_EXPAND_BUILTIN_LOAD (xload1024, X1024mode, X1024mode)
       {                                                                        \
         rtx arg5 = expand_normal (CALL_EXPR_ARG (args, 4));                    \
         arg5 = verify_const_bool_arg (arg5, #name, "fifth");                   \
-        if (GET_MODE_SIZE (mmode) > 32 && INTVAL (arg5))                       \
-          error ("volatile not allowed for memory access sizes > 32.");        \
-        MEM_VOLATILE_P (arg2) = (INTVAL (arg5) != 0);                          \
+        volatile_p |= (INTVAL (arg5) != 0);                                    \
       }                                                                        \
+    if (GET_MODE_SIZE (mmode) > 32 && volatile_p)                              \
+      error ("volatile not allowed for memory access sizes > 32.");            \
+    MEM_VOLATILE_P (arg2) = volatile_p;                                        \
     if (!target)                                                               \
       target = gen_reg_rtx (tmode);                                            \
     else                                                                       \
@@ -3826,20 +3886,29 @@ KVX_EXPAND_BUILTIN_LOADC (xloadc1024, X1024mode, X1024mode)
   {                                                                            \
     if (KV3_N_ONLY)                                                            \
       error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
-    int nargs = call_expr_nargs (args);                                        \
+    int nargs = call_expr_nargs (args), volatile_p = 0;                        \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
+    rtx arg3 = const0_rtx;                                                     \
     arg1 = force_reg (tmode, arg1);                                            \
     arg2 = gen_rtx_MEM (mmode, force_reg (Pmode, arg2));                       \
     if (nargs > 2)                                                             \
       {                                                                        \
-        rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));                    \
-        arg3 = verify_const_bool_arg (arg3, #name, "third");                   \
-        if (GET_MODE_SIZE (mmode) > 32 && INTVAL (arg3))                       \
-          error ("volatile not allowed for memory access sizes > 32.");        \
-        MEM_VOLATILE_P (arg2) = (INTVAL (arg3) != 0);                          \
+        arg3 = expand_normal (CALL_EXPR_ARG (args, 2));                        \
+        arg3 = verify_const_ready_arg (arg3, #name, "third");                  \
+        if (GET_CODE (arg3) == CONST_INT)                                      \
+          volatile_p |= (INTVAL (arg3) != 0);                                  \
       }                                                                        \
-    emit_insn (gen_kvx_##name (arg1, arg2));                                   \
+    if (nargs > 3)                                                             \
+      {                                                                        \
+        rtx arg4 = expand_normal (CALL_EXPR_ARG (args, 3));                    \
+        arg4 = verify_const_bool_arg (arg4, #name, "fourth");                  \
+        volatile_p |= (INTVAL (arg4) != 0);                                    \
+      }                                                                        \
+    if (GET_MODE_SIZE (mmode) > 32 && volatile_p)                              \
+      error ("volatile not allowed for memory access sizes > 32.");            \
+    MEM_VOLATILE_P (arg2) = volatile_p;                                        \
+    emit_insn (gen_kvx_##name (arg1, arg2, arg3));                             \
     return target;                                                             \
   }
 
@@ -3863,24 +3932,33 @@ KVX_EXPAND_BUILTIN_STORE (xstore1024, X1024mode, X1024mode)
   {                                                                            \
     if (KV3_N_ONLY)                                                            \
       error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
-    int nargs = call_expr_nargs (args);                                        \
+    int nargs = call_expr_nargs (args), volatile_p = 0;                        \
     machine_mode cmode = GET_MODE_SIZE (mmode) > 64 ? TImode : DImode;         \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
     rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));                        \
     rtx arg4 = build_storecond_arg (CALL_EXPR_ARG (args, 3), #name);           \
+    rtx arg5 = const0_rtx;                                                     \
     arg1 = force_reg (tmode, arg1);                                            \
     arg2 = gen_rtx_MEM (mmode, force_reg (Pmode, arg2));                       \
     arg3 = force_reg (cmode, arg3);                                            \
     if (nargs > 4)                                                             \
       {                                                                        \
-        rtx arg5 = expand_normal (CALL_EXPR_ARG (args, 4));                    \
-        arg5 = verify_const_bool_arg (arg5, #name, "fifth");                   \
-        if (GET_MODE_SIZE (mmode) > 32 && INTVAL (arg5))                       \
-          error ("volatile not allowed for memory access sizes > 32.");        \
-        MEM_VOLATILE_P (arg2) = (INTVAL (arg5) != 0);                          \
+        arg5 = expand_normal (CALL_EXPR_ARG (args, 4));                        \
+        arg5 = verify_const_ready_arg (arg5, #name, "fifth");                  \
+        if (GET_CODE (arg5) == CONST_INT)                                      \
+          volatile_p |= (INTVAL (arg5) != 0);                                  \
       }                                                                        \
-    emit_insn (gen_kvx_##name (arg1, arg2, arg3, arg4));                       \
+    if (nargs > 5)                                                             \
+      {                                                                        \
+        rtx arg6 = expand_normal (CALL_EXPR_ARG (args, 5));                    \
+        arg6 = verify_const_bool_arg (arg6, #name, "sixth");                   \
+        volatile_p |= (INTVAL (arg6) != 0);                                    \
+      }                                                                        \
+    if (GET_MODE_SIZE (mmode) > 32 && volatile_p)                              \
+      error ("volatile not allowed for memory access sizes > 32.");            \
+    MEM_VOLATILE_P (arg2) = volatile_p;                                        \
+    emit_insn (gen_kvx_##name (arg1, arg2, arg3, arg4, arg5));                 \
     return target;                                                             \
   }
 
@@ -3902,7 +3980,7 @@ KVX_EXPAND_BUILTIN_STOREC (xstorec1024, X1024mode, X1024mode)
 static rtx
 kvx_expand_builtin_xloads512 (rtx target, tree args)
 {
-  int nargs = call_expr_nargs (args);
+  int nargs = call_expr_nargs (args), volatile_p = 0;
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
   rtx arg3 = build_xloadh_arg (CALL_EXPR_ARG (args, 2), "xloads512");
@@ -3912,8 +3990,9 @@ kvx_expand_builtin_xloads512 (rtx target, tree args)
     {
       rtx arg4 = expand_normal (CALL_EXPR_ARG (args, 3));
       arg4 = verify_const_bool_arg (arg4, "xloads512", "fourth");
-      MEM_VOLATILE_P (arg2) = (INTVAL (arg4) != 0);
+      volatile_p |= (INTVAL (arg4) != 0);
     }
+  MEM_VOLATILE_P (arg2) = volatile_p;
   if (!target)
     target = gen_reg_rtx (X512mode);
   else
@@ -3925,7 +4004,7 @@ kvx_expand_builtin_xloads512 (rtx target, tree args)
 static rtx
 kvx_expand_builtin_xloads1024 (rtx target, tree args)
 {
-  int nargs = call_expr_nargs (args);
+  int nargs = call_expr_nargs (args), volatile_p = 0;
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
   rtx arg3 = build_xloadq_arg (CALL_EXPR_ARG (args, 2), "xloads1024");
@@ -3935,8 +4014,9 @@ kvx_expand_builtin_xloads1024 (rtx target, tree args)
     {
       rtx arg4 = expand_normal (CALL_EXPR_ARG (args, 3));
       arg4 = verify_const_bool_arg (arg4, "xloads1024", "fourth");
-      MEM_VOLATILE_P (arg2) = (INTVAL (arg4) != 0);
+      volatile_p |= (INTVAL (arg4) != 0);
     }
+  MEM_VOLATILE_P (arg2) = volatile_p;
   if (!target)
     target = gen_reg_rtx (X1024mode);
   else
@@ -3948,7 +4028,7 @@ kvx_expand_builtin_xloads1024 (rtx target, tree args)
 static rtx
 kvx_expand_builtin_xloadsc512 (rtx target, tree args)
 {
-  int nargs = call_expr_nargs (args);
+  int nargs = call_expr_nargs (args), volatile_p = 0;
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
   rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
@@ -3960,8 +4040,9 @@ kvx_expand_builtin_xloadsc512 (rtx target, tree args)
     {
       rtx arg5 = expand_normal (CALL_EXPR_ARG (args, 4));
       arg5 = verify_const_bool_arg (arg5, "xloadsc512", "fifth");
-      MEM_VOLATILE_P (arg2) = (INTVAL (arg5) != 0);
+      volatile_p |= (INTVAL (arg5) != 0);
     }
+  MEM_VOLATILE_P (arg2) = volatile_p;
   if (!target)
     target = gen_reg_rtx (X512mode);
   else
@@ -3973,7 +4054,7 @@ kvx_expand_builtin_xloadsc512 (rtx target, tree args)
 static rtx
 kvx_expand_builtin_xloadsc1024 (rtx target, tree args)
 {
-  int nargs = call_expr_nargs (args);
+  int nargs = call_expr_nargs (args), volatile_p = 0;
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
   rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
   rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
@@ -3985,8 +4066,9 @@ kvx_expand_builtin_xloadsc1024 (rtx target, tree args)
     {
       rtx arg5 = expand_normal (CALL_EXPR_ARG (args, 4));
       arg5 = verify_const_bool_arg (arg5, "xloadsc1024", "fifth");
-      MEM_VOLATILE_P (arg2) = (INTVAL (arg5) != 0);
+      volatile_p |= (INTVAL (arg5) != 0);
     }
+  MEM_VOLATILE_P (arg2) = volatile_p;
   if (!target)
     target = gen_reg_rtx (X1024mode);
   else
@@ -4000,7 +4082,7 @@ kvx_expand_builtin_xloadsc1024 (rtx target, tree args)
   {                                                                            \
     if (KV3_N_ONLY)                                                            \
       error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
-    int nargs = call_expr_nargs (args);                                        \
+    int nargs = call_expr_nargs (args), volatile_p = 0;                        \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
     rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));                        \
@@ -4012,8 +4094,9 @@ kvx_expand_builtin_xloadsc1024 (rtx target, tree args)
       {                                                                        \
         rtx arg5 = expand_normal (CALL_EXPR_ARG (args, 4));                    \
         arg5 = verify_const_bool_arg (arg5, #name, "fifth");                   \
-        MEM_VOLATILE_P (arg2) = (INTVAL (arg5) != 0);                          \
+        volatile_p |= (INTVAL (arg5) != 0);                                    \
       }                                                                        \
+    MEM_VOLATILE_P (arg2) = volatile_p;                                        \
     if (!target)                                                               \
       target = gen_reg_rtx (bmode);                                            \
     else                                                                       \
@@ -4805,6 +4888,7 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_DPURGESW: return kvx_expand_builtin_dpurgesw (target, exp);
     case KVX_BUILTIN_DFLUSHSW: return kvx_expand_builtin_dflushsw (target, exp);
     case KVX_BUILTIN_FENCE: return kvx_expand_builtin_fence (target, exp);
+    case KVX_BUILTIN_READY: return kvx_expand_builtin_ready (target, exp);
     case KVX_BUILTIN_DZEROL: return kvx_expand_builtin_dzerol (target, exp);
 
     case KVX_BUILTIN_ALW: return kvx_expand_builtin_alw (target, exp);
