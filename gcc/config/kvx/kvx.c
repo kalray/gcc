@@ -4224,8 +4224,8 @@ kvx_expand_compare_and_swap (rtx operands[])
   emit_move_insn (gen_lowpart (mode, low), newval);
 
   rtx modifier = gen_rtx_CONST_STRING (VOIDmode, "");
-  emit_insn (mode == SImode ? gen_kvx_acswapw (tmp, mem, modifier)
-			    : gen_kvx_acswapd (tmp, mem, modifier));
+  emit_insn (mode == SImode ? gen_kvx_acswapw (tmp, mem, modifier, const0_rtx)
+			    : gen_kvx_acswapd (tmp, mem, modifier, const0_rtx));
 
   // If acswap succeeds (LOW is equal to 0x1), then return.
   emit_cmp_and_jump_insns (gen_lowpart (mode, low), const1_rtx, EQ, NULL_RTX,
@@ -4333,8 +4333,8 @@ kvx_expand_atomic_op (enum rtx_code code, rtx target, bool after, rtx mem,
   /* Update memory with op result iff memory hasn't been modified since:
      if CURR_MEM_VAL == MEM then update MEM with NEW_MEM_VAL else try again. */
   rtx modifier = gen_rtx_CONST_STRING (VOIDmode, "");
-  emit_insn (mode == SImode ? gen_kvx_acswapw (tmp, mem, modifier)
-			    : gen_kvx_acswapd (tmp, mem, modifier));
+  emit_insn (mode == SImode ? gen_kvx_acswapw (tmp, mem, modifier, const0_rtx)
+			    : gen_kvx_acswapd (tmp, mem, modifier, const0_rtx));
 
   /* Handle post fence right after acswap. */
   kvx_emit_post_barrier (model);
@@ -4409,7 +4409,7 @@ kvx_expand_atomic_test_and_set (rtx operands[])
   kvx_emit_pre_barrier (model);
 
   rtx modifier = gen_rtx_CONST_STRING (VOIDmode, "");
-  emit_insn (gen_kvx_acswapw (tmp, memsi, modifier));
+  emit_insn (gen_kvx_acswapw (tmp, memsi, modifier, const0_rtx));
 
   /* Handle post fence right after acswap. */
   kvx_emit_post_barrier (model);
@@ -6834,18 +6834,18 @@ kvx_handle_stack_limit_register_option (const char *arg)
     {
       int reg = decode_reg_name (arg);
       if (reg < 0)
-        error ("unrecognized register name %qs", arg);
+	error ("unrecognized register name %qs", arg);
       /* Only allow $sr as stack-limit register */
       else if (strncmp (arg, "sr", 2))
-        {
-          error ("only $sr can be used as stack-limit register");
-        }
+	{
+	  error ("only $sr can be used as stack-limit register");
+	}
       else
-        {
-          /* Deactivate previous OPT_fstack_limit_symbol_ options.  */
-          opt_fstack_limit_symbol_arg = NULL;
-          opt_fstack_limit_register_no = reg;
-        }
+	{
+	  /* Deactivate previous OPT_fstack_limit_symbol_ options.  */
+	  opt_fstack_limit_symbol_arg = NULL;
+	  opt_fstack_limit_register_no = reg;
+	}
 
       return true;
     }
@@ -6870,13 +6870,13 @@ kvx_option_override (void)
     FOR_EACH_VEC_ELT (*v, i, opt)
     {
       switch (opt->opt_index)
-        {
-        case OPT_ffixed_reg:
-          kvx_handle_fixed_reg_option (opt->arg);
-          break;
-        case OPT_fstack_limit_register_:
-          kvx_handle_stack_limit_register_option (opt->arg);
-          break;
+	{
+	case OPT_ffixed_reg:
+	  kvx_handle_fixed_reg_option (opt->arg);
+	  break;
+	case OPT_fstack_limit_register_:
+	  kvx_handle_stack_limit_register_option (opt->arg);
+	  break;
 	  case OPT_fstack_limit_symbol_:
 	    kvx_handle_stack_limit_symbol_option (opt->arg);
 	    break;

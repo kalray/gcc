@@ -292,12 +292,12 @@
 ;; Atomic Load and Add
 (define_expand "kvx_aladd<lsusize>"
   [(parallel
-  [(set (match_operand:SIDI 0 "register_operand" "")
-        (unspec_volatile:SIDI [(match_operand:SIDI 1 "mematomic_operand" "")
-                               (match_operand 3 "" "")] UNSPEC_ALADD))
-   (set (match_dup 1)
-        (plus:SIDI (match_dup 1)
-                   (match_operand:SIDI 2 "nonmemory_operand" "")))]
+    [(set (match_operand:SIDI 0 "register_operand" "")
+          (unspec_volatile:SIDI [(match_operand:SIDI 1 "mematomic_operand" "")
+                                 (match_operand 3 "" "")] UNSPEC_ALADD))
+     (set (match_dup 1)
+          (plus:SIDI (match_dup 1)
+                     (match_operand:SIDI 2 "nonmemory_operand" "")))]
   )]
   ""
   ""
@@ -332,11 +332,12 @@
 ;; Atomic Compare and Swap
 (define_expand "kvx_acswap<lsusize>"
   [(parallel
-  [(set (match_operand:TI 0 "register_operand" "")
-        (unspec_volatile:TI [(match_operand:SIDI 1 "mematomic_operand" "")
-                             (match_operand 2 "" "")] UNSPEC_ACSWAP))
-   (set (match_dup 1)
-        (unspec:SIDI [(match_dup 1) (match_dup 0)] UNSPEC_ACSWAP))]
+    [(set (match_operand:TI 0 "register_operand" "")
+          (unspec_volatile:TI [(match_operand:SIDI 1 "mematomic_operand" "")
+                               (match_operand 2 "" "")] UNSPEC_ACSWAP))
+     (set (match_dup 1)
+          (unspec:SIDI [(match_dup 1) (match_dup 0)] UNSPEC_ACSWAP))
+     (use (match_operand:SI 3 "nonmemory_operand" ""))]
   )]
   ""
   ""
@@ -347,7 +348,8 @@
         (unspec_volatile:TI [(match_operand:SIDI 1 "mematomic_operand" "+a,b,m")
                              (match_operand 2 "" "")] UNSPEC_ACSWAP))
    (set (match_dup 1)
-        (unspec:SIDI [(match_dup 1) (match_dup 0)] UNSPEC_ACSWAP))]
+        (unspec:SIDI [(match_dup 1) (match_dup 0)] UNSPEC_ACSWAP))
+   (use (match_operand:SI 3 "nonmemory_operand" ""))]
   "KV3_1"
   "acswap<lsusize>%2%X1 %1 = %0"
   [(set_attr "type" "lsu_auxr_auxw_atomic,lsu_auxr_auxw_atomic_x,lsu_auxr_auxw_atomic_y")
@@ -359,7 +361,8 @@
         (unspec_volatile:TI [(match_operand:SIDI 1 "mematomic_operand" "+c,d,e")
                              (match_operand 2 "" "")] UNSPEC_ACSWAP))
    (set (match_dup 1)
-        (unspec:SIDI [(match_dup 1) (match_dup 0)] UNSPEC_ACSWAP))]
+        (unspec:SIDI [(match_dup 1) (match_dup 0)] UNSPEC_ACSWAP))
+   (use (match_operand:SI 3 "nonmemory_operand" ""))]
   "KV3_2"
   "acswap<lsusize>%2%X1 %O1 = %0"
   [(set_attr "type" "lsu_auxr_auxw_atomic,lsu_auxr_auxw_atomic_x,lsu_auxr_auxw_atomic_y")
