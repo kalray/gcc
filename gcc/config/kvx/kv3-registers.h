@@ -81,7 +81,7 @@ enum reg_class {
 	"syo",	"hto",	"ito",	"do",	"mo",	"pso",	"tpcm0",	"tpcm1", \
 	"dc",	"dba0",	"dba1",	"dwa0",	"dwa1",	"mes",	"ws",	"dc0", \
 	"dc1",	"dc2",	"dc3",	"dba2",	"dba3",	"dwa2",	"dwa3",	"tpcm2", \
-	"tpcmc",	"pm4",	"pm5",	"pm6",	"pm7",	"pmc2",	"srhpc",	"cc", \
+	"tpcmc",	"pm4",	"pm5",	"pm6",	"pm7",	"pmc2",	"srhpc",	"frcc", \
 	"spc_pl0",	"spc_pl1",	"spc_pl2",	"spc_pl3",	"sps_pl0",	"sps_pl1",	"sps_pl2",	"sps_pl3", \
 	"ea_pl0",	"ea_pl1",	"ea_pl2",	"ea_pl3",	"ev_pl0",	"ev_pl1",	"ev_pl2",	"ev_pl3", \
 	"sr_pl0",	"sr_pl1",	"sr_pl2",	"sr_pl3",	"es_pl0",	"es_pl1",	"es_pl2",	"es_pl3", \
