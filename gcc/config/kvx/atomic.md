@@ -364,7 +364,7 @@
         (unspec:SIDI [(match_dup 1) (match_dup 0)] UNSPEC_ACSWAP))
    (use (match_operand:SI 3 "nonmemory_operand" ""))]
   "KV3_2"
-  "acswap<lsusize>%2%X1 %O1 = %0"
+  "acswap<lsusize>%2%X1 %x0, %O1 = %0"
   [(set_attr "type" "lsu_auxr_auxw_atomic,lsu_auxr_auxw_atomic_x,lsu_auxr_auxw_atomic_y")
    (set_attr "length"                  "4,                     8,                    12")]
 )
