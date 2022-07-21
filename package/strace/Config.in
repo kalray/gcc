@@ -22,3 +22,8 @@ comment "strace needs a toolchain w/ headers >= 4.0 on nios2"
 comment "strace needs a toolchain w/ headers >= 5.0 on xtensa"
 	depends on BR2_xtensa
 	depends on !BR2_TOOLCHAIN_HEADERS_AT_LEAST_5_0
+
+config BR2_STRACE_VERSION
+	string
+	default "19f3bb2e38be375d5febfbf6e517623a3da5d703" if BR2_kvx
+	default "5.12"
