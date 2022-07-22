@@ -51,6 +51,8 @@
 
 #include "divmodtypes.h"
 
+////////////////////////////////////////////////////////////////////////////////
+
 static inline uint16x8_t
 uint16x4_divmod (uint16x4_t a, uint16x4_t b)
 {
@@ -61,7 +63,7 @@ uint16x4_divmod (uint16x4_t a, uint16x4_t b)
     goto div0;
   // As `src == b << (16 -1)` adding src yields `src == b << 16`.
   src += src & (wb > acc);
-#if 0 //__kv3_2__ CR
+#if __kv3_2__
   for (int i = 0; i < 16; i++)
     {
       acc = __builtin_kvx_stsuwq (src, acc);
@@ -129,6 +131,8 @@ __modv4hi3 (int16x4_t a, int16x4_t b)
   return __builtin_kvx_selecthq (-result, result, a, ".ltz");
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
 static inline uint16x16_t
 uint16x8_divmod (uint16x8_t a, uint16x8_t b)
 {
@@ -139,28 +143,19 @@ uint16x8_divmod (uint16x8_t a, uint16x8_t b)
     goto div0;
   // As `src == b << (16 -1)` adding src yields `src == b << 16`.
   src += src & (wb > acc);
-#if 0 //__kv3_2__ CR
+#if __kv3_2__
   for (int i = 0; i < 16; i++)
     {
       acc = __builtin_kvx_stsuwo (src, acc);
     }
 #else
-  uint32x4_t acc_lo = __builtin_kvx_low128 (acc);
-  uint32x4_t src_lo = __builtin_kvx_low128 (src);
-  uint64x4_t w_acc_lo = __builtin_kvx_widenwdq (acc_lo, ".z");
-  uint64x4_t w_src_lo = __builtin_kvx_widenwdq (src_lo, ".z");
-  uint32x4_t acc_hi = __builtin_kvx_high128 (acc);
-  uint32x4_t src_hi = __builtin_kvx_high128 (src);
-  uint64x4_t w_acc_hi = __builtin_kvx_widenwdq (acc_hi, ".z");
-  uint64x4_t w_src_hi = __builtin_kvx_widenwdq (src_hi, ".z");
+  uint64x8_t w_acc = __builtin_kvx_widenwdo (acc, ".z");
+  uint64x8_t w_src = __builtin_kvx_widenwdo (src, ".z");
   for (int i = 0; i < 16; i++)
     {
-      w_acc_lo = __builtin_kvx_stsudq (w_src_lo, w_acc_lo);
-      w_acc_hi = __builtin_kvx_stsudq (w_src_hi, w_acc_hi);
+      w_acc = __builtin_kvx_stsudo (w_src, w_acc);
     }
-  acc_lo = __builtin_kvx_narrowdwq (w_acc_lo, "");
-  acc_hi = __builtin_kvx_narrowdwq (w_acc_hi, "");
-  acc = __builtin_kvx_cat256 (acc_lo, acc_hi);
+  acc = __builtin_kvx_narrowdwo (w_acc, "");
 #endif
   uint16x8_t q = __builtin_kvx_narrowwho (acc, "");
   uint16x8_t r = __builtin_kvx_narrowwho (acc >> 16, "");
@@ -216,6 +211,8 @@ __modv8hi3 (int16x8_t a, int16x8_t b)
   return __builtin_kvx_selectho (-result, result, a, ".ltz");
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
 static inline uint16x32_t
 uint16x16_divmod (uint16x16_t a, uint16x16_t b)
 {
@@ -226,19 +223,19 @@ uint16x16_divmod (uint16x16_t a, uint16x16_t b)
     goto div0;
   // As `src == b << (16 -1)` adding src yields `src == b << 16`.
   src += src & (wb > acc);
-#if 0 //__kv3_2__ CR
+#if __kv3_2__
   for (int i = 0; i < 16; i++)
     {
       acc = __builtin_kvx_stsuwx (src, acc);
     }
 #else
   uint32x8_t acc_lo = __builtin_kvx_low256 (acc);
-  uint32x8_t src_lo = __builtin_kvx_low256 (src);
-  uint64x8_t w_acc_lo = __builtin_kvx_widenwdo (acc_lo, ".z");
-  uint64x8_t w_src_lo = __builtin_kvx_widenwdo (src_lo, ".z");
   uint32x8_t acc_hi = __builtin_kvx_high256 (acc);
-  uint32x8_t src_hi = __builtin_kvx_high256 (src);
+  uint64x8_t w_acc_lo = __builtin_kvx_widenwdo (acc_lo, ".z");
   uint64x8_t w_acc_hi = __builtin_kvx_widenwdo (acc_hi, ".z");
+  uint32x8_t src_lo = __builtin_kvx_low256 (src);
+  uint32x8_t src_hi = __builtin_kvx_high256 (src);
+  uint64x8_t w_src_lo = __builtin_kvx_widenwdo (src_lo, ".z");
   uint64x8_t w_src_hi = __builtin_kvx_widenwdo (src_hi, ".z");
   for (int i = 0; i < 16; i++)
     {

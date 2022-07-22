@@ -166,6 +166,8 @@ extern bool kvx_expand_vec_perm_const (rtx target, rtx source1, rtx source2, rtx
 extern void kvx_expand_vector_shift (rtx target, rtx source, rtx chunk,
 				     unsigned bits, int left);
 
+extern void kvx_expand_any64_eqz (rtx target, rtx source, enum machine_mode mode);
+
 extern void kvx_emit_pre_barrier (rtx);
 extern void kvx_emit_post_barrier (rtx);
 extern void kvx_expand_compare_and_swap (rtx op[]);

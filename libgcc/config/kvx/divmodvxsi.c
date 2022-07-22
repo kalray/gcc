@@ -51,6 +51,8 @@
 
 #include "divmodtypes.h"
 
+////////////////////////////////////////////////////////////////////////////////
+
 static inline uint32x4_t
 uint32x2_divmod (uint32x2_t a, uint32x2_t b)
 {
@@ -119,48 +121,7 @@ __modv2si3 (int32x2_t a, int32x2_t b)
   return __builtin_kvx_selectwp (-result, result, a, ".ltz");
 }
 
-#ifdef TEST_V2SI
-#define LANE 1
-
-uint32_t
-__udivsi3 (uint32_t a, uint32_t b)
-{
-  uint32x2_t udivv2si3 = __udivv2si3 (a - (uint32x2_t){}, b - (uint32x2_t){});
-  return (uint32_t)udivv2si3[LANE];
-}
-
-uint32_t
-__umodsi3 (uint32_t a, uint32_t b)
-{
-  uint32x2_t umodv2si3 = __umodv2si3 (a - (uint32x2_t){}, b - (uint32x2_t){});
-  return (uint32_t)umodv2si3[LANE];
-}
-
-uint32_t
-__udivmodsi4 (uint32_t a, uint32_t b, uint32_t *c)
-{
-  uint32x2_t c_ = {0, 0};
-  uint32x2_t udivmodv2si4 = __udivmodv2si4 (a - (uint32x2_t){}, b - (uint32x2_t){}, &c_);
-  if (c)
-    *c = c_[LANE];
-  return (uint32_t)udivmodv2si4[LANE];
-}
-
-int32_t
-__divsi3 (int32_t a, int32_t b)
-{
-  int32x2_t divv2si3 = __divv2si3 (a - (int32x2_t){}, b - (int32x2_t){});
-  return (int32_t)divv2si3[LANE];
-}
-
-int32_t
-__modsi3 (int32_t a, int32_t b)
-{
-  int32x2_t modv2si3 = __modv2si3 (a - (int32x2_t){}, b - (int32x2_t){});
-  return (int32_t)modv2si3[LANE];
-}
-
-#endif // TEST_V2SI
+////////////////////////////////////////////////////////////////////////////////
 
 static inline uint32x8_t
 uint32x4_divmod (uint32x4_t a, uint32x4_t b)
@@ -230,48 +191,7 @@ __modv4si3 (int32x4_t a, int32x4_t b)
   return __builtin_kvx_selectwq (-result, result, a, ".ltz");
 }
 
-#ifdef TEST_V4SI
-#define LANE 2
-
-uint32_t
-__udivsi3 (uint32_t a, uint32_t b)
-{
-  uint32x4_t udivv4si3 = __udivv4si3 (a - (uint32x4_t){}, b - (uint32x4_t){});
-  return (uint32_t)udivv4si3[LANE];
-}
-
-uint32_t
-__umodsi3 (uint32_t a, uint32_t b)
-{
-  uint32x4_t umodv4si3 = __umodv4si3 (a - (uint32x4_t){}, b - (uint32x4_t){});
-  return (uint32_t)umodv4si3[LANE];
-}
-
-uint32_t
-__udivmodsi4 (uint32_t a, uint32_t b, uint32_t *c)
-{
-  uint32x4_t c_ = {0, 0};
-  uint32x4_t udivmodv4si4 = __udivmodv4si4 (a - (uint32x4_t){}, b - (uint32x4_t){}, &c_);
-  if (c)
-    *c = c_[LANE];
-  return (uint32_t)udivmodv4si4[LANE];
-}
-
-int32_t
-__divsi3 (int32_t a, int32_t b)
-{
-  int32x4_t divv4si3 = __divv4si3 (a - (int32x4_t){}, b - (int32x4_t){});
-  return (int32_t)divv4si3[LANE];
-}
-
-int32_t
-__modsi3 (int32_t a, int32_t b)
-{
-  int32x4_t modv4si3 = __modv4si3 (a - (int32x4_t){}, b - (int32x4_t){});
-  return (int32_t)modv4si3[LANE];
-}
-
-#endif // TEST_V4SI
+////////////////////////////////////////////////////////////////////////////////
 
 static inline uint32x16_t
 uint32x8_divmod (uint32x8_t a, uint32x8_t b)
@@ -340,4 +260,135 @@ __modv8si3 (int32x8_t a, int32x8_t b)
   int32x8_t result = __builtin_kvx_high256 (divmod);
   return __builtin_kvx_selectwo (-result, result, a, ".ltz");
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+#ifdef TEST_V2SI
+#define LANE 1
+
+uint32_t
+__udivsi3 (uint32_t a, uint32_t b)
+{
+  uint32x2_t udivv2si3 = __udivv2si3 (a - (uint32x2_t){}, b - (uint32x2_t){});
+  return (uint32_t)udivv2si3[LANE];
+}
+
+uint32_t
+__umodsi3 (uint32_t a, uint32_t b)
+{
+  uint32x2_t umodv2si3 = __umodv2si3 (a - (uint32x2_t){}, b - (uint32x2_t){});
+  return (uint32_t)umodv2si3[LANE];
+}
+
+uint32_t
+__udivmodsi4 (uint32_t a, uint32_t b, uint32_t *c)
+{
+  uint32x2_t c_ = {0, 0};
+  uint32x2_t udivmodv2si4 = __udivmodv2si4 (a - (uint32x2_t){}, b - (uint32x2_t){}, &c_);
+  if (c)
+    *c = c_[LANE];
+  return (uint32_t)udivmodv2si4[LANE];
+}
+
+int32_t
+__divsi3 (int32_t a, int32_t b)
+{
+  int32x2_t divv2si3 = __divv2si3 (a - (int32x2_t){}, b - (int32x2_t){});
+  return (int32_t)divv2si3[LANE];
+}
+
+int32_t
+__modsi3 (int32_t a, int32_t b)
+{
+  int32x2_t modv2si3 = __modv2si3 (a - (int32x2_t){}, b - (int32x2_t){});
+  return (int32_t)modv2si3[LANE];
+}
+
+#endif // TEST_V2SI
+
+#ifdef TEST_V4SI
+#define LANE 2
+
+uint32_t
+__udivsi3 (uint32_t a, uint32_t b)
+{
+  uint32x4_t udivv4si3 = __udivv4si3 (a - (uint32x4_t){}, b - (uint32x4_t){});
+  return (uint32_t)udivv4si3[LANE];
+}
+
+uint32_t
+__umodsi3 (uint32_t a, uint32_t b)
+{
+  uint32x4_t umodv4si3 = __umodv4si3 (a - (uint32x4_t){}, b - (uint32x4_t){});
+  return (uint32_t)umodv4si3[LANE];
+}
+
+uint32_t
+__udivmodsi4 (uint32_t a, uint32_t b, uint32_t *c)
+{
+  uint32x4_t c_ = {0, 0};
+  uint32x4_t udivmodv4si4 = __udivmodv4si4 (a - (uint32x4_t){}, b - (uint32x4_t){}, &c_);
+  if (c)
+    *c = c_[LANE];
+  return (uint32_t)udivmodv4si4[LANE];
+}
+
+int32_t
+__divsi3 (int32_t a, int32_t b)
+{
+  int32x4_t divv4si3 = __divv4si3 (a - (int32x4_t){}, b - (int32x4_t){});
+  return (int32_t)divv4si3[LANE];
+}
+
+int32_t
+__modsi3 (int32_t a, int32_t b)
+{
+  int32x4_t modv4si3 = __modv4si3 (a - (int32x4_t){}, b - (int32x4_t){});
+  return (int32_t)modv4si3[LANE];
+}
+
+#endif // TEST_V4SI
+
+#ifdef TEST_V8SI
+#define LANE 3
+
+uint32_t
+__udivsi3 (uint32_t a, uint32_t b)
+{
+  uint32x8_t udivv8si3 = __udivv8si3 (a - (uint32x8_t){}, b - (uint32x8_t){});
+  return (uint32_t)udivv8si3[LANE];
+}
+
+uint32_t
+__umodsi3 (uint32_t a, uint32_t b)
+{
+  uint32x8_t umodv8si3 = __umodv8si3 (a - (uint32x8_t){}, b - (uint32x8_t){});
+  return (uint32_t)umodv8si3[LANE];
+}
+
+uint32_t
+__udivmodsi4 (uint32_t a, uint32_t b, uint32_t *c)
+{
+  uint32x8_t c_ = {0, 0};
+  uint32x8_t udivmodv8si4 = __udivmodv8si4 (a - (uint32x8_t){}, b - (uint32x8_t){}, &c_);
+  if (c)
+    *c = c_[LANE];
+  return (uint32_t)udivmodv8si4[LANE];
+}
+
+int32_t
+__divsi3 (int32_t a, int32_t b)
+{
+  int32x8_t divv8si3 = __divv8si3 (a - (int32x8_t){}, b - (int32x8_t){});
+  return (int32_t)divv8si3[LANE];
+}
+
+int32_t
+__modsi3 (int32_t a, int32_t b)
+{
+  int32x8_t modv8si3 = __modv8si3 (a - (int32x8_t){}, b - (int32x8_t){});
+  return (int32_t)modv8si3[LANE];
+}
+
+#endif // TEST_V4SI
 

@@ -87,7 +87,7 @@ div0:
 }
 #endif
 
-#if !defined(TEST_V2SI) && !defined(TEST_V4SI)
+#if !defined(TEST_V2SI) && !defined(TEST_V4SI) && !defined(TEST_V8SI)
 
 uint32_t
 __udivsi3 (uint32_t a, uint32_t b)
