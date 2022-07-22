@@ -16,6 +16,14 @@
   "A label reference"
   (match_code "label_ref"))
 
+(define_constraint "S01"
+  "A zero or minus 1 constant."
+  (and (match_code "const_int,const_vector")
+       (ior (match_test "op == const0_rtx")
+            (match_test "op == constm1_rtx")
+            (match_test "op == CONST0_RTX (mode)")
+            (match_test "op == CONSTM1_RTX (mode)"))))
+
 (define_constraint "U05"
   "An unsigned 5-bit constant."
   (and (match_code "const_int")

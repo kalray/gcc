@@ -4151,6 +4151,35 @@ kvx_expand_vector_shift (rtx target, rtx source, rtx chunk,
     }
 }
 
+/* Emit code that sets TARGET to non-zero or zero if any of the lanes of SOURCE
+   in MODE is zero.  */
+void
+kvx_expand_any64_eqz (rtx target, rtx source, enum machine_mode mode)
+{
+  gcc_assert (GET_MODE_SIZE (mode) == UNITS_PER_WORD);
+  if (mode == V8QImode && KV3_1)
+    {
+      // On the kv3-1 that does not have 8-bit SIMD compare, use the classic trick
+      // HASZERO(v) (((v) - 0x0101010101010101ULL) & ~(v) & 0x8080808080808080ULL).
+      rtx op1 = simplify_gen_subreg (DImode, source, V8QImode, 0);
+      rtx bias = GEN_INT (-0x0101010101010101ULL);
+      rtx mask = GEN_INT (0x8080808080808080ULL);
+      rtx temp0 = gen_reg_rtx (DImode);
+      rtx temp1 = gen_reg_rtx (DImode);
+      rtx temp2 = gen_reg_rtx (DImode);
+      emit_insn (gen_one_cmpldi2 (temp0, op1));
+      emit_insn (gen_adddi3 (temp1, op1, bias));
+      emit_insn (gen_anddi3 (temp2, temp0, mask));
+      emit_insn (gen_anddi3 (target, temp1, temp2));
+    }
+  else
+    {
+      rtx op0 = simplify_gen_subreg (mode, target, DImode, 0);
+      rtx compn_eqz = gen_rtx_EQ (mode, source, CONST0_RTX (mode));
+      emit_insn (gen_rtx_SET (op0, compn_eqz));
+    }
+}
+
 /* Emit a barrier, that is appropriate for memory model MODEL, at the
    start of a sequence implementing an atomic operation.  */
 void
