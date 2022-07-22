@@ -174,7 +174,7 @@
   [(set (match_operand:V2DI 0 "register_operand" "=r")
         (neg:V2DI (match_operator:V2DI 1 "comparison_operator"
                    [(match_operand:V2DI 2 "register_operand" "r")
-                    (match_operand:V2DI 3 "register_operand" "r")])))]
+                    (match_operand:V2DI 3 "reg_zero_mone_operand" "rS01")])))]
   ""
   "compd.%1 %x0 = %x2, %x3\n\tcompd.%1 %y0 = %y2, %y3"
   [(set_attr "type" "alu_tiny_x2")
@@ -185,7 +185,7 @@
   [(set (match_operand:V2DI 0 "register_operand" "=r")
         (neg:V2DI (match_operator:V2DI 1 "comparison_operator"
                    [(vec_duplicate:V2DI (match_operand:DI 2 "nonmemory_operand" "r"))
-                    (match_operand:V2DI 3 "register_operand" "r")])))]
+                    (match_operand:V2DI 3 "reg_zero_mone_operand" "rS01")])))]
   ""
   "compd.%1 %x0 = %2, %x3\n\tcompd.%1 %y0 = %2, %y3"
   [(set_attr "type" "alu_tiny_x2")
@@ -207,7 +207,7 @@
   [(set (match_operand:V4DI 0 "register_operand" "=r")
         (neg:V4DI (match_operator:V4DI 1 "comparison_operator"
                    [(match_operand:V4DI 2 "register_operand" "r")
-                     (match_operand:V4DI 3 "register_operand" "r")])))]
+                     (match_operand:V4DI 3 "reg_zero_mone_operand" "rS01")])))]
   ""
   {
     return "compd.%1 %x0 = %x2, %x3\n\tcompd.%1 %y0 = %y2, %y3\n\t"
@@ -221,7 +221,7 @@
   [(set (match_operand:V4DI 0 "register_operand" "=r")
         (neg:V4DI (match_operator:V4DI 1 "comparison_operator"
                    [(vec_duplicate:V4DI (match_operand:DI 2 "nonmemory_operand" "r"))
-                    (match_operand:V4DI 3 "register_operand" "r")])))]
+                    (match_operand:V4DI 3 "reg_zero_mone_operand" "rS01")])))]
   ""
   {
     return "compd.%1 %x0 = %2, %x3\n\tcompd.%1 %y0 = %2, %y3\n\t"
@@ -249,42 +249,43 @@
 ;; *COMPN*
 
 (define_insn "*compn<suffix>"
-  [(set (match_operand:<MASK> 0 "register_operand" "=r")
+  [(set (match_operand:<MASK> 0 "register_operand" "=r,r")
         (match_operator:<MASK> 1 "comparison_operator"
-         [(match_operand:S64K 2 "register_operand" "r")
-          (match_operand:S64K 3 "register_operand" "r")]))]
+         [(match_operand:S64K 2 "register_operand" "r,r")
+          (match_operand:S64K 3 "reg_zero_mone_operand" "r,S01")]))]
   ""
   "compn<suffix>.%1 %0 = %2, %3"
-  [(set_attr "type" "alu_tiny")]
+  [(set_attr "type" "alu_tiny,alu_tiny_x")
+   (set_attr "length"      "4,         8")]
 )
 
 (define_insn "*compn<suffix>"
-  [(set (match_operand:<MASK> 0 "register_operand" "=r")
+  [(set (match_operand:<MASK> 0 "register_operand" "=r,r")
         (match_operator:<MASK> 1 "comparison_operator"
-         [(match_operand:S128K 2 "register_operand" "r")
-          (match_operand:S128K 3 "register_operand" "r")]))]
+         [(match_operand:S128K 2 "register_operand" "r,r")
+          (match_operand:S128K 3 "reg_zero_mone_operand" "r,S01")]))]
   ""
   "compn<chunkx>.%1 %x0 = %x2, %x3\n\tcompn<chunkx>.%1 %y0 = %y2, %y3"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
+  [(set_attr "type" "alu_tiny_x2,alu_tiny_x2_x")
+   (set_attr "length"         "8,           16")]
 )
 
 (define_insn "*compn<suffix>_s2"
-  [(set (match_operand:<MASK> 0 "register_operand" "=r")
+  [(set (match_operand:<MASK> 0 "register_operand" "=r,r")
         (match_operator:<MASK> 1 "comparison_operator"
-         [(vec_duplicate:S128K (match_operand:<CHUNK> 2 "nonmemory_operand" "r"))
-          (match_operand:S128K 3 "register_operand" "r")]))]
+         [(vec_duplicate:S128K (match_operand:<CHUNK> 2 "nonmemory_operand" "r,r"))
+          (match_operand:S128K 3 "reg_zero_mone_operand" "r,S01")]))]
   ""
   "compn<chunkx>.%1 %x0 = %2, %x3\n\tcompn<chunkx>.%1 %y0 = %2, %y3"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
+  [(set_attr "type" "alu_tiny_x2,alu_tiny_x2_x")
+   (set_attr "length"         "8,           16")]
 )
 
 (define_insn "*compn<suffix>_s3"
-  [(set (match_operand:<MASK> 0 "register_operand" "=r")
+  [(set (match_operand:<MASK> 0 "register_operand" "=r,r")
         (match_operator:<MASK> 1 "comparison_operator"
-         [(match_operand:S128K 2 "register_operand" "r")
-          (vec_duplicate:S128K (match_operand:<CHUNK> 3 "nonmemory_operand" "r"))]))]
+         [(match_operand:S128K 2 "register_operand" "r,r")
+          (vec_duplicate:S128K (match_operand:<CHUNK> 3 "nonmemory_operand" "r,r"))]))]
   ""
   "compn<chunkx>.%1 %x0 = %x2, %3\n\tcompn<chunkx>.%1 %y0 = %y2, %3"
   [(set_attr "type" "alu_tiny_x2")
@@ -295,7 +296,7 @@
   [(set (match_operand:V2DI 0 "register_operand" "=r")
         (match_operator:V2DI 1 "comparison_operator"
          [(match_operand:V2DI 2 "register_operand" "r")
-          (match_operand:V2DI 3 "register_operand" "r")]))]
+          (match_operand:V2DI 3 "reg_zero_mone_operand" "rS01")]))]
   "KV3_1"
   "#"
   "KV3_1 && reload_completed"
@@ -308,21 +309,21 @@
 )
 
 (define_insn "*compndp"
-  [(set (match_operand:V2DI 0 "register_operand" "=r")
+  [(set (match_operand:V2DI 0 "register_operand" "=r,r")
         (match_operator:V2DI 1 "comparison_operator"
-         [(match_operand:V2DI 2 "register_operand" "r")
-          (match_operand:V2DI 3 "register_operand" "r")]))]
+         [(match_operand:V2DI 2 "register_operand" "r,r")
+          (match_operand:V2DI 3 "reg_zero_mone_operand" "r,S01")]))]
   "KV3_2"
   "compnd.%1 %x0 = %x2, %x3\n\tcompnd.%1 %y0 = %y2, %y3"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
+  [(set_attr "type" "alu_tiny_x2, alu_tiny_x2_x")
+   (set_attr "length"         "8,            16")]
 )
 
 (define_insn_and_split "*compndp_s2"
   [(set (match_operand:V2DI 0 "register_operand" "=r")
         (match_operator:V2DI 1 "comparison_operator"
          [(vec_duplicate:V2DI (match_operand:DI 2 "nonmemory_operand" "r"))
-          (match_operand:V2DI 3 "register_operand" "r")]))]
+          (match_operand:V2DI 3 "reg_zero_mone_operand" "rS01")]))]
   "KV3_1"
   "#"
   "KV3_1 && reload_completed"
@@ -335,14 +336,14 @@
 )
 
 (define_insn "*compndp_s2"
-  [(set (match_operand:V2DI 0 "register_operand" "=r")
+  [(set (match_operand:V2DI 0 "register_operand" "=r,r")
         (match_operator:V2DI 1 "comparison_operator"
-         [(vec_duplicate:V2DI (match_operand:DI 2 "nonmemory_operand" "r"))
-          (match_operand:V2DI 3 "register_operand" "r")]))]
+         [(vec_duplicate:V2DI (match_operand:DI 2 "nonmemory_operand" "r,r"))
+          (match_operand:V2DI 3 "reg_zero_mone_operand" "r,S01")]))]
   "KV3_2"
   "compnd.%1 %x0 = %2, %x3\n\tcompnd.%1 %y0 = %2, %y3"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
+  [(set_attr "type" "alu_tiny_x2,alu_tiny_x2_x")
+   (set_attr "length"         "8,           16")]
 )
 
 (define_insn_and_split "*compndp_s3"
@@ -373,31 +374,31 @@
 )
 
 (define_insn "*compn<suffix>"
-  [(set (match_operand:<MASK> 0 "register_operand" "=r")
+  [(set (match_operand:<MASK> 0 "register_operand" "=r,r")
         (match_operator:<MASK> 1 "comparison_operator"
-         [(match_operand:S256K 2 "register_operand" "r")
-          (match_operand:S256K 3 "register_operand" "r")]))]
+         [(match_operand:S256K 2 "register_operand" "r,r")
+          (match_operand:S256K 3 "reg_zero_mone_operand" "r,S01")]))]
   ""
   {
     return "compn<chunkx>.%1 %x0 = %x2, %x3\n\tcompn<chunkx>.%1 %y0 = %y2, %y3\n\t"
            "compn<chunkx>.%1 %z0 = %z2, %z3\n\tcompn<chunkx>.%1 %t0 = %t2, %t3";
   }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
+  [(set_attr "type" "alu_tiny_x4,alu_tiny_x4_x")
+   (set_attr "length"        "16,           32")]
 )
 
 (define_insn "*compn<suffix>_s2"
-  [(set (match_operand:<MASK> 0 "register_operand" "=r")
+  [(set (match_operand:<MASK> 0 "register_operand" "=r,r")
         (match_operator:<MASK> 1 "comparison_operator"
-         [(vec_duplicate:S256K (match_operand:<CHUNK> 2 "nonmemory_operand" "r"))
-          (match_operand:S256K 3 "register_operand" "r")]))]
+         [(vec_duplicate:S256K (match_operand:<CHUNK> 2 "nonmemory_operand" "r,r"))
+          (match_operand:S256K 3 "reg_zero_mone_operand" "r,S01")]))]
   ""
   {
     return "compn<chunkx>.%1 %x0 = %2, %x3\n\tcompn<chunkx>.%1 %y0 = %2, %y3\n\t"
            "compn<chunkx>.%1 %z0 = %2, %z3\n\tcompn<chunkx>.%1 %t0 = %2, %t3";
   }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
+  [(set_attr "type" "alu_tiny_x4,alu_tiny_x4_x")
+   (set_attr "length"        "16,           32")]
 )
 
 (define_insn "*compn<suffix>_s3"
@@ -418,7 +419,7 @@
   [(set (match_operand:V4DI 0 "register_operand" "=r")
         (match_operator:V4DI 1 "comparison_operator"
          [(match_operand:V4DI 2 "register_operand" "r")
-          (match_operand:V4DI 3 "register_operand" "r")]))]
+          (match_operand:V4DI 3 "reg_zero_mone_operand" "rS01")]))]
   "KV3_1"
   "#"
   "KV3_1 && reload_completed"
@@ -431,24 +432,24 @@
 )
 
 (define_insn "*compndq"
-  [(set (match_operand:V4DI 0 "register_operand" "=r")
+  [(set (match_operand:V4DI 0 "register_operand" "=r,r")
         (match_operator:V4DI 1 "comparison_operator"
-         [(match_operand:V4DI 2 "register_operand" "r")
-          (match_operand:V4DI 3 "register_operand" "r")]))]
+         [(match_operand:V4DI 2 "register_operand" "r,r")
+          (match_operand:V4DI 3 "reg_zero_mone_operand" "r,S01")]))]
   "KV3_2"
   {
     return "compnd.%1 %x0 = %x2, %x3\n\tcompnd.%1 %y0 = %y2, %y3\n\t"
            "compnd.%1 %z0 = %z2, %z3\n\tcompnd.%1 %t0 = %t2, %t3";
   }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
+  [(set_attr "type" "alu_tiny_x4,alu_tiny_x4_x")
+   (set_attr "length"        "16,           32")]
 )
 
 (define_insn_and_split "*compndq_s2"
   [(set (match_operand:V4DI 0 "register_operand" "=&r")
         (match_operator:V4DI 1 "comparison_operator"
          [(vec_duplicate:V4DI (match_operand:DI 2 "nonmemory_operand" "r"))
-          (match_operand:V4DI 3 "register_operand" "r")]))]
+          (match_operand:V4DI 3 "reg_zero_mone_operand" "rS01")]))]
   "KV3_1"
   "#"
   "KV3_1 && reload_completed"
@@ -461,17 +462,17 @@
 )
 
 (define_insn "*compndq_s2"
-  [(set (match_operand:V4DI 0 "register_operand" "=r")
+  [(set (match_operand:V4DI 0 "register_operand" "=r,r")
         (match_operator:V4DI 1 "comparison_operator"
-         [(vec_duplicate:V4DI (match_operand:DI 2 "nonmemory_operand" "r"))
-          (match_operand:V4DI 3 "register_operand" "r")]))]
+         [(vec_duplicate:V4DI (match_operand:DI 2 "nonmemory_operand" "r,r"))
+          (match_operand:V4DI 3 "reg_zero_mone_operand" "r,S01")]))]
   "KV3_2"
   {
     return "compnd.%1 %x0 = %2, %x3\n\tcompnd.%1 %y0 = %2, %y3\n\t"
            "compnd.%1 %z0 = %2, %z3\n\tcompnd.%1 %t0 = %2, %t3";
   }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
+  [(set_attr "type" "alu_tiny_x4,alu_tiny_x4_x")
+   (set_attr "length"        "16,           32")]
 )
 
 (define_insn_and_split "*compndq_s3"

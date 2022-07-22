@@ -1,5 +1,7 @@
 #include "divmodtypes.h"
 
+////////////////////////////////////////////////////////////////////////////////
+
 static inline uint64x4_t
 uint64x2_divmod (uint64x2_t a, uint64x2_t b)
 {
@@ -91,49 +93,7 @@ __modv2di3 (int64x2_t a, int64x2_t b)
   return __builtin_kvx_selectdp (-result, result, a, ".ltz");
 }
 
-#ifdef TEST_V2DI
-#define LANE 1
-
-uint64_t
-__udivdi3 (uint64_t a, uint64_t b)
-{
-  uint64x2_t udivv2di3 = __udivv2di3 (a - (uint64x2_t){}, b - (uint64x2_t){});
-  return (uint64_t)udivv2di3[LANE];
-}
-
-uint64_t
-__umoddi3 (uint64_t a, uint64_t b)
-{
-  uint64x2_t umodv2di3 = __umodv2di3 (a - (uint64x2_t){}, b - (uint64x2_t){});
-  return (uint64_t)umodv2di3[LANE];
-}
-
-uint64_t
-__udivmoddi4 (uint64_t a, uint64_t b, uint64_t *c)
-{
-  uint64x2_t c_ = {0, 0};
-  uint64x2_t udivmodv2di4
-    = __udivmodv2di4 (a - (uint64x2_t){}, b - (uint64x2_t){}, &c_);
-  if (c)
-    *c = c_[LANE];
-  return (uint64_t)udivmodv2di4[LANE];
-}
-
-int64_t
-__divdi3 (int64_t a, int64_t b)
-{
-  int64x2_t divv2di3 = __divv2di3 (a - (int64x2_t){}, b - (int64x2_t){});
-  return (int64_t)divv2di3[LANE];
-}
-
-int64_t
-__moddi3 (int64_t a, int64_t b)
-{
-  int64x2_t modv2di3 = __modv2di3 (a - (int64x2_t){}, b - (int64x2_t){});
-  return (int64_t)modv2di3[LANE];
-}
-
-#endif // TEST_V2DI
+////////////////////////////////////////////////////////////////////////////////
 
 static inline uint64x8_t
 uint64x4_divmod (uint64x4_t a, uint64x4_t b)
@@ -231,6 +191,52 @@ __modv4di3 (int64x4_t a, int64x4_t b)
   int64x4_t result = __builtin_kvx_high256 (divmod);
   return __builtin_kvx_selectdq (-result, result, a, ".ltz");
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+#ifdef TEST_V2DI
+#define LANE 1
+
+uint64_t
+__udivdi3 (uint64_t a, uint64_t b)
+{
+  uint64x2_t udivv2di3 = __udivv2di3 (a - (uint64x2_t){}, b - (uint64x2_t){});
+  return (uint64_t)udivv2di3[LANE];
+}
+
+uint64_t
+__umoddi3 (uint64_t a, uint64_t b)
+{
+  uint64x2_t umodv2di3 = __umodv2di3 (a - (uint64x2_t){}, b - (uint64x2_t){});
+  return (uint64_t)umodv2di3[LANE];
+}
+
+uint64_t
+__udivmoddi4 (uint64_t a, uint64_t b, uint64_t *c)
+{
+  uint64x2_t c_ = {0, 0};
+  uint64x2_t udivmodv2di4
+    = __udivmodv2di4 (a - (uint64x2_t){}, b - (uint64x2_t){}, &c_);
+  if (c)
+    *c = c_[LANE];
+  return (uint64_t)udivmodv2di4[LANE];
+}
+
+int64_t
+__divdi3 (int64_t a, int64_t b)
+{
+  int64x2_t divv2di3 = __divv2di3 (a - (int64x2_t){}, b - (int64x2_t){});
+  return (int64_t)divv2di3[LANE];
+}
+
+int64_t
+__moddi3 (int64_t a, int64_t b)
+{
+  int64x2_t modv2di3 = __modv2di3 (a - (int64x2_t){}, b - (int64x2_t){});
+  return (int64_t)modv2di3[LANE];
+}
+
+#endif // TEST_V2DI
 
 #ifdef TEST_V4DI
 #define LANE 0

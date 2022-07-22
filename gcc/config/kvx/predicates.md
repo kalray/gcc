@@ -13,12 +13,14 @@
   (and (match_code "const_double,const_vector")
        (match_test "op == CONST1_RTX (mode)")))
 
-;; Register or constant zero.
-(define_predicate "reg_or_zero_operand"
+;; Register or constant 0/-1.
+(define_predicate "reg_zero_mone_operand"
   (and (match_code "reg,subreg,const_int,const_vector")
        (ior (match_operand 0 "register_operand")
             (match_test "op == const0_rtx")
-            (match_test "op == CONST0_RTX (mode)"))))
+            (match_test "op == constm1_rtx")
+            (match_test "op == CONST0_RTX (mode)")
+            (match_test "op == CONSTM1_RTX (mode)"))))
 
 ;; Register or constant 1.0 (floating-point).
 (define_predicate "reg_or_float1_operand"

@@ -1,6 +1,19 @@
 #ifndef _DIVMOD_TYPES_H
 #define _DIVMOD_TYPES_H
 
+#ifdef __kv3_2__
+typedef __INT8_TYPE__ int8_t;
+typedef __UINT8_TYPE__ uint8_t;
+typedef int8_t int8x8_t __attribute ((vector_size (8 * sizeof (int8_t))));
+typedef int8_t int8x16_t __attribute ((vector_size (16 * sizeof (int8_t))));
+typedef int8_t int8x32_t __attribute ((vector_size (32 * sizeof (int8_t))));
+typedef int8_t int8x64_t __attribute ((vector_size (64 * sizeof (int8_t))));
+typedef uint8_t uint8x8_t __attribute ((vector_size (8 * sizeof (uint8_t))));
+typedef uint8_t uint8x16_t __attribute ((vector_size (16 * sizeof (uint8_t))));
+typedef uint8_t uint8x32_t __attribute ((vector_size (32 * sizeof (uint8_t))));
+typedef uint8_t uint8x64_t __attribute ((vector_size (64 * sizeof (uint8_t))));
+#endif//__kv3_2__
+
 typedef __INT16_TYPE__ int16_t;
 typedef __UINT16_TYPE__ uint16_t;
 typedef int16_t int16x4_t __attribute ((vector_size (4 * sizeof (int16_t))));
@@ -112,8 +125,29 @@ uint16x16_t __udivmodv16hi4 (uint16x16_t a, uint16x16_t b, uint16x16_t *c);
 int16x16_t __divv16hi3 (int16x16_t a, int16x16_t b);
 int16x16_t __modv16hi3 (int16x16_t a, int16x16_t b);
 
+#ifdef __kv3_2__
+uint8x8_t __udivv8qi3 (uint8x8_t a, uint8x8_t b);
+uint8x8_t __umodv8qi3 (uint8x8_t a, uint8x8_t b);
+uint8x8_t __udivmodv8qi4 (uint8x8_t a, uint8x8_t b, uint8x8_t *c);
+int8x8_t __divv8qi3 (int8x8_t a, int8x8_t b);
+int8x8_t __modv8qi3 (int8x8_t a, int8x8_t b);
+
+uint8x16_t __udivv16qi3 (uint8x16_t a, uint8x16_t b);
+uint8x16_t __umodv16qi3 (uint8x16_t a, uint8x16_t b);
+uint8x16_t __udivmodv16qi4 (uint8x16_t a, uint8x16_t b, uint8x16_t *c);
+int8x16_t __divv16qi3 (int8x16_t a, int8x16_t b);
+int8x16_t __modv16qi3 (int8x16_t a, int8x16_t b);
+
+uint8x32_t __udivv32qi3 (uint8x32_t a, uint8x32_t b);
+uint8x32_t __umodv32qi3 (uint8x32_t a, uint8x32_t b);
+uint8x32_t __udivmodv32qi4 (uint8x32_t a, uint8x32_t b, uint8x32_t *c);
+int8x32_t __divv32qi3 (int8x32_t a, int8x32_t b);
+int8x32_t __modv32qi3 (int8x32_t a, int8x32_t b);
+#endif//__kv3_2__
+
 //#define TEST_V2SI
-#define TEST_V4SI
+//#define TEST_V4SI
+#define TEST_V8SI
 //#define TEST_V2DI
 #define TEST_V4DI
 

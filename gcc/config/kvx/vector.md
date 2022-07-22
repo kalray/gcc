@@ -303,7 +303,7 @@
   [(set (match_operand:<MASK> 0 "register_operand")
         (match_operator 1 "comparison_operator"
          [(match_operand:SIMDCMP 2 "register_operand")
-          (match_operand:SIMDCMP 3 "reg_or_zero_operand")]))]
+          (match_operand:SIMDCMP 3 "reg_zero_mone_operand")]))]
   ""
   {
     rtx mask = operands[0];
@@ -317,7 +317,7 @@
   [(set (match_operand:<MASK> 0 "register_operand")
         (match_operator 1 "comparison_operator"
          [(match_operand:SIMDCMP 2 "register_operand")
-          (match_operand:SIMDCMP 3 "reg_or_zero_operand")]))]
+          (match_operand:SIMDCMP 3 "reg_zero_mone_operand")]))]
   ""
   {
     rtx mask = operands[0];
@@ -333,7 +333,7 @@
    (match_operand:SIMDALL 2 "nonmemory_operand")
    (match_operator 3 "comparison_operator"
     [(match_operand:SIMDCMP 4 "register_operand")
-     (match_operand:SIMDCMP 5 "reg_or_zero_operand")])]
+     (match_operand:SIMDCMP 5 "reg_zero_mone_operand")])]
   "(GET_MODE_NUNITS (<SIMDCMP:MODE>mode) == GET_MODE_NUNITS (<SIMDALL:MODE>mode))"
   {
     rtx target = operands[0];
@@ -350,7 +350,7 @@
    (match_operand:SIMDALL 2 "nonmemory_operand")
    (match_operator 3 "comparison_operator"
     [(match_operand:SIMDCMP 4 "register_operand")
-     (match_operand:SIMDCMP 5 "reg_or_zero_operand")])]
+     (match_operand:SIMDCMP 5 "reg_zero_mone_operand")])]
   "(GET_MODE_NUNITS (<SIMDCMP:MODE>mode) == GET_MODE_NUNITS (<SIMDALL:MODE>mode))"
   {
     rtx target = operands[0];
@@ -1022,26 +1022,39 @@
                        (match_operand:VXQI 2 "register_operand" "")))]
   ""
   {
-    unsigned mode_size = GET_MODE_SIZE (<MODE>mode);
-    for (unsigned offset = 0; offset < mode_size; offset += UNITS_PER_WORD)
+    if (KV3_1)
       {
-        rtx op2 = simplify_gen_subreg (V4HImode, operands[2], <MODE>mode, offset);
-        rtx op1 = simplify_gen_subreg (V4HImode, operands[1], <MODE>mode, offset);
-        rtx op0 = simplify_gen_subreg (V4HImode, operands[0], <MODE>mode, offset);
-        rtx op2o = gen_reg_rtx (V4HImode), op2e = gen_reg_rtx (V4HImode);
-        emit_insn (gen_rtx_SET (op2o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op2), UNSPEC_QXOBHQ)));
-        emit_insn (gen_rtx_SET (op2e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op2), UNSPEC_QXEBHQ)));
-        rtx op1o = gen_reg_rtx (V4HImode), op1e = gen_reg_rtx (V4HImode);
-        emit_insn (gen_rtx_SET (op1o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXOBHQ)));
-        emit_insn (gen_rtx_SET (op1e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXEBHQ)));
-        rtx op0o = gen_reg_rtx (V4HImode), op0e = gen_reg_rtx (V4HImode);
-        emit_insn (gen_<prefix>v4hi3 (op0o, op1o, op2o));
-        emit_insn (gen_<prefix>v4hi3 (op0e, op1e, op2e));
-        emit_insn (gen_rtx_SET (op0o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0o), UNSPEC_QXEBHQ)));
-        if (<set8msb>)
-          emit_insn (gen_rtx_SET (op0e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0e), UNSPEC_ZXEBHQ)));
-        emit_insn (gen_rtx_SET (op0, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, op0o, op0e), UNSPEC_OROEBO)));
+        unsigned mode_size = GET_MODE_SIZE (<MODE>mode);
+        for (unsigned offset = 0; offset < mode_size; offset += UNITS_PER_WORD)
+          {
+            rtx op2 = simplify_gen_subreg (V4HImode, operands[2], <MODE>mode, offset);
+            rtx op1 = simplify_gen_subreg (V4HImode, operands[1], <MODE>mode, offset);
+            rtx op0 = simplify_gen_subreg (V4HImode, operands[0], <MODE>mode, offset);
+            rtx op2o = gen_reg_rtx (V4HImode), op2e = gen_reg_rtx (V4HImode);
+            emit_insn (gen_rtx_SET (op2o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op2), UNSPEC_QXOBHQ)));
+            emit_insn (gen_rtx_SET (op2e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op2), UNSPEC_QXEBHQ)));
+            rtx op1o = gen_reg_rtx (V4HImode), op1e = gen_reg_rtx (V4HImode);
+            emit_insn (gen_rtx_SET (op1o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXOBHQ)));
+            emit_insn (gen_rtx_SET (op1e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXEBHQ)));
+            rtx op0o = gen_reg_rtx (V4HImode), op0e = gen_reg_rtx (V4HImode);
+            emit_insn (gen_<prefix>v4hi3 (op0o, op1o, op2o));
+            emit_insn (gen_<prefix>v4hi3 (op0e, op1e, op2e));
+            emit_insn (gen_rtx_SET (op0o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0o), UNSPEC_QXEBHQ)));
+            if (<set8msb>)
+              emit_insn (gen_rtx_SET (op0e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0e), UNSPEC_ZXEBHQ)));
+            emit_insn (gen_rtx_SET (op0, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, op0o, op0e), UNSPEC_OROEBO)));
+          }
       }
+    else if (KV3_2)
+      {
+        rtx dest = emit_library_call_value (gen_rtx_SYMBOL_REF (Pmode, "__<prefix><mode>3"),
+                                            operands[0], LCT_CONST, <MODE>mode,
+                                            operands[1], <MODE>mode, operands[2], <MODE>mode);
+        if (dest != operands[0])
+          emit_move_insn (operands[0], dest);
+      }
+    else
+      gcc_unreachable ();
     DONE;
   }
 )
@@ -1052,24 +1065,37 @@
                        (match_operand:VXQI 2 "register_operand" "")))]
   ""
   {
-    unsigned mode_size = GET_MODE_SIZE (<MODE>mode);
-    for (unsigned offset = 0; offset < mode_size; offset += UNITS_PER_WORD)
+    if (KV3_1)
       {
-        rtx op2 = simplify_gen_subreg (V4HImode, operands[2], <MODE>mode, offset);
-        rtx op1 = simplify_gen_subreg (V4HImode, operands[1], <MODE>mode, offset);
-        rtx op0 = simplify_gen_subreg (V4HImode, operands[0], <MODE>mode, offset);
-        rtx op2o = gen_reg_rtx (V4HImode), op2e = gen_reg_rtx (V4HImode);
-        emit_insn (gen_rtx_SET (op2o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op2), UNSPEC_QXOBHQ)));
-        emit_insn (gen_rtx_SET (op2e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op2), UNSPEC_QXEBHQ)));
-        rtx op1o = gen_reg_rtx (V4HImode), op1e = gen_reg_rtx (V4HImode);
-        emit_insn (gen_rtx_SET (op1o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXOBHQ)));
-        emit_insn (gen_rtx_SET (op1e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXEBHQ)));
-        rtx op0o = gen_reg_rtx (V4HImode), op0e = gen_reg_rtx (V4HImode);
-        emit_insn (gen_<prefix>v4hi3 (op0o, op1o, op2o));
-        emit_insn (gen_<prefix>v4hi3 (op0e, op1e, op2e));
-        emit_insn (gen_rtx_SET (op0e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0e), UNSPEC_ZXOBHQ)));
-        emit_insn (gen_rtx_SET (op0, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, op0o, op0e), UNSPEC_OROEBO)));
+        unsigned mode_size = GET_MODE_SIZE (<MODE>mode);
+        for (unsigned offset = 0; offset < mode_size; offset += UNITS_PER_WORD)
+          {
+            rtx op2 = simplify_gen_subreg (V4HImode, operands[2], <MODE>mode, offset);
+            rtx op1 = simplify_gen_subreg (V4HImode, operands[1], <MODE>mode, offset);
+            rtx op0 = simplify_gen_subreg (V4HImode, operands[0], <MODE>mode, offset);
+            rtx op2o = gen_reg_rtx (V4HImode), op2e = gen_reg_rtx (V4HImode);
+            emit_insn (gen_rtx_SET (op2o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op2), UNSPEC_QXOBHQ)));
+            emit_insn (gen_rtx_SET (op2e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op2), UNSPEC_QXEBHQ)));
+            rtx op1o = gen_reg_rtx (V4HImode), op1e = gen_reg_rtx (V4HImode);
+            emit_insn (gen_rtx_SET (op1o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXOBHQ)));
+            emit_insn (gen_rtx_SET (op1e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXEBHQ)));
+            rtx op0o = gen_reg_rtx (V4HImode), op0e = gen_reg_rtx (V4HImode);
+            emit_insn (gen_<prefix>v4hi3 (op0o, op1o, op2o));
+            emit_insn (gen_<prefix>v4hi3 (op0e, op1e, op2e));
+            emit_insn (gen_rtx_SET (op0e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0e), UNSPEC_ZXOBHQ)));
+            emit_insn (gen_rtx_SET (op0, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, op0o, op0e), UNSPEC_OROEBO)));
+          }
       }
+    else if (KV3_2)
+      {
+        rtx dest = emit_library_call_value (gen_rtx_SYMBOL_REF (Pmode, "__<prefix><mode>3"),
+                                            operands[0], LCT_CONST, <MODE>mode,
+                                            operands[1], <MODE>mode, operands[2], <MODE>mode);
+        if (dest != operands[0])
+          emit_move_insn (operands[0], dest);
+      }
+    else
+      gcc_unreachable ();
     DONE;
   }
 )

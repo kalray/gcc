@@ -662,11 +662,20 @@ enum kvx_builtin
   KVX_BUILTIN_TLBWRITE,
   KVX_BUILTIN_WAITIT,
 
+  KVX_BUILTIN_STSUHQ,
+  KVX_BUILTIN_STSUHO,
+  KVX_BUILTIN_STSUHX,
+  KVX_BUILTIN_STSUHV,
   KVX_BUILTIN_STSUW,
+  KVX_BUILTIN_STSUWP,
+  KVX_BUILTIN_STSUWQ,
+  KVX_BUILTIN_STSUWO,
+  KVX_BUILTIN_STSUWX,
   KVX_BUILTIN_STSUD,
   KVX_BUILTIN_STSUDP,
   KVX_BUILTIN_STSUDQ,
   KVX_BUILTIN_STSUDO,
+
   KVX_BUILTIN_SBMM8,
   KVX_BUILTIN_SBMMT8,
 
@@ -1665,11 +1674,20 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (TLBWRITE, "tlbwrite", VOID); // Memory
   ADD_KVX_BUILTIN (WAITIT, "waitit", UINT32, UINT32); // Control
 
+  ADD_KVX_BUILTIN (STSUHQ, "stsuhq", V4HI, V4HI, V4HI); // Vector kv3-2
+  ADD_KVX_BUILTIN (STSUHO, "stsuho", V8HI, V8HI, V8HI); // Vector kv3-2
+  ADD_KVX_BUILTIN (STSUHX, "stsuhx", V16HI, V16HI, V16HI); // Vector kv3-2
+  ADD_KVX_BUILTIN (STSUHV, "stsuhv", V32HI, V32HI, V32HI); // Vector kv3-2
   ADD_KVX_BUILTIN (STSUW, "stsuw", UINT32, UINT32, UINT32); // Scalar
+  ADD_KVX_BUILTIN (STSUWP, "stsuwp", V2SI, V2SI, V2SI); // Vector kv3-2
+  ADD_KVX_BUILTIN (STSUWQ, "stsuwq", V4SI, V4SI, V4SI); // Vector kv3-2
+  ADD_KVX_BUILTIN (STSUWO, "stsuwo", V8SI, V8SI, V8SI); // Vector kv3-2
+  ADD_KVX_BUILTIN (STSUWX, "stsuwx", V16SI, V16SI, V16SI); // Vector kv3-2
   ADD_KVX_BUILTIN (STSUD, "stsud", UINT64, UINT64, UINT64); // Scalar
   ADD_KVX_BUILTIN (STSUDP, "stsudp", V2DI, V2DI, V2DI); // Vector
   ADD_KVX_BUILTIN (STSUDQ, "stsudq", V4DI, V4DI, V4DI); // Vector
   ADD_KVX_BUILTIN (STSUDO, "stsudo", V8DI, V8DI, V8DI); // Vector
+
   ADD_KVX_BUILTIN (SBMM8, "sbmm8", UINT64, UINT64, UINT64); // Scalar
   ADD_KVX_BUILTIN (SBMMT8, "sbmmt8", UINT64, UINT64, UINT64); // Scalar
 
@@ -3315,7 +3333,7 @@ KVX_EXPAND_BUILTIN_3_STANDARD (xcat1024, kvx_xcat1024, X1024mode, X512mode)
 KVX_EXPAND_BUILTIN_3_STANDARD (xcat2048, kvx_xcat2048, X2048mode, X1024mode)
 KVX_EXPAND_BUILTIN_3_STANDARD (xcat4096, kvx_xcat4096, X4096mode, X2048mode)
 #undef KV3_N_ONLY
-#define KV3_N_ONLY (!KV3_2 * 2)
+#define KV3_N_ONLY ((!KV3_2) * 2)
 KVX_EXPAND_BUILTIN_3_STANDARD (xcat8192, kvx_xcat8192, X8192mode, X4096mode)
 #undef KV3_N_ONLY
 #define KV3_N_ONLY 0
@@ -3656,11 +3674,24 @@ KVX_EXPAND_BUILTIN_2_SILENT (fsrsrd, kvx_fsrsrd, DFmode, DFmode)
 KVX_EXPAND_BUILTIN_2_SILENT (fsrsrdp, kvx_fsrsrdp, V2DFmode, V2DFmode)
 KVX_EXPAND_BUILTIN_2_SILENT (fsrsrdq, kvx_fsrsrdq, V4DFmode, V4DFmode)
 
+#undef KV3_N_ONLY
+#define KV3_N_ONLY (!KV3_2 * 2)
+KVX_EXPAND_BUILTIN_3_STANDARD (stsuhq, kvx_stsuhq, V4HImode, V4HImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (stsuho, kvx_stsuho, V8HImode, V8HImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (stsuhx, kvx_stsuhx, V16HImode, V16HImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (stsuhv, kvx_stsuhv, V32HImode, V32HImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (stsuwp, kvx_stsuwp, V2SImode, V2SImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (stsuwq, kvx_stsuwq, V4SImode, V4SImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (stsuwo, kvx_stsuwo, V8SImode, V8SImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (stsuwx, kvx_stsuwx, V16SImode, V16SImode)
+#undef KV3_N_ONLY
+#define KV3_N_ONLY 0
 KVX_EXPAND_BUILTIN_3_STANDARD (stsuw, kvx_stsuw, SImode, SImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (stsud, kvx_stsud, DImode, DImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (stsudp, kvx_stsudp, V2DImode, V2DImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (stsudq, kvx_stsudq, V4DImode, V4DImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (stsudo, kvx_stsudo, V8DImode, V8DImode)
+
 KVX_EXPAND_BUILTIN_3_STANDARD (sbmm8, kvx_sbmm8, DImode, DImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (sbmmt8, kvx_sbmmt8, DImode, DImode)
 
@@ -4236,6 +4267,7 @@ KVX_EXPAND_BUILTIN_XALIGN (xaccess4096o, kvx_xaccess4096o, V256mode, X4096mode)
 KVX_EXPAND_BUILTIN_XALIGN (xaccess8192o, kvx_xaccess8192o, V256mode, X8192mode)
 
 KVX_EXPAND_BUILTIN_XMATMUL (xmma484bw, kvx_xmma484bw, X512mode, X256mode)
+#undef KV3_N_ONLY
 #define KV3_N_ONLY ((!KV3_2) * 2)
 KVX_EXPAND_BUILTIN_FSCALE (xfscalewo, kvx_xfscalewo, X256mode, X256mode)
 KVX_EXPAND_BUILTIN_XMATMUL (xmma4164bw, kvx_xmma4164bw, X512mode, X512mode)
@@ -4254,7 +4286,7 @@ KVX_EXPAND_BUILTIN_XRECVO (xrecvo, kvx_xrecvo, X256mode)
 KVX_EXPAND_BUILTIN_2_CHANNELS (xsendrecvo, kvx_xsendrecvo, X256mode, X256mode)
 
 #undef KV3_N_ONLY
-#define KV3_N_ONLY (!KV3_1 * 1)
+#define KV3_N_ONLY ((!KV3_1) * 1)
 KVX_EXPAND_BUILTIN_4_FLOATINGS (xfmma444hw, kvx_xfmma444hw, X512mode, X256mode)
 #undef KV3_N_ONLY
 #define KV3_N_ONLY 0
@@ -4905,11 +4937,20 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_TLBWRITE: return kvx_expand_builtin_tlbwrite (target, exp);
     case KVX_BUILTIN_WAITIT: return kvx_expand_builtin_waitit (target, exp);
 
+    case KVX_BUILTIN_STSUHQ: return kvx_expand_builtin_stsuhq (target, exp);
+    case KVX_BUILTIN_STSUHO: return kvx_expand_builtin_stsuho (target, exp);
+    case KVX_BUILTIN_STSUHX: return kvx_expand_builtin_stsuhx (target, exp);
+    case KVX_BUILTIN_STSUHV: return kvx_expand_builtin_stsuhv (target, exp);
     case KVX_BUILTIN_STSUW: return kvx_expand_builtin_stsuw (target, exp);
+    case KVX_BUILTIN_STSUWP: return kvx_expand_builtin_stsuwp (target, exp);
+    case KVX_BUILTIN_STSUWQ: return kvx_expand_builtin_stsuwq(target, exp);
+    case KVX_BUILTIN_STSUWO: return kvx_expand_builtin_stsuwo(target, exp);
+    case KVX_BUILTIN_STSUWX: return kvx_expand_builtin_stsuwx(target, exp);
     case KVX_BUILTIN_STSUD: return kvx_expand_builtin_stsud (target, exp);
     case KVX_BUILTIN_STSUDP: return kvx_expand_builtin_stsudp (target, exp);
     case KVX_BUILTIN_STSUDQ: return kvx_expand_builtin_stsudq (target, exp);
     case KVX_BUILTIN_STSUDO: return kvx_expand_builtin_stsudo (target, exp);
+
     case KVX_BUILTIN_SBMM8: return kvx_expand_builtin_sbmm8 (target, exp);
     case KVX_BUILTIN_SBMMT8: return kvx_expand_builtin_sbmmt8 (target, exp);
 
