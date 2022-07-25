@@ -1,13 +1,12 @@
 {
   "linters": {
-        "clang-format": {
-            "type": "clang-format",
-            "bin": "/work/common/tools/creduce-llvm/root/bin/clang-format",
-            "flags": ["-style=file"],
-            "include": [
-                "(\\.(c|h)$)",
-                "(\\.(cpp|hpp)$)"
-                ]
-        }
+    "clang-format": {
+      "type": "script-and-regex",
+        "script-and-regex.script": "bash -c './lint.sh \"$0\"'",
+        "script-and-regex.regex": "/^(?P<severity>warning|error|autofix):(?P<line>[0-9]+) (?P<message>.*)$/m",
+        "include": [
+          "(\\.(c|cc|cpp|h)$)"
+        ]
+    }
   }
 }
