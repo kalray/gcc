@@ -1,3 +1,5 @@
+HOST_LIBGCC2_CFLAGS += -ffunction-sections -fdata-sections
+
 LIB2ADD += $(srcdir)/config/kvx/divmoddi.c \
            $(srcdir)/config/kvx/divmodsi.c \
            $(srcdir)/config/kvx/divmodvxdi.c \
