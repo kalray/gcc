@@ -1,7 +1,7 @@
 TM_H += $(srcdir)/config/kvx/kvx-protos.h
 PASSES_EXTRA += $(srcdir)/config/kvx/kvx-passes.def
 
-kvx-prologue-stack-limit.o: $(srcdir)/config/kvx/kvx-prologue-stack-limit.c
+kvx-prologue-stack-limit.o: $(srcdir)/config/kvx/kvx-prologue-stack-limit.cc
 	$(COMPILE) $<
 	$(POSTCOMPILE)
 

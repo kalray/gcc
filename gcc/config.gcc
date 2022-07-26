@@ -576,7 +576,7 @@ kvx-*-*)
 		*)
 			;;
 	esac
-	target_gtfiles="\$(srcdir)/config/kvx/kvx-builtins.c"
+	target_gtfiles="\$(srcdir)/config/kvx/kvx-builtins.cc"
 	;;
 esac
 
