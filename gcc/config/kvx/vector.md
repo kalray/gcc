@@ -5523,17 +5523,6 @@
   }
 )
 
-(define_expand "recip<mode>2"
-  [(match_operand:VXSF 0 "register_operand" "")
-   (match_operand:VXSF 1 "register_operand" "")]
-  ""
-  {
-    rtx rm = gen_rtx_CONST_STRING (VOIDmode, "");
-    emit_insn (gen_kvx_frec<suffix> (operands[0], operands[1], rm));
-    DONE;
-  }
-)
-
 (define_expand "rsqrt<mode>2"
   [(match_operand:VXSF 0 "register_operand" "")
    (match_operand:VXSF 1 "register_operand" "")]
@@ -6030,9 +6019,9 @@
   {
     for (int i = 0; i < 2; i++)
       {
-        rtx opnd0 = gen_rtx_SUBREG (V2SFmode, operands[0], i*8);
-        rtx opnd1 = gen_rtx_SUBREG (V2SFmode, operands[1], i*8);
-        rtx opnd2 = gen_rtx_SUBREG (V2SFmode, operands[2], i*8);
+        rtx opnd0 = simplify_gen_subreg (V2SFmode, operands[0], V4SFmode, i*8);
+        rtx opnd1 = simplify_gen_subreg (V2SFmode, operands[1], V4SFmode, i*8);
+        rtx opnd2 = simplify_gen_subreg (V2SFmode, operands[2], V4SFmode, i*8);
         emit_insn (gen_kvx_fcdivwp (opnd0, opnd1, opnd2, operands[3]));
       }
     DONE;
@@ -6309,9 +6298,9 @@
   {
     for (int i = 0; i < 2; i++)
       {
-        rtx opnd0 = gen_rtx_SUBREG (DFmode, operands[0], i*8);
-        rtx opnd1 = gen_rtx_SUBREG (DFmode, operands[1], i*8);
-        rtx opnd2 = gen_rtx_SUBREG (DFmode, operands[2], i*8);
+        rtx opnd0 = simplify_gen_subreg (DFmode, operands[0], V2DFmode, i*8);
+        rtx opnd1 = simplify_gen_subreg (DFmode, operands[1], V2DFmode, i*8);
+        rtx opnd2 = simplify_gen_subreg (DFmode, operands[2], V2DFmode, i*8);
         emit_insn (gen_kvx_fcdivd (opnd0, opnd1, opnd2, operands[3]));
       }
     DONE;
@@ -6693,9 +6682,9 @@
   {
     for (int i = 0; i < 2; i++)
       {
-        rtx opnd0 = gen_rtx_SUBREG (<HALF>mode, operands[0], i*16);
-        rtx opnd1 = gen_rtx_SUBREG (<HALF>mode, operands[1], i*16);
-        rtx opnd2 = gen_rtx_SUBREG (<HALF>mode, operands[2], i*16);
+        rtx opnd0 = simplify_gen_subreg (<HALF>mode, operands[0], <MODE>mode, i*16);
+        rtx opnd1 = simplify_gen_subreg (<HALF>mode, operands[1], <MODE>mode, i*16);
+        rtx opnd2 = simplify_gen_subreg (<HALF>mode, operands[2], <MODE>mode, i*16);
         emit_insn (gen_copysign<half>3 (opnd0, opnd1, opnd2));
       }
     DONE;
@@ -6966,9 +6955,9 @@
   {
     for (int i = 0; i < 4; i++)
       {
-        rtx opnd0 = gen_rtx_SUBREG (V2SFmode, operands[0], i*8);
-        rtx opnd1 = gen_rtx_SUBREG (V2SFmode, operands[1], i*8);
-        rtx opnd2 = gen_rtx_SUBREG (V2SFmode, operands[2], i*8);
+        rtx opnd0 = simplify_gen_subreg (V2SFmode, operands[0], V8SFmode, i*8);
+        rtx opnd1 = simplify_gen_subreg (V2SFmode, operands[1], V8SFmode, i*8);
+        rtx opnd2 = simplify_gen_subreg (V2SFmode, operands[2], V8SFmode, i*8);
         emit_insn (gen_kvx_fcdivwp (opnd0, opnd1, opnd2, operands[3]));
       }
     DONE;
@@ -7216,9 +7205,9 @@
   {
     for (int i = 0; i < 2; i++)
       {
-        rtx opnd0 = gen_rtx_SUBREG (V2DFmode, operands[0], i*16);
-        rtx opnd1 = gen_rtx_SUBREG (V2DFmode, operands[1], i*16);
-        rtx opnd2 = gen_rtx_SUBREG (V2DFmode, operands[2], i*16);
+        rtx opnd0 = simplify_gen_subreg (V2DFmode, operands[0], V4DFmode, i*16);
+        rtx opnd1 = simplify_gen_subreg (V2DFmode, operands[1], V4DFmode, i*16);
+        rtx opnd2 = simplify_gen_subreg (V2DFmode, operands[2], V4DFmode, i*16);
         emit_insn (gen_copysignv2df3 (opnd0, opnd1, opnd2));
       }
     DONE;
@@ -7306,9 +7295,9 @@
   {
     for (int i = 0; i < 4; i++)
       {
-        rtx opnd0 = gen_rtx_SUBREG (DFmode, operands[0], i*8);
-        rtx opnd1 = gen_rtx_SUBREG (DFmode, operands[1], i*8);
-        rtx opnd2 = gen_rtx_SUBREG (DFmode, operands[2], i*8);
+        rtx opnd0 = simplify_gen_subreg (DFmode, operands[0], V4DFmode, i*8);
+        rtx opnd1 = simplify_gen_subreg (DFmode, operands[1], V4DFmode, i*8);
+        rtx opnd2 = simplify_gen_subreg (DFmode, operands[2], V4DFmode, i*8);
         emit_insn (gen_kvx_fcdivd (opnd0, opnd1, opnd2, operands[3]));
       }
     DONE;
