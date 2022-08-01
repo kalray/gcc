@@ -2503,7 +2503,7 @@ verify_const_ready_arg (rtx arg, const char *name, const char *where)
 	return arg;
     }
   if (GET_MODE (arg) == SImode)
-    return arg;
+    return force_not_mem (arg);
   error ("__builtin_kvx_%s expects a boolean value in %s argument.", name,
 	 where);
   return 0;
