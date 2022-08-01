@@ -77,8 +77,8 @@
 )
 
 (define_insn "*fcomp<cfx>"
-  [(set (match_operand:DI 0 "register_operand" "=r,r")
-        (match_operator:DI 1 "float_comparison_operator"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (match_operator:SIDI 1 "float_comparison_operator"
          [(match_operand:ALLF 2 "register_operand" "r,r")
           (match_operand:ALLF 3 "register_f32_operand" "r,H32")]))]
   ""

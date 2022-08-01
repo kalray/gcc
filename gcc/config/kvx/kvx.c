@@ -1460,44 +1460,12 @@ kvx_excess_precision (enum excess_precision_type type)
 static bool
 kvx_vector_mode_supported_p (enum machine_mode mode)
 {
-  switch (mode)
-    {
-    // 64-bit modes
-    case E_V8QImode:
-    case E_V4HImode:
-    case E_V2SImode:
-    case E_V4HFmode:
-    case E_V2SFmode:
-    case E_V1DImode:
-    // 128-bit modes
-    case E_V16QImode:
-    case E_V8HImode:
-    case E_V4SImode:
-    case E_V2DImode:
-    case E_V8HFmode:
-    case E_V4SFmode:
-    case E_V2DFmode:
-    // 256-bit modes
-    case E_V32QImode:
-    case E_V16HImode:
-    case E_V8SImode:
-    case E_V4DImode:
-    case E_V16HFmode:
-    case E_V8SFmode:
-    case E_V4DFmode:
-    // 512-bit modes
-    case E_V64QImode:
-    case E_V32HImode:
-    case E_V16SImode:
-    case E_V8DImode:
-    case E_V32HFmode:
-    case E_V16SFmode:
-    case E_V8DFmode:
-      return true;
-    default:
-      break;
-    }
-  return kvx_extension_mode_p (mode);
+  if (kvx_extension_mode_p (mode))
+    return true;
+
+  // In core, support up to 64-byte vectors (8 registers).
+  unsigned size = GET_MODE_SIZE (mode);
+  return (size >= UNITS_PER_WORD && size <= UNITS_PER_WORD * 8);
 }
 
 static bool
@@ -1512,24 +1480,12 @@ kvx_support_vector_misalignment (enum machine_mode mode ATTRIBUTE_UNUSED,
 static machine_mode
 kvx_vectorize_preferred_simd_mode (scalar_mode mode)
 {
-  switch (mode)
-    {
-    case E_HImode:
-      return V8HImode;
-    case E_SImode:
-      return V4SImode;
-    case E_DImode:
-      return V2DImode;
-    case E_HFmode:
-      return V8HFmode;
-    case E_SFmode:
-      return V4SFmode;
-    case E_DFmode:
-      return V2DFmode;
-    default:
-      break;
-    }
-  return word_mode;
+  scalar_mode inner_mode = GET_MODE_INNER (mode);
+  unsigned inner_size = GET_MODE_SIZE (inner_mode);
+  int nunits = (UNITS_PER_WORD * 2) / inner_size;
+  if (nunits <= 1)
+    return word_mode;
+  return mode_for_vector (inner_mode, nunits).require ();
 }
 
 static bool
@@ -3130,44 +3086,24 @@ kvx_canonicalize_comparison (int *code, rtx *op0, rtx *op1,
 static enum machine_mode
 kvx_get_predicate_mode (enum machine_mode mode)
 {
-  switch (mode)
+  if (VECTOR_MODE_P (mode))
     {
-    // 64-bit modes
-    case E_V4HFmode:
-      return V4HImode;
-    case E_V2SFmode:
-      return V2SImode;
-    // 128-bit modes
-    case E_V8HFmode:
-      return V8HImode;
-    case E_V4SFmode:
-      return V4SImode;
-    case E_V2DFmode:
-      return V2DImode;
-    // 256-bit modes
-    case E_V16HFmode:
-      return V16HImode;
-    case E_V8SFmode:
-      return V8SImode;
-    case E_V4DFmode:
-      return V4DImode;
-    // 512-bit modes
-    case E_V32HFmode:
-      return E_V32HImode;
-    case E_V16SFmode:
-      return E_V16SImode;
-    case E_V8DFmode:
-      return E_V8DImode;
-    // Scalar modes
-    case E_HFmode:
-    case E_SFmode:
-    case E_DFmode:
-      return DImode;
-    // Other modes
-    default:
-      break;
+      int nunits = GET_MODE_NUNITS (mode);
+      scalar_mode inner_mode = GET_MODE_INNER (mode);
+      scalar_int_mode comp_mode = int_mode_for_mode (inner_mode).require ();
+      if (GET_MODE_NUNITS (mode) == 1)
+	return comp_mode;
+
+      return mode_for_vector (comp_mode, nunits).require ();
     }
-  return mode;
+
+  if (GET_MODE_SIZE (mode) <= GET_MODE_SIZE (SImode))
+    return SImode;
+
+  if (GET_MODE_SIZE (mode) <= GET_MODE_SIZE (DImode))
+    return DImode;
+
+  return int_mode_for_mode (mode).require ();
 }
 
 /* Emulate V<n>QI comparisons by expanding them to V4HI comparisons. */
@@ -3461,61 +3397,21 @@ kvx_expand_masked_move (rtx target, rtx select1, rtx select2, rtx mask)
 static enum machine_mode
 kvx_get_chunk_mode (enum machine_mode mode)
 {
-  switch (mode)
+  machine_mode chunk_mode = mode;
+  if (VECTOR_MODE_P (mode))
     {
-    // 64-bit modes
-    case E_V1DImode:
-      return DImode;
-    // 128-bit modes
-    case E_V16QImode:
-      return V8QImode;
-    case E_V8HImode:
-      return V4HImode;
-    case E_V4SImode:
-      return V2SImode;
-    case E_V2DImode:
-      return DImode;
-    case E_V8HFmode:
-      return V4HFmode;
-    case E_V4SFmode:
-      return V2SFmode;
-    case E_V2DFmode:
-      return DFmode;
-    // 256-bit modes
-    case E_V32QImode:
-      return V8QImode;
-    case E_V16HImode:
-      return V4HImode;
-    case E_V8SImode:
-      return V2SImode;
-    case E_V4DImode:
-      return DImode;
-    case E_V16HFmode:
-      return V4HFmode;
-    case E_V8SFmode:
-      return V2SFmode;
-    case E_V4DFmode:
-      return DFmode;
-    // 512-bit modes
-    case E_V64QImode:
-      return V8QImode;
-    case E_V32HImode:
-      return V4HImode;
-    case E_V16SImode:
-      return V2SImode;
-    case E_V8DImode:
-      return DImode;
-    case E_V32HFmode:
-      return V4HFmode;
-    case E_V16SFmode:
-      return V2SFmode;
-    case E_V8DFmode:
-      return DFmode;
-    // Other modes
-    default:
-      break;
+      scalar_mode inner_mode = GET_MODE_INNER (mode);
+      unsigned inner_size = GET_MODE_SIZE (inner_mode);
+      if (inner_size >= UNITS_PER_WORD)
+	chunk_mode = inner_mode;
+      else
+	{
+	  unsigned nunits = UNITS_PER_WORD / inner_size;
+	  chunk_mode = mode_for_vector (inner_mode, nunits).require ();
+	}
     }
-  return mode;
+  gcc_assert (GET_MODE_SIZE (chunk_mode) == UNITS_PER_WORD);
+  return chunk_mode;
 }
 
 void
@@ -5055,7 +4951,7 @@ kvx_const_vector_value (rtx x, int slice)
     {
       machine_mode mode = GET_MODE (x);
       machine_mode inner_mode = GET_MODE_INNER (mode);
-      int index = slice * (8 / GET_MODE_SIZE (inner_mode));
+      int index = slice * (UNITS_PER_WORD / GET_MODE_SIZE (inner_mode));
       if (inner_mode == QImode)
 	{
 	  HOST_WIDE_INT val_0 = INTVAL (CONST_VECTOR_ELT (x, index + 0));
@@ -5859,7 +5755,7 @@ kvx_rtx_costs (rtx x, machine_mode mode, int outer_code,
       *total = speed ? 2 * nwords : 8 * nwords;
       if (outer_code == SET)
 	{
-	  *total += *total = kvx_type_tiny_cost (nwords, 0, speed);
+	  *total += kvx_type_tiny_cost (nwords, 0, speed);
 	}
       goto end_recurse;
 
