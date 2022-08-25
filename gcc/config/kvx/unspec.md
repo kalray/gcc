@@ -106,6 +106,7 @@
         UNSPEC_SETSIGN
 
         UNSPEC_FREC
+        UNSPEC_FLOW
         UNSPEC_FRSR
         UNSPEC_FDOT2
 

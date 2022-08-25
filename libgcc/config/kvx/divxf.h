@@ -10,6 +10,8 @@
   the algos
 */
 
+#define UNUSED(a) a __attribute__((unused))
+
 typedef __INT32_TYPE__ int32_t;
 typedef __UINT32_TYPE__ uint32_t;
 typedef __INT64_TYPE__ int64_t;
@@ -218,8 +220,8 @@ CONCAT4(__divm3,_,MODE1,_tail) (fp_type r2, fp_type q_star, fp_type y3,       \
   /* Step 5: detect midpoint subnormal */                                     \
   int final_exp = r_dq.f.e + k;                                               \
   int subnormal_midpoint_detected = 0;                                        \
-  int subnormal_shift = 0;                                                    \
-  if (!__builtin_strcmp (#mode1, "rn"))                                                 \
+  int UNUSED (subnormal_shift) = 0;                                           \
+  if (!__builtin_strcmp (#mode1, "rn"))                                       \
     {                                                                         \
       /* calculate with explicit bit in case that bit ends up                 \
        * being the round bit */                                               \
@@ -235,7 +237,7 @@ CONCAT4(__divm3,_,MODE1,_tail) (fp_type r2, fp_type q_star, fp_type y3,       \
                                                                               \
   /* the rescale operation in the general case */                             \
   FP_UINT res;                                                                \
-  fp_type res_r_cs = res.d =                                                  \
+  fp_type UNUSED (res_r_cs) = res.d =                                         \
     __builtin_kvx_fmul (r_dq.d, scale.d, "" SILENT_STRING);                   \
                                                                               \
   if (!__builtin_strcmp (#mode1, "rn"))                                       \
@@ -313,10 +315,10 @@ CONCAT2(__divm3,MODE1) (fp_type a, fp_type b)                                 \
   /* Step 5: detect midpoint subnormal */                                     \
   int final_exp = r_dq.f.e + k;                                               \
   int subnormal_midpoint_detected = 0;                                        \
-  int subnormal_shift = 0;                                                    \
+  int UNUSED (subnormal_shift) = 0;                                                    \
   if (!__builtin_strcmp (#mode1, "rn"))                                       \
     {                                                                         \
-      int subnormal_midpoint_detected = 0;                                    \
+      int UNUSED (subnormal_midpoint_detected) = 0;                                    \
       /* calculate with explicit bit in case that bit ends up being the round \
        * bit */                                                               \
       int subnormal_shift = ((r_dq.f.m | ONE << FP_TYPE_MANTISSA_SIZE)        \
@@ -330,7 +332,7 @@ CONCAT2(__divm3,MODE1) (fp_type a, fp_type b)                                 \
   FP_UINT scale = rescale_float (&final_exp, &r_dq, is_inexact, &ev);         \
                                                                               \
   /* the rescale operation in the general case */                             \
-  fp_type res_rn = dres.d =                                                   \
+  fp_type UNUSED (res_rn) = dres.d =                                                   \
     __builtin_kvx_fmul (r_dq.d, scale.d, "." #mode1 SILENT_STRING);           \
                                                                               \
   if (!__builtin_strcmp (#mode1, "rn"))                                       \
@@ -496,6 +498,7 @@ rescale_float (int *final_exp, FP_UINT * r_dq, int is_inexact,                \
                                                                               \
   return scale;                                                               \
 }                                                                             \
-// #define SPECIALIZE
+
+//#define SPECIALIZE
 
 #endif //_DIVXF3_H_

@@ -2672,6 +2672,26 @@
   }
 )
 
+;; TODO: FIXME
+;; UNSPEC to get the low part of a V2SF
+;; It should be possible to use simplify_gen_subreg (SFmode, op, V2SFmode, 0)
+;; but, due to a bug in the inliner triggered by simde_mm512_recip_ps (in svml.c
+;; in simde), the types at the boundary of simde_mm512_loadu_ps (which does a
+;; memcpy to convert types) are partially lost when it is inlined, resulting in
+;; a (subreg:SF (subreg:V2SF (reg:V64QI ...))) which can't be processed.
+;; This is currently only used by kvx_frecwp, but might be needed at other
+;; places such as kvx_frsrwp. I let them untouched because I want to know when
+;; it will break there as well.
+
+(define_insn_and_split "kvx_floww"
+  [(set (match_operand:SF 0 "register_operand" "=r")
+        (unspec:SF [(match_operand:V2SF 1 "register_operand" "0")] UNSPEC_FLOW))]
+  ""
+  "#"
+  "reload_completed"
+  [(use (const_int 0))]
+)
+
 (define_expand "kvx_frecwp"
   [(match_operand:V2SF 0 "register_operand" "")
    (match_operand:V2SF 1 "register_operand" "")
@@ -2680,8 +2700,9 @@
   {
     rtx op0x = gen_reg_rtx (SFmode);
     rtx op0y = gen_reg_rtx (SFmode);
-    rtx op1x = simplify_gen_subreg (SFmode, operands[1], V2SFmode, 0);
+    rtx op1x = gen_reg_rtx (SFmode);
     rtx op1y = gen_reg_rtx (SFmode);
+    emit_insn (gen_kvx_floww (op1x, operands[1]));
     emit_insn (gen_kvx_fhighw (op1y, operands[1]));
     emit_insn (gen_kvx_frecw (op0x, op1x, operands[2]));
     emit_insn (gen_kvx_frecw (op0y, op1y, operands[2]));
@@ -2698,8 +2719,8 @@
   {
     for (int i = 0; i < 2; i++)
       {
-        rtx opnd0 = gen_rtx_SUBREG (V2SFmode, operands[0], i*8);
-        rtx opnd1 = gen_rtx_SUBREG (V2SFmode, operands[1], i*8);
+        rtx opnd0 = simplify_gen_subreg (V2SFmode, operands[0], V4SFmode, i*8);
+        rtx opnd1 = simplify_gen_subreg (V2SFmode, operands[1], V4SFmode, i*8);
         emit_insn (gen_kvx_frecwp (opnd0, opnd1, operands[2]));
       }
     DONE;
@@ -2714,8 +2735,8 @@
   {
     for (int i = 0; i < 4; i++)
       {
-        rtx opnd0 = gen_rtx_SUBREG (V2SFmode, operands[0], i*8);
-        rtx opnd1 = gen_rtx_SUBREG (V2SFmode, operands[1], i*8);
+        rtx opnd0 = simplify_gen_subreg (V2SFmode, operands[0], V8SFmode, i*8);
+        rtx opnd1 = simplify_gen_subreg (V2SFmode, operands[1], V8SFmode, i*8);
         emit_insn (gen_kvx_frecwp (opnd0, opnd1, operands[2]));
       }
     DONE;
@@ -2742,7 +2763,6 @@
   "frsrw%2 %0 = %1"
   [(set_attr "type" "alu_full_sfu")]
 )
-
 (define_expand "kvx_frsrwp"
   [(match_operand:V2SF 0 "register_operand" "")
    (match_operand:V2SF 1 "register_operand" "")

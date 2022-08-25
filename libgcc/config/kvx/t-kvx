@@ -7,7 +7,12 @@ LIB2ADD += $(srcdir)/config/kvx/divmoddi.c \
            $(srcdir)/config/kvx/divmodvxhi.c \
            $(srcdir)/config/kvx/divmodvxqi.c \
            $(srcdir)/config/kvx/divsf3.c \
-           $(srcdir)/config/kvx/divdf3.c
+           $(srcdir)/config/kvx/divdf3.c \
+           $(srcdir)/config/kvx/divv2df3.c \
+           $(srcdir)/config/kvx/divv2sf3.c \
+           $(srcdir)/config/kvx/divv4df3.c \
+           $(srcdir)/config/kvx/divv4sf3.c \
+           $(srcdir)/config/kvx/divv8sf3.c
 
 crtcxa.o: $(srcdir)/config/kvx/crtcxa.c
 	$(crt_compile) -c $<
