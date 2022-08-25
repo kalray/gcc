@@ -17,7 +17,7 @@ static __divm3_rx_t __divm3_rx[] = {
 fp_type
 __divm3 (fp_type a, fp_type b)
 {
-  return __div3m_rx[GET_ROUND] (a, b);
+  return __divm3_rx[GET_ROUND] (a, b);
 }
 
 define_specialized_divm3 (RU, ru, rd);

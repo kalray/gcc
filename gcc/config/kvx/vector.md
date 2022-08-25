@@ -6890,7 +6890,7 @@
   [(set (match_operand:VXSF 0 "register_operand" "")
         (div:VXSF (match_operand:VXSF 1 "reg_or_float1_operand" "")
                   (match_operand:VXSF 2 "register_operand" "")))]
-  "flag_reciprocal_math || flag_unsafe_math_optimizations"
+  ""
   {
     rtx rm = gen_rtx_CONST_STRING (VOIDmode, "");
     rtx rn = gen_rtx_CONST_STRING (VOIDmode, ".rn");
@@ -6905,7 +6905,7 @@
         emit_insn (gen_kvx_frec<suffix> (t, b, rm));
         emit_insn (gen_kvx_fmul<suffix> (operands[0], a, t, rm));
       }
-    else // (flag_unsafe_math_optimizations)
+    else if (flag_unsafe_math_optimizations)
       {
         rtx re = gen_reg_rtx (<MODE>mode);
         emit_insn (gen_kvx_frec<suffix> (re, b, rn));
@@ -6920,6 +6920,13 @@
         rtx y2 = operands[0];
         emit_insn (gen_kvx_ffma<suffix> (y2, e1, re, y1, rm));
       }
+     else
+       {
+         emit_library_call_value
+           (gen_rtx_SYMBOL_REF (Pmode, "__div<mode>3"),
+            operands[0], LCT_CONST, <MODE>mode,
+            operands[1], <MODE>mode, operands[2], <MODE>mode);
+       }
     DONE;
   }
 )
@@ -6957,17 +6964,10 @@
                   (match_operand:VXDF 2 "register_operand" "")))]
   ""
   {
-    unsigned mode_size = GET_MODE_SIZE (<MODE>mode);
-    for (unsigned offset = 0; offset < mode_size; offset += UNITS_PER_WORD)
-      {
-        rtx op0 = simplify_gen_subreg (DFmode, operands[0], <MODE>mode, offset);
-        rtx op1 = simplify_gen_subreg (DFmode, operands[1], <MODE>mode, offset);
-        rtx op2 = simplify_gen_subreg (DFmode, operands[2], <MODE>mode, offset);
-        emit_library_call_value
-          (gen_rtx_SYMBOL_REF (Pmode, "__divdf3"),
-          op0, LCT_CONST, DFmode,
-          op1, DFmode, op2, DFmode);
-      }
+    emit_library_call_value
+      (gen_rtx_SYMBOL_REF (Pmode, "__div<mode>3"),
+       operands[0], LCT_CONST, <MODE>mode,
+       operands[1], <MODE>mode, operands[2], <MODE>mode);
     DONE;
   }
 )
