@@ -1609,8 +1609,8 @@
 )
 
 (define_expand "kvx_shift<lsvs>"
-  [(match_operand:W128A 0 "register_operand" "")
-   (match_operand:W128A 1 "register_operand" "")
+  [(match_operand:V2DA 0 "register_operand" "")
+   (match_operand:V2DA 1 "register_operand" "")
    (match_operand 2 "sixbits_unsigned_operand" "")
    (match_operand:<INNER> 3 "nonmemory_operand" "")]
   ""
@@ -1694,8 +1694,8 @@
 )
 
 (define_expand "kvx_shift<lsvs>"
-  [(match_operand:W256A 0 "register_operand" "")
-   (match_operand:W256A 1 "register_operand" "")
+  [(match_operand:V4DA 0 "register_operand" "")
+   (match_operand:V4DA 1 "register_operand" "")
    (match_operand:SI 2 "register_operand" "")
    (match_operand:<INNER> 3 "nonmemory_operand" "")]
   ""
@@ -1774,8 +1774,8 @@
 )
 
 (define_insn_and_split "kvx_cat<lsvs>"
-  [(set (match_operand:W128A 0 "register_operand" "=r")
-        (vec_concat:W128A (match_operand:<HALF> 1 "register_operand" "0")
+  [(set (match_operand:V2DA 0 "register_operand" "=r")
+        (vec_concat:V2DA (match_operand:<HALF> 1 "register_operand" "0")
                           (match_operand:<HALF> 2 "register_operand" "r")))]
   ""
   "#"
