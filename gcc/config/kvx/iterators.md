@@ -320,12 +320,6 @@
 ;; Iterator for floating-point compare modes (up to 64-bit)
 (define_mode_iterator ALLF [SF DF])
 
-;; Attribute for ALLF compares.
-(define_mode_attr cfx [
-  (SF "w")
-  (DF "d")
-])
-
 ;; Scalar modes used by the mov pattern that fit in a register.
 ;; TI and OI and to be handled elsewhere.
 ;; (define_mode_iterator ALLIF [QI HI HF SI SF DI DF HC SC])
@@ -984,12 +978,6 @@
   (V8DF    "d")
 ])
 
-;; Iterator for all the small element 64-bit vector modes.
-(define_mode_iterator S64A [
-  V8QI V4HI V2SI
-  V4HF V2SF
-])
-
 ;; Iterator for the non-byte small element 64-bit vector integer modes.
 (define_mode_iterator S64I [
   V4HI V2SI
@@ -1015,6 +1003,18 @@
   V4HF V2SF
 ])
 
+;; Iterator for all the small element 64-bit vector modes.
+(define_mode_iterator S64A [
+  V8QI V4HI V2SI
+  V4HF V2SF
+])
+
+;; Iterator for the non-byte small element 64-bit vector modes.
+(define_mode_iterator S64B [
+  (V8QI "KV3_2") V4HI V2SI
+  V4HF V2SF
+])
+
 ;; Iterator for the non-byte small element 128-bit vector integer modes.
 (define_mode_iterator S128I [
   V8HI V4SI
@@ -1032,6 +1032,18 @@
 
 ;; Iterator for the small element 128-bit vector FP modes.
 (define_mode_iterator S128F [
+  V8HF V4SF
+])
+
+;; Iterator for all the small element 128-bit vector modes.
+(define_mode_iterator S128A [
+  V16QI V8HI V4SI
+  V8HF V4SF
+])
+
+;; Iterator for the non-byte small element 128-bit vector modes.
+(define_mode_iterator S128B [
+  (V16QI "KV3_2") V8HI V4SI
   V8HF V4SF
 ])
 
@@ -1080,11 +1092,6 @@
   V8HF V4SF V2DF
 ])
 
-;; Iterator for the 64-bit element 128-bit vector modes.
-(define_mode_iterator W128A [
-  V2DI V2DF
-])
-
 ;; Iterator for V16HI V4DI
 (define_mode_iterator V256I [
   V16HI V4DI
@@ -1110,20 +1117,29 @@
   V16HF V8SF V4DF
 ])
 
-;; Iterator for V16QI S128I S128F
-(define_mode_iterator S128A [
-  V16QI V8HI V4SI
-  V8HF V4SF
-])
-
 ;; Iterator for V32QI S256I S256F
 (define_mode_iterator S256A [
   V32QI V16HI V8SI
   V16HF V8SF
 ])
 
+;; Iterator for the 64-bit element 128-bit vector modes.
+(define_mode_iterator V2DA [
+  V2DI V2DF
+])
+
+;; Iterator for the 16-bit element 256-bit vector modes.
+(define_mode_iterator V16HA [
+  V16HI V16HF
+])
+
+;; Iterator for the 32-bit element 256-bit vector modes.
+(define_mode_iterator V8SA [
+  V8SI V8SF
+])
+
 ;; Iterator for the 64-bit element 256-bit vector modes.
-(define_mode_iterator W256A [
+(define_mode_iterator V4DA [
   V4DI V4DF
 ])
 
