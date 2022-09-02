@@ -603,38 +603,6 @@
 )
 
 
-;; KVX_XLOADS512, KVX_XLOADSC512
-
-(define_insn "kvx_xloads512"
-  [(set (match_operand:X512 0 "register_operand" "=x,x,x")
-        (unspec:X512 [(match_operand:X512 1 "register_operand" "0,0,0")
-                        (match_operand:X256 2 "memory_operand" "a,b,m")
-                        (match_operand 3 "" "")] UNSPEC_XLOADS))]
-  ""
-  "xlo%3%X2 %0 = %2"
-  [(set_attr_alternative "type"
-    [(if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_load_uncached") (const_string "lsu_load"))
-     (if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_load_uncached_x") (const_string "lsu_load_x"))
-     (if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_load_uncached_y") (const_string "lsu_load_y"))])
-   (set_attr "length" "4, 8, 12")]
-)
-
-(define_insn "kvx_xloadsc512"
-  [(set (match_operand:X512 0 "register_operand" "=x,x,x")
-        (unspec:X512 [(match_operand:X512 1 "register_operand" "0,0,0")
-                        (match_operand:X256 2 "memfoiled_operand" "c,d,e")
-                        (match_operand:DI 3 "register_operand" "r,r,r")
-                        (match_operand 4 "" "")] UNSPEC_XLOADS))]
-  ""
-  "xlo%4%X2 %3? %0 = %O2"
-  [(set_attr_alternative "type"
-    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_load_uncached") (const_string "lsu_load"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_load_uncached_x") (const_string "lsu_load_x"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_load_uncached_y") (const_string "lsu_load_y"))])
-   (set_attr "length" "4, 8, 12")]
-)
-
-
 ;; KVX_XLOADS1024, KVX_XLOADSC1024
 
 (define_insn "kvx_xloads1024"
