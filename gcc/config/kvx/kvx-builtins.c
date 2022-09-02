@@ -778,9 +778,7 @@ enum kvx_builtin
   KVX_BUILTIN_XSTOREC512,
   KVX_BUILTIN_XSTOREC1024,
 
-  KVX_BUILTIN_XLOADS512,
   KVX_BUILTIN_XLOADS1024,
-  KVX_BUILTIN_XLOADSC512,
   KVX_BUILTIN_XLOADSC1024,
 
   KVX_BUILTIN_XPRELOAD512,
@@ -1767,9 +1765,7 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN_VA (XSTOREC512, "xstorec512", VOID, X512, VPTR, UINT64, STORECOND/*, BOOL*/); // Extension
   ADD_KVX_BUILTIN_VA (XSTOREC1024, "xstorec1024", VOID, X1024, VPTR, UINT128, STORECOND/*, BOOL*/); // Extension
 
-  ADD_KVX_BUILTIN_VA (XLOADS512, "xloads512", X512, X512, CVPTR, XLOADH/*, BOOL*/); // Extension
   ADD_KVX_BUILTIN_VA (XLOADS1024, "xloads1024", X1024, X1024, CVPTR, XLOADQ/*, BOOL*/); // Extension
-  ADD_KVX_BUILTIN_VA (XLOADSC512, "xloadsc512", X512, X512, CVPTR, UINT64, XLOADHC/*, BOOL*/); // Extension
   ADD_KVX_BUILTIN_VA (XLOADSC1024, "xloadsc1024", X1024, X1024, CVPTR, UINT64, XLOADQC/*, BOOL*/); // Extension
 
   ADD_KVX_BUILTIN_VA (XPRELOAD512, "xpreload512", X512, X512, CVPTR, UINT64, XPRELOAD/*, BOOL*/); // Extension
@@ -2167,25 +2163,6 @@ build_variant_arg (tree arg, const char *name)
 }
 
 static rtx
-build_xloadh_arg (tree arg, const char *name)
-{
-  if (KV3_1)
-    error ("__builtin_kvx_%s is not available for the kv3-1.", name);
-  const char *modifier = kvx_tree_string_constant (arg, name);
-  static const char *table[] = {
-    ".h0", ".h0.s", ".h0.u", ".h0.us",
-    ".h1", ".h1.s", ".h1.u", ".h1.us",
-  };
-  for (int i = 0; i < (int) (sizeof (table) / sizeof (*table)); i++)
-    {
-      if (!strcmp (modifier, table[i]))
-	return gen_rtx_CONST_STRING (VOIDmode, table[i]);
-    }
-  error ("__builtin_kvx_%s modifier \"%s\" not recognized.", name, modifier);
-  return 0;
-}
-
-static rtx
 build_xloadq_arg (tree arg, const char *name)
 {
   const char *modifier = kvx_tree_string_constant (arg, name);
@@ -2194,10 +2171,10 @@ build_xloadq_arg (tree arg, const char *name)
     if (modifier[3] == 0 || (modifier[3] == '.' && modifier[4] != 'u'))
       error ("__builtin_kvx_%s requires '.u' or '.us' in modifier.", name);
   static const char *table[] = {
-    ".q0", ".q0.s", ".q0.u", ".q0.us",
-    ".q1", ".q1.s", ".q1.u", ".q1.us",
-    ".q2", ".q2.s", ".q2.u", ".q2.us",
-    ".q3", ".q3.s", ".q3.u", ".q3.us",
+    ".q0", ".s.q0", ".u.q0", ".us.q0",
+    ".q1", ".s.q1", ".u.q1", ".us.q1",
+    ".q2", ".s.q2", ".u.q2", ".us.q2",
+    ".q3", ".s.q3", ".u.q3", ".us.q3",
   };
   for (int i = 0; i < (int) (sizeof (table) / sizeof (*table)); i++)
     {
@@ -2248,51 +2225,26 @@ build_loadcond_arg (tree arg, const char *name)
 }
 
 static rtx
-build_xloadhc_arg (tree arg, const char *name)
-{
-  if (KV3_1)
-    error ("__builtin_kvx_%s is not available for the kv3-1.", name);
-  const char *modifier = kvx_tree_string_constant (arg, name);
-  static const char *table[] = {
-    ".h0.dnez", ".h0.deqz", ".h0.wnez", ".h0.weqz", ".h0.mt", ".h0.mf", ".h0.mtc", ".h0.mfc",
-    ".h0.s.dnez", ".h0.s.deqz", ".h0.s.wnez", ".h0.s.weqz", ".h0.s.mt", ".h0.s.mf", ".h0.s.mtc", ".h0.s.mfc",
-    ".h0.u.dnez", ".h0.u.deqz", ".h0.u.wnez", ".h0.u.weqz", ".h0.u.mt", ".h0.u.mf", ".h0.u.mtc", ".h0.u.mfc",
-    ".h0.us.dnez", ".h0.us.deqz", ".h0.us.wnez", ".h0.us.weqz", ".h0.us.mt", ".h0.us.mf", ".h0.us.mtc", ".h0.us.mfc",
-    ".h1.dnez", ".h1.deqz", ".h1.wnez", ".h1.weqz", ".h1.mt", ".h1.mf", ".h1.mtc", ".h1.mfc",
-    ".h1.s.dnez", ".h1.s.deqz", ".h1.s.wnez", ".h1.s.weqz", ".h1.s.mt", ".h1.s.mf", ".h1.s.mtc", ".h1.s.mfc",
-    ".h1.u.dnez", ".h1.u.deqz", ".h1.u.wnez", ".h1.u.weqz", ".h1.u.mt", ".h1.u.mf", ".h1.u.mtc", ".h1.u.mfc",
-    ".h1.us.dnez", ".h1.us.deqz", ".h1.us.wnez", ".h1.us.weqz", ".h1.us.mt", ".h1.us.mf", ".h1.us.mtc", ".h1.us.mfc",
-  };
-  for (int i = 0; i < (int) (sizeof (table) / sizeof (*table)); i++)
-    {
-      if (!strcmp (modifier, table[i]))
-	return gen_rtx_CONST_STRING (VOIDmode, table[i]);
-    }
-  error ("__builtin_kvx_%s modifier \"%s\" not recognized.", name, modifier);
-  return 0;
-}
-
-static rtx
 build_xloadqc_arg (tree arg, const char *name)
 {
   const char *modifier = kvx_tree_string_constant (arg, name);
   static const char *table[] = {
-    ".q0.dnez", ".q0.deqz", ".q0.wnez", ".q0.weqz", ".q0.mt", ".q0.mf", ".q0.mtc", ".q0.mfc",
-    ".q0.s.dnez", ".q0.s.deqz", ".q0.s.wnez", ".q0.s.weqz", ".q0.s.mt", ".q0.s.mf", ".q0.s.mtc", ".q0.s.mfc",
-    ".q0.u.dnez", ".q0.u.deqz", ".q0.u.wnez", ".q0.u.weqz", ".q0.u.mt", ".q0.u.mf", ".q0.u.mtc", ".q0.u.mfc",
-    ".q0.us.dnez", ".q0.us.deqz", ".q0.us.wnez", ".q0.us.weqz", ".q0.us.mt", ".q0.us.mf", ".q0.us.mtc", ".q0.us.mfc",
-    ".q1.dnez", ".q1.deqz", ".q1.wnez", ".q1.weqz", ".q1.mt", ".q1.mf", ".q1.mtc", ".q1.mfc",
-    ".q1.s.dnez", ".q1.s.deqz", ".q1.s.wnez", ".q1.s.weqz", ".q1.s.mt", ".q1.s.mf", ".q1.s.mtc", ".q1.s.mfc",
-    ".q1.u.dnez", ".q1.u.deqz", ".q1.u.wnez", ".q1.u.weqz", ".q1.u.mt", ".q1.u.mf", ".q1.u.mtc", ".q1.u.mfc",
-    ".q1.us.dnez", ".q1.us.deqz", ".q1.us.wnez", ".q1.us.weqz", ".q1.us.mt", ".q1.us.mf", ".q1.us.mtc", ".q1.us.mfc",
-    ".q2.dnez", ".q2.deqz", ".q2.wnez", ".q2.weqz", ".q2.mt", ".q2.mf", ".q2.mtc", ".q2.mfc",
-    ".q2.s.dnez", ".q2.s.deqz", ".q2.s.wnez", ".q2.s.weqz", ".q2.s.mt", ".q2.s.mf", ".q2.s.mtc", ".q2.s.mfc",
-    ".q2.u.dnez", ".q2.u.deqz", ".q2.u.wnez", ".q2.u.weqz", ".q2.u.mt", ".q2.u.mf", ".q2.u.mtc", ".q2.u.mfc",
-    ".q2.us.dnez", ".q2.us.deqz", ".q2.us.wnez", ".q2.us.weqz", ".q2.us.mt", ".q2.us.mf", ".q2.us.mtc", ".q2.us.mfc",
-    ".q3.dnez", ".q3.deqz", ".q3.wnez", ".q3.weqz", ".q3.mt", ".q3.mf", ".q3.mtc", ".q3.mfc",
-    ".q3.s.dnez", ".q3.s.deqz", ".q3.s.wnez", ".q3.s.weqz", ".q3.s.mt", ".q3.s.mf", ".q3.s.mtc", ".q3.s.mfc",
-    ".q3.u.dnez", ".q3.u.deqz", ".q3.u.wnez", ".q3.u.weqz", ".q3.u.mt", ".q3.u.mf", ".q3.u.mtc", ".q3.u.mfc",
-    ".q3.us.dnez", ".q3.us.deqz", ".q3.us.wnez", ".q3.us.weqz", ".q3.us.mt", ".q3.us.mf", ".q3.us.mtc", ".q3.us.mfc",
+    ".dnez.q0", ".deqz.q0", ".wnez.q0", ".weqz.q0", ".mt.q0", ".mf.q0", ".mtc.q0", ".mfc.q0",
+    ".s.dnez.q0", ".s.deqz.q0", ".s.wnez.q0", ".s.weqz.q0", ".s.mt.q0", ".s.mf.q0", ".s.mtc.q0", ".s.mfc.q0",
+    ".u.dnez.q0", ".u.deqz.q0", ".u.wnez.q0", ".u.weqz.q0", ".u.mt.q0", ".u.mf.q0", ".u.mtc.q0", ".u.mfc.q0",
+    ".us.dnez.q0", ".us.deqz.q0", ".us.wnez.q0", ".us.weqz.q0", ".us.mt.q0", ".us.mf.q0", ".us.mtc.q0", ".us.mfc.q0",
+    ".dnez.q1", ".deqz.q1", ".wnez.q1", ".weqz.q1", ".mt.q1", ".mf.q1", ".mtc.q1", ".mfc.q1",
+    ".s.dnez.q1", ".s.deqz.q1", ".s.wnez.q1", ".s.weqz.q1", ".s.mt.q1", ".s.mf.q1", ".s.mtc.q1", ".s.mfc.q1",
+    ".u.dnez.q1", ".u.deqz.q1", ".u.wnez.q1", ".u.weqz.q1", ".u.mt.q1", ".u.mf.q1", ".u.mtc.q1", ".u.mfc.q1",
+    ".us.dnez.q1", ".us.deqz.q1", ".us.wnez.q1", ".us.weqz.q1", ".us.mt.q1", ".us.mf.q1", ".us.mtc.q1", ".us.mfc.q1",
+    ".dnez.q2", ".deqz.q2", ".wnez.q2", ".weqz.q2", ".mt.q2", ".mf.q2", ".mtc.q2", ".mfc.q2",
+    ".s.dnez.q2", ".s.deqz.q2", ".s.wnez.q2", ".s.weqz.q2", ".s.mt.q2", ".s.mf.q2", ".s.mtc.q2", ".s.mfc.q2",
+    ".u.dnez.q2", ".u.deqz.q2", ".u.wnez.q2", ".u.weqz.q2", ".u.mt.q2", ".u.mf.q2", ".u.mtc.q2", ".u.mfc.q2",
+    ".us.dnez.q2", ".us.deqz.q2", ".us.wnez.q2", ".us.weqz.q2", ".us.mt.q2", ".us.mf.q2", ".us.mtc.q2", ".us.mfc.q2",
+    ".dnez.q3", ".deqz.q3", ".wnez.q3", ".weqz.q3", ".mt.q3", ".mf.q3", ".mtc.q3", ".mfc.q3",
+    ".s.dnez.q3", ".s.deqz.q3", ".s.wnez.q3", ".s.weqz.q3", ".s.mt.q3", ".s.mf.q3", ".s.mtc.q3", ".s.mfc.q3",
+    ".u.dnez.q3", ".u.deqz.q3", ".u.wnez.q3", ".u.weqz.q3", ".u.mt.q3", ".u.mf.q3", ".u.mtc.q3", ".u.mfc.q3",
+    ".us.dnez.q3", ".us.deqz.q3", ".us.wnez.q3", ".us.weqz.q3", ".us.mt.q3", ".us.mf.q3", ".us.mtc.q3", ".us.mfc.q3",
   };
   for (int i = 0; i < (int) (sizeof (table) / sizeof (*table)); i++)
     {
@@ -2416,11 +2368,11 @@ build_xpreload_arg (tree arg, const char *name)
   const char *modifier = kvx_tree_string_constant (arg, name);
   static const char *table[] = {
     "", ".s", ".u", ".us",
-    ".b", ".b.s", ".b.u", ".b.us",
-    ".h", ".h.s", ".h.u", ".h.us",
-    ".w", ".w.s", ".w.u", ".w.us",
-    ".d", ".d.s", ".d.u", ".d.us",
-    ".q", ".q.s", ".q.u", ".q.us",
+    ".b", ".s.b", ".u.b", ".us.b",
+    ".h", ".s.h", ".u.h", ".us.h",
+    ".w", ".s.w", ".u.w", ".us.w",
+    ".d", ".s.d", ".u.d", ".us.d",
+    ".q", ".s.q", ".u.q", ".us.q",
   };
   for (int i = 0; i < (int) (sizeof (table) / sizeof (*table)); i++)
     {
@@ -3978,30 +3930,6 @@ KVX_EXPAND_BUILTIN_STOREC (xstorec512, X512mode, X512mode)
 KVX_EXPAND_BUILTIN_STOREC (xstorec1024, X1024mode, X1024mode)
 
 static rtx
-kvx_expand_builtin_xloads512 (rtx target, tree args)
-{
-  int nargs = call_expr_nargs (args), volatile_p = 0;
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-  rtx arg3 = build_xloadh_arg (CALL_EXPR_ARG (args, 2), "xloads512");
-  arg1 = force_reg (X512mode, arg1);
-  arg2 = gen_rtx_MEM (X256mode, force_reg (Pmode, arg2));
-  if (nargs > 3)
-    {
-      rtx arg4 = expand_normal (CALL_EXPR_ARG (args, 3));
-      arg4 = verify_const_bool_arg (arg4, "xloads512", "fourth");
-      volatile_p |= (INTVAL (arg4) != 0);
-    }
-  MEM_VOLATILE_P (arg2) = volatile_p;
-  if (!target)
-    target = gen_reg_rtx (X512mode);
-  else
-    target = force_reg (X512mode, target);
-  emit_insn (gen_kvx_xloads512 (target, arg1, arg2, arg3));
-  return target;
-}
-
-static rtx
 kvx_expand_builtin_xloads1024 (rtx target, tree args)
 {
   int nargs = call_expr_nargs (args), volatile_p = 0;
@@ -4022,32 +3950,6 @@ kvx_expand_builtin_xloads1024 (rtx target, tree args)
   else
     target = force_reg (X1024mode, target);
   emit_insn (gen_kvx_xloads1024 (target, arg1, arg2, arg3));
-  return target;
-}
-
-static rtx
-kvx_expand_builtin_xloadsc512 (rtx target, tree args)
-{
-  int nargs = call_expr_nargs (args), volatile_p = 0;
-  rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));
-  rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));
-  rtx arg4 = build_xloadhc_arg (CALL_EXPR_ARG (args, 3), "xloadsc512");
-  arg1 = force_reg (X512mode, arg1);
-  arg2 = gen_rtx_MEM (X256mode, force_reg (Pmode, arg2));
-  arg3 = force_reg (DImode, arg3);
-  if (nargs > 4)
-    {
-      rtx arg5 = expand_normal (CALL_EXPR_ARG (args, 4));
-      arg5 = verify_const_bool_arg (arg5, "xloadsc512", "fifth");
-      volatile_p |= (INTVAL (arg5) != 0);
-    }
-  MEM_VOLATILE_P (arg2) = volatile_p;
-  if (!target)
-    target = gen_reg_rtx (X512mode);
-  else
-    target = force_reg (X512mode, target);
-  emit_insn (gen_kvx_xloadsc512 (target, arg1, arg2, arg3, arg4));
   return target;
 }
 
@@ -4986,9 +4888,7 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_XSTOREC512: return kvx_expand_builtin_xstorec512 (target, exp);
     case KVX_BUILTIN_XSTOREC1024: return kvx_expand_builtin_xstorec1024 (target, exp);
 
-    case KVX_BUILTIN_XLOADS512: return kvx_expand_builtin_xloads512 (target, exp);
     case KVX_BUILTIN_XLOADS1024: return kvx_expand_builtin_xloads1024 (target, exp);
-    case KVX_BUILTIN_XLOADSC512: return kvx_expand_builtin_xloadsc512 (target, exp);
     case KVX_BUILTIN_XLOADSC1024: return kvx_expand_builtin_xloadsc1024 (target, exp);
 
     case KVX_BUILTIN_XPRELOAD512: return kvx_expand_builtin_xpreload512 (target, exp);
