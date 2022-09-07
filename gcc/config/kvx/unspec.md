@@ -152,6 +152,8 @@
         UNSPEC_PCREL
         UNSPEC_LOAD
         UNSPEC_LOADC
+        UNSPEC_LOADS
+        UNSPEC_LOADZ
         UNSPEC_XLOAD
         UNSPEC_XLOADC
         UNSPEC_XLOADS
