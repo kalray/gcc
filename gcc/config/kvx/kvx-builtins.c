@@ -2149,7 +2149,7 @@ build_variant_arg (tree arg, const char *name)
   // If kv3-1 coprocessor builtin, modifier must include ".u" or ".us".
   if (KV3_1 && *name == 'x')
     if (modifier[0] == 0 || (modifier[0] == '.' && modifier[1] != 'u'))
-      error ("__builtin_kvx_%s requires '.u' or '.us' in modifier.", name);
+      error ("__builtin_kvx_%s requires '.u' or '.us' in modifier \"%s\".", name, modifier);
   static const char *table[] = {
     "", ".s", ".u", ".us",
   };
@@ -2168,8 +2168,8 @@ build_xloadq_arg (tree arg, const char *name)
   const char *modifier = kvx_tree_string_constant (arg, name);
   // If kv3-1 coprocessor builtin, modifier must include ".u" or ".us".
   if (KV3_1)
-    if (modifier[3] == 0 || (modifier[3] == '.' && modifier[4] != 'u'))
-      error ("__builtin_kvx_%s requires '.u' or '.us' in modifier.", name);
+    if (modifier[0] == 0 || (modifier[0] == '.' && modifier[1] != 'u'))
+      error ("__builtin_kvx_%s requires '.u' or '.us' in modifier \"%s\".", name, modifier);
   static const char *table[] = {
     ".q0", ".s.q0", ".u.q0", ".us.q0",
     ".q1", ".s.q1", ".u.q1", ".us.q1",
@@ -2192,7 +2192,7 @@ build_loadcond_arg (tree arg, const char *name)
   // If kv3-1 coprocessor builtin, modifier must include ".u" or ".us".
   if (KV3_1 && *name == 'x')
     if (modifier[0] == 0 || (modifier[0] == '.' && modifier[1] != 'u'))
-      error ("__builtin_kvx_%s requires \".u\" or \".us\" in modifier.", name);
+      error ("__builtin_kvx_%s requires \".u\" or \".us\" in modifier \"%s\".", name, modifier);
   static const char *table[] = {
     // kv3-1 LD, LQ, LO, XLO and kv3-2 LD, LQ, LO
     ".dnez", ".deqz", ".dltz", ".dgez", ".dlez", ".dgtz", ".odd",
