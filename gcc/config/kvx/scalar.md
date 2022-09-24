@@ -276,9 +276,9 @@
 
 (define_insn "abdsi3_1"
   [(set (match_operand:SI 0 "register_operand" "=r,r,r")
-        (abs:SI (minus:SI (umax:SI (match_operand:SI 1 "register_operand" "r,r,r")
-                                   (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i"))
-                          (umin:SI (match_dup 1) (match_dup 2)))))]
+        (minus:SI (smax:SI (match_operand:SI 1 "register_operand" "r,r,r")
+                           (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i"))
+                  (smin:SI (match_dup 1) (match_dup 2))))]
   "KV3_1"
   "abdw %0 = %1, %2"
   [(set_attr "type" "alu_thin,alu_thin,alu_thin_x")
@@ -287,9 +287,9 @@
 
 (define_insn "abddi3_1"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
-        (abs:DI (minus:DI (umax:DI (match_operand:DI 1 "register_operand" "r,r,r,r")
-                                   (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i"))
-                          (umin:DI (match_dup 1) (match_dup 2)))))]
+        (minus:DI (smax:DI (match_operand:DI 1 "register_operand" "r,r,r,r")
+                           (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i"))
+                  (smin:DI (match_dup 1) (match_dup 2))))]
   "KV3_1"
   "abdd %0 = %1, %2"
   [(set_attr "type" "alu_thin,alu_thin,alu_thin_x,alu_thin_y")
@@ -298,9 +298,9 @@
 
 (define_insn "abd<mode>3_2"
   [(set (match_operand:SIDI 0 "register_operand" "=r,r")
-        (abs:SIDI (minus:SIDI (umax:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
-                                         (match_operand:SIDI 2 "register_s32_operand" "r,B32"))
-                              (umin:SIDI (match_dup 1) (match_dup 2)))))]
+        (minus:SIDI (smax:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
+                               (match_operand:SIDI 2 "register_s32_operand" "r,B32"))
+                    (smin:SIDI (match_dup 1) (match_dup 2))))]
   "KV3_2"
   "abd<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_tiny,alu_tiny_x")
@@ -309,47 +309,47 @@
 ;; zero-extend version of abdsi3
 (define_insn "*abdsi3_zext"
   [(set (match_operand:DI 0 "register_operand" "=r,r")
-        (zero_extend:DI (abs:SI (minus:SI (umax:SI (match_operand:SI 1 "register_operand" "r,r")
-                                                   (match_operand:SI 2 "register_s32_operand" "r,B32"))
-                                          (umin:SI (match_dup 1) (match_dup 2))))))]
+        (zero_extend:DI (minus:SI (smax:SI (match_operand:SI 1 "register_operand" "r,r")
+                                           (match_operand:SI 2 "register_s32_operand" "r,B32"))
+                                  (smin:SI (match_dup 1) (match_dup 2)))))]
   "KV3_2"
   "abdw %0 = %1, %2"
   [(set_attr "type" "alu_tiny,alu_tiny_x")
    (set_attr "length"      "4,         8")]
 )
 
-(define_expand "ssabd<mode>3"
+(define_expand "abds<mode>3"
   [(match_operand:SIDI 0 "register_operand" "")
    (match_operand:SIDI 1 "register_operand" "")
    (match_operand:SIDI 2 "register_s32_operand" "")]
   ""
   {
     if (KV3_1)
-      emit_insn (gen_ssabd<mode>3_1 (operands[0], operands[1], operands[2]));
+      emit_insn (gen_abds<mode>3_1 (operands[0], operands[1], operands[2]));
     else if (KV3_2)
-      emit_insn (gen_ssabd<mode>3_2 (operands[0], operands[1], operands[2]));
+      emit_insn (gen_abds<mode>3_2 (operands[0], operands[1], operands[2]));
     else
       gcc_unreachable ();
     DONE;
   }
 )
 
-(define_insn_and_split "ssabd<mode>3_1"
+(define_insn_and_split "abds<mode>3_1"
   [(set (match_operand:SIDI 0 "register_operand" "=r")
-        (ss_abs:SIDI (minus:SIDI (umax:SIDI (match_operand:SIDI 1 "register_operand" "r")
-                                            (match_operand:SIDI 2 "register_operand" "r"))
-                                 (umin:SIDI (match_dup 2) (match_dup 1)))))
+        (ss_minus:SIDI (smax:SIDI (match_operand:SIDI 1 "register_operand" "r")
+                                  (match_operand:SIDI 2 "register_operand" "r"))
+                       (smin:SIDI (match_dup 1) (match_dup 2))))
    (clobber (match_scratch:SIDI 3 "=&r"))
    (clobber (match_scratch:SIDI 4 "=&r"))]
   "KV3_1"
   "#"
   "KV3_1"
   [(set (match_dup 3)
-        (ss_minus:SIDI (match_dup 1) (match_dup 2)))
+        (smax:SIDI (match_dup 1) (match_dup 2)))
    (set (match_dup 4)
-        (ss_minus:SIDI (match_dup 2) (match_dup 1)))
+        (smin:SIDI (match_dup 1) (match_dup 2)))
    (set (match_dup 0)
-        (smax:SIDI (match_dup 3) (match_dup 4)))]
+        (ss_minus:SIDI (match_dup 3) (match_dup 4)))]
   {
     if (GET_CODE (operands[3]) == SCRATCH)
       operands[3] = gen_reg_rtx (<MODE>mode);
@@ -358,24 +358,86 @@
   }
 )
 
-(define_insn "ssabd<mode>3_2"
+(define_insn "abds<mode>3_2"
   [(set (match_operand:SIDI 0 "register_operand" "=r,r")
-        (ss_abs:SIDI (minus:SIDI (umax:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
-                                            (match_operand:SIDI 2 "register_s32_operand" "r,B32"))
-                                 (umin:SIDI (match_dup 1) (match_dup 2)))))]
+        (ss_minus:SIDI (smax:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
+                                  (match_operand:SIDI 2 "register_s32_operand" "r,B32"))
+                       (smin:SIDI (match_dup 1) (match_dup 2))))]
   "KV3_2"
   "abds<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_tiny,alu_tiny_x")
    (set_attr "length"      "4,         8")]
 )
-;; zero-extend version of ssabdsi3
-(define_insn "*ssabdsi3_zext"
+;; zero-extend version of abdssi3
+(define_insn "*abdssi3_zext"
   [(set (match_operand:DI 0 "register_operand" "=r,r")
-        (zero_extend:DI (ss_abs:SI (minus:SI (umax:SI (match_operand:SI 1 "register_operand" "r,r")
-                                                      (match_operand:SI 2 "register_s32_operand" "r,B32"))
-                                             (umin:SI (match_dup 1) (match_dup 2))))))]
+        (zero_extend:DI (ss_minus:SI (smax:SI (match_operand:SI 1 "register_operand" "r,r")
+                                              (match_operand:SI 2 "register_s32_operand" "r,B32"))
+                                     (smin:SI (match_dup 1) (match_dup 2)))))]
   "KV3_2"
   "abdsw %0 = %1, %2"
+  [(set_attr "type" "alu_tiny,alu_tiny_x")
+   (set_attr "length"      "4,         8")]
+)
+
+(define_expand "abdu<mode>3"
+  [(match_operand:SIDI 0 "register_operand" "")
+   (match_operand:SIDI 1 "register_operand" "")
+   (match_operand:SIDI 2 "register_s32_operand" "")]
+  ""
+  {
+    if (KV3_1)
+      emit_insn (gen_abdu<mode>3_1 (operands[0], operands[1], operands[2]));
+    else if (KV3_2)
+      emit_insn (gen_abdu<mode>3_2 (operands[0], operands[1], operands[2]));
+    else
+      gcc_unreachable ();
+    DONE;
+  }
+)
+
+(define_insn_and_split "abdu<mode>3_1"
+  [(set (match_operand:SIDI 0 "register_operand" "=r")
+        (minus:SIDI (umax:SIDI (match_operand:SIDI 1 "register_operand" "r")
+                               (match_operand:SIDI 2 "register_operand" "r"))
+                    (umin:SIDI (match_dup 1) (match_dup 2))))
+   (clobber (match_scratch:SIDI 3 "=&r"))
+   (clobber (match_scratch:SIDI 4 "=&r"))]
+  "KV3_1"
+  "#"
+  "KV3_1"
+  [(set (match_dup 3)
+        (umax:SIDI (match_dup 1) (match_dup 2)))
+   (set (match_dup 4)
+        (umin:SIDI (match_dup 1) (match_dup 2)))
+   (set (match_dup 0)
+        (minus:SIDI (match_dup 3) (match_dup 4)))]
+  {
+    if (GET_CODE (operands[3]) == SCRATCH)
+      operands[3] = gen_reg_rtx (<MODE>mode);
+    if (GET_CODE (operands[4]) == SCRATCH)
+      operands[4] = gen_reg_rtx (<MODE>mode);
+  }
+)
+
+(define_insn "abdu<mode>3_2"
+  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
+        (minus:SIDI (umax:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
+                               (match_operand:SIDI 2 "register_s32_operand" "r,B32"))
+                    (umin:SIDI (match_dup 1) (match_dup 2))))]
+  "KV3_2"
+  "abdu<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_tiny,alu_tiny_x")
+   (set_attr "length"      "4,         8")]
+)
+;; zero-extend version of abdusi3
+(define_insn "*abdusi3_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r,r")
+        (zero_extend:DI (minus:SI (umax:SI (match_operand:SI 1 "register_operand" "r,r")
+                                           (match_operand:SI 2 "register_s32_operand" "r,B32"))
+                                  (umin:SI (match_dup 1) (match_dup 2)))))]
+  "KV3_2"
+  "abduw %0 = %1, %2"
   [(set_attr "type" "alu_tiny,alu_tiny_x")
    (set_attr "length"      "4,         8")]
 )

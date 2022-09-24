@@ -253,22 +253,16 @@
   (rotatert "true")
 ])
 
-;; Code iterator to generate the "abd<>3" and "ssabd<>3" patterns.
-(define_code_iterator ABS [
-  abs
-  ss_abs
+;; Code iterator to generate the "abd<>3" and "abds<>3" patterns.
+(define_code_iterator MINUS [
+  minus
+  ss_minus
 ])
 
-;; Code attribute for the "abd<>3" and "ssabd<>3" pattern names.
-(define_code_attr abdn [
-  (abs "abd")
-  (ss_abs "ssabd")
-])
-
-;; Code attribute for mapping code to abd instruction mnemonics.
+;; Code attribute for the "abd<>3" and "abds<>3" pattern names.
 (define_code_attr abdm [
-  (abs "abd")
-  (ss_abs "abds")
+  (minus "abd")
+  (ss_minus "abds")
 ])
 
 ;; Int iterator for the AVG operators of VXQI patterns.
