@@ -1047,12 +1047,12 @@
   }
 )
 
-;; abd<m>2 ssabd<m>2
-(define_expand "<ABS:abdn><mode>3"
+;; abd<m>3 abds<m>3
+(define_expand "<MINUS:abdm><mode>3_1"
   [(set (match_operand:VXQI 0 "register_operand" "")
-        (ABS:VXQI (minus:VXQI (umax:VXQI (match_operand:VXQI 1 "register_operand" "")
-                                         (match_operand:VXQI 2 "register_operand" ""))
-                              (umin:VXQI (match_dup 1) (match_dup 2)))))]
+        (MINUS:VXQI (smax:VXQI (match_operand:VXQI 1 "register_operand" "")
+                               (match_operand:VXQI 2 "register_operand" ""))
+                    (smin:VXQI (match_dup 1) (match_dup 2))))]
   ""
   {
     if (KV3_1)
@@ -1070,8 +1070,8 @@
             emit_insn (gen_rtx_SET (op1o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXOBHQ)));
             emit_insn (gen_rtx_SET (op1e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXEBHQ)));
             rtx op0o = gen_reg_rtx (V4HImode), op0e = gen_reg_rtx (V4HImode);
-            emit_insn (gen_<ABS:abdn>v4hi3 (op0o, op1o, op2o));
-            emit_insn (gen_<ABS:abdn>v4hi3 (op0e, op1e, op2e));
+            emit_insn (gen_<MINUS:abdm>v4hi3 (op0o, op1o, op2o));
+            emit_insn (gen_<MINUS:abdm>v4hi3 (op0e, op1e, op2e));
             if (<set8lsb>)
               emit_insn (gen_rtx_SET (op0o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0o), UNSPEC_QXOBHQ)));
             emit_insn (gen_rtx_SET (op0e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0e), UNSPEC_ZXOBHQ)));
@@ -1081,83 +1081,38 @@
       }
   }
 )
-(define_insn "*<ABS:abdn>v8qi3_2"
-  [(set (match_operand:V8QI 0 "register_operand" "=r")
-        (ABS:V8QI (minus:V8QI (umax:V8QI (match_operand:V8QI 1 "register_operand" "r")
-                                         (match_operand:V8QI 2 "register_operand" "r"))
-                              (umin:V8QI (match_dup 1) (match_dup 2)))))]
-  "KV3_2"
-  "<abdm>bo %0 = %1, %2"
-  [(set_attr "type" "alu_tiny")]
-)
-(define_insn "*<ABS:abdn>v16qi3_2"
-  [(set (match_operand:V16QI 0 "register_operand" "=r")
-        (ABS:V16QI (minus:V16QI (umax:V16QI (match_operand:V16QI 1 "register_operand" "r")
-                                            (match_operand:V16QI 2 "register_operand" "r"))
-                                (umin:V16QI (match_dup 1) (match_dup 2)))))]
-  "KV3_2"
-  "<abdm>bo %x0 = %x1, %x2\n\t<abdm>bo %y0 = %y1, %y2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-(define_insn "*<ABS:abdn>v16qi3_s1"
-  [(set (match_operand:V16QI 0 "register_operand" "=r")
-        (ABS:V16QI (minus:V16QI (umax:V16QI (vec_duplicate:V16QI (match_operand:V8QI 1 "nonmemory_operand" "r"))
-                                            (match_operand:V16QI 2 "register_operand" "r"))
-                                (umin:V16QI (vec_duplicate:V16QI (match_dup 1)) (match_dup 2)))))]
-  "KV3_2"
-  "<abdm>bo %x0 = %1, %x2\n\t<abdm>bo %y0 = %1, %y2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-(define_insn "*<ABS:abdn>v16qi3_s2"
-  [(set (match_operand:V16QI 0 "register_operand" "=r")
-        (ABS:V16QI (minus:V16QI (umax:V16QI (match_operand:V16QI 1 "register_operand" "r")
-                                            (vec_duplicate:V16QI (match_operand:V8QI 2 "nonmemory_operand" "r")))
-                                (umin:V16QI (match_dup 1) (vec_duplicate:V16QI (match_dup 2))))))]
-  "KV3_2"
-  "<abdm>bo %x0 = %x1, %2\n\t<abdm>bo %y0 = %y1, %2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-(define_insn "*<ABS:abdn>v32qi3_2"
-  [(set (match_operand:V32QI 0 "register_operand" "=r")
-        (ABS:V32QI (minus:V32QI (umax:V32QI (match_operand:V32QI 1 "register_operand" "r")
-                                            (match_operand:V32QI 2 "register_operand" "r"))
-                                (umin:V32QI (match_dup 1) (match_dup 2)))))]
-  "KV3_2"
+
+;; abdu<m>3
+(define_expand "abdu<mode>3_1"
+  [(set (match_operand:VXQI 0 "register_operand" "")
+        (minus:VXQI (umax:VXQI (match_operand:VXQI 1 "register_operand" "")
+                               (match_operand:VXQI 2 "register_operand" ""))
+                    (umin:VXQI (match_dup 1) (match_dup 2))))]
+  ""
   {
-    return "<abdm>bo %x0 = %x1, %x2\n\t<abdm>bo %y0 = %y1, %y2\n\t"
-           "<abdm>bo %z0 = %z1, %z2\n\t<abdm>bo %t0 = %t1, %t2";
+    if (KV3_1)
+      {
+        unsigned mode_size = GET_MODE_SIZE (<MODE>mode);
+        for (unsigned offset = 0; offset < mode_size; offset += UNITS_PER_WORD)
+          {
+            rtx op2 = simplify_gen_subreg (V4HImode, operands[2], <MODE>mode, offset);
+            rtx op1 = simplify_gen_subreg (V4HImode, operands[1], <MODE>mode, offset);
+            rtx op0 = simplify_gen_subreg (V4HImode, operands[0], <MODE>mode, offset);
+            rtx op2o = gen_reg_rtx (V4HImode), op2e = gen_reg_rtx (V4HImode);
+            emit_insn (gen_rtx_SET (op2o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op2), UNSPEC_QXOBHQ)));
+            emit_insn (gen_rtx_SET (op2e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op2), UNSPEC_QXEBHQ)));
+            rtx op1o = gen_reg_rtx (V4HImode), op1e = gen_reg_rtx (V4HImode);
+            emit_insn (gen_rtx_SET (op1o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXOBHQ)));
+            emit_insn (gen_rtx_SET (op1e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXEBHQ)));
+            rtx op0o = gen_reg_rtx (V4HImode), op0e = gen_reg_rtx (V4HImode);
+            emit_insn (gen_abduv4hi3 (op0o, op1o, op2o));
+            emit_insn (gen_abduv4hi3 (op0e, op1e, op2e));
+            emit_insn (gen_rtx_SET (op0e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0e), UNSPEC_ZXOBHQ)));
+            emit_insn (gen_rtx_SET (op0, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, op0o, op0e), UNSPEC_OROEBO)));
+          }
+        DONE;
+      }
   }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-(define_insn "*<ABS:abdn>v32qi3_s1"
-  [(set (match_operand:V32QI 0 "register_operand" "=r")
-        (ABS:V32QI (minus:V32QI (umax:V32QI (vec_duplicate:V32QI (match_operand:V8QI 1 "nonmemory_operand" "r"))
-                                            (match_operand:V32QI 2 "register_operand" "r"))
-                                (umin:V32QI (vec_duplicate:V32QI (match_dup 1)) (match_dup 2)))))]
-  "KV3_2"
-  {
-    return "<abdm>bo %x0 = %1, %x2\n\t<abdm>bo %y0 = %1, %y2\n\t"
-           "<abdm>bo %z0 = %1, %z2\n\t<abdm>bo %t0 = %1, %t2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-(define_insn "*<ABS:abdn>v32qi3_s2"
-  [(set (match_operand:V32QI 0 "register_operand" "=r")
-        (ABS:V32QI (minus:V32QI (umax:V32QI (match_operand:V32QI 1 "register_operand" "r")
-                                            (vec_duplicate:V32QI (match_operand:V8QI 2 "nonmemory_operand" "r")))
-                                (umin:V32QI (match_dup 1) (vec_duplicate:V32QI (match_dup 2))))))]
-  "KV3_2"
-  {
-    return "<abdm>bo %x0 = %x1, %2\n\t<abdm>bo %y0 = %y1, %2\n\t"
-           "<abdm>bo %z0 = %z1, %2\n\t<abdm>bo %t0 = %t1, %2";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
 )
 
 ;; avg<m>3_floor uavg<m>3_floor avg<m>3_ceil uavg<m>3_ceil
@@ -2179,47 +2134,74 @@
   [(set_attr "type" "alu_tiny")]
 )
 
-(define_insn "abd<mode>3"
-  [(set (match_operand:S64I 0 "register_operand" "=r")
-        (abs:S64I (minus:S64I (umax:S64I (match_operand:S64I 1 "register_operand" "r")
-                                         (match_operand:S64I 2 "register_operand" "r"))
-                              (umin:S64I (match_dup 1) (match_dup 2)))))]
-  ""
-  "abd<suffix> %0 = %1, %2"
-  [(set_attr "type" "alu_thin")]
-)
-
-(define_expand "ssabd<mode>3"
-  [(match_operand:S64I 0 "register_operand" "")
-   (match_operand:S64I 1 "register_operand" "")
-   (match_operand:S64I 2 "register_s32_operand" "")]
+(define_expand "abd<mode>3"
+  [(match_operand:S64L 0 "register_operand" "")
+   (match_operand:S64L 1 "register_operand" "")
+   (match_operand:S64L 2 "register_s32_operand" "")]
   ""
   {
     if (KV3_1)
-      emit_insn (gen_ssabd<mode>3_1 (operands[0], operands[1], operands[2]));
+      emit_insn (gen_abd<mode>3_1 (operands[0], operands[1], operands[2]));
     else if (KV3_2)
-      emit_insn (gen_ssabd<mode>3_2 (operands[0], operands[1], operands[2]));
+      emit_insn (gen_abd<mode>3_2 (operands[0], operands[1], operands[2]));
     else
       gcc_unreachable ();
     DONE;
   }
 )
 
-(define_insn_and_split "ssabd<mode>3_1"
+(define_insn "abd<mode>3_1"
   [(set (match_operand:S64I 0 "register_operand" "=r")
-        (ss_abs:S64I (minus:S64I (match_operand:S64I 1 "register_operand" "r")
-                                 (match_operand:S64I 2 "register_operand" "r"))))
+        (minus:S64I (smax:S64I (match_operand:S64I 1 "register_operand" "r")
+                               (match_operand:S64I 2 "register_operand" "r"))
+                    (smin:S64I (match_dup 1) (match_dup 2))))]
+  ""
+  "abd<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_lite")]
+)
+
+(define_insn "abd<mode>3_2"
+  [(set (match_operand:S64L 0 "register_operand" "=r")
+        (minus:S64L (smax:S64L (match_operand:S64L 1 "register_operand" "r")
+                               (match_operand:S64L 2 "register_operand" "r"))
+                    (smin:S64L (match_dup 1) (match_dup 2))))]
+  ""
+  "abd<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_tiny")]
+)
+
+(define_expand "abds<mode>3"
+  [(match_operand:S64L 0 "register_operand" "")
+   (match_operand:S64L 1 "register_operand" "")
+   (match_operand:S64L 2 "register_s32_operand" "")]
+  ""
+  {
+    if (KV3_1)
+      emit_insn (gen_abds<mode>3_1 (operands[0], operands[1], operands[2]));
+    else if (KV3_2)
+      emit_insn (gen_abds<mode>3_2 (operands[0], operands[1], operands[2]));
+    else
+      gcc_unreachable ();
+    DONE;
+  }
+)
+
+(define_insn_and_split "abds<mode>3_1"
+  [(set (match_operand:S64I 0 "register_operand" "=r")
+        (ss_minus:S64I (smax:S64I (match_operand:S64I 1 "register_operand" "r")
+                                  (match_operand:S64I 2 "register_operand" "r"))
+                       (smin:S64I (match_dup 1) (match_dup 2))))
    (clobber (match_scratch:S64I 3 "=&r"))
    (clobber (match_scratch:S64I 4 "=&r"))]
   "KV3_1"
   "#"
   "KV3_1"
   [(set (match_dup 3)
-        (ss_minus:S64I (match_dup 1) (match_dup 2)))
+        (smax:S64I (match_dup 1) (match_dup 2)))
    (set (match_dup 4)
-        (ss_minus:S64I (match_dup 2) (match_dup 1)))
+        (smin:S64I (match_dup 1) (match_dup 2)))
    (set (match_dup 0)
-        (smax:S64I (match_dup 3) (match_dup 4)))]
+        (ss_minus:S64I (match_dup 3) (match_dup 4)))]
   {
     if (GET_CODE (operands[3]) == SCRATCH)
       operands[3] = gen_reg_rtx (<MODE>mode);
@@ -2228,13 +2210,63 @@
   }
 )
 
-(define_insn "ssabd<mode>3_2"
-  [(set (match_operand:S64I 0 "register_operand" "=r")
-        (ss_abs:S64I (minus:S64I (umax:S64I (match_operand:S64I 1 "register_operand" "r")
-                                            (match_operand:S64I 2 "register_s32_operand" "r"))
-                                 (umin:S64I (match_dup 1) (match_dup 2)))))]
+(define_insn "abds<mode>3_2"
+  [(set (match_operand:S64L 0 "register_operand" "=r")
+        (ss_minus:S64L (smax:S64L (match_operand:S64L 1 "register_operand" "r")
+                                  (match_operand:S64L 2 "register_s32_operand" "r"))
+                       (smin:S64L (match_dup 1) (match_dup 2))))]
   "KV3_2"
   "abds<suffix> %0 = %1, %2"
+  [(set_attr "type" "alu_tiny")]
+)
+
+(define_expand "abdu<mode>3"
+  [(match_operand:S64L 0 "register_operand" "")
+   (match_operand:S64L 1 "register_operand" "")
+   (match_operand:S64L 2 "register_s32_operand" "")]
+  ""
+  {
+    if (KV3_1)
+      emit_insn (gen_abdu<mode>3_1 (operands[0], operands[1], operands[2]));
+    else if (KV3_2)
+      emit_insn (gen_abdu<mode>3_2 (operands[0], operands[1], operands[2]));
+    else
+      gcc_unreachable ();
+    DONE;
+  }
+)
+
+(define_insn_and_split "abdu<mode>3_1"
+  [(set (match_operand:S64I 0 "register_operand" "=r")
+        (minus:S64I (umax:S64I (match_operand:S64I 1 "register_operand" "r")
+                               (match_operand:S64I 2 "register_operand" "r"))
+                    (umin:S64I (match_dup 1) (match_dup 2))))
+   (clobber (match_scratch:S64I 3 "=&r"))
+   (clobber (match_scratch:S64I 4 "=&r"))]
+  "KV3_1"
+  "#"
+  "KV3_1"
+  [(set (match_dup 3)
+        (umax:S64I (match_dup 1) (match_dup 2)))
+   (set (match_dup 4)
+        (umin:S64I (match_dup 1) (match_dup 2)))
+   (set (match_dup 0)
+        (minus:S64I (match_dup 3) (match_dup 4)))]
+  {
+    if (GET_CODE (operands[3]) == SCRATCH)
+      operands[3] = gen_reg_rtx (<MODE>mode);
+    if (GET_CODE (operands[4]) == SCRATCH)
+      operands[4] = gen_reg_rtx (<MODE>mode);
+  }
+)
+
+(define_insn "abdu<mode>3_2"
+  [(set (match_operand:S64L 0 "register_operand" "=r")
+        (minus:S64L (umax:S64L (match_operand:S64L 1 "register_operand" "r")
+                               (match_operand:S64L 2 "register_s32_operand" "r"))
+                    (umin:S64L (match_dup 1) (match_dup 2))))]
+  "KV3_2"
+  "abdu<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_tiny")]
 )
 
@@ -3624,22 +3656,49 @@
    (set_attr "length"         "8")]
 )
 
-(define_insn "abd<mode>3"
+(define_expand "abd<mode>3"
+  [(match_operand:V128L 0 "register_operand" "")
+   (match_operand:V128L 1 "register_operand" "")
+   (match_operand:V128L 2 "register_s32_operand" "")]
+  ""
+  {
+    if (KV3_1)
+      emit_insn (gen_abd<mode>3_1 (operands[0], operands[1], operands[2]));
+    else if (KV3_2)
+      emit_insn (gen_abd<mode>3_2 (operands[0], operands[1], operands[2]));
+    else
+      gcc_unreachable ();
+    DONE;
+  }
+)
+
+(define_insn "abd<mode>3_1"
   [(set (match_operand:V128J 0 "register_operand" "=r")
-        (abs:V128J (minus:V128J (umax:V128J (match_operand:V128J 1 "register_operand" "r")
-                                            (match_operand:V128J 2 "register_operand" "r"))
-                                (umin:V128J (match_dup 1) (match_dup 2)))))]
+        (minus:V128J (smax:V128J (match_operand:V128J 1 "register_operand" "r")
+                                 (match_operand:V128J 2 "register_operand" "r"))
+                     (smin:V128J (match_dup 1) (match_dup 2))))]
   ""
   "abd<chunkx> %x0 = %x1, %x2\n\tabd<chunkx> %y0 = %y1, %y2"
-  [(set_attr "type" "alu_thin_x2")
+  [(set_attr "type" "alu_lite_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "abd<mode>3_2"
+  [(set (match_operand:V128L 0 "register_operand" "=r")
+        (minus:V128L (smax:V128L (match_operand:V128L 1 "register_operand" "r")
+                                 (match_operand:V128L 2 "register_operand" "r"))
+                     (smin:V128L (match_dup 1) (match_dup 2))))]
+  ""
+  "abd<chunkx> %x0 = %x1, %x2\n\tabd<chunkx> %y0 = %y1, %y2"
+  [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
 )
 
 (define_insn "*abd<suffix>_s1"
-  [(set (match_operand:V128J 0 "register_operand" "=r")
-        (abs:V128J (minus:V128J (umax:V128J (vec_duplicate:V128J (match_operand:<CHUNK> 1 "nonmemory_operand" "r"))
-                                            (match_operand:V128J 2 "register_operand" "r"))
-                                (umin:V128J (vec_duplicate:V128J (match_dup 1)) (match_dup 2)))))]
+  [(set (match_operand:V128L 0 "register_operand" "=r")
+        (minus:V128L (smax:V128L (vec_duplicate:V128L (match_operand:<CHUNK> 1 "nonmemory_operand" "r"))
+                                 (match_operand:V128L 2 "register_operand" "r"))
+                     (smin:V128L (vec_duplicate:V128L (match_dup 1)) (match_dup 2))))]
   ""
   "abd<chunkx> %x0 = %1, %x2\n\tabd<chunkx> %y0 = %1, %y2"
   [(set_attr "type" "alu_thin_x2")
@@ -3647,47 +3706,48 @@
 )
 
 (define_insn "*abd<suffix>_s2"
-  [(set (match_operand:V128J 0 "register_operand" "=r")
-        (abs:V128J (minus:V128J (umax:V128J (match_operand:V128J 1 "register_operand" "r")
-                                            (vec_duplicate:V128J (match_operand:<CHUNK> 2 "nonmemory_operand" "r")))
-                                (umin:V128J (match_dup 1) (vec_duplicate:V128J (match_dup 2))))))]
+  [(set (match_operand:V128L 0 "register_operand" "=r")
+        (minus:V128L (smax:V128L (match_operand:V128L 1 "register_operand" "r")
+                                 (vec_duplicate:V128L (match_operand:<CHUNK> 2 "nonmemory_operand" "r")))
+                     (smin:V128L (match_dup 1) (vec_duplicate:V128L (match_dup 2)))))]
   ""
   "abd<chunkx> %x0 = %x1, %2\n\tabd<chunkx> %y0 = %y1, %2"
   [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
-(define_expand "ssabd<mode>3"
-  [(match_operand:V128J 0 "register_operand" "")
-   (match_operand:V128J 1 "register_operand" "")
-   (match_operand:V128J 2 "register_s32_operand" "")]
+(define_expand "abds<mode>3"
+  [(match_operand:V128L 0 "register_operand" "")
+   (match_operand:V128L 1 "register_operand" "")
+   (match_operand:V128L 2 "register_s32_operand" "")]
   ""
   {
     if (KV3_1)
-      emit_insn (gen_ssabd<mode>3_1 (operands[0], operands[1], operands[2]));
+      emit_insn (gen_abds<mode>3_1 (operands[0], operands[1], operands[2]));
     else if (KV3_2)
-      emit_insn (gen_ssabd<mode>3_2 (operands[0], operands[1], operands[2]));
+      emit_insn (gen_abds<mode>3_2 (operands[0], operands[1], operands[2]));
     else
       gcc_unreachable ();
     DONE;
   }
 )
 
-(define_insn_and_split "ssabd<mode>3_1"
+(define_insn_and_split "abds<mode>3_1"
   [(set (match_operand:V128J 0 "register_operand" "=r")
-        (ss_abs:V128J (minus:V128J (match_operand:V128J 1 "register_operand" "r")
-                                   (match_operand:V128J 2 "register_operand" "r"))))
+        (ss_minus:V128J (smax:V128J (match_operand:V128J 1 "register_operand" "r")
+                                    (match_operand:V128J 2 "register_operand" "r"))
+                        (smin:V128J (match_dup 1) (match_dup 2))))
    (clobber (match_scratch:V128J 3 "=&r"))
    (clobber (match_scratch:V128J 4 "=&r"))]
   "KV3_1"
   "#"
   "KV3_1"
   [(set (match_dup 3)
-        (ss_minus:V128J (match_dup 1) (match_dup 2)))
+        (smax:V128J (match_dup 1) (match_dup 2)))
    (set (match_dup 4)
-        (ss_minus:V128J (match_dup 2) (match_dup 1)))
+        (smin:V128J (match_dup 1) (match_dup 2)))
    (set (match_dup 0)
-        (smax:V128J (match_dup 3) (match_dup 4)))]
+        (ss_minus:V128J (match_dup 3) (match_dup 4)))]
   {
     if (GET_CODE (operands[3]) == SCRATCH)
       operands[3] = gen_reg_rtx (<MODE>mode);
@@ -3696,35 +3756,108 @@
   }
 )
 
-(define_insn "ssabd<mode>3_2"
-  [(set (match_operand:V128J 0 "register_operand" "=r")
-        (ss_abs:V128J (minus:V128J (umax:V128J (match_operand:V128J 1 "register_operand" "r")
-                                               (match_operand:V128J 2 "register_operand" "r"))
-                                   (umin:V128J (match_dup 1) (match_dup 2)))))]
+(define_insn "abds<mode>3_2"
+  [(set (match_operand:V128L 0 "register_operand" "=r")
+        (ss_minus:V128L (smax:V128L (match_operand:V128L 1 "register_operand" "r")
+                                    (match_operand:V128L 2 "register_operand" "r"))
+                        (smin:V128L (match_dup 1) (match_dup 2))))]
   "KV3_2"
   "abds<chunkx> %x0 = %x1, %x2\n\tabds<chunkx> %y0 = %y1, %y2"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
 )
 
-(define_insn "*ssabd<suffix>_s1"
-  [(set (match_operand:V128J 0 "register_operand" "=r")
-        (ss_abs:V128J (minus:V128J (umax:V128J (vec_duplicate:V128J (match_operand:<CHUNK> 1 "nonmemory_operand" "r"))
-                                               (match_operand:V128J 2 "register_operand" "r"))
-                                   (umin:V128J (vec_duplicate:V128J (match_dup 1)) (match_dup 2)))))]
+(define_insn "*abds<suffix>_s1"
+  [(set (match_operand:V128L 0 "register_operand" "=r")
+        (ss_minus:V128L (smax:V128L (vec_duplicate:V128L (match_operand:<CHUNK> 1 "nonmemory_operand" "r"))
+                                    (match_operand:V128L 2 "register_operand" "r"))
+                        (smin:V128L (vec_duplicate:V128L (match_dup 1)) (match_dup 2))))]
   "KV3_2"
   "abds<chunkx> %x0 = %1, %x2\n\tabds<chunkx> %y0 = %1, %y2"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
 )
 
-(define_insn "*ssabd<suffix>_s2"
-  [(set (match_operand:V128J 0 "register_operand" "=r")
-        (ss_abs:V128J (minus:V128J (umax:V128J (match_operand:V128J 1 "register_operand" "r")
-                                               (vec_duplicate:V128J (match_operand:<CHUNK> 2 "nonmemory_operand" "r")))
-                                   (umin:V128J (match_dup 1) (vec_duplicate:V128J (match_dup 2))))))]
+(define_insn "*abds<suffix>_s2"
+  [(set (match_operand:V128L 0 "register_operand" "=r")
+        (ss_minus:V128L (smax:V128L (match_operand:V128L 1 "register_operand" "r")
+                                    (vec_duplicate:V128L (match_operand:<CHUNK> 2 "nonmemory_operand" "r")))
+                        (smin:V128L (match_dup 1) (vec_duplicate:V128L (match_dup 2)))))]
   "KV3_2"
   "abds<chunkx> %x0 = %x1, %2\n\tabds<chunkx> %y0 = %y1, %2"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_expand "abdu<mode>3"
+  [(match_operand:V128L 0 "register_operand" "")
+   (match_operand:V128L 1 "register_operand" "")
+   (match_operand:V128L 2 "register_s32_operand" "")]
+  ""
+  {
+    if (KV3_1)
+      emit_insn (gen_abdu<mode>3_1 (operands[0], operands[1], operands[2]));
+    else if (KV3_2)
+      emit_insn (gen_abdu<mode>3_2 (operands[0], operands[1], operands[2]));
+    else
+      gcc_unreachable ();
+    DONE;
+  }
+)
+
+(define_insn_and_split "abdu<mode>3_1"
+  [(set (match_operand:V128J 0 "register_operand" "=r")
+        (minus:V128J (umax:V128J (match_operand:V128J 1 "register_operand" "r")
+                                 (match_operand:V128J 2 "register_operand" "r"))
+                     (umin:V128J (match_dup 1) (match_dup 2))))
+   (clobber (match_scratch:V128J 3 "=&r"))
+   (clobber (match_scratch:V128J 4 "=&r"))]
+  "KV3_1"
+  "#"
+  "KV3_1"
+  [(set (match_dup 3)
+        (umax:V128J (match_dup 1) (match_dup 2)))
+   (set (match_dup 4)
+        (umin:V128J (match_dup 1) (match_dup 2)))
+   (set (match_dup 0)
+        (minus:V128J (match_dup 3) (match_dup 4)))]
+  {
+    if (GET_CODE (operands[3]) == SCRATCH)
+      operands[3] = gen_reg_rtx (<MODE>mode);
+    if (GET_CODE (operands[4]) == SCRATCH)
+      operands[4] = gen_reg_rtx (<MODE>mode);
+  }
+)
+
+(define_insn "abdu<mode>3_2"
+  [(set (match_operand:V128L 0 "register_operand" "=r")
+        (minus:V128L (umax:V128L (match_operand:V128L 1 "register_operand" "r")
+                                 (match_operand:V128L 2 "register_operand" "r"))
+                     (umin:V128L (match_dup 1) (match_dup 2))))]
+  "KV3_2"
+  "abdu<chunkx> %x0 = %x1, %x2\n\tabdu<chunkx> %y0 = %y1, %y2"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "*abdu<suffix>_s1"
+  [(set (match_operand:V128L 0 "register_operand" "=r")
+        (minus:V128L (umax:V128L (vec_duplicate:V128L (match_operand:<CHUNK> 1 "nonmemory_operand" "r"))
+                                 (match_operand:V128L 2 "register_operand" "r"))
+                     (umin:V128L (vec_duplicate:V128L (match_dup 1)) (match_dup 2))))]
+  "KV3_2"
+  "abdu<chunkx> %x0 = %1, %x2\n\tabdu<chunkx> %y0 = %1, %y2"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "*abdu<suffix>_s2"
+  [(set (match_operand:V128L 0 "register_operand" "=r")
+        (minus:V128L (umax:V128L (match_operand:V128L 1 "register_operand" "r")
+                                 (vec_duplicate:V128L (match_operand:<CHUNK> 2 "nonmemory_operand" "r")))
+                     (umin:V128L (match_dup 1) (vec_duplicate:V128L (match_dup 2)))))]
+  "KV3_2"
+  "abdu<chunkx> %x0 = %x1, %2\n\tabdu<chunkx> %y0 = %y1, %2"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
 )
@@ -5799,41 +5932,48 @@
 )
 
 (define_expand "abd<mode>3"
-  [(set (match_operand:V256J 0 "register_operand" "")
-        (abs:V256J (minus:V256J (umax:V256J (match_operand:V256J 1 "register_operand" "")
-                                            (match_operand:V256J 2 "register_operand" ""))
-                                (umin:V256J (match_dup 1) (match_dup 2)))))]
+  [(match_operand:V256L 0 "register_operand" "")
+   (match_operand:V256L 1 "register_operand" "")
+   (match_operand:V256L 2 "register_s32_operand" "")]
   ""
-  ""
+  {
+    if (KV3_1)
+      emit_insn (gen_abd<mode>3_1 (operands[0], operands[1], operands[2]));
+    else if (KV3_2)
+      emit_insn (gen_abd<mode>3_2 (operands[0], operands[1], operands[2]));
+    else
+      gcc_unreachable ();
+    DONE;
+  }
 )
 
 (define_insn_and_split "abd<mode>3_1"
   [(set (match_operand:V256J 0 "register_operand" "=r")
-        (abs:V256J (minus:V256J (umax:V256J (match_operand:V256J 1 "register_operand" "r")
-                                            (match_operand:V256J 2 "register_operand" "r"))
-                                (umin:V256J (match_dup 1) (match_dup 2)))))]
+        (minus:V256J (smax:V256J (match_operand:V256J 1 "register_operand" "r")
+                                 (match_operand:V256J 2 "register_operand" "r"))
+                     (smin:V256J (match_dup 1) (match_dup 2))))]
   "KV3_1"
   "#"
   "KV3_1 && reload_completed"
   [(set (subreg:<HALF> (match_dup 0) 0)
-        (abs:<HALF> (minus:<HALF> (umax:<HALF> (subreg:<HALF> (match_dup 1) 0)
-                                               (subreg:<HALF> (match_dup 2) 0))
-                                  (umin:<HALF> (subreg:<HALF> (match_dup 1) 0)
-                                               (subreg:<HALF> (match_dup 2) 0)))))
+        (minus:<HALF> (smax:<HALF> (subreg:<HALF> (match_dup 1) 0)
+                                   (subreg:<HALF> (match_dup 2) 0))
+                      (smin:<HALF> (subreg:<HALF> (match_dup 1) 0)
+                                   (subreg:<HALF> (match_dup 2) 0))))
    (set (subreg:<HALF> (match_dup 0) 16)
-        (abs:<HALF> (minus:<HALF> (umax:<HALF> (subreg:<HALF> (match_dup 1) 16)
-                                               (subreg:<HALF> (match_dup 2) 16))
-                                  (umin:<HALF> (subreg:<HALF> (match_dup 1) 16)
-                                               (subreg:<HALF> (match_dup 2) 16)))))]
+        (minus:<HALF> (smax:<HALF> (subreg:<HALF> (match_dup 1) 16)
+                                   (subreg:<HALF> (match_dup 2) 16))
+                      (smin:<HALF> (subreg:<HALF> (match_dup 1) 16)
+                                   (subreg:<HALF> (match_dup 2) 16))))]
   ""
   [(set_attr "type" "alu_lite_x2")]
 )
 
 (define_insn "abd<mode>3_2"
-  [(set (match_operand:V256J 0 "register_operand" "=r")
-        (abs:V256J (minus:V256J (umax:V256J (match_operand:V256J 1 "register_operand" "r")
-                                            (match_operand:V256J 2 "register_operand" "r"))
-                                (umin:V256J (match_dup 1) (match_dup 2)))))]
+  [(set (match_operand:V256L 0 "register_operand" "=r")
+        (minus:V256L (smax:V256L (match_operand:V256L 1 "register_operand" "r")
+                                 (match_operand:V256L 2 "register_operand" "r"))
+                     (smin:V256L (match_dup 1) (match_dup 2))))]
   "KV3_2"
   {
     return "abd<chunkx> %x0 = %x1, %x2\n\tabd<chunkx> %y0 = %y1, %y2\n\t"
@@ -5844,32 +5984,32 @@
 )
 
 (define_insn_and_split "*abd<suffix>_s1"
-  [(set (match_operand:V256J 0 "register_operand" "=&r")
-        (abs:V256J (minus:V256J (umax:V256J (vec_duplicate:V256J (match_operand:<CHUNK> 1 "nonmemory_operand" "r"))
-                                            (match_operand:V256J 2 "register_operand" "r"))
-                                (umin:V256J (vec_duplicate:V256J (match_dup 1)) (match_dup 2)))))]
+  [(set (match_operand:V256L 0 "register_operand" "=&r")
+        (minus:V256L (smax:V256L (vec_duplicate:V256L (match_operand:<CHUNK> 1 "nonmemory_operand" "r"))
+                                 (match_operand:V256L 2 "register_operand" "r"))
+                     (smin:V256L (vec_duplicate:V256L (match_dup 1)) (match_dup 2))))]
   "KV3_1"
   "#"
   "KV3_1 && reload_completed"
   [(set (subreg:<HALF> (match_dup 0) 0)
-        (abs:<HALF> (minus:<HALF> (umax:<HALF> (vec_duplicate:<HALF> (match_dup 1))
-                                               (subreg:<HALF> (match_dup 2) 0))
-                                  (umin:<HALF> (vec_duplicate:<HALF> (match_dup 1))
-                                               (subreg:<HALF> (match_dup 2) 0)))))
+        (minus:<HALF> (smax:<HALF> (vec_duplicate:<HALF> (match_dup 1))
+                                   (subreg:<HALF> (match_dup 2) 0))
+                      (smin:<HALF> (vec_duplicate:<HALF> (match_dup 1))
+                                   (subreg:<HALF> (match_dup 2) 0))))
    (set (subreg:<HALF> (match_dup 0) 16)
-        (abs:<HALF> (minus:<HALF> (umax:<HALF> (vec_duplicate:<HALF> (match_dup 1))
-                                               (subreg:<HALF> (match_dup 2) 16))
-                                  (umin:<HALF> (vec_duplicate:<HALF> (match_dup 1))
-                                               (subreg:<HALF> (match_dup 2) 16)))))]
+        (minus:<HALF> (smax:<HALF> (vec_duplicate:<HALF> (match_dup 1))
+                                   (subreg:<HALF> (match_dup 2) 16))
+                      (smin:<HALF> (vec_duplicate:<HALF> (match_dup 1))
+                                   (subreg:<HALF> (match_dup 2) 16))))]
   ""
   [(set_attr "type" "alu_lite_x2")]
 )
 
 (define_insn "*abd<suffix>_s1"
-  [(set (match_operand:V256J 0 "register_operand" "=&r")
-        (abs:V256J (minus:V256J (umax:V256J (vec_duplicate:V256J (match_operand:<CHUNK> 1 "nonmemory_operand" "r"))
-                                            (match_operand:V256J 2 "register_operand" "r"))
-                                (umin:V256J (vec_duplicate:V256J (match_dup 1)) (match_dup 2)))))]
+  [(set (match_operand:V256L 0 "register_operand" "=&r")
+        (minus:V256L (smax:V256L (vec_duplicate:V256L (match_operand:<CHUNK> 1 "nonmemory_operand" "r"))
+                                 (match_operand:V256L 2 "register_operand" "r"))
+                     (smin:V256L (vec_duplicate:V256L (match_dup 1)) (match_dup 2))))]
   "KV3_2"
   {
     return "abd<chunkx> %x0 = %1, %x2\n\tabd<chunkx> %y0 = %1, %y2\n\t"
@@ -5880,32 +6020,32 @@
 )
 
 (define_insn_and_split "*abd<suffix>_s2"
-  [(set (match_operand:V256J 0 "register_operand" "=&r")
-        (abs:V256J (minus:V256J (umax:V256J (match_operand:V256J 1 "register_operand" "r")
-                                            (vec_duplicate:V256J (match_operand:<CHUNK> 2 "nonmemory_operand" "r")))
-                                (umin:V256J (match_dup 1) (vec_duplicate:V256J (match_dup 2))))))]
+  [(set (match_operand:V256L 0 "register_operand" "=&r")
+        (minus:V256L (smax:V256L (match_operand:V256L 1 "register_operand" "r")
+                                 (vec_duplicate:V256L (match_operand:<CHUNK> 2 "nonmemory_operand" "r")))
+                     (smin:V256L (match_dup 1) (vec_duplicate:V256L (match_dup 2)))))]
   "KV3_1"
   "#"
   "KV3_1 && reload_completed"
   [(set (subreg:<HALF> (match_dup 0) 0)
-        (abs:<HALF> (minus:<HALF> (umax:<HALF> (subreg:<HALF> (match_dup 1) 0)
-                                               (vec_duplicate:<HALF> (match_dup 2)))
-                                  (umin:<HALF> (subreg:<HALF> (match_dup 1) 0)
-                                               (vec_duplicate:<HALF> (match_dup 2))))))
+        (minus:<HALF> (smax:<HALF> (subreg:<HALF> (match_dup 1) 0)
+                                   (vec_duplicate:<HALF> (match_dup 2)))
+                      (smin:<HALF> (subreg:<HALF> (match_dup 1) 0)
+                                   (vec_duplicate:<HALF> (match_dup 2)))))
    (set (subreg:<HALF> (match_dup 0) 16)
-        (abs:<HALF> (minus:<HALF> (umax:<HALF> (subreg:<HALF> (match_dup 1) 16)
-                                               (vec_duplicate:<HALF> (match_dup 2)))
-                                  (umin:<HALF> (subreg:<HALF> (match_dup 1) 16)
-                                               (vec_duplicate:<HALF> (match_dup 2))))))]
+        (minus:<HALF> (smax:<HALF> (subreg:<HALF> (match_dup 1) 16)
+                                   (vec_duplicate:<HALF> (match_dup 2)))
+                      (smin:<HALF> (subreg:<HALF> (match_dup 1) 16)
+                                   (vec_duplicate:<HALF> (match_dup 2)))))]
   ""
   [(set_attr "type" "alu_lite_x2")]
 )
 
 (define_insn "*abd<suffix>_s2"
-  [(set (match_operand:V256J 0 "register_operand" "=&r")
-        (abs:V256J (minus:V256J (umax:V256J (match_operand:V256J 1 "register_operand" "r")
-                                            (vec_duplicate:V256J (match_operand:<CHUNK> 2 "nonmemory_operand" "r")))
-                                (umin:V256J (match_dup 1) (vec_duplicate:V256J (match_dup 2))))))]
+  [(set (match_operand:V256L 0 "register_operand" "=&r")
+        (minus:V256L (smax:V256L (match_operand:V256L 1 "register_operand" "r")
+                                 (vec_duplicate:V256L (match_operand:<CHUNK> 2 "nonmemory_operand" "r")))
+                     (smin:V256L (match_dup 1) (vec_duplicate:V256L (match_dup 2)))))]
   "KV3_2"
   {
     return "abd<chunkx> %x0 = %x1, %2\n\tabd<chunkx> %y0 = %y1, %2\n\t"
@@ -5915,37 +6055,38 @@
    (set_attr "length"        "16")]
 )
 
-(define_expand "ssabd<mode>3"
-  [(match_operand:V256J 0 "register_operand" "")
-   (match_operand:V256J 1 "register_operand" "")
-   (match_operand:V256J 2 "register_s32_operand" "")]
+(define_expand "abds<mode>3"
+  [(match_operand:V256L 0 "register_operand" "")
+   (match_operand:V256L 1 "register_operand" "")
+   (match_operand:V256L 2 "register_s32_operand" "")]
   ""
   {
     if (KV3_1)
-      emit_insn (gen_ssabd<mode>3_1 (operands[0], operands[1], operands[2]));
+      emit_insn (gen_abds<mode>3_1 (operands[0], operands[1], operands[2]));
     else if (KV3_2)
-      emit_insn (gen_ssabd<mode>3_2 (operands[0], operands[1], operands[2]));
+      emit_insn (gen_abds<mode>3_2 (operands[0], operands[1], operands[2]));
     else
       gcc_unreachable ();
     DONE;
   }
 )
 
-(define_insn_and_split "ssabd<mode>3_1"
+(define_insn_and_split "abds<mode>3_1"
   [(set (match_operand:V256J 0 "register_operand" "=r")
-        (ss_abs:V256J (minus:V256J (match_operand:V256J 1 "register_operand" "r")
-                                   (match_operand:V256J 2 "register_operand" "r"))))
+        (ss_minus:V256J (smax:V256J (match_operand:V256J 1 "register_operand" "r")
+                                    (match_operand:V256J 2 "register_operand" "r"))
+                        (smin:V256J (match_dup 1) (match_dup 2))))
    (clobber (match_scratch:V256J 3 "=&r"))
    (clobber (match_scratch:V256J 4 "=&r"))]
   "KV3_1"
   "#"
   "KV3_1"
   [(set (match_dup 3)
-        (ss_minus:V256J (match_dup 1) (match_dup 2)))
+        (smax:V256J (match_dup 1) (match_dup 2)))
    (set (match_dup 4)
-        (ss_minus:V256J (match_dup 2) (match_dup 1)))
+        (smin:V256J (match_dup 1) (match_dup 2)))
    (set (match_dup 0)
-        (smax:V256J (match_dup 3) (match_dup 4)))]
+        (ss_minus:V256J (match_dup 3) (match_dup 4)))]
   {
     if (GET_CODE (operands[3]) == SCRATCH)
       operands[3] = gen_reg_rtx (<MODE>mode);
@@ -5954,11 +6095,11 @@
   }
 )
 
-(define_insn "ssabd<mode>3_2"
-  [(set (match_operand:V256J 0 "register_operand" "=r")
-        (ss_abs:V256J (minus:V256J (umax:V256J (match_operand:V256J 1 "register_operand" "r")
-                                               (match_operand:V256J 2 "register_operand" "r"))
-                                   (umin:V256J (match_dup 1) (match_dup 2)))))]
+(define_insn "abds<mode>3_2"
+  [(set (match_operand:V256L 0 "register_operand" "=r")
+        (ss_minus:V256L (smax:V256L (match_operand:V256L 1 "register_operand" "r")
+                                    (match_operand:V256L 2 "register_operand" "r"))
+                        (smin:V256L (match_dup 1) (match_dup 2))))]
   "KV3_2"
   {
     return "abds<chunkx> %x0 = %x1, %x2\n\tabds<chunkx> %y0 = %y1, %y2\n\t"
@@ -5968,11 +6109,11 @@
    (set_attr "length"        "16")]
 )
 
-(define_insn "*ssabd<suffix>_s1"
-  [(set (match_operand:V256J 0 "register_operand" "=&r")
-        (ss_abs:V256J (minus:V256J (umax:V256J (vec_duplicate:V256J (match_operand:<CHUNK> 1 "nonmemory_operand" "r"))
-                                               (match_operand:V256J 2 "register_operand" "r"))
-                                   (umin:V256J (vec_duplicate:V256J (match_dup 1)) (match_dup 2)))))]
+(define_insn "*abds<suffix>_s1"
+  [(set (match_operand:V256L 0 "register_operand" "=&r")
+        (ss_minus:V256L (smax:V256L (vec_duplicate:V256L (match_operand:<CHUNK> 1 "nonmemory_operand" "r"))
+                                    (match_operand:V256L 2 "register_operand" "r"))
+                        (smin:V256L (vec_duplicate:V256L (match_dup 1)) (match_dup 2))))]
   "KV3_2"
   {
     return "abds<chunkx> %x0 = %1, %x2\n\tabds<chunkx> %y0 = %1, %y2\n\t"
@@ -5982,11 +6123,11 @@
    (set_attr "length"        "16")]
 )
 
-(define_insn "*ssabd<suffix>_s2"
-  [(set (match_operand:V256J 0 "register_operand" "=&r")
-        (ss_abs:V256J (minus:V256J (umax:V256J (match_operand:V256J 1 "register_operand" "r")
-                                               (vec_duplicate:V256J (match_operand:<CHUNK> 2 "nonmemory_operand" "r")))
-                                   (umin:V256J (match_dup 1) (vec_duplicate:V256J (match_dup 2))))))]
+(define_insn "*abds<suffix>_s2"
+  [(set (match_operand:V256L 0 "register_operand" "=&r")
+        (ss_minus:V256L (smax:V256L (match_operand:V256L 1 "register_operand" "r")
+                                    (vec_duplicate:V256L (match_operand:<CHUNK> 2 "nonmemory_operand" "r")))
+                        (smin:V256L (match_dup 1) (vec_duplicate:V256L (match_dup 2)))))]
   "KV3_2"
   {
     return "abds<chunkx> %x0 = %x1, %2\n\tabds<chunkx> %y0 = %y1, %2\n\t"
@@ -5996,6 +6137,87 @@
    (set_attr "length"        "16")]
 )
 
+(define_expand "abdu<mode>3"
+  [(match_operand:V256L 0 "register_operand" "")
+   (match_operand:V256L 1 "register_operand" "")
+   (match_operand:V256L 2 "register_s32_operand" "")]
+  ""
+  {
+    if (KV3_1)
+      emit_insn (gen_abdu<mode>3_1 (operands[0], operands[1], operands[2]));
+    else if (KV3_2)
+      emit_insn (gen_abdu<mode>3_2 (operands[0], operands[1], operands[2]));
+    else
+      gcc_unreachable ();
+    DONE;
+  }
+)
+
+(define_insn_and_split "abdu<mode>3_1"
+  [(set (match_operand:V256J 0 "register_operand" "=r")
+        (minus:V256J (umax:V256J (match_operand:V256J 1 "register_operand" "r")
+                                 (match_operand:V256J 2 "register_operand" "r"))
+                     (umin:V256J (match_dup 1) (match_dup 2))))
+   (clobber (match_scratch:V256J 3 "=&r"))
+   (clobber (match_scratch:V256J 4 "=&r"))]
+  "KV3_1"
+  "#"
+  "KV3_1"
+  [(set (match_dup 3)
+        (umax:V256J (match_dup 1) (match_dup 2)))
+   (set (match_dup 4)
+        (umin:V256J (match_dup 1) (match_dup 2)))
+   (set (match_dup 0)
+        (minus:V256J (match_dup 3) (match_dup 4)))]
+  {
+    if (GET_CODE (operands[3]) == SCRATCH)
+      operands[3] = gen_reg_rtx (<MODE>mode);
+    if (GET_CODE (operands[4]) == SCRATCH)
+      operands[4] = gen_reg_rtx (<MODE>mode);
+  }
+)
+
+(define_insn "abdu<mode>3_2"
+  [(set (match_operand:V256L 0 "register_operand" "=r")
+        (minus:V256L (umax:V256L (match_operand:V256L 1 "register_operand" "r")
+                                 (match_operand:V256L 2 "register_operand" "r"))
+                     (umin:V256L (match_dup 1) (match_dup 2))))]
+  "KV3_2"
+  {
+    return "abdu<chunkx> %x0 = %x1, %x2\n\tabdu<chunkx> %y0 = %y1, %y2\n\t"
+           "abdu<chunkx> %z0 = %z1, %z2\n\tabdu<chunkx> %t0 = %t1, %t2";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_insn "*abdu<suffix>_s1"
+  [(set (match_operand:V256L 0 "register_operand" "=&r")
+        (minus:V256L (umax:V256L (vec_duplicate:V256L (match_operand:<CHUNK> 1 "nonmemory_operand" "r"))
+                                 (match_operand:V256L 2 "register_operand" "r"))
+                     (umin:V256L (vec_duplicate:V256L (match_dup 1)) (match_dup 2))))]
+  "KV3_2"
+  {
+    return "abdu<chunkx> %x0 = %1, %x2\n\tabdu<chunkx> %y0 = %1, %y2\n\t"
+           "abdu<chunkx> %z0 = %1, %z2\n\tabdu<chunkx> %t0 = %1, %t2";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_insn "*abdu<suffix>_s2"
+  [(set (match_operand:V256L 0 "register_operand" "=&r")
+        (minus:V256L (umax:V256L (match_operand:V256L 1 "register_operand" "r")
+                                 (vec_duplicate:V256L (match_operand:<CHUNK> 2 "nonmemory_operand" "r")))
+                     (umin:V256L (match_dup 1) (vec_duplicate:V256L (match_dup 2)))))]
+  "KV3_2"
+  {
+    return "abdu<chunkx> %x0 = %x1, %2\n\tabdu<chunkx> %y0 = %y1, %2\n\t"
+           "abdu<chunkx> %z0 = %z1, %2\n\tabdu<chunkx> %t0 = %t1, %2";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
 
 ;; V8SI
 
