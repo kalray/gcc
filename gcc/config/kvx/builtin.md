@@ -422,7 +422,9 @@
     if (!*xstr)
       emit_insn (gen_abd<mode>3 (operands[0], operands[1], operands[2]));
     else if (xstr[1] == 's')
-      emit_insn (gen_ssabd<mode>3 (operands[0], operands[1], operands[2]));
+      emit_insn (gen_abds<mode>3 (operands[0], operands[1], operands[2]));
+    else if (xstr[1] == 'u')
+      emit_insn (gen_abdu<mode>3 (operands[0], operands[1], operands[2]));
     else
       gcc_unreachable ();
     DONE;
@@ -440,7 +442,9 @@
     if (!*xstr)
       emit_insn (gen_abd<mode>3 (operands[0], operands[1], operands[2]));
     else if (xstr[1] == 's')
-      emit_insn (gen_ssabd<mode>3 (operands[0], operands[1], operands[2]));
+      emit_insn (gen_abds<mode>3 (operands[0], operands[1], operands[2]));
+    else if (xstr[1] == 'u')
+      emit_insn (gen_abdu<mode>3 (operands[0], operands[1], operands[2]));
     else
       gcc_unreachable ();
     DONE;
@@ -458,7 +462,9 @@
     if (!*xstr)
       emit_insn (gen_abd<mode>3 (operands[0], operands[1], operands[2]));
     else if (xstr[1] == 's')
-      emit_insn (gen_ssabd<mode>3 (operands[0], operands[1], operands[2]));
+      emit_insn (gen_abds<mode>3 (operands[0], operands[1], operands[2]));
+    else if (xstr[1] == 'u')
+      emit_insn (gen_abdu<mode>3 (operands[0], operands[1], operands[2]));
     else
       gcc_unreachable ();
     DONE;
@@ -476,7 +482,9 @@
     if (!*xstr)
       emit_insn (gen_abd<mode>3 (operands[0], operands[1], operands[2]));
     else if (xstr[1] == 's')
-      emit_insn (gen_ssabd<mode>3 (operands[0], operands[1], operands[2]));
+      emit_insn (gen_abds<mode>3 (operands[0], operands[1], operands[2]));
+    else if (xstr[1] == 'u')
+      emit_insn (gen_abdu<mode>3 (operands[0], operands[1], operands[2]));
     else
       gcc_unreachable ();
     DONE;
@@ -494,7 +502,9 @@
     if (!*xstr)
       emit_insn (gen_abd<mode>3 (operands[0], operands[1], operands[2]));
     else if (xstr[1] == 's')
-      emit_insn (gen_ssabd<mode>3 (operands[0], operands[1], operands[2]));
+      emit_insn (gen_abds<mode>3 (operands[0], operands[1], operands[2]));
+    else if (xstr[1] == 'u')
+      emit_insn (gen_abdu<mode>3 (operands[0], operands[1], operands[2]));
     else
       gcc_unreachable ();
     DONE;

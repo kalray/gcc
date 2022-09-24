@@ -999,6 +999,7 @@ kvx_init_builtins (void)
 #define AVERAGE STRING
 #define SATURATE STRING
 #define SIGNEDSAT STRING
+#define ABDSATUNS STRING
 #define EXTENDMUL STRING
 #define WIDENINT STRING
 #define NARROWINT STRING
@@ -1088,19 +1089,19 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (ABSDP, "absdp", V2DI, V2DI, SIGNEDSAT); // Vector
   ADD_KVX_BUILTIN (ABSDQ, "absdq", V4DI, V4DI, SIGNEDSAT); // Vector
 
-  ADD_KVX_BUILTIN (ABDBO, "abdbo", V8QI, V8QI, V8QI, SIGNEDSAT); // Vector
-  ADD_KVX_BUILTIN (ABDBX, "abdbx", V16QI, V16QI, V16QI, SIGNEDSAT); // Vector
-  ADD_KVX_BUILTIN (ABDBV, "abdbv", V32QI, V32QI, V32QI, SIGNEDSAT); // Vector
-  ADD_KVX_BUILTIN (ABDHQ, "abdhq", V4HI, V4HI, V4HI, SIGNEDSAT); // Vector
-  ADD_KVX_BUILTIN (ABDHO, "abdho", V8HI, V8HI, V8HI, SIGNEDSAT); // Vector
-  ADD_KVX_BUILTIN (ABDHX, "abdhx", V16HI, V16HI, V16HI, SIGNEDSAT); // Vector
-  ADD_KVX_BUILTIN (ABDW, "abdw", INT32, INT32, INT32, SIGNEDSAT); // Scalar
-  ADD_KVX_BUILTIN (ABDWP, "abdwp", V2SI, V2SI, V2SI, SIGNEDSAT); // Vector
-  ADD_KVX_BUILTIN (ABDWQ, "abdwq", V4SI, V4SI, V4SI, SIGNEDSAT); // Vector
-  ADD_KVX_BUILTIN (ABDWO, "abdwo", V8SI, V8SI, V8SI, SIGNEDSAT); // Vector
-  ADD_KVX_BUILTIN (ABDD, "abdd", INT64, INT64, INT64, SIGNEDSAT); // Scalar
-  ADD_KVX_BUILTIN (ABDDP, "abddp", V2DI, V2DI, V2DI, SIGNEDSAT); // Vector
-  ADD_KVX_BUILTIN (ABDDQ, "abddq", V4DI, V4DI, V4DI, SIGNEDSAT); // Vector
+  ADD_KVX_BUILTIN (ABDBO, "abdbo", V8QI, V8QI, V8QI, ABDSATUNS); // Vector
+  ADD_KVX_BUILTIN (ABDBX, "abdbx", V16QI, V16QI, V16QI, ABDSATUNS); // Vector
+  ADD_KVX_BUILTIN (ABDBV, "abdbv", V32QI, V32QI, V32QI, ABDSATUNS); // Vector
+  ADD_KVX_BUILTIN (ABDHQ, "abdhq", V4HI, V4HI, V4HI, ABDSATUNS); // Vector
+  ADD_KVX_BUILTIN (ABDHO, "abdho", V8HI, V8HI, V8HI, ABDSATUNS); // Vector
+  ADD_KVX_BUILTIN (ABDHX, "abdhx", V16HI, V16HI, V16HI, ABDSATUNS); // Vector
+  ADD_KVX_BUILTIN (ABDW, "abdw", INT32, INT32, INT32, ABDSATUNS); // Scalar
+  ADD_KVX_BUILTIN (ABDWP, "abdwp", V2SI, V2SI, V2SI, ABDSATUNS); // Vector
+  ADD_KVX_BUILTIN (ABDWQ, "abdwq", V4SI, V4SI, V4SI, ABDSATUNS); // Vector
+  ADD_KVX_BUILTIN (ABDWO, "abdwo", V8SI, V8SI, V8SI, ABDSATUNS); // Vector
+  ADD_KVX_BUILTIN (ABDD, "abdd", INT64, INT64, INT64, ABDSATUNS); // Scalar
+  ADD_KVX_BUILTIN (ABDDP, "abddp", V2DI, V2DI, V2DI, ABDSATUNS); // Vector
+  ADD_KVX_BUILTIN (ABDDQ, "abddq", V4DI, V4DI, V4DI, ABDSATUNS); // Vector
 
   ADD_KVX_BUILTIN (AVGBO, "avgbo", V8QI, V8QI, V8QI, AVERAGE); // Vector
   ADD_KVX_BUILTIN (AVGBX, "avgbx", V16QI, V16QI, V16QI, AVERAGE); // Vector
@@ -1914,6 +1915,22 @@ build_signedsat_arg (tree arg, const char *name)
 }
 
 static rtx
+build_abdsatuns_arg (tree arg, const char *name)
+{
+  const char *modifier = kvx_tree_string_constant (arg, name);
+  static const char *table[] = {
+    "", ".s", ".u",
+  };
+  for (int i = 0; i < (int) (sizeof (table) / sizeof (*table)); i++)
+    {
+      if (!strcmp (modifier, table[i]))
+	return gen_rtx_CONST_STRING (VOIDmode, table[i]);
+    }
+  error ("__builtin_kvx_%s modifier \"%s\" not recognized.", name, modifier);
+  return 0;
+}
+
+static rtx
 build_extendmul_arg (tree arg, const char *name)
 {
   const char *modifier = kvx_tree_string_constant (arg, name);
@@ -2349,7 +2366,7 @@ build_accesses_arg (tree arg, const char *name)
   if (KV3_1 && modifier[0])
     error ("__builtin_kvx_%s modifier \"%s\" is for the kv3-2.", name, modifier);
   static const char *table[] = {
-    "", ".w", ".r",
+    "", ".w", ".r", ".wa"
   };
   for (int i = 0; i < (int) (sizeof (table) / sizeof (*table)); i++)
     {
@@ -2694,6 +2711,8 @@ verify_sfr_regno (int regno, const char *name, const char *where)
   }
 #define KVX_EXPAND_BUILTIN_3_CARRY(name, name2, tmode, smode)                  \
   KVX_EXPAND_BUILTIN_3_MODIFIERS(carry, name, name2, tmode, smode)
+#define KVX_EXPAND_BUILTIN_3_ABDSATUNS(name, name2, tmode, smode)              \
+  KVX_EXPAND_BUILTIN_3_MODIFIERS(abdsatuns, name, name2, tmode, smode)
 #define KVX_EXPAND_BUILTIN_3_AVERAGE(name, name2, tmode, smode)                \
   KVX_EXPAND_BUILTIN_3_MODIFIERS(average, name, name2, tmode, smode)
 #define KVX_EXPAND_BUILTIN_3_SATURATE(name, name2, tmode, smode)               \
@@ -2993,19 +3012,19 @@ KVX_EXPAND_BUILTIN_2_SIGNEDSAT (absd, kvx_absd, DImode, DImode)
 KVX_EXPAND_BUILTIN_2_SIGNEDSAT (absdp, kvx_absdp, V2DImode, V2DImode)
 KVX_EXPAND_BUILTIN_2_SIGNEDSAT (absdq, kvx_absdq, V4DImode, V4DImode)
 
-KVX_EXPAND_BUILTIN_3_SIGNEDSAT (abdbo, kvx_abdbo, V8QImode, V8QImode)
-KVX_EXPAND_BUILTIN_3_SIGNEDSAT (abdbx, kvx_abdbx, V16QImode, V16QImode)
-KVX_EXPAND_BUILTIN_3_SIGNEDSAT (abdbv, kvx_abdbv, V32QImode, V32QImode)
-KVX_EXPAND_BUILTIN_3_SIGNEDSAT (abdhq, kvx_abdhq, V4HImode, V4HImode)
-KVX_EXPAND_BUILTIN_3_SIGNEDSAT (abdho, kvx_abdho, V8HImode, V8HImode)
-KVX_EXPAND_BUILTIN_3_SIGNEDSAT (abdhx, kvx_abdhx, V16HImode, V16HImode)
-KVX_EXPAND_BUILTIN_3_SIGNEDSAT (abdw, kvx_abdw, SImode, SImode)
-KVX_EXPAND_BUILTIN_3_SIGNEDSAT (abdwp, kvx_abdwp, V2SImode, V2SImode)
-KVX_EXPAND_BUILTIN_3_SIGNEDSAT (abdwq, kvx_abdwq, V4SImode, V4SImode)
-KVX_EXPAND_BUILTIN_3_SIGNEDSAT (abdwo, kvx_abdwo, V8SImode, V8SImode)
-KVX_EXPAND_BUILTIN_3_SIGNEDSAT (abdd, kvx_abdd, DImode, DImode)
-KVX_EXPAND_BUILTIN_3_SIGNEDSAT (abddp, kvx_abddp, V2DImode, V2DImode)
-KVX_EXPAND_BUILTIN_3_SIGNEDSAT (abddq, kvx_abddq, V4DImode, V4DImode)
+KVX_EXPAND_BUILTIN_3_ABDSATUNS (abdbo, kvx_abdbo, V8QImode, V8QImode)
+KVX_EXPAND_BUILTIN_3_ABDSATUNS (abdbx, kvx_abdbx, V16QImode, V16QImode)
+KVX_EXPAND_BUILTIN_3_ABDSATUNS (abdbv, kvx_abdbv, V32QImode, V32QImode)
+KVX_EXPAND_BUILTIN_3_ABDSATUNS (abdhq, kvx_abdhq, V4HImode, V4HImode)
+KVX_EXPAND_BUILTIN_3_ABDSATUNS (abdho, kvx_abdho, V8HImode, V8HImode)
+KVX_EXPAND_BUILTIN_3_ABDSATUNS (abdhx, kvx_abdhx, V16HImode, V16HImode)
+KVX_EXPAND_BUILTIN_3_ABDSATUNS (abdw, kvx_abdw, SImode, SImode)
+KVX_EXPAND_BUILTIN_3_ABDSATUNS (abdwp, kvx_abdwp, V2SImode, V2SImode)
+KVX_EXPAND_BUILTIN_3_ABDSATUNS (abdwq, kvx_abdwq, V4SImode, V4SImode)
+KVX_EXPAND_BUILTIN_3_ABDSATUNS (abdwo, kvx_abdwo, V8SImode, V8SImode)
+KVX_EXPAND_BUILTIN_3_ABDSATUNS (abdd, kvx_abdd, DImode, DImode)
+KVX_EXPAND_BUILTIN_3_ABDSATUNS (abddp, kvx_abddp, V2DImode, V2DImode)
+KVX_EXPAND_BUILTIN_3_ABDSATUNS (abddq, kvx_abddq, V4DImode, V4DImode)
 
 KVX_EXPAND_BUILTIN_3_AVERAGE (avgbo, kvx_avgbo, V8QImode, V8QImode)
 KVX_EXPAND_BUILTIN_3_AVERAGE (avgbx, kvx_avgbx, V16QImode, V16QImode)
