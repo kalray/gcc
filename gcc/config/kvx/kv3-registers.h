@@ -87,7 +87,7 @@ enum reg_class {
 	"sr_pl0",	"sr_pl1",	"sr_pl2",	"sr_pl3",	"es_pl0",	"es_pl1",	"es_pl2",	"es_pl3", \
 	"sid_pl0",	"sid_pl1",	"sid_pl2",	"sid_pl3",	"sr1_pl0",	"sr1_pl1",	"sr1_pl2",	"sr1_pl3", \
 	"syow",	"htow",	"itow",	"dow",	"mow",	"psow",	"res102",	"res103", \
-	"res104",	"res105",	"res106",	"res107",	"res108",	"res109",	"res110",	"res111", \
+	"tpcc_pl0",	"tpcc_pl1",	"tpcc_pl2",	"tpcc_pl3",	"res108",	"res109",	"res110",	"res111", \
 	"res112",	"res113",	"res114",	"res115",	"res116",	"res117",	"res118",	"res119", \
 	"res120",	"res121",	"res122",	"res123",	"res124",	"res125",	"res126",	"res127", \
 	"spc",	"res129",	"res130",	"res131",	"sps",	"res133",	"res134",	"res135", \
@@ -95,7 +95,7 @@ enum reg_class {
 	"sr",	"res145",	"res146",	"res147",	"es",	"res149",	"res150",	"res151", \
 	"sid",	"res153",	"res154",	"res155",	"sr1",	"res157",	"res158",	"res159", \
 	"res160",	"res161",	"res162",	"res163",	"res164",	"res165",	"res166",	"res167", \
-	"res168",	"res169",	"res170",	"res171",	"res172",	"res173",	"res174",	"res175", \
+	"tpcc",	"res169",	"res170",	"res171",	"res172",	"res173",	"res174",	"res175", \
 	"res176",	"res177",	"res178",	"res179",	"res180",	"res181",	"res182",	"res183", \
 	"res184",	"res185",	"res186",	"res187",	"res188",	"res189",	"res190",	"res191", \
 	"a0_x",	"a0_y",	"a0_z",	"a0_t",	"a1_x",	"a1_y",	"a1_z",	"a1_t", \
