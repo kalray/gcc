@@ -958,6 +958,10 @@ kvx_init_builtins (void)
   add_builtin_type ("__kvx_v512", V512);
 
   tree OI = make_unsigned_type (256);
+  SET_TYPE_ALIGN (OI, 256);
+  SET_TYPE_MODE (OI, OImode);
+  layout_type (OI);
+
   tree X256 = build_vector_type (OI, 1);
   tree X512 = build_vector_type (OI, 2);
   tree X1024 = build_vector_type (OI, 4);
