@@ -884,7 +884,7 @@ kvx_init_builtins (void)
   tree V4HI = build_opaque_vector_type (INT16, 4);
   tree V8HI = build_opaque_vector_type (INT16, 8);
   tree V16HI = build_opaque_vector_type (INT16, 16);
-  tree V32HI = build_opaque_vector_type (INT32, 32);
+  tree V32HI = build_opaque_vector_type (INT16, 32);
 
   tree V2SI = build_opaque_vector_type (INT32, 2);
   tree V4SI = build_opaque_vector_type (INT32, 4);
@@ -898,7 +898,7 @@ kvx_init_builtins (void)
   tree V4HF = build_opaque_vector_type (FLOAT16, 4);
   tree V8HF = build_opaque_vector_type (FLOAT16, 8);
   tree V16HF = build_opaque_vector_type (FLOAT16, 16);
-  tree V32HF = build_opaque_vector_type (FLOAT32, 32);
+  tree V32HF = build_opaque_vector_type (FLOAT16, 32);
 
   tree V2SF = build_opaque_vector_type (FLOAT32, 2);
   tree V4SF = build_opaque_vector_type (FLOAT32, 4);
@@ -1828,9 +1828,9 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (XSX48BW, "xsx48bw", X1024, X256); // Extension kv3-2
   ADD_KVX_BUILTIN (XZX48BW, "xzx48bw", X1024, X256); // Extension kv3-2
   ADD_KVX_BUILTIN (XMT44D, "xmt44d", X1024, X1024); // Extension
-  ADD_KVX_BUILTIN (XSENDO, "xsendo", VOID, X256, CHANNEL); // Extension
-  ADD_KVX_BUILTIN (XRECVO, "xrecvo", X256, CHANNEL); // Extension
-  ADD_KVX_BUILTIN (XSENDRECVO, "xsendrecvo", X256, X256, CHANNELS); // Extension
+  ADD_KVX_BUILTIN (XSENDO, "xsendo", VOID, X256, CHANNEL); // Extension kv3-2
+  ADD_KVX_BUILTIN (XRECVO, "xrecvo", X256, CHANNEL); // Extension kv3-2
+  ADD_KVX_BUILTIN (XSENDRECVO, "xsendrecvo", X256, X256, CHANNELS); // Extension kv3-2
 
   ADD_KVX_BUILTIN (XSWAP256, "xswap256", V4DI, _X256, V4DI); // Extension
 
@@ -3160,7 +3160,7 @@ KVX_EXPAND_BUILTIN_2_WIDENINT (widenbhx, kvx_widenbhx, V16HImode, V16QImode)
 KVX_EXPAND_BUILTIN_2_WIDENINT (widenbhv, kvx_widenbhv, V32HImode, V32QImode)
 KVX_EXPAND_BUILTIN_2_WIDENINT (widenhwq, kvx_widenhwq, V4SImode, V4HImode)
 KVX_EXPAND_BUILTIN_2_WIDENINT (widenhwo, kvx_widenhwo, V8SImode, V8HImode)
-KVX_EXPAND_BUILTIN_2_WIDENINT (widenhwx, kvx_widenhwx, V8SImode, V8HImode)
+KVX_EXPAND_BUILTIN_2_WIDENINT (widenhwx, kvx_widenhwx, V16SImode, V16HImode)
 KVX_EXPAND_BUILTIN_2_WIDENINT (widenwdp, kvx_widenwdp, V2DImode, V2SImode)
 KVX_EXPAND_BUILTIN_2_WIDENINT (widenwdq, kvx_widenwdq, V4DImode, V4SImode)
 KVX_EXPAND_BUILTIN_2_WIDENINT (widenwdo, kvx_widenwdo, V8DImode, V8SImode)
