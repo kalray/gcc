@@ -307,10 +307,10 @@
   ""
   {
     rtx mask = operands[0];
-    rtx cmp = operands[1];
+    rtx comp = operands[1];
     rtx left = operands[2];
     rtx right = operands[3];
-    kvx_lower_comparison (mask, GET_CODE (cmp), left, right);
+    kvx_lower_comparison (mask, comp, <MODE>mode);
     DONE;
   }
 )
@@ -323,10 +323,10 @@
   ""
   {
     rtx mask = operands[0];
-    rtx cmp = operands[1];
+    rtx comp = operands[1];
     rtx left = operands[2];
     rtx right = operands[3];
-    kvx_lower_comparison (mask, GET_CODE (cmp), left, right);
+    kvx_lower_comparison (mask, comp, <MODE>mode);
     DONE;
   }
 )
@@ -343,10 +343,7 @@
     rtx target = operands[0];
     rtx select1 = operands[1];
     rtx select2 = operands[2];
-    rtx cmp = operands[3];
-    rtx left = operands[4];
-    rtx right = operands[5];
-    kvx_expand_conditional_move (target, select1, select2, cmp, left, right);
+    kvx_expand_conditional_move (target, select1, select2, operands[3], <SIMDALL:MODE>mode);
     DONE;
   }
 )
@@ -363,10 +360,7 @@
     rtx target = operands[0];
     rtx select1 = operands[1];
     rtx select2 = operands[2];
-    rtx cmp = operands[3];
-    rtx left = operands[4];
-    rtx right = operands[5];
-    kvx_expand_conditional_move (target, select1, select2, cmp, left, right);
+    kvx_expand_conditional_move (target, select1, select2, operands[3], <SIMDALL:MODE>mode);
     DONE;
   }
 )

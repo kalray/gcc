@@ -132,11 +132,12 @@ extern bool kvx_has_43bit_vector_const_p (rtx x);
 
 extern bool kvx_has_32x2bit_vector_const_p (rtx x);
 
-extern rtx kvx_lower_comparison (rtx pred, enum rtx_code cmp_code, rtx left,
-				 rtx right);
+extern enum machine_mode kvx_get_predicate_mode (enum machine_mode mode);
+
+extern void kvx_lower_comparison (rtx pred, rtx comp, enum machine_mode mode);
 
 extern void kvx_expand_conditional_move (rtx target, rtx select1, rtx select2,
-					 rtx cmp, rtx left, rtx right);
+					 rtx cmp, enum machine_mode mode);
 
 extern void kvx_expand_masked_move (rtx target, rtx select1, rtx select2,
 				    rtx mask);

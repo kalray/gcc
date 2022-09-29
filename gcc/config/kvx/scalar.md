@@ -945,7 +945,7 @@
                 (match_operand 2 "nonmemory_operand" "")))]
   ""
   {
-    if (poweroftwo_6bits_operand (operands[2], SImode))
+    if (const_pow2lt64_operand (operands[2], VOIDmode))
       {
         HOST_WIDE_INT constant = INTVAL (operands[2]);
         operands[2] = gen_rtx_CONST_INT (VOIDmode, __builtin_ctzll (constant));
@@ -985,7 +985,7 @@
                 (match_operand 2 "nonmemory_operand" "")))]
   ""
   {
-    if (poweroftwo_6bits_operand (operands[2], SImode))
+    if (const_pow2lt64_operand (operands[2], VOIDmode))
       {
         HOST_WIDE_INT constant = INTVAL (operands[2]);
         operands[2] = gen_rtx_CONST_INT (VOIDmode, __builtin_ctzll (constant));
@@ -1027,7 +1027,7 @@
                  (match_operand 2 "nonmemory_operand" "")))]
   ""
   {
-    if (poweroftwo_6bits_operand (operands[2], SImode))
+    if (const_pow2lt64_operand (operands[2], VOIDmode))
       {
         HOST_WIDE_INT constant = INTVAL (operands[2]);
         operands[2] = gen_rtx_CONST_INT (VOIDmode, __builtin_ctzll (constant));
@@ -1110,7 +1110,7 @@
                  (match_operand 2 "nonmemory_operand" "")))]
   ""
   {
-    if (poweroftwo_6bits_operand (operands[2], SImode))
+    if (const_pow2lt64_operand (operands[2], VOIDmode))
       {
         HOST_WIDE_INT constant = INTVAL (operands[2]);
         operands[2] = gen_rtx_CONST_INT (VOIDmode, constant - 1ULL);
@@ -1229,6 +1229,16 @@
   [(set_attr "type" "mau_auxr")]
 )
 
+(define_insn "*maddsuwd"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (plus:DI (mult:DI (sign_extend:DI (match_operand:SI 1 "register_operand" "r"))
+                          (zero_extend:DI (match_operand:SI 2 "register_operand" "r")))
+                 (match_operand:DI 3 "register_operand" "0")))]
+  ""
+  "maddsuwd %0 = %1, %2"
+  [(set_attr "type" "mau_auxr")]
+)
+
 (define_insn "usmaddsidi4"
   [(set (match_operand:DI 0 "register_operand" "=r")
         (plus:DI (mult:DI (zero_extend:DI (match_operand:SI 1 "register_operand" "r"))
@@ -1276,6 +1286,16 @@
                            (zero_extend:DI (match_operand:SI 2 "register_operand" "r")))))]
   ""
   "msbfuwd %0 = %1, %2"
+  [(set_attr "type" "mau_auxr")]
+)
+
+(define_insn "*msbfsuwd"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (minus:DI (match_operand:DI 3 "register_operand" "0")
+                  (mult:DI (sign_extend:DI (match_operand:SI 1 "register_operand" "r"))
+                           (zero_extend:DI (match_operand:SI 2 "register_operand" "r")))))]
+  ""
+  "msbfsuwd %0 = %1, %2"
   [(set_attr "type" "mau_auxr")]
 )
 
@@ -2218,7 +2238,7 @@
                 (match_operand 2 "nonmemory_operand" "")))]
   ""
   {
-    if (poweroftwo_6bits_operand (operands[2], DImode))
+    if (const_pow2lt64_operand (operands[2], VOIDmode))
       {
         HOST_WIDE_INT constant = INTVAL (operands[2]);
         operands[2] = gen_rtx_CONST_INT (VOIDmode, __builtin_ctzll (constant));
@@ -2258,7 +2278,7 @@
                 (match_operand 2 "nonmemory_operand" "")))]
   ""
   {
-    if (poweroftwo_6bits_operand (operands[2], DImode))
+    if (const_pow2lt64_operand (operands[2], VOIDmode))
       {
         HOST_WIDE_INT constant = INTVAL (operands[2]);
         operands[2] = gen_rtx_CONST_INT (VOIDmode, __builtin_ctzll (constant));
@@ -2300,7 +2320,7 @@
                  (match_operand 2 "nonmemory_operand" "")))]
   ""
   {
-    if (poweroftwo_6bits_operand (operands[2], DImode))
+    if (const_pow2lt64_operand (operands[2], VOIDmode))
       {
         HOST_WIDE_INT constant = INTVAL (operands[2]);
         operands[2] = gen_rtx_CONST_INT (VOIDmode, __builtin_ctzll (constant));
@@ -2424,7 +2444,7 @@
                  (match_operand 2 "nonmemory_operand" "")))]
   ""
   {
-    if (poweroftwo_6bits_operand (operands[2], DImode))
+    if (const_pow2lt64_operand (operands[2], VOIDmode))
       {
         HOST_WIDE_INT constant = INTVAL (operands[2]);
         operands[2] = gen_rtx_CONST_INT (VOIDmode, constant - 1ULL);
@@ -2649,6 +2669,26 @@
   [(set_attr "type" "mau_auxr")]
 )
 
+(define_insn "*madduzdt"
+  [(set (match_operand:TI 0 "register_operand" "=r")
+        (plus:TI (mult:TI (zero_extend:TI (match_operand:DI 1 "register_operand" "r"))
+                          (zero_extend:TI (match_operand:DI 2 "register_operand" "r")))
+                 (lshiftrt:TI (match_operand:TI 3 "register_operand" "0") (const_int 64))))]
+  ""
+  "madduzdt %0 = %1, %2"
+  [(set_attr "type" "mau_auxr")]
+)
+
+(define_insn "*maddsudt"
+  [(set (match_operand:TI 0 "register_operand" "=r")
+        (plus:TI (mult:TI (sign_extend:TI (match_operand:DI 1 "register_operand" "r"))
+                          (zero_extend:TI (match_operand:DI 2 "register_operand" "r")))
+                 (match_operand:TI 3 "register_operand" "0")))]
+  ""
+  "maddsudt %0 = %1, %2"
+  [(set_attr "type" "mau_auxr")]
+)
+
 (define_insn "usmaddditi4"
   [(set (match_operand:TI 0 "register_operand" "=r")
         (plus:TI (mult:TI (zero_extend:TI (match_operand:DI 1 "register_operand" "r"))
@@ -2686,6 +2726,26 @@
                            (zero_extend:TI (match_operand:DI 2 "register_operand" "r")))))]
   ""
   "msbfudt %0 = %1, %2"
+  [(set_attr "type" "mau_auxr")]
+)
+
+(define_insn "*msbfuzdt"
+  [(set (match_operand:TI 0 "register_operand" "=r")
+        (minus:TI (lshiftrt:TI (match_operand:TI 3 "register_operand" "0") (const_int 64))
+                  (mult:TI (zero_extend:TI (match_operand:DI 1 "register_operand" "r"))
+                           (zero_extend:TI (match_operand:DI 2 "register_operand" "r")))))]
+  ""
+  "msbfuzdt %0 = %1, %2"
+  [(set_attr "type" "mau_auxr")]
+)
+
+(define_insn "*msbfsudt"
+  [(set (match_operand:TI 0 "register_operand" "=r")
+        (minus:TI (match_operand:TI 3 "register_operand" "0")
+                  (mult:TI (sign_extend:TI (match_operand:DI 1 "register_operand" "r"))
+                           (zero_extend:TI (match_operand:DI 2 "register_operand" "r")))))]
+  ""
+  "msbfsudt %0 = %1, %2"
   [(set_attr "type" "mau_auxr")]
 )
 
@@ -2950,43 +3010,205 @@
 ;; TI
 
 (define_expand "addti3"
-  [(set (match_operand:TI 0 "register_operand")
-        (plus:TI (match_operand:TI 1 "register_operand")
-                 (match_operand:TI 2 "register_operand")))]
+  [(set (match_operand:TI 0 "register_operand" "")
+        (plus:TI (match_operand:TI 1 "register_operand" "")
+                 (match_operand:TI 2 "register_s32_operand" "")))]
   ""
-  {
-    rtx lo_0 = simplify_gen_subreg (DImode, operands[0], TImode, 0);
-    rtx hi_0 = simplify_gen_subreg (DImode, operands[0], TImode, 8);
-    rtx lo_1 = simplify_gen_subreg (DImode, operands[1], TImode, 0);
-    rtx hi_1 = simplify_gen_subreg (DImode, operands[1], TImode, 8);
-    rtx lo_2 = simplify_gen_subreg (DImode, operands[2], TImode, 0);
-    rtx hi_2 = simplify_gen_subreg (DImode, operands[2], TImode, 8);
-    rtx ci = gen_rtx_CONST_STRING (VOIDmode, ".i");
-    rtx c = gen_rtx_CONST_STRING (VOIDmode, "");
-    emit_insn (gen_kvx_addcd (lo_0, lo_1, lo_2, ci));
-    emit_insn (gen_kvx_addcd (hi_0, hi_1, hi_2, c));
-    DONE;
-  }
+)
+
+(define_insn_and_split "*addti3_reg"
+  [(set (match_operand:TI 0 "register_operand" "=r")
+        (plus:TI (match_operand:TI 1 "register_operand" "r")
+                 (match_operand:TI 2 "register_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(parallel
+    [(set (subreg:DI (match_dup 0) 0)
+          (unspec:DI [(subreg:DI (match_dup 1) 0)
+                      (subreg:DI (match_dup 2) 0)
+                      (const_string ".i")] UNSPEC_ADDCD))
+     (set (reg:DI KV3_CS_REGNO)
+          (unspec:DI [(reg:DI KV3_CS_REGNO)
+                      (subreg:DI (match_dup 1) 0)
+                      (subreg:DI (match_dup 2) 0)] UNSPEC_CARRY))])
+   (parallel
+    [(set (subreg:DI (match_dup 0) 8)
+          (unspec:DI [(subreg:DI (match_dup 1) 8)
+                      (subreg:DI (match_dup 2) 8)
+                      (const_string "")] UNSPEC_ADDCD))
+     (set (reg:DI KV3_CS_REGNO)
+          (unspec:DI [(reg:DI KV3_CS_REGNO)
+                      (subreg:DI (match_dup 1) 8)
+                      (subreg:DI (match_dup 2) 8)] UNSPEC_CARRY))])]
+)
+
+(define_insn_and_split "*addti3_pos32"
+  [(set (match_operand:TI 0 "register_operand" "=r")
+        (plus:TI (match_operand:TI 1 "register_operand" "r")
+                 (match_operand:TI 2 "const_pos32_operand" "i")))]
+  ""
+  "#"
+  "reload_completed"
+  [(parallel
+    [(set (subreg:DI (match_dup 0) 0)
+          (unspec:DI [(subreg:DI (match_dup 1) 0)
+                      (match_dup 2)
+                      (const_string ".i")] UNSPEC_ADDCD))
+     (set (reg:DI KV3_CS_REGNO)
+          (unspec:DI [(reg:DI KV3_CS_REGNO)
+                      (subreg:DI (match_dup 1) 0)
+                      (match_dup 2)] UNSPEC_CARRY))])
+   (parallel
+    [(set (subreg:DI (match_dup 0) 8)
+          (unspec:DI [(subreg:DI (match_dup 1) 8)
+                      (const_int 0)
+                      (const_string "")] UNSPEC_ADDCD))
+     (set (reg:DI KV3_CS_REGNO)
+          (unspec:DI [(reg:DI KV3_CS_REGNO)
+                      (subreg:DI (match_dup 1) 8)
+                      (const_int 0)] UNSPEC_CARRY))])]
+)
+
+(define_insn_and_split "*addti3_neg32"
+  [(set (match_operand:TI 0 "register_operand" "=r")
+        (plus:TI (match_operand:TI 1 "register_operand" "r")
+                 (match_operand:TI 2 "const_neg32_operand" "i")))]
+  ""
+  "#"
+  "reload_completed"
+  [(parallel
+    [(set (subreg:DI (match_dup 0) 0)
+          (unspec:DI [(subreg:DI (match_dup 1) 0)
+                      (match_dup 2)
+                      (const_string ".i")] UNSPEC_ADDCD))
+     (set (reg:DI KV3_CS_REGNO)
+          (unspec:DI [(reg:DI KV3_CS_REGNO)
+                      (subreg:DI (match_dup 1) 0)
+                      (match_dup 2)] UNSPEC_CARRY))])
+   (parallel
+    [(set (subreg:DI (match_dup 0) 8)
+          (unspec:DI [(subreg:DI (match_dup 1) 8)
+                      (const_int -1)
+                      (const_string "")] UNSPEC_ADDCD))
+     (set (reg:DI KV3_CS_REGNO)
+          (unspec:DI [(reg:DI KV3_CS_REGNO)
+                      (subreg:DI (match_dup 1) 8)
+                      (const_int -1)] UNSPEC_CARRY))])]
 )
 
 (define_expand "subti3"
-  [(set (match_operand:TI 0 "register_operand")
-        (minus:TI (match_operand:TI 1 "register_operand")
-                  (match_operand:TI 2 "register_operand")))]
+  [(set (match_operand:TI 0 "register_operand" "")
+        (minus:TI (match_operand:TI 1 "register_operand" "")
+                  (match_operand:TI 2 "register_operand" "")))]
   ""
-  {
-    rtx lo_0 = simplify_gen_subreg (DImode, operands[0], TImode, 0);
-    rtx hi_0 = simplify_gen_subreg (DImode, operands[0], TImode, 8);
-    rtx lo_1 = simplify_gen_subreg (DImode, operands[1], TImode, 0);
-    rtx hi_1 = simplify_gen_subreg (DImode, operands[1], TImode, 8);
-    rtx lo_2 = simplify_gen_subreg (DImode, operands[2], TImode, 0);
-    rtx hi_2 = simplify_gen_subreg (DImode, operands[2], TImode, 8);
-    rtx ci = gen_rtx_CONST_STRING (VOIDmode, ".i");
-    rtx c = gen_rtx_CONST_STRING (VOIDmode, "");
-    emit_insn (gen_kvx_sbfcd (lo_0, lo_2, lo_1, ci));
-    emit_insn (gen_kvx_sbfcd (hi_0, hi_2, hi_1, c));
-    DONE;
-  }
+)
+
+(define_insn_and_split "*subti3_reg"
+  [(set (match_operand:TI 0 "register_operand" "=r")
+        (minus:TI (match_operand:TI 1 "register_operand" "r")
+                  (match_operand:TI 2 "register_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(parallel
+    [(set (subreg:DI (match_dup 0) 0)
+          (unspec:DI [(subreg:DI (match_dup 2) 0)
+                      (subreg:DI (match_dup 1) 0)
+                      (const_string ".i")] UNSPEC_SBFCD))
+     (set (reg:DI KV3_CS_REGNO)
+          (unspec:DI [(reg:DI KV3_CS_REGNO)
+                      (subreg:DI (match_dup 2) 0)
+                      (subreg:DI (match_dup 1) 0)] UNSPEC_BORROW))])
+   (parallel
+    [(set (subreg:DI (match_dup 0) 8)
+          (unspec:DI [(subreg:DI (match_dup 2) 8)
+                      (subreg:DI (match_dup 1) 8)
+                      (const_string "")] UNSPEC_SBFCD))
+     (set (reg:DI KV3_CS_REGNO)
+          (unspec:DI [(reg:DI KV3_CS_REGNO)
+                      (subreg:DI (match_dup 2) 8)
+                      (subreg:DI (match_dup 1) 8)] UNSPEC_BORROW))])]
+)
+
+(define_insn_and_split "*subti3_pos32"
+  [(set (match_operand:TI 0 "register_operand" "=r")
+        (minus:TI (match_operand:TI 1 "const_pos32_operand" "i")
+                  (match_operand:TI 2 "register_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(parallel
+    [(set (subreg:DI (match_dup 0) 0)
+          (unspec:DI [(subreg:DI (match_dup 2) 0)
+                      (match_dup 1)
+                      (const_string ".i")] UNSPEC_SBFCD))
+     (set (reg:DI KV3_CS_REGNO)
+          (unspec:DI [(reg:DI KV3_CS_REGNO)
+                      (subreg:DI (match_dup 2) 0)
+                      (match_dup 1)] UNSPEC_BORROW))])
+   (parallel
+    [(set (subreg:DI (match_dup 0) 8)
+          (unspec:DI [(subreg:DI (match_dup 2) 8)
+                      (const_int 0)
+                      (const_string "")] UNSPEC_SBFCD))
+     (set (reg:DI KV3_CS_REGNO)
+          (unspec:DI [(reg:DI KV3_CS_REGNO)
+                      (subreg:DI (match_dup 2) 8)
+                      (const_int 0)] UNSPEC_BORROW))])]
+)
+
+(define_insn_and_split "*subti3_neg32"
+  [(set (match_operand:TI 0 "register_operand" "=r")
+        (minus:TI (match_operand:TI 1 "const_neg32_operand" "i")
+                  (match_operand:TI 2 "register_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(parallel
+    [(set (subreg:DI (match_dup 0) 0)
+          (unspec:DI [(subreg:DI (match_dup 2) 0)
+                      (match_dup 1)
+                      (const_string ".i")] UNSPEC_SBFCD))
+     (set (reg:DI KV3_CS_REGNO)
+          (unspec:DI [(reg:DI KV3_CS_REGNO)
+                      (subreg:DI (match_dup 2) 0)
+                      (match_dup 1)] UNSPEC_BORROW))])
+   (parallel
+    [(set (subreg:DI (match_dup 0) 8)
+          (unspec:DI [(subreg:DI (match_dup 2) 8)
+                      (const_int -1)
+                      (const_string "")] UNSPEC_SBFCD))
+     (set (reg:DI KV3_CS_REGNO)
+          (unspec:DI [(reg:DI KV3_CS_REGNO)
+                      (subreg:DI (match_dup 2) 8)
+                      (const_int -1)] UNSPEC_BORROW))])]
+)
+
+(define_insn_and_split "negti2"
+  [(set (match_operand:TI 0 "register_operand" "=r")
+        (neg:TI (match_operand:TI 1 "register_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(parallel
+    [(set (subreg:DI (match_dup 0) 0)
+          (unspec:DI [(subreg:DI (match_dup 1) 0)
+                      (const_int 0)
+                      (const_string ".i")] UNSPEC_SBFCD))
+     (set (reg:DI KV3_CS_REGNO)
+          (unspec:DI [(reg:DI KV3_CS_REGNO)
+                      (subreg:DI (match_dup 1) 0)
+                      (const_int 0)] UNSPEC_BORROW))])
+   (parallel
+    [(set (subreg:DI (match_dup 0) 8)
+          (unspec:DI [(subreg:DI (match_dup 1) 8)
+                      (const_int 0)
+                      (const_string "")] UNSPEC_SBFCD))
+     (set (reg:DI KV3_CS_REGNO)
+          (unspec:DI [(reg:DI KV3_CS_REGNO)
+                      (subreg:DI (match_dup 1) 8)
+                      (const_int 0)] UNSPEC_BORROW))])]
 )
 
 (define_expand "multi3"
@@ -3005,6 +3227,62 @@
     emit_insn (gen_madddidi4 (hi_0, hi_1, lo_2, hi_0));
     DONE;
   }
+)
+
+(define_insn_and_split "ashlti3"
+  [(set (match_operand:TI 0 "register_operand" "=&r")
+        (ashift:TI (match_operand:TI 1 "register_operand" "r")
+                   (match_operand:SI 2 "const_ge64_operand" "i")))]
+  ""
+  "#"
+  "reload_completed"
+  ;; "make %x0 = 0\n\tslld %y0 = %x1, (%2 & 63)"
+  [(set (subreg:DI (match_dup 0) 0)
+        (const_int 0))
+   (set (subreg:DI (match_dup 0) 8)
+        (ashift:DI (subreg:DI (match_dup 1) 0) (match_dup 2)))]
+  {
+    gcc_checking_assert (CONST_INT_P (operands[2]));
+    operands[2] = GEN_INT (INTVAL (operands[2]) & 63);
+  }
+  [(set_attr "type" "alu_tiny_x2")]
+)
+
+(define_insn_and_split "ashrti3"
+  [(set (match_operand:TI 0 "register_operand" "=&r")
+        (ashiftrt:TI (match_operand:TI 1 "register_operand" "r")
+                     (match_operand:SI 2 "const_ge64_operand" "i")))]
+  ""
+  "#"
+  "reload_completed"
+  ;; "srad %x0 = %y1, (%2 & 63)\n\tsrad %y0 = %y1, 63"
+  [(set (subreg:DI (match_dup 0) 0)
+        (ashiftrt:DI (subreg:DI (match_dup 1) 8) (match_dup 2)))
+   (set (subreg:DI (match_dup 0) 8)
+        (ashiftrt:DI (subreg:DI (match_dup 1) 8) (const_int 63)))]
+  {
+    gcc_checking_assert (CONST_INT_P (operands[2]));
+    operands[2] = GEN_INT (INTVAL (operands[2]) & 63);
+  }
+  [(set_attr "type" "alu_tiny_x2")]
+)
+
+(define_insn_and_split "lshrti3"
+  [(set (match_operand:TI 0 "register_operand" "=&r")
+        (lshiftrt:TI (match_operand:TI 1 "register_operand" "r")
+                     (match_operand:SI 2 "const_ge64_operand" "i")))]
+  ""
+  "#"
+  "reload_completed"
+  ;; "srld %x0 = %y1, (%2 & 63)\n\tmake %y0 = 0"
+  [(set (subreg:DI (match_dup 0) 0)
+        (lshiftrt:DI (subreg:DI (match_dup 1) 8) (match_dup 2)))
+   (set (subreg:DI (match_dup 0) 8) (const_int 0))]
+  {
+    gcc_checking_assert (CONST_INT_P (operands[2]));
+    operands[2] = GEN_INT (INTVAL (operands[2]) & 63);
+  }
+  [(set_attr "type" "alu_tiny_x2")]
 )
 
 
@@ -3749,23 +4027,24 @@
         (match_operand:DF 1 "register_operand" ""))]
   ""
   {
-   rtx cs_val = gen_reg_rtx (DImode);
-   rtx tempdi = gen_reg_rtx (DImode);
-   rtx tempdf = gen_reg_rtx (DFmode);
-   rtx cs = gen_rtx_REG (DImode, 68);
-   rtx rn = gen_rtx_CONST_STRING (VOIDmode, ".rn");
-   rtx deqz = gen_rtx_CONST_STRING (VOIDmode, ".deqz");
-   /* 1. Reset the error bits (IO and XIO) we check in CS */
-   emit_insn (gen_kvx_get (cs_val, cs));
-   emit_insn (gen_anddi3 (cs_val, cs_val, GEN_INT (0xfffffffffffffdfd)));
-   emit_insn (gen_kvx_set (cs, cs_val));
-   /* 2. Convert floating point to fixed point */
-   emit_insn (gen_kvx_fixedd (tempdi, operands[1], const0_rtx, rn));
-   emit_insn (gen_kvx_get (cs_val, cs));
-   emit_insn (gen_anddi3 (cs_val, cs_val, GEN_INT (2)));
-   /* 3. Convert back to floating point, and take into account corner cases. */
-   emit_insn (gen_kvx_floatd (tempdf, tempdi, const0_rtx, rn));
-   emit_insn (gen_kvx_selectfd (operands[0], tempdf, operands[1], cs_val, deqz));
-   DONE;
-   })
+    rtx cs_val = gen_reg_rtx (DImode);
+    rtx tempdi = gen_reg_rtx (DImode);
+    rtx tempdf = gen_reg_rtx (DFmode);
+    rtx cs = gen_rtx_REG (DImode, 68);
+    rtx rn = gen_rtx_CONST_STRING (VOIDmode, ".rn");
+    rtx deqz = gen_rtx_CONST_STRING (VOIDmode, ".deqz");
+    /* 1. Reset the error bits (IO and XIO) we check in CS */
+    emit_insn (gen_kvx_get (cs_val, cs));
+    emit_insn (gen_anddi3 (cs_val, cs_val, GEN_INT (0xfffffffffffffdfd)));
+    emit_insn (gen_kvx_set (cs, cs_val));
+    /* 2. Convert floating point to fixed point */
+    emit_insn (gen_kvx_fixedd (tempdi, operands[1], const0_rtx, rn));
+    emit_insn (gen_kvx_get (cs_val, cs));
+    emit_insn (gen_anddi3 (cs_val, cs_val, GEN_INT (2)));
+    /* 3. Convert back to floating point, and take into account corner cases. */
+    emit_insn (gen_kvx_floatd (tempdf, tempdi, const0_rtx, rn));
+    emit_insn (gen_kvx_selectfd (operands[0], tempdf, operands[1], cs_val, deqz));
+    DONE;
+  }
+)
 
