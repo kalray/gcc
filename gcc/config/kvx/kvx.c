@@ -3082,43 +3082,21 @@ kvx_canonicalize_comparison (int *code, rtx *op0, rtx *op1,
     }
 }
 
-/* Return the mode of a predicate resulting from comparing MODE. */
-static enum machine_mode
-kvx_get_predicate_mode (enum machine_mode mode)
-{
-  if (VECTOR_MODE_P (mode))
-    {
-      int nunits = GET_MODE_NUNITS (mode);
-      scalar_mode inner_mode = GET_MODE_INNER (mode);
-      scalar_int_mode comp_mode = int_mode_for_mode (inner_mode).require ();
-      if (GET_MODE_NUNITS (mode) == 1)
-	return comp_mode;
-
-      return mode_for_vector (comp_mode, nunits).require ();
-    }
-
-  if (GET_MODE_SIZE (mode) <= GET_MODE_SIZE (SImode))
-    return SImode;
-
-  if (GET_MODE_SIZE (mode) <= GET_MODE_SIZE (DImode))
-    return DImode;
-
-  return int_mode_for_mode (mode).require ();
-}
-
 /* Emulate VXQI comparisons by expanding them to V4HI comparisons. */
-static rtx
-kvx_emulate_vxqi_comparison(rtx pred, enum rtx_code cmp_code, rtx left, rtx right)
+static void
+kvx_emulate_vxqi_comparison (rtx pred, rtx comp, machine_mode comp_mode)
 {
-  machine_mode cmp_mode = GET_MODE (left);
-  unsigned mode_size = GET_MODE_SIZE (cmp_mode);
+  rtx left = XEXP (comp, 0);
+  rtx right = XEXP (comp, 1);
+  enum rtx_code comp_code = GET_CODE (comp);
+  unsigned mode_size = GET_MODE_SIZE (comp_mode);
   for (unsigned offset = 0; offset < mode_size; offset += UNITS_PER_WORD)
     {
-      rtx rightc = simplify_gen_subreg (V4HImode, right, cmp_mode, offset);
-      rtx leftc = simplify_gen_subreg (V4HImode, left, cmp_mode, offset);
-      rtx predc = simplify_gen_subreg (V4HImode, pred, cmp_mode, offset);
+      rtx rightc = simplify_gen_subreg (V4HImode, right, comp_mode, offset);
+      rtx leftc = simplify_gen_subreg (V4HImode, left, comp_mode, offset);
+      rtx predc = simplify_gen_subreg (V4HImode, pred, comp_mode, offset);
       rtx righto = CONST0_RTX (V4HImode), righte = CONST0_RTX (V4HImode);
-      if (!const_zero_operand (right, cmp_mode))
+      if (!const_zero_operand (right, comp_mode))
 	{
 	  righto = gen_reg_rtx (V4HImode), righte = gen_reg_rtx (V4HImode);
 	  emit_insn (gen_rtx_SET (righto, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, rightc), UNSPEC_QXOBHQ)));
@@ -3128,63 +3106,146 @@ kvx_emulate_vxqi_comparison(rtx pred, enum rtx_code cmp_code, rtx left, rtx righ
       emit_insn (gen_rtx_SET (lefto, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, leftc), UNSPEC_QXOBHQ)));
       emit_insn (gen_rtx_SET (lefte, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, leftc), UNSPEC_QXEBHQ)));
       rtx predo = gen_reg_rtx (V4HImode), prede = gen_reg_rtx (V4HImode);
-      kvx_lower_comparison (predo, cmp_code, lefto, righto);
-      kvx_lower_comparison (prede, cmp_code, lefte, righte);
+      rtx compo = gen_rtx_fmt_ee (comp_code, V4HImode, lefto, righto);
+      rtx compe = gen_rtx_fmt_ee (comp_code, V4HImode, lefte, righte);
+      kvx_lower_comparison (predo, compo, V4HImode);
+      kvx_lower_comparison (prede, compe, V4HImode);
       emit_insn (gen_rtx_SET (predo, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, predo), UNSPEC_QXOBHQ)));
       emit_insn (gen_rtx_SET (prede, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, prede), UNSPEC_ZXOBHQ)));
       emit_insn (gen_rtx_SET (predc, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, predo, prede), UNSPEC_OROEBO)));
     }
-  return pred;
 }
 
-/* Emit the compare insn and return the predicate register if lowering occurred.
- * Lowering occurs if the comparison is not between scalar integer and zero.
- * In case of floating-point lowering, the left and right operand may be swapped.
- * The predicate register is created if lowering and if NULL_RTX is passed.  */
-rtx
-kvx_lower_comparison (rtx pred, enum rtx_code cmp_code, rtx left, rtx right)
+/* Lower a comparison between TI registers into a DI register.  */
+static void
+kvx_lower_timode_comparison (rtx pred, rtx comp, machine_mode comp_mode)
 {
-  machine_mode cmp_mode = GET_MODE (left);
-  enum mode_class cmp_class = GET_MODE_CLASS (cmp_mode);
+  rtx left = XEXP (comp, 0);
+  rtx right = XEXP (comp, 1);
+  enum rtx_code comp_code = GET_CODE (comp);
+  gcc_assert (GET_MODE (pred) == DImode);
+  rtx left_lo = simplify_gen_subreg (DImode, left, TImode, 0);
+  rtx left_hi = simplify_gen_subreg (DImode, left, TImode, 8);
+  rtx right_lo = simplify_gen_subreg (DImode, right, TImode, 0);
+  rtx right_hi = simplify_gen_subreg (DImode, right, TImode, 8);
+  enum rtx_code strict_code = comp_code;
+  switch (comp_code)
+    {
+    case NE: case EQ:
+      {
+	rtx lo_cmp = gen_reg_rtx (DImode);
+	emit_insn (gen_cstoredi4 (lo_cmp, comp, left_lo, right_lo));
+	rtx hi_cmp = gen_reg_rtx (DImode);
+	emit_insn (gen_cstoredi4 (hi_cmp, comp, left_hi, right_hi));
+	if (comp_code == NE)
+	  emit_insn (gen_iordi3 (pred, lo_cmp, hi_cmp));
+	if (comp_code == EQ)
+	  emit_insn (gen_anddi3 (pred, lo_cmp, hi_cmp));
+	return;
+      }
+    case GT: case LT: case GTU: case LTU:
+      break;
+    case GE:
+      strict_code = GT;
+      break;
+    case LE:
+      strict_code =  LT;
+      break;
+    case GEU:
+      strict_code = GTU;
+      break;
+    case LEU:
+      strict_code = LTU;
+      break;
+    default:
+      gcc_unreachable ();
+    }
+  emit_insn (gen_rtx_SET (pred, gen_rtx_fmt_ee (strict_code, DImode,
+						left_hi, right_hi)));
+  enum rtx_code ucode = unsigned_condition (comp_code);
+  rtx lo_ucmp = gen_reg_rtx (DImode);
+  emit_insn (gen_rtx_SET (lo_ucmp, gen_rtx_fmt_ee (ucode, DImode,
+						   left_lo, right_lo)));
+  rtx hi_eq = gen_reg_rtx (DImode);
+  emit_insn (gen_rtx_SET (hi_eq, gen_rtx_fmt_ee (EQ, DImode,
+						 left_hi, right_hi)));
+  rtx eq = gen_rtx_NE (VOIDmode, hi_eq, const0_rtx);
+  rtx select = gen_rtx_IF_THEN_ELSE (DImode, eq, lo_ucmp, pred);
+  emit_insn (gen_rtx_SET (pred, select));
+}
+
+/* Return the mode of a predicate resulting from comparing MODE. */
+enum machine_mode
+kvx_get_predicate_mode (enum machine_mode mode)
+{
+  if (VECTOR_MODE_P (mode))
+    {
+      int nunits = GET_MODE_NUNITS (mode);
+      scalar_mode inner_mode = GET_MODE_INNER (mode);
+      scalar_int_mode pred_mode = int_mode_for_mode (inner_mode).require ();
+      if (GET_MODE_NUNITS (mode) == 1)
+	return kvx_get_predicate_mode (pred_mode);
+
+      return mode_for_vector (pred_mode, nunits).require ();
+    }
+
+  if (GET_MODE_SIZE (mode) <= GET_MODE_SIZE (SImode))
+    return SImode;
+
+  return DImode;
+}
+
+/* Lower a comparison COMP between CMP_MODE rtx(es) into a predicate register PRED.
+ * In case of floating-point lowering, the left and right operands may be swapped.  */
+void
+kvx_lower_comparison (rtx pred, rtx comp, machine_mode comp_mode)
+{
+  rtx left = XEXP (comp, 0);
+  rtx right = XEXP (comp, 1);
+  enum rtx_code comp_code = GET_CODE (comp);
+  enum mode_class comp_class = GET_MODE_CLASS (comp_mode);
   bool float_compare_p
-    = (cmp_class == MODE_FLOAT || cmp_class == MODE_VECTOR_FLOAT);
+    = (comp_class == MODE_FLOAT || comp_class == MODE_VECTOR_FLOAT);
 
-  if (cmp_class == MODE_INT && const_zero_operand (right, cmp_mode))
-    return NULL_RTX;
+  if (comp_mode == TImode)
+    {
+      kvx_lower_timode_comparison (pred, comp, TImode);
+      return;
+    }
 
-  if (pred == NULL_RTX)
-    pred = gen_reg_rtx (kvx_get_predicate_mode (cmp_mode));
-
-  if (KV3_1 && VECTOR_MODE_P (cmp_mode) && GET_MODE_INNER (cmp_mode) == QImode)
-    return kvx_emulate_vxqi_comparison (pred, cmp_code, left,right);
+  if (KV3_1 && VECTOR_MODE_P (comp_mode) && GET_MODE_INNER (comp_mode) == QImode)
+    {
+      kvx_emulate_vxqi_comparison (pred, comp, comp_mode);
+      return;
+    }
 
   machine_mode pred_mode = GET_MODE (pred);
-  rtx cmp = gen_rtx_fmt_ee (cmp_code, pred_mode, left, right);
+  rtx cmp = gen_rtx_fmt_ee (comp_code, pred_mode, left, right);
 
   if (float_compare_p)
     {
       if (!float_comparison_operator (cmp, VOIDmode))
 	{
-	  enum rtx_code swapped = swap_condition (cmp_code);
+	  enum rtx_code swapped = swap_condition (comp_code);
 
-	  if (swapped == cmp_code)
+	  if (swapped == comp_code)
 	    {
 	      rtx tmp = gen_reg_rtx (pred_mode);
 	      rtx tmp2 = gen_reg_rtx (pred_mode);
 	      rtx cmp2 = copy_rtx (cmp);
-	      enum rtx_code cond_code;
+	      enum rtx_code join_code;
 
-	      if (cmp_code == UNORDERED)
+	      if (comp_code == UNORDERED)
 		{
 		  PUT_CODE (cmp, UNGE);
 		  PUT_CODE (cmp2, UNLT);
-		  cond_code = AND;
+		  join_code = AND;
 		}
-	      else if (cmp_code == ORDERED)
+	      else if (comp_code == ORDERED)
 		{
 		  PUT_CODE (cmp, GE);
 		  PUT_CODE (cmp2, LT);
-		  cond_code = IOR;
+		  join_code = IOR;
 		}
 	      else
 		{
@@ -3193,7 +3254,7 @@ kvx_lower_comparison (rtx pred, enum rtx_code cmp_code, rtx left, rtx right)
 
 	      emit_insn (gen_rtx_SET (tmp, cmp));
 	      emit_insn (gen_rtx_SET (tmp2, cmp2));
-	      cmp = gen_rtx_fmt_ee (cond_code, pred_mode, tmp, tmp2);
+	      cmp = gen_rtx_fmt_ee (join_code, pred_mode, tmp, tmp2);
 	    }
 	  else
 	    {
@@ -3201,26 +3262,25 @@ kvx_lower_comparison (rtx pred, enum rtx_code cmp_code, rtx left, rtx right)
 	      XEXP (cmp, 0) = right;
 	      XEXP (cmp, 1) = left;
 	    }
-	  gcc_assert (swapped == cmp_code
+	  gcc_assert (swapped == comp_code
 		      || float_comparison_operator (cmp, VOIDmode));
 	}
 
-      XEXP (cmp, 0) = force_reg (cmp_mode, XEXP (cmp, 0));
-      XEXP (cmp, 1) = force_reg (cmp_mode, XEXP (cmp, 1));
+      XEXP (cmp, 0) = force_reg (comp_mode, XEXP (cmp, 0));
+      XEXP (cmp, 1) = force_reg (comp_mode, XEXP (cmp, 1));
     }
-  else if (VECTOR_MODE_P (cmp_mode))
+  else if (VECTOR_MODE_P (comp_mode))
     {
-      XEXP (cmp, 0) = force_reg (cmp_mode, XEXP (cmp, 0));
-      XEXP (cmp, 1) = force_reg (cmp_mode, XEXP (cmp, 1));
+      XEXP (cmp, 0) = force_reg (comp_mode, XEXP (cmp, 0));
+      XEXP (cmp, 1) = force_reg (comp_mode, XEXP (cmp, 1));
     }
 
   emit_insn (gen_rtx_SET (pred, cmp));
-  return pred;
 }
 
 /* Emulate V<n>QI cond moves by expanding them to V4HI cond moves. */
 static void
-kvx_emulate_vxqi_simplecond_move(rtx pred, enum rtx_code cmp_code, rtx src, rtx dst)
+kvx_emulate_vxqi_simplecond_move (rtx pred, enum rtx_code comp_code, rtx src, rtx dst)
 {
   machine_mode mode = GET_MODE (dst);
   rtx const0_v4hi_rtx = CONST0_RTX (V4HImode);
@@ -3239,8 +3299,8 @@ kvx_emulate_vxqi_simplecond_move(rtx pred, enum rtx_code cmp_code, rtx src, rtx 
       emit_insn (gen_rtx_SET (predo, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, predc), UNSPEC_QXOBHQ)));
       emit_insn (gen_rtx_SET (prede, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, predc), UNSPEC_QXEBHQ)));
 
-      rtx cmpo = gen_rtx_fmt_ee (cmp_code, VOIDmode, predo, const0_v4hi_rtx);
-      rtx cmpe = gen_rtx_fmt_ee (cmp_code, VOIDmode, prede, const0_v4hi_rtx);
+      rtx cmpo = gen_rtx_fmt_ee (comp_code, VOIDmode, predo, const0_v4hi_rtx);
+      rtx cmpe = gen_rtx_fmt_ee (comp_code, VOIDmode, prede, const0_v4hi_rtx);
 
       rtx dsto = gen_reg_rtx (V4HImode), dste = gen_reg_rtx (V4HImode);
       emit_insn (gen_rtx_SET (dsto, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, dstc), UNSPEC_QXOBHQ)));
@@ -3257,14 +3317,14 @@ kvx_emulate_vxqi_simplecond_move(rtx pred, enum rtx_code cmp_code, rtx src, rtx 
 
 void
 kvx_expand_conditional_move (rtx target, rtx select1, rtx select2,
-			     rtx cmp, rtx left, rtx right)
+			     rtx comp, machine_mode comp_mode)
 {
+  rtx left = XEXP (comp, 0);
+  rtx right = XEXP (comp, 1);
   machine_mode mode = GET_MODE (target);
-  enum rtx_code cmp_code = GET_CODE (cmp);
-  machine_mode cmp_mode = GET_MODE (left);
-  rtx src = NULL_RTX, dst = NULL_RTX;
-  bool vector_true_false = false;
+  enum rtx_code comp_code = GET_CODE (comp);
 
+  bool vector_true_false = false;
   if (VECTOR_MODE_P (mode))
     {
       rtx const0_mode_rtx = CONST0_RTX (mode);
@@ -3273,13 +3333,14 @@ kvx_expand_conditional_move (rtx target, rtx select1, rtx select2,
 			  && (select2 == const0_mode_rtx);
     }
 
+  rtx src = NULL_RTX, dst = NULL_RTX;
   if (vector_true_false)
     {
       dst = target;
     }
   else if (!rtx_equal_p (select1, target) && !rtx_equal_p (select2, target))
     {
-      if (reg_overlap_mentioned_p (target, cmp))
+      if (reg_overlap_mentioned_p (target, comp))
 	dst = gen_reg_rtx (mode);
       else
 	dst = target;
@@ -3292,11 +3353,11 @@ kvx_expand_conditional_move (rtx target, rtx select1, rtx select2,
       src = force_reg (mode, select2);
       dst = target;
 
-      enum mode_class cmp_class = GET_MODE_CLASS (cmp_mode);
-      if (cmp_class == MODE_FLOAT || cmp_class == MODE_VECTOR_FLOAT)
-	cmp_code = reverse_condition_maybe_unordered (cmp_code);
+      enum mode_class comp_class = GET_MODE_CLASS (comp_mode);
+      if (comp_class == MODE_FLOAT || comp_class == MODE_VECTOR_FLOAT)
+	comp_code = reverse_condition_maybe_unordered (comp_code);
       else
-	cmp_code = reverse_condition (cmp_code);
+	comp_code = reverse_condition (comp_code);
     }
   else
     {
@@ -3304,27 +3365,29 @@ kvx_expand_conditional_move (rtx target, rtx select1, rtx select2,
       dst = target;
     }
 
-  machine_mode pred_mode = kvx_get_predicate_mode (cmp_mode);
+  enum mode_class comp_class = GET_MODE_CLASS (comp_mode);
+  machine_mode pred_mode = kvx_get_predicate_mode (comp_mode);
   rtx pred = gen_reg_rtx (pred_mode);
-
-  if (kvx_lower_comparison (pred, cmp_code, left, right))
-    cmp_code = NE;
-  else
+  if (comp_class == MODE_INT && right == const0_rtx
+      && zero_comparison_operator (comp, VOIDmode)
+      && GET_MODE_SIZE (comp_mode) <= UNITS_PER_WORD)
     emit_move_insn (pred, left);
+  else
+    {
+      rtx comp = gen_rtx_fmt_ee (comp_code, pred_mode, left, right);
+      kvx_lower_comparison (pred, comp, comp_mode);
+      comp_code = NE;
+    }
 
   if (vector_true_false)
-    {
-      emit_insn (gen_rtx_SET (dst, pred));
-    }
-  else if (KV3_1 && VECTOR_MODE_P (cmp_mode)
-	   && GET_MODE_INNER (cmp_mode) == QImode)
-    {
-      kvx_emulate_vxqi_simplecond_move(pred, cmp_code, src, dst);
-    }
+    emit_insn (gen_rtx_SET (dst, pred));
+  else if (KV3_1 && VECTOR_MODE_P (comp_mode)
+	   && GET_MODE_INNER (comp_mode) == QImode)
+    kvx_emulate_vxqi_simplecond_move (pred, comp_code, src, dst);
   else
     {
       rtx const0_pred_mode_rtx = CONST0_RTX (pred_mode);
-      rtx cmp0 = gen_rtx_fmt_ee (cmp_code, VOIDmode, pred, const0_pred_mode_rtx);
+      rtx cmp0 = gen_rtx_fmt_ee (comp_code, VOIDmode, pred, const0_pred_mode_rtx);
       emit_insn (gen_rtx_SET (dst, gen_rtx_IF_THEN_ELSE (mode, cmp0, src, dst)));
     }
 
@@ -3336,7 +3399,7 @@ void
 kvx_expand_masked_move (rtx target, rtx select1, rtx select2, rtx mask)
 {
   machine_mode mode = GET_MODE (target);
-  enum rtx_code cmp_code = NE;
+  enum rtx_code comp_code = NE;
   rtx src = NULL_RTX, dst = NULL_RTX;
   bool vector_true_false = false;
 
@@ -3366,7 +3429,7 @@ kvx_expand_masked_move (rtx target, rtx select1, rtx select2, rtx mask)
     {
       src = force_reg (mode, select2);
       dst = target;
-      cmp_code = EQ;
+      comp_code = EQ;
     }
   else
     {
@@ -3380,13 +3443,13 @@ kvx_expand_masked_move (rtx target, rtx select1, rtx select2, rtx mask)
     }
   else if (VECTOR_MODE_P (mode) && GET_MODE_INNER (mode) == QImode)
     {
-      kvx_emulate_vxqi_simplecond_move(mask, cmp_code, src, dst);
+      kvx_emulate_vxqi_simplecond_move (mask, comp_code, src, dst);
     }
   else
     {
       machine_mode mask_mode = GET_MODE (mask);
       rtx const0_mask_mode_rtx = CONST0_RTX (mask_mode);
-      rtx cmp0 = gen_rtx_fmt_ee (cmp_code, VOIDmode, mask, const0_mask_mode_rtx);
+      rtx cmp0 = gen_rtx_fmt_ee (comp_code, VOIDmode, mask, const0_mask_mode_rtx);
       emit_insn (gen_rtx_SET (dst, gen_rtx_IF_THEN_ELSE (mode, cmp0, src, dst)));
     }
 
@@ -3538,7 +3601,7 @@ kvx_expand_chunk_splat (rtx target, rtx source, machine_mode inner_mode)
  * the corresponding 64-bit chunks of the target.
  */
 static rtx
-kvx_expand_chunk_insert(rtx target, rtx source, int index, machine_mode inner_mode)
+kvx_expand_chunk_insert (rtx target, rtx source, int index, machine_mode inner_mode)
 {
   machine_mode chunk_mode = GET_MODE (target);
   unsigned inner_size = GET_MODE_SIZE (inner_mode);
@@ -3603,7 +3666,7 @@ kvx_expand_chunk_insert(rtx target, rtx source, int index, machine_mode inner_mo
 }
 
 /* Called by the vec_duplicate<mode> standard pattern and by
- * kvx_expand_vector_init().  */
+ * kvx_expand_vector_init ().  */
 void
 kvx_expand_vector_duplicate (rtx target, rtx source)
 {
@@ -3725,20 +3788,20 @@ kvx_expand_vec_perm_print (FILE *file, machine_mode vector_mode)
   int ibytes = GET_MODE_SIZE (inner_mode);
 
   for (int i = 0; i < nunits*ibytes; i++)
-    fprintf(file, "[%2d]", kvx_expand_vec_perm.from[i]);
-  fprintf(file, " from[]\n");
+    fprintf (file, "[%2d]", kvx_expand_vec_perm.from[i]);
+  fprintf (file, " from[]\n");
 
   for (int orig = 0; orig < 2*nwords; orig++) {
     for (int dest = 0; dest < nwords; dest++) {
       for (int lane = 0; lane < UNITS_PER_WORD; lane++)
-	fprintf(file, "%03d ", kvx_expand_vec_perm.values[orig][dest].bytes[lane]);
+	fprintf (file, "%03d ", kvx_expand_vec_perm.values[orig][dest].bytes[lane]);
     }
-    fprintf(file, "orig[%d]\n", orig);
+    fprintf (file, "orig[%d]\n", orig);
   }
   for (int dest = 0; dest < nwords; dest++) {
-    fprintf(file, "            dest[%d]            |", dest);
+    fprintf (file, "            dest[%d]            |", dest);
   }
-  fprintf(file, "\n");
+  fprintf (file, "\n");
 }
 
 /* Special case of kvx_expand_vec_perm_const_emit with a single MOVE. */
@@ -4508,7 +4571,7 @@ kvx_sched_adjust_cost (rtx_insn *cons_insn, int dep_type, rtx_insn *prod_insn,
 	}
       else if (GET_CODE (PATTERN (prod_insn)) == CLOBBER)
 	// Delay consumer INSN of CLOBBER for non-zero number of clock cycles.
-	// This corrects the rewriting of dependencies by chain_to_prev_insn().
+	// This corrects the rewriting of dependencies by (chain_to_prev_insn).
 	// Problem appears in cases the CLOBBER of an INSF is located after the
 	// producer for the INSF. So we find this producer and apply its cost.
 	{

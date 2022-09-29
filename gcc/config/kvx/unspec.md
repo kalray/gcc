@@ -1,6 +1,8 @@
 
 (define_c_enum "unspec"
   [     
+        UNSPEC_CARRY
+        UNSPEC_BORROW
         UNSPEC_EFFECT
         UNSPEC_AWAIT
         UNSPEC_BARRIER

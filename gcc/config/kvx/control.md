@@ -76,6 +76,18 @@
    (set_attr "length"      "4")]
 )
 
+(define_expand "cstoreti4"
+  [(set (match_operand:DI 0 "register_operand" "")
+        (match_operator:DI 1 "comparison_operator"
+         [(match_operand:TI 2 "register_operand" "")
+          (match_operand:TI 3 "register_operand" "")]))]
+  ""
+  {
+    kvx_lower_comparison (operands[0], operands[1], TImode);
+    DONE;
+  }
+)
+
 (define_expand "cstore<mode>4" 
   [(set (match_operand:DI 0 "register_operand" "")
         (match_operator:DI 1 "comparison_operator"
@@ -83,8 +95,7 @@
           (match_operand:ALLF 3 "nonmemory_operand" "")]))]
   ""
   {
-    enum rtx_code cmp_code = GET_CODE (operands[1]);
-    kvx_lower_comparison (operands[0], cmp_code, operands[2], operands[3]);
+    kvx_lower_comparison (operands[0], operands[1], <MODE>mode);
     DONE;
   }
 )
@@ -94,25 +105,26 @@
 
 (define_expand "cbranch<mode>4"
   [(set (pc)
-        (if_then_else (match_operator       0 "comparison_operator"
+        (if_then_else (match_operator 0 "comparison_operator"
                        [(match_operand:CBRANCH 1 "register_operand")
                         (match_operand:CBRANCH 2 "nonmemory_operand")])
                       (label_ref (match_operand 3 ""))
                       (pc)))]
   ""
   {
-    enum rtx_code cmp_code = GET_CODE (operands[0]);
-    rtx pred = kvx_lower_comparison (0, cmp_code, operands[1], operands[2]);
-    if (pred)
+    enum mode_class comp_class = GET_MODE_CLASS (<MODE>mode);
+    if (comp_class == MODE_INT && operands[2] == const0_rtx
+        && zero_comparison_operator (operands[0], VOIDmode)
+        && GET_MODE_SIZE (<MODE>mode) <= UNITS_PER_WORD)
+      ;
+    else
       {
+        rtx pred = gen_reg_rtx (kvx_get_predicate_mode (<MODE>mode));
+        kvx_lower_comparison (pred, operands[0], <MODE>mode);
         PUT_CODE (operands[0], NE);
         operands[1] = pred;
         operands[2] = const0_rtx;
       }
-    else if (GET_MODE_CLASS (<MODE>mode) == MODE_FLOAT)
-     {
-        gcc_unreachable ();
-     }
   }
 )
 
@@ -1128,10 +1140,8 @@
     rtx target = operands[0];
     rtx select1 = operands[2];
     rtx select2 = operands[3];
-    rtx cmp = operands[1];
-    rtx left = XEXP (cmp, 0);
-    rtx right = XEXP (cmp, 1);
-    kvx_expand_conditional_move (target, select1, select2, cmp, left, right);
+    machine_mode mode = GET_MODE (XEXP (operands[1], 0));
+    kvx_expand_conditional_move (target, select1, select2, operands[1], mode);
     DONE;
   }
 )
