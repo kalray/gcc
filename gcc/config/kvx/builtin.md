@@ -6,7 +6,7 @@
                     (match_operand:DI 2 "register_s32_operand" "r,B32")
                     (match_operand 3 "" "")] UNSPEC_ADDCD))
    (set (reg:DI KV3_CS_REGNO)
-        (unspec:DI [(reg:DI KV3_CS_REGNO)] UNSPEC_EFFECT))]
+        (unspec:DI [(reg:DI KV3_CS_REGNO) (match_dup 1) (match_dup 2)] UNSPEC_CARRY))]
   ""
   "addcd%3 %0 = %1, %2"
   [(set_attr "type" "alu_full,alu_full_x")
@@ -16,10 +16,10 @@
 (define_insn "kvx_sbfcd"
   [(set (match_operand:DI 0 "register_operand" "=r,r")
         (unspec:DI [(match_operand:DI 1 "register_operand" "r,r")
-                    (match_operand:DI 2 "register_operand" "r,B32")
+                    (match_operand:DI 2 "register_s32_operand" "r,B32")
                     (match_operand 3 "" "")] UNSPEC_SBFCD))
    (set (reg:DI KV3_CS_REGNO)
-        (unspec:DI [(reg:DI KV3_CS_REGNO)] UNSPEC_EFFECT))]
+        (unspec:DI [(reg:DI KV3_CS_REGNO) (match_dup 1) (match_dup 2)] UNSPEC_BORROW))]
   ""
   "sbfcd%3 %0 = %1, %2"
   [(set_attr "type" "alu_full,alu_full_x")

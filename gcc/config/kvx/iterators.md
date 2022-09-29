@@ -373,7 +373,7 @@
 
 ;; Iterator for the modes tested by cbranch<m>4
 (define_mode_iterator CBRANCH [
-  SI SF DI DF
+  SI SF DI DF TI
 ])
 
 ;; Iterator for the modes that fit in a GPR for CMOVED.

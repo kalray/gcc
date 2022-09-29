@@ -386,7 +386,7 @@
   [(unspec [(match_operand:DI 0 "register_operand" "r")] UNSPEC_SYNCGROUP)
    (clobber (mem:BLK (scratch)))
    (set (reg:DI KV3_IPE_REGNO)
-        (unspec:DI [(reg:DI KV3_IPE_REGNO)] UNSPEC_EFFECT))]
+        (unspec:DI [(reg:DI KV3_IPE_REGNO) (match_dup 0)] UNSPEC_EFFECT))]
   ""
   "syncgroup %0"
   [(set_attr "type" "bcu")]
