@@ -55,11 +55,31 @@
   return (INTVAL (op) >= 0 && INTVAL (op) < (1<<6));
 })
 
-(define_predicate "poweroftwo_6bits_operand"
+(define_predicate "const_pow2lt64_operand"
   (match_code "const_int")
 {
   return (__builtin_popcountll (INTVAL (op)) == 1)
-          && (INTVAL (op) >= 0) && (INTVAL(op) <= 64);
+         && (__builtin_ctzll (INTVAL (op)) < 64);
+})
+
+(define_predicate "const_ge64_operand"
+  (match_code "const_int")
+{
+  return (INTVAL (op) >= 64);
+})
+
+(define_predicate "const_pos32_operand"
+  (and (match_code "const_int")
+       (match_test "satisfies_constraint_I32(op)"))
+{
+  return INTVAL (op) >= 0;
+})
+
+(define_predicate "const_neg32_operand"
+  (and (match_code "const_int")
+       (match_test "satisfies_constraint_I32(op)"))
+{
+  return INTVAL (op) < 0;
 })
 
 ;; Register or immediate up to signed 32
