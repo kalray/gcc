@@ -1,20 +1,53 @@
 
-;; KVX_XUNDEF
+;; XUNDEF
 
-(define_insn "kvx_xundef256"
+(define_insn_and_split "kvx_xundef256"
+  [(set (match_operand:X256 0 "register_operand" "=x")
+        (unspec:X256 [(const_int 0)] UNSPEC_DEF))]
+  ""
+  "#"
+  "reload_completed"
+  [(use (const_int 0))]
+)
+
+(define_insn_and_split "kvx_xundef<bitsize>"
+  [(set (match_operand:XBUFF 0 "register_operand" "=x")
+        (unspec:XBUFF [(const_int 0)] UNSPEC_DEF))]
+  ""
+  "#"
+  "reload_completed"
+  [(use (const_int 0))]
+)
+
+
+;; XZERO
+
+(define_insn_and_split "kvx_xzero256"
   [(set (match_operand:X256 0 "register_operand" "=x")
         (match_operand:X256 1 "const_zero_operand" ""))]
   ""
-  "xcopyo %0 = %0"
-  [(set_attr "type" "bcu_crrp_crwl_crwh")]
+  "#"
+  ""
+  [(set (match_dup 1) (const_int 0))
+   (set (match_dup 0)
+        (unspec:X256 [(match_dup 1)] UNSPEC_XSPLATD))]
+  {
+    operands[1] = gen_reg_rtx (DImode);
+  }
 )
 
-(define_insn "kvx_xundef<bitsize>"
+(define_insn_and_split "kvx_xzero<bitsize>"
   [(set (match_operand:XBUFF 0 "register_operand" "=x")
         (match_operand:XBUFF 1 "const_zero_operand" ""))]
   ""
-  "xcopyo %x0 = %x0"
-  [(set_attr "type" "bcu_crrp_crwl_crwh")]
+  "#"
+  ""
+  [(set (match_dup 1) (const_int 0))
+   (set (match_dup 0)
+        (unspec:XBUFF [(match_dup 1)] UNSPEC_XSPLATD))]
+  {
+    operands[1] = gen_reg_rtx (DImode);
+  }
 )
 
 
@@ -282,7 +315,7 @@
 )
 
 
-;; KVX_XCAT*, KVX_XLOW*, KVX_XHIGH*
+;; XCAT*, KVX_XLOW*, KVX_XHIGH*
 
 (define_insn_and_split "kvx_xcat512"
   [(set (match_operand:X512 0 "register_operand" "=x")
@@ -549,7 +582,7 @@
 )
 
 
-;; KVX_XLOAD256, KVX_XLOAD512, KVX_XLOAD1024
+;; XLOAD256, KVX_XLOAD512, KVX_XLOAD1024
 
 (define_insn "kvx_xload256"
   [(set (match_operand:X256 0 "register_operand" "=x,x,x")
@@ -603,7 +636,7 @@
 )
 
 
-;; KVX_XLOADS1024, KVX_XLOADSC1024
+;; XLOADS1024, KVX_XLOADSC1024
 
 (define_insn "kvx_xloads1024"
   [(set (match_operand:X1024 0 "register_operand" "=x,x,x")
@@ -751,7 +784,7 @@
 )
 
 
-;; KVX_XLOADC256, KVX_XLOADC512, KVX_XLOADC1024
+;; XLOADC256, KVX_XLOADC512, KVX_XLOADC1024
 
 (define_insn "kvx_xloadc256"
   [(set (match_operand:X256 0 "register_operand" "=x,x,x")
@@ -825,7 +858,7 @@
 )
 
 
-;; KVX_XSTORE256, KVX_XSTORE512, KVX_XSTORE1024
+;; XSTORE256, KVX_XSTORE512, KVX_XSTORE1024
 
 (define_insn "kvx_xstore256"
   [(set (match_operand:X256 1 "memory_operand"  "=a,b,m")
@@ -882,7 +915,7 @@
 )
 
 
-;; KVX_XSTOREC256, KVX_XSTOREC512, KVX_XSTOREC1024
+;; XSTOREC256, KVX_XSTOREC512, KVX_XSTOREC1024
 
 (define_insn "kvx_xstorec256"
   [(set (match_operand:X256 1 "memfoiled_operand"  "=c,d,e")
@@ -952,7 +985,7 @@
 )
 
 
-;; KVX_XPRELOAD*
+;; XPRELOAD*
 
 (define_insn "kvx_xpreload<XBUFF:bitsize>"
   [(set (match_operand:XBUFF 0 "register_operand" "=x,x,x")
@@ -967,7 +1000,7 @@
 )
 
 
-;; KVX_XALIGN*O, KVX_XACCESS*O
+;; XALIGN*O, KVX_XACCESS*O
 
 (define_insn "kvx_xalign<XBUFF:bitsize>o"
   [(set (match_operand:X256 0 "register_operand" "=x")
@@ -988,7 +1021,7 @@
 )
 
 
-;; KVX_XFSCALEWO
+;; XFSCALEWO
 
 (define_insn "kvx_xfscalewo"
   [(set (match_operand:X256 0 "register_operand" "=x")
@@ -1001,7 +1034,7 @@
 )
 
 
-;; KVX_XMMA484BW
+;; XMMA484BW
 
 (define_expand "kvx_xmma484bw"
   [(match_operand:X512 0 "register_operand" "")
@@ -1123,7 +1156,7 @@
 )
 
 
-;; KVX_XMMA4164BW
+;; XMMA4164BW
 
 (define_expand "kvx_xmma4164bw"
   [(match_operand:X512 0 "register_operand" "")
@@ -1189,7 +1222,7 @@
 )
 
 
-;; KVX_XMADD44BW0, KVX_XMADD44BW1
+;; XMADD44BW0, KVX_XMADD44BW1
 
 (define_expand "kvx_xmadd44bw0"
   [(match_operand:X512 0 "register_operand" "")
@@ -1294,7 +1327,7 @@
 )
 
 
-;; KVX_XMADDIFWO, KVX_XMSBFIFWO, KVX_XFFMA44HW
+;; XMADDIFWO, KVX_XMSBFIFWO, KVX_XFFMA44HW
 
 (define_insn "kvx_xmaddifwo"
   [(set (match_operand:X256 0 "register_operand" "=x")
@@ -1330,7 +1363,7 @@
 )
 
 
-;; KVX_XFMMA444HW, KVX_XFMMA484HW
+;; XFMMA444HW, KVX_XFMMA484HW
 
 (define_insn "kvx_xfmma444hw"
   [(set (match_operand:X512 0 "register_operand" "=x")
@@ -1355,7 +1388,7 @@
 )
 
 
-;; KVX_XFNARROW44WH, KVX_XCLAMPWO
+;; XFNARROW44WH, KVX_XCLAMPWO
 
 (define_insn "kvx_xfnarrow44wh"
   [(set (match_operand:X256 0 "register_operand" "=x")
@@ -1377,7 +1410,7 @@
 )
 
 
-;; KVX_XTRUNC48WB, KVX_XSX48BW, KVX_XZX48BW
+;; XTRUNC48WB, KVX_XSX48BW, KVX_XZX48BW
 
 (define_insn "kvx_xtrunc48wb"
   [(set (match_operand:X256 0 "register_operand" "=x")
@@ -1404,7 +1437,7 @@
 )
 
 
-;; KVX_XSENDO, KVX_XRECVO, KVX_XSENDRECVO
+;; XSENDO, KVX_XRECVO, KVX_XSENDRECVO
 
 (define_insn "kvx_xsendo"
   [(unspec_volatile [(match_operand:X256 0 "register_operand" "x")
@@ -1432,7 +1465,7 @@
 )
 
 
-;; KVX_XSWAP256
+;; XSWAP256
 
 (define_expand "kvx_xswap256"
   [(match_operand:V256 0 "register_operand" "")
@@ -1459,7 +1492,7 @@
 )
 
 
-;; KVX_XMT44D
+;; XMT44D
 
 (define_insn "kvx_xmt44d"
   [(set (match_operand:X1024 0 "register_operand" "=x")

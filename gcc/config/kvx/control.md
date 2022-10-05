@@ -319,7 +319,7 @@
 )
 
 (define_insn_and_split "*compndp_s2"
-  [(set (match_operand:V2DI 0 "register_operand" "=&r")
+  [(set (match_operand:V2DI 0 "register_operand" "=r")
         (match_operator:V2DI 1 "comparison_operator"
          [(vec_duplicate:V2DI (match_operand:DI 2 "nonmemory_operand" "r"))
           (match_operand:V2DI 3 "register_operand" "r")]))]
@@ -346,7 +346,7 @@
 )
 
 (define_insn_and_split "*compndp_s3"
-  [(set (match_operand:V2DI 0 "register_operand" "=&r")
+  [(set (match_operand:V2DI 0 "register_operand" "=r")
         (match_operator:V2DI 1 "comparison_operator"
          [(match_operand:V2DI 2 "register_operand" "r")
           (vec_duplicate:V2DI (match_operand:DI 3 "nonmemory_operand" "r"))]))]
@@ -475,7 +475,7 @@
 )
 
 (define_insn_and_split "*compndq_s3"
-  [(set (match_operand:V4DI 0 "register_operand" "=&r")
+  [(set (match_operand:V4DI 0 "register_operand" "=r")
         (match_operator:V4DI 1 "comparison_operator"
          [(match_operand:V4DI 2 "register_operand" "r")
           (vec_duplicate:V4DI (match_operand:DI 3 "nonmemory_operand" "r"))]))]
@@ -502,6 +502,87 @@
   }
   [(set_attr "type" "alu_tiny_x4")
    (set_attr "length"        "16")]
+)
+
+(define_insn_and_split "*compn<suffix>"
+  [(set (match_operand:<MASK> 0 "register_operand" "=&r")
+        (match_operator:<MASK> 1 "comparison_operator"
+         [(match_operand:V512L 2 "register_operand" "r")
+          (match_operand:V512L 3 "register_operand" "r")]))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<QMASK> (match_dup 0) 0)
+        (match_op_dup:<QMASK> 1
+         [(subreg:<QUART> (match_dup 2) 0)
+          (subreg:<QUART> (match_dup 3) 0)]))
+   (set (subreg:<QMASK> (match_dup 0) 16)
+        (match_op_dup:<QMASK> 1
+         [(subreg:<QUART> (match_dup 2) 16)
+          (subreg:<QUART> (match_dup 3) 16)]))
+   (set (subreg:<QMASK> (match_dup 0) 32)
+        (match_op_dup:<QMASK> 1
+         [(subreg:<QUART> (match_dup 2) 32)
+          (subreg:<QUART> (match_dup 3) 32)]))
+   (set (subreg:<QMASK> (match_dup 0) 48)
+        (match_op_dup:<QMASK> 1
+         [(subreg:<QUART> (match_dup 2) 48)
+          (subreg:<QUART> (match_dup 3) 48)]))]
+  ""
+)
+
+(define_insn_and_split "*compn<suffix>_s2"
+  [(set (match_operand:<MASK> 0 "register_operand" "=&r")
+        (match_operator:<MASK> 1 "comparison_operator"
+         [(vec_duplicate:V512L (match_operand:<CHUNK> 2 "nonmemory_operand" "r"))
+          (match_operand:V512L 3 "register_operand" "r")]))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<QMASK> (match_dup 0) 0)
+        (match_op_dup:<QMASK> 1
+         [(vec_duplicate:<QUART> (match_dup 2))
+          (subreg:<QUART> (match_dup 3) 0)]))
+   (set (subreg:<QMASK> (match_dup 0) 16)
+        (match_op_dup:<QMASK> 1
+         [(vec_duplicate:<QUART> (match_dup 2))
+          (subreg:<QUART> (match_dup 3) 16)]))
+   (set (subreg:<QMASK> (match_dup 0) 32)
+        (match_op_dup:<QMASK> 1
+         [(vec_duplicate:<QUART> (match_dup 2))
+          (subreg:<QUART> (match_dup 3) 32)]))
+   (set (subreg:<QMASK> (match_dup 0) 48)
+        (match_op_dup:<QMASK> 1
+         [(vec_duplicate:<QUART> (match_dup 2))
+          (subreg:<QUART> (match_dup 3) 48)]))]
+  ""
+)
+
+(define_insn_and_split "*compn<suffix>_s3"
+  [(set (match_operand:<MASK> 0 "register_operand" "=&r")
+        (match_operator:<MASK> 1 "comparison_operator"
+         [(match_operand:V512L 2 "register_operand" "r")
+          (vec_duplicate:V512L (match_operand:<CHUNK> 3 "register_operand" "r"))]))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<QMASK> (match_dup 0) 0)
+        (match_op_dup:<QMASK> 1
+         [(subreg:<QUART> (match_dup 2) 0)
+          (vec_duplicate:<QUART> (match_dup 3))]))
+   (set (subreg:<QMASK> (match_dup 0) 16)
+        (match_op_dup:<QMASK> 1
+         [(subreg:<QUART> (match_dup 2) 16)
+          (vec_duplicate:<QUART> (match_dup 3))]))
+   (set (subreg:<QMASK> (match_dup 0) 32)
+        (match_op_dup:<QMASK> 1
+         [(subreg:<QUART> (match_dup 2) 32)
+          (vec_duplicate:<QUART> (match_dup 3))]))
+   (set (subreg:<QMASK> (match_dup 0) 48)
+        (match_op_dup:<QMASK> 1
+         [(subreg:<QUART> (match_dup 2) 48)
+          (vec_duplicate:<QUART> (match_dup 3))]))]
+  ""
 )
 
 
@@ -553,9 +634,9 @@
 
 (define_insn "*fcompdq"
   [(set (match_operand:V4DI 0 "register_operand" "=r")
-        (neg:V4DI (match_operator:V4DI 1 "comparison_operator"
-                   [(match_operand:V4DI 2 "register_operand" "r")
-                     (match_operand:V4DI 3 "register_operand" "r")])))]
+        (neg:V4DI (match_operator:V4DI 1 "float_comparison_operator"
+                   [(match_operand:V4DF 2 "register_operand" "r")
+                     (match_operand:V4DF 3 "register_operand" "r")])))]
   "KV3_2"
   {
     return "fcompd.%F1 %x0 = %x2, %x3\n\tfcompd.%F1 %y0 = %y2, %y3\n\t"
@@ -567,9 +648,9 @@
 
 (define_insn "*fcompdq_s2"
   [(set (match_operand:V4DI 0 "register_operand" "=r")
-        (neg:V4DI (match_operator:V4DI 1 "comparison_operator"
-                   [(vec_duplicate:V4DI (match_operand:DI 2 "nonmemory_operand" "r"))
-                    (match_operand:V4DI 3 "register_operand" "r")])))]
+        (neg:V4DI (match_operator:V4DI 1 "float_comparison_operator"
+                   [(vec_duplicate:V4DF (match_operand:DI 2 "nonmemory_operand" "r"))
+                    (match_operand:V4DF 3 "register_operand" "r")])))]
   "KV3_2"
   {
     return "fcompd.%F1 %x0 = %2, %x3\n\tfcompd.%F1 %y0 = %2, %y3\n\t"
@@ -581,9 +662,9 @@
 
 (define_insn "*fcompdq_s3"
   [(set (match_operand:V4DI 0 "register_operand" "=r")
-        (neg:V4DI (match_operator:V4DI 1 "comparison_operator"
-                   [(match_operand:V4DI 2 "register_operand" "r")
-                    (vec_duplicate:V4DI (match_operand:DI 3 "nonmemory_operand" "r"))])))]
+        (neg:V4DI (match_operator:V4DI 1 "float_comparison_operator"
+                   [(match_operand:V4DF 2 "register_operand" "r")
+                    (vec_duplicate:V4DF (match_operand:DI 3 "nonmemory_operand" "r"))])))]
   "KV3_2"
   {
     return "fcompd.%F1 %x0 = %x2, %3\n\tfcompd.%F1 %y0 = %y2, %3\n\t"
@@ -667,7 +748,7 @@
 )
 
 (define_insn_and_split "*fcompndp_s2"
-  [(set (match_operand:V2DI 0 "register_operand" "=&r")
+  [(set (match_operand:V2DI 0 "register_operand" "=r")
         (match_operator:V2DI 1 "float_comparison_operator"
          [(vec_duplicate:V2DF (match_operand:DF 2 "nonmemory_operand" "r"))
           (match_operand:V2DF 3 "register_operand" "r")]))]
@@ -694,7 +775,7 @@
 )
 
 (define_insn_and_split "*fcompndp_s3"
-  [(set (match_operand:V2DI 0 "register_operand" "=&r")
+  [(set (match_operand:V2DI 0 "register_operand" "=r")
         (match_operator:V2DI 1 "float_comparison_operator"
          [(match_operand:V2DF 2 "register_operand" "r")
           (vec_duplicate:V2DF (match_operand:DF 3 "nonmemory_operand" "r"))]))]
@@ -879,8 +960,8 @@
 (define_insn "*fcompndq_s2"
   [(set (match_operand:V4DI 0 "register_operand" "=r")
         (match_operator:V4DI 1 "comparison_operator"
-         [(vec_duplicate:V4DI (match_operand:DI 2 "nonmemory_operand" "r"))
-          (match_operand:V4DI 3 "register_operand" "r")]))]
+         [(vec_duplicate:V4DF (match_operand:DF 2 "nonmemory_operand" "r"))
+          (match_operand:V4DF 3 "register_operand" "r")]))]
   "KV3_2"
   {
     return "fcompnd.%F1 %x0 = %2, %x3\n\tfcompnd.%F1 %y0 = %2, %y3\n\t"
@@ -913,8 +994,8 @@
 (define_insn "*fcompndq_s3"
   [(set (match_operand:V4DI 0 "register_operand" "=r")
         (match_operator:V4DI 1 "comparison_operator"
-         [(match_operand:V4DI 2 "register_operand" "r")
-          (vec_duplicate:V4DI (match_operand:DI 3 "nonmemory_operand" "r"))]))]
+         [(match_operand:V4DF 2 "register_operand" "r")
+          (vec_duplicate:V4DF (match_operand:DF 3 "nonmemory_operand" "r"))]))]
   "KV3_2"
   {
     return "fcompnd.%F1 %x0 = %x2, %3\n\tfcompnd.%F1 %y0 = %y2, %3\n\t"
@@ -922,6 +1003,87 @@
   }
   [(set_attr "type" "alu_tiny_x4")
    (set_attr "length"        "16")]
+)
+
+(define_insn_and_split "*fcompn<suffix>"
+  [(set (match_operand:<MASK> 0 "register_operand" "=&r")
+        (match_operator:<MASK> 1 "float_comparison_operator"
+         [(match_operand:V512F 2 "register_operand" "r")
+          (match_operand:V512F 3 "register_operand" "r")]))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<QMASK> (match_dup 0) 0)
+        (match_op_dup:<QMASK> 1
+         [(subreg:<QUART> (match_dup 2) 0)
+          (subreg:<QUART> (match_dup 3) 0)]))
+   (set (subreg:<QMASK> (match_dup 0) 16)
+        (match_op_dup:<QMASK> 1
+         [(subreg:<QUART> (match_dup 2) 16)
+          (subreg:<QUART> (match_dup 3) 16)]))
+   (set (subreg:<QMASK> (match_dup 0) 32)
+        (match_op_dup:<QMASK> 1
+         [(subreg:<QUART> (match_dup 2) 32)
+          (subreg:<QUART> (match_dup 3) 32)]))
+   (set (subreg:<QMASK> (match_dup 0) 48)
+        (match_op_dup:<QMASK> 1
+         [(subreg:<QUART> (match_dup 2) 48)
+          (subreg:<QUART> (match_dup 3) 48)]))]
+  ""
+)
+
+(define_insn_and_split "*fcompn<suffix>_s2"
+  [(set (match_operand:<MASK> 0 "register_operand" "=&r")
+        (match_operator:<MASK> 1 "float_comparison_operator"
+         [(vec_duplicate:V512F (match_operand:<CHUNK> 2 "nonmemory_operand" "r"))
+          (match_operand:V512F 3 "register_operand" "r")]))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<QMASK> (match_dup 0) 0)
+        (match_op_dup:<QMASK> 1
+         [(vec_duplicate:<QUART> (match_dup 2))
+          (subreg:<QUART> (match_dup 3) 0)]))
+   (set (subreg:<QMASK> (match_dup 0) 16)
+        (match_op_dup:<QMASK> 1
+         [(vec_duplicate:<QUART> (match_dup 2))
+          (subreg:<QUART> (match_dup 3) 16)]))
+   (set (subreg:<QMASK> (match_dup 0) 32)
+        (match_op_dup:<QMASK> 1
+         [(vec_duplicate:<QUART> (match_dup 2))
+          (subreg:<QUART> (match_dup 3) 32)]))
+   (set (subreg:<QMASK> (match_dup 0) 48)
+        (match_op_dup:<QMASK> 1
+         [(vec_duplicate:<QUART> (match_dup 2))
+          (subreg:<QUART> (match_dup 3) 48)]))]
+  ""
+)
+
+(define_insn_and_split "*fcompn<suffix>_s3"
+  [(set (match_operand:<MASK> 0 "register_operand" "=&r")
+        (match_operator:<MASK> 1 "float_comparison_operator"
+         [(match_operand:V512F 2 "register_operand" "r")
+          (vec_duplicate:V512F (match_operand:<CHUNK> 3 "register_operand" "r"))]))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<QMASK> (match_dup 0) 0)
+        (match_op_dup:<QMASK> 1
+         [(subreg:<QUART> (match_dup 2) 0)
+          (vec_duplicate:<QUART> (match_dup 3))]))
+   (set (subreg:<QMASK> (match_dup 0) 16)
+        (match_op_dup:<QMASK> 1
+         [(subreg:<QUART> (match_dup 2) 16)
+          (vec_duplicate:<QUART> (match_dup 3))]))
+   (set (subreg:<QMASK> (match_dup 0) 32)
+        (match_op_dup:<QMASK> 1
+         [(subreg:<QUART> (match_dup 2) 32)
+          (vec_duplicate:<QUART> (match_dup 3))]))
+   (set (subreg:<QMASK> (match_dup 0) 48)
+        (match_op_dup:<QMASK> 1
+         [(subreg:<QUART> (match_dup 2) 48)
+          (vec_duplicate:<QUART> (match_dup 3))]))]
+  ""
 )
 
 
@@ -1015,14 +1177,14 @@
   "KV3_1"
   "#"
   "KV3_1 && reload_completed"
-  [(set (subreg:TI (match_dup 0) 0)
-        (if_then_else:TI (match_op_dup 2 [(match_dup 3) (const_int 0)])
-                         (subreg:TI (match_dup 1) 0)
-                         (subreg:TI (match_dup 4) 0)))
-   (set (subreg:TI (match_dup 0) 16)
-        (if_then_else:TI (match_op_dup 2 [(match_dup 3) (const_int 0)])
-                         (subreg:TI (match_dup 1) 16)
-                         (subreg:TI (match_dup 4) 16)))]
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (if_then_else:<HALF> (match_op_dup 2 [(match_dup 3) (const_int 0)])
+                             (subreg:<HALF> (match_dup 1) 0)
+                             (subreg:<HALF> (match_dup 4) 0)))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (if_then_else:<HALF> (match_op_dup 2 [(match_dup 3) (const_int 0)])
+                             (subreg:<HALF> (match_dup 1) 16)
+                             (subreg:<HALF> (match_dup 4) 16)))]
   ""
   [(set_attr "type" "alu_lite_x2")]
 )
@@ -1052,19 +1214,19 @@
                              (match_operand:ALL256 3 "register_operand" "0")))]
   "KV3_1"
   "#"
-  "reload_completed"
-  [(set (subreg:TI (match_dup 0) 0)
-        (if_then_else:TI (ne (zero_extract:SIDI (match_dup 2)
+  "KV3_1 && reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (if_then_else:<HALF> (ne (zero_extract:SIDI (match_dup 2)
                                                 (const_int 1) (const_int 0))
-                             (const_int 0))
-                         (subreg:TI (match_dup 1) 0)
-                         (subreg:TI (match_dup 3) 0)))
-   (set (subreg:TI (match_dup 0) 16)
-        (if_then_else:TI (ne (zero_extract:SIDI (match_dup 2)
+                                 (const_int 0))
+                             (subreg:<HALF> (match_dup 1) 0)
+                             (subreg:<HALF> (match_dup 3) 0)))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (if_then_else:<HALF> (ne (zero_extract:SIDI (match_dup 2)
                                                 (const_int 1) (const_int 0))
-                             (const_int 0))
-                         (subreg:TI (match_dup 1) 16)
-                         (subreg:TI (match_dup 3) 16)))]
+                                 (const_int 0))
+                             (subreg:<HALF> (match_dup 1) 16)
+                             (subreg:<HALF> (match_dup 3) 16)))]
   ""
   [(set_attr "type" "alu_thin_x2")]
 )
@@ -1094,19 +1256,19 @@
                              (match_operand:ALL256 3 "register_operand" "0")))]
   "KV3_1"
   "#"
-  "reload_completed"
-  [(set (subreg:TI (match_dup 0) 0)
-        (if_then_else:TI (eq (zero_extract:SIDI (match_dup 2)
+  "KV3_1 && reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (if_then_else:<HALF> (eq (zero_extract:SIDI (match_dup 2)
                                                 (const_int 1) (const_int 0))
-                             (const_int 0))
-                         (subreg:TI (match_dup 1) 0)
-                         (subreg:TI (match_dup 3) 0)))
-   (set (subreg:TI (match_dup 0) 16)
-        (if_then_else:TI (eq (zero_extract:SIDI (match_dup 2)
+                                 (const_int 0))
+                             (subreg:<HALF> (match_dup 1) 0)
+                             (subreg:<HALF> (match_dup 3) 0)))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (if_then_else:<HALF> (eq (zero_extract:SIDI (match_dup 2)
                                                 (const_int 1) (const_int 0))
-                             (const_int 0))
-                         (subreg:TI (match_dup 1) 16)
-                         (subreg:TI (match_dup 3) 16)))]
+                                 (const_int 0))
+                             (subreg:<HALF> (match_dup 1) 16)
+                             (subreg:<HALF> (match_dup 3) 16)))]
   ""
   [(set_attr "type" "alu_thin_x2")]
 )
@@ -1189,177 +1351,97 @@
 )
 
 (define_insn "*select<suffix>"
-  [(set (match_operand:S128B 0 "register_operand" "=r")
-        (if_then_else:S128B (match_operator 2 "zero_comparison_operator"
+  [(set (match_operand:V128B 0 "register_operand" "=r")
+        (if_then_else:V128B (match_operator 2 "zero_comparison_operator"
                                             [(match_operand:<MASK> 3 "register_operand" "r")
                                              (match_operand:<MASK> 5 "const_zero_operand" "")])
-                            (match_operand:S128B 1 "register_operand" "r")
-                            (match_operand:S128B 4 "register_operand" "0")))]
+                            (match_operand:V128B 1 "register_operand" "r")
+                            (match_operand:V128B 4 "register_operand" "0")))]
   ""
-  "cmove<chunkx>.%2z %x3? %x0 = %x1\n\tcmove<chunkx>.%2z %y3? %y0 = %y1"
+  {
+    if (GET_MODE_SIZE (GET_MODE_INNER (<MODE>mode)) == UNITS_PER_WORD)
+      return "cmoved.d%2z %x3? %x0 = %x1\n\tcmoved.d%2z %y3? %y0 = %y1";
+    return "cmove<chunkx>.%2z %x3? %x0 = %x1\n\tcmove<chunkx>.%2z %y3? %y0 = %y1";
+  }
   [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
 (define_insn "*select<suffix>_nez"
-  [(set (match_operand:S128B 0 "register_operand" "=r")
-        (if_then_else:S128B (ne (match_operator:<MASK> 2 "zero_comparison_operator"
+  [(set (match_operand:V128B 0 "register_operand" "=r")
+        (if_then_else:V128B (ne (match_operator:<MASK> 2 "zero_comparison_operator"
                                                 [(match_operand:<MASK> 3 "register_operand" "r")
                                                  (match_operand:<MASK> 5 "const_zero_operand" "")])
                                 (match_operand:<MASK> 6 "const_zero_operand" ""))
-                            (match_operand:S128B 1 "register_operand" "r")
-                            (match_operand:S128B 4 "register_operand" "0")))]
+                            (match_operand:V128B 1 "register_operand" "r")
+                            (match_operand:V128B 4 "register_operand" "0")))]
   ""
-  "cmove<chunkx>.%2z %x3? %x0 = %x1\n\tcmove<chunkx>.%2z %y3? %y0 = %y1"
+  {
+    if (GET_MODE_SIZE (GET_MODE_INNER (<MODE>mode)) == UNITS_PER_WORD)
+      return "cmoved.d%2z %x3? %x0 = %x1\n\tcmoved.d%2z %y3? %y0 = %y1";
+    return "cmove<chunkx>.%2z %x3? %x0 = %x1\n\tcmove<chunkx>.%2z %y3? %y0 = %y1";
+  }
   [(set_attr "type" "alu_thin_x2")
    (set_attr "length"         "8")]
 )
 
 (define_insn "*select<suffix>_nez_eqz"
-  [(set (match_operand:S128B 0 "register_operand" "=r")
-        (if_then_else:S128B (ne (eq:<MASK> (match_operator:<MASK> 2 "zero_comparison_operator"
+  [(set (match_operand:V128B 0 "register_operand" "=r")
+        (if_then_else:V128B (ne (eq:<MASK> (match_operator:<MASK> 2 "zero_comparison_operator"
                                                            [(match_operand:<MASK> 3 "register_operand" "r")
                                                             (match_operand:<MASK> 5 "const_zero_operand" "")])
                                            (match_operand:<MASK> 6 "const_zero_operand" ""))
                                 (match_operand:<MASK> 7 "const_zero_operand" ""))
-                            (match_operand:S128B 1 "register_operand" "r")
-                            (match_operand:S128B 4 "register_operand" "0")))]
+                            (match_operand:V128B 1 "register_operand" "r")
+                            (match_operand:V128B 4 "register_operand" "0")))]
   ""
-  "cmove<chunkx>.%R2z %x3? %x0 = %x1\n\tcmove<chunkx>.%R2z %y3? %y0 = %y1"
-  [(set_attr "type" "alu_thin_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*selectdp"
-  [(set (match_operand:V2DA 0 "register_operand" "=r")
-        (if_then_else:V2DA (match_operator 2 "zero_comparison_operator"
-                                             [(match_operand:<MASK> 3 "register_operand" "r")
-                                              (match_operand:<MASK> 5 "const_zero_operand" "")])
-                           (match_operand:V2DA 1 "register_operand" "r")
-                           (match_operand:V2DA 4 "register_operand" "0")))]
-  ""
-  "cmoved.d%2z %x3? %x0 = %x1\n\tcmoved.d%2z %y3? %y0 = %y1"
-  [(set_attr "type" "alu_thin_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*selectdp_nez"
-  [(set (match_operand:V2DA 0 "register_operand" "=r")
-        (if_then_else:V2DA (ne (match_operator:<MASK> 2 "zero_comparison_operator"
-                                               [(match_operand:<MASK> 3 "register_operand" "r")
-                                                (match_operand:<MASK> 5 "const_zero_operand" "")])
-                               (match_operand:<MASK> 6 "const_zero_operand" ""))
-                           (match_operand:V2DA 1 "register_operand" "r")
-                           (match_operand:V2DA 4 "register_operand" "0")))]
-  ""
-  "cmoved.d%2z %x3? %x0 = %x1\n\tcmoved.d%2z %y3? %y0 = %y1"
-  [(set_attr "type" "alu_thin_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*selectdp_nez_eqz"
-  [(set (match_operand:V2DA 0 "register_operand" "=r")
-        (if_then_else:V2DA (ne (eq:<MASK> (match_operator:<MASK> 2 "zero_comparison_operator"
-                                                          [(match_operand:<MASK> 3 "register_operand" "r")
-                                                           (match_operand:<MASK> 5 "const_zero_operand" "")])
-                                        (match_operand:<MASK> 6 "const_zero_operand" ""))
-                               (match_operand:<MASK> 7 "const_zero_operand" ""))
-                           (match_operand:V2DA 1 "register_operand" "r")
-                           (match_operand:V2DA 4 "register_operand" "0")))]
-  ""
-  "cmoved.d%R2z %x3? %x0 = %x1\n\tcmoved.d%R2z %y3? %y0 = %y1"
-  [(set_attr "type" "alu_thin_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "*selectbv_2"
-  [(set (match_operand:V32QI 0 "register_operand" "=r")
-        (if_then_else:V32QI (match_operator 2 "zero_comparison_operator"
-                                            [(match_operand:V32QI 3 "register_operand" "r")
-                                             (match_operand:V32QI 5 "const_zero_operand" "")])
-                            (match_operand:V32QI 1 "register_operand" "r")
-                            (match_operand:V32QI 4 "register_operand" "0")))]
-  "KV3_2"
   {
-    return "cmovebo.%2z %x3? %x0 = %x1\n\tcmovebo.%2z %y3? %y0 = %y1\n\t"
-           "cmovebo.%2z %z3? %z0 = %z1\n\tcmovebo.%2z %t3? %t0 = %t1";
+    if (GET_MODE_SIZE (GET_MODE_INNER (<MODE>mode)) == UNITS_PER_WORD)
+      return "cmoved.d%R2z %x3? %x0 = %x1\n\tcmoved.d%R2z %y3? %y0 = %y1";
+    return "cmove<chunkx>.%R2z %x3? %x0 = %x1\n\tcmove<chunkx>.%R2z %y3? %y0 = %y1";
   }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn "*selectbv_nez_2"
-  [(set (match_operand:V32QI 0 "register_operand" "=r")
-        (if_then_else:V32QI (ne (match_operator:V32QI 2 "zero_comparison_operator"
-                                                [(match_operand:V32QI 3 "register_operand" "r")
-                                                 (match_operand:V32QI 5 "const_zero_operand" "")])
-                                (match_operand:V32QI 6 "const_zero_operand" ""))
-                            (match_operand:V32QI 1 "register_operand" "r")
-                            (match_operand:V32QI 4 "register_operand" "0")))]
-  "KV3_2"
-  {
-    return "cmovebo.%2z %x3? %x0 = %x1\n\tcmovebo.%2z %y3? %y0 = %y1\n\t"
-           "cmovebo.%2z %z3? %z0 = %z1\n\tcmovebo.%2z %t3? %t0 = %t1";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn "*selectbv_nez_eqz_2"
-  [(set (match_operand:V32QI 0 "register_operand" "=r")
-        (if_then_else:V32QI (ne (eq:V32QI (match_operator:V32QI 2 "zero_comparison_operator"
-                                                          [(match_operand:V32QI 3 "register_operand" "r")
-                                                           (match_operand:V32QI 5 "const_zero_operand" "")])
-                                          (match_operand:V32QI 6 "const_zero_operand" ""))
-                                (match_operand:V32QI 7 "const_zero_operand" ""))
-                            (match_operand:V32QI 1 "register_operand" "r")
-                            (match_operand:V32QI 4 "register_operand" "0")))]
-  "KV3_2"
-  {
-    return "cmovebo.%R2z %x3? %x0 = %x1\n\tcmovebo.%R2z %y3? %y0 = %y1\n\t"
-           "cmovebo.%R2z %z3? %z0 = %z1\n\tcmovebo.%R2z %t3? %t0 = %t1";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
+  [(set_attr "type" "alu_thin_x2")
+   (set_attr "length"         "8")]
 )
 
 (define_insn_and_split "*select<suffix>_1"
-  [(set (match_operand:V16HA 0 "register_operand" "=r")
-        (if_then_else:V16HA (match_operator 2 "zero_comparison_operator"
+  [(set (match_operand:V256B 0 "register_operand" "=r")
+        (if_then_else:V256B (match_operator 2 "zero_comparison_operator"
                                             [(match_operand:<MASK> 3 "register_operand" "r")
                                              (match_operand:<MASK> 5 "const_zero_operand" "")])
-                            (match_operand:V16HA 1 "register_operand" "r")
-                            (match_operand:V16HA 4 "register_operand" "0")))]
+                            (match_operand:V256B 1 "register_operand" "r")
+                            (match_operand:V256B 4 "register_operand" "0")))]
   "KV3_1"
   "#"
   "KV3_1 && reload_completed"
   [(set (subreg:<HALF> (match_dup 0) 0)
         (if_then_else:<HALF> (match_op_dup 2 [(subreg:<HMASK> (match_dup 3) 0)
-                                              (const_vector:<HMASK> [
-                                                (const_int 0) (const_int 0) (const_int 0) (const_int 0)
-                                                (const_int 0) (const_int 0) (const_int 0) (const_int 0)])])
+                                              (match_dup 5)])
                              (subreg:<HALF> (match_dup 1) 0)
                              (subreg:<HALF> (match_dup 4) 0)))
    (set (subreg:<HALF> (match_dup 0) 16)
         (if_then_else:<HALF> (match_op_dup 2 [(subreg:<HMASK> (match_dup 3) 16)
-                                              (const_vector:<HMASK> [
-                                                (const_int 0) (const_int 0) (const_int 0) (const_int 0)
-                                                (const_int 0) (const_int 0) (const_int 0) (const_int 0)])])
+                                              (match_dup 5)])
                              (subreg:<HALF> (match_dup 1) 16)
                              (subreg:<HALF> (match_dup 4) 16)))]
-  ""
+  {
+    operands[5] = CONST0_RTX (<HMASK>mode);
+  }
   [(set_attr "type" "alu_lite_x2")]
 )
 
 (define_insn "*select<suffix>_2"
-  [(set (match_operand:V16HA 0 "register_operand" "=r")
-        (if_then_else:V16HA (match_operator 2 "zero_comparison_operator"
+  [(set (match_operand:V256B 0 "register_operand" "=r")
+        (if_then_else:V256B (match_operator 2 "zero_comparison_operator"
                                             [(match_operand:<MASK> 3 "register_operand" "r")
                                              (match_operand:<MASK> 5 "const_zero_operand" "")])
-                            (match_operand:V16HA 1 "register_operand" "r")
-                            (match_operand:V16HA 4 "register_operand" "0")))]
+                            (match_operand:V256B 1 "register_operand" "r")
+                            (match_operand:V256B 4 "register_operand" "0")))]
   "KV3_2"
   {
+    if (GET_MODE_SIZE (GET_MODE_INNER (<MODE>mode)) == UNITS_PER_WORD)
+      return "cmoved.d%2z %x3? %x0 = %x1\n\tcmoved.d%2z %y3? %y0 = %y1\n\t"
+             "cmoved.d%2z %z3? %z0 = %z1\n\tcmoved.d%2z %t3? %t0 = %t1";
     return "cmove<chunkx>.%2z %x3? %x0 = %x1\n\tcmove<chunkx>.%2z %y3? %y0 = %y1\n\t"
            "cmove<chunkx>.%2z %z3? %z0 = %z1\n\tcmove<chunkx>.%2z %t3? %t0 = %t1";
   }
@@ -1368,44 +1450,45 @@
 )
 
 (define_insn_and_split "*select<suffix>_nez_1"
-  [(set (match_operand:V16HA 0 "register_operand" "=r")
-        (if_then_else:V16HA (ne (match_operator:<MASK> 2 "zero_comparison_operator"
+  [(set (match_operand:V256B 0 "register_operand" "=r")
+        (if_then_else:V256B (ne (match_operator:<MASK> 2 "zero_comparison_operator"
                                                 [(match_operand:<MASK> 3 "register_operand" "r")
                                                  (match_operand:<MASK> 5 "const_zero_operand" "")])
                                 (match_operand:<MASK> 6 "const_zero_operand" ""))
-                            (match_operand:V16HA 1 "register_operand" "r")
-                            (match_operand:V16HA 4 "register_operand" "0")))]
+                            (match_operand:V256B 1 "register_operand" "r")
+                            (match_operand:V256B 4 "register_operand" "0")))]
   "KV3_1"
   "#"
   "KV3_1 && reload_completed"
   [(set (subreg:<HALF> (match_dup 0) 0)
         (if_then_else:<HALF> (match_op_dup 2 [(subreg:<HMASK> (match_dup 3) 0)
-                                              (const_vector:<HMASK> [
-                                                (const_int 0) (const_int 0) (const_int 0) (const_int 0)
-                                                (const_int 0) (const_int 0) (const_int 0) (const_int 0)])])
+                                              (match_dup 5)])
                              (subreg:<HALF> (match_dup 1) 0)
                              (subreg:<HALF> (match_dup 4) 0)))
    (set (subreg:<HALF> (match_dup 0) 16)
         (if_then_else:<HALF> (match_op_dup 2 [(subreg:<HMASK> (match_dup 3) 16)
-                                              (const_vector:<HMASK> [
-                                                (const_int 0) (const_int 0) (const_int 0) (const_int 0)
-                                                (const_int 0) (const_int 0) (const_int 0) (const_int 0)])])
+                                              (match_dup 5)])
                              (subreg:<HALF> (match_dup 1) 16)
                              (subreg:<HALF> (match_dup 4) 16)))]
-  ""
+  {
+    operands[5] = CONST0_RTX (<HMASK>mode);
+  }
   [(set_attr "type" "alu_lite_x2")]
 )
 
 (define_insn "*select<suffix>_nez_2"
-  [(set (match_operand:V16HA 0 "register_operand" "=r")
-        (if_then_else:V16HA (ne (match_operator:<MASK> 2 "zero_comparison_operator"
+  [(set (match_operand:V256B 0 "register_operand" "=r")
+        (if_then_else:V256B (ne (match_operator:<MASK> 2 "zero_comparison_operator"
                                                 [(match_operand:<MASK> 3 "register_operand" "r")
                                                  (match_operand:<MASK> 5 "const_zero_operand" "")])
                                 (match_operand:<MASK> 6 "const_zero_operand" ""))
-                            (match_operand:V16HA 1 "register_operand" "r")
-                            (match_operand:V16HA 4 "register_operand" "0")))]
+                            (match_operand:V256B 1 "register_operand" "r")
+                            (match_operand:V256B 4 "register_operand" "0")))]
   "KV3_2"
   {
+    if (GET_MODE_SIZE (GET_MODE_INNER (<MODE>mode)) == UNITS_PER_WORD)
+      return "cmoved.d%2z %x3? %x0 = %x1\n\tcmoved.d%2z %y3? %y0 = %y1\n\t"
+             "cmoved.d%2z %z3? %z0 = %z1\n\tcmoved.d%2z %t3? %t0 = %t1";
     return "cmove<chunkx>.%2z %x3? %x0 = %x1\n\tcmove<chunkx>.%2z %y3? %y0 = %y1\n\t"
            "cmove<chunkx>.%2z %z3? %z0 = %z1\n\tcmove<chunkx>.%2z %t3? %t0 = %t1";
   }
@@ -1414,58 +1497,51 @@
 )
 
 (define_insn_and_split "*select<suffix>_nez_eqz_1"
-  [(set (match_operand:V16HA 0 "register_operand" "=r")
-        (if_then_else:V16HA (ne (eq:<MASK> (match_operator:<MASK> 2 "zero_comparison_operator"
+  [(set (match_operand:V256B 0 "register_operand" "=r")
+        (if_then_else:V256B (ne (eq:<MASK> (match_operator:<MASK> 2 "zero_comparison_operator"
                                                            [(match_operand:<MASK> 3 "register_operand" "r")
                                                             (match_operand:<MASK> 5 "const_zero_operand" "")])
                                            (match_operand:<MASK> 6 "const_zero_operand" ""))
                                 (match_operand:<MASK> 7 "const_zero_operand" ""))
-                            (match_operand:V16HA 1 "register_operand" "r")
-                            (match_operand:V16HA 4 "register_operand" "0")))]
+                            (match_operand:V256B 1 "register_operand" "r")
+                            (match_operand:V256B 4 "register_operand" "0")))]
   "KV3_1"
   "#"
   "KV3_1 && reload_completed"
   [(set (subreg:<HALF> (match_dup 0) 0)
         (if_then_else:<HALF> (ne (eq:<HMASK> (match_op_dup:<HMASK> 2 [(subreg:<HMASK> (match_dup 3) 0)
-                                                                      (const_vector:<HMASK> [
-                                                                        (const_int 0) (const_int 0) (const_int 0) (const_int 0)
-                                                                        (const_int 0) (const_int 0) (const_int 0) (const_int 0)])])
-                                             (const_vector:<HMASK> [
-                                               (const_int 0) (const_int 0) (const_int 0) (const_int 0)
-                                               (const_int 0) (const_int 0) (const_int 0) (const_int 0)]))
-                                 (const_vector:<HMASK> [
-                                   (const_int 0) (const_int 0) (const_int 0) (const_int 0)
-                                   (const_int 0) (const_int 0) (const_int 0) (const_int 0)]))
+                                                                      (match_dup 5)])
+                                             (match_dup 5))
+                                 (match_dup 5))
                            (subreg:<HALF> (match_dup 1) 0)
                            (subreg:<HALF> (match_dup 4) 0)))
    (set (subreg:<HALF> (match_dup 0) 16)
         (if_then_else:<HALF> (ne (eq:<HMASK> (match_op_dup:<HMASK> 2 [(subreg:<HMASK> (match_dup 3) 16)
-                                                                      (const_vector:<HMASK> [
-                                                                        (const_int 0) (const_int 0) (const_int 0) (const_int 0)
-                                                                        (const_int 0) (const_int 0) (const_int 0) (const_int 0)])])
-                                             (const_vector:<HMASK> [
-                                               (const_int 0) (const_int 0) (const_int 0) (const_int 0)
-                                               (const_int 0) (const_int 0) (const_int 0) (const_int 0)]))
-                                 (const_vector:<HMASK> [
-                                   (const_int 0) (const_int 0) (const_int 0) (const_int 0)
-                                   (const_int 0) (const_int 0) (const_int 0) (const_int 0)]))
+                                                                      (match_dup 5)])
+                                             (match_dup 5))
+                                 (match_dup 5))
                            (subreg:<HALF> (match_dup 1) 16)
                            (subreg:<HALF> (match_dup 4) 16)))]
-  ""
+  {
+    operands[5] = CONST0_RTX (<HMASK>mode);
+  }
   [(set_attr "type" "alu_lite_x2")]
 )
 
 (define_insn "*select<suffix>_nez_eqz_2"
-  [(set (match_operand:V16HA 0 "register_operand" "=r")
-        (if_then_else:V16HA (ne (eq:<MASK> (match_operator:<MASK> 2 "zero_comparison_operator"
+  [(set (match_operand:V256B 0 "register_operand" "=r")
+        (if_then_else:V256B (ne (eq:<MASK> (match_operator:<MASK> 2 "zero_comparison_operator"
                                                            [(match_operand:<MASK> 3 "register_operand" "r")
                                                             (match_operand:<MASK> 5 "const_zero_operand" "")])
                                            (match_operand:<MASK> 6 "const_zero_operand" ""))
                                 (match_operand:<MASK> 7 "const_zero_operand" ""))
-                            (match_operand:V16HA 1 "register_operand" "r")
-                            (match_operand:V16HA 4 "register_operand" "0")))]
+                            (match_operand:V256B 1 "register_operand" "r")
+                            (match_operand:V256B 4 "register_operand" "0")))]
   "KV3_2"
   {
+    if (GET_MODE_SIZE (GET_MODE_INNER (<MODE>mode)) == UNITS_PER_WORD)
+      return "cmoved.d%R2z %x3? %x0 = %x1\n\tcmoved.d%R2z %y3? %y0 = %y1\n\t"
+             "cmoved.d%R2z %z3? %z0 = %z1\n\tcmoved.d%R2z %t3? %t0 = %t1";
     return "cmove<chunkx>.%R2z %x3? %x0 = %x1\n\tcmove<chunkx>.%R2z %y3? %y0 = %y1\n\t"
            "cmove<chunkx>.%R2z %z3? %z0 = %z1\n\tcmove<chunkx>.%R2z %t3? %t0 = %t1";
   }
@@ -1473,303 +1549,119 @@
    (set_attr "length"        "16")]
 )
 
-(define_insn_and_split "*select<suffix>_1"
-  [(set (match_operand:V8SA 0 "register_operand" "=r")
-        (if_then_else:V8SA (match_operator 2 "zero_comparison_operator"
-                                             [(match_operand:<MASK> 3 "register_operand" "r")
-                                              (match_operand:<MASK> 5 "const_zero_operand" "")])
-                           (match_operand:V8SA 1 "register_operand" "r")
-                           (match_operand:V8SA 4 "register_operand" "0")))]
-  "KV3_1"
+(define_insn_and_split "*select<suffix>"
+  [(set (match_operand:V512B 0 "register_operand" "=r")
+        (if_then_else:V512B (match_operator 2 "zero_comparison_operator"
+                                            [(match_operand:<MASK> 3 "register_operand" "r")
+                                             (match_operand:<MASK> 5 "const_zero_operand" "")])
+                            (match_operand:V512B 1 "register_operand" "r")
+                            (match_operand:V512B 4 "register_operand" "0")))]
+  ""
   "#"
-  "KV3_1 && reload_completed"
-  [(set (subreg:<HALF> (match_dup 0) 0)
-        (if_then_else:<HALF> (match_op_dup 2 [(subreg:<HMASK> (match_dup 3) 0)
-                                              (const_vector:<HMASK> [
-                                                (const_int 0) (const_int 0)
-                                                (const_int 0) (const_int 0)])])
-                             (subreg:<HALF> (match_dup 1) 0)
-                             (subreg:<HALF> (match_dup 4) 0)))
-   (set (subreg:<HALF> (match_dup 0) 16)
-        (if_then_else:<HALF> (match_op_dup 2 [(subreg:<HMASK> (match_dup 3) 16)
-                                              (const_vector:<HMASK> [
-                                                (const_int 0) (const_int 0)
-                                                (const_int 0) (const_int 0)])])
-                             (subreg:<HALF> (match_dup 1) 16)
-                             (subreg:<HALF> (match_dup 4) 16)))]
+  "reload_completed"
+  [(set (subreg:<QUART> (match_dup 0) 0)
+        (if_then_else:<QUART> (match_op_dup 2 [(subreg:<QMASK> (match_dup 3) 0)
+                                               (match_dup 5)])
+                              (subreg:<QUART> (match_dup 1) 0)
+                              (subreg:<QUART> (match_dup 4) 0)))
+   (set (subreg:<QUART> (match_dup 0) 16)
+        (if_then_else:<QUART> (match_op_dup 2 [(subreg:<QMASK> (match_dup 3) 16)
+                                               (match_dup 5)])
+                              (subreg:<QUART> (match_dup 1) 16)
+                              (subreg:<QUART> (match_dup 4) 16)))
+   (set (subreg:<QUART> (match_dup 0) 32)
+        (if_then_else:<QUART> (match_op_dup 2 [(subreg:<QMASK> (match_dup 3) 32)
+                                               (match_dup 5)])
+                              (subreg:<QUART> (match_dup 1) 32)
+                              (subreg:<QUART> (match_dup 4) 32)))
+   (set (subreg:<QUART> (match_dup 0) 48)
+        (if_then_else:<QUART> (match_op_dup 2 [(subreg:<QMASK> (match_dup 3) 48)
+                                               (match_dup 5)])
+                              (subreg:<QUART> (match_dup 1) 48)
+                              (subreg:<QUART> (match_dup 4) 48)))]
+  {
+    operands[5] = CONST0_RTX (<QMASK>mode);
+  }
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn_and_split "*select<suffix>_nez"
+  [(set (match_operand:V512B 0 "register_operand" "=&r")
+        (if_then_else:V512B (ne (match_operator:<MASK> 2 "zero_comparison_operator"
+                                                [(match_operand:<MASK> 3 "register_operand" "r")
+                                                 (match_operand:<MASK> 5 "const_zero_operand" "")])
+                                (match_operand:<MASK> 6 "const_zero_operand" ""))
+                            (match_operand:V512B 1 "register_operand" "r")
+                            (match_operand:V512B 4 "register_operand" "0")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<QUART> (match_dup 0) 0)
+        (if_then_else:<QUART> (match_op_dup 2 [(subreg:<QMASK> (match_dup 3) 0)
+                                               (match_dup 5)])
+                              (subreg:<QUART> (match_dup 1) 0)
+                              (subreg:<QUART> (match_dup 4) 0)))
+   (set (subreg:<QUART> (match_dup 0) 16)
+        (if_then_else:<QUART> (match_op_dup 2 [(subreg:<QMASK> (match_dup 3) 16)
+                                               (match_dup 5)])
+                              (subreg:<QUART> (match_dup 1) 16)
+                              (subreg:<QUART> (match_dup 4) 16)))
+   (set (subreg:<QUART> (match_dup 0) 32)
+        (if_then_else:<QUART> (match_op_dup 2 [(subreg:<QMASK> (match_dup 3) 32)
+                                               (match_dup 5)])
+                              (subreg:<QUART> (match_dup 1) 32)
+                              (subreg:<QUART> (match_dup 4) 32)))
+   (set (subreg:<QUART> (match_dup 0) 48)
+        (if_then_else:<QUART> (match_op_dup 2 [(subreg:<QMASK> (match_dup 3) 48)
+                                               (match_dup 5)])
+                              (subreg:<QUART> (match_dup 1) 48)
+                              (subreg:<QUART> (match_dup 4) 48)))]
   ""
   [(set_attr "type" "alu_lite_x2")]
 )
 
-(define_insn "*select<suffix>_2"
-  [(set (match_operand:V8SA 0 "register_operand" "=r")
-        (if_then_else:V8SA (match_operator 2 "zero_comparison_operator"
-                                             [(match_operand:<MASK> 3 "register_operand" "r")
-                                              (match_operand:<MASK> 5 "const_zero_operand" "")])
-                           (match_operand:V8SA 1 "register_operand" "r")
-                           (match_operand:V8SA 4 "register_operand" "0")))]
-  "KV3_2"
-  {
-    return "cmove<chunkx>.%2z %x3? %x0 = %x1\n\tcmove<chunkx>.%2z %y3? %y0 = %y1\n\t"
-           "cmove<chunkx>.%2z %z3? %z0 = %z1\n\tcmove<chunkx>.%2z %t3? %t0 = %t1";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn_and_split "*select<suffix>_nez_1"
-  [(set (match_operand:V8SA 0 "register_operand" "=r")
-        (if_then_else:V8SA (ne (match_operator:<MASK> 2 "zero_comparison_operator"
-                                               [(match_operand:<MASK> 3 "register_operand" "r")
-                                                (match_operand:<MASK> 5 "const_zero_operand" "")])
-                               (match_operand:<MASK> 6 "const_zero_operand" ""))
-                           (match_operand:V8SA 1 "register_operand" "r")
-                           (match_operand:V8SA 4 "register_operand" "0")))]
-  "KV3_1"
+(define_insn_and_split "*select<suffix>_nez_eqz"
+  [(set (match_operand:V512B 0 "register_operand" "=&r")
+        (if_then_else:V512B (ne (eq:<MASK> (match_operator:<MASK> 2 "zero_comparison_operator"
+                                                           [(match_operand:<MASK> 3 "register_operand" "r")
+                                                            (match_operand:<MASK> 5 "const_zero_operand" "")])
+                                           (match_operand:<MASK> 6 "const_zero_operand" ""))
+                                (match_operand:<MASK> 7 "const_zero_operand" ""))
+                            (match_operand:V512B 1 "register_operand" "r")
+                            (match_operand:V512B 4 "register_operand" "0")))]
+  ""
   "#"
-  "KV3_1 && reload_completed"
-  [(set (subreg:<HALF> (match_dup 0) 0)
-        (if_then_else:<HALF> (match_op_dup 2 [(subreg:<HMASK> (match_dup 3) 0)
-                                              (const_vector:<HMASK> [
-                                                (const_int 0) (const_int 0)
-                                                (const_int 0) (const_int 0)])])
-                             (subreg:<HALF> (match_dup 1) 0)
-                             (subreg:<HALF> (match_dup 4) 0)))
-   (set (subreg:<HALF> (match_dup 0) 16)
-        (if_then_else:<HALF> (match_op_dup 2 [(subreg:<HMASK> (match_dup 3) 16)
-                                              (const_vector:<HMASK> [
-                                                (const_int 0) (const_int 0)
-                                                (const_int 0) (const_int 0)])])
-                             (subreg:<HALF> (match_dup 1) 16)
-                             (subreg:<HALF> (match_dup 4) 16)))]
+  "reload_completed"
+  [(set (subreg:<QUART> (match_dup 0) 0)
+        (if_then_else:<QUART> (ne (eq:<QMASK> (match_op_dup:<QMASK> 2 [(subreg:<QMASK> (match_dup 3) 0)
+                                                                      (match_dup 5)])
+                                             (match_dup 5))
+                                 (match_dup 5))
+                           (subreg:<QUART> (match_dup 1) 0)
+                           (subreg:<QUART> (match_dup 4) 0)))
+   (set (subreg:<QUART> (match_dup 0) 16)
+        (if_then_else:<QUART> (ne (eq:<QMASK> (match_op_dup:<QMASK> 2 [(subreg:<QMASK> (match_dup 3) 16)
+                                                                      (match_dup 5)])
+                                             (match_dup 5))
+                                 (match_dup 5))
+                           (subreg:<QUART> (match_dup 1) 16)
+                           (subreg:<QUART> (match_dup 4) 16)))
+   (set (subreg:<QUART> (match_dup 0) 32)
+        (if_then_else:<QUART> (ne (eq:<QMASK> (match_op_dup:<QMASK> 2 [(subreg:<QMASK> (match_dup 3) 32)
+                                                                      (match_dup 5)])
+                                             (match_dup 5))
+                                 (match_dup 5))
+                           (subreg:<QUART> (match_dup 1) 32)
+                           (subreg:<QUART> (match_dup 4) 32)))
+   (set (subreg:<QUART> (match_dup 0) 48)
+        (if_then_else:<QUART> (ne (eq:<QMASK> (match_op_dup:<QMASK> 2 [(subreg:<QMASK> (match_dup 3) 48)
+                                                                      (match_dup 5)])
+                                             (match_dup 5))
+                                 (match_dup 5))
+                           (subreg:<QUART> (match_dup 1) 48)
+                           (subreg:<QUART> (match_dup 4) 48)))]
   ""
   [(set_attr "type" "alu_lite_x2")]
 )
 
-(define_insn "*select<suffix>_nez_2"
-  [(set (match_operand:V8SA 0 "register_operand" "=r")
-        (if_then_else:V8SA (ne (match_operator:<MASK> 2 "zero_comparison_operator"
-                                               [(match_operand:<MASK> 3 "register_operand" "r")
-                                                (match_operand:<MASK> 5 "const_zero_operand" "")])
-                               (match_operand:<MASK> 6 "const_zero_operand" ""))
-                           (match_operand:V8SA 1 "register_operand" "r")
-                           (match_operand:V8SA 4 "register_operand" "0")))]
-  "KV3_2"
-  {
-    return "cmove<chunkx>.%2z %x3? %x0 = %x1\n\tcmove<chunkx>.%2z %y3? %y0 = %y1\n\t"
-           "cmove<chunkx>.%2z %z3? %z0 = %z1\n\tcmove<chunkx>.%2z %t3? %t0 = %t1";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn_and_split "*select<suffix>_nez_eqz_1"
-  [(set (match_operand:V8SA 0 "register_operand" "=r")
-        (if_then_else:V8SA (ne (eq:<MASK> (match_operator:<MASK> 2 "zero_comparison_operator"
-                                                          [(match_operand:<MASK> 3 "register_operand" "r")
-                                                           (match_operand:<MASK> 5 "const_zero_operand" "")])
-                                          (match_operand:<MASK> 6 "const_zero_operand" ""))
-                               (match_operand:<MASK> 7 "const_zero_operand" ""))
-                           (match_operand:V8SA 1 "register_operand" "r")
-                           (match_operand:V8SA 4 "register_operand" "0")))]
-  "KV3_1"
-  "#"
-  "KV3_1 && reload_completed"
-  [(set (subreg:<HALF> (match_dup 0) 0)
-        (if_then_else:<HALF> (ne (eq:<HMASK> (match_op_dup:<HMASK> 2 [(subreg:<HMASK> (match_dup 3) 0)
-                                                                      (const_vector:<HMASK> [
-                                                                        (const_int 0) (const_int 0)
-                                                                        (const_int 0) (const_int 0)])])
-                                             (const_vector:<HMASK> [
-                                               (const_int 0) (const_int 0)
-                                               (const_int 0) (const_int 0)]))
-                                 (const_vector:<HMASK> [
-                                   (const_int 0) (const_int 0)
-                                   (const_int 0) (const_int 0)]))
-                             (subreg:<HALF> (match_dup 1) 0)
-                             (subreg:<HALF> (match_dup 4) 0)))
-   (set (subreg:<HALF> (match_dup 0) 16)
-        (if_then_else:<HALF> (ne (eq:<HMASK> (match_op_dup:<HMASK> 2 [(subreg:<HMASK> (match_dup 3) 16)
-                                                                      (const_vector:<HMASK> [
-                                                                        (const_int 0) (const_int 0)
-                                                                        (const_int 0) (const_int 0)])])
-                                             (const_vector:<HMASK> [
-                                               (const_int 0) (const_int 0)
-                                               (const_int 0) (const_int 0)]))
-                                 (const_vector:<HMASK> [
-                                   (const_int 0) (const_int 0)
-                                   (const_int 0) (const_int 0)]))
-                             (subreg:<HALF> (match_dup 1) 16)
-                             (subreg:<HALF> (match_dup 4) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn "*select<suffix>_nez_eqz_2"
-  [(set (match_operand:V8SA 0 "register_operand" "=r")
-        (if_then_else:V8SA (ne (eq:<MASK> (match_operator:<MASK> 2 "zero_comparison_operator"
-                                                          [(match_operand:<MASK> 3 "register_operand" "r")
-                                                           (match_operand:<MASK> 5 "const_zero_operand" "")])
-                                          (match_operand:<MASK> 6 "const_zero_operand" ""))
-                               (match_operand:<MASK> 7 "const_zero_operand" ""))
-                           (match_operand:V8SA 1 "register_operand" "r")
-                           (match_operand:V8SA 4 "register_operand" "0")))]
-  "KV3_2"
-  {
-    return "cmove<chunkx>.%R2z %x3? %x0 = %x1\n\tcmove<chunkx>.%R2z %y3? %y0 = %y1\n\t"
-           "cmove<chunkx>.%R2z %z3? %z0 = %z1\n\tcmove<chunkx>.%R2z %t3? %t0 = %t1";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn_and_split "*select<suffix>_1"
-  [(set (match_operand:V4DA 0 "register_operand" "=r")
-        (if_then_else:V4DA (match_operator 2 "zero_comparison_operator"
-                                             [(match_operand:<MASK> 3 "register_operand" "r")
-                                              (match_operand:<MASK> 5 "const_zero_operand" "")])
-                           (match_operand:V4DA 1 "register_operand" "r")
-                           (match_operand:V4DA 4 "register_operand" "0")))]
-  "KV3_1"
-  "#"
-  "KV3_1 && reload_completed"
-  [(set (subreg:<HALF> (match_dup 0) 0)
-        (if_then_else:<HALF> (match_op_dup 2 [(subreg:<HMASK> (match_dup 3) 0)
-                                              (const_vector:<HMASK> [
-                                                (const_int 0)
-                                                (const_int 0)])])
-                             (subreg:<HALF> (match_dup 1) 0)
-                             (subreg:<HALF> (match_dup 4) 0)))
-   (set (subreg:<HALF> (match_dup 0) 16)
-        (if_then_else:<HALF> (match_op_dup 2 [(subreg:<HMASK> (match_dup 3) 16)
-                                              (const_vector:<HMASK> [
-                                                (const_int 0)
-                                                (const_int 0)])])
-                             (subreg:<HALF> (match_dup 1) 16)
-                             (subreg:<HALF> (match_dup 4) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn "*select<suffix>_2"
-  [(set (match_operand:V4DA 0 "register_operand" "=r")
-        (if_then_else:V4DA (match_operator 2 "zero_comparison_operator"
-                                             [(match_operand:<MASK> 3 "register_operand" "r")
-                                              (match_operand:<MASK> 5 "const_zero_operand" "")])
-                           (match_operand:V4DA 1 "register_operand" "r")
-                           (match_operand:V4DA 4 "register_operand" "0")))]
-  "KV3_2"
-  {
-    return "cmoved.d%2z %x3? %x0 = %x1\n\tcmoved.d%2z %y3? %y0 = %y1\n\t"
-           "cmoved.d%2z %z3? %z0 = %z1\n\tcmoved.d%2z %t3? %t0 = %t1";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn_and_split "*select<suffix>_nez_1"
-  [(set (match_operand:V4DA 0 "register_operand" "=r")
-        (if_then_else:V4DA (ne (match_operator:<MASK> 2 "zero_comparison_operator"
-                                               [(match_operand:<MASK> 3 "register_operand" "r")
-                                                (match_operand:<MASK> 5 "const_zero_operand" "")])
-                               (match_operand:<MASK> 6 "const_zero_operand" ""))
-                           (match_operand:V4DA 1 "register_operand" "r")
-                           (match_operand:V4DA 4 "register_operand" "0")))]
-  "KV3_1"
-  "#"
-  "KV3_1 && reload_completed"
-  [(set (subreg:<HALF> (match_dup 0) 0)
-        (if_then_else:<HALF> (match_op_dup 2 [(subreg:<HMASK> (match_dup 3) 0)
-                                              (const_vector:<HMASK> [
-                                                (const_int 0)
-                                                (const_int 0)])])
-                             (subreg:<HALF> (match_dup 1) 0)
-                             (subreg:<HALF> (match_dup 4) 0)))
-   (set (subreg:<HALF> (match_dup 0) 16)
-        (if_then_else:<HALF> (match_op_dup 2 [(subreg:<HMASK> (match_dup 3) 16)
-                                              (const_vector:<HMASK> [
-                                                (const_int 0)
-                                                (const_int 0)])])
-                             (subreg:<HALF> (match_dup 1) 16)
-                             (subreg:<HALF> (match_dup 4) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn "*select<suffix>_nez_2"
-  [(set (match_operand:V4DA 0 "register_operand" "=r")
-        (if_then_else:V4DA (ne (match_operator:<MASK> 2 "zero_comparison_operator"
-                                               [(match_operand:<MASK> 3 "register_operand" "r")
-                                                (match_operand:<MASK> 5 "const_zero_operand" "")])
-                               (match_operand:<MASK> 6 "const_zero_operand" ""))
-                           (match_operand:V4DA 1 "register_operand" "r")
-                           (match_operand:V4DA 4 "register_operand" "0")))]
-  "KV3_2"
-  {
-    return "cmoved.d%2z %x3? %x0 = %x1\n\tcmoved.d%2z %y3? %y0 = %y1\n\t"
-           "cmoved.d%2z %z3? %z0 = %z1\n\tcmoved.d%2z %t3? %t0 = %t1";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
-
-(define_insn_and_split "*select<suffix>_nez_eqz_1"
-  [(set (match_operand:V4DA 0 "register_operand" "=r")
-        (if_then_else:V4DA (ne (eq:<MASK> (match_operator:<MASK> 2 "zero_comparison_operator"
-                                                          [(match_operand:<MASK> 3 "register_operand" "r")
-                                                           (match_operand:<MASK> 5 "const_zero_operand" "")])
-                                          (match_operand:<MASK> 6 "const_zero_operand" ""))
-                               (match_operand:<MASK> 7 "const_zero_operand" ""))
-                           (match_operand:V4DA 1 "register_operand" "r")
-                           (match_operand:V4DA 4 "register_operand" "0")))]
-  "KV3_1"
-  "#"
-  "KV3_1 && reload_completed"
-  [(set (subreg:<HALF> (match_dup 0) 0)
-        (if_then_else:<HALF> (ne (eq:<HMASK> (match_op_dup:<HMASK> 2 [(subreg:<HMASK> (match_dup 3) 0)
-                                                                      (const_vector:<HMASK> [
-                                                                        (const_int 0)
-                                                                        (const_int 0)])])
-                                             (const_vector:<HMASK> [
-                                               (const_int 0)
-                                               (const_int 0)]))
-                                 (const_vector:<HMASK> [
-                                   (const_int 0)
-                                   (const_int 0)]))
-                             (subreg:<HALF> (match_dup 1) 0)
-                             (subreg:<HALF> (match_dup 4) 0)))
-   (set (subreg:<HALF> (match_dup 0) 16)
-        (if_then_else:<HALF> (ne (eq:<HMASK> (match_op_dup:<HMASK> 2 [(subreg:<HMASK> (match_dup 3) 16)
-                                                                      (const_vector:<HMASK> [
-                                                                        (const_int 0)
-                                                                        (const_int 0)])])
-                                             (const_vector:<HMASK> [
-                                               (const_int 0)
-                                               (const_int 0)]))
-                                 (const_vector:<HMASK> [
-                                   (const_int 0)
-                                   (const_int 0)]))
-                             (subreg:<HALF> (match_dup 1) 16)
-                             (subreg:<HALF> (match_dup 4) 16)))]
-  ""
-  [(set_attr "type" "alu_lite_x2")]
-)
-
-(define_insn "*select<suffix>_nez_eqz_2"
-  [(set (match_operand:V4DA 0 "register_operand" "=r")
-        (if_then_else:V4DA (ne (eq:<MASK> (match_operator:<MASK> 2 "zero_comparison_operator"
-                                                        [(match_operand:<MASK> 3 "register_operand" "r")
-                                                         (match_operand:<MASK> 5 "const_zero_operand" "")])
-                                        (match_operand:<MASK> 6 "const_zero_operand" ""))
-                              (match_operand:<MASK> 7 "const_zero_operand" ""))
-                            (match_operand:V4DA 1 "register_operand" "r")
-                            (match_operand:V4DA 4 "register_operand" "0")))]
-  "KV3_2"
-  {
-    return "cmoved.d%R2z %x3? %x0 = %x1\n\tcmoved.d%R2z %y3? %y0 = %y1\n\t"
-           "cmoved.d%R2z %z3? %z0 = %z1\n\tcmoved.d%R2z %t3? %t0 = %t1";
-  }
-  [(set_attr "type" "alu_tiny_x4")
-   (set_attr "length"        "16")]
-)
 

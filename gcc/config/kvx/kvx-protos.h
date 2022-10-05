@@ -23,6 +23,8 @@ along with GCC; see the file COPYING3.  If not see
 
 void expand_builtin_trap (void);
 
+void kvx_expand_builtin_maddt (rtx operands[], int add);
+
 #ifdef HAVE_ATTR_arch
 extern enum attr_arch kvx_arch_schedule;
 #endif /* HAVE_ATTR_arch */
@@ -161,7 +163,8 @@ extern void kvx_expand_vector_duplicate (rtx target, rtx source);
 
 extern bool kvx_expand_vec_perm_const (rtx target, rtx source1, rtx source2, rtx selector);
 
-extern rtx kvx_expand_chunk_shift (rtx target, rtx source1, rtx source2, int shift);
+extern void kvx_expand_vector_shift (rtx target, rtx source, rtx chunk,
+				     unsigned bits, int left);
 
 extern void kvx_emit_pre_barrier (rtx);
 extern void kvx_emit_post_barrier (rtx);
