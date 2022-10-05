@@ -794,6 +794,8 @@ kvx_hard_regno_mode_ok (unsigned regno, enum machine_mode mode)
   // GPR
   if (IN_RANGE (regno, KV3_GPR_FIRST_REGNO, KV3_GPR_LAST_REGNO))
     {
+      // Maximum GPR aligment is 4 64-bit words (256 bits).
+      nwords = nwords > 4 ? 4 : nwords;
       return !(regno & (nwords - 1));
     }
   // SFR
@@ -1561,21 +1563,21 @@ kvx_modifier_enabled_p (const char * mod, rtx x)
     {
       const char *xstr = XSTR (x, 0);
       if (xstr[0] == '.')
-        {
-          int win_start = 1;
-          while (!res)
-            {
-              int win_sz = 0;
-              for (;
-                   xstr[win_start + win_sz]
-                   && xstr[win_start + win_sz] != '.'; ++win_sz);
-              res = len == win_sz + 1 && !strncmp (xstr + win_start - 1, mod, win_sz + 1);
-              if (xstr[win_start + win_sz] == '.')
-                win_start += win_sz + 1;
-              else
-                break;
-            }
-        }
+	{
+	  int win_start = 1;
+	  while (!res)
+	    {
+	      int win_sz = 0;
+	      for (;
+		   xstr[win_start + win_sz]
+		   && xstr[win_start + win_sz] != '.'; ++win_sz);
+	      res = len == win_sz + 1 && !strncmp (xstr + win_start - 1, mod, win_sz + 1);
+	      if (xstr[win_start + win_sz] == '.')
+		win_start += win_sz + 1;
+	      else
+		break;
+	    }
+	}
     }
   else if (code == CONCAT)
     res = kvx_modifier_enabled_p (mod, XEXP (x, 0))
@@ -1601,22 +1603,22 @@ kvx_modifier_rounding (rtx x)
     {
       const char *xstr = XSTR (x, 0);
       if (xstr[0] == '.')
-        {
-          int win_start = 1;
-          while (!res)
-            {
-              int win_sz = 0;
-              for (;
-                   xstr[win_start + win_sz]
-                   && xstr[win_start + win_sz] != '.'; ++win_sz);
-              if (win_sz == 2 && xstr[win_start] == 'r')
-                res = gen_rtx_CONST_STRING (VOIDmode, xstr + win_start - 1);
-              else if (xstr[win_start + win_sz] == '.')
-                win_start += win_sz + 1;
-              else
-                break;
-            }
-        }
+	{
+	  int win_start = 1;
+	  while (!res)
+	    {
+	      int win_sz = 0;
+	      for (;
+		   xstr[win_start + win_sz]
+		   && xstr[win_start + win_sz] != '.'; ++win_sz);
+	      if (win_sz == 2 && xstr[win_start] == 'r')
+		res = gen_rtx_CONST_STRING (VOIDmode, xstr + win_start - 1);
+	      else if (xstr[win_start + win_sz] == '.')
+		win_start += win_sz + 1;
+	      else
+		break;
+	    }
+	}
     }
   else if (code == CONCAT)
     {
@@ -3503,8 +3505,8 @@ kvx_expand_vector_insert (rtx target, rtx source, rtx where)
 	  rtx op0 = simplify_gen_subreg (DImode, target, vector_mode,
 					 major * UNITS_PER_WORD);
 	  rtx op1 = gen_lowpart (DImode, source);
-	  rtx op2 = GEN_INT (width * 8);
-	  rtx op3 = GEN_INT (minor * 8);
+	  rtx op2 = GEN_INT (width * BITS_PER_UNIT);
+	  rtx op3 = GEN_INT (minor * BITS_PER_UNIT);
 	  rtx opi = gen_rtx_ZERO_EXTRACT (DImode, op0, op2, op3);
 	  emit_insn (gen_rtx_SET (opi, op1));
 	}
@@ -3540,8 +3542,8 @@ kvx_expand_vector_extract (rtx target, rtx source, rtx where)
 	  rtx op0 = simplify_gen_subreg (DImode, target, inner_mode, 0);
 	  rtx op1 = simplify_gen_subreg (DImode, source, vector_mode,
 					 major * UNITS_PER_WORD);
-	  rtx op2 = GEN_INT (width * 8);
-	  rtx op3 = GEN_INT (minor * 8);
+	  rtx op2 = GEN_INT (width * BITS_PER_UNIT);
+	  rtx op3 = GEN_INT (minor * BITS_PER_UNIT);
 	  rtx extract = gen_rtx_ZERO_EXTRACT (DImode, op1, op2, op3);
 	  emit_insn (gen_rtx_SET (op0, extract));
 	}
@@ -4048,34 +4050,104 @@ kvx_vectorize_vec_perm_const (machine_mode vmode, rtx target, rtx op0,
   return target ? kvx_expand_vec_perm_const (target, op0, op1, sel_rtx) : true;
 }
 
-/* Helper to implement vector cross-element right shift. Two source chunks are
- * provided, with a NULL source2 in case the vacated bits must be cleared. */
-rtx
-kvx_expand_chunk_shift (rtx target, rtx source1, rtx source2, int shift)
+/* Helper to expand SPNs vec_shl_insert, vec_shl, vec_shr.  */
+void
+kvx_expand_vector_shift (rtx target, rtx source, rtx chunk,
+			 unsigned bits, int left)
 {
   machine_mode mode = GET_MODE (target);
-  gcc_assert ((unsigned)shift < 64U);
-  if (shift == 0)
-    emit_move_insn (target, source1);
+  unsigned mode_size = GET_MODE_SIZE (mode);
+  gcc_assert ((unsigned)bits < 512U);
+  if (chunk != const0_rtx)
+    chunk = simplify_gen_subreg (DImode, chunk, GET_MODE (chunk), 0);
+
+  if (bits > mode_size * BITS_PER_UNIT)
+    {
+      emit_insn (gen_rtx_SET (target, CONST0_RTX (mode)));
+      return;
+    }
+
+  bits %= mode_size * BITS_PER_UNIT;
+  if (!bits)
+    {
+      emit_insn (gen_rtx_SET (target, source));
+      return;
+    }
+
+  unsigned offset = bits / BITS_PER_UNIT;
+  unsigned aligned = offset & -UNITS_PER_WORD;
+  if (aligned == offset)
+    {
+      if (left)
+	for (int i = 0; i < (int)mode_size; i += UNITS_PER_WORD)
+	  {
+	    int j = i - (int)offset;
+	    rtx target_i = simplify_gen_subreg (DImode, target, mode, i);
+	    rtx source_j = j >= 0 ?
+	      simplify_gen_subreg (DImode, source, mode, j) : chunk;
+	    emit_insn (gen_rtx_SET (target_i, source_j));
+	  }
+      else
+	for (int i = 0; i < (int)mode_size; i += UNITS_PER_WORD)
+	  {
+	    int j = i + (int)offset;
+	    rtx target_i = simplify_gen_subreg (DImode, target, mode, i);
+	    rtx source_j = j < (int)mode_size ?
+	      simplify_gen_subreg (DImode, source, mode, j) : chunk;
+	    emit_insn (gen_rtx_SET (target_i, source_j));
+	  }
+    }
   else
     {
-      rtx op0 = simplify_gen_subreg (DImode, target, mode, 0);
-      rtx op1 = simplify_gen_subreg (DImode, source1, mode, 0);
-      if (source2 == NULL_RTX)
-	{
-	  emit_insn (gen_lshrdi3 (op0, op1, GEN_INT (shift)));
-	}
+      rtx shift = GEN_INT ((offset % UNITS_PER_WORD) * BITS_PER_UNIT);
+      rtx nshift = GEN_INT ((-offset % UNITS_PER_WORD) * BITS_PER_UNIT);
+      if (left)
+	for (int i = 0; i < (int)mode_size; i += UNITS_PER_WORD)
+	  {
+	    int j = i - (int)aligned;
+	    int k = j - UNITS_PER_WORD;
+	    rtx target_i = simplify_gen_subreg (DImode, target, mode, i);
+	    if (k >= 0)
+	      {
+		rtx source_j = simplify_gen_subreg (DImode, source, mode, j);
+		rtx source_k = simplify_gen_subreg (DImode, source, mode, k);
+		emit_insn (gen_rtx_SET (target_i, gen_rtx_LSHIFTRT (DImode, source_k, nshift)));
+		emit_insn (gen_rtx_SET (gen_rtx_ZERO_EXTRACT (DImode, target_i, nshift, shift), source_j));
+	      }
+	    else if (j >= 0)
+	      {
+		rtx source_j = simplify_gen_subreg (DImode, source, mode, j);
+		emit_insn (gen_rtx_SET (target_i, gen_rtx_ASHIFT (DImode, source_j, shift)));
+		if (chunk != const0_rtx)
+		  emit_insn (gen_rtx_SET (gen_rtx_ZERO_EXTRACT (DImode, target_i, shift, const0_rtx), chunk));
+	      }
+	    else
+	      emit_insn (gen_rtx_SET (target_i, chunk));
+	  }
       else
-	{
-	  rtx temp0 = gen_reg_rtx (DImode);
-	  rtx temp1 = gen_reg_rtx (DImode);
-	  rtx op2 = simplify_gen_subreg (DImode, source2, mode, 0);
-	  emit_insn (gen_ashldi3 (temp1, op2, GEN_INT (64 - shift)));
-	  emit_insn (gen_lshrdi3 (temp0, op1, GEN_INT (shift)));
-	  emit_insn (gen_iordi3 (op0, temp0, temp1));
-	}
+	for (int i = 0; i < (int)mode_size; i += UNITS_PER_WORD)
+	  {
+	    int j = i + (int)aligned;
+	    int k = j + UNITS_PER_WORD;
+	    rtx target_i = simplify_gen_subreg (DImode, target, mode, i);
+	    if (k < (int)mode_size)
+	      {
+		rtx source_j = simplify_gen_subreg (DImode, source, mode, j);
+		rtx source_k = simplify_gen_subreg (DImode, source, mode, k);
+		emit_insn (gen_rtx_SET (target_i, gen_rtx_LSHIFTRT (DImode, source_j, shift)));
+		emit_insn (gen_rtx_SET (gen_rtx_ZERO_EXTRACT (DImode, target_i, shift, nshift), source_k));
+	      }
+	    else if (j < (int)mode_size)
+	      {
+		rtx source_j = simplify_gen_subreg (DImode, source, mode, j);
+		emit_insn (gen_rtx_SET (target_i, gen_rtx_LSHIFTRT (DImode, source_j, shift)));
+		if (chunk != const0_rtx)
+		  emit_insn (gen_rtx_SET (gen_rtx_ZERO_EXTRACT (DImode, target_i, shift, nshift), chunk));
+	      }
+	    else
+	      emit_insn (gen_rtx_SET (target_i, chunk));
+	  }
     }
-  return target;
 }
 
 /* Emit a barrier, that is appropriate for memory model MODEL, at the
@@ -6188,7 +6260,7 @@ kvx_insn_cost (rtx_insn *insn, bool speed)
     }
   else if (type >= TYPE_ALU_FULL && type < TYPE_LSU)
     {
-      int penalty = (type == TYPE_ALU_FULL_COPRO) * (15 - 1);
+      int penalty = (type == TYPE_ALU_FULL_SFU) * (15 - 1);
       cost += kvx_type_full_cost (1, penalty, speed);
     }
   else if (type >= TYPE_LSU && type < TYPE_MAU)

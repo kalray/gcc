@@ -47,7 +47,7 @@
   (set (match_operand:DI 6 "memory_operand" "")
        (match_operand:DI 7 "register_operand" ""))]
  ""
- [(const_int 0)]
+ [(use (const_int 0))]
  {
    if (kvx_pack_load_store (operands, 4))
      DONE;
@@ -62,7 +62,7 @@
   (set (match_operand:DI 2 "memory_operand" "")
        (match_operand:DI 3 "register_operand" ""))]
  ""
- [(const_int 0)]
+ [(use (const_int 0))]
  {
    if (kvx_pack_load_store (operands, 2))
      DONE;
@@ -94,7 +94,7 @@
   (set (match_operand:DI 6 "register_operand" "")
        (match_operand:DI 7 "memory_operand" ""))]
  ""
- [(const_int 0)]
+ [(use (const_int 0))]
  {
    if (kvx_pack_load_store (operands, 4))
      DONE;
@@ -109,7 +109,7 @@
   (set (match_operand:DI 2 "register_operand" "")
        (match_operand:DI 3 "memory_operand" ""))]
  ""
- [(const_int 0)]
+ [(use (const_int 0))]
  {
    if (kvx_pack_load_store (operands, 2))
      DONE;

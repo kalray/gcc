@@ -27,6 +27,34 @@
 )
 
 
+;; MADDDT, MDSBDT
+
+(define_expand "kvx_madddt"
+  [(match_operand:V2DI 0 "register_operand" "")
+   (match_operand:DI 1 "register_operand" "")
+   (match_operand:DI 2 "register_operand" "")
+   (match_operand:V2DI 3 "register_operand" "")
+   (match_operand 4 "" "")]
+  ""
+  {
+    kvx_expand_builtin_maddt (operands, 1);
+    DONE;
+  }
+)
+
+(define_expand "kvx_msbfdt"
+  [(match_operand:V2DI 0 "register_operand" "")
+   (match_operand:DI 1 "register_operand" "")
+   (match_operand:DI 2 "register_operand" "")
+   (match_operand:V2DI 3 "register_operand" "")
+   (match_operand 4 "" "")]
+  ""
+  {
+    kvx_expand_builtin_maddt (operands, 0);
+    DONE;
+  }
+)
+
 ;; ADD*
 
 (define_expand "kvx_add<suffix>"
@@ -1561,197 +1589,39 @@
 )
 
 
-;; SHIFT*
+;; SHIFT*, CAT*, LOW*, HIGH*
 
 (define_expand "kvx_shift<lsvs>"
-  [(match_operand:S64A 0 "register_operand" "")
-   (match_operand:S64A 1 "register_operand" "")
-   (match_operand 2 "sixbits_unsigned_operand" "")
+  [(match_operand:SIMDALL 0 "register_operand" "")
+   (match_operand:SIMDALL 1 "register_operand" "")
+   (match_operand 2 "const_int_operand" "")
    (match_operand:<INNER> 3 "nonmemory_operand" "")]
   ""
   {
-    int shift = INTVAL (operands[2]) * GET_MODE_BITSIZE (<INNER>mode);
-    rtx chunk = NULL_RTX;
-    if (operands[3] != CONST0_RTX (<INNER>mode))
-      {
-        chunk = gen_reg_rtx (<CHUNK>mode);
-        kvx_expand_chunk_splat (chunk, operands[3], <INNER>mode);
-      }
-    kvx_expand_chunk_shift (operands[0], operands[1], chunk, shift);
-    DONE;
-  }
-)
-
-(define_expand "kvx_shift<lsvs>"
-  [(match_operand:S128A 0 "register_operand" "")
-   (match_operand:S128A 1 "register_operand" "")
-   (match_operand 2 "sixbits_unsigned_operand" "")
-   (match_operand:<INNER> 3 "nonmemory_operand" "")]
-  ""
-  {
-    int shift = INTVAL (operands[2]) * GET_MODE_BITSIZE (<INNER>mode);
-    rtx opnd0_0 = gen_rtx_SUBREG (<CHUNK>mode, operands[0], 0);
-    rtx opnd0_1 = gen_rtx_SUBREG (<CHUNK>mode, operands[0], 8);
-    rtx opnd1_0 = gen_rtx_SUBREG (<CHUNK>mode, operands[1], 0);
-    rtx opnd1_1 = gen_rtx_SUBREG (<CHUNK>mode, operands[1], 8);
-    rtx filler = CONST0_RTX (<CHUNK>mode);
-    rtx chunk = NULL_RTX;
-    if (operands[3] != CONST0_RTX (<INNER>mode))
-      {
-        chunk = gen_reg_rtx (<CHUNK>mode);
-        kvx_expand_chunk_splat (chunk, operands[3], <INNER>mode);
-        filler = chunk;
-      }
-    if (shift < 64)
-      {
-        kvx_expand_chunk_shift (opnd0_0, opnd1_0, opnd1_1, shift);
-        kvx_expand_chunk_shift (opnd0_1, opnd1_1, chunk, shift);
-      }
-    else if (shift < 128)
-      {
-        kvx_expand_chunk_shift (opnd0_0, opnd1_1, chunk, shift - 64);
-        emit_move_insn (opnd0_1, filler);
-      }
+    HOST_WIDE_INT value = INTVAL (operands[2]);
+    HOST_WIDE_INT bytes = (value >= 0 ? value : -value) * GET_MODE_SIZE (<INNER>mode);
+    bytes %= GET_MODE_SIZE (<MODE>mode);
+    if (!bytes)
+      emit_insn (gen_rtx_SET (operands[0], operands[1]));
     else
-      gcc_unreachable ();
+      {
+        rtx chunk = const0_rtx;
+        unsigned bits = bytes * BITS_PER_UNIT;
+        if (operands[3] != CONST0_RTX (<INNER>mode))
+          {
+            if (bytes == GET_MODE_SIZE (<INNER>mode))
+              chunk = force_reg (<INNER>mode, operands[3]);
+            else
+              {
+                chunk = gen_reg_rtx (<CHUNK>mode);
+                kvx_expand_chunk_splat (chunk, operands[3], <INNER>mode);
+              }
+          }
+        kvx_expand_vector_shift (operands[0], operands[1], chunk, bits, value < 0);
+      }
     DONE;
   }
 )
-
-(define_expand "kvx_shift<lsvs>"
-  [(match_operand:V2DA 0 "register_operand" "")
-   (match_operand:V2DA 1 "register_operand" "")
-   (match_operand 2 "sixbits_unsigned_operand" "")
-   (match_operand:<INNER> 3 "nonmemory_operand" "")]
-  ""
-  {
-    int shift = INTVAL (operands[2]) * GET_MODE_BITSIZE (<INNER>mode);
-    rtx opnd0_0 = gen_rtx_SUBREG (<INNER>mode, operands[0], 0);
-    rtx opnd0_1 = gen_rtx_SUBREG (<INNER>mode, operands[0], 8);
-    rtx opnd1_1 = gen_rtx_SUBREG (<INNER>mode, operands[1], 8);
-    rtx filler = operands[3];
-    if (shift == 0)
-      {
-        emit_move_insn (operands[0], operands[1]);
-      }
-    else if (shift == 64)
-      {
-        emit_move_insn (opnd0_0, opnd1_1);
-        emit_move_insn (opnd0_1, filler);
-      }
-    else
-      gcc_unreachable ();
-    DONE;
-  }
-)
-
-(define_expand "kvx_shift<lsvs>"
-  [(match_operand:S256A 0 "register_operand" "")
-   (match_operand:S256A 1 "register_operand" "")
-   (match_operand:SI 2 "register_operand" "")
-   (match_operand:<INNER> 3 "nonmemory_operand" "")]
-  ""
-  {
-    int shift = INTVAL (operands[2]) * GET_MODE_BITSIZE (<INNER>mode);
-    rtx opnd0_0 = gen_rtx_SUBREG (<CHUNK>mode, operands[0], 0);
-    rtx opnd0_1 = gen_rtx_SUBREG (<CHUNK>mode, operands[0], 8);
-    rtx opnd0_2 = gen_rtx_SUBREG (<CHUNK>mode, operands[0], 16);
-    rtx opnd0_3 = gen_rtx_SUBREG (<CHUNK>mode, operands[0], 24);
-    rtx opnd1_0 = gen_rtx_SUBREG (<CHUNK>mode, operands[1], 0);
-    rtx opnd1_1 = gen_rtx_SUBREG (<CHUNK>mode, operands[1], 8);
-    rtx opnd1_2 = gen_rtx_SUBREG (<CHUNK>mode, operands[1], 16);
-    rtx opnd1_3 = gen_rtx_SUBREG (<CHUNK>mode, operands[1], 24);
-    rtx filler = CONST0_RTX (<CHUNK>mode);
-    rtx chunk = NULL_RTX;
-    if (operands[3] != CONST0_RTX (<INNER>mode))
-      {
-        chunk = gen_reg_rtx (<CHUNK>mode);
-        kvx_expand_chunk_splat (chunk, operands[3], <INNER>mode);
-        filler = chunk;
-      }
-    if (shift < 64)
-      {
-        kvx_expand_chunk_shift (opnd0_0, opnd1_0, opnd1_1, shift);
-        kvx_expand_chunk_shift (opnd0_1, opnd1_1, opnd1_2, shift);
-        kvx_expand_chunk_shift (opnd0_2, opnd1_2, opnd1_3, shift);
-        kvx_expand_chunk_shift (opnd0_3, opnd1_3, chunk, shift);
-      }
-    else if (shift < 128)
-      {
-        kvx_expand_chunk_shift (opnd0_0, opnd1_1, opnd1_2, shift - 64);
-        kvx_expand_chunk_shift (opnd0_1, opnd1_2, opnd1_3, shift - 64);
-        kvx_expand_chunk_shift (opnd0_2, opnd1_3, chunk, shift - 64);
-        emit_move_insn (opnd0_3, filler);
-      }
-    else if (shift < 192)
-      {
-        kvx_expand_chunk_shift (opnd0_0, opnd1_2, opnd1_3, shift - 128);
-        kvx_expand_chunk_shift (opnd0_1, opnd1_3, chunk, shift - 128);
-        emit_move_insn (opnd0_2, filler);
-        emit_move_insn (opnd0_3, filler);
-      }
-    else if (shift < 256)
-      {
-        kvx_expand_chunk_shift (opnd0_0, opnd1_3, chunk, shift - 192);
-        emit_move_insn (opnd0_1, filler);
-        emit_move_insn (opnd0_2, filler);
-        emit_move_insn (opnd0_3, filler);
-      }
-    else
-      gcc_unreachable ();
-    DONE;
-  }
-)
-
-(define_expand "kvx_shift<lsvs>"
-  [(match_operand:V4DA 0 "register_operand" "")
-   (match_operand:V4DA 1 "register_operand" "")
-   (match_operand:SI 2 "register_operand" "")
-   (match_operand:<INNER> 3 "nonmemory_operand" "")]
-  ""
-  {
-    int shift = INTVAL (operands[2]) * GET_MODE_BITSIZE (<INNER>mode);
-    rtx opnd0_0 = gen_rtx_SUBREG (<INNER>mode, operands[0], 0);
-    rtx opnd0_1 = gen_rtx_SUBREG (<INNER>mode, operands[0], 8);
-    rtx opnd0_2 = gen_rtx_SUBREG (<INNER>mode, operands[0], 16);
-    rtx opnd0_3 = gen_rtx_SUBREG (<INNER>mode, operands[0], 24);
-    rtx opnd1_1 = gen_rtx_SUBREG (<INNER>mode, operands[1], 8);
-    rtx opnd1_2 = gen_rtx_SUBREG (<INNER>mode, operands[1], 16);
-    rtx opnd1_3 = gen_rtx_SUBREG (<INNER>mode, operands[1], 24);
-    rtx filler = operands[3];
-    if (shift == 0)
-      {
-        emit_move_insn (operands[0], operands[1]);
-      }
-    else if (shift  == 64)
-      {
-        emit_move_insn (opnd0_0, opnd1_1);
-        emit_move_insn (opnd0_1, opnd1_2);
-        emit_move_insn (opnd0_2, opnd1_3);
-        emit_move_insn (opnd0_3, filler);
-      }
-    else if (shift == 128)
-      {
-        emit_move_insn (opnd0_0, opnd1_2);
-        emit_move_insn (opnd0_1, opnd1_3);
-        emit_move_insn (opnd0_2, filler);
-        emit_move_insn (opnd0_3, filler);
-      }
-    else if (shift == 192)
-      {
-        emit_move_insn (opnd0_0, opnd1_3);
-        emit_move_insn (opnd0_1, filler);
-        emit_move_insn (opnd0_2, filler);
-        emit_move_insn (opnd0_3, filler);
-      }
-    else
-      gcc_unreachable ();
-    DONE;
-  }
-)
-
-
-;; CAT*, LOW*, HIGH*
 
 (define_insn "kvx_catwp"
   [(set (match_operand:V2SI 0 "register_operand" "=r")
@@ -1783,14 +1653,14 @@
   ""
 )
 
-(define_insn_and_split "kvx_cat<lsvs>"
-  [(set (match_operand:V2DA 0 "register_operand" "=r")
-        (vec_concat:V2DA (match_operand:<HALF> 1 "register_operand" "0")
-                          (match_operand:<HALF> 2 "register_operand" "r")))]
+(define_insn_and_split "kvx_catfdp"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (vec_concat:V2DF (match_operand:DF 1 "register_operand" "0")
+                         (match_operand:DF 2 "register_operand" "r")))]
   ""
   "#"
   "reload_completed"
-  [(set (subreg:<HALF> (match_dup 0) 8)
+  [(set (subreg:DF (match_dup 0) 8)
         (match_dup 2))]
   ""
 )
@@ -2445,7 +2315,7 @@
                     (match_operand 2 "" "")] UNSPEC_FREC))]
   ""
   "frecw%2 %0 = %1"
-  [(set_attr "type" "alu_full_copro")]
+  [(set_attr "type" "alu_full_sfu")]
 )
 
 (define_insn "kvx_frecw"
@@ -2454,7 +2324,7 @@
                     (match_operand 2 "" "")] UNSPEC_FREC))]
   ""
   "frecw%2 %0 = %1"
-  [(set_attr "type" "alu_full_copro")]
+  [(set_attr "type" "alu_full_sfu")]
 )
 
 (define_expand "kvx_frecwp"
@@ -2515,7 +2385,7 @@
                     (match_operand 2 "" "")] UNSPEC_FRSR))]
   ""
   "frsrw%2 %0 = %1"
-  [(set_attr "type" "alu_full_copro")]
+  [(set_attr "type" "alu_full_sfu")]
 )
 
 (define_insn "kvx_frsrw"
@@ -2524,7 +2394,7 @@
                     (match_operand 2 "" "")] UNSPEC_FRSR))]
   ""
   "frsrw%2 %0 = %1"
-  [(set_attr "type" "alu_full_copro")]
+  [(set_attr "type" "alu_full_sfu")]
 )
 
 (define_expand "kvx_frsrwp"
@@ -2665,7 +2535,9 @@
                       (match_operand 3 "" "")] UNSPEC_FADD))]
   ""
   "faddwq%3 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set (attr "type")
+        (if_then_else (match_test "KV3_1")
+                      (const_string "mau_auxr_fpu") (const_string "mau_fpu")))]
 )
 
 (define_insn "kvx_fadddp"
@@ -2675,7 +2547,9 @@
                       (match_operand 3 "" "")] UNSPEC_FADD))]
   ""
   "fadddp%3 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set (attr "type")
+        (if_then_else (match_test "KV3_1")
+                      (const_string "mau_auxr_fpu") (const_string "mau_fpu")))]
 )
 
 (define_insn "kvx_faddhx"
@@ -2858,7 +2732,9 @@
                       (match_operand 3 "" "")] UNSPEC_FSBF))]
   ""
   "fsbfwq%3 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set (attr "type")
+        (if_then_else (match_test "KV3_1")
+                      (const_string "mau_auxr_fpu") (const_string "mau_fpu")))]
 )
 
 (define_insn "kvx_fsbfdp"
@@ -2868,7 +2744,9 @@
                       (match_operand 3 "" "")] UNSPEC_FSBF))]
   ""
   "fsbfdp%3 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set (attr "type")
+        (if_then_else (match_test "KV3_1")
+                      (const_string "mau_auxr_fpu") (const_string "mau_fpu")))]
 )
 
 (define_insn "kvx_fsbfhx"
@@ -3051,7 +2929,9 @@
                       (match_operand 3 "" "")] UNSPEC_FMUL))]
   ""
   "fmulwq%3 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set (attr "type")
+        (if_then_else (match_test "KV3_1")
+                      (const_string "mau_auxr_fpu") (const_string "mau_fpu")))]
 )
 
 (define_insn_and_split "kvx_fmuldp"
@@ -6754,6 +6634,22 @@
    (set_attr "length" "4, 8, 12")]
 )
 
+(define_insn_and_split "kvx_load512"
+  [(set (match_operand:V512 0 "register_operand" "=&r,&r,&r")
+        (unspec:V512 [(match_operand:V512 1 "memory_operand" "a,b,m")
+                      (match_operand 2 "" "")] UNSPEC_LOAD))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V256 (match_dup 0) 0)
+        (unspec:V256 [(subreg:V256 (match_dup 1) 0)
+                      (match_dup 2)] UNSPEC_LOAD))
+   (set (subreg:V256 (match_dup 0) 32)
+        (unspec:V256 [(subreg:V256 (match_dup 1) 32)
+                      (match_dup 2)] UNSPEC_LOAD))]
+  ""
+)
+
 
 ;; KVX_LOADC*
 
@@ -7108,6 +7004,24 @@
   "so%X1 %1 = %0"
   [(set_attr "type" "lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
    (set_attr "length"            "4,               8,              12")]
+)
+
+(define_insn_and_split "kvx_store512"
+  [(set (match_operand:V512 1 "memory_operand"  "=a,b,m")
+        (unspec:V512 [(match_operand:V512 0 "register_operand" "r,r,r")] UNSPEC_STORE))
+   (use (match_operand:SI 2 "nonmemory_operand" ""))]
+  ""
+  "#"
+  "reload_completed"
+  [(parallel
+    [(set (subreg:V256 (match_dup 1) 0)
+          (unspec:V256 [(subreg:V256 (match_dup 0) 0)] UNSPEC_STORE))
+     (use (match_operand:SI 2 "nonmemory_operand" ""))])
+   (parallel
+    [(set (subreg:V256 (match_dup 1) 32)
+          (unspec:V256 [(subreg:V256 (match_dup 0) 32)] UNSPEC_STORE))
+     (use (match_operand:SI 2 "nonmemory_operand" ""))])]
+  ""
 )
 
 

@@ -73,7 +73,7 @@
   "kvx_hardreg_misaligned_p (operands[0], 2) || kvx_hardreg_misaligned_p (operands[1], 2)"
   "#"
   "&& reload_completed"
-  [(const_int 0)]
+  [(use (const_int 0))]
   {
     kvx_split_128bits_move (operands[0], operands[1]);
     DONE;
@@ -105,7 +105,7 @@
   [(set (match_operand:ALL128 0 "register_operand" "")
         (match_operand:ALL128 1 "register_operand" ""))]
   "reload_completed"
-  [(const_int 0)]
+  [(use (const_int 0))]
   {
     kvx_split_128bits_move (operands[0], operands[1]);
     DONE;
@@ -118,7 +118,7 @@
   ""
   "#"
   "reload_completed"
-  [(const_int 0)]
+  [(use (const_int 0))]
   {
     kvx_make_128bit_const (operands[0], operands[1]);
     DONE;
@@ -154,7 +154,7 @@
   "kvx_hardreg_misaligned_p (operands[0], 4) || kvx_hardreg_misaligned_p (operands[1], 4)"
   "#"
   "&& reload_completed"
-  [(const_int 0)]
+  [(use (const_int 0))]
   {
     kvx_split_256bits_move (operands[0], operands[1]);
     DONE;
@@ -186,7 +186,7 @@
   [(set (match_operand:ALL256 0 "register_operand" "")
         (match_operand:ALL256 1 "register_operand" ""))]
   "reload_completed"
-  [(const_int 0)]
+  [(use (const_int 0))]
   {
     kvx_split_256bits_move (operands[0], operands[1]);
     DONE;
@@ -199,7 +199,7 @@
   ""
   "#"
   "reload_completed"
-  [(const_int 0)]
+  [(use (const_int 0))]
   {
     kvx_make_256bit_const (operands[0], operands[1]);
     DONE;
@@ -220,8 +220,8 @@
 )
 
 (define_insn_and_split "*mov<mode>"
-  [(set (match_operand:ALL512 0 "nonimmediate_operand" "=r,&r,&r,&r,a,b,m")
-        (match_operand:ALL512 1 "nonimmediate_operand"  "r, a, b, m,r,r,r"))]
+  [(set (match_operand:ALL512 0 "nonimmediate_operand" "=&r,&r,&r,&r,a,b,m")
+        (match_operand:ALL512 1 "nonimmediate_operand"   "r, a, b, m,r,r,r"))]
   ""
   "#"
   "reload_completed"
@@ -237,7 +237,7 @@
   ""
   "#"
   "reload_completed"
-  [(const_int 0)]
+  [(use (const_int 0))]
   {
     kvx_make_512bit_const (operands[0], operands[1]);
     DONE;
@@ -261,7 +261,7 @@
   }
 )
 
-(define_expand "vec_extract<SIMDALL:mode><SIMDALL:inner>"
+(define_expand "vec_extract<mode><inner>"
   [(match_operand:<INNER> 0 "register_operand" "")
    (match_operand:SIMDALL 1 "register_operand" "")
    (match_operand 2 "const_int_operand" "")]
@@ -275,7 +275,7 @@
   }
 )
 
-(define_expand "vec_init<SIMDALL:mode><SIMDALL:inner>"
+(define_expand "vec_init<mode><inner>"
   [(match_operand:SIMDALL 0 "register_operand" "")
    (match_operand 1 "" "")]
   ""
@@ -287,7 +287,7 @@
   }
 )
 
-(define_expand "vec_duplicate<SIMDALL:mode>"
+(define_expand "vec_duplicate<mode>"
   [(match_operand:SIMDALL 0 "register_operand" "")
    (match_operand 1 "" "")]
   ""
@@ -331,44 +331,44 @@
   }
 )
 
-(define_expand "vcond<SIMDCMP:mode><SIMDALL:mode>"
-  [(match_operand:SIMDCMP 0 "register_operand")
-   (match_operand:SIMDCMP 1 "nonmemory_operand")
-   (match_operand:SIMDCMP 2 "nonmemory_operand")
+(define_expand "vcond<SIMDALL:mode><SIMDCMP:mode>"
+  [(match_operand:SIMDALL 0 "register_operand")
+   (match_operand:SIMDALL 1 "nonmemory_operand")
+   (match_operand:SIMDALL 2 "nonmemory_operand")
    (match_operator 3 "comparison_operator"
-    [(match_operand:SIMDALL 4 "register_operand")
-     (match_operand:SIMDALL 5 "reg_or_zero_operand")])]
+    [(match_operand:SIMDCMP 4 "register_operand")
+     (match_operand:SIMDCMP 5 "reg_or_zero_operand")])]
   "(GET_MODE_NUNITS (<SIMDCMP:MODE>mode) == GET_MODE_NUNITS (<SIMDALL:MODE>mode))"
   {
     rtx target = operands[0];
     rtx select1 = operands[1];
     rtx select2 = operands[2];
-    kvx_expand_conditional_move (target, select1, select2, operands[3], <SIMDALL:MODE>mode);
+    kvx_expand_conditional_move (target, select1, select2, operands[3], <SIMDCMP:MODE>mode);
     DONE;
   }
 )
 
-(define_expand "vcondu<SIMDCMP:mode><SIMDALL:mode>"
-  [(match_operand:SIMDCMP 0 "register_operand")
-   (match_operand:SIMDCMP 1 "nonmemory_operand")
-   (match_operand:SIMDCMP 2 "nonmemory_operand")
+(define_expand "vcondu<SIMDALL:mode><SIMDCMP:mode>"
+  [(match_operand:SIMDALL 0 "register_operand")
+   (match_operand:SIMDALL 1 "nonmemory_operand")
+   (match_operand:SIMDALL 2 "nonmemory_operand")
    (match_operator 3 "comparison_operator"
-    [(match_operand:SIMDALL 4 "register_operand")
-     (match_operand:SIMDALL 5 "reg_or_zero_operand")])]
+    [(match_operand:SIMDCMP 4 "register_operand")
+     (match_operand:SIMDCMP 5 "reg_or_zero_operand")])]
   "(GET_MODE_NUNITS (<SIMDCMP:MODE>mode) == GET_MODE_NUNITS (<SIMDALL:MODE>mode))"
   {
     rtx target = operands[0];
     rtx select1 = operands[1];
     rtx select2 = operands[2];
-    kvx_expand_conditional_move (target, select1, select2, operands[3], <SIMDALL:MODE>mode);
+    kvx_expand_conditional_move (target, select1, select2, operands[3], <SIMDCMP:MODE>mode);
     DONE;
   }
 )
 
 (define_expand "vcond_mask_<mode><mask>"
-  [(match_operand:SIMDCMP 0 "register_operand")
-   (match_operand:SIMDCMP 1 "nonmemory_operand")
-   (match_operand:SIMDCMP 2 "nonmemory_operand")
+  [(match_operand:SIMDALL 0 "register_operand")
+   (match_operand:SIMDALL 1 "nonmemory_operand")
+   (match_operand:SIMDALL 2 "nonmemory_operand")
    (match_operand:<MASK> 3 "register_operand")]
   ""
   {
@@ -381,18 +381,38 @@
   }
 )
 
+(define_expand "vec_shl_insert_<mode>"
+  [(match_operand:SIMDALL 0 "register_operand" "")
+   (match_operand:SIMDALL 1 "register_operand" "")
+   (match_operand:<INNER> 2 "register_operand" "")]
+  ""
+  {
+    HOST_WIDE_INT bits = GET_MODE_SIZE (<INNER>mode) * BITS_PER_UNIT;
+    kvx_expand_vector_shift (operands[0], operands[1], operands[2], bits, 1);
+    DONE;
+  }
+)
+
+(define_expand "vec_shl_<mode>"
+  [(match_operand:SIMDALL 0 "register_operand" "")
+   (match_operand:SIMDALL 1 "register_operand" "")
+   (match_operand:SI 2 "const_pos32_operand" "")]
+  ""
+  {
+    HOST_WIDE_INT value = INTVAL (operands[2]);
+    kvx_expand_vector_shift (operands[0], operands[1], const0_rtx, value, 1);
+    DONE;
+  }
+)
+
 (define_expand "vec_shr_<mode>"
   [(match_operand:SIMDALL 0 "register_operand" "")
    (match_operand:SIMDALL 1 "register_operand" "")
-   (match_operand 2 "sixbits_unsigned_operand" "")]
+   (match_operand:SI 2 "const_pos32_operand" "")]
   ""
   {
-    unsigned bitshift = INTVAL (operands[2]);
-    unsigned bitwidth = GET_MODE_BITSIZE (<INNER>mode);
-    unsigned eltshift = bitshift / bitwidth;
-    gcc_assert (eltshift * bitwidth == bitshift);
-    rtx filler = CONST0_RTX (<INNER>mode);
-    emit_insn (gen_kvx_shift<lsvs> (operands[0], operands[1], GEN_INT (eltshift), filler));
+    HOST_WIDE_INT value = INTVAL (operands[2]);
+    kvx_expand_vector_shift (operands[0], operands[1], const0_rtx, value, 0);
     DONE;
   }
 )
@@ -627,6 +647,23 @@
   ""
   [(set_attr "type" "alu_tiny_x4")
    (set_attr "length"        "16")]
+)
+
+(define_insn_and_split "*dup512"
+  [(set (match_operand:SIMD512 0 "register_operand" "=&r")
+        (vec_duplicate:SIMD512 (match_operand:<CHUNK> 1 "nonmemory_operand" "r")))]
+  ""
+  "#"
+  ""
+  [(set (subreg:<CHUNK> (match_dup 0) 0) (match_dup 1))
+   (set (subreg:<CHUNK> (match_dup 0) 8) (match_dup 1))
+   (set (subreg:<CHUNK> (match_dup 0) 16) (match_dup 1))
+   (set (subreg:<CHUNK> (match_dup 0) 24) (match_dup 1))
+   (set (subreg:<CHUNK> (match_dup 0) 32) (match_dup 1))
+   (set (subreg:<CHUNK> (match_dup 0) 40) (match_dup 1))
+   (set (subreg:<CHUNK> (match_dup 0) 48) (match_dup 1))
+   (set (subreg:<CHUNK> (match_dup 0) 56) (match_dup 1))]
+  ""
 )
 
 
@@ -1259,7 +1296,7 @@
    (set_attr "length" "        8,          8")]
 )
 (define_insn_and_split "*<prefix>v32qi3_2"
-  [(set (match_operand:V32QI 0 "register_operand" "=r,r")
+  [(set (match_operand:V32QI 0 "register_operand" "=&r,r")
         (BINSHLRL:V32QI (match_operand:V32QI 1 "register_operand" "r,r")
                         (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
   "KV3_2"
@@ -3959,9 +3996,6 @@
 )
 
 
-;; V128J (V8HI V4SI V2DI)
-
-
 ;; V4SI
 
 (define_insn "mulv4si3"
@@ -3970,7 +4004,9 @@
                    (match_operand:V4SI 2 "register_operand" "r")))]
   ""
   "mulwq %0 = %1, %2"
-  [(set_attr "type" "mau_auxr")]
+  [(set (attr "type")
+        (if_then_else (match_test "KV3_1")
+                      (const_string "mau_auxr") (const_string "mau")))]
 )
 
 (define_insn "rotlv4si3"
@@ -6213,6 +6249,7 @@
    (set_attr "length"        "16")]
 )
 
+
 ;; V8SI
 
 (define_insn_and_split "mulv8si3"
@@ -6507,7 +6544,9 @@
                       (match_operand 3 "" "")] UNSPEC_FDOT2))]
   ""
   "fdot2wdp%3 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set (attr "type")
+        (if_then_else (match_test "KV3_1")
+                      (const_string "mau_auxr_fpu") (const_string "mau_fpu")))]
 )
 
 (define_insn "kvx_fdot2wzp"
@@ -6517,7 +6556,9 @@
                       (match_operand 3 "" "")] UNSPEC_FDOT2))]
   ""
   "fdot2wzp%3 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set (attr "type")
+        (if_then_else (match_test "KV3_1")
+                      (const_string "mau_auxr_fpu") (const_string "mau_fpu")))]
 )
 
 (define_insn "floatv2siv2sf2"
@@ -6988,7 +7029,9 @@
                    (match_operand:V4SF 2 "register_operand" "r")))]
   ""
   "faddwq %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set (attr "type")
+        (if_then_else (match_test "KV3_1")
+                      (const_string "mau_auxr_fpu") (const_string "mau_fpu")))]
 )
 
 (define_insn "subv4sf3"
@@ -6997,7 +7040,9 @@
                     (match_operand:V4SF 2 "register_operand" "r")))]
   ""
   "fsbfwq %0 = %2, %1"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set (attr "type")
+        (if_then_else (match_test "KV3_1")
+                      (const_string "mau_auxr_fpu") (const_string "mau_fpu")))]
 )
 
 (define_insn "mulv4sf3"
@@ -7006,7 +7051,9 @@
                    (match_operand:V4SF 2 "register_operand" "r")))]
   ""
   "fmulwq %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set (attr "type")
+        (if_then_else (match_test "KV3_1")
+                      (const_string "mau_auxr_fpu") (const_string "mau_fpu")))]
 )
 
 (define_insn_and_split "floatv4siv4sf2"
@@ -7092,7 +7139,9 @@
                    (match_operand:V2DF 2 "register_operand" "r")))]
   ""
   "fadddp %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set (attr "type")
+        (if_then_else (match_test "KV3_1")
+                      (const_string "mau_auxr_fpu") (const_string "mau_fpu")))]
 )
 
 (define_insn "subv2df3"
@@ -7101,7 +7150,9 @@
                     (match_operand:V2DF 2 "register_operand" "r")))]
   ""
   "fsbfdp %0 = %2, %1"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set (attr "type")
+        (if_then_else (match_test "KV3_1")
+                      (const_string "mau_auxr_fpu") (const_string "mau_fpu")))]
 )
 
 (define_insn_and_split "mulv2df3"

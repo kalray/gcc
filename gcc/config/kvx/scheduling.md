@@ -162,7 +162,7 @@
 (define_insn_reservation "kv3_alu_full" 1 (eq_attr "type" "alu_full") "kv3_alu_full_r")
 (define_insn_reservation "kv3_alu_full_x" 1 (eq_attr "type" "alu_full_x") "kv3_alu_full_x_r")
 (define_insn_reservation "kv3_alu_full_y" 1 (eq_attr "type" "alu_full_y") "kv3_alu_full_y_r")
-(define_insn_reservation "kv3_alu_full_copro" 15 (eq_attr "type" "alu_full_copro") "kv3_alu_full_r")
+(define_insn_reservation "kv3_alu_full_sfu" 15 (eq_attr "type" "alu_full_sfu") "kv3_alu_full_r")
 ;;
 (define_insn_reservation "kv3_lsu" 1 (eq_attr "type" "lsu") "kv3_lsu_r")
 (define_insn_reservation "kv3_lsu_x" 1 (eq_attr "type" "lsu_x") "kv3_lsu_x_r")
