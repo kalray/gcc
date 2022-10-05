@@ -6,7 +6,11 @@
 
 UCLIBC_VERSION = $(call qstrip,$(BR2_UCLIBC_VERSION))
 ifeq ($(BR2_kvx),y)
-UCLIBC_SITE = $(call github,kalray,uclibc-ng,$(UCLIBC_VERSION))
+UCLIBC_SITE = $(call kalray,uclibc-ng,$(UCLIBC_VERSION))
+UCLIBC_SOURCE = uclibc-$(UCLIBC_VERSION).tar.gz
+ifneq ($(call qstrip,$(BR2_KALRAY_SITE)),)
+BR_NO_CHECK_HASH_FOR += $(UCLIBC_SOURCE)
+endif
 else
 UCLIBC_SOURCE = uClibc-ng-$(UCLIBC_VERSION).tar.xz
 UCLIBC_SITE = https://downloads.uclibc-ng.org/releases/$(UCLIBC_VERSION)

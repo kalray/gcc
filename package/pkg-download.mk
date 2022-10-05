@@ -64,6 +64,9 @@ github = https://github.com/$(1)/$(2)/archive/$(3)
 # gitlab(user,package,version): returns site of Gitlab-generated tarball
 gitlab = https://gitlab.com/$(1)/$(2)/-/archive/$(3)
 
+# kalray(package,version): returns site of GitHub repository or BR2_KALRAY_SITE
+kalray = $(if $(call qstrip,$(BR2_KALRAY_SITE)),$(call qstrip,$(BR2_KALRAY_SITE)),$(call github,kalray,$(1),$(2)))
+
 # Expressly do not check hashes for those files
 # Exported variables default to immediately expanded in some versions of
 # make, but we need it to be recursively-epxanded, so explicitly assign it.

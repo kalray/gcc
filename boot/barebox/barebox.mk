@@ -29,6 +29,9 @@ $(1)_SITE_METHOD = git
 # downloaded a second time for barebox-aux; also alows avoiding the hash
 # check:
 $(1)_SOURCE = barebox-$$($(1)_VERSION)$$(BR_FMT_VERSION_git).tar.gz
+else ifeq ($(BR2_kvx),y)
+$(1)_SITE = $$(call kalray,$(1),$$($(1)_VERSION))
+$(1)_SOURCE = barebox-$$($(1)_VERSION).tar.gz
 else
 # Handle stable official Barebox versions
 $(1)_SOURCE = barebox-$$($(1)_VERSION).tar.bz2

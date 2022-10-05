@@ -6,7 +6,11 @@
 
 STRACE_VERSION = $(call qstrip,$(BR2_STRACE_VERSION))
 ifeq ($(BR2_kvx),y)
-STRACE_SITE = $(call github,kalray,strace,$(STRACE_VERSION))
+STRACE_SITE = $(call kalray,strace,$(STRACE_VERSION))
+STRACE_SOURCE = strace-$(STRACE_VERSION).tar.gz
+ifneq ($(call qstrip,$(BR2_KALRAY_SITE)),)
+BR_NO_CHECK_HASH_FOR += $(STRACE_SOURCE)
+endif
 STRACE_AUTORECONF = YES
 define STRACE_BOOTSTRAP_HOOK
 	$(SED) 's%^\(autoreconf.*\)%#\1%' $(@D)/bootstrap

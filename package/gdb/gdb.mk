@@ -12,9 +12,14 @@ ifeq ($(BR2_arc),y)
 GDB_SITE = $(call github,foss-for-synopsys-dwc-arc-processors,binutils-gdb,$(GDB_VERSION))
 GDB_SOURCE = gdb-$(GDB_VERSION).tar.gz
 GDB_FROM_GIT = y
-else ifeq ($(BR2_kvx),y)
-GDB_SITE = $(call github,kalray,gdb,$(GDB_VERSION))
+endif
+
+ifeq ($(BR2_kvx),y)
+GDB_SITE = $(call kalray,gdb,$(GDB_VERSION))
 GDB_SOURCE = gdb-$(GDB_VERSION).tar.gz
+ifneq ($(call qstrip,$(BR2_KALRAY_SITE)),)
+BR_NO_CHECK_HASH_FOR += $(GDB_SOURCE)
+endif
 GDB_FROM_GIT = y
 endif
 

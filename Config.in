@@ -241,6 +241,12 @@ config BR2_BACKUP_SITE
 	  buildroot will fall back to download package sources from here
 	  if the normal location fails.
 
+config BR2_KALRAY_SITE
+	string "Kalray download site"
+	default "file:///$(BR2_EXTERNAL_KVX_PATH)/../buildroot-packages-src"
+	help
+	  Kalray site to download from.
+
 config BR2_KERNEL_MIRROR
 	string "Kernel.org mirror"
 	default "https://cdn.kernel.org/pub"
