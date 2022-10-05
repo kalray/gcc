@@ -27,6 +27,7 @@
         UNSPEC_READY
         UNSPEC_DZEROL
 
+        UNSPEC_DEF
         UNSPEC_GET
         UNSPEC_SET
         UNSPEC_STSU
