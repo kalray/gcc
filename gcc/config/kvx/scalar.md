@@ -1,3 +1,23 @@
+;; HI
+
+(define_insn "bswaphi2"
+  [(set (match_operand:HI 0 "register_operand" "=r")
+        (bswap:HI (match_operand:HI 1 "register_operand" "r")))]
+  ""
+  "sbmm8 %0 = %1, 0x0102"
+  [(set_attr "type" "alu_thin_x")
+   (set_attr "length"        "8")]
+)
+;; zero-extend version of bswapsi2
+(define_insn "*bswapsi2_zext"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (zero_extend:DI (bswap:HI (match_operand:HI 1 "register_operand" "r"))))]
+  ""
+  "sbmm8 %0 = %1, 0x0102"
+  [(set_attr "type" "alu_thin_x")
+   (set_attr "length"        "8")]
+)
+
 ;; SIDI (SI/DI)
 
 (define_expand "usadd<mode>3"
@@ -3756,6 +3776,52 @@
   ""
   "floatuw.rn %0 = %1, 0"
   [(set_attr "type" "mau_fpu")]
+)
+
+(define_expand "floatdisf2"
+  [(set (match_operand:SF 0 "register_operand" "")
+        (float:SF (match_operand:DI 1 "register_operand" "")))]
+  ""
+  {
+    if (!flag_unsafe_math_optimizations)
+      {
+        rtx dest = emit_library_call_value (gen_rtx_SYMBOL_REF (Pmode, "__floatdisf"),
+                                            operands[0], LCT_CONST, SFmode,
+                                            operands[1], DImode);
+        if (dest != operands[0])
+          emit_move_insn (operands[0], dest);
+      }
+    else
+      {
+        rtx temp = gen_reg_rtx (DFmode);
+        emit_insn (gen_rtx_SET (temp, gen_rtx_FLOAT (DFmode, operands[1])));
+        emit_insn (gen_rtx_SET (operands[0], gen_rtx_FLOAT_TRUNCATE (SFmode, temp)));
+      }
+    DONE;
+  }
+)
+
+(define_expand "floatunsdisf2"
+  [(set (match_operand:SF 0 "register_operand" "")
+        (unsigned_float:SF (match_operand:DI 1 "register_operand" "")))]
+  ""
+  {
+    if (!flag_unsafe_math_optimizations)
+      {
+        rtx dest = emit_library_call_value (gen_rtx_SYMBOL_REF (Pmode, "__floatundisf"),
+                                            operands[0], LCT_CONST, SFmode,
+                                            operands[1], DImode);
+        if (dest != operands[0])
+          emit_move_insn (operands[0], dest);
+      }
+    else
+      {
+        rtx temp = gen_reg_rtx (DFmode);
+        emit_insn (gen_rtx_SET (temp, gen_rtx_UNSIGNED_FLOAT (DFmode, operands[1])));
+        emit_insn (gen_rtx_SET (operands[0], gen_rtx_FLOAT_TRUNCATE (SFmode, temp)));
+      }
+    DONE;
+  }
 )
 
 (define_insn "fix_truncsfsi2"
