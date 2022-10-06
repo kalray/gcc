@@ -3022,6 +3022,77 @@
   }
 )
 
+;; FADD*C
+
+(define_insn "kvx_faddwc"
+  [(set (match_operand:V2SF 0 "register_operand" "=r")
+        (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")
+                      (match_operand:V2SF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FADD))]
+  ""
+  "faddwc%3 %0 = %1, %2"
+  [(set_attr "type" "mau_fpu")]
+)
+
+(define_insn "kvx_faddwcp"
+  [(set (match_operand:V4SF 0 "register_operand" "=r")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
+                      (match_operand:V4SF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FADD))]
+  ""
+  "faddwcp%3 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn "kvx_fadddc"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")
+                      (match_operand:V2DF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FADD))]
+  ""
+  "fadddc%3 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn_and_split "kvx_fadddcp"
+  [(set (match_operand:V4DF 0 "register_operand" "=r")
+        (unspec:V4DF [(match_operand:V4DF 1 "register_operand" "r")
+                      (match_operand:V4DF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FADD))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V2DF (match_dup 0) 0)
+        (unspec:V2DF [(subreg:V2DF (match_dup 1) 0)
+                      (subreg:V2DF (match_dup 2) 0)
+                      (match_dup 3)] UNSPEC_FADD))
+   (set (subreg:V2DF (match_dup 0) 16)
+        (unspec:V2DF [(subreg:V2DF (match_dup 1) 16)
+                      (subreg:V2DF (match_dup 2) 16)
+                      (match_dup 3)] UNSPEC_FADD))]
+  ""
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn_and_split "kvx_faddwcq"
+  [(set (match_operand:V8SF 0 "register_operand" "=r")
+        (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "r")
+                      (match_operand:V8SF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FADD))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V4SF (match_dup 0) 0)
+        (unspec:V4SF [(subreg:V4SF (match_dup 1) 0)
+                      (subreg:V4SF (match_dup 2) 0)
+                      (match_dup 3)] UNSPEC_FADD))
+   (set (subreg:V4SF (match_dup 0) 16)
+        (unspec:V4SF [(subreg:V4SF (match_dup 1) 16)
+                      (subreg:V4SF (match_dup 2) 16)
+                      (match_dup 3)] UNSPEC_FADD))]
+  ""
+  [(set_attr "type" "mau_auxr_fpu")]
+)
 
 ;; FADD*
 
@@ -3219,6 +3290,77 @@
   [(set_attr "type" "mau_auxr_fpu")]
 )
 
+;; FSBF*C
+
+(define_insn "kvx_fsbfwc"
+  [(set (match_operand:V2SF 0 "register_operand" "=r")
+        (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")
+                      (match_operand:V2SF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FSBF))]
+  ""
+  "fsbfwc%3 %0 = %1, %2"
+  [(set_attr "type" "mau_fpu")]
+)
+
+(define_insn "kvx_fsbfwcp"
+  [(set (match_operand:V4SF 0 "register_operand" "=r")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
+                      (match_operand:V4SF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FSBF))]
+  ""
+  "fsbfwcp%3 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn "kvx_fsbfdc"
+  [(set (match_operand:V2DF 0 "register_operand" "=r")
+        (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")
+                      (match_operand:V2DF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FSBF))]
+  ""
+  "fsbfdc%3 %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn_and_split "kvx_fsbfdcp"
+  [(set (match_operand:V4DF 0 "register_operand" "=r")
+        (unspec:V4DF [(match_operand:V4DF 1 "register_operand" "r")
+                      (match_operand:V4DF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FSBF))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V2DF (match_dup 0) 0)
+        (unspec:V2DF [(subreg:V2DF (match_dup 1) 0)
+                      (subreg:V2DF (match_dup 2) 0)
+                      (match_dup 3)] UNSPEC_FSBF))
+   (set (subreg:V2DF (match_dup 0) 16)
+        (unspec:V2DF [(subreg:V2DF (match_dup 1) 16)
+                      (subreg:V2DF (match_dup 2) 16)
+                      (match_dup 3)] UNSPEC_FSBF))]
+  ""
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn_and_split "kvx_fsbfwcq"
+  [(set (match_operand:V8SF 0 "register_operand" "=r")
+        (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "r")
+                      (match_operand:V8SF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FSBF))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V4SF (match_dup 0) 0)
+        (unspec:V4SF [(subreg:V4SF (match_dup 1) 0)
+                      (subreg:V4SF (match_dup 2) 0)
+                      (match_dup 3)] UNSPEC_FSBF))
+   (set (subreg:V4SF (match_dup 0) 16)
+        (unspec:V4SF [(subreg:V4SF (match_dup 1) 16)
+                      (subreg:V4SF (match_dup 2) 16)
+                      (match_dup 3)] UNSPEC_FSBF))]
+  ""
+  [(set_attr "type" "mau_auxr_fpu")]
+)
 
 ;; FSBF*
 
@@ -3415,7 +3557,6 @@
   ""
   [(set_attr "type" "mau_auxr_fpu")]
 )
-
 
 ;; FMUL*
 
@@ -4322,7 +4463,7 @@
       {
         rtx product = gen_reg_rtx (V2SFmode);
         emit_insn (gen_kvx_fmulwc (product, operands[2], operands[1], operands[4]));
-        emit_insn (gen_kvx_faddwp (operands[0], product, operands[3], operands[4]));
+        emit_insn (gen_kvx_faddwc (operands[0], product, operands[3], operands[4]));
         DONE;
       }
   }
@@ -4357,7 +4498,7 @@
             rtx opnd2 = gen_rtx_SUBREG (V2SFmode, operands[2], i*8);
             rtx opnd3 = gen_rtx_SUBREG (V2SFmode, operands[3], i*8);
             emit_insn (gen_kvx_fmulwc (product, opnd2, opnd1, operands[4]));
-            emit_insn (gen_kvx_faddwp (opnd0, product, opnd3, operands[4]));
+            emit_insn (gen_kvx_faddwc (opnd0, product, opnd3, operands[4]));
           }
         DONE;
       }
@@ -4408,7 +4549,7 @@
             rtx opnd2 = gen_rtx_SUBREG (V2SFmode, operands[2], i*8);
             rtx opnd3 = gen_rtx_SUBREG (V2SFmode, operands[3], i*8);
             emit_insn (gen_kvx_fmulwc (product, opnd2, opnd1, operands[4]));
-            emit_insn (gen_kvx_faddwp (opnd0, product, opnd3, operands[4]));
+            emit_insn (gen_kvx_faddwc (opnd0, product, opnd3, operands[4]));
           }
         DONE;
       }
@@ -4735,7 +4876,7 @@
       {
         rtx product = gen_reg_rtx (V2SFmode);
         emit_insn (gen_kvx_fmulwc (product, operands[2], operands[1], operands[4]));
-        emit_insn (gen_kvx_fsbfwp (operands[0], product, operands[3], operands[4]));
+        emit_insn (gen_kvx_fsbfwc (operands[0], product, operands[3], operands[4]));
         DONE;
       }
   }
@@ -4770,7 +4911,7 @@
             rtx opnd2 = gen_rtx_SUBREG (V2SFmode, operands[2], i*8);
             rtx opnd3 = gen_rtx_SUBREG (V2SFmode, operands[3], i*8);
             emit_insn (gen_kvx_fmulwc (product, opnd2, opnd1, operands[4]));
-            emit_insn (gen_kvx_fsbfwp (opnd0, product, opnd3, operands[4]));
+            emit_insn (gen_kvx_fsbfwc (opnd0, product, opnd3, operands[4]));
           }
         DONE;
       }
@@ -4821,7 +4962,7 @@
             rtx opnd2 = gen_rtx_SUBREG (V2SFmode, operands[2], i*8);
             rtx opnd3 = gen_rtx_SUBREG (V2SFmode, operands[3], i*8);
             emit_insn (gen_kvx_fmulwc (product, opnd2, opnd1, operands[4]));
-            emit_insn (gen_kvx_fsbfwp (opnd0, product, opnd3, operands[4]));
+            emit_insn (gen_kvx_fsbfwc (opnd0, product, opnd3, operands[4]));
           }
         DONE;
       }

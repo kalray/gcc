@@ -212,12 +212,17 @@ kvx_float32x2_nez(float32x2_t a)
 float32x2_t __attribute__ ((noinline))
 kvx_float32x2_faddcwc(float32x2_t a, float32x2_t b)
 {
-    return __builtin_kvx_faddwp(a, b, ".c.rn");
+    return __builtin_kvx_faddwc(a, b, ".c.rn");
 }
 float32x2_t __attribute__ ((noinline))
 kvx_float32x2_fsbfcwc(float32x2_t a, float32x2_t b)
 {
-    return __builtin_kvx_fsbfwp(a, b, ".c.rn");
+    return __builtin_kvx_fsbfwc(a, b, ".c.rn");
+}
+float32x2_t __attribute__ ((noinline))
+kvx_float32x2_fsbfwc(float32x2_t a, float32x2_t b)
+{
+    return __builtin_kvx_fsbfwc(a, b, ".rn");
 }
 float32x2_t __attribute__ ((noinline))
 kvx_float32x2_fmulwc(float32x2_t a, float32x2_t b)
