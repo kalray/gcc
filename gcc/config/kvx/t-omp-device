@@ -1,0 +1,4 @@
+omp-device-properties-kvx: $(srcdir)/config/kvx/kvx.cc
+	echo kind: gpu > $@
+	echo arch: kvx >> $@
+	echo isa: kvx >> $@

@@ -120,7 +120,8 @@ host_triplet = @host@
 target_triplet = @target@
 @PLUGIN_NVPTX_TRUE@am__append_1 = libgomp-plugin-nvptx.la
 @PLUGIN_GCN_TRUE@am__append_2 = libgomp-plugin-gcn.la
-@USE_FORTRAN_TRUE@am__append_3 = openacc.f90
+@PLUGIN_KVX_TRUE@am__append_3 = libgomp-plugin-kvx.la
+@USE_FORTRAN_TRUE@am__append_4 = openacc.f90
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/../config/acx.m4 \
@@ -197,6 +198,16 @@ libgomp_plugin_gcn_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(libgomp_plugin_gcn_la_LDFLAGS) $(LDFLAGS) -o $@
 @PLUGIN_GCN_TRUE@am_libgomp_plugin_gcn_la_rpath = -rpath \
 @PLUGIN_GCN_TRUE@	$(toolexeclibdir)
+@PLUGIN_KVX_TRUE@libgomp_plugin_kvx_la_DEPENDENCIES = libgomp.la
+@PLUGIN_KVX_TRUE@am_libgomp_plugin_kvx_la_OBJECTS =  \
+@PLUGIN_KVX_TRUE@	libgomp_plugin_kvx_la-plugin-kvx.lo
+libgomp_plugin_kvx_la_OBJECTS = $(am_libgomp_plugin_kvx_la_OBJECTS)
+libgomp_plugin_kvx_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(libgomp_plugin_kvx_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(libgomp_plugin_kvx_la_LDFLAGS) $(LDFLAGS) -o $@
+@PLUGIN_KVX_TRUE@am_libgomp_plugin_kvx_la_rpath = -rpath \
+@PLUGIN_KVX_TRUE@	$(toolexeclibdir)
 @PLUGIN_NVPTX_TRUE@libgomp_plugin_nvptx_la_DEPENDENCIES = libgomp.la \
 @PLUGIN_NVPTX_TRUE@	$(am__DEPENDENCIES_1)
 @PLUGIN_NVPTX_TRUE@am_libgomp_plugin_nvptx_la_OBJECTS =  \
@@ -269,6 +280,7 @@ am__v_FCLD_ = $(am__v_FCLD_@AM_DEFAULT_V@)
 am__v_FCLD_0 = @echo "  FCLD    " $@;
 am__v_FCLD_1 = 
 SOURCES = $(libgomp_plugin_gcn_la_SOURCES) \
+	$(libgomp_plugin_kvx_la_SOURCES) \
 	$(libgomp_plugin_nvptx_la_SOURCES) $(libgomp_la_SOURCES)
 AM_V_DVIPS = $(am__v_DVIPS_@AM_V@)
 am__v_DVIPS_ = $(am__v_DVIPS_@AM_DEFAULT_V@)
@@ -533,7 +545,8 @@ libsubincludedir = $(libdir)/gcc/$(target_alias)/$(gcc_version)/include
 AM_CPPFLAGS = $(addprefix -I, $(search_path))
 AM_CFLAGS = $(XCFLAGS)
 AM_LDFLAGS = $(XLDFLAGS) $(SECTION_LDFLAGS) $(OPT_LDFLAGS)
-toolexeclib_LTLIBRARIES = libgomp.la $(am__append_1) $(am__append_2)
+toolexeclib_LTLIBRARIES = libgomp.la $(am__append_1) $(am__append_2) \
+	$(am__append_3)
 nodist_toolexeclib_HEADERS = libgomp.spec
 
 # -Wc is only a libtool option.
@@ -559,7 +572,7 @@ libgomp_la_SOURCES = alloc.c atomic.c barrier.c critical.c env.c \
 	oacc-parallel.c oacc-host.c oacc-init.c oacc-mem.c \
 	oacc-async.c oacc-plugin.c oacc-cuda.c priority_queue.c \
 	affinity-fmt.c teams.c allocator.c oacc-profiling.c \
-	oacc-target.c $(am__append_3)
+	oacc-target.c $(am__append_4)
 
 # Nvidia PTX OpenACC plugin.
 @PLUGIN_NVPTX_TRUE@libgomp_plugin_nvptx_version_info = -version-info $(libtool_VERSION)
@@ -582,6 +595,18 @@ libgomp_la_SOURCES = alloc.c atomic.c barrier.c critical.c env.c \
 @PLUGIN_GCN_TRUE@	$(lt_host_flags) $(PLUGIN_GCN_LDFLAGS)
 @PLUGIN_GCN_TRUE@libgomp_plugin_gcn_la_LIBADD = libgomp.la $(PLUGIN_GCN_LIBS)
 @PLUGIN_GCN_TRUE@libgomp_plugin_gcn_la_LIBTOOLFLAGS = --tag=disable-static
+
+# KALRAY KVX plugin
+@PLUGIN_KVX_TRUE@libgomp_plugin_kvx_version_info = -version-info $(libtool_VERSION)
+@PLUGIN_KVX_TRUE@libgomp_plugin_kvx_la_SOURCES = plugin/plugin-kvx.c
+@PLUGIN_KVX_TRUE@libgomp_plugin_kvx_la_CPPFLAGS = $(AM_CPPFLAGS) $(PLUGIN_KVX_CPPFLAGS) \
+@PLUGIN_KVX_TRUE@	-D_GNU_SOURCE
+
+@PLUGIN_KVX_TRUE@libgomp_plugin_kvx_la_LDFLAGS =  \
+@PLUGIN_KVX_TRUE@	$(libgomp_plugin_kvx_version_info) \
+@PLUGIN_KVX_TRUE@	$(lt_host_flags) $(PLUGIN_KVX_LDFLAGS)
+@PLUGIN_KVX_TRUE@libgomp_plugin_kvx_la_LIBADD = libgomp.la $(PLUGIN_KVX_LIBS)
+@PLUGIN_KVX_TRUE@libgomp_plugin_kvx_la_LIBTOOLFLAGS = --tag=disable-static
 nodist_noinst_HEADERS = libgomp_f.h
 nodist_libsubinclude_HEADERS = omp.h openacc.h acc_prof.h
 @USE_FORTRAN_TRUE@nodist_finclude_HEADERS = omp_lib.h omp_lib.f90 omp_lib.mod omp_lib_kinds.mod \
@@ -721,6 +746,9 @@ clean-toolexeclibLTLIBRARIES:
 libgomp-plugin-gcn.la: $(libgomp_plugin_gcn_la_OBJECTS) $(libgomp_plugin_gcn_la_DEPENDENCIES) $(EXTRA_libgomp_plugin_gcn_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(libgomp_plugin_gcn_la_LINK) $(am_libgomp_plugin_gcn_la_rpath) $(libgomp_plugin_gcn_la_OBJECTS) $(libgomp_plugin_gcn_la_LIBADD) $(LIBS)
 
+libgomp-plugin-kvx.la: $(libgomp_plugin_kvx_la_OBJECTS) $(libgomp_plugin_kvx_la_DEPENDENCIES) $(EXTRA_libgomp_plugin_kvx_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(libgomp_plugin_kvx_la_LINK) $(am_libgomp_plugin_kvx_la_rpath) $(libgomp_plugin_kvx_la_OBJECTS) $(libgomp_plugin_kvx_la_LIBADD) $(LIBS)
+
 libgomp-plugin-nvptx.la: $(libgomp_plugin_nvptx_la_OBJECTS) $(libgomp_plugin_nvptx_la_DEPENDENCIES) $(EXTRA_libgomp_plugin_nvptx_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(libgomp_plugin_nvptx_la_LINK) $(am_libgomp_plugin_nvptx_la_rpath) $(libgomp_plugin_nvptx_la_OBJECTS) $(libgomp_plugin_nvptx_la_LIBADD) $(LIBS)
 
@@ -750,6 +778,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iter_ull.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgomp-plugin.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgomp_plugin_gcn_la-plugin-gcn.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgomp_plugin_kvx_la-plugin-kvx.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgomp_plugin_nvptx_la-plugin-nvptx.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lock.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/loop.Plo@am__quote@
@@ -808,6 +837,13 @@ libgomp_plugin_gcn_la-plugin-gcn.lo: plugin/plugin-gcn.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='plugin/plugin-gcn.c' object='libgomp_plugin_gcn_la-plugin-gcn.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(libgomp_plugin_gcn_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgomp_plugin_gcn_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libgomp_plugin_gcn_la-plugin-gcn.lo `test -f 'plugin/plugin-gcn.c' || echo '$(srcdir)/'`plugin/plugin-gcn.c
+
+libgomp_plugin_kvx_la-plugin-kvx.lo: plugin/plugin-kvx.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(libgomp_plugin_kvx_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgomp_plugin_kvx_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libgomp_plugin_kvx_la-plugin-kvx.lo -MD -MP -MF $(DEPDIR)/libgomp_plugin_kvx_la-plugin-kvx.Tpo -c -o libgomp_plugin_kvx_la-plugin-kvx.lo `test -f 'plugin/plugin-kvx.c' || echo '$(srcdir)/'`plugin/plugin-kvx.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libgomp_plugin_kvx_la-plugin-kvx.Tpo $(DEPDIR)/libgomp_plugin_kvx_la-plugin-kvx.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='plugin/plugin-kvx.c' object='libgomp_plugin_kvx_la-plugin-kvx.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(libgomp_plugin_kvx_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgomp_plugin_kvx_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libgomp_plugin_kvx_la-plugin-kvx.lo `test -f 'plugin/plugin-kvx.c' || echo '$(srcdir)/'`plugin/plugin-kvx.c
 
 libgomp_plugin_nvptx_la-plugin-nvptx.lo: plugin/plugin-nvptx.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(libgomp_plugin_nvptx_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgomp_plugin_nvptx_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libgomp_plugin_nvptx_la-plugin-nvptx.lo -MD -MP -MF $(DEPDIR)/libgomp_plugin_nvptx_la-plugin-nvptx.Tpo -c -o libgomp_plugin_nvptx_la-plugin-nvptx.lo `test -f 'plugin/plugin-nvptx.c' || echo '$(srcdir)/'`plugin/plugin-nvptx.c

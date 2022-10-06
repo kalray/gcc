@@ -232,6 +232,7 @@ enum gomp_map_kind
 #define GOMP_DEVICE_INTEL_MIC		6
 #define GOMP_DEVICE_HSA			7
 #define GOMP_DEVICE_GCN			8
+#define GOMP_DEVICE_KALRAY_KVX		9
 
 #define GOMP_DEVICE_ICV			-1
 #define GOMP_DEVICE_HOST_FALLBACK	-2

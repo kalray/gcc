@@ -2336,6 +2336,10 @@ kvx-*-cos*)
 	tm_file="${tm_file} elfos.h dbxelf.h kvx/kvx-cos.h newlib-stdint.h"
 	tmake_file="kvx/t-kvx kvx/t-cos"
 	extra_options="${extra_options} kvx/kvx-cos.opt"
+	if test x$enable_as_accelerator = xyes; then
+		extra_programs="${extra_programs} mkoffload\$(exeext)"
+		tm_file="${tm_file} kvx/offload.h"
+	fi
 	;;
 kvx-*-linux*)
 	tm_file="${tm_file} dbxelf.h elfos.h gnu-user.h linux.h kvx/kvx-linux.h glibc-stdint.h"

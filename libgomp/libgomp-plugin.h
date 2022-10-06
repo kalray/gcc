@@ -51,7 +51,8 @@ enum offload_target_type
   OFFLOAD_TARGET_TYPE_NVIDIA_PTX = 5,
   OFFLOAD_TARGET_TYPE_INTEL_MIC = 6,
   OFFLOAD_TARGET_TYPE_HSA = 7,
-  OFFLOAD_TARGET_TYPE_GCN = 8
+  OFFLOAD_TARGET_TYPE_GCN = 8,
+  OFFLOAD_TARGET_TYPE_KVX = 9
 };
 
 /* Opaque type to represent plugin-dependent implementation of an
