@@ -668,6 +668,8 @@ OPT_LDFLAGS
 SECTION_LDFLAGS
 PLUGIN_GCN_FALSE
 PLUGIN_GCN_TRUE
+PLUGIN_KVX_FALSE
+PLUGIN_KVX_TRUE
 PLUGIN_NVPTX_FALSE
 PLUGIN_NVPTX_TRUE
 offload_additional_lib_paths
@@ -11419,7 +11421,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 11422 "configure"
+#line 11424 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11525,7 +11527,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 11528 "configure"
+#line 11530 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -15184,6 +15186,7 @@ done
 
 PLUGIN_NVPTX=0
 PLUGIN_GCN=0
+PLUGIN_KVX=0
 # Parse '--enable-offload-targets', figure out the corresponding libgomp
 # plugins, and configure to find the corresponding offload compilers.
 # 'offload_plugins' and 'offload_targets' will be populated in the same order.
@@ -15219,6 +15222,41 @@ if test x"$enable_offload_targets" != x; then
 	  *-*-*)
 	    # Target architecture not supported.
 	    PLUGIN_NVPTX=0
+	    ;;
+	esac
+	;;
+      kvx*)
+	case "${target}" in
+	  kvx-cos | x86_64-*-*)
+	    case " ${CC} ${CFLAGS} " in
+	      *" -m32 "* | *" -mx32 "*)
+		# PR libgomp/65099: Currently, we only support offloading in
+		# 64-bit configurations.
+		PLUGIN_KVX=0
+		;;
+	      *)
+		tgt_plugin=kvx
+		PLUGIN_KVX=$tgt
+
+	        PLUGIN_KVX_CPPFLAGS=$KVX_RUNTIME_CPPFLAGS
+	        PLUGIN_KVX_LDFLAGS="$KVX_RUNTIME_LDFLAGS"
+		PLUGIN_KVX_LIBS='-lmppa_offload_host -lmppa_rproc_host -lmppalock -lmopd -lrproc -lopen_amp -lmppa_sim_client -lmetal'
+
+		PLUGIN_KVX_save_CPPFLAGS=$CPPFLAGS
+		CPPFLAGS="$PLUGIN_KVX_CPPFLAGS $CPPFLAGS"
+		PLUGIN_KVX_save_LDFLAGS=$LDFLAGS
+		LDFLAGS="$PLUGIN_KVX_LDFLAGS $LDFLAGS"
+		PLUGIN_KVX_save_LIBS=$LIBS
+		LIBS="$PLUGIN_KVX_LIBS $LIBS"
+
+		PLUGIN_KVX=1
+		CPPFLAGS=$PLUGIN_KVX_save_CPPFLAGS
+		LDFLAGS=$PLUGIN_KVX_save_LDFLAGS
+	    esac
+	    ;;
+	  *-*-*)
+	    # Target architecture not supported.
+	    PLUGIN_KVX=0
 	    ;;
 	esac
 	;;
@@ -15286,6 +15324,13 @@ else
   PLUGIN_GCN_FALSE=
 fi
 
+ if test "$PLUGIN_KVX" = 1; then
+  PLUGIN_KVX_TRUE=
+  PLUGIN_KVX_FALSE='#'
+else
+  PLUGIN_KVX_TRUE='#'
+  PLUGIN_KVX_FALSE=
+fi
 
 
 # Check for functions needed.
@@ -17128,6 +17173,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${PLUGIN_NVPTX_TRUE}" && test -z "${PLUGIN_NVPTX_FALSE}"; then
   as_fn_error $? "conditional \"PLUGIN_NVPTX\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${PLUGIN_KVX_TRUE}" && test -z "${PLUGIN_KVX_FALSE}"; then
+  as_fn_error $? "conditional \"PLUGIN_KVX\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${PLUGIN_GCN_TRUE}" && test -z "${PLUGIN_GCN_FALSE}"; then

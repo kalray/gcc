@@ -50,7 +50,8 @@ enum offload_target_type
   /* OFFLOAD_TARGET_TYPE_HOST_NONSHM = 3 removed.  */
   OFFLOAD_TARGET_TYPE_NVIDIA_PTX = 5,
   OFFLOAD_TARGET_TYPE_HSA = 7,
-  OFFLOAD_TARGET_TYPE_GCN = 8
+  OFFLOAD_TARGET_TYPE_GCN = 8,
+  OFFLOAD_TARGET_TYPE_KVX = 9
 };
 
 /* Opaque type to represent plugin-dependent implementation of an

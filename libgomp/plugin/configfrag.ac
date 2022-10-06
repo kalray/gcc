@@ -40,6 +40,7 @@ AC_CHECK_HEADERS_ONCE(unistd.h)
 AC_CHECK_FUNCS_ONCE(secure_getenv __secure_getenv getuid geteuid getgid getegid)
 
 
+PLUGIN_KVX=0
 PLUGIN_NVPTX=0
 PLUGIN_GCN=0
 # Parse '--enable-offload-targets', figure out the corresponding libgomp
@@ -77,6 +78,41 @@ if test x"$enable_offload_targets" != x; then
 	  *-*-*)
 	    # Target architecture not supported.
 	    PLUGIN_NVPTX=0
+	    ;;
+	esac
+	;;
+      kvx*)
+	case "${target}" in
+	  kvx-cos | x86_64-*-*)
+	    case " ${CC} ${CFLAGS} " in
+	      *" -m32 "* | *" -mx32 "*)
+		# PR libgomp/65099: Currently, we only support offloading in
+		# 64-bit configurations.
+		PLUGIN_KVX=0
+		;;
+	      *)
+		tgt_plugin=kvx
+		PLUGIN_KVX=$tgt
+
+	        PLUGIN_KVX_CPPFLAGS=$KVX_RUNTIME_CPPFLAGS
+	        PLUGIN_KVX_LDFLAGS="$KVX_RUNTIME_LDFLAGS"
+		PLUGIN_KVX_LIBS='-lmppa_offload_host -lmppa_rproc_host -lmppalock -lmopd  -lrproc -lopen_amp -lmppa_sim_client -lmetal'
+
+		PLUGIN_KVX_save_CPPFLAGS=$CPPFLAGS
+		CPPFLAGS="$PLUGIN_KVX_CPPFLAGS $CPPFLAGS"
+		PLUGIN_KVX_save_LDFLAGS=$LDFLAGS
+		LDFLAGS="$PLUGIN_KVX_LDFLAGS $LDFLAGS"
+		PLUGIN_KVX_save_LIBS=$LIBS
+		LIBS="$PLUGIN_KVX_LIBS $LIBS"
+
+		PLUGIN_KVX=1
+		CPPFLAGS=$PLUGIN_KVX_save_CPPFLAGS
+		LDFLAGS=$PLUGIN_KVX_save_LDFLAGS
+	    esac
+	    ;;
+	  *-*-*)
+	    # Target architecture not supported.
+	    PLUGIN_KVX=0
 	    ;;
 	esac
 	;;
@@ -126,4 +162,5 @@ fi
 AC_DEFINE_UNQUOTED(OFFLOAD_PLUGINS, "$offload_plugins",
   [Define to offload plugins, separated by commas.])
 AM_CONDITIONAL([PLUGIN_NVPTX], [test $PLUGIN_NVPTX = 1])
+AM_CONDITIONAL([PLUGIN_KVX], [test "$PLUGIN_KVX" = 1])
 AM_CONDITIONAL([PLUGIN_GCN], [test $PLUGIN_GCN = 1])

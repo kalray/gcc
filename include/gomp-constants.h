@@ -232,6 +232,7 @@ enum gomp_map_kind
 /* #define GOMP_DEVICE_INTEL_MIC	6 removed.  */
 /* #define GOMP_DEVICE_HSA		7 removed.  */
 #define GOMP_DEVICE_GCN			8
+#define GOMP_DEVICE_KALRAY_KVX		9
 
 /* We have a compatibility issue.  OpenMP 5.2 introduced
    omp_initial_device with value of -1 which clashes with our

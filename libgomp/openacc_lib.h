@@ -46,6 +46,7 @@
       integer (acc_device_kind), parameter :: acc_device_not_host = 4
       integer (acc_device_kind), parameter :: acc_device_nvidia = 5
       integer (acc_device_kind), parameter :: acc_device_radeon = 8
+      integer (acc_device_kind), parameter :: acc_device_kalray = 9
 
       integer, parameter :: acc_device_property_kind = 4
 ! OpenACC 2.6/2.7/3.0 used acc_device_property; in a spec update the
