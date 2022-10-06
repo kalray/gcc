@@ -212,12 +212,12 @@ kvx_float64x4_nez(float64x4_t a)
 float64x4_t __attribute__ ((noinline))
 kvx_float64x4_faddcdcp(float64x4_t a, float64x4_t b)
 {
-    return __builtin_kvx_fadddq(a, b, ".c.rn");
+    return __builtin_kvx_fadddcp(a, b, ".c.rn");
 }
 float64x4_t __attribute__ ((noinline))
 kvx_float64x4_fsbfcdcp(float64x4_t a, float64x4_t b)
 {
-    return __builtin_kvx_fsbfdq(a, b, ".c.rn");
+    return __builtin_kvx_fsbfdcp(a, b, ".c.rn");
 }
 float64x4_t __attribute__ ((noinline))
 kvx_float64x4_fmuldcp(float64x4_t a, float64x4_t b)
