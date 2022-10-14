@@ -80,7 +80,7 @@
     switch (which_alternative)
       {
       case 0:
-        return "copyv %0 = %1";
+        return "xcopyo %0 = %1";
       case 1: case 2: case 3:
         return "xlo.u%X1 %0 = %1";
       case 4: case 5: case 6:
