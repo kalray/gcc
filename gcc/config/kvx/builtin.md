@@ -6896,42 +6896,38 @@
 
 (define_insn "kvx_fsrsrw"
   [(set (match_operand:SF 0 "register_operand" "=r")
-        (unspec:SF [(match_operand:SF 1 "register_operand" "r")
-                    (match_operand 2 "" "")] UNSPEC_FSRSR))]
+        (unspec:SF [(match_operand:SF 1 "register_operand" "r")] UNSPEC_FSRSR))]
   ""
-  "fsrsrw%2 %0 = %1"
+  "fsrsrw %0 = %1"
   [(set_attr "type" "alu_lite")]
 )
 
 (define_insn "kvx_fsrsrd"
   [(set (match_operand:DF 0 "register_operand" "=r")
-        (unspec:DF [(match_operand:DF 1 "register_operand" "r")
-                    (match_operand 2 "" "")] UNSPEC_FSRSR))]
+        (unspec:DF [(match_operand:DF 1 "register_operand" "r")] UNSPEC_FSRSR))]
   ""
-  "fsrsrd%2 %0 = %1"
+  "fsrsrd %0 = %1"
   [(set_attr "type" "alu_lite")]
 )
 
 (define_insn "kvx_fsrsrwp"
   [(set (match_operand:V2SF 0 "register_operand" "=r")
-        (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")
-                      (match_operand 2 "" "")] UNSPEC_FSRSR))]
+        (unspec:V2SF [(match_operand:V2SF 1 "register_operand" "r")] UNSPEC_FSRSR))]
   ""
-  "fsrsrwp%2 %0 = %1"
+  "fsrsrwp %0 = %1"
   [(set_attr "type" "alu_lite")]
 )
 
 (define_expand "kvx_fsrsrwq"
   [(match_operand:V4SF 0 "register_operand" "")
-   (match_operand:V4SF 1 "register_operand" "")
-   (match_operand 2 "" "")]
+   (match_operand:V4SF 1 "register_operand" "")]
   ""
   {
     for (int i = 0; i < 2; i++)
       {
         rtx opnd0 = gen_rtx_SUBREG (V2SFmode, operands[0], i*8);
         rtx opnd1 = gen_rtx_SUBREG (V2SFmode, operands[1], i*8);
-        emit_insn (gen_kvx_fsrsrwp (opnd0, opnd1, operands[2]));
+        emit_insn (gen_kvx_fsrsrwp (opnd0, opnd1));
       }
     DONE;
   }
@@ -6939,15 +6935,14 @@
 
 (define_expand "kvx_fsrsrdp"
   [(match_operand:V2DF 0 "register_operand" "")
-   (match_operand:V2DF 1 "register_operand" "")
-   (match_operand 2 "" "")]
+   (match_operand:V2DF 1 "register_operand" "")]
   ""
   {
     for (int i = 0; i < 2; i++)
       {
         rtx opnd0 = gen_rtx_SUBREG (DFmode, operands[0], i*8);
         rtx opnd1 = gen_rtx_SUBREG (DFmode, operands[1], i*8);
-        emit_insn (gen_kvx_fsrsrd (opnd0, opnd1, operands[2]));
+        emit_insn (gen_kvx_fsrsrd (opnd0, opnd1));
       }
     DONE;
   }
@@ -6955,15 +6950,14 @@
 
 (define_expand "kvx_fsrsrwo"
   [(match_operand:V8SF 0 "register_operand" "")
-   (match_operand:V8SF 1 "register_operand" "")
-   (match_operand 2 "" "")]
+   (match_operand:V8SF 1 "register_operand" "")]
   ""
   {
     for (int i = 0; i < 4; i++)
       {
         rtx opnd0 = gen_rtx_SUBREG (V2SFmode, operands[0], i*8);
         rtx opnd1 = gen_rtx_SUBREG (V2SFmode, operands[1], i*8);
-        emit_insn (gen_kvx_fsrsrwp (opnd0, opnd1, operands[2]));
+        emit_insn (gen_kvx_fsrsrwp (opnd0, opnd1));
       }
     DONE;
   }
@@ -6971,15 +6965,14 @@
 
 (define_expand "kvx_fsrsrdq"
   [(match_operand:V4DF 0 "register_operand" "")
-   (match_operand:V4DF 1 "register_operand" "")
-   (match_operand 2 "" "")]
+   (match_operand:V4DF 1 "register_operand" "")]
   ""
   {
     for (int i = 0; i < 4; i++)
       {
         rtx opnd0 = gen_rtx_SUBREG (DFmode, operands[0], i*8);
         rtx opnd1 = gen_rtx_SUBREG (DFmode, operands[1], i*8);
-        emit_insn (gen_kvx_fsrsrd (opnd0, opnd1, operands[2]));
+        emit_insn (gen_kvx_fsrsrd (opnd0, opnd1));
       }
     DONE;
   }
