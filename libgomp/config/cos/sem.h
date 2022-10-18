@@ -104,7 +104,7 @@ gomp_sem_wait (gomp_sem_t *sem)
 {
   __cos_swap_t c;
 
-  __builtin_kvx_fence ();
+  mppa_cos_wfence ();
 
   while (1)
     {
@@ -137,13 +137,13 @@ gomp_sem_wait (gomp_sem_t *sem)
 static inline void
 gomp_sem_post (gomp_sem_t *sem)
 {
-  __builtin_kvx_fence (); /* consistency before post */
+  mppa_cos_wfence (); /* consistency before post */
 #if (__SIZEOF_PTRDIFF_T__ == 8)
   MPPA_COS_AFADDD ((void *) sem, 1);
 #else
   MPPA_COS_AFADDW ((void *) sem, 1);
 #endif
-  __builtin_kvx_fence (); /* consistency before doorbell */
+  mppa_cos_wfence (); /* consistency before doorbell */
   mppa_cos_doorbell_all ();
   MPPA_COS_DINVAL ();
 }
