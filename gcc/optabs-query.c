@@ -204,6 +204,9 @@ get_best_extraction_insn (extraction_insn *insn,
 			  unsigned HOST_WIDE_INT struct_bits,
 			  machine_mode field_mode)
 {
+  if (struct_bits > MAX_BITSIZE_MODE_ANY_INT)
+    return false;
+
   opt_scalar_int_mode mode_iter;
   FOR_EACH_MODE_FROM (mode_iter, smallest_int_mode_for_size (struct_bits))
     {
