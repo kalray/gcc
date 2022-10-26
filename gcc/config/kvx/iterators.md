@@ -308,9 +308,6 @@
   (UNSPEC_AVGRU "avgru")
 ])
 
-;; Iterator for all integer modes (up to 64-bit)
-(define_mode_iterator ALLI [QI HI SI DI])
-
 ;; Iterator for SI, QI and HI modes
 (define_mode_iterator SHORT [QI HI SI])
 
@@ -457,6 +454,15 @@
   V16QI V8HI V8HF V4SI V2DI V4SF V2DF
   V32QI V16HI V16HF V8SI V4DI V8SF V4DF
   V64QI V32HI V32HF V16SI V8DI V16SF V8DF
+])
+
+;; Iterator for all scalar and vector integer modes (up to 256-bit)
+(define_mode_iterator ALLIV [
+  QI HI SI DI TI OI
+  V8QI V4HI V2SI
+  V16QI V8HI V4SI V2DI
+  V32QI V16HI V8SI V4DI
+  V64QI V32HI V16SI V8DI
 ])
 
 ;; Iterator for all modes (integer, float, vector) for MOV*CC.

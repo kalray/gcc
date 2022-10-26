@@ -74,6 +74,7 @@
         UNSPEC_FNARROW
         UNSPEC_ADDD
         UNSPEC_ANDD
+        UNSPEC_IORD
         UNSPEC_XORD
         UNSPEC_SLLD
         UNSPEC_SRLD

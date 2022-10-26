@@ -339,7 +339,7 @@
     rtx target = operands[0];
     rtx select1 = operands[1];
     rtx select2 = operands[2];
-    kvx_expand_conditional_move (target, select1, select2, operands[3], <SIMDCMP:MODE>mode);
+    kvx_expand_conditional_move (target, select1, select2, operands[3]);
     DONE;
   }
 )
@@ -356,7 +356,7 @@
     rtx target = operands[0];
     rtx select1 = operands[1];
     rtx select2 = operands[2];
-    kvx_expand_conditional_move (target, select1, select2, operands[3], <SIMDCMP:MODE>mode);
+    kvx_expand_conditional_move (target, select1, select2, operands[3]);
     DONE;
   }
 )
@@ -639,7 +639,7 @@
   [(set_attr "type" "alu_tiny")]
 )
 
-(define_insn "*anddp"
+(define_insn "*anddps"
   [(set (match_operand:ALL128 0 "register_operand" "=r")
         (unspec:ALL128 [(match_operand:SIMD128 1 "register_operand" "r")
                         (match_operand:DI 2 "register_operand" "r")] UNSPEC_ANDD))]
@@ -649,7 +649,7 @@
    (set_attr "length"         "8")]
 )
 
-(define_insn "*anddq"
+(define_insn "*anddqs"
   [(set (match_operand:ALL256 0 "register_operand" "=r")
         (unspec:ALL256 [(match_operand:SIMD256 1 "register_operand" "r")
                         (match_operand:DI 2 "register_operand" "r")] UNSPEC_ANDD))]
@@ -660,6 +660,93 @@
   }
   [(set_attr "type" "alu_tiny_x4")
    (set_attr "length"        "16")]
+)
+
+(define_insn "*and128"
+  [(set (match_operand:ALL128 0 "register_operand" "=r")
+        (unspec:ALL128 [(match_operand:ALL128 1 "register_operand" "r")
+                        (match_operand:SIMD128 2 "register_operand" "r")] UNSPEC_ANDD))]
+  ""
+  "andd %x0 = %x1, %x2\n\tandd %y0 = %y1, %y2"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "*and256"
+  [(set (match_operand:ALL256 0 "register_operand" "=r")
+        (unspec:ALL256 [(match_operand:ALL256 1 "register_operand" "r")
+                        (match_operand:SIMD256 2 "register_operand" "r")] UNSPEC_ANDD))]
+  ""
+  {
+    return "andd %x0 = %x1, %x2\n\tandd %y0 = %y1, %y2\n\t"
+           "andd %z0 = %z1, %z2\n\tandd %t0 = %t1, %t2";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_insn_and_split "*and512"
+  [(set (match_operand:ALL512 0 "register_operand" "")
+        (unspec:ALL512 [(match_operand:ALL512 1 "register_operand" "")
+                        (match_operand:SIMD512 2 "register_operand" "")] UNSPEC_ANDD))]
+  ""
+  "#"
+  ""
+  [(set (subreg:<ALL512:HALF> (match_dup 0) 0)
+        (unspec:<ALL512:HALF> [(subreg:<ALL512:HALF> (match_dup 1) 0)
+                               (subreg:<SIMD512:HALF> (match_dup 2) 0)] UNSPEC_ANDD))
+   (set (subreg:<ALL512:HALF> (match_dup 0) 32)
+        (unspec:<ALL512:HALF> [(subreg:<ALL512:HALF> (match_dup 1) 32)
+                               (subreg:<SIMD512:HALF> (match_dup 2) 32)] UNSPEC_ANDD))]
+  ""
+)
+
+(define_insn "*iord"
+  [(set (match_operand:ALL64 0 "register_operand" "=r")
+        (unspec:ALL64 [(match_operand:ALL64 1 "register_operand" "r")
+                       (match_operand:FITGPR 2 "register_operand" "r")] UNSPEC_IORD))]
+  ""
+  "ord %0 = %1, %2"
+  [(set_attr "type" "alu_tiny")]
+)
+
+(define_insn "*ior128"
+  [(set (match_operand:ALL128 0 "register_operand" "=r")
+        (unspec:ALL128 [(match_operand:ALL128 1 "register_operand" "r")
+                        (match_operand:SIMD128 2 "register_operand" "r")] UNSPEC_IORD))]
+  ""
+  "ord %x0 = %x1, %x2\n\tord %y0 = %y1, %y2"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "*ior256"
+  [(set (match_operand:ALL256 0 "register_operand" "=r")
+        (unspec:ALL256 [(match_operand:ALL256 1 "register_operand" "r")
+                        (match_operand:SIMD256 2 "register_operand" "r")] UNSPEC_IORD))]
+  ""
+  {
+    return "ord %x0 = %x1, %x2\n\tord %y0 = %y1, %y2\n\t"
+           "ord %z0 = %z1, %z2\n\tord %t0 = %t1, %t2";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_insn_and_split "*ior512"
+  [(set (match_operand:ALL512 0 "register_operand" "")
+        (unspec:ALL512 [(match_operand:ALL512 1 "register_operand" "")
+                        (match_operand:SIMD512 2 "register_operand" "")] UNSPEC_IORD))]
+  ""
+  "#"
+  ""
+  [(set (subreg:<ALL512:HALF> (match_dup 0) 0)
+        (unspec:<ALL512:HALF> [(subreg:<ALL512:HALF> (match_dup 1) 0)
+                               (subreg:<SIMD512:HALF> (match_dup 2) 0)] UNSPEC_IORD))
+   (set (subreg:<ALL512:HALF> (match_dup 0) 32)
+        (unspec:<ALL512:HALF> [(subreg:<ALL512:HALF> (match_dup 1) 32)
+                               (subreg:<SIMD512:HALF> (match_dup 2) 32)] UNSPEC_IORD))]
+  ""
 )
 
 (define_insn "*xord"
