@@ -1905,7 +1905,8 @@ kvx_print_operand (FILE *file, rtx x, int code)
       }
       return;
 
-      case CONST_VECTOR: {
+    case CONST_VECTOR:
+      {
 	int slice = 1 * force_yreg + 2 * force_zreg + 3 * force_treg;
 	fprintf (file, "0x" HOST_WIDE_INT_PRINT_PADDED_HEX,
 		 kvx_const_vector_value (x, slice));
@@ -3334,28 +3335,32 @@ kvx_emulate_vxqi_simplecond_move (rtx pred, enum rtx_code comp_code, rtx src, rt
 }
 
 void
-kvx_expand_conditional_move (rtx target, rtx select1, rtx select2,
-			     rtx comp, machine_mode comp_mode)
+kvx_expand_conditional_move (rtx target, rtx select1, rtx select2, rtx comp)
 {
-  rtx left = XEXP (comp, 0);
-  rtx right = XEXP (comp, 1);
   machine_mode mode = GET_MODE (target);
-  enum rtx_code comp_code = GET_CODE (comp);
+  rtx const0_mode_rtx = CONST0_RTX (mode);
+  rtx constm1_mode_rtx = CONSTM1_RTX (mode);
+  machine_mode comp_mode =  GET_MODE (XEXP (comp, 0));
+  machine_mode pred_mode = kvx_get_predicate_mode (comp_mode);
+  enum mode_class comp_class = GET_MODE_CLASS (comp_mode);
+  bool float_compare_p = (comp_class == MODE_FLOAT
+			  || comp_class == MODE_VECTOR_FLOAT);
+  bool vector_modes_p = VECTOR_MODE_P (mode) && VECTOR_MODE_P (comp_mode);
 
-  bool vector_true_false = false;
-  if (VECTOR_MODE_P (mode))
+  int vector_any_and_zero = 0, vector_any_and_mone = 0;
+  if (vector_modes_p)
     {
-      rtx const0_mode_rtx = CONST0_RTX (mode);
-      rtx constm1_mode_rtx = CONSTM1_RTX (mode);
-      vector_true_false = (select1 == constm1_mode_rtx)
-			  && (select2 == const0_mode_rtx);
+      vector_any_and_zero = (select2 == const0_mode_rtx)
+			  - (select1 == const0_mode_rtx);
+      vector_any_and_mone = (select2 == constm1_mode_rtx)
+			  - (select1 == constm1_mode_rtx);
     }
 
+  // Normalize conditional move as `dst = comp ? src : dst;`.
   rtx src = NULL_RTX, dst = NULL_RTX;
-  if (vector_true_false)
-    {
-      dst = target;
-    }
+  enum rtx_code comp_code = GET_CODE (comp);
+  if (vector_any_and_zero || vector_any_and_mone)
+    dst = target;
   else if (!rtx_equal_p (select1, target) && !rtx_equal_p (select2, target))
     {
       if (reg_overlap_mentioned_p (target, comp))
@@ -3368,14 +3373,11 @@ kvx_expand_conditional_move (rtx target, rtx select1, rtx select2,
     }
   else if (rtx_equal_p (select1, target))
     {
+      comp_code = float_compare_p ? reverse_condition_maybe_unordered (comp_code)
+				  : reverse_condition (comp_code);
+
       src = force_reg (mode, select2);
       dst = target;
-
-      enum mode_class comp_class = GET_MODE_CLASS (comp_mode);
-      if (comp_class == MODE_FLOAT || comp_class == MODE_VECTOR_FLOAT)
-	comp_code = reverse_condition_maybe_unordered (comp_code);
-      else
-	comp_code = reverse_condition (comp_code);
     }
   else
     {
@@ -3383,30 +3385,50 @@ kvx_expand_conditional_move (rtx target, rtx select1, rtx select2,
       dst = target;
     }
 
-  enum mode_class comp_class = GET_MODE_CLASS (comp_mode);
-  machine_mode pred_mode = kvx_get_predicate_mode (comp_mode);
-  rtx pred = gen_reg_rtx (pred_mode);
-  if (comp_class == MODE_INT && right == const0_rtx
-      && zero_comparison_operator (comp, VOIDmode)
-      && GET_MODE_SIZE (comp_mode) <= UNITS_PER_WORD)
-    emit_move_insn (pred, left);
-  else
-    {
-      rtx comp = gen_rtx_fmt_ee (comp_code, pred_mode, left, right);
-      kvx_lower_comparison (pred, comp, comp_mode);
-      comp_code = NE;
-    }
+  if (vector_any_and_zero < 0 || vector_any_and_mone > 0)
+    comp_code = float_compare_p ? reverse_condition_maybe_unordered (comp_code)
+				: reverse_condition (comp_code);
 
-  if (vector_true_false)
-    emit_insn (gen_rtx_SET (dst, pred));
-  else if (KV3_1 && VECTOR_MODE_P (comp_mode)
-	   && GET_MODE_INNER (comp_mode) == QImode)
-    kvx_emulate_vxqi_simplecond_move (pred, comp_code, src, dst);
+  // Put the comparison result into PRED.
+  rtx pred = gen_reg_rtx (pred_mode);
+  rtx compare = gen_rtx_fmt_ee (comp_code, pred_mode,
+				XEXP (comp, 0), XEXP (comp, 1));
+  kvx_lower_comparison (pred, compare, comp_mode);
+
+  if (vector_any_and_zero || vector_any_and_mone)
+    {
+      if (vector_any_and_zero > 0 && select1 != constm1_mode_rtx)
+	{
+	  select1 = simplify_gen_subreg (pred_mode, force_reg (mode, select1), mode, 0);
+	  emit_insn (gen_rtx_SET (pred, gen_rtx_AND (pred_mode, pred, select1)));
+	}
+      if (vector_any_and_zero < 0 && select2 != constm1_mode_rtx)
+	{
+	  select2 = simplify_gen_subreg (pred_mode, force_reg (mode, select2), mode, 0);
+	  emit_insn (gen_rtx_SET (pred, gen_rtx_AND (pred_mode, pred, select2)));
+	}
+      if (vector_any_and_mone > 0 && select1 != const0_mode_rtx)
+	{
+	  select1 = simplify_gen_subreg (pred_mode, force_reg (mode, select1), mode, 0);
+	  emit_insn (gen_rtx_SET (pred, gen_rtx_IOR (pred_mode, pred, select1)));
+	}
+      if (vector_any_and_mone < 0 && select2 != const0_mode_rtx)
+	{
+	  select2 = simplify_gen_subreg (pred_mode, force_reg (mode, select2), mode, 0);
+	  emit_insn (gen_rtx_SET (pred, gen_rtx_IOR (pred_mode, pred, select2)));
+	}
+      pred = simplify_gen_subreg (mode, pred, pred_mode, 0);
+      emit_insn (gen_rtx_SET (dst, pred));
+    }
+  else if (KV3_1 && vector_modes_p && GET_MODE_INNER (mode) == QImode)
+    kvx_emulate_vxqi_simplecond_move (pred, NE, src, dst);
   else
+    // Special cases above do not apply, conditional move with test `PRED NE CONST0`.
+    // The combiner should then fold the comparaison into the conditional move test.
     {
       rtx const0_pred_mode_rtx = CONST0_RTX (pred_mode);
-      rtx cmp0 = gen_rtx_fmt_ee (comp_code, VOIDmode, pred, const0_pred_mode_rtx);
-      emit_insn (gen_rtx_SET (dst, gen_rtx_IF_THEN_ELSE (mode, cmp0, src, dst)));
+      rtx test = gen_rtx_fmt_ee (NE, VOIDmode, pred, const0_pred_mode_rtx);
+      emit_insn (gen_rtx_SET (dst, gen_rtx_IF_THEN_ELSE (mode, test, src, dst)));
     }
 
   if (dst != target)
@@ -3414,28 +3436,31 @@ kvx_expand_conditional_move (rtx target, rtx select1, rtx select2,
 }
 
 void
-kvx_expand_masked_move (rtx target, rtx select1, rtx select2, rtx mask)
+kvx_expand_masked_move (rtx target, rtx select1, rtx select2, rtx pred)
 {
   machine_mode mode = GET_MODE (target);
-  enum rtx_code comp_code = NE;
+  rtx const0_mode_rtx = CONST0_RTX (mode);
+  rtx constm1_mode_rtx = CONSTM1_RTX (mode);
+  machine_mode pred_mode = GET_MODE (pred);
+  bool vector_modes_p = VECTOR_MODE_P (mode) && VECTOR_MODE_P (pred_mode);
+
+  int vector_any_and_zero = 0, vector_any_and_mone = 0;
+  if (vector_modes_p)
+    {
+      vector_any_and_zero = (select2 == const0_mode_rtx)
+			  - (select1 == const0_mode_rtx);
+      vector_any_and_mone = (select2 == constm1_mode_rtx)
+			  - (select1 == constm1_mode_rtx);
+    }
+
+  // Normalize conditional move as `dst = comp ? src : dst;`.
   rtx src = NULL_RTX, dst = NULL_RTX;
-  bool vector_true_false = false;
-
-  if (VECTOR_MODE_P (mode))
-    {
-      rtx const0_mode_rtx = CONST0_RTX (mode);
-      rtx constm1_mode_rtx = CONSTM1_RTX (mode);
-      vector_true_false = (select1 == constm1_mode_rtx)
-			  && (select2 == const0_mode_rtx);
-    }
-
-  if (vector_true_false)
-    {
-      dst = target;
-    }
+  enum rtx_code comp_code = NE;
+  if (vector_any_and_zero || vector_any_and_mone)
+    dst = target;
   else if (!rtx_equal_p (select1, target) && !rtx_equal_p (select2, target))
     {
-      if (reg_overlap_mentioned_p (target, mask))
+      if (reg_overlap_mentioned_p (target, pred))
 	dst = gen_reg_rtx (mode);
       else
 	dst = target;
@@ -3445,9 +3470,9 @@ kvx_expand_masked_move (rtx target, rtx select1, rtx select2, rtx mask)
     }
   else if (rtx_equal_p (select1, target))
     {
+      comp_code = reverse_condition (comp_code);
       src = force_reg (mode, select2);
       dst = target;
-      comp_code = EQ;
     }
   else
     {
@@ -3455,19 +3480,40 @@ kvx_expand_masked_move (rtx target, rtx select1, rtx select2, rtx mask)
       dst = target;
     }
 
-  if (vector_true_false)
+  if (vector_any_and_zero < 0 || vector_any_and_mone > 0)
+    comp_code = reverse_condition (comp_code);
+
+  if (vector_any_and_zero || vector_any_and_mone)
     {
-      emit_insn (gen_rtx_SET (dst, mask));
+      if (vector_any_and_zero > 0 && select1 != constm1_mode_rtx)
+	{
+	  select1 = simplify_gen_subreg (pred_mode, force_reg (mode, select1), mode, 0);
+	  emit_insn (gen_rtx_SET (pred, gen_rtx_AND (pred_mode, pred, select1)));
+	}
+      if (vector_any_and_zero < 0 && select2 != constm1_mode_rtx)
+	{
+      if (vector_any_and_mone > 0 && select1 != const0_mode_rtx)
+	{
+	  select1 = simplify_gen_subreg (pred_mode, force_reg (mode, select1), mode, 0);
+	  emit_insn (gen_rtx_SET (pred, gen_rtx_IOR (pred_mode, pred, select1)));
+	}
+      if (vector_any_and_mone < 0 && select2 != const0_mode_rtx)
+	{
+	  select2 = simplify_gen_subreg (pred_mode, force_reg (mode, select2), mode, 0);
+	  emit_insn (gen_rtx_SET (pred, gen_rtx_IOR (pred_mode, pred, select2)));
+	}
+	  select2 = simplify_gen_subreg (pred_mode, force_reg (mode, select2), mode, 0);
+	  emit_insn (gen_rtx_SET (pred, gen_rtx_AND (pred_mode, pred, select2)));
+	}
+      pred = simplify_gen_subreg (mode, pred, pred_mode, 0);
+      emit_insn (gen_rtx_SET (dst, pred));
     }
-  else if (VECTOR_MODE_P (mode) && GET_MODE_INNER (mode) == QImode)
-    {
-      kvx_emulate_vxqi_simplecond_move (mask, comp_code, src, dst);
-    }
+  else if (KV3_1 && vector_modes_p && GET_MODE_INNER (mode) == QImode)
+    kvx_emulate_vxqi_simplecond_move (pred, comp_code, src, dst);
   else
     {
-      machine_mode mask_mode = GET_MODE (mask);
-      rtx const0_mask_mode_rtx = CONST0_RTX (mask_mode);
-      rtx cmp0 = gen_rtx_fmt_ee (comp_code, VOIDmode, mask, const0_mask_mode_rtx);
+      rtx const0_pred_mode = CONST0_RTX (pred_mode);
+      rtx cmp0 = gen_rtx_fmt_ee (comp_code, VOIDmode, pred, const0_pred_mode);
       emit_insn (gen_rtx_SET (dst, gen_rtx_IF_THEN_ELSE (mode, cmp0, src, dst)));
     }
 
@@ -4747,7 +4793,8 @@ static struct kvx_sched2
 #define KVX_SCHED2_INSN_START 2
 #define KVX_SCHED2_INSN_STOP 4
 #define KVX_SCHED2_INSN_TAIL 8
-#define KVX_SCHED2_INSN_STALL 16
+#define KVX_SCHED2_INSN_JUMP 16
+#define KVX_SCHED2_INSN_STALL 32
 static void
 kvx_sched2_ctor (int max_uid)
 {
@@ -4845,7 +4892,8 @@ kvx_sched_dfa_new_cycle (FILE *dump ATTRIBUTE_UNUSED,
       if (JUMP_P (insn) || CALL_P (insn))
 	{
 	  // JUMP or CALL, stop the current bundle regardless of clock.
-	  kvx_sched2.insn_flags[uid] |= KVX_SCHED2_INSN_STOP;
+	  kvx_sched2.insn_flags[uid]
+	    |= KVX_SCHED2_INSN_STOP | KVX_SCHED2_INSN_JUMP;
 	}
 
       kvx_sched2.insn_cycle[uid] = clock;
@@ -4874,103 +4922,124 @@ kvx_sched_can_speculate_insn (rtx_insn *insn ATTRIBUTE_UNUSED)
   return true;
 }
 
+struct kvx_sched_resources {
+  const char *message;
+  unsigned insn_count;
+  unsigned tiny_count;
+  unsigned thin_count;
+  unsigned lite_count;
+  unsigned full_count;
+  unsigned auxr_count;
+  unsigned lsu_count;
+  unsigned mau_count;
+  unsigned bcu_count;
+  unsigned tca_count;
+};
+
+static void
+kvx_sched_resources_add (struct kvx_sched_resources *resources, rtx_insn *insn)
+{
+  if (NONDEBUG_INSN_P (insn) && INSN_CODE (insn) >= 0)
+    {
+      resources->insn_count++;
+      // Keep the TYPE tests in sync with the order of the types.md file.
+      enum attr_type type = get_attr_type (insn);
+      if (type == TYPE_ALL)
+	{
+	  
+	  resources->tiny_count++, resources->thin_count++;
+	  resources->lite_count++, resources->full_count++;
+	  resources->lsu_count++, resources->mau_count++;
+	  resources->bcu_count++, resources->tca_count++;
+	}
+      else if (type == TYPE_ALU_NOP)
+	;
+      else if (type >= TYPE_ALU_TINY && type < TYPE_LSU)
+	{
+	  if (type >= TYPE_ALU_TINY && type < TYPE_ALU_TINY_X2)
+	    resources->tiny_count++;
+	  else if (type >= TYPE_ALU_TINY_X2 && type < TYPE_ALU_TINY_X4)
+	    resources->tiny_count += 2;
+	  else if (type >= TYPE_ALU_TINY_X4 && type < TYPE_ALU_THIN)
+	    resources->tiny_count += 4;
+	  else if (type >= TYPE_ALU_THIN && type < TYPE_ALU_THIN_X2)
+	    resources->thin_count++;
+	  else if (type >= TYPE_ALU_THIN_X2 && type < TYPE_ALU_LITE)
+	    resources->thin_count += 2;
+	  else if (type >= TYPE_ALU_LITE && type < TYPE_ALU_LITE_X2)
+	    resources->lite_count++;
+	  else if (type >= TYPE_ALU_LITE_X2 && type < TYPE_ALU_FULL)
+	    resources->lite_count += 2;
+	  else if (type >= TYPE_ALU_FULL && type < TYPE_LSU)
+	    resources->full_count++;
+	  else
+	    gcc_unreachable ();
+	}
+      else if (type >= TYPE_LSU && type < TYPE_MAU)
+	{
+	  resources->lsu_count++;
+	  if (type >= TYPE_LSU_AUXR_STORE && type < TYPE_LSU_CRRP_STORE)
+	    resources->auxr_count++;
+	}
+      else if (type >= TYPE_MAU && type < TYPE_BCU)
+	{
+	  resources->mau_count++;
+	  if (type >= TYPE_MAU_AUXR)
+	    resources->auxr_count++;
+	}
+      else if (type >= TYPE_BCU && type < TYPE_TCA)
+	resources->bcu_count++;
+      else if (type >= TYPE_TCA && type <= TYPE_TCA_FLOAT)
+	resources->tca_count++;
+      else
+	gcc_unreachable ();
+    }
+}
+
+static unsigned
+kvx_sched_resources_full_bundles (struct kvx_sched_resources *resources)
+{
+  if (KV3_1)
+    resources->lite_count += resources->thin_count;
+  if (KV3_2)
+    resources->tiny_count += resources->thin_count;
+
+  unsigned issue_rate = kvx_sched_issue_rate ();
+  unsigned result = (resources->insn_count + issue_rate - 1) / issue_rate;
+  if (result < (resources->tiny_count + 3)/4)
+    result = (resources->tiny_count + 3)/4;
+  if (result < (resources->lite_count + 1)/2)
+    result = (resources->lite_count + 1)/2;
+  if (result < resources->full_count)
+    result = resources->full_count;
+  if (result < resources->auxr_count)
+    result = resources->auxr_count;
+  if (result < resources->lsu_count)
+    result = resources->lsu_count;
+  if (result < resources->mau_count)
+    result = resources->mau_count;
+  if (result < resources->bcu_count)
+    result = resources->bcu_count;
+  if (result < resources->tca_count)
+    result = resources->tca_count;
+
+  return result;
+}
+
 static int
 kvx_sched_sms_res_mii (struct ddg *g)
 {
-  int insn_count = 0;
-  int tiny_count = 0;
-  int thin_count = 0;
-  int lite_count = 0;
-  int full_count = 0;
-  int auxr_count = 0;
-  int lsu_count = 0;
-  int mau_count = 0;
-  int bcu_count = 0;
-  int tca_count = 0;
-  int issue_rate = kvx_sched_issue_rate ();
+  struct kvx_sched_resources resources;
+  memset (&resources, 0, sizeof (resources));
 
   for (int i = 0; i < g->num_nodes; i++)
     {
       rtx_insn *insn = g->nodes[i].insn;
-      if (NONDEBUG_INSN_P (insn))
-	{
-	  insn_count++;
-	  // Keep the TYPE tests in sync with the order of the types.md file.
-	  enum attr_type type = get_attr_type (insn);
-	  if (type == TYPE_ALL)
-	    {
-	      insn_count += issue_rate - 1;
-	      lsu_count++, mau_count++;
-	      bcu_count++;
-	    }
-	  else if (type == TYPE_ALU_NOP)
-	    ;
-	  else if (type >= TYPE_ALU_TINY && type < TYPE_LSU)
-	    {
-	      if (type >= TYPE_ALU_TINY && type < TYPE_ALU_TINY_X2)
-		tiny_count++;
-	      else if (type >= TYPE_ALU_TINY_X2 && type < TYPE_ALU_TINY_X4)
-		tiny_count += 2;
-	      else if (type >= TYPE_ALU_TINY_X4 && type < TYPE_ALU_THIN)
-		tiny_count += 4;
-	      else if (type >= TYPE_ALU_THIN && type < TYPE_ALU_THIN_X2)
-		thin_count++;
-	      else if (type >= TYPE_ALU_THIN_X2 && type < TYPE_ALU_LITE)
-		thin_count += 2;
-	      else if (type >= TYPE_ALU_LITE && type < TYPE_ALU_LITE_X2)
-		lite_count++;
-	      else if (type >= TYPE_ALU_LITE_X2 && type < TYPE_ALU_FULL)
-		lite_count += 2;
-	      else if (type >= TYPE_ALU_FULL && type < TYPE_LSU)
-		full_count++;
-	      else
-		gcc_unreachable ();
-	    }
-	  else if (type >= TYPE_LSU && type < TYPE_MAU)
-	    {
-	      lsu_count++;
-	      if (type >= TYPE_LSU_AUXR_STORE && type < TYPE_LSU_CRRP_STORE)
-		auxr_count++;
-	    }
-	  else if (type >= TYPE_MAU && type < TYPE_BCU)
-	    {
-	      mau_count++;
-	      if (type >= TYPE_MAU_AUXR)
-		auxr_count++;
-	    }
-	  else if (type >= TYPE_BCU && type < TYPE_TCA)
-	    bcu_count++;
-	  else if (type >= TYPE_TCA && type <= TYPE_TCA_FLOAT)
-	    tca_count++;
-	  else
-	    gcc_unreachable ();
-	}
+      kvx_sched_resources_add (&resources, insn);
     }
 
-  if (KV3_1)
-    lite_count += thin_count;
-  if (KV3_2)
-    tiny_count += thin_count;
-
-  int res_mii = (insn_count + issue_rate - 1) / issue_rate;
-  if (res_mii < (tiny_count + 3)/4)
-    res_mii = (tiny_count + 3)/4;
-  if (res_mii < (lite_count + 1)/2)
-    res_mii = (lite_count + 1)/2;
-  if (res_mii < full_count)
-    res_mii = full_count;
-  if (res_mii < auxr_count)
-    res_mii = auxr_count;
-  if (res_mii < lsu_count)
-    res_mii = lsu_count;
-  if (res_mii < mau_count)
-    res_mii = mau_count;
-  if (res_mii < bcu_count)
-    res_mii = bcu_count;
-  if (res_mii < tca_count)
-    res_mii = tca_count;
-
-  return res_mii;
+  unsigned full_bundles = kvx_sched_resources_full_bundles (&resources);
+  return full_bundles ? full_bundles : 1;
 }
 
 /* FIXME AUTO: This must be fixed for coolidge */
@@ -5843,6 +5912,11 @@ kvx_asm_final_postscan_insn (FILE *file, rtx_insn *insn,
 			     rtx *opvec ATTRIBUTE_UNUSED,
 			     int noperands ATTRIBUTE_UNUSED)
 {
+  static int prev_bundle;
+  static int jump_bundle;
+  int doloop_end = recog_memoized (insn) == CODE_FOR_doloop_end_si
+		   || recog_memoized (insn) == CODE_FOR_doloop_end_di;
+
   if (kvx_sched2.insn_cycle)
     {
       int uid = INSN_UID (insn);
@@ -5856,30 +5930,52 @@ kvx_asm_final_postscan_insn (FILE *file, rtx_insn *insn,
 	    fprintf (file, "\t;;\n");
 	  return;
 	}
+
+      unsigned flags = kvx_sched2.insn_flags[uid];
+      gcc_assert (!doloop_end || (flags & KVX_SCHED2_INSN_JUMP));
+
       if (KV3_1)
 	kvx_sched2_fix_insn_issue (insn, opvec, noperands);
-      if (kvx_sched2.insn_flags[uid] & KVX_SCHED2_INSN_STOP)
+
+      if (flags & KVX_SCHED2_INSN_HEAD)
+	prev_bundle = jump_bundle = 0;
+
+      int cycle = kvx_sched2.insn_cycle[uid];
+      if (flags & KVX_SCHED2_INSN_STOP)
 	{
 	  if (TARGET_SCHED2_DATES)
 	    {
-	      if (recog_memoized (insn) != CODE_FOR_doloop_end_si
-		  && recog_memoized (insn) != CODE_FOR_doloop_end_di)
+	      if (!doloop_end)
 		{
 		  const char *stalled = "";
 		  if (kvx_sched2.insn_flags[uid] & KVX_SCHED2_INSN_STALL)
 		    stalled = "(stalled)";
-		  int cycle = kvx_sched2.insn_cycle[uid];
 		  fprintf (file, "\t;;\t# (end cycle %d)%s\n", cycle, stalled);
 		}
+	      else if (jump_bundle == prev_bundle)
+		fprintf (file, "\tnop\n\t;;\n");
 	    }
 	  else
-	    fprintf (file, "\t;;\n");
-	  return;
+	    {
+	      if (!doloop_end)
+		fprintf (file, "\t;;\n");
+	      else if (jump_bundle == prev_bundle)
+		fprintf (file, "\tnop\n\t;;\n");
+	    }
 	}
+
+      if (kvx_sched2.insn_flags[uid] & KVX_SCHED2_INSN_START)
+	prev_bundle++;
+      if (kvx_sched2.insn_flags[uid] & KVX_SCHED2_INSN_JUMP)
+	jump_bundle = prev_bundle;
+
+      return;
     }
   if (!kvx_sched2.insn_cycle || !kvx_scheduling)
     {
       fprintf (file, "\t;;\n");
+      if (doloop_end)
+	fprintf (file, "\tnop\n\t;;\n");
       return;
     }
 }
@@ -5998,7 +6094,8 @@ kvx_rtx_costs (rtx x, machine_mode mode, int outer_code,
   int latency = 1;
   bool float_mode_p = FLOAT_MODE_P (mode);
   unsigned mode_size = GET_MODE_SIZE (mode);
-  int lsucount = mode_size ? (mode_size + 31) / 32 : 1;
+  unsigned oi_size = GET_MODE_SIZE (OImode);
+  int lsucount = mode_size ? (mode_size + oi_size - 1) / oi_size : 1;
   int nwords = (mode_size + UNITS_PER_WORD - 1) / UNITS_PER_WORD;
   nwords = nwords >= 1 ? nwords : 1;
 
@@ -6467,7 +6564,8 @@ kvx_memory_move_cost (machine_mode mode, reg_class_t rclass ATTRIBUTE_UNUSED,
   // Assume in-cache load latency is 3 cycles.
   int penalty = in ? (3 - 1) : 0;
   unsigned mode_size = GET_MODE_SIZE (mode);
-  int lsucount = mode_size ? (mode_size + 31) / 32 : 1;
+  unsigned oi_size = GET_MODE_SIZE (OImode);
+  int lsucount = mode_size ? (mode_size + oi_size - 1) / oi_size : 1;
   int cost = kvx_type_lsu_cost (lsucount, penalty, true);
 
   if (DUMP_COSTS)
@@ -6773,13 +6871,6 @@ kvx_hwloop_optimize (hwloop_info loop)
       return false;
     }
 
-  if (loop->jumps_outof)
-    {
-      if (dump_file)
-	fprintf (dump_file, ";; loop %d has early exit\n", loop->loop_no);
-      return false;
-    }
-
   if (!loop->incoming_dest)
     {
       if (dump_file)
@@ -6792,14 +6883,6 @@ kvx_hwloop_optimize (hwloop_info loop)
     {
       if (dump_file)
 	fprintf (dump_file, ";; loop %d is not entered from head\n",
-		 loop->loop_no);
-      return false;
-    }
-
-  if (loop->blocks.length () > 1)
-    {
-      if (dump_file)
-	fprintf (dump_file, ";; loop %d has more than one basic block\n",
 		 loop->loop_no);
       return false;
     }
@@ -6887,6 +6970,107 @@ kvx_hwloop_optimize (hwloop_info loop)
 
 static struct hw_doloop_hooks kvx_doloop_hooks
   = { kvx_hwloop_pattern_reg, kvx_hwloop_optimize, kvx_hwloop_fail };
+
+/* Implements TARGET_LOOP_UNROLL_ADJUST.  */
+static unsigned
+kvx_loop_unroll_adjust (unsigned nunroll, struct loop *loop)
+{
+  class niter_desc *desc = get_simple_loop_desc (loop);
+  bool unroll_stupid_p = !desc->simple_p || desc->assumptions;
+  bool unroll_runtime_p = !unroll_stupid_p && !desc->const_iter;
+  bool unroll_constant_p = !unroll_stupid_p && desc->const_iter;
+
+  const int max_ninsns = 512;
+  const int max_full_bundles = 16;
+  static struct kvx_sched_resources resources;
+  unsigned max_clz = sizeof (unsigned) * CHAR_BIT - 1;
+
+  // Memoize the loop body analysis in LOOP->AUX.
+  if (!loop->aux)
+    {
+      memset (&resources, 0, sizeof (resources));
+
+      basic_block *body = get_loop_body (loop);
+      for (unsigned i = 0; i < loop->num_nodes; i++)
+	{
+	  rtx_insn *insn = 0;
+	  FOR_BB_INSNS (body[i], insn)
+	    {
+	      kvx_sched_resources_add (&resources, insn);
+	      if (resources.insn_count > max_ninsns)
+		resources.message = "Too many instructions in loop.";
+	      if (CALL_P (insn))
+		continue;
+	      resources.message = kvx_invalid_within_doloop (insn);
+	      if (resources.message)
+		break;
+	    }
+	  if (resources.message)
+	    break;
+	}
+      free (body);
+      loop->aux = &resources;
+    } else
+      gcc_assert (loop->aux == &resources);
+
+    if (resources.message)
+      {
+	if (dump_file)
+	  fprintf (dump_file, "kvx_loop_unroll_adjust: %s\n",
+		   resources.message);
+	return 0;
+      }
+
+  // Force UNROLLING as a power-of-two, with the resulting number of
+  // insns not greater than MAX_NINSNS. In case of PRAGMA GCC UNROLL,
+  // the user-supplied unroll factor is passed into LOOP->UNROLL.
+  if (!unroll_constant_p)
+    {
+      if (loop->unroll)
+	nunroll = loop->unroll;
+      unsigned log2_nunroll = (max_clz - __builtin_clz (nunroll | 1));
+      unsigned max_nunroll = max_ninsns >> log2_nunroll;
+      nunroll = 1U << log2_nunroll;
+      if (nunroll > max_nunroll)
+	nunroll = max_nunroll;
+      gcc_assert (nunroll == (nunroll & -nunroll));
+    }
+
+  // Force unrolling of non-constant, non-runtime loop trip count
+  // by setting LOOP->LPT_DECISION.DECISION to LPT_UNROLL_STUPID.
+  // This an abuse of the loop-runroll.c:(decide_unroll_stupid) code
+  // which normally rejects unrolling of loops with branches inside.
+  if (unroll_stupid_p)
+    {
+      if (!loop->unroll)
+	{
+	  unsigned full_bundles = kvx_sched_resources_full_bundles (&resources);
+	  full_bundles = full_bundles ? full_bundles : 1;
+	  nunroll = (max_full_bundles + full_bundles - 1) / full_bundles;
+	}
+      nunroll = 1U << (max_clz - __builtin_clz (nunroll | 1));
+      gcc_assert (nunroll == (nunroll & -nunroll));
+
+      if (nunroll > 1)
+	{
+	  if (dump_file)
+	    fprintf (dump_file, "kvx_loop_unroll_adjust: "
+				"Force LPT_UNROLL_STUPID %d iterations.\n", nunroll);
+
+	  loop->lpt_decision.decision = LPT_UNROLL_STUPID;
+	  loop->lpt_decision.times = nunroll - 1;
+	}
+    }
+
+  if (dump_file)
+    fprintf (dump_file, "kvx_loop_unroll_adjust: "
+			"Return nunroll=%d%s\n.", nunroll,
+			(unroll_constant_p ? " [unroll_constant]" :
+			 	(unroll_runtime_p ? " [unroll_runtime]" :
+				 	(unroll_stupid_p ? " [unroll_stupid]" : ""))));
+
+  return nunroll;
+}
 
 /* Traverse the CFG and split EBBs that may grow too large.  */
 static void
@@ -7146,6 +7330,17 @@ kvx_option_override (void)
 	    gcc_unreachable ();
 	  }
       }
+
+#if 0 // If 1 then gcc/gcc/testsuite/gcc.dg/ipa/iinline-attr.c fails.
+  SET_OPTION_IF_UNSET (&global_options, &global_options_set,
+		       param_simultaneous_prefetches, 8);
+  // Size in bytes of the L1D cache line.
+  SET_OPTION_IF_UNSET (&global_options, &global_options_set,
+		       param_l1_cache_line_size, 64);
+  // Size in KB of the L1D cache.
+  SET_OPTION_IF_UNSET (&global_options, &global_options_set,
+		       param_l1_cache_size, 16);
+#endif
 
   kvx_arch_schedule = ARCH_KV3_1;
   if (KV3_2)
@@ -7740,6 +7935,9 @@ kvx_constant_alignment (const_tree exp, HOST_WIDE_INT align)
 
 #undef TARGET_INVALID_WITHIN_DOLOOP
 #define TARGET_INVALID_WITHIN_DOLOOP kvx_invalid_within_doloop
+
+#undef TARGET_LOOP_UNROLL_ADJUST
+#define TARGET_LOOP_UNROLL_ADJUST kvx_loop_unroll_adjust
 
 #undef TARGET_PRINT_OPERAND
 #define TARGET_PRINT_OPERAND kvx_print_operand

@@ -1169,7 +1169,7 @@
 )
 
 (define_insn_and_split "*cmov<SIDI:mode>.<ALL256:mode>"
-  [(set (match_operand:ALL256 0 "register_operand" "=r")
+  [(set (match_operand:ALL256 0 "register_operand" "=&r")
         (if_then_else:ALL256 (match_operator 2 "zero_comparison_operator"
                                                 [(match_operand:SIDI 3 "register_operand" "r")
                                                  (const_int 0)])
@@ -1207,7 +1207,7 @@
 )
 
 (define_insn_and_split "*cmov<SIDI:mode>.<ALL256:mode>.odd"
-  [(set (match_operand:ALL256 0 "register_operand" "=r")
+  [(set (match_operand:ALL256 0 "register_operand" "=&r")
         (if_then_else:ALL256 (ne (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r")
                                                     (const_int 1) (const_int 0))
                                  (const_int 0))
@@ -1218,13 +1218,13 @@
   "KV3_1 && reload_completed"
   [(set (subreg:<HALF> (match_dup 0) 0)
         (if_then_else:<HALF> (ne (zero_extract:SIDI (match_dup 2)
-                                                (const_int 1) (const_int 0))
+                                                    (const_int 1) (const_int 0))
                                  (const_int 0))
                              (subreg:<HALF> (match_dup 1) 0)
                              (subreg:<HALF> (match_dup 3) 0)))
    (set (subreg:<HALF> (match_dup 0) 16)
         (if_then_else:<HALF> (ne (zero_extract:SIDI (match_dup 2)
-                                                (const_int 1) (const_int 0))
+                                                    (const_int 1) (const_int 0))
                                  (const_int 0))
                              (subreg:<HALF> (match_dup 1) 16)
                              (subreg:<HALF> (match_dup 3) 16)))]
@@ -1249,7 +1249,7 @@
 )
 
 (define_insn_and_split "*cmov<SIDI:mode>.<ALL256:mode>.even"
-  [(set (match_operand:ALL256 0 "register_operand" "=r")
+  [(set (match_operand:ALL256 0 "register_operand" "=&r")
         (if_then_else:ALL256 (eq (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r")
                                                     (const_int 1) (const_int 0))
                                  (const_int 0))
@@ -1260,13 +1260,13 @@
   "KV3_1 && reload_completed"
   [(set (subreg:<HALF> (match_dup 0) 0)
         (if_then_else:<HALF> (eq (zero_extract:SIDI (match_dup 2)
-                                                (const_int 1) (const_int 0))
+                                                    (const_int 1) (const_int 0))
                                  (const_int 0))
                              (subreg:<HALF> (match_dup 1) 0)
                              (subreg:<HALF> (match_dup 3) 0)))
    (set (subreg:<HALF> (match_dup 0) 16)
         (if_then_else:<HALF> (eq (zero_extract:SIDI (match_dup 2)
-                                                (const_int 1) (const_int 0))
+                                                    (const_int 1) (const_int 0))
                                  (const_int 0))
                              (subreg:<HALF> (match_dup 1) 16)
                              (subreg:<HALF> (match_dup 3) 16)))]
@@ -1290,21 +1290,142 @@
    (set_attr "length"        "16")]
 )
 
+(define_insn_and_split "*cmov<SIDI:mode>.<ALL512:mode>"
+  [(set (match_operand:ALL512 0 "register_operand" "=&r")
+        (if_then_else:ALL512 (match_operator 2 "zero_comparison_operator"
+                                                [(match_operand:SIDI 3 "register_operand" "r")
+                                                 (const_int 0)])
+                             (match_operand:ALL512 1 "register_operand" "r")
+                             (match_operand:ALL512 4 "register_operand" "0")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<QUART> (match_dup 0) 0)
+        (if_then_else:<QUART> (match_op_dup 2 [(match_dup 3) (const_int 0)])
+                              (subreg:<QUART> (match_dup 1) 0)
+                              (subreg:<QUART> (match_dup 4) 0)))
+   (set (subreg:<QUART> (match_dup 0) 16)
+        (if_then_else:<QUART> (match_op_dup 2 [(match_dup 3) (const_int 0)])
+                              (subreg:<QUART> (match_dup 1) 16)
+                              (subreg:<QUART> (match_dup 4) 16)))
+   (set (subreg:<QUART> (match_dup 0) 32)
+        (if_then_else:<QUART> (match_op_dup 2 [(match_dup 3) (const_int 0)])
+                              (subreg:<QUART> (match_dup 1) 32)
+                              (subreg:<QUART> (match_dup 4) 32)))
+   (set (subreg:<QUART> (match_dup 0) 48)
+        (if_then_else:<QUART> (match_op_dup 2 [(match_dup 3) (const_int 0)])
+                              (subreg:<QUART> (match_dup 1) 48)
+                              (subreg:<QUART> (match_dup 4) 48)))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
 
-;; MOV*CC
+(define_insn_and_split "*cmov<SIDI:mode>.<ALL512:mode>.odd"
+  [(set (match_operand:ALL512 0 "register_operand" "=&r")
+        (if_then_else:ALL512 (ne (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r")
+                                                    (const_int 1) (const_int 0))
+                                 (const_int 0))
+                             (match_operand:ALL512 1 "register_operand" "r")
+                             (match_operand:ALL512 3 "register_operand" "0")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<QUART> (match_dup 0) 0)
+        (if_then_else:<QUART> (ne (zero_extract:SIDI (match_dup 2)
+                                                     (const_int 1) (const_int 0))
+                                  (const_int 0))
+                              (subreg:<QUART> (match_dup 1) 0)
+                              (subreg:<QUART> (match_dup 3) 0)))
+   (set (subreg:<QUART> (match_dup 0) 16)
+        (if_then_else:<QUART> (ne (zero_extract:SIDI (match_dup 2)
+                                                     (const_int 1) (const_int 0))
+                                  (const_int 0))
+                              (subreg:<QUART> (match_dup 1) 16)
+                              (subreg:<QUART> (match_dup 3) 16)))
+   (set (subreg:<QUART> (match_dup 0) 32)
+        (if_then_else:<QUART> (ne (zero_extract:SIDI (match_dup 2)
+                                                     (const_int 1) (const_int 0))
+                                  (const_int 0))
+                              (subreg:<QUART> (match_dup 1) 32)
+                              (subreg:<QUART> (match_dup 3) 32)))
+   (set (subreg:<QUART> (match_dup 0) 48)
+        (if_then_else:<QUART> (ne (zero_extract:SIDI (match_dup 2)
+                                                     (const_int 1) (const_int 0))
+                                  (const_int 0))
+                              (subreg:<QUART> (match_dup 1) 48)
+                              (subreg:<QUART> (match_dup 3) 48)))]
+  ""
+  [(set_attr "type" "alu_thin_x2")]
+)
+
+(define_insn_and_split "*cmov<SIDI:mode>.<ALL512:mode>.even"
+  [(set (match_operand:ALL512 0 "register_operand" "=&r")
+        (if_then_else:ALL512 (eq (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r")
+                                                    (const_int 1) (const_int 0))
+                                 (const_int 0))
+                             (match_operand:ALL512 1 "register_operand" "r")
+                             (match_operand:ALL512 3 "register_operand" "0")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<QUART> (match_dup 0) 0)
+        (if_then_else:<QUART> (eq (zero_extract:SIDI (match_dup 2)
+                                                     (const_int 1) (const_int 0))
+                                  (const_int 0))
+                              (subreg:<QUART> (match_dup 1) 0)
+                              (subreg:<QUART> (match_dup 3) 0)))
+   (set (subreg:<QUART> (match_dup 0) 16)
+        (if_then_else:<QUART> (eq (zero_extract:SIDI (match_dup 2)
+                                                     (const_int 1) (const_int 0))
+                                  (const_int 0))
+                              (subreg:<QUART> (match_dup 1) 16)
+                              (subreg:<QUART> (match_dup 3) 16)))
+   (set (subreg:<QUART> (match_dup 0) 32)
+        (if_then_else:<QUART> (eq (zero_extract:SIDI (match_dup 2)
+                                                     (const_int 1) (const_int 0))
+                                  (const_int 0))
+                              (subreg:<QUART> (match_dup 1) 32)
+                              (subreg:<QUART> (match_dup 3) 32)))
+   (set (subreg:<QUART> (match_dup 0) 48)
+        (if_then_else:<QUART> (eq (zero_extract:SIDI (match_dup 2)
+                                                     (const_int 1) (const_int 0))
+                                  (const_int 0))
+                              (subreg:<QUART> (match_dup 1) 48)
+                              (subreg:<QUART> (match_dup 3) 48)))]
+  ""
+  [(set_attr "type" "alu_thin_x2")]
+)
+
+
+;; MOV*CC, ADD*CC
 
 (define_expand "mov<mode>cc"
-  [(set (match_operand:ALLIFV 0 "register_operand" "")
-        (if_then_else:ALLIFV (match_operand 1 "comparison_operator" "")
-                             (match_operand:ALLIFV 2 "nonmemory_operand" "")
-                             (match_operand:ALLIFV 3 "nonmemory_operand" "")))]
+  [(match_operand:ALLIFV 0 "register_operand" "")
+   (match_operand 1 "comparison_operator" "")
+   (match_operand:ALLIFV 2 "nonmemory_operand" "")
+   (match_operand:ALLIFV 3 "nonmemory_operand" "")]
   ""
   {
     rtx target = operands[0];
     rtx select1 = operands[2];
     rtx select2 = operands[3];
-    machine_mode mode = GET_MODE (XEXP (operands[1], 0));
-    kvx_expand_conditional_move (target, select1, select2, operands[1], mode);
+    kvx_expand_conditional_move (target, select1, select2, operands[1]);
+    DONE;
+  }
+)
+
+(define_expand "add<mode>cc"
+  [(match_operand:ALLIV 0 "register_operand" "")
+   (match_operand 1 "comparison_operator" "")
+   (match_operand:ALLIV 2 "register_operand" "")
+   (match_operand:ALLIV 3 "register_operand" "")]
+  ""
+  {
+    rtx target = operands[0];
+    rtx select1 = gen_reg_rtx (<MODE>mode);
+    rtx select2 = operands[2];
+    emit_insn (gen_rtx_SET (select1, gen_rtx_PLUS (<MODE>mode, operands[2], operands[3])));
+    kvx_expand_conditional_move (target, select1, select2, operands[1]);
     DONE;
   }
 )
@@ -1617,7 +1738,9 @@
                                                (match_dup 5)])
                               (subreg:<QUART> (match_dup 1) 48)
                               (subreg:<QUART> (match_dup 4) 48)))]
-  ""
+  {
+    operands[5] = CONST0_RTX (<QMASK>mode);
+  }
   [(set_attr "type" "alu_lite_x2")]
 )
 
@@ -1661,7 +1784,9 @@
                                  (match_dup 5))
                            (subreg:<QUART> (match_dup 1) 48)
                            (subreg:<QUART> (match_dup 4) 48)))]
-  ""
+  {
+    operands[5] = CONST0_RTX (<QMASK>mode);
+  }
   [(set_attr "type" "alu_lite_x2")]
 )
 

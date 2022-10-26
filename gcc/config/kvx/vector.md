@@ -339,7 +339,7 @@
     rtx target = operands[0];
     rtx select1 = operands[1];
     rtx select2 = operands[2];
-    kvx_expand_conditional_move (target, select1, select2, operands[3], <SIMDCMP:MODE>mode);
+    kvx_expand_conditional_move (target, select1, select2, operands[3]);
     DONE;
   }
 )
@@ -356,7 +356,7 @@
     rtx target = operands[0];
     rtx select1 = operands[1];
     rtx select2 = operands[2];
-    kvx_expand_conditional_move (target, select1, select2, operands[3], <SIMDCMP:MODE>mode);
+    kvx_expand_conditional_move (target, select1, select2, operands[3]);
     DONE;
   }
 )
