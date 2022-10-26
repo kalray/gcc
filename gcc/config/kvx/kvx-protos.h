@@ -145,8 +145,7 @@ extern enum machine_mode kvx_get_predicate_mode (enum machine_mode mode);
 
 extern void kvx_lower_comparison (rtx pred, rtx comp, enum machine_mode mode);
 
-extern void kvx_expand_conditional_move (rtx target, rtx select1, rtx select2,
-					 rtx cmp, enum machine_mode mode);
+extern void kvx_expand_conditional_move (rtx target, rtx select1, rtx select2, rtx cmp);
 
 extern void kvx_expand_masked_move (rtx target, rtx select1, rtx select2,
 				    rtx mask);
