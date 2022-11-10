@@ -1,5 +1,6 @@
 
 ;; XUNDEF
+;;
 
 (define_insn_and_split "kvx_xundef256"
   [(set (match_operand:X256 0 "register_operand" "=x")
@@ -1363,20 +1364,46 @@
 )
 
 
-;; XFMMA444HW, KVX_XFMMA484HW
+;; XFMMA444HW, XFMMA484HW
 
-(define_insn "kvx_xfmma444hw"
-  [(set (match_operand:X512 0 "register_operand" "=x")
-        (unspec:X512 [(match_operand:X256 1 "register_operand" "x")
+(define_insn "kvx_xfmma242hw01"
+  [(set (match_operand:X256 0 "register_operand" "=x")
+        (unspec:X256 [(match_operand:X256 1 "register_operand" "x")
                       (match_operand:X256 2 "register_operand" "x")
-                      (match_operand:X512 3 "register_operand" "0")
-                      (match_operand 4 "" "")] UNSPEC_XFMMA444HW))]
-  "KV3_2"
-  "xfmma444hw%4 %0 = %1, %2"
-  [(set_attr "type" "tca_float")]
-)
+                      (match_operand:X512 3 "register_operand" "x")] UNSPEC_XFMMA242HW01))]
+  "KV3_1"
+  "fmma242hw0 %0.lo = %3, %1, %2\n\t;;\n\tfmma242hw1 %0.hi = %3, %1, %2"
+  [(set_attr "type" "tca_float")
+   (set_attr "length" "12")])
 
-(define_insn "kvx_xfmma484hw"
+(define_insn "kvx_xfmma242hw23"
+  [(set (match_operand:X256 0 "register_operand" "=x")
+        (unspec:X256 [(match_operand:X256 1 "register_operand" "x")
+                      (match_operand:X256 2 "register_operand" "x")
+                      (match_operand:X512 3 "register_operand" "x")] UNSPEC_XFMMA242HW23))]
+  "KV3_1"
+  "fmma242hw2 %0.lo = %3, %1, %2\n\t;;\n\tfmma242hw3 %0.hi = %3, %1, %2"
+  [(set_attr "type" "tca_float")
+   (set_attr "length" "12")])
+
+(define_insn_and_split "kvx_xfmma444hw"
+  [(set (match_operand:X512 0 "register_operand" "=&x")
+   (unspec:X512 [(match_operand:X256 1 "register_operand" "x")
+                 (match_operand:X256 2 "register_operand" "x")
+                 (match_operand:X512 3 "register_operand" "0")
+                 (match_operand 4 "" "")] UNSPEC_XFMMA444HW))]
+  "KV3_1"
+  "#"
+  "reload_completed"
+  [(set (subreg:X256 (match_dup 0) 0)
+        (unspec:X256 [(match_dup 1) (match_dup 2) (match_dup 3)] UNSPEC_XFMMA242HW01))
+   (set (subreg:X256 (match_dup 0) 32)
+        (unspec:X256 [(match_dup 1) (match_dup 2) (match_dup 3)] UNSPEC_XFMMA242HW23))]
+  {
+     operands[0] = simplify_subreg (V2OImode, operands[0], V2OImode, 0);
+  })
+
+(define_insn "kvx_xfmma484hw_2"
   [(set (match_operand:X512 0 "register_operand" "=x")
         (unspec:X512 [(match_operand:X512 1 "register_operand" "x")
                       (match_operand:X512 2 "register_operand" "x")
@@ -1384,9 +1411,34 @@
                       (match_operand 4 "" "")] UNSPEC_XFMMA484HW))]
   "KV3_2"
   "xfmma484hw%4 %0 = %1, %2"
-  [(set_attr "type" "tca_float")]
-)
+  [(set_attr "type" "tca_float")])
 
+(define_expand "kvx_xfmma484hw"
+  [(match_operand:X512 0 "register_operand")
+   (match_operand:X512 1 "register_operand")
+   (match_operand:X512 2 "register_operand")
+   (match_operand:X512 3 "register_operand")
+   (match_operand 4 "" "")]
+  ""
+  {
+    if (KV3_1)
+      {
+        rtx lo256_1 = gen_reg_rtx (V1OImode);
+        rtx lo256_2 = gen_reg_rtx (V1OImode);
+        rtx hi256_1 = gen_reg_rtx (V1OImode);
+        rtx hi256_2 = gen_reg_rtx (V1OImode);
+        emit_insn (gen_kvx_xlow256 (lo256_1, operands[1]));
+        emit_insn (gen_kvx_xlow256 (lo256_2, operands[2]));
+        emit_insn (gen_kvx_xhigh256 (hi256_1, operands[1]));
+        emit_insn (gen_kvx_xhigh256 (hi256_2, operands[2]));
+        rtx tmp = gen_reg_rtx (V2OImode);
+        emit_insn (gen_kvx_xfmma444hw (tmp, lo256_1, lo256_2, operands[3], operands[4]));
+        emit_insn (gen_kvx_xfmma444hw (operands[0], hi256_1, hi256_2, tmp, operands[4]));
+      }
+    if (KV3_2)
+      emit_insn (gen_kvx_xfmma484hw_2 (operands[0], operands[1], operands[2], operands[3], operands[4])) ;
+    DONE;
+  })
 
 ;; XFNARROW44WH, KVX_XCLAMPWO
 

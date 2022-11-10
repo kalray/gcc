@@ -2208,7 +2208,7 @@ kvx_emit_multiple_spill (rtx mem, rtx reg, int nr, bool is_load)
   if (!is_load)
     {
       RTX_FRAME_RELATED_P (insn) = 1;
-      gcc_assert ((unsigned)XVECLEN (PATTERN (insn), 0) == nr);
+      gcc_assert (XVECLEN (PATTERN (insn), 0) == nr);
 
       for (int i = 0; i < nr; i++)
 	{
@@ -2823,6 +2823,7 @@ kvx_legitimize_tls_reference (rtx x)
     }
 }
 
+__attribute__((unused))
 static bool
 function_symbol_referenced_p (rtx x)
 {
@@ -3836,12 +3837,12 @@ kvx_expand_vec_perm_const_emit_insf (rtx target, rtx source1, rtx source2,
   int origm = -1, origi = -1;
 
   // The move constant is the one with a subset of bits of KVX_SBMM8_IDENTITY.
-  if ((constant1 & KVX_SBMM8_IDENTITY) == constant1)
+  if ((constant1 & ((HOST_WIDE_INT) KVX_SBMM8_IDENTITY)) == constant1)
     {
       origm = orig1, origi = orig2;
       constanti = constant2;
     }
-  else if ((constant2 & KVX_SBMM8_IDENTITY) == constant2)
+  else if ((constant2 & ((HOST_WIDE_INT) KVX_SBMM8_IDENTITY)) == constant2)
     {
       origm = orig2, origi = orig1;
       constanti = constant1;
@@ -3913,7 +3914,7 @@ kvx_expand_vec_perm_const_emit (rtx target, rtx source1, rtx source2)
 	  HOST_WIDE_INT constant = kvx_expand_vec_perm.values[orig][dest].dword;
 	  if (constant)
 	    {
-	      if (constant == KVX_SBMM8_IDENTITY)
+	      if (constant == (HOST_WIDE_INT) KVX_SBMM8_IDENTITY)
 		orig0 = orig;
 	      else if (orig1 < 0)
 		orig1 = orig;
