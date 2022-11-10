@@ -54,7 +54,7 @@
   {
     bool misaligned_0 = kvx_hardreg_misaligned_p (operands[0], 2);
     bool misaligned_1 = kvx_hardreg_misaligned_p (operands[1], 2);
-    if (misaligned_0 && MEM_P (operands[1]) || misaligned_1 && MEM_P (operands[0]))
+    if ((misaligned_0 && MEM_P (operands[1])) || (misaligned_1 && MEM_P (operands[0])))
       {
         rtx temp = gen_reg_rtx (<MODE>mode);
         emit_insn (gen_rtx_SET (temp, operands[1]));
@@ -135,7 +135,7 @@
   {
     bool misaligned_0 = kvx_hardreg_misaligned_p (operands[0], 4);
     bool misaligned_1 = kvx_hardreg_misaligned_p (operands[1], 4);
-    if (misaligned_0 && MEM_P (operands[1]) || misaligned_1 && MEM_P (operands[0]))
+    if ((misaligned_0 && MEM_P (operands[1])) || (misaligned_1 && MEM_P (operands[0])))
       {
         rtx temp = gen_reg_rtx (<MODE>mode);
         emit_insn (gen_rtx_SET (temp, operands[1]));
@@ -308,8 +308,6 @@
   {
     rtx mask = operands[0];
     rtx comp = operands[1];
-    rtx left = operands[2];
-    rtx right = operands[3];
     kvx_lower_comparison (mask, comp, <MODE>mode);
     DONE;
   }
@@ -324,8 +322,6 @@
   {
     rtx mask = operands[0];
     rtx comp = operands[1];
-    rtx left = operands[2];
-    rtx right = operands[3];
     kvx_lower_comparison (mask, comp, <MODE>mode);
     DONE;
   }

@@ -1846,8 +1846,8 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (XMADDIFWO, "xmaddifwo", X256, X256, X256, X256, FLOATINGS); // Extension kv3-2
   ADD_KVX_BUILTIN (XMSBFIFWO, "xmsbfifwo", X256, X256, X256, X256, FLOATINGS); // Extension kv3-2
   ADD_KVX_BUILTIN (XFFMA44HW, "xffma44hw", X512, X256, X256, X512, FLOATINGS); // Extension kv3-2
-  ADD_KVX_BUILTIN (XFMMA444HW, "xfmma444hw", X512, X256, X256, X512, FLOATINGS); // Extension kv3-2
-  ADD_KVX_BUILTIN (XFMMA484HW, "xfmma484hw", X512, X512, X512, X512, FLOATINGS); // Extension kv3-2
+  ADD_KVX_BUILTIN (XFMMA444HW, "xfmma444hw", X512, X256, X256, X512, FLOATINGS); // Extension kv3-1
+  ADD_KVX_BUILTIN (XFMMA484HW, "xfmma484hw", X512, X512, X512, X512, FLOATINGS); // Extension
   ADD_KVX_BUILTIN (XFNARROW44WH, "xfnarrow44wh", X256, X512, FLOATINGS); // Extension kv3-2
   ADD_KVX_BUILTIN (XCLAMPWO, "xclampwo", X256, X256, X256, X256); // Extension kv3-2
   ADD_KVX_BUILTIN (XTRUNC48WB, "xtrunc48wb", X256, X1024); // Extension kv3-2
@@ -2524,6 +2524,7 @@ verify_const_ready_arg (rtx arg, const char *name, const char *where)
   return 0;
 }
 
+__attribute__ ((unused))
 static rtx
 verify_const_int_arg (rtx arg, int bits, const char *name, const char *where)
 {
@@ -2546,9 +2547,8 @@ verify_const_uint_arg (rtx arg, int bits, const char *name, const char *where)
   if (GET_CODE (arg) == CONST_INT && GET_MODE (arg) == VOIDmode)
     {
       unsigned shift = 64 - bits;
-      long long tmp = INTVAL (arg);
-      unsigned long long utmp = tmp;
-      if (tmp == (utmp << shift) >> shift)
+      unsigned long long utmp = INTVAL (arg);
+      if (utmp == (utmp << shift) >> shift)
 	return arg;
     }
   error ("__builtin_kvx_%s expects a %d-bit unsigned immediate in %s argument.",
@@ -2556,6 +2556,7 @@ verify_const_uint_arg (rtx arg, int bits, const char *name, const char *where)
   return 0;
 }
 
+__attribute__ ((unused))
 static rtx
 verify_const_field_arg (rtx arg, int bits, const char *name, const char *where)
 {
@@ -2567,7 +2568,7 @@ verify_const_field_arg (rtx arg, int bits, const char *name, const char *where)
       unsigned long long utmp = tmp;
       if (tmp == (stmp << shift) >> shift)
 	return arg;
-      if (tmp == (utmp << shift) >> shift)
+      if (utmp == (utmp << shift) >> shift)
 	return arg;
     }
   error ("__builtin_kvx_%s expects a %d-bit signed or unsigned immediate in %s "
@@ -2588,6 +2589,7 @@ verify_sfr_regno (int regno, const char *name, const char *where)
   return gcc_regno;
 }
 
+#undef KV3_N_ONLY
 #define KV3_N_ONLY 0
 
 #define KVX_EXPAND_BUILTIN_0_VOID(name, name2)                                 \
@@ -3312,8 +3314,10 @@ KVX_EXPAND_BUILTIN_3_STANDARD (xcat512, kvx_xcat512, X512mode, X256mode)
 KVX_EXPAND_BUILTIN_3_STANDARD (xcat1024, kvx_xcat1024, X1024mode, X512mode)
 KVX_EXPAND_BUILTIN_3_STANDARD (xcat2048, kvx_xcat2048, X2048mode, X1024mode)
 KVX_EXPAND_BUILTIN_3_STANDARD (xcat4096, kvx_xcat4096, X4096mode, X2048mode)
-#define KV3_N_ONLY ((!KV3_2) * 2)
+#undef KV3_N_ONLY
+#define KV3_N_ONLY (!KV3_2 * 2)
 KVX_EXPAND_BUILTIN_3_STANDARD (xcat8192, kvx_xcat8192, X8192mode, X4096mode)
+#undef KV3_N_ONLY
 #define KV3_N_ONLY 0
 
 KVX_EXPAND_BUILTIN_2_STANDARD (low64, kvx_low64, V64mode, V128mode)
@@ -3698,7 +3702,7 @@ KVX_EXPAND_BUILTIN_3_CACHELEVEL (dpurgesw, kvx_dpurgesw, DImode)
 KVX_EXPAND_BUILTIN_3_CACHELEVEL (dflushsw, kvx_dflushsw, DImode)
 
 static rtx
-kvx_expand_builtin_fence (rtx target, tree args)
+kvx_expand_builtin_fence (rtx ARG_UNUSED (target), tree args)
 {
   int nargs = call_expr_nargs (args);
   rtx arg1 = nargs >= 1?
@@ -4240,8 +4244,6 @@ KVX_EXPAND_BUILTIN_4_EXTENDMUL (xmadd44bw1, kvx_xmadd44bw1, X512mode, X256mode)
 KVX_EXPAND_BUILTIN_4_FLOATINGS (xmaddifwo, kvx_xmaddifwo, X256mode, X256mode)
 KVX_EXPAND_BUILTIN_4_FLOATINGS (xmsbfifwo, kvx_xmsbfifwo, X256mode, X256mode)
 KVX_EXPAND_BUILTIN_4_FLOATINGS (xffma44hw, kvx_xffma44hw, X512mode, X256mode)
-KVX_EXPAND_BUILTIN_4_FLOATINGS (xfmma444hw, kvx_xfmma444hw, X512mode, X256mode)
-KVX_EXPAND_BUILTIN_4_FLOATINGS (xfmma484hw, kvx_xfmma484hw, X512mode, X512mode)
 KVX_EXPAND_BUILTIN_2_FLOATINGS (xfnarrow44wh, kvx_xfnarrow44wh, X256mode, X512mode)
 KVX_EXPAND_BUILTIN_4_STANDARD (xclampwo, kvx_xclampwo, X256mode, X256mode)
 KVX_EXPAND_BUILTIN_2_STANDARD (xtrunc48wb, kvx_xtrunc48wb, X256mode, X1024mode)
@@ -4250,8 +4252,14 @@ KVX_EXPAND_BUILTIN_2_STANDARD (xzx48bw, kvx_xzx48bw, X1024mode, X256mode)
 KVX_EXPAND_BUILTIN_XSENDO (xsendo, kvx_xsendo, X256mode)
 KVX_EXPAND_BUILTIN_XRECVO (xrecvo, kvx_xrecvo, X256mode)
 KVX_EXPAND_BUILTIN_2_CHANNELS (xsendrecvo, kvx_xsendrecvo, X256mode, X256mode)
+
+#undef KV3_N_ONLY
+#define KV3_N_ONLY (!KV3_1 * 1)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (xfmma444hw, kvx_xfmma444hw, X512mode, X256mode)
+#undef KV3_N_ONLY
 #define KV3_N_ONLY 0
 KVX_EXPAND_BUILTIN_2_STANDARD (xmt44d, kvx_xmt44d, X1024mode, X1024mode)
+KVX_EXPAND_BUILTIN_4_FLOATINGS (xfmma484hw, kvx_xfmma484hw, X512mode, X512mode)
 
 static rtx
 kvx_expand_builtin_xswap256 (rtx target, tree args)
