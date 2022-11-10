@@ -1073,7 +1073,7 @@
    (match_operand:WIDENI 1 "register_operand")]
   ""
   {
-    unsigned mode_size = GET_MODE_SIZE (<MODE>mode);
+    int mode_size = GET_MODE_SIZE (<MODE>mode);
     for (int i = 0; i * UNITS_PER_WORD < mode_size; i++)
       {
         rtx op1_i = simplify_gen_subreg (<CHUNK>mode, operands[1], <MODE>mode, i * 8);
@@ -1091,12 +1091,12 @@
   ""
   {
     operands[2] = gen_reg_rtx (DImode);
-    rtx valuev8qi_l = GEN_INT (0x0008000400020001);
-    rtx valuev4hi_l = GEN_INT (0x0000080400000201);
+    rtx valuev8qi_l ATTRIBUTE_UNUSED = GEN_INT (0x0008000400020001);
+    rtx valuev4hi_l ATTRIBUTE_UNUSED = GEN_INT (0x0000080400000201);
     emit_insn (gen_rtx_SET (operands[2], value<mode>_l));
     operands[3] = gen_reg_rtx (DImode);
-    rtx valuev8qi_m = GEN_INT (0x0080004000200010);
-    rtx valuev4hi_m = GEN_INT (0x0000804000002010);
+    rtx valuev8qi_m ATTRIBUTE_UNUSED = GEN_INT (0x0080004000200010);
+    rtx valuev4hi_m ATTRIBUTE_UNUSED = GEN_INT (0x0000804000002010);
     emit_insn (gen_rtx_SET (operands[3], value<mode>_m));
   }
 )
@@ -1126,8 +1126,8 @@
    (match_operand:WIDENI 1 "register_operand")]
   ""
   {
-    unsigned mode_size = GET_MODE_SIZE (<MODE>mode);
-    for (int i = 0; i * UNITS_PER_WORD < mode_size; i++)
+    int mode_size = GET_MODE_SIZE (<MODE>mode);
+    for (int i = 0; i * UNITS_PER_WORD <  mode_size; i++)
       {
         rtx op1_i = simplify_gen_subreg (<CHUNK>mode, operands[1], <MODE>mode, i * 8);
         rtx op0_i = simplify_gen_subreg (<WCHUNK>mode, operands[0], <WIDE>mode, i * 16);
@@ -1160,7 +1160,7 @@
    (match_operand:WIDENI 1 "register_operand")]
   ""
   {
-    unsigned mode_size = GET_MODE_SIZE (<MODE>mode);
+    int mode_size = GET_MODE_SIZE (<MODE>mode);
     for (int i = 0; i * UNITS_PER_WORD < mode_size; i++)
       {
         rtx op1_i = simplify_gen_subreg (<CHUNK>mode, operands[1], <MODE>mode, i * 8);
@@ -1178,12 +1178,12 @@
   ""
   {
     operands[2] = gen_reg_rtx (DImode);
-    rtx valuev8qi_l = GEN_INT (0x0800040002000100);
-    rtx valuev4hi_l = GEN_INT (0x0804000002010000);
+    rtx valuev8qi_l ATTRIBUTE_UNUSED = GEN_INT (0x0800040002000100);
+    rtx valuev4hi_l ATTRIBUTE_UNUSED = GEN_INT (0x0804000002010000);
     emit_insn (gen_rtx_SET (operands[2], value<mode>_l));
     operands[3] = gen_reg_rtx (DImode);
-    rtx valuev8qi_m = GEN_INT (0x8000400020001000);
-    rtx valuev4hi_m = GEN_INT (0x8040000020100000);
+    rtx valuev8qi_m ATTRIBUTE_UNUSED = GEN_INT (0x8000400020001000);
+    rtx valuev4hi_m ATTRIBUTE_UNUSED = GEN_INT (0x8040000020100000);
     emit_insn (gen_rtx_SET (operands[3], value<mode>_m));
   }
 )
@@ -1255,7 +1255,7 @@
    (match_operand:<WIDE> 1 "register_operand")]
   ""
   {
-    unsigned mode_size = GET_MODE_SIZE (<MODE>mode);
+    int mode_size = GET_MODE_SIZE (<MODE>mode);
     for (int i = 0; i * UNITS_PER_WORD < mode_size; i++)
       {
         rtx op1_i = simplify_gen_subreg (<WCHUNK>mode, operands[1], <WIDE>mode, i * 16);
@@ -1276,12 +1276,12 @@
   ""
   {
     operands[2] = gen_reg_rtx (DImode);
-    rtx valuev8qi_l = GEN_INT (0x0000000040100401);
-    rtx valuev4hi_l = GEN_INT (0x0000000020100201);
+    rtx valuev8qi_l ATTRIBUTE_UNUSED = GEN_INT (0x0000000040100401);
+    rtx valuev4hi_l ATTRIBUTE_UNUSED = GEN_INT (0x0000000020100201);
     emit_insn (gen_rtx_SET (operands[2], value<mode>_l));
     operands[3] = gen_reg_rtx (DImode);
-    rtx valuev8qi_m = GEN_INT (0x4010040100000000);
-    rtx valuev4hi_m = GEN_INT (0x2010020100000000);
+    rtx valuev8qi_m ATTRIBUTE_UNUSED = GEN_INT (0x4010040100000000);
+    rtx valuev4hi_m ATTRIBUTE_UNUSED = GEN_INT (0x2010020100000000);
     emit_insn (gen_rtx_SET (operands[3], value<mode>_m));
     operands[4] = gen_rtx_SCRATCH (<WIDE>mode);
   }
@@ -1344,7 +1344,7 @@
    (match_operand:<WIDE> 1 "register_operand")]
   ""
   {
-    unsigned mode_size = GET_MODE_SIZE (<MODE>mode);
+    int mode_size = GET_MODE_SIZE (<MODE>mode);
     for (int i = 0; i * UNITS_PER_WORD < mode_size; i++)
       {
         rtx op1_i = simplify_gen_subreg (<WCHUNK>mode, operands[1], <WIDE>mode, i * 16);
@@ -1365,12 +1365,12 @@
   ""
   {
     operands[2] = gen_reg_rtx (DImode);
-    rtx valuev8qi_l = GEN_INT (0x0000000080200802);
-    rtx valuev4hi_l = GEN_INT (0x0000000080400804);
+    rtx valuev8qi_l ATTRIBUTE_UNUSED = GEN_INT (0x0000000080200802);
+    rtx valuev4hi_l ATTRIBUTE_UNUSED = GEN_INT (0x0000000080400804);
     emit_insn (gen_rtx_SET (operands[2], value<mode>_l));
     operands[3] = gen_reg_rtx (DImode);
-    rtx valuev8qi_m = GEN_INT (0x8020080200000000);
-    rtx valuev4hi_m = GEN_INT (0x8040080400000000);
+    rtx valuev8qi_m ATTRIBUTE_UNUSED = GEN_INT (0x8020080200000000);
+    rtx valuev4hi_m ATTRIBUTE_UNUSED = GEN_INT (0x8040080400000000);
     emit_insn (gen_rtx_SET (operands[3], value<mode>_m));
     operands[4] = gen_rtx_SCRATCH (<WIDE>mode);
   }
@@ -1439,7 +1439,7 @@
    (match_operand:<WIDE> 1 "register_operand")]
   ""
   {
-    unsigned mode_size = GET_MODE_SIZE (<MODE>mode);
+    int mode_size = GET_MODE_SIZE (<MODE>mode);
     for (int i = 0; i * UNITS_PER_WORD < mode_size; i++)
       {
         rtx op1_i = simplify_gen_subreg (<WCHUNK>mode, operands[1], <WIDE>mode, i * 16);
@@ -1508,7 +1508,7 @@
    (match_operand:<WIDE> 1 "register_operand")]
   ""
   {
-    unsigned mode_size = GET_MODE_SIZE (<MODE>mode);
+    int mode_size = GET_MODE_SIZE (<MODE>mode);
     for (int i = 0; i * UNITS_PER_WORD < mode_size; i++)
       {
         rtx op1_i = simplify_gen_subreg (<WCHUNK>mode, operands[1], <WIDE>mode, i * 16);
@@ -1527,10 +1527,10 @@
     rtx zero = gen_reg_rtx (<HWIDE>mode);
     rtx lower = gen_reg_rtx (<WIDE>mode);
     rtx upper = gen_reg_rtx (<WIDE>mode);
-    rtx maxvalv4hi = gen_rtx_CONST_VECTOR (V4HImode,
+    rtx maxvalv4hi ATTRIBUTE_UNUSED = gen_rtx_CONST_VECTOR (V4HImode,
                                            gen_rtvec (4, GEN_INT (0xFF), GEN_INT (0xFF),
                                                          GEN_INT (0xFF), GEN_INT (0xFF)));
-    rtx maxvalv2si = gen_rtx_CONST_VECTOR (V2SImode,
+    rtx maxvalv2si ATTRIBUTE_UNUSED = gen_rtx_CONST_VECTOR (V2SImode,
                                            gen_rtvec (2, GEN_INT (0xFFFF), GEN_INT (0xFFFF)));
     rtx zero_chunk = gen_rtx_VEC_DUPLICATE (<WIDE>mode, zero);
     rtx maxval_chunk = gen_rtx_VEC_DUPLICATE (<WIDE>mode, maxval<hwide>);
@@ -1798,12 +1798,12 @@
   ""
   {
     rtx op1 = simplify_gen_subreg (DImode, operands[1], <MODE>mode, 0);
-    rtx bias_v8qi = GEN_INT (-0x0101010101010101ULL);
-    rtx bias_v4hi = GEN_INT (-0x0001000100010001ULL);
-    rtx bias_v2si = GEN_INT (-0x0000000100000001ULL);
-    rtx mask_v8qi = GEN_INT (0x8080808080808080ULL);
-    rtx mask_v4hi = GEN_INT (0x8000800080008000ULL);
-    rtx mask_v2si = GEN_INT (0x8000000080000000ULL);
+    rtx bias_v8qi ATTRIBUTE_UNUSED = GEN_INT (-0x0101010101010101ULL);
+    rtx bias_v4hi ATTRIBUTE_UNUSED = GEN_INT (-0x0001000100010001ULL);
+    rtx bias_v2si ATTRIBUTE_UNUSED = GEN_INT (-0x0000000100000001ULL);
+    rtx mask_v8qi ATTRIBUTE_UNUSED = GEN_INT (0x8080808080808080ULL);
+    rtx mask_v4hi ATTRIBUTE_UNUSED = GEN_INT (0x8000800080008000ULL);
+    rtx mask_v2si ATTRIBUTE_UNUSED = GEN_INT (0x8000000080000000ULL);
     rtx temp0 = gen_reg_rtx (DImode);
     rtx temp1 = gen_reg_rtx (DImode);
     rtx temp2 = gen_reg_rtx (DImode);
@@ -2011,10 +2011,10 @@
   {
     if (KV3_1)
       {
-        unsigned mode_size = GET_MODE_SIZE (<MODE>mode);
+        int mode_size = GET_MODE_SIZE (<MODE>mode);
         const char *modifier = XSTR (operands[4], 0);
         bool oddeven = !strcmp(modifier, ".odd") || !strcmp(modifier, ".even");
-        for (unsigned offset = 0; offset < mode_size; offset += UNITS_PER_WORD)
+        for (int offset = 0; offset < mode_size; offset += UNITS_PER_WORD)
           {
             rtx op3 = simplify_gen_subreg (V4HImode, operands[3], <MODE>mode, offset);
             rtx op2 = simplify_gen_subreg (V4HImode, operands[2], <MODE>mode, offset);
