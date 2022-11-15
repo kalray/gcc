@@ -1687,12 +1687,11 @@ build_v2_objc_method_fixup_call (int super_flag, tree method_prototype,
 #ifdef OBJCPLUS
       ret_val = build_conditional_expr (input_location,
 					ifexp, ret_val, ftree,
-					tf_warning_or_error);
+					tf_warning_or_error, false);
 #else
       ret_val = build_conditional_expr (input_location,
 					ifexp, 0,
-					ret_val, NULL_TREE, input_location,
-					ftree, NULL_TREE, input_location);
+					ret_val, NULL_TREE, input_location, false);
       ret_val = fold_convert (ret_type, ret_val);
 #endif
     }
@@ -1798,11 +1797,10 @@ build_v2_build_objc_method_call (int super, tree method_prototype,
 
 #ifdef OBJCPLUS
       ret_val = build_conditional_expr (loc, ifexp, ret_val, ftree,
-					tf_warning_or_error);
+					tf_warning_or_error, false);
 #else
       ret_val = build_conditional_expr (loc, ifexp, 1,
-					ret_val, NULL_TREE, loc,
-					ftree, NULL_TREE, loc);
+					ftree, NULL_TREE, loc, false);
       ret_val = fold_convert (ret_type, ret_val);
 #endif
     }
