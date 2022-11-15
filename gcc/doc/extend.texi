@@ -11778,7 +11778,7 @@ c = a >  b;     /* The result would be @{0, 0,-1, 0@}  */
 c = a == b;     /* The result would be @{0,-1, 0,-1@}  */
 @end smallexample
 
-In C++, the ternary operator @code{?:} is available. @code{a?b:c}, where
+The ternary operator @code{?:} is available. @code{a?b:c}, where
 @code{b} and @code{c} are vectors of the same type and @code{a} is an
 integer vector with the same number of elements of the same size as @code{b}
 and @code{c}, computes all three arguments and creates a vector
@@ -11791,7 +11791,7 @@ vector. If both @code{b} and @code{c} are scalars and the type of
 @code{b} and @code{c} are converted to a vector type whose elements have
 this type and with the same number of elements as @code{a}.
 
-In C++, the logic operators @code{!, &&, ||} are available for vectors.
+The logic operators @code{!, &&, ||} are available for vectors.
 @code{!v} is equivalent to @code{v == 0}, @code{a && b} is equivalent to
 @code{a!=0 & b!=0} and @code{a || b} is equivalent to @code{a!=0 | b!=0}.
 For mixed operations between a scalar @code{s} and a vector @code{v},
