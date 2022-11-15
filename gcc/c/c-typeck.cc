@@ -4562,11 +4562,18 @@ build_unary_op (location_t location, enum tree_code code, tree xarg,
     case TRUTH_NOT_EXPR:
       if (typecode != INTEGER_TYPE && typecode != FIXED_POINT_TYPE
 	  && typecode != REAL_TYPE && typecode != POINTER_TYPE
-	  && typecode != COMPLEX_TYPE)
+	  && typecode != COMPLEX_TYPE && typecode != VECTOR_TYPE)
 	{
 	  error_at (location,
 		    "wrong type argument to unary exclamation mark");
 	  return error_mark_node;
+	}
+      if (gnu_vector_type_p (TREE_TYPE (arg)))
+	{
+	  pedwarn (location, OPT_Wpedantic,
+		   "wrong type argument to unary exclamation mark");
+	  return build_binary_op (location, EQ_EXPR, arg,
+				  build_zero_cst (TREE_TYPE (arg)), false);
 	}
       if (int_operands)
 	{
@@ -5189,7 +5196,8 @@ type_or_builtin_type (tree expr, tree *bltin = NULL)
 tree
 build_conditional_expr (location_t colon_loc, tree ifexp, bool ifexp_bcp,
 			tree op1, tree op1_original_type, location_t op1_loc,
-			tree op2, tree op2_original_type, location_t op2_loc)
+			tree op2, tree op2_original_type, location_t op2_loc,
+			bool no_default_promotion_p)
 {
   tree type1;
   tree type2;
@@ -5214,10 +5222,16 @@ build_conditional_expr (location_t colon_loc, tree ifexp, bool ifexp_bcp,
 
   /* Promote both alternatives.  */
 
-  if (TREE_CODE (TREE_TYPE (op1)) != VOID_TYPE)
-    op1 = default_conversion (op1);
-  if (TREE_CODE (TREE_TYPE (op2)) != VOID_TYPE)
-    op2 = default_conversion (op2);
+  if (no_default_promotion_p
+      && TREE_CODE (TREE_TYPE (op1)) == TREE_CODE (TREE_TYPE (op2)))
+    ;
+  else
+    {
+      if (TREE_CODE (TREE_TYPE (op1)) != VOID_TYPE)
+	op1 = default_conversion (op1);
+      if (TREE_CODE (TREE_TYPE (op2)) != VOID_TYPE)
+	op2 = default_conversion (op2);
+    }
 
   if (TREE_CODE (ifexp) == ERROR_MARK
       || TREE_CODE (TREE_TYPE (op1)) == ERROR_MARK
@@ -5503,6 +5517,129 @@ build_conditional_expr (location_t colon_loc, tree ifexp, bool ifexp_bcp,
       result_type = type2;
     }
 
+  if (gnu_vector_type_p (TREE_TYPE (ifexp))
+      && VECTOR_INTEGER_TYPE_P (TREE_TYPE (ifexp)))
+    {
+      tree ifexp_type = TREE_TYPE (ifexp);
+
+      /* If ifexp is another cond_expr choosing between -1 and 0,
+         then we can use its comparison.  It may help to avoid
+         additional comparison, produce more accurate diagnostics
+         and enables folding.  */
+      if (TREE_CODE (ifexp) == VEC_COND_EXPR
+	  && integer_minus_onep (TREE_OPERAND (ifexp, 1))
+	  && integer_zerop (TREE_OPERAND (ifexp, 2)))
+	ifexp = TREE_OPERAND (ifexp, 0);
+
+      tree op1_type = TREE_TYPE (op1);
+      tree op2_type = TREE_TYPE (op2);
+
+      if (!VECTOR_TYPE_P (op1_type) && !VECTOR_TYPE_P (op2_type))
+	{
+	  /* Rely on the error messages of the scalar version.  */
+	  tree scal =
+	    build_conditional_expr (colon_loc, integer_one_node, ifexp_bcp,
+				    op1, op1_original_type, op1_loc,
+				    op2, op2_original_type, op2_loc, true);
+	  if (scal == error_mark_node)
+	    return error_mark_node;
+	  tree stype = TREE_TYPE (scal);
+	  tree ctype = TREE_TYPE (ifexp_type);
+	  if (TYPE_SIZE (stype) != TYPE_SIZE (ctype)
+	      || (!INTEGRAL_TYPE_P (stype) && !SCALAR_FLOAT_TYPE_P (stype)))
+	    {
+	      error_at (colon_loc,
+			"inferred scalar type %qT is not an integer or "
+			"floating-point type of the same size as %qT", stype,
+			COMPARISON_CLASS_P (ifexp)
+			? TREE_TYPE (TREE_TYPE (TREE_OPERAND (ifexp, 0)))
+			: ctype);
+	      return error_mark_node;
+	    }
+
+	  tree vtype = build_opaque_vector_type (stype,
+						 TYPE_VECTOR_SUBPARTS
+						 (ifexp_type));
+	  /* The warnings (like Wsign-conversion) have already been
+	     given by the scalar build_conditional_expr. We still check
+	     unsafe_conversion_p to forbid truncating long long -> float.  */
+	  if (unsafe_conversion_p (stype, op1, NULL_TREE, false))
+	    {
+	      error_at (colon_loc, "conversion of scalar %qT to vector %qT "
+			"involves truncation", op1_type, vtype);
+	      return error_mark_node;
+	    }
+	  if (unsafe_conversion_p (stype, op2, NULL_TREE, false))
+	    {
+	      error_at (colon_loc, "conversion of scalar %qT to vector %qT "
+			"involves truncation", op2_type, vtype);
+	      return error_mark_node;
+	    }
+
+	  op1 = convert (stype, op1);
+	  op1 = save_expr (op1);
+	  op1 = build_vector_from_val (vtype, op1);
+	  op1_type = vtype;
+	  op2 = convert (stype, op2);
+	  op2 = save_expr (op2);
+	  op2 = build_vector_from_val (vtype, op2);
+	  op2_type = vtype;
+	}
+
+      if (gnu_vector_type_p (op1_type) ^ gnu_vector_type_p (op2_type))
+	{
+	  enum stv_conv convert_flag =
+	    scalar_to_vector (colon_loc, VEC_COND_EXPR, op1, op2,
+			      true);
+
+	  switch (convert_flag)
+	    {
+	    case stv_error:
+	      return error_mark_node;
+	    case stv_firstarg:
+	      {
+		op1 = save_expr (op1);
+		op1 = convert (TREE_TYPE (op2_type), op1);
+		op1 = build_vector_from_val (op2_type, op1);
+		op1_type = TREE_TYPE (op1);
+		break;
+	      }
+	    case stv_secondarg:
+	      {
+		op2 = save_expr (op2);
+		op2 = convert (TREE_TYPE (op1_type), op2);
+		op2 = build_vector_from_val (op1_type, op2);
+		op2_type = TREE_TYPE (op2);
+		break;
+	      }
+	    default:
+	      break;
+	    }
+	}
+
+      if (!gnu_vector_type_p (op1_type)
+	  || !gnu_vector_type_p (op2_type)
+	  || !comptypes (op1_type, op2_type)
+	  || maybe_ne (TYPE_VECTOR_SUBPARTS (ifexp_type),
+		       TYPE_VECTOR_SUBPARTS (op1_type))
+	  || TYPE_SIZE (ifexp_type) != TYPE_SIZE (op1_type))
+	{
+	  error_at (colon_loc,
+		    "incompatible vector types in conditional expression: "
+		    "%qT, %qT and %qT", TREE_TYPE (ifexp),
+		    TREE_TYPE (orig_op1), TREE_TYPE (orig_op2));
+	  return error_mark_node;
+	}
+
+      if (!COMPARISON_CLASS_P (ifexp))
+	{
+	  tree cmp_type = truth_type_for (ifexp_type);
+	  ifexp = build2 (NE_EXPR, cmp_type, ifexp,
+			  build_zero_cst (ifexp_type));
+	}
+      return build3_loc (colon_loc, VEC_COND_EXPR, op1_type, ifexp, op1, op2);
+    }
+
   if (!result_type)
     {
       if (flag_cond_mismatch)
@@ -5546,17 +5683,6 @@ build_conditional_expr (location_t colon_loc, tree ifexp, bool ifexp_bcp,
 		   || (ifexp == truthvalue_false_node
 		       && TREE_CODE (orig_op2) == INTEGER_CST
 		       && !TREE_OVERFLOW (orig_op2)));
-    }
-
-  /* Need to convert condition operand into a vector mask.  */
-  if (VECTOR_TYPE_P (TREE_TYPE (ifexp)))
-    {
-      tree vectype = TREE_TYPE (ifexp);
-      tree elem_type = TREE_TYPE (vectype);
-      tree zero = build_int_cst (elem_type, 0);
-      tree zero_vec = build_vector_from_val (vectype, zero);
-      tree cmp_type = truth_type_for (vectype);
-      ifexp = build2 (NE_EXPR, cmp_type, ifexp, zero_vec);
     }
 
   if (int_const || (ifexp_bcp && TREE_CODE (ifexp) == INTEGER_CST))
@@ -12132,6 +12258,60 @@ build_binary_op (location_t location, enum tree_code code,
 		       && (op0 == truthvalue_true_node
 			   || !TREE_OVERFLOW (orig_op1)));
 	}
+      if (!VECTOR_TYPE_P (type0) && gnu_vector_type_p (type1))
+	{
+	  if (!COMPARISON_CLASS_P (op1))
+	    op1 = build_binary_op (EXPR_LOCATION (op1), NE_EXPR, op1,
+				   build_zero_cst (type1), false);
+	  if (code == TRUTH_ANDIF_EXPR)
+	    {
+	      tree z = build_zero_cst (TREE_TYPE (op1));
+	      return build_conditional_expr (location, op0, 0,
+					     op1, NULL_TREE,
+					     EXPR_LOCATION (op1), z,
+					     NULL_TREE, EXPR_LOCATION (z),
+					     false);
+	    }
+	  else if (code == TRUTH_ORIF_EXPR)
+	    {
+	      tree m1 = build_all_ones_cst (TREE_TYPE (op1));
+	      return build_conditional_expr (location, op0, 0,
+					     m1, NULL_TREE,
+					     EXPR_LOCATION (m1), op1,
+					     NULL_TREE, EXPR_LOCATION (op1),
+					     false);
+	    }
+	  else
+	    gcc_unreachable ();
+	}
+      if (gnu_vector_type_p (type0)
+	  && (!VECTOR_TYPE_P (type1) || gnu_vector_type_p (type1)))
+	{
+	  if (!COMPARISON_CLASS_P (op0))
+	    op0 = build_binary_op (EXPR_LOCATION (op0), NE_EXPR, op0,
+				   build_zero_cst (type0), false);
+	  if (!VECTOR_TYPE_P (type1))
+	    {
+	      tree m1 = build_all_ones_cst (TREE_TYPE (op0));
+	      tree z = build_zero_cst (TREE_TYPE (op0));
+	      op1 = build_conditional_expr (location, op1, 0,
+					    m1, NULL_TREE,
+					    EXPR_LOCATION (m1), z,
+					    NULL_TREE, EXPR_LOCATION (z),
+					    false);
+	    }
+	  else if (!COMPARISON_CLASS_P (op1))
+	    op1 = build_binary_op (EXPR_LOCATION (op1), NE_EXPR, op1,
+				   build_zero_cst (type1), false);
+	  if (code == TRUTH_ANDIF_EXPR)
+	    code = BIT_AND_EXPR;
+	  else if (code == TRUTH_ORIF_EXPR)
+	    code = BIT_IOR_EXPR;
+	  else
+	    gcc_unreachable ();
+
+	  return build_binary_op (location, code, op0, op1, false);
+	}
       break;
 
       /* Shift operations: result has same type as first operand;
@@ -12934,8 +13114,11 @@ c_objc_common_truthvalue_conversion (location_t location, tree expr)
       gcc_unreachable ();
 
     case VECTOR_TYPE:
-      error_at (location, "used vector type where scalar is required");
-      return error_mark_node;
+      pedwarn (location, OPT_Wpedantic,
+	       "used vector type where scalar is required");
+      if (!VECTOR_INTEGER_TYPE_P (TREE_TYPE (expr)))
+	error_at (location,
+		  "used non-integral vector type where an integral type is required.");
 
     default:
       break;
@@ -12951,8 +13134,6 @@ c_objc_common_truthvalue_conversion (location_t location, tree expr)
       expr = note_integer_operands (expr);
     }
   else
-    /* ??? Should we also give an error for vectors rather than leaving
-       those to give errors later?  */
     expr = c_common_truthvalue_conversion (location, expr);
 
   if (TREE_CODE (expr) == INTEGER_CST && int_operands && !int_const)
