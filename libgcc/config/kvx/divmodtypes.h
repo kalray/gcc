@@ -147,9 +147,9 @@ int8x32_t __modv32qi3 (int8x32_t a, int8x32_t b);
 
 //#define TEST_V2SI
 //#define TEST_V4SI
-#define TEST_V8SI
+//#define TEST_V8SI
 //#define TEST_V2DI
-#define TEST_V4DI
+//#define TEST_V4DI
 
 #endif//_DIVMOD_TYPES_H
 

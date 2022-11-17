@@ -567,9 +567,9 @@ kvx_xvr_reg_name (unsigned regno)
 }
 
 static const char *
-kvx_xwr_reg_name (unsigned regno)
+kvx_xtr_reg_name (unsigned regno)
 {
-  static const char *xwr_reg_names[] = {KV3_XWR_REGISTER_NAMES};
+  static const char *xwr_reg_names[] = {KV3_XTR_REGISTER_NAMES};
   unsigned index = regno - KV3_XCR_FIRST_REGNO;
   gcc_assert (index % 8 == 0);
   return xwr_reg_names[index / 8];
@@ -1801,7 +1801,7 @@ kvx_print_operand (FILE *file, rtx x, int code)
 	  else if (GET_MODE_SIZE (GET_MODE (x)) == UNITS_PER_WORD * 16)
 	    fprintf (file, "$%s", kvx_xmr_reg_name (REGNO (operand)));
 	  else if (GET_MODE_SIZE (GET_MODE (x)) == UNITS_PER_WORD * 8)
-	    fprintf (file, "$%s", kvx_xwr_reg_name (REGNO (operand)));
+	    fprintf (file, "$%s", kvx_xtr_reg_name (REGNO (operand)));
 	  else
 	    fprintf (file, "$%s", kvx_xvr_reg_name (REGNO (operand)));
 	}
