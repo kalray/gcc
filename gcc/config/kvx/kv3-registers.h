@@ -169,7 +169,7 @@ enum reg_class {
 	"a48",	"a49",	"a50",	"a51",	"a52",	"a53",	"a54",	"a55", \
 	"a56",	"a57",	"a58",	"a59",	"a60",	"a61",	"a62",	"a63",
 
-#define KV3_XWR_REGISTER_NAMES \
+#define KV3_XTR_REGISTER_NAMES \
 	"a0a1",	"a2a3",	"a4a5",	"a6a7",	"a8a9",	"a10a11",	"a12a13",	"a14a15", \
 	"a16a17",	"a18a19",	"a20a21",	"a22a23",	"a24a25",	"a26a27",	"a28a29",	"a30a31", \
 	"a32a33",	"a34a35",	"a36a37",	"a38a39",	"a40a41",	"a42a43",	"a44a45",	"a46a47", \
