@@ -539,13 +539,39 @@
   [(set_attr "type" "alu_thin")]
 )
 
-(define_insn "*sbmm8"
+(define_insn "*sbmm8d"
   [(set (match_operand:ALL64 0 "register_operand" "=r")
         (unspec:ALL64 [(match_operand:FITGPR 1 "register_operand" "r")
                        (match_operand:DI 2 "register_operand" "r")] UNSPEC_SBMM8))]
   ""
   "sbmm8 %0 = %1, %2"
   [(set_attr "type" "alu_thin")]
+)
+
+(define_insn "*sbmm8dp"
+  [(set (match_operand:ALL128 0 "register_operand" "=r")
+        (unspec:ALL128 [(match_operand:SIMD128 1 "register_operand" "r")
+                        (match_operand:DI 2 "register_operand" "r")] UNSPEC_SBMM8))]
+  ""
+  "sbmm8 %x0 = %x1, %2\n\tsbmm8 %y0 = %y1, %2"
+  [(set_attr "type" "alu_thin_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn_and_split "*sbmm8dq"
+  [(set (match_operand:ALL256 0 "register_operand" "=&r")
+        (unspec:ALL256 [(match_operand:SIMD256 1 "register_operand" "r")
+                        (match_operand:DI 2 "register_operand" "r")] UNSPEC_SBMM8))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:<ALL256:HALF> (match_dup 0) 0)
+        (unspec:<ALL256:HALF> [(subreg:<SIMD256:HALF> (match_dup 1) 0)
+                               (match_dup 2)] UNSPEC_SBMM8))
+   (set (subreg:<ALL256:HALF> (match_dup 0) 16)
+        (unspec:<ALL256:HALF> [(subreg:<SIMD256:HALF> (match_dup 1) 16)
+                               (match_dup 2)] UNSPEC_SBMM8))]
+  ""
 )
 
 (define_insn "*sbmm8s"
@@ -575,10 +601,33 @@
 (define_insn "*addd"
   [(set (match_operand:ALL64 0 "register_operand" "=r")
         (unspec:ALL64 [(match_operand:ALL64 1 "register_operand" "r")
-                       (match_operand:FITGPR 2 "register_operand" "r")] UNSPEC_ADDD))]
+                       (match_operand:DI 2 "register_operand" "r")] UNSPEC_ADDD))]
   ""
   "addd %0 = %1, %2"
   [(set_attr "type" "alu_tiny")]
+)
+
+(define_insn "*adddp"
+  [(set (match_operand:ALL128 0 "register_operand" "=r")
+        (unspec:ALL128 [(match_operand:SIMD128 1 "register_operand" "r")
+                        (match_operand:DI 2 "register_operand" "r")] UNSPEC_ADDD))]
+  ""
+  "addd %x0 = %x1, %2\n\taddd %y0 = %y1, %2"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "*adddq"
+  [(set (match_operand:ALL256 0 "register_operand" "=r")
+        (unspec:ALL256 [(match_operand:SIMD256 1 "register_operand" "r")
+                        (match_operand:DI 2 "register_operand" "r")] UNSPEC_ADDD))]
+  ""
+  {
+    return "addd %x0 = %x1, %2\n\taddd %y0 = %y1, %2\n\t"
+           "addd %z0 = %z1, %2\n\taddd %t0 = %t1, %2";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
 )
 
 (define_insn "*andd"
@@ -588,6 +637,29 @@
   ""
   "andd %0 = %1, %2"
   [(set_attr "type" "alu_tiny")]
+)
+
+(define_insn "*anddp"
+  [(set (match_operand:ALL128 0 "register_operand" "=r")
+        (unspec:ALL128 [(match_operand:SIMD128 1 "register_operand" "r")
+                        (match_operand:DI 2 "register_operand" "r")] UNSPEC_ANDD))]
+  ""
+  "andd %x0 = %x1, %2\n\tandd %y0 = %y1, %2"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "*anddq"
+  [(set (match_operand:ALL256 0 "register_operand" "=r")
+        (unspec:ALL256 [(match_operand:SIMD256 1 "register_operand" "r")
+                        (match_operand:DI 2 "register_operand" "r")] UNSPEC_ANDD))]
+  ""
+  {
+    return "andd %x0 = %x1, %2\n\tandd %y0 = %y1, %2\n\t"
+           "andd %z0 = %z1, %2\n\tandd %t0 = %t1, %2";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
 )
 
 (define_insn "*xord"
@@ -665,53 +737,58 @@
 
 ;; VXQI (V8QI V16QI V32QI)
 
-(define_insn "*zxebhq"
-  [(set (match_operand:V4HI 0 "register_operand" "=r")
-        (unspec:V4HI [(match_operand:V4HI 1 "register_operand" "r")] UNSPEC_ZXEBHQ))]
-  ""
-  "andd.@ %0 = %1, 0x00FF00FF"
-  [(set_attr "type" "alu_tiny_x")
-   (set_attr "length"        "8")]
-)
-
-(define_insn "*zxobhq"
-  [(set (match_operand:V4HI 0 "register_operand" "=r")
-        (unspec:V4HI [(match_operand:V4HI 1 "register_operand" "r")] UNSPEC_ZXOBHQ))]
-  ""
-  "srlhqs %0 = %1, 8"
-  [(set_attr "type" "alu_thin")]
-)
-
-(define_insn "*qxebhq"
-  [(set (match_operand:V4HI 0 "register_operand" "=r")
-        (unspec:V4HI [(match_operand:V4HI 1 "register_operand" "r")] UNSPEC_QXEBHQ))]
-  ""
-  "sllhqs %0 = %1, 8"
-  [(set_attr "type" "alu_thin")]
-)
-
-(define_insn "*qxobhq"
-  [(set (match_operand:V4HI 0 "register_operand" "=r")
-        (unspec:V4HI [(match_operand:V4HI 1 "register_operand" "r")] UNSPEC_QXOBHQ))]
-  ""
-  "andd.@ %0 = %1, 0xFF00FF00"
-  [(set_attr "type" "alu_tiny_x")
-   (set_attr "length"        "8")]
-)
-
-(define_insn "*oroebo"
-  [(set (match_operand:V4HI 0 "register_operand" "=r")
-        (unspec:V4HI [(match_operand:V4HI 1 "register_operand" "r")
-                      (match_operand:V4HI 2 "register_operand" "r")] UNSPEC_OROEBO))]
+(define_insn "kvx_oroebo"
+  [(set (match_operand:V8QI 0 "register_operand" "=r")
+        (unspec:V8QI [(match_operand:V4HI 1 "register_operand" "r")
+                      (match_operand:V4HI 2 "register_operand" "r")] UNSPEC_OROE))]
   ""
   "ord %0 = %1, %2"
   [(set_attr "type" "alu_tiny")]
 )
 
-(define_insn_and_split "*oroebo2_zxebhq"
-  [(set (match_operand:V4HI 0 "register_operand" "=r")
-        (unspec:V4HI [(unspec:V4HI [(match_operand:V4HI 1 "register_operand" "r")
-                                    (match_operand:V4HI 2 "register_operand" "r")] UNSPEC_OROEBO)] UNSPEC_ZXEBHQ))]
+(define_insn "kvx_oroebx"
+  [(set (match_operand:V16QI 0 "register_operand" "=r")
+        (unspec:V16QI [(match_operand:V8HI 1 "register_operand" "r")
+                       (match_operand:V8HI 2 "register_operand" "r")] UNSPEC_OROE))]
+  ""
+  "ord %x0 = %x1, %x2\n\tord %y0 = %y1, %y2"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "kvx_oroebv"
+  [(set (match_operand:V32QI 0 "register_operand" "=r")
+        (unspec:V32QI [(match_operand:V16HI 1 "register_operand" "r")
+                       (match_operand:V16HI 2 "register_operand" "r")] UNSPEC_OROE))]
+  ""
+  {
+    return "ord %x0 = %x1, %x2\n\tord %y0 = %y1, %y2\n\t"
+           "ord %z0 = %z1, %z2\n\tord %t0 = %t1, %t2";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_insn_and_split "kvx_oroebt"
+  [(set (match_operand:V64QI 0 "register_operand" "=r")
+        (unspec:V64QI [(match_operand:V32HI 1 "register_operand" "r")
+                       (match_operand:V32HI 2 "register_operand" "r")] UNSPEC_OROE))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V32QI (match_dup 0) 0)
+        (unspec:V32QI [(subreg:V16HI (match_dup 1) 0)
+                       (subreg:V16HI (match_dup 2) 0)] UNSPEC_OROE))
+   (set (subreg:V32QI (match_dup 0) 32)
+        (unspec:V32QI [(subreg:V16HI (match_dup 1) 32)
+                       (subreg:V16HI (match_dup 2) 32)] UNSPEC_OROE))]
+  ""
+)
+
+(define_insn_and_split "*zxe<hwidenx>_oroe<suffix>_2"
+  [(set (match_operand:<HWIDE> 0 "register_operand" "=r")
+        (unspec:<HWIDE> [(unspec:VXQI [(match_operand:<HWIDE> 1 "register_operand" "r")
+                                       (match_operand:<HWIDE> 2 "register_operand" "r")] UNSPEC_OROE)] UNSPEC_ZXE))]
   ""
   "#"
   ""
@@ -720,41 +797,49 @@
   [(set_attr "type" "alu_tiny")]
 )
 
-(define_insn_and_split "*oroebo1_zxobhq"
-  [(set (match_operand:V4HI 0 "register_operand" "=r")
-        (unspec:V4HI [(unspec:V4HI [(match_operand:V4HI 1 "register_operand" "r")
-                                    (match_operand:V4HI 2 "register_operand" "r")] UNSPEC_OROEBO)] UNSPEC_ZXOBHQ))]
-  ""
-  "#"
-  ""
-  [(set (match_dup 0)
-        (unspec:V4HI [(match_dup 1)] UNSPEC_ZXOBHQ))]
-  ""
-  [(set_attr "type" "alu_tiny")]
-)
-
-(define_insn_and_split "*oroebo2_qxebhq"
-  [(set (match_operand:V4HI 0 "register_operand" "=r")
-        (unspec:V4HI [(unspec:V4HI [(match_operand:V4HI 1 "register_operand" "r")
-                                    (match_operand:V4HI 2 "register_operand" "r")] UNSPEC_OROEBO)] UNSPEC_QXEBHQ))]
-  ""
-  "#"
-  ""
-  [(set (match_dup 0)
-        (unspec:V4HI [(match_dup 2)] UNSPEC_QXEBHQ))]
-  ""
-  [(set_attr "type" "alu_tiny")]
-)
-
-(define_insn_and_split "*oroebo1_qxobhq"
-  [(set (match_operand:V4HI 0 "register_operand" "=r")
-        (unspec:V4HI [(unspec:V4HI [(match_operand:V4HI 1 "register_operand" "r")
-                                    (match_operand:V4HI 2 "register_operand" "r")] UNSPEC_OROEBO)] UNSPEC_QXOBHQ))]
+(define_insn_and_split "*qxo<hwidenx>_oroe<suffix>_1"
+  [(set (match_operand:<HWIDE> 0 "register_operand" "=r")
+        (unspec:<HWIDE> [(unspec:VXQI [(match_operand:<HWIDE> 1 "register_operand" "r")
+                                       (match_operand:<HWIDE> 2 "register_operand" "r")] UNSPEC_OROE)] UNSPEC_QXO))]
   ""
   "#"
   ""
   [(set (match_dup 0) (match_dup 1))]
   ""
+  [(set_attr "type" "alu_tiny")]
+)
+
+(define_insn_and_split "*zxo<hwidenx>_oroe<suffix>_1"
+  [(set (match_operand:<HWIDE> 0 "register_operand" "=r")
+        (unspec:<HWIDE> [(unspec:VXQI [(match_operand:<HWIDE> 1 "register_operand" "r")
+                                       (match_operand:<HWIDE> 2 "register_operand" "r")] UNSPEC_OROE)] UNSPEC_ZXO))]
+  ""
+  "#"
+  ""
+  [(set (match_dup 0)
+        (unspec:<HWIDE> [(match_dup 1)] UNSPEC_ZXO))]
+  {
+    rtx op1 = gen_reg_rtx (<MODE>mode);
+    emit_insn (gen_rtx_SET (op1, simplify_gen_subreg (<MODE>mode, operands[1], <HWIDE>mode, 0)));
+    operands[1] = op1;
+  }
+  [(set_attr "type" "alu_tiny")]
+)
+
+(define_insn_and_split "*qxe<hwidenx>_oroe<suffix>_2"
+  [(set (match_operand:<HWIDE> 0 "register_operand" "=r")
+        (unspec:<HWIDE> [(unspec:VXQI [(match_operand:<HWIDE> 1 "register_operand" "r")
+                                       (match_operand:<HWIDE> 2 "register_operand" "r")] UNSPEC_OROE)] UNSPEC_QXE))]
+  ""
+  "#"
+  ""
+  [(set (match_dup 0)
+        (unspec:<HWIDE> [(match_dup 2)] UNSPEC_QXE))]
+  {
+    rtx op2 = gen_reg_rtx (<MODE>mode);
+    emit_insn (gen_rtx_SET (op2, simplify_gen_subreg (<MODE>mode, operands[2], <HWIDE>mode, 0)));
+    operands[2] = op2;
+  }
   [(set_attr "type" "alu_tiny")]
 )
 
@@ -766,22 +851,21 @@
   {
     if (KV3_1)
       {
-        unsigned mode_size = GET_MODE_SIZE (<MODE>mode);
-        for (unsigned offset = 0; offset < mode_size; offset += UNITS_PER_WORD)
+        rtx op1o = gen_reg_rtx (<HWIDE>mode), op1e = gen_reg_rtx (<HWIDE>mode);
+        emit_insn (gen_kvx_qxo<hwidenx> (op1o, operands[1]));
+        emit_insn (gen_kvx_qxe<hwidenx> (op1e, operands[1]));
+        rtx op0o = gen_reg_rtx (<HWIDE>mode), op0e = gen_reg_rtx (<HWIDE>mode);
+        emit_insn (gen_<prefix><hwide>2 (op0e, op1e));
+        emit_insn (gen_<prefix><hwide>2 (op0o, op1o));
+        rtx opto = gen_reg_rtx (<MODE>mode), opte = gen_reg_rtx (<MODE>mode);
+        if (<set8lsb>)
           {
-            rtx op1 = simplify_gen_subreg (V4HImode, operands[1], <MODE>mode, offset);
-            rtx op0 = simplify_gen_subreg (V4HImode, operands[0], <MODE>mode, offset);
-            rtx op1o = gen_reg_rtx (V4HImode), op1e = gen_reg_rtx (V4HImode);
-            emit_insn (gen_rtx_SET (op1o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXOBHQ)));
-            emit_insn (gen_rtx_SET (op1e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXEBHQ)));
-            rtx op0o = gen_reg_rtx (V4HImode), op0e = gen_reg_rtx (V4HImode);
-            emit_insn (gen_<prefix>v4hi2 (op0e, op1e));
-            emit_insn (gen_<prefix>v4hi2 (op0o, op1o));
-            if (<set8lsb>)
-              emit_insn (gen_rtx_SET (op0o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0o), UNSPEC_QXOBHQ)));
-            emit_insn (gen_rtx_SET (op0e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0e), UNSPEC_ZXOBHQ)));
-            emit_insn (gen_rtx_SET (op0, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, op0o, op0e), UNSPEC_OROEBO)));
+            emit_insn (gen_rtx_SET (opto, gen_rtx_SUBREG (<MODE>mode, op0o, 0)));
+            emit_insn (gen_kvx_qxo<hwidenx> (op0o, opto));
           }
+        emit_insn (gen_rtx_SET (opte, gen_rtx_SUBREG (<MODE>mode, op0e, 0)));
+        emit_insn (gen_kvx_zxo<hwidenx> (op0e, opte));
+        emit_insn (gen_kvx_oroe<suffix> (operands[0], op0o, op0e));
         DONE;
       }
   }
@@ -823,26 +907,25 @@
   {
     if (KV3_1)
       {
-        unsigned mode_size = GET_MODE_SIZE (<MODE>mode);
-        for (unsigned offset = 0; offset < mode_size; offset += UNITS_PER_WORD)
+        rtx op2o = gen_reg_rtx (<HWIDE>mode), op2e = gen_reg_rtx (<HWIDE>mode);
+        emit_insn (gen_kvx_qxo<hwidenx> (op2o, operands[2]));
+        emit_insn (gen_kvx_qxe<hwidenx> (op2e, operands[2]));
+        rtx op1o = gen_reg_rtx (<HWIDE>mode), op1e = gen_reg_rtx (<HWIDE>mode);
+        emit_insn (gen_kvx_qxo<hwidenx> (op1o, operands[1]));
+        emit_insn (gen_kvx_qxe<hwidenx> (op1e, operands[1]));
+        rtx op0o = gen_reg_rtx (<HWIDE>mode), op0e = gen_reg_rtx (<HWIDE>mode);
+        emit_insn (gen_<prefix><hwide>3 (op0o, op1o, op2o));
+        emit_insn (gen_<prefix><hwide>3 (op0e, op1e, op2e));
+        rtx opto = gen_reg_rtx (<MODE>mode), opte = gen_reg_rtx (<MODE>mode);
+        if (<set8lsb>)
           {
-            rtx op2 = simplify_gen_subreg (V4HImode, operands[2], <MODE>mode, offset);
-            rtx op1 = simplify_gen_subreg (V4HImode, operands[1], <MODE>mode, offset);
-            rtx op0 = simplify_gen_subreg (V4HImode, operands[0], <MODE>mode, offset);
-            rtx op2o = gen_reg_rtx (V4HImode), op2e = gen_reg_rtx (V4HImode);
-            emit_insn (gen_rtx_SET (op2o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op2), UNSPEC_QXOBHQ)));
-            emit_insn (gen_rtx_SET (op2e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op2), UNSPEC_QXEBHQ)));
-            rtx op1o = gen_reg_rtx (V4HImode), op1e = gen_reg_rtx (V4HImode);
-            emit_insn (gen_rtx_SET (op1o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXOBHQ)));
-            emit_insn (gen_rtx_SET (op1e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXEBHQ)));
-            rtx op0o = gen_reg_rtx (V4HImode), op0e = gen_reg_rtx (V4HImode);
-            emit_insn (gen_<prefix>v4hi3 (op0o, op1o, op2o));
-            emit_insn (gen_<prefix>v4hi3 (op0e, op1e, op2e));
-            if (<set8lsb>)
-              emit_insn (gen_rtx_SET (op0o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0o), UNSPEC_QXOBHQ)));
-            emit_insn (gen_rtx_SET (op0e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0e), UNSPEC_ZXOBHQ)));
-            emit_insn (gen_rtx_SET (op0, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, op0o, op0e), UNSPEC_OROEBO)));
+            emit_insn (gen_rtx_SET (opto, gen_rtx_SUBREG (<MODE>mode, op0o, 0)));
+            emit_insn (gen_kvx_qxo<hwidenx> (op0o, opto));
           }
+        emit_insn (gen_rtx_SET (opte, gen_rtx_SUBREG (<MODE>mode, op0e, 0)));
+        emit_insn (gen_kvx_zxo<hwidenx> (op0e, opte));
+        emit_insn (gen_kvx_oroe<suffix> (operands[0], op0o, op0e));
+
         DONE;
       }
   }
@@ -996,22 +1079,19 @@
                    (match_operand:VXQI 2 "register_operand" "")))]
   ""
   {
-    unsigned mode_size = GET_MODE_SIZE (<MODE>mode);
-    for (unsigned offset = 0; offset < mode_size; offset += UNITS_PER_WORD)
-      {
-        rtx op2 = simplify_gen_subreg (V4HImode, operands[2], <MODE>mode, offset);
-        rtx op1 = simplify_gen_subreg (V4HImode, operands[1], <MODE>mode, offset);
-        rtx op0 = simplify_gen_subreg (V4HImode, operands[0], <MODE>mode, offset);
-        rtx op2o = gen_reg_rtx (V4HImode), op2e = op2;
-        emit_insn (gen_rtx_SET (op2o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op2), UNSPEC_ZXOBHQ)));
-        rtx op1o = gen_reg_rtx (V4HImode), op1e = op1;
-        emit_insn (gen_rtx_SET (op1o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXOBHQ)));
-        rtx op0o = gen_reg_rtx (V4HImode), op0e = gen_reg_rtx (V4HImode);
-        emit_insn (gen_mulv4hi3 (op0o, op1o, op2o));
-        emit_insn (gen_mulv4hi3 (op0e, op1e, op2e));
-        emit_insn (gen_rtx_SET (op0e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0e), UNSPEC_ZXEBHQ)));
-        emit_insn (gen_rtx_SET (op0, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, op0o, op0e), UNSPEC_OROEBO)));
-      }
+    rtx op2o = gen_reg_rtx (<HWIDE>mode), op2e = gen_reg_rtx (<HWIDE>mode);
+    emit_insn (gen_rtx_SET (op2e, simplify_gen_subreg (<HWIDE>mode, operands[2], <MODE>mode, 0)));
+    emit_insn (gen_kvx_zxo<hwidenx> (op2o, operands[2]));
+    rtx op1o = gen_reg_rtx (<HWIDE>mode), op1e = gen_reg_rtx (<HWIDE>mode);
+    emit_insn (gen_rtx_SET (op1e, simplify_gen_subreg (<HWIDE>mode, operands[1], <MODE>mode, 0)));
+    emit_insn (gen_kvx_qxo<hwidenx> (op1o, operands[1]));
+    rtx op0o = gen_reg_rtx (<HWIDE>mode), op0e = gen_reg_rtx (<HWIDE>mode);
+    emit_insn (gen_mul<hwide>3 (op0o, op1o, op2o));
+    emit_insn (gen_mul<hwide>3 (op0e, op1e, op2e));
+    rtx opte = gen_reg_rtx (<MODE>mode);
+    emit_insn (gen_rtx_SET (opte, gen_rtx_SUBREG (<MODE>mode, op0e, 0)));
+    emit_insn (gen_kvx_zxe<hwidenx> (op0e, opte));
+    emit_insn (gen_kvx_oroe<suffix> (operands[0], op0o, op0e));
     DONE;
   }
 )
@@ -1024,26 +1104,24 @@
   {
     if (KV3_1)
       {
-        unsigned mode_size = GET_MODE_SIZE (<MODE>mode);
-        for (unsigned offset = 0; offset < mode_size; offset += UNITS_PER_WORD)
+        rtx op2o = gen_reg_rtx (<HWIDE>mode), op2e = gen_reg_rtx (<HWIDE>mode);
+        emit_insn (gen_kvx_qxo<hwidenx> (op2o, operands[2]));
+        emit_insn (gen_kvx_qxe<hwidenx> (op2e, operands[2]));
+        rtx op1o = gen_reg_rtx (<HWIDE>mode), op1e = gen_reg_rtx (<HWIDE>mode);
+        emit_insn (gen_kvx_qxo<hwidenx> (op1o, operands[1]));
+        emit_insn (gen_kvx_qxe<hwidenx> (op1e, operands[1]));
+        rtx op0o = gen_reg_rtx (<HWIDE>mode), op0e = gen_reg_rtx (<HWIDE>mode);
+        emit_insn (gen_<prefix><hwide>3 (op0o, op1o, op2o));
+        emit_insn (gen_<prefix><hwide>3 (op0e, op1e, op2e));
+        rtx opto = gen_reg_rtx (<MODE>mode), opte = gen_reg_rtx (<MODE>mode);
+        emit_insn (gen_rtx_SET (opto, gen_rtx_SUBREG (<MODE>mode, op0o, 0)));
+        emit_insn (gen_kvx_qxe<hwidenx> (op0o, opto));
+        if (<set8msb>)
           {
-            rtx op2 = simplify_gen_subreg (V4HImode, operands[2], <MODE>mode, offset);
-            rtx op1 = simplify_gen_subreg (V4HImode, operands[1], <MODE>mode, offset);
-            rtx op0 = simplify_gen_subreg (V4HImode, operands[0], <MODE>mode, offset);
-            rtx op2o = gen_reg_rtx (V4HImode), op2e = gen_reg_rtx (V4HImode);
-            emit_insn (gen_rtx_SET (op2o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op2), UNSPEC_QXOBHQ)));
-            emit_insn (gen_rtx_SET (op2e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op2), UNSPEC_QXEBHQ)));
-            rtx op1o = gen_reg_rtx (V4HImode), op1e = gen_reg_rtx (V4HImode);
-            emit_insn (gen_rtx_SET (op1o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXOBHQ)));
-            emit_insn (gen_rtx_SET (op1e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXEBHQ)));
-            rtx op0o = gen_reg_rtx (V4HImode), op0e = gen_reg_rtx (V4HImode);
-            emit_insn (gen_<prefix>v4hi3 (op0o, op1o, op2o));
-            emit_insn (gen_<prefix>v4hi3 (op0e, op1e, op2e));
-            emit_insn (gen_rtx_SET (op0o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0o), UNSPEC_QXEBHQ)));
-            if (<set8msb>)
-              emit_insn (gen_rtx_SET (op0e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0e), UNSPEC_ZXEBHQ)));
-            emit_insn (gen_rtx_SET (op0, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, op0o, op0e), UNSPEC_OROEBO)));
+            emit_insn (gen_rtx_SET (opte, gen_rtx_SUBREG (<MODE>mode, op0e, 0)));
+            emit_insn (gen_kvx_zxe<hwidenx> (op0e, opte));
           }
+        emit_insn (gen_kvx_oroe<suffix> (operands[0], op0o, op0e));
       }
     else if (KV3_2)
       {
@@ -1067,24 +1145,19 @@
   {
     if (KV3_1)
       {
-        unsigned mode_size = GET_MODE_SIZE (<MODE>mode);
-        for (unsigned offset = 0; offset < mode_size; offset += UNITS_PER_WORD)
-          {
-            rtx op2 = simplify_gen_subreg (V4HImode, operands[2], <MODE>mode, offset);
-            rtx op1 = simplify_gen_subreg (V4HImode, operands[1], <MODE>mode, offset);
-            rtx op0 = simplify_gen_subreg (V4HImode, operands[0], <MODE>mode, offset);
-            rtx op2o = gen_reg_rtx (V4HImode), op2e = gen_reg_rtx (V4HImode);
-            emit_insn (gen_rtx_SET (op2o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op2), UNSPEC_QXOBHQ)));
-            emit_insn (gen_rtx_SET (op2e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op2), UNSPEC_QXEBHQ)));
-            rtx op1o = gen_reg_rtx (V4HImode), op1e = gen_reg_rtx (V4HImode);
-            emit_insn (gen_rtx_SET (op1o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXOBHQ)));
-            emit_insn (gen_rtx_SET (op1e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXEBHQ)));
-            rtx op0o = gen_reg_rtx (V4HImode), op0e = gen_reg_rtx (V4HImode);
-            emit_insn (gen_<prefix>v4hi3 (op0o, op1o, op2o));
-            emit_insn (gen_<prefix>v4hi3 (op0e, op1e, op2e));
-            emit_insn (gen_rtx_SET (op0e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0e), UNSPEC_ZXOBHQ)));
-            emit_insn (gen_rtx_SET (op0, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, op0o, op0e), UNSPEC_OROEBO)));
-          }
+        rtx op2o = gen_reg_rtx (<HWIDE>mode), op2e = gen_reg_rtx (<HWIDE>mode);
+        emit_insn (gen_kvx_qxo<hwidenx> (op2o, operands[2]));
+        emit_insn (gen_kvx_qxe<hwidenx> (op2e, operands[2]));
+        rtx op1o = gen_reg_rtx (<HWIDE>mode), op1e = gen_reg_rtx (<HWIDE>mode);
+        emit_insn (gen_kvx_qxo<hwidenx> (op1o, operands[1]));
+        emit_insn (gen_kvx_qxe<hwidenx> (op1e, operands[1]));
+        rtx op0o = gen_reg_rtx (<HWIDE>mode), op0e = gen_reg_rtx (<HWIDE>mode);
+        emit_insn (gen_<prefix><hwide>3 (op0o, op1o, op2o));
+        emit_insn (gen_<prefix><hwide>3 (op0e, op1e, op2e));
+        rtx opte = gen_reg_rtx (<MODE>mode);
+        emit_insn (gen_rtx_SET (opte, gen_rtx_SUBREG (<MODE>mode, op0e, 0)));
+        emit_insn (gen_kvx_zxo<hwidenx> (op0e, opte));
+        emit_insn (gen_kvx_oroe<suffix> (operands[0], op0o, op0e));
       }
     else if (KV3_2)
       {
@@ -1110,26 +1183,24 @@
   {
     if (KV3_1)
       {
-        unsigned mode_size = GET_MODE_SIZE (<MODE>mode);
-        for (unsigned offset = 0; offset < mode_size; offset += UNITS_PER_WORD)
+        rtx op2o = gen_reg_rtx (<HWIDE>mode), op2e = gen_reg_rtx (<HWIDE>mode);
+        emit_insn (gen_kvx_qxo<hwidenx> (op2o, operands[2]));
+        emit_insn (gen_kvx_qxe<hwidenx> (op2e, operands[2]));
+        rtx op1o = gen_reg_rtx (<HWIDE>mode), op1e = gen_reg_rtx (<HWIDE>mode);
+        emit_insn (gen_kvx_qxo<hwidenx> (op1o, operands[1]));
+        emit_insn (gen_kvx_qxe<hwidenx> (op1e, operands[1]));
+        rtx op0o = gen_reg_rtx (<HWIDE>mode), op0e = gen_reg_rtx (<HWIDE>mode);
+        emit_insn (gen_<MINUS:abdm><hwide>3 (op0o, op1o, op2o));
+        emit_insn (gen_<MINUS:abdm><hwide>3 (op0e, op1e, op2e));
+        rtx opto = gen_reg_rtx (<MODE>mode), opte = gen_reg_rtx (<MODE>mode);
+        if (<set8lsb>)
           {
-            rtx op2 = simplify_gen_subreg (V4HImode, operands[2], <MODE>mode, offset);
-            rtx op1 = simplify_gen_subreg (V4HImode, operands[1], <MODE>mode, offset);
-            rtx op0 = simplify_gen_subreg (V4HImode, operands[0], <MODE>mode, offset);
-            rtx op2o = gen_reg_rtx (V4HImode), op2e = gen_reg_rtx (V4HImode);
-            emit_insn (gen_rtx_SET (op2o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op2), UNSPEC_QXOBHQ)));
-            emit_insn (gen_rtx_SET (op2e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op2), UNSPEC_QXEBHQ)));
-            rtx op1o = gen_reg_rtx (V4HImode), op1e = gen_reg_rtx (V4HImode);
-            emit_insn (gen_rtx_SET (op1o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXOBHQ)));
-            emit_insn (gen_rtx_SET (op1e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXEBHQ)));
-            rtx op0o = gen_reg_rtx (V4HImode), op0e = gen_reg_rtx (V4HImode);
-            emit_insn (gen_<MINUS:abdm>v4hi3 (op0o, op1o, op2o));
-            emit_insn (gen_<MINUS:abdm>v4hi3 (op0e, op1e, op2e));
-            if (<set8lsb>)
-              emit_insn (gen_rtx_SET (op0o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0o), UNSPEC_QXOBHQ)));
-            emit_insn (gen_rtx_SET (op0e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0e), UNSPEC_ZXOBHQ)));
-            emit_insn (gen_rtx_SET (op0, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, op0o, op0e), UNSPEC_OROEBO)));
+            emit_insn (gen_rtx_SET (opto, gen_rtx_SUBREG (<MODE>mode, op0o, 0)));
+            emit_insn (gen_kvx_qxo<hwidenx> (op0o, opto));
           }
+        emit_insn (gen_rtx_SET (opte, gen_rtx_SUBREG (<MODE>mode, op0e, 0)));
+        emit_insn (gen_kvx_zxo<hwidenx> (op0e, opte));
+        emit_insn (gen_kvx_oroe<suffix> (operands[0], op0o, op0e));
         DONE;
       }
   }
@@ -1145,24 +1216,19 @@
   {
     if (KV3_1)
       {
-        unsigned mode_size = GET_MODE_SIZE (<MODE>mode);
-        for (unsigned offset = 0; offset < mode_size; offset += UNITS_PER_WORD)
-          {
-            rtx op2 = simplify_gen_subreg (V4HImode, operands[2], <MODE>mode, offset);
-            rtx op1 = simplify_gen_subreg (V4HImode, operands[1], <MODE>mode, offset);
-            rtx op0 = simplify_gen_subreg (V4HImode, operands[0], <MODE>mode, offset);
-            rtx op2o = gen_reg_rtx (V4HImode), op2e = gen_reg_rtx (V4HImode);
-            emit_insn (gen_rtx_SET (op2o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op2), UNSPEC_QXOBHQ)));
-            emit_insn (gen_rtx_SET (op2e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op2), UNSPEC_QXEBHQ)));
-            rtx op1o = gen_reg_rtx (V4HImode), op1e = gen_reg_rtx (V4HImode);
-            emit_insn (gen_rtx_SET (op1o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXOBHQ)));
-            emit_insn (gen_rtx_SET (op1e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXEBHQ)));
-            rtx op0o = gen_reg_rtx (V4HImode), op0e = gen_reg_rtx (V4HImode);
-            emit_insn (gen_abduv4hi3 (op0o, op1o, op2o));
-            emit_insn (gen_abduv4hi3 (op0e, op1e, op2e));
-            emit_insn (gen_rtx_SET (op0e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0e), UNSPEC_ZXOBHQ)));
-            emit_insn (gen_rtx_SET (op0, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, op0o, op0e), UNSPEC_OROEBO)));
-          }
+        rtx op2o = gen_reg_rtx (<HWIDE>mode), op2e = gen_reg_rtx (<HWIDE>mode);
+        emit_insn (gen_kvx_qxo<hwidenx> (op2o, operands[2]));
+        emit_insn (gen_kvx_qxe<hwidenx> (op2e, operands[2]));
+        rtx op1o = gen_reg_rtx (<HWIDE>mode), op1e = gen_reg_rtx (<HWIDE>mode);
+        emit_insn (gen_kvx_qxo<hwidenx> (op1o, operands[1]));
+        emit_insn (gen_kvx_qxe<hwidenx> (op1e, operands[1]));
+        rtx op0o = gen_reg_rtx (<HWIDE>mode), op0e = gen_reg_rtx (<HWIDE>mode);
+        emit_insn (gen_abdu<hwide>3 (op0o, op1o, op2o));
+        emit_insn (gen_abdu<hwide>3 (op0e, op1e, op2e));
+        rtx opte = gen_reg_rtx (<MODE>mode);
+        emit_insn (gen_rtx_SET (opte, gen_rtx_SUBREG (<MODE>mode, op0e, 0)));
+        emit_insn (gen_kvx_zxo<hwidenx> (op0e, opte));
+        emit_insn (gen_kvx_oroe<suffix> (operands[0], op0o, op0e));
         DONE;
       }
   }
@@ -1177,32 +1243,29 @@
   {
     if (KV3_1)
       {
-        unsigned mode_size = GET_MODE_SIZE (<MODE>mode);
-        rtx bias =  gen_reg_rtx (DImode);
+        rtx op2o = gen_reg_rtx (<HWIDE>mode), op2e = gen_reg_rtx (<HWIDE>mode);
+        emit_insn (gen_kvx_qxo<hwidenx> (op2o, operands[2]));
+        emit_insn (gen_kvx_qxe<hwidenx> (op2e, operands[2]));
         if (<avground>)
-          emit_insn (gen_rtx_SET (bias, GEN_INT (0x00FF00FF00FF00FF)));
-        for (unsigned offset = 0; offset < mode_size; offset += UNITS_PER_WORD)
           {
-            rtx op2 = simplify_gen_subreg (V4HImode, operands[2], <MODE>mode, offset);
-            rtx op1 = simplify_gen_subreg (V4HImode, operands[1], <MODE>mode, offset);
-            rtx op0 = simplify_gen_subreg (V4HImode, operands[0], <MODE>mode, offset);
-            rtx op2o = gen_reg_rtx (V4HImode), op2e = gen_reg_rtx (V4HImode);
-            emit_insn (gen_rtx_SET (op2o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op2), UNSPEC_QXOBHQ)));
-            emit_insn (gen_rtx_SET (op2e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op2), UNSPEC_QXEBHQ)));
-            if (<avground>)
-              emit_insn (gen_rtx_SET (op2o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, op2o, bias), UNSPEC_ADDD)));
-            if (<avground>)
-              emit_insn (gen_rtx_SET (op2e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, op2e, bias), UNSPEC_ADDD)));
-            rtx op1o = gen_reg_rtx (V4HImode), op1e = gen_reg_rtx (V4HImode);
-            emit_insn (gen_rtx_SET (op1o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXOBHQ)));
-            emit_insn (gen_rtx_SET (op1e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXEBHQ)));
-            rtx op0o = gen_reg_rtx (V4HImode), op0e = gen_reg_rtx (V4HImode);
-            emit_insn (gen_<avgpre>v4hi<avgpost> (op0o, op1o, op2o));
-            emit_insn (gen_<avgpre>v4hi<avgpost> (op0e, op1e, op2e));
-            emit_insn (gen_rtx_SET (op0o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0o), UNSPEC_QXOBHQ)));
-            emit_insn (gen_rtx_SET (op0e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0e), UNSPEC_ZXOBHQ)));
-            emit_insn (gen_rtx_SET (op0, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, op0o, op0e), UNSPEC_OROEBO)));
+            // Add 0xFF to the low bytes so the rounding propagtes to the high bytes.
+            rtx bias =  gen_reg_rtx (DImode);
+            emit_insn (gen_rtx_SET (bias, GEN_INT (0x00FF00FF00FF00FF)));
+            emit_insn (gen_rtx_SET (op2o, gen_rtx_UNSPEC (<HWIDE>mode, gen_rtvec (2, op2o, bias), UNSPEC_ADDD)));
+            emit_insn (gen_rtx_SET (op2e, gen_rtx_UNSPEC (<HWIDE>mode, gen_rtvec (2, op2e, bias), UNSPEC_ADDD)));
           }
+        rtx op1o = gen_reg_rtx (<HWIDE>mode), op1e = gen_reg_rtx (<HWIDE>mode);
+        emit_insn (gen_kvx_qxo<hwidenx> (op1o, operands[1]));
+        emit_insn (gen_kvx_qxe<hwidenx> (op1e, operands[1]));
+        rtx op0o = gen_reg_rtx (<HWIDE>mode), op0e = gen_reg_rtx (<HWIDE>mode);
+        emit_insn (gen_<avgpre><hwide><avgpost> (op0o, op1o, op2o));
+        emit_insn (gen_<avgpre><hwide><avgpost> (op0e, op1e, op2e));
+        rtx opto = gen_reg_rtx (<MODE>mode), opte = gen_reg_rtx (<MODE>mode);
+        emit_insn (gen_rtx_SET (opto, gen_rtx_SUBREG (<MODE>mode, op0o, 0)));
+        emit_insn (gen_kvx_qxo<hwidenx> (op0o, opto));
+        emit_insn (gen_rtx_SET (opte, gen_rtx_SUBREG (<MODE>mode, op0e, 0)));
+        emit_insn (gen_kvx_zxo<hwidenx> (op0e, opte));
+        emit_insn (gen_kvx_oroe<suffix> (operands[0], op0o, op0e));
         DONE;
       }
   }
@@ -1246,24 +1309,23 @@
   {
     if (KV3_1)
       {
-        unsigned mode_size = GET_MODE_SIZE (<MODE>mode);
-        for (unsigned offset = 0; offset < mode_size; offset += UNITS_PER_WORD)
+        rtx op2 = gen_reg_rtx (SImode);
+        emit_insn (gen_andsi3 (op2, operands[2], GEN_INT (0x7)));
+        rtx op1o = gen_reg_rtx (<HWIDE>mode), op1e = gen_reg_rtx (<HWIDE>mode);
+        emit_insn (gen_kvx_qxo<hwidenx> (op1o, operands[1]));
+        emit_insn (gen_kvx_qxe<hwidenx> (op1e, operands[1]));
+        rtx op0o = gen_reg_rtx (<HWIDE>mode), op0e = gen_reg_rtx (<HWIDE>mode);
+        emit_insn (gen_<prefix><hwide>3 (op0o, op1o, op2));
+        emit_insn (gen_<prefix><hwide>3 (op0e, op1e, op2));
+        rtx opto = gen_reg_rtx (<MODE>mode), opte = gen_reg_rtx (<MODE>mode);
+        emit_insn (gen_rtx_SET (opte, gen_rtx_SUBREG (<MODE>mode, op0e, 0)));
+        emit_insn (gen_kvx_zxo<hwidenx> (op0e, opte));
+        if (<set8lsb>)
           {
-            rtx op2 = gen_reg_rtx (SImode);
-            emit_insn (gen_andsi3 (op2, operands[2], GEN_INT (0x7)));
-            rtx op1 = simplify_gen_subreg (V4HImode, operands[1], <MODE>mode, offset);
-            rtx op0 = simplify_gen_subreg (V4HImode, operands[0], <MODE>mode, offset);
-            rtx op1o = gen_reg_rtx (V4HImode), op1e = gen_reg_rtx (V4HImode);
-            emit_insn (gen_rtx_SET (op1o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXOBHQ)));
-            emit_insn (gen_rtx_SET (op1e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXEBHQ)));
-            rtx op0o = gen_reg_rtx (V4HImode), op0e = gen_reg_rtx (V4HImode);
-            emit_insn (gen_<prefix>v4hi3 (op0o, op1o, op2));
-            emit_insn (gen_<prefix>v4hi3 (op0e, op1e, op2));
-            emit_insn (gen_rtx_SET (op0e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0e), UNSPEC_ZXOBHQ)));
-            if (<set8lsb>)
-              emit_insn (gen_rtx_SET (op0o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0o), UNSPEC_QXOBHQ)));
-            emit_insn (gen_rtx_SET (op0, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, op0o, op0e), UNSPEC_OROEBO)));
+            emit_insn (gen_rtx_SET (opto, gen_rtx_SUBREG (<MODE>mode, op0o, 0)));
+            emit_insn (gen_kvx_qxo<hwidenx> (op0o, opto));
           }
+        emit_insn (gen_kvx_oroe<suffix> (operands[0], op0o, op0e));
         DONE;
       }
   }
@@ -1344,25 +1406,24 @@
     if (KV3_1)
       {
         rtx const8 = GEN_INT (8);
-        unsigned mode_size = GET_MODE_SIZE (<MODE>mode);
-        for (unsigned offset = 0; offset < mode_size; offset += UNITS_PER_WORD)
+        rtx op2 = gen_reg_rtx (SImode), op2p8 = gen_reg_rtx (SImode);
+        emit_insn (gen_andsi3 (op2, operands[2], GEN_INT (0x7)));
+        emit_insn (gen_addsi3 (op2p8, op2, const8));
+        rtx op1o = gen_reg_rtx (<HWIDE>mode), op1e = gen_reg_rtx (<HWIDE>mode);
+        emit_insn (gen_kvx_qxo<hwidenx> (op1o, operands[1]));
+        emit_insn (gen_kvx_qxe<hwidenx> (op1e, operands[1]));
+        rtx op0o = gen_reg_rtx (<HWIDE>mode), op0e = gen_reg_rtx (<HWIDE>mode);
+        emit_insn (gen_<prefix><hwide>3 (op0o, op1o, op2));
+        emit_insn (gen_<prefix><hwide>3 (op0e, op1e, op2p8));
+        rtx opto = gen_reg_rtx (<MODE>mode), opte = gen_reg_rtx (<MODE>mode);
+        emit_insn (gen_rtx_SET (opto, gen_rtx_SUBREG (<MODE>mode, op0o, 0)));
+        emit_insn (gen_kvx_qxo<hwidenx> (op0o, opto));
+        if (<set8msb>)
           {
-            rtx op2 = gen_reg_rtx (SImode), op2p8 = gen_reg_rtx (SImode);
-            emit_insn (gen_andsi3 (op2, operands[2], GEN_INT (0x7)));
-            emit_insn (gen_addsi3 (op2p8, op2, const8));
-            rtx op1 = simplify_gen_subreg (V4HImode, operands[1], <MODE>mode, offset);
-            rtx op0 = simplify_gen_subreg (V4HImode, operands[0], <MODE>mode, offset);
-            rtx op1o = gen_reg_rtx (V4HImode), op1e = gen_reg_rtx (V4HImode);
-            emit_insn (gen_rtx_SET (op1o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXOBHQ)));
-            emit_insn (gen_rtx_SET (op1e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXEBHQ)));
-            rtx op0o = gen_reg_rtx (V4HImode), op0e = gen_reg_rtx (V4HImode);
-            emit_insn (gen_<prefix>v4hi3 (op0o, op1o, op2));
-            emit_insn (gen_<prefix>v4hi3 (op0e, op1e, op2p8));
-            emit_insn (gen_rtx_SET (op0o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0o), UNSPEC_QXOBHQ)));
-            if (<set8msb>)
-              emit_insn (gen_rtx_SET (op0e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0e), UNSPEC_ZXEBHQ)));
-            emit_insn (gen_rtx_SET (op0, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, op0o, op0e), UNSPEC_OROEBO)));
+            emit_insn (gen_rtx_SET (opte, gen_rtx_SUBREG (<MODE>mode, op0e, 0)));
+            emit_insn (gen_kvx_zxe<hwidenx> (op0e, opte));
           }
+        emit_insn (gen_kvx_oroe<suffix> (operands[0], op0o, op0e));
         DONE;
       }
   }
@@ -1378,24 +1439,21 @@
     if (KV3_1)
       {
         rtx const8 = GEN_INT (8);
-        unsigned mode_size = GET_MODE_SIZE (<MODE>mode);
-        for (unsigned offset = 0; offset < mode_size; offset += UNITS_PER_WORD)
-          {
-            rtx op2 = gen_reg_rtx (SImode), op2p8 = gen_reg_rtx (SImode);
-            emit_insn (gen_andsi3 (op2, operands[2], GEN_INT (0x7)));
-            emit_insn (gen_addsi3 (op2p8, op2, const8));
-            rtx op1 = simplify_gen_subreg (V4HImode, operands[1], <MODE>mode, offset);
-            rtx op0 = simplify_gen_subreg (V4HImode, operands[0], <MODE>mode, offset);
-            rtx op1o = gen_reg_rtx (V4HImode), op1e = gen_reg_rtx (V4HImode);
-            emit_insn (gen_rtx_SET (op1o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXOBHQ)));
-            emit_insn (gen_rtx_SET (op1e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op1), UNSPEC_QXEBHQ)));
-            rtx op0o = gen_reg_rtx (V4HImode), op0e = gen_reg_rtx (V4HImode);
-            emit_insn (gen_sshrv4hi3 (op0o, op1o, op2p8));
-            emit_insn (gen_sshrv4hi3 (op0e, op1e, op2p8));
-            emit_insn (gen_rtx_SET (op0o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0o), UNSPEC_QXEBHQ)));
-            emit_insn (gen_rtx_SET (op0e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0e), UNSPEC_ZXEBHQ)));
-            emit_insn (gen_rtx_SET (op0, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, op0o, op0e), UNSPEC_OROEBO)));
-          }
+        rtx op2 = gen_reg_rtx (SImode), op2p8 = gen_reg_rtx (SImode);
+        emit_insn (gen_andsi3 (op2, operands[2], GEN_INT (0x7)));
+        emit_insn (gen_addsi3 (op2p8, op2, const8));
+        rtx op1o = gen_reg_rtx (<HWIDE>mode), op1e = gen_reg_rtx (<HWIDE>mode);
+        emit_insn (gen_kvx_qxo<hwidenx> (op1o, operands[1]));
+        emit_insn (gen_kvx_qxe<hwidenx> (op1e, operands[1]));
+        rtx op0o = gen_reg_rtx (<HWIDE>mode), op0e = gen_reg_rtx (<HWIDE>mode);
+        emit_insn (gen_sshr<hwide>3 (op0o, op1o, op2p8));
+        emit_insn (gen_sshr<hwide>3 (op0e, op1e, op2p8));
+        rtx opto = gen_reg_rtx (<MODE>mode), opte = gen_reg_rtx (<MODE>mode);
+        emit_insn (gen_rtx_SET (opto, gen_rtx_SUBREG (<MODE>mode, op0o, 0)));
+        emit_insn (gen_kvx_qxe<hwidenx> (op0o, opto));
+        emit_insn (gen_rtx_SET (opte, gen_rtx_SUBREG (<MODE>mode, op0e, 0)));
+        emit_insn (gen_kvx_zxe<hwidenx> (op0e, opte));
+        emit_insn (gen_kvx_oroe<suffix> (operands[0], op0o, op0e));
       }
     else
       {
@@ -1454,26 +1512,23 @@
   {
     if (KV3_1)
       {
-        unsigned mode_size = GET_MODE_SIZE (<MODE>mode);
         rtx evenbmm = gen_reg_rtx (DImode), oddbmm = gen_reg_rtx (DImode);
         emit_insn (gen_rtx_SET (evenbmm, GEN_INT (0x4040101004040101)));
         emit_insn (gen_rtx_SET (oddbmm, GEN_INT (0x8080202008080202)));
-        for (unsigned offset = 0; offset < mode_size; offset += UNITS_PER_WORD)
-          {
-            rtx op2 = gen_reg_rtx (SImode);
-            emit_insn (gen_andsi3 (op2, operands[2], GEN_INT (0x7)));
-            rtx op1 = simplify_gen_subreg (V4HImode, operands[1], <MODE>mode, offset);
-            rtx op0 = simplify_gen_subreg (V4HImode, operands[0], <MODE>mode, offset);
-            rtx op1o = gen_reg_rtx (V4HImode), op1e = gen_reg_rtx (V4HImode);
-            emit_insn (gen_rtx_SET (op1o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, op1, oddbmm), UNSPEC_SBMM8)));
-            emit_insn (gen_rtx_SET (op1e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, op1, evenbmm), UNSPEC_SBMM8)));
-            rtx op0o = gen_reg_rtx (V4HImode), op0e = gen_reg_rtx (V4HImode);
-            emit_insn (gen_ashlv4hi3 (op0o, op1o, op2));
-            emit_insn (gen_ashlv4hi3 (op0e, op1e, op2));
-            emit_insn (gen_rtx_SET (op0o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0o), UNSPEC_QXOBHQ)));
-            emit_insn (gen_rtx_SET (op0e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0e), UNSPEC_ZXOBHQ)));
-            emit_insn (gen_rtx_SET (op0, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, op0o, op0e), UNSPEC_OROEBO)));
-          }
+        rtx op2 = gen_reg_rtx (SImode);
+        emit_insn (gen_andsi3 (op2, operands[2], GEN_INT (0x7)));
+        rtx op1o = gen_reg_rtx (<HWIDE>mode), op1e = gen_reg_rtx (<HWIDE>mode);
+        emit_insn (gen_rtx_SET (op1o, gen_rtx_UNSPEC (<HWIDE>mode, gen_rtvec (2, operands[1], oddbmm), UNSPEC_SBMM8)));
+        emit_insn (gen_rtx_SET (op1e, gen_rtx_UNSPEC (<HWIDE>mode, gen_rtvec (2, operands[1], evenbmm), UNSPEC_SBMM8)));
+        rtx op0o = gen_reg_rtx (<HWIDE>mode), op0e = gen_reg_rtx (<HWIDE>mode);
+        emit_insn (gen_ashl<hwide>3 (op0o, op1o, op2));
+        emit_insn (gen_ashl<hwide>3 (op0e, op1e, op2));
+        rtx opto = gen_reg_rtx (<MODE>mode), opte = gen_reg_rtx (<MODE>mode);
+        emit_insn (gen_rtx_SET (opto, gen_rtx_SUBREG (<MODE>mode, op0o, 0)));
+        emit_insn (gen_kvx_qxo<hwidenx> (op0o, opto));
+        emit_insn (gen_rtx_SET (opte, gen_rtx_SUBREG (<MODE>mode, op0e, 0)));
+        emit_insn (gen_kvx_zxo<hwidenx> (op0e, opte));
+        emit_insn (gen_kvx_oroe<suffix> (operands[0], op0o, op0e));
       }
     else
       {
@@ -1501,26 +1556,23 @@
   {
     if (KV3_1)
       {
-        unsigned mode_size = GET_MODE_SIZE (<MODE>mode);
         rtx evenbmm = gen_reg_rtx (DImode), oddbmm = gen_reg_rtx (DImode);
         emit_insn (gen_rtx_SET (evenbmm, GEN_INT (0x4040101004040101)));
         emit_insn (gen_rtx_SET (oddbmm, GEN_INT (0x8080202008080202)));
-        for (unsigned offset = 0; offset < mode_size; offset += UNITS_PER_WORD)
-          {
-            rtx op2 = gen_reg_rtx (SImode);
-            emit_insn (gen_andsi3 (op2, operands[2], GEN_INT (0x7)));
-            rtx op1 = simplify_gen_subreg (V4HImode, operands[1], <MODE>mode, offset);
-            rtx op0 = simplify_gen_subreg (V4HImode, operands[0], <MODE>mode, offset);
-            rtx op1o = gen_reg_rtx (V4HImode), op1e = gen_reg_rtx (V4HImode);
-            emit_insn (gen_rtx_SET (op1o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, op1, oddbmm), UNSPEC_SBMM8)));
-            emit_insn (gen_rtx_SET (op1e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, op1, evenbmm), UNSPEC_SBMM8)));
-            rtx op0o = gen_reg_rtx (V4HImode), op0e = gen_reg_rtx (V4HImode);
-            emit_insn (gen_lshrv4hi3 (op0o, op1o, op2));
-            emit_insn (gen_lshrv4hi3 (op0e, op1e, op2));
-            emit_insn (gen_rtx_SET (op0o, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0o), UNSPEC_QXEBHQ)));
-            emit_insn (gen_rtx_SET (op0e, gen_rtx_UNSPEC (V4HImode, gen_rtvec (1, op0e), UNSPEC_ZXEBHQ)));
-            emit_insn (gen_rtx_SET (op0, gen_rtx_UNSPEC (V4HImode, gen_rtvec (2, op0o, op0e), UNSPEC_OROEBO)));
-          }
+        rtx op2 = gen_reg_rtx (SImode);
+        emit_insn (gen_andsi3 (op2, operands[2], GEN_INT (0x7)));
+        rtx op1o = gen_reg_rtx (<HWIDE>mode), op1e = gen_reg_rtx (<HWIDE>mode);
+        emit_insn (gen_rtx_SET (op1o, gen_rtx_UNSPEC (<HWIDE>mode, gen_rtvec (2, operands[1], oddbmm), UNSPEC_SBMM8)));
+        emit_insn (gen_rtx_SET (op1e, gen_rtx_UNSPEC (<HWIDE>mode, gen_rtvec (2, operands[1], evenbmm), UNSPEC_SBMM8)));
+        rtx op0o = gen_reg_rtx (<HWIDE>mode), op0e = gen_reg_rtx (<HWIDE>mode);
+        emit_insn (gen_lshr<hwide>3 (op0o, op1o, op2));
+        emit_insn (gen_lshr<hwide>3 (op0e, op1e, op2));
+        rtx opto = gen_reg_rtx (<MODE>mode), opte = gen_reg_rtx (<MODE>mode);
+        emit_insn (gen_rtx_SET (opto, gen_rtx_SUBREG (<MODE>mode, op0o, 0)));
+        emit_insn (gen_kvx_qxe<hwidenx> (op0o, opto));
+        emit_insn (gen_rtx_SET (opte, gen_rtx_SUBREG (<MODE>mode, op0e, 0)));
+        emit_insn (gen_kvx_zxe<hwidenx> (op0e, opte));
+        emit_insn (gen_kvx_oroe<suffix> (operands[0], op0o, op0e));
       }
     else
       {

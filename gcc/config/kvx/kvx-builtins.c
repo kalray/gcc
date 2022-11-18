@@ -256,6 +256,26 @@ enum kvx_builtin
   KVX_BUILTIN_WIDENWDQ,
   KVX_BUILTIN_WIDENWDO,
 
+  KVX_BUILTIN_WIDENEBHQ,
+  KVX_BUILTIN_WIDENEBHO,
+  KVX_BUILTIN_WIDENEBHX,
+  KVX_BUILTIN_WIDENEHWP,
+  KVX_BUILTIN_WIDENEHWQ,
+  KVX_BUILTIN_WIDENEHWO,
+  KVX_BUILTIN_WIDENEWD,
+  KVX_BUILTIN_WIDENEWDP,
+  KVX_BUILTIN_WIDENEWDQ,
+
+  KVX_BUILTIN_WIDENOBHQ,
+  KVX_BUILTIN_WIDENOBHO,
+  KVX_BUILTIN_WIDENOBHX,
+  KVX_BUILTIN_WIDENOHWP,
+  KVX_BUILTIN_WIDENOHWQ,
+  KVX_BUILTIN_WIDENOHWO,
+  KVX_BUILTIN_WIDENOWD,
+  KVX_BUILTIN_WIDENOWDP,
+  KVX_BUILTIN_WIDENOWDQ,
+
   KVX_BUILTIN_NARROWHBO,
   KVX_BUILTIN_NARROWHBX,
   KVX_BUILTIN_NARROWHBV,
@@ -269,7 +289,7 @@ enum kvx_builtin
   KVX_BUILTIN_SHIFTBO,
   KVX_BUILTIN_SHIFTBX,
   KVX_BUILTIN_SHIFTBV,
-  KVX_BUILTIN_SHIFTBW,
+  KVX_BUILTIN_SHIFTBT,
   KVX_BUILTIN_SHIFTHQ,
   KVX_BUILTIN_SHIFTHO,
   KVX_BUILTIN_SHIFTHX,
@@ -1268,6 +1288,26 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (WIDENWDQ, "widenwdq", V4DI, V4SI, WIDENINT); // Vector
   ADD_KVX_BUILTIN (WIDENWDO, "widenwdo", V8DI, V8SI, WIDENINT); // Vector
 
+  ADD_KVX_BUILTIN (WIDENEBHQ, "widenebhq", V4HI, V8QI, WIDENINT); // Vector
+  ADD_KVX_BUILTIN (WIDENEBHO, "widenebho", V8HI, V16QI, WIDENINT); // Vector
+  ADD_KVX_BUILTIN (WIDENEBHX, "widenebhx", V16HI, V32QI, WIDENINT); // Vector
+  ADD_KVX_BUILTIN (WIDENEHWP, "widenehwp", V2SI, V4HI, WIDENINT); // Vector
+  ADD_KVX_BUILTIN (WIDENEHWQ, "widenehwq", V4SI, V8HI, WIDENINT); // Vector
+  ADD_KVX_BUILTIN (WIDENEHWO, "widenehwo", V8SI, V16HI, WIDENINT); // Vector
+  ADD_KVX_BUILTIN (WIDENEWD, "widenewd", INT64, V2SI, WIDENINT); // Vector
+  ADD_KVX_BUILTIN (WIDENEWDP, "widenewdp", V2DI, V4SI, WIDENINT); // Vector
+  ADD_KVX_BUILTIN (WIDENEWDQ, "widenewdq", V4DI, V8SI, WIDENINT); // Vector
+
+  ADD_KVX_BUILTIN (WIDENOBHQ, "widenobhq", V4HI, V8QI, WIDENINT); // Vector
+  ADD_KVX_BUILTIN (WIDENOBHO, "widenobho", V8HI, V16QI, WIDENINT); // Vector
+  ADD_KVX_BUILTIN (WIDENOBHX, "widenobhx", V16HI, V32QI, WIDENINT); // Vector
+  ADD_KVX_BUILTIN (WIDENOHWP, "widenohwp", V2SI, V4HI, WIDENINT); // Vector
+  ADD_KVX_BUILTIN (WIDENOHWQ, "widenohwq", V4SI, V8HI, WIDENINT); // Vector
+  ADD_KVX_BUILTIN (WIDENOHWO, "widenohwo", V8SI, V16HI, WIDENINT); // Vector
+  ADD_KVX_BUILTIN (WIDENOWD, "widenowd", INT64, V2SI, WIDENINT); // Vector
+  ADD_KVX_BUILTIN (WIDENOWDP, "widenowdp", V2DI, V4SI, WIDENINT); // Vector
+  ADD_KVX_BUILTIN (WIDENOWDQ, "widenowdq", V4DI, V8SI, WIDENINT); // Vector
+
   ADD_KVX_BUILTIN (NARROWHBO, "narrowhbo", V8QI, V8HI, NARROWINT); // Vector
   ADD_KVX_BUILTIN (NARROWHBX, "narrowhbx", V16QI, V16HI, NARROWINT); // Vector
   ADD_KVX_BUILTIN (NARROWHBV, "narrowhbv", V32QI, V32HI, NARROWINT); // Vector
@@ -1281,7 +1321,7 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (SHIFTBO, "shiftbo", V8QI, V8QI, INT32, INT8); // Vector
   ADD_KVX_BUILTIN (SHIFTBX, "shiftbx", V16QI, V16QI, INT32, INT8); // Vector
   ADD_KVX_BUILTIN (SHIFTBV, "shiftbv", V32QI, V32QI, INT32, INT8); // Vector
-  ADD_KVX_BUILTIN (SHIFTBW, "shiftbw", V64QI, V64QI, INT32, INT8); // Vector
+  ADD_KVX_BUILTIN (SHIFTBT, "shiftbt", V64QI, V64QI, INT32, INT8); // Vector
   ADD_KVX_BUILTIN (SHIFTHQ, "shifthq", V4HI, V4HI, INT32, INT16); // Vector
   ADD_KVX_BUILTIN (SHIFTHO, "shiftho", V8HI, V8HI, INT32, INT16); // Vector
   ADD_KVX_BUILTIN (SHIFTHX, "shifthx", V16HI, V16HI, INT32, INT16); // Vector
@@ -3280,6 +3320,26 @@ KVX_EXPAND_BUILTIN_2_WIDENINT (widenwdp, kvx_widenwdp, V2DImode, V2SImode)
 KVX_EXPAND_BUILTIN_2_WIDENINT (widenwdq, kvx_widenwdq, V4DImode, V4SImode)
 KVX_EXPAND_BUILTIN_2_WIDENINT (widenwdo, kvx_widenwdo, V8DImode, V8SImode)
 
+KVX_EXPAND_BUILTIN_2_WIDENINT (widenebhq, kvx_widenebhq, V4HImode, V8QImode)
+KVX_EXPAND_BUILTIN_2_WIDENINT (widenebho, kvx_widenebho, V8HImode, V16QImode)
+KVX_EXPAND_BUILTIN_2_WIDENINT (widenebhx, kvx_widenebhx, V16HImode, V32QImode)
+KVX_EXPAND_BUILTIN_2_WIDENINT (widenehwp, kvx_widenehwp, V2SImode, V4HImode)
+KVX_EXPAND_BUILTIN_2_WIDENINT (widenehwq, kvx_widenehwq, V4SImode, V8HImode)
+KVX_EXPAND_BUILTIN_2_WIDENINT (widenehwo, kvx_widenehwo, V8SImode, V16HImode)
+KVX_EXPAND_BUILTIN_2_WIDENINT (widenewd, kvx_widenewd, DImode, V2SImode)
+KVX_EXPAND_BUILTIN_2_WIDENINT (widenewdp, kvx_widenewdp, V2DImode, V4SImode)
+KVX_EXPAND_BUILTIN_2_WIDENINT (widenewdq, kvx_widenewdq, V4DImode, V8SImode)
+
+KVX_EXPAND_BUILTIN_2_WIDENINT (widenobhq, kvx_widenobhq, V4HImode, V8QImode)
+KVX_EXPAND_BUILTIN_2_WIDENINT (widenobho, kvx_widenobho, V8HImode, V16QImode)
+KVX_EXPAND_BUILTIN_2_WIDENINT (widenobhx, kvx_widenobhx, V16HImode, V32QImode)
+KVX_EXPAND_BUILTIN_2_WIDENINT (widenohwp, kvx_widenohwp, V2SImode, V4HImode)
+KVX_EXPAND_BUILTIN_2_WIDENINT (widenohwq, kvx_widenohwq, V4SImode, V8HImode)
+KVX_EXPAND_BUILTIN_2_WIDENINT (widenohwo, kvx_widenohwo, V8SImode, V16HImode)
+KVX_EXPAND_BUILTIN_2_WIDENINT (widenowd, kvx_widenowd, DImode, V2SImode)
+KVX_EXPAND_BUILTIN_2_WIDENINT (widenowdp, kvx_widenowdp, V2DImode, V4SImode)
+KVX_EXPAND_BUILTIN_2_WIDENINT (widenowdq, kvx_widenowdq, V4DImode, V8SImode)
+
 KVX_EXPAND_BUILTIN_2_NARROWINT (narrowhbo, kvx_narrowhbo, V8QImode, V8HImode)
 KVX_EXPAND_BUILTIN_2_NARROWINT (narrowhbx, kvx_narrowhbx, V16QImode, V16HImode)
 KVX_EXPAND_BUILTIN_2_NARROWINT (narrowhbv, kvx_narrowhbv, V32QImode, V32HImode)
@@ -3293,7 +3353,7 @@ KVX_EXPAND_BUILTIN_2_NARROWINT (narrowdwo, kvx_narrowdwo, V8SImode, V8DImode)
 KVX_EXPAND_BUILTIN_SHIFT (shiftbo, kvx_shiftbo, V8QImode, QImode)
 KVX_EXPAND_BUILTIN_SHIFT (shiftbx, kvx_shiftbx, V16QImode, QImode)
 KVX_EXPAND_BUILTIN_SHIFT (shiftbv, kvx_shiftbv, V32QImode, QImode)
-KVX_EXPAND_BUILTIN_SHIFT (shiftbw, kvx_shiftbw, V64QImode, QImode)
+KVX_EXPAND_BUILTIN_SHIFT (shiftbt, kvx_shiftbt, V64QImode, QImode)
 KVX_EXPAND_BUILTIN_SHIFT (shifthq, kvx_shifthq, V4HImode, HImode)
 KVX_EXPAND_BUILTIN_SHIFT (shiftho, kvx_shiftho, V8HImode, HImode)
 KVX_EXPAND_BUILTIN_SHIFT (shifthx, kvx_shifthx, V16HImode, HImode)
@@ -4541,10 +4601,30 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_NARROWDWQ: return kvx_expand_builtin_narrowdwq (target, exp);
     case KVX_BUILTIN_NARROWDWO: return kvx_expand_builtin_narrowdwo (target, exp);
 
+    case KVX_BUILTIN_WIDENEBHQ: return kvx_expand_builtin_widenebhq (target, exp);
+    case KVX_BUILTIN_WIDENEBHO: return kvx_expand_builtin_widenebho (target, exp);
+    case KVX_BUILTIN_WIDENEBHX: return kvx_expand_builtin_widenebhx (target, exp);
+    case KVX_BUILTIN_WIDENEHWP: return kvx_expand_builtin_widenehwp (target, exp);
+    case KVX_BUILTIN_WIDENEHWQ: return kvx_expand_builtin_widenehwq (target, exp);
+    case KVX_BUILTIN_WIDENEHWO: return kvx_expand_builtin_widenehwo (target, exp);
+    case KVX_BUILTIN_WIDENEWD: return kvx_expand_builtin_widenewd (target, exp);
+    case KVX_BUILTIN_WIDENEWDP: return kvx_expand_builtin_widenewdp (target, exp);
+    case KVX_BUILTIN_WIDENEWDQ: return kvx_expand_builtin_widenewdq (target, exp);
+
+    case KVX_BUILTIN_WIDENOBHQ: return kvx_expand_builtin_widenobhq (target, exp);
+    case KVX_BUILTIN_WIDENOBHO: return kvx_expand_builtin_widenobho (target, exp);
+    case KVX_BUILTIN_WIDENOBHX: return kvx_expand_builtin_widenobhx (target, exp);
+    case KVX_BUILTIN_WIDENOHWP: return kvx_expand_builtin_widenohwp (target, exp);
+    case KVX_BUILTIN_WIDENOHWQ: return kvx_expand_builtin_widenohwq (target, exp);
+    case KVX_BUILTIN_WIDENOHWO: return kvx_expand_builtin_widenohwo (target, exp);
+    case KVX_BUILTIN_WIDENOWD: return kvx_expand_builtin_widenowd (target, exp);
+    case KVX_BUILTIN_WIDENOWDP: return kvx_expand_builtin_widenowdp (target, exp);
+    case KVX_BUILTIN_WIDENOWDQ: return kvx_expand_builtin_widenowdq (target, exp);
+
     case KVX_BUILTIN_SHIFTBO: return kvx_expand_builtin_shiftbo (target, exp);
     case KVX_BUILTIN_SHIFTBX: return kvx_expand_builtin_shiftbx (target, exp);
     case KVX_BUILTIN_SHIFTBV: return kvx_expand_builtin_shiftbv (target, exp);
-    case KVX_BUILTIN_SHIFTBW: return kvx_expand_builtin_shiftbw (target, exp);
+    case KVX_BUILTIN_SHIFTBT: return kvx_expand_builtin_shiftbt (target, exp);
     case KVX_BUILTIN_SHIFTHQ: return kvx_expand_builtin_shifthq (target, exp);
     case KVX_BUILTIN_SHIFTHO: return kvx_expand_builtin_shiftho (target, exp);
     case KVX_BUILTIN_SHIFTHX: return kvx_expand_builtin_shifthx (target, exp);

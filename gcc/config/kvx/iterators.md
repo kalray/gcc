@@ -495,7 +495,7 @@
   (V8SF    "wo")
   (V4DI    "dq")
   (V4DF    "dq")
-  (V64QI   "bw")
+  (V64QI   "bt")
   (V32HI   "hv")
   (V32HF   "hv")
   (V16SI   "wx")
@@ -531,7 +531,7 @@
   (V8SF    "fwo")
   (V4DI    "dq")
   (V4DF    "fdq")
-  (V64QI   "bw")
+  (V64QI   "bt")
   (V32HI   "hv")
   (V32HF   "fhv")
   (V16SI   "wx")
@@ -874,6 +874,11 @@
   (V8HF    "V4SF")
   (V4SI    "V2DI")
   (V4SF    "V2DF")
+  (V32QI   "V16HI")
+  (V16HI   "V8SI")
+  (V16HF   "V8SF")
+  (V8SI    "V4DI")
+  (V8SF    "V4DF")
 ])
 
 ;; Attribute to get the half wide mode of a vector mode.
@@ -888,6 +893,11 @@
   (V8HF    "v4sf")
   (V4SI    "v2di")
   (V4SF    "v2df")
+  (V32QI   "v16hi")
+  (V16HI   "v8si")
+  (V16HF   "v8sf")
+  (V8SI    "v4di")
+  (V8SF    "v4df")
 ])
 
 ;; Attribute to get the half widening suffix of a vector mode.
@@ -902,6 +912,11 @@
   (V8HF    "hwq")
   (V4SI    "wdp")
   (V4SF    "wdp")
+  (V32QI   "bhx")
+  (V16HI   "hwo")
+  (V16HF   "hwo")
+  (V8SI    "wdq")
+  (V8SF    "wdq")
 ])
 
 ;; Attribute to get the trunc(ate) suffix of a vector mode.
