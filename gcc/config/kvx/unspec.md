@@ -70,11 +70,11 @@
         UNSPEC_SRLD
         UNSPEC_SRAD
         UNSPEC_SRS
-        UNSPEC_ZXOBHQ
-        UNSPEC_ZXEBHQ
-        UNSPEC_QXOBHQ
-        UNSPEC_QXEBHQ
-        UNSPEC_OROEBO
+        UNSPEC_ZXO
+        UNSPEC_ZXE
+        UNSPEC_QXO
+        UNSPEC_QXE
+        UNSPEC_OROE
 
         UNSPEC_INITX2A
         UNSPEC_INITX2B
