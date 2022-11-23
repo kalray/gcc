@@ -1666,3 +1666,67 @@
 )
 
 
+;; COND_EXEC MOVE
+
+(define_insn "*cond_exec_move<FITGPR:mode>"
+  [(cond_exec
+     (match_operator 2 "zero_comparison_operator"
+      [(match_operand:SIDI 3 "register_operand" "r,r,r,r")
+       (const_int 0)])
+     (set (match_operand:FITGPR 0 "register_operand" "=r,r,r,r")
+          (match_operand:FITGPR 1 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")))]
+  ""
+  "cmoved.<SIDI:suffix>%2z %3? %0 = %1"
+  [(set_attr "type" "alu_thin,alu_thin,alu_thin_x,alu_thin_y")
+   (set_attr "length"      "4,       4,         8,        12")]
+)
+
+
+;; COND_EXEC STORE
+
+(define_insn "*cond_exec_store<ALLIFV:mode>"
+  [(cond_exec
+     (match_operator 2 "zero_comparison_operator"
+      [(match_operand:SIDI 3 "register_operand" "r,r,r")
+       (const_int 0)])
+     (set (match_operand:ALLIFV 0 "memsimple_operand" "=c,d,e")
+          (match_operand:ALLIFV 1 "register_operand" "r,r,r")))]
+  ""
+  "s<ALLIFV:lsusize>%X0.<SIDI:suffix>%2z %3? %O0 = %1"
+  [(set_attr "type" "lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
+   (set_attr "length"            "4,               8,              12")]
+)
+
+
+;; COND_EXEC LOAD
+
+(define_insn "*cond_exec_load<ALLIFV:mode>"
+  [(cond_exec
+     (match_operator 2 "zero_comparison_operator"
+      [(match_operand:SIDI 3 "register_operand" "r,r,r")
+       (const_int 0)])
+     (set (match_operand:ALLIFV 0 "register_operand" "=r,r,r")
+          (match_operand:ALLIFV 1 "memsimple_operand" "c,d,e")))]
+  ""
+  "l<ALLIFV:lsusizezx>%V1.<SIDI:suffix>%2z %3? %0 = %O1"
+  [(set_attr "type" "lsu_auxw_load,lsu_auxw_load_x,lsu_auxw_load_y")
+   (set_attr "length"           "4,              8,             12")]
+)
+
+
+;; COND_EXEC LOAD EXTEND
+
+(define_insn "*cond_exec_load<SHORT:mode><ANY_EXTEND:lsux>"
+  [(cond_exec
+     (match_operator 2 "zero_comparison_operator"
+      [(match_operand:SIDI 3 "register_operand" "r,r,r")
+       (const_int 0)])
+     (set (match_operand:DI 0 "register_operand" "=r,r,r")
+          (ANY_EXTEND:DI (match_operand:SHORT 1 "memsimple_operand" "c,d,e"))))]
+  ""
+  "l<SHORT:lsusize><ANY_EXTEND:lsux>%V1.<SIDI:suffix>%2z %3? %0 = %O1"
+  [(set_attr "type" "lsu_auxw_load,lsu_auxw_load_x,lsu_auxw_load_y")
+   (set_attr "length"           "4,              8,             12")]
+)
+
+

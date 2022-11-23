@@ -242,7 +242,7 @@
     case 4: case 5: case 6:
       return "s<ALLIF:lsusize>%X0 %0 = %1";
     case 7: case 8: case 9: case 10: case 11: case 12:
-      return "l<lsusize><lsuzx>%V1 %0 = %1";
+      return "l<lsusizezx>%V1 %0 = %1";
     case 13:
       return "get %0 = %1";
     case 14:
