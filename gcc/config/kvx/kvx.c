@@ -37,6 +37,7 @@
 #include "gimple.h"
 #include "cfghooks.h"
 #include "cfgloop.h"
+#include "profile.h"
 #include "df.h"
 #include "tm_p.h"
 #include "stringpool.h"
@@ -4732,11 +4733,6 @@ kvx_sched_adjust_priority (rtx_insn *insn, int priority)
 static void
 kvx_sched_dependencies_evaluation_hook (rtx_insn *head, rtx_insn *tail)
 {
-  rtx_insn *next_tail = NEXT_INSN (tail);
-  for (rtx_insn *insn = head; insn != next_tail; insn = NEXT_INSN (insn))
-    {
-      // Place holder, do nothing for now.
-    }
 }
 
 /* SCHED2 data structure. */
@@ -4861,6 +4857,12 @@ kvx_sched_dfa_new_cycle (FILE *dump ATTRIBUTE_UNUSED,
 static void
 kvx_sched_set_sched_flags (struct spec_info_def *spec_info)
 {
+  unsigned int *flags = &(current_sched_info->flags);
+
+  // DO_PREDICATION prevents mapping of REG_DEP_CONTROL to REG_DEP_ANTI.
+  if (*flags & SCHED_EBB) // Implies reload-completed.
+    *flags |= DO_PREDICATION;
+
   // Speculative scheduling is enabled by non-zero spec_info->mask.
   spec_info->mask = 0;
 }
@@ -6648,6 +6650,14 @@ kvx_addr_space_convert (rtx op, tree from_type, tree to_type ATTRIBUTE_UNUSED)
   return op;
 }
 
+/* Implements TARGET_HAVE_CONDITIONAL_EXECUTION.  */
+static bool
+kvx_have_conditional_execution (void)
+{
+  // Enable NOCE before combine and COND_EXEC after reload.
+  return reload_completed;
+}
+
 static void
 kvx_function_prologue (FILE *file ATTRIBUTE_UNUSED)
 {
@@ -6878,6 +6888,74 @@ kvx_hwloop_optimize (hwloop_info loop)
 static struct hw_doloop_hooks kvx_doloop_hooks
   = { kvx_hwloop_pattern_reg, kvx_hwloop_optimize, kvx_hwloop_fail };
 
+/* Traverse the CFG and split EBBs that may grow too large.  */
+static void
+kvx_split_ebbs (void)
+{
+  unsigned block_count = 0;
+  // Find ebb HEAD and TAIL as in (schedule_ebbs).
+  basic_block bb;
+  int probability_cutoff;
+
+  if (profile_info && profile_status_for_fn (cfun) == PROFILE_READ)
+    probability_cutoff = param_tracer_min_branch_probability_feedback;
+  else
+    probability_cutoff = param_tracer_min_branch_probability;
+  probability_cutoff = REG_BR_PROB_BASE / 100 * probability_cutoff;
+
+  FOR_EACH_BB_FN (bb, cfun)
+    {
+      rtx_insn *head = BB_HEAD (bb);
+      rtx_insn *tail = BB_END (bb);
+
+      if (bb->flags & BB_DISABLE_SCHEDULE)
+	continue;
+
+      for (;;)
+	{
+	  tail = BB_END (bb);
+	  if (bb->next_bb == EXIT_BLOCK_PTR_FOR_FN (cfun)
+	      || LABEL_P (BB_HEAD (bb->next_bb)))
+	    break;
+	  edge e = find_fallthru_edge (bb->succs);
+	  if (! e)
+	    break;
+	  if (e->probability.initialized_p ()
+	      && e->probability.to_reg_br_prob_base () <= probability_cutoff)
+	    break;
+	  if (e->dest->flags & BB_DISABLE_SCHEDULE)
+	    break;
+	  if (++block_count > 256)
+	    {
+	      // Adding a label will make (schedule_ebbs) start a new EBB.
+	      BB_HEAD (bb) = emit_label_before (gen_label_rtx (), BB_HEAD (bb));
+	      break;
+	    }
+	  bb = bb->next_bb;
+	}
+
+      // Start of a new EBB.
+      block_count = 1;
+
+      // Logic from (schedule_ebb) to return the same value into bb.
+      while (head != tail)
+	{
+	  if (NOTE_P (head) || DEBUG_INSN_P (head))
+	    head = NEXT_INSN (head);
+	  else if (NOTE_P (tail) || DEBUG_INSN_P (tail))
+	    tail = PREV_INSN (tail);
+	  else if (LABEL_P (head))
+	    head = NEXT_INSN (head);
+	  else
+	    break;
+	}
+      basic_block last_bb = BLOCK_FOR_INSN (tail);
+      if (EDGE_COUNT (last_bb->preds) == 0)
+	last_bb = last_bb->prev_bb;
+      bb = last_bb;
+    }
+}
+
 /* Implements TARGET_MACHINE_DEPENDENT_REORG.  */
 static void
 kvx_machine_dependent_reorg (void)
@@ -6901,7 +6979,10 @@ kvx_machine_dependent_reorg (void)
       if (flag_selective_scheduling2 && !maybe_skip_selective_scheduling ())
 	run_selective_scheduling ();
       else
-	schedule_ebbs ();
+	{
+	  kvx_split_ebbs ();
+	  schedule_ebbs ();
+	}
 
       timevar_pop (TV_SCHED2);
     }
@@ -7562,6 +7643,9 @@ kvx_constant_alignment (const_tree exp, HOST_WIDE_INT align)
 
 #undef TARGET_COMPUTE_PRESSURE_CLASSES
 #define TARGET_COMPUTE_PRESSURE_CLASSES kvx_compute_pressure_classes
+
+#undef TARGET_HAVE_CONDITIONAL_EXECUTION
+#define TARGET_HAVE_CONDITIONAL_EXECUTION kvx_have_conditional_execution
 
 #undef TARGET_SCHED_ISSUE_RATE
 #define TARGET_SCHED_ISSUE_RATE kvx_sched_issue_rate

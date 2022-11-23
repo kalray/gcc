@@ -656,7 +656,7 @@
 (define_insn "kvx_xloadsc1024"
   [(set (match_operand:X1024 0 "register_operand" "=x,x,x")
         (unspec:X1024 [(match_operand:X1024 1 "register_operand" "0,0,0")
-                         (match_operand:X256 2 "memfoiled_operand" "c,d,e")
+                         (match_operand:X256 2 "memsimple_operand" "c,d,e")
                          (match_operand:DI 3 "register_operand" "r,r,r")
                          (match_operand 4 "" "")] UNSPEC_XLOADS))]
   ""
@@ -787,10 +787,26 @@
 
 ;; XLOADC256, KVX_XLOADC512, KVX_XLOADC1024
 
-(define_insn "kvx_xloadc256"
+(define_expand "kvx_xloadc256"
+  [(match_operand:X256 0 "register_operand" "")
+   (match_operand:X256 1 "reg_zero_mone_operand" "")
+   (match_operand:X256 2 "memsimple_operand" "")
+   (match_operand:DI 3 "register_operand" "")
+   (match_operand 4 "" "")]
+  ""
+  {
+    if (!const_zero_operand (operands[1], <MODE>mode))
+      emit_insn (gen_kvx_xloadc_ (operands[0], operands[1], operands[2], operands[3], operands[4]));
+    else
+      emit_insn (gen_kvx_xloadc__ (operands[0], operands[2], operands[3], operands[4]));
+    DONE;
+  }
+)
+
+(define_insn "kvx_xloadc_"
   [(set (match_operand:X256 0 "register_operand" "=x,x,x")
         (unspec:X256 [(match_operand:X256 1 "register_operand" "0,0,0")
-                      (match_operand:X256 2 "memfoiled_operand" "c,d,e")
+                      (match_operand:X256 2 "memsimple_operand" "c,d,e")
                       (match_operand:DI 3 "register_operand" "r,r,r")
                       (match_operand 4 "" "")] UNSPEC_XLOADC))]
   ""
@@ -802,10 +818,24 @@
    (set_attr "length" "4, 8, 12")]
 )
 
+(define_insn "kvx_xloadc__"
+  [(set (match_operand:X256 0 "register_operand" "=x,x,x")
+        (unspec:X256 [(match_operand:X256 1 "memsimple_operand" "c,d,e")
+                      (match_operand:DI 2 "register_operand" "r,r,r")
+                      (match_operand 3 "" "")] UNSPEC_XLOADC))]
+  ""
+  "xlo%3%X1 %2? %0 = %O1"
+  [(set_attr_alternative "type"
+    [(if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_load_uncached") (const_string "lsu_load"))
+     (if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_load_uncached_x") (const_string "lsu_load_x"))
+     (if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_load_uncached_y") (const_string "lsu_load_y"))])
+   (set_attr "length" "4, 8, 12")]
+)
+
 (define_expand "kvx_xloadc512"
   [(match_operand:X512 0 "register_operand" "")
-   (match_operand:X512 1 "register_operand" "")
-   (match_operand:X512 2 "memfoiled_operand" "")
+   (match_operand:X512 1 "reg_zero_mone_operand" "")
+   (match_operand:X512 2 "memsimple_operand" "")
    (match_operand:DI 3 "register_operand" "")
    (match_operand 4 "" "")]
   ""
@@ -817,21 +847,29 @@
         masks[1] = gen_reg_rtx (DImode);
         emit_move_insn (masks[1], (gen_rtx_LSHIFTRT (DImode, operands[3], GEN_INT (32))));
       }
-    for (int i = 0; i < 2; i++)
-      {
-        rtx opnd0 = simplify_gen_subreg (V1OImode, operands[0], <MODE>mode, i*32);
-        rtx opnd1 = simplify_gen_subreg (V1OImode, operands[1], <MODE>mode, i*32);
-        rtx opnd2 = simplify_gen_subreg (V1OImode, operands[2], <MODE>mode, i*32);
-        emit_insn (gen_kvx_xloadc256 (opnd0, opnd1, opnd2, masks[i], operands[4]));
-      }
+    if (!const_zero_operand (operands[1], <MODE>mode))
+      for (int i = 0; i < 2; i++)
+        {
+          rtx opnd0 = simplify_gen_subreg (V1OImode, operands[0], <MODE>mode, i*32);
+          rtx opnd1 = simplify_gen_subreg (V1OImode, operands[1], <MODE>mode, i*32);
+          rtx opnd2 = simplify_gen_subreg (V1OImode, operands[2], <MODE>mode, i*32);
+          emit_insn (gen_kvx_xloadc_ (opnd0, opnd1, opnd2, masks[i], operands[4]));
+        }
+    else
+      for (int i = 0; i < 2; i++)
+        {
+          rtx opnd0 = simplify_gen_subreg (V1OImode, operands[0], <MODE>mode, i*32);
+          rtx opnd2 = simplify_gen_subreg (V1OImode, operands[2], <MODE>mode, i*32);
+          emit_insn (gen_kvx_xloadc__ (opnd0, opnd2, masks[i], operands[4]));
+        }
     DONE;
   }
 )
 
 (define_expand "kvx_xloadc1024"
   [(match_operand:X1024 0 "register_operand" "")
-   (match_operand:X1024 1 "register_operand" "")
-   (match_operand:X1024 2 "memfoiled_operand" "")
+   (match_operand:X1024 1 "reg_zero_mone_operand" "")
+   (match_operand:X1024 2 "memsimple_operand" "")
    (match_operand:TI 3 "register_operand" "")
    (match_operand 4 "" "")]
   ""
@@ -847,13 +885,21 @@
         masks[3] = gen_reg_rtx (DImode);
         emit_move_insn (masks[3], (gen_rtx_LSHIFTRT (DImode, masks[2], GEN_INT (32))));
       }
-    for (int i = 0; i < 4; i++)
-      {
-        rtx opnd0 = simplify_gen_subreg (V1OImode, operands[0], <MODE>mode, i*32);
-        rtx opnd1 = simplify_gen_subreg (V1OImode, operands[1], <MODE>mode, i*32);
-        rtx opnd2 = simplify_gen_subreg (V1OImode, operands[2], <MODE>mode, i*32);
-        emit_insn (gen_kvx_xloadc256 (opnd0, opnd1, opnd2, masks[i], operands[4]));
-      }
+    if (!const_zero_operand (operands[1], <MODE>mode))
+      for (int i = 0; i < 4; i++)
+        {
+          rtx opnd0 = simplify_gen_subreg (V1OImode, operands[0], <MODE>mode, i*32);
+          rtx opnd1 = simplify_gen_subreg (V1OImode, operands[1], <MODE>mode, i*32);
+          rtx opnd2 = simplify_gen_subreg (V1OImode, operands[2], <MODE>mode, i*32);
+          emit_insn (gen_kvx_xloadc_ (opnd0, opnd1, opnd2, masks[i], operands[4]));
+        }
+    else
+      for (int i = 0; i < 4; i++)
+        {
+          rtx opnd0 = simplify_gen_subreg (V1OImode, operands[0], <MODE>mode, i*32);
+          rtx opnd2 = simplify_gen_subreg (V1OImode, operands[2], <MODE>mode, i*32);
+          emit_insn (gen_kvx_xloadc__ (opnd0, opnd2, masks[i], operands[4]));
+        }
     DONE;
   }
 )
@@ -919,7 +965,7 @@
 ;; XSTOREC256, KVX_XSTOREC512, KVX_XSTOREC1024
 
 (define_insn "kvx_xstorec256"
-  [(set (match_operand:X256 1 "memfoiled_operand"  "=c,d,e")
+  [(set (match_operand:X256 1 "memsimple_operand"  "=c,d,e")
         (unspec:X256 [(match_operand:X256 0 "register_operand" "x,x,x")
                         (match_operand:DI 2 "register_operand" "r,r,r")
                         (match_operand 3 "" "")] UNSPEC_XSTOREC))
@@ -933,7 +979,7 @@
 
 (define_expand "kvx_xstorec512"
   [(match_operand:X512 0 "register_operand" "")
-   (match_operand:X512 1 "memfoiled_operand" "")
+   (match_operand:X512 1 "memsimple_operand" "")
    (match_operand:DI 2 "register_operand" "")
    (match_operand 3 "" "")
    (match_operand:SI 4 "nonmemory_operand" "")]
@@ -958,7 +1004,7 @@
 
 (define_expand "kvx_xstorec1024"
   [(match_operand:X1024 0 "register_operand" "")
-   (match_operand:X1024 1 "memfoiled_operand" "")
+   (match_operand:X1024 1 "memsimple_operand" "")
    (match_operand:TI 2 "register_operand" "")
    (match_operand 3 "" "")
    (match_operand:SI 4 "nonmemory_operand" "")]
@@ -991,7 +1037,7 @@
 (define_insn "kvx_xpreload<XBUFF:bitsize>"
   [(set (match_operand:XBUFF 0 "register_operand" "=x,x,x")
         (unspec:XBUFF [(match_operand:XBUFF 1 "register_operand" "0,0,0")
-                       (match_operand:X256 2 "memfoiled_operand" "c,d,e")
+                       (match_operand:X256 2 "memsimple_operand" "c,d,e")
                        (match_operand:DI 3 "register_operand" "r,r,r")
                        (match_operand 4 "" "")] UNSPEC_XPRELOAD))]
   "KV3_2"

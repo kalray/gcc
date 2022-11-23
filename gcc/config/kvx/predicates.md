@@ -179,9 +179,9 @@
 })
 
 ;; Reject memory addresses that use the .xs addressing mode.
-;; Here .xs addressing may appear as (plus (ashift (reg) (const_int)) (reg)).
+;; Here .xs addressing may appear as (plus (mult (reg) (const_int)) (reg)).
 ;; In that cases addresses will be rejected by address_operand().
-(define_special_predicate "noxsaddr_operand"
+(define_predicate "noxsaddr_operand"
   (match_test "address_operand (op, mode)")
 {
   if (GET_CODE (op) == PLUS && GET_CODE (XEXP (op, 0)) == MULT)
@@ -190,7 +190,7 @@
 })
 
 ;; Used to filter the addressing mode of masked memory instructions.
-(define_special_predicate "memfoiled_operand"
+(define_predicate "memsimple_operand"
   (match_code "mem")
 {
   return indirect_operand (op, mode)
@@ -199,7 +199,7 @@
 })
 
 ;; Used to filter the addressing mode of atomic memory instructions.
-(define_special_predicate "mematomic_operand"
+(define_predicate "mematomic_operand"
   (match_code "mem")
 {
   if (KV3_1)
