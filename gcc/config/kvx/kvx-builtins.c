@@ -2307,7 +2307,7 @@ build_xloadq_arg (tree arg, const char *name)
 }
 
 static rtx
-build_loadcond_arg (tree arg, const char *name)
+build_loadcond_arg (tree arg, const char *name, int *_clear)
 {
   const char *modifier = kvx_tree_string_constant (arg, name);
   // If kv3-1 coprocessor builtin, modifier must include ".u" or ".us".
@@ -2338,6 +2338,8 @@ build_loadcond_arg (tree arg, const char *name)
 	  if (KV3_1 && masked_modifier (operand, VOIDmode))
 	    error ("__builtin_kvx_%s modifier \"%s\" is for the kv3-2 masked loads.",
 		   name, modifier);
+	  if (_clear && (strstr (modifier, ".mtc") || strstr (modifier, ".mfc")))
+	    *_clear = true;
 	  return operand;
 	}
     }
@@ -4013,12 +4015,12 @@ KVX_EXPAND_BUILTIN_LOAD (xload1024, X1024mode, X1024mode)
   {                                                                            \
     if (KV3_N_ONLY)                                                            \
       error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
-    int nargs = call_expr_nargs (args), volatile_p = 0;                        \
+    int nargs = call_expr_nargs (args), volatile_p = 0, clear = 0;             \
     machine_mode cmode = GET_MODE_SIZE (mmode) > 64 ? TImode : DImode;         \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
     rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));                        \
-    rtx arg4 = build_loadcond_arg (CALL_EXPR_ARG (args, 3), #name);            \
+    rtx arg4 = build_loadcond_arg (CALL_EXPR_ARG (args, 3), #name, &clear);    \
     arg1 = force_reg (tmode, arg1);                                            \
     arg2 = gen_rtx_MEM (mmode, force_reg (Pmode, arg2));                       \
     arg3 = force_reg (cmode, arg3);                                            \
@@ -4035,6 +4037,8 @@ KVX_EXPAND_BUILTIN_LOAD (xload1024, X1024mode, X1024mode)
       target = gen_reg_rtx (tmode);                                            \
     else                                                                       \
       target = force_reg (tmode, target);                                      \
+    if (clear)                                                                 \
+      arg1 = CONST0_RTX (tmode);                                               \
     emit_insn (gen_kvx_##name (target, arg1, arg2, arg3, arg4));               \
     return target;                                                             \
   }

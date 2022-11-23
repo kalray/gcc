@@ -7232,7 +7232,7 @@
 (define_insn "kvx_loadcbz"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r")
         (zero_extend:DI (unspec:QI [(match_operand:DI 1 "register_operand" "0,0,0")
-                                    (match_operand:QI 2 "memfoiled_operand" "c,d,e")
+                                    (match_operand:QI 2 "memsimple_operand" "c,d,e")
                                     (match_operand:DI 3 "register_operand" "r,r,r")
                                     (match_operand 4 "" "")] UNSPEC_LOADC)))]
   ""
@@ -7247,7 +7247,7 @@
 (define_insn "kvx_loadchz"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r")
         (zero_extend:DI (unspec:HI [(match_operand:DI 1 "register_operand" "0,0,0")
-                                    (match_operand:HI 2 "memfoiled_operand" "c,d,e")
+                                    (match_operand:HI 2 "memsimple_operand" "c,d,e")
                                     (match_operand:DI 3 "register_operand" "r,r,r")
                                     (match_operand 4 "" "")] UNSPEC_LOADC)))]
   ""
@@ -7262,7 +7262,7 @@
 (define_insn "kvx_loadcwz"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r")
         (zero_extend:DI (unspec:SI [(match_operand:DI 1 "register_operand" "0,0,0")
-                                    (match_operand:SI 2 "memfoiled_operand" "c,d,e")
+                                    (match_operand:SI 2 "memsimple_operand" "c,d,e")
                                     (match_operand:DI 3 "register_operand" "r,r,r")
                                     (match_operand 4 "" "")] UNSPEC_LOADC)))]
   ""
@@ -7277,7 +7277,7 @@
 (define_insn "kvx_loadcd"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r")
         (unspec:DI [(match_operand:DI 1 "register_operand" "0,0,0")
-                    (match_operand:DI 2 "memfoiled_operand" "c,d,e")
+                    (match_operand:DI 2 "memsimple_operand" "c,d,e")
                     (match_operand:DI 3 "register_operand" "r,r,r")
                     (match_operand 4 "" "")] UNSPEC_LOADC))]
   ""
@@ -7292,7 +7292,7 @@
 (define_insn "kvx_loadcq"
   [(set (match_operand:TI 0 "register_operand" "=r,r,r")
         (unspec:TI [(match_operand:TI 1 "register_operand" "0,0,0")
-                    (match_operand:TI 2 "memfoiled_operand" "c,d,e")
+                    (match_operand:TI 2 "memsimple_operand" "c,d,e")
                     (match_operand:DI 3 "register_operand" "r,r,r")
                     (match_operand 4 "" "")] UNSPEC_LOADC))]
   ""
@@ -7307,7 +7307,7 @@
 (define_insn "kvx_loadchf"
   [(set (match_operand:HF 0 "register_operand" "=r,r,r")
         (unspec:HF [(match_operand:HF 1 "register_operand" "0,0,0")
-                    (match_operand:HF 2 "memfoiled_operand" "c,d,e")
+                    (match_operand:HF 2 "memsimple_operand" "c,d,e")
                     (match_operand:DI 3 "register_operand" "r,r,r")
                     (match_operand 4 "" "")] UNSPEC_LOADC))]
   ""
@@ -7322,7 +7322,7 @@
 (define_insn "kvx_loadcwf"
   [(set (match_operand:SF 0 "register_operand" "=r,r,r")
         (unspec:SF [(match_operand:SF 1 "register_operand" "0,0,0")
-                    (match_operand:SF 2 "memfoiled_operand" "c,d,e")
+                    (match_operand:SF 2 "memsimple_operand" "c,d,e")
                     (match_operand:DI 3 "register_operand" "r,r,r")
                     (match_operand 4 "" "")] UNSPEC_LOADC))]
   ""
@@ -7337,7 +7337,7 @@
 (define_insn "kvx_loadcdf"
   [(set (match_operand:DF 0 "register_operand" "=r,r,r")
         (unspec:DF [(match_operand:DF 1 "register_operand" "0,0,0")
-                    (match_operand:DF 2 "memfoiled_operand" "c,d,e")
+                    (match_operand:DF 2 "memsimple_operand" "c,d,e")
                     (match_operand:DI 3 "register_operand" "r,r,r")
                     (match_operand 4 "" "")] UNSPEC_LOADC))]
   ""
@@ -7351,8 +7351,8 @@
 
 (define_expand "kvx_loadc64"
   [(match_operand:V64 0 "register_operand" "")
-   (match_operand:V64 1 "register_operand" "")
-   (match_operand:V64 2 "memfoiled_operand" "")
+   (match_operand:V64 1 "reg_zero_mone_operand" "")
+   (match_operand:V64 2 "memsimple_operand" "")
    (match_operand:DI 3 "register_operand" "")
    (match_operand 4 "" "")]
   ""
@@ -7363,8 +7363,13 @@
         rtx address = XEXP (operands[2], 0);
         rtx memory = gen_rtx_MEM (<TMODE>mode, address);
         MEM_COPY_ATTRIBUTES (memory, operands[2]);
-        emit_insn (gen_rtx_SET (gen_rtx_SUBREG (<MODE>mode, loaded, 0), operands[1]));
-        emit_insn (gen_kvx_loadc256 (loaded, loaded, memory, operands[3], operands[4]));
+        if (!const_zero_operand (operands[1], <MODE>mode))
+          {
+            emit_insn (gen_rtx_SET (gen_rtx_SUBREG (<MODE>mode, loaded, 0), operands[1]));
+            emit_insn (gen_kvx_loadc_ (loaded, loaded, memory, operands[3], operands[4]));
+          }
+        else
+          emit_insn (gen_kvx_loadc__ (loaded, memory, operands[3], operands[4]));
         emit_insn (gen_rtx_SET (operands[0], gen_rtx_SUBREG (<MODE>mode, loaded, 0)));
       }
     else
@@ -7376,7 +7381,7 @@
 (define_insn "kvx_loadc64_"
   [(set (match_operand:V64 0 "register_operand" "=r,r,r")
         (unspec:V64 [(match_operand:V64 1 "register_operand" "0,0,0")
-                     (match_operand:V64 2 "memfoiled_operand" "c,d,e")
+                     (match_operand:V64 2 "memsimple_operand" "c,d,e")
                      (match_operand:DI 3 "register_operand" "r,r,r")
                      (match_operand 4 "" "")] UNSPEC_LOADC))]
   ""
@@ -7390,8 +7395,8 @@
 
 (define_expand "kvx_loadc128"
   [(match_operand:V128 0 "register_operand" "")
-   (match_operand:V128 1 "register_operand" "")
-   (match_operand:V128 2 "memfoiled_operand" "")
+   (match_operand:V128 1 "reg_zero_mone_operand" "")
+   (match_operand:V128 2 "memsimple_operand" "")
    (match_operand:DI 3 "register_operand" "")
    (match_operand 4 "" "")]
   ""
@@ -7402,8 +7407,13 @@
         rtx address = XEXP (operands[2], 0);
         rtx memory = gen_rtx_MEM (<DMODE>mode, address);
         MEM_COPY_ATTRIBUTES (memory, operands[2]);
-        emit_insn (gen_rtx_SET (gen_rtx_SUBREG (<MODE>mode, loaded, 0), operands[1]));
-        emit_insn (gen_kvx_loadc256 (loaded, loaded, memory, operands[3], operands[4]));
+        if (!const_zero_operand (operands[1], <MODE>mode))
+          {
+            emit_insn (gen_rtx_SET (gen_rtx_SUBREG (<MODE>mode, loaded, 0), operands[1]));
+            emit_insn (gen_kvx_loadc_ (loaded, loaded, memory, operands[3], operands[4]));
+          }
+        else
+          emit_insn (gen_kvx_loadc__ (loaded, memory, operands[3], operands[4]));
         emit_insn (gen_rtx_SET (operands[0], gen_rtx_SUBREG (<MODE>mode, loaded, 0)));
       }
     else
@@ -7415,7 +7425,7 @@
 (define_insn "kvx_loadc128_"
   [(set (match_operand:V128 0 "register_operand" "=r,r,r")
         (unspec:V128 [(match_operand:V128 1 "register_operand" "0,0,0")
-                      (match_operand:V128 2 "memfoiled_operand" "c,d,e")
+                      (match_operand:V128 2 "memsimple_operand" "c,d,e")
                       (match_operand:DI 3 "register_operand" "r,r,r")
                       (match_operand 4 "" "")] UNSPEC_LOADC))]
   ""
@@ -7427,10 +7437,26 @@
    (set_attr "length" "4, 8, 12")]
 )
 
-(define_insn "kvx_loadc256"
+(define_expand "kvx_loadc256"
+  [(match_operand:V256 0 "register_operand" "")
+   (match_operand:V256 1 "reg_zero_mone_operand" "")
+   (match_operand:V256 2 "memsimple_operand" "")
+   (match_operand:DI 3 "register_operand" "")
+   (match_operand 4 "" "")]
+  ""
+  {
+    if (!const_zero_operand (operands[1], <MODE>mode))
+      emit_insn (gen_kvx_loadc_ (operands[0], operands[1], operands[2], operands[3], operands[4]));
+    else
+      emit_insn (gen_kvx_loadc__ (operands[0], operands[2], operands[3], operands[4]));
+    DONE;
+  }
+)
+
+(define_insn "kvx_loadc_"
   [(set (match_operand:V256 0 "register_operand" "=r,r,r")
-        (unspec:V256 [(match_operand:V256 1 "register_operand" "0,0,0")
-                      (match_operand:V256 2 "memfoiled_operand" "c,d,e")
+        (unspec:V256 [(match_operand:V256 1 "reg_zero_mone_operand" "0,0,0")
+                      (match_operand:V256 2 "memsimple_operand" "c,d,e")
                       (match_operand:DI 3 "register_operand" "r,r,r")
                       (match_operand 4 "" "")] UNSPEC_LOADC))]
   ""
@@ -7439,6 +7465,20 @@
     [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
      (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
      (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+   (set_attr "length" "4, 8, 12")]
+)
+
+(define_insn "kvx_loadc__"
+  [(set (match_operand:V256 0 "register_operand" "=r,r,r")
+        (unspec:V256 [(match_operand:V256 1 "memsimple_operand" "c,d,e")
+                      (match_operand:DI 2 "register_operand" "r,r,r")
+                      (match_operand 3 "" "")] UNSPEC_LOADC))]
+  ""
+  "lo%3%X1 %2? %0 = %O1"
+  [(set_attr_alternative "type"
+    [(if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -7604,7 +7644,7 @@
 ;; KVX_STOREC*
 
 (define_insn "kvx_storecb"
-  [(set (match_operand:QI 1 "memfoiled_operand"  "=c,d,e")
+  [(set (match_operand:QI 1 "memsimple_operand"  "=c,d,e")
         (unspec:QI [(match_operand:DI 0 "register_operand" "r,r,r")
                     (match_operand:DI 2 "register_operand" "r,r,r")
                     (match_operand 3 "" "")] UNSPEC_STOREC))
@@ -7616,7 +7656,7 @@
    (set_attr "length"            "4,               8,              12")]
 )
 (define_insn "*kvx_storecb"
-  [(set (match_operand:QI 1 "memfoiled_operand"  "=c,d,e")
+  [(set (match_operand:QI 1 "memsimple_operand"  "=c,d,e")
         (unspec:QI [(ANY_EXTEND:DI (match_operand:QI 0 "register_operand" "r,r,r"))
                     (match_operand:DI 2 "register_operand" "r,r,r")
                     (match_operand 3 "" "")] UNSPEC_STOREC))
@@ -7629,7 +7669,7 @@
 )
 
 (define_insn "kvx_storech"
-  [(set (match_operand:HI 1 "memfoiled_operand"  "=c,d,e")
+  [(set (match_operand:HI 1 "memsimple_operand"  "=c,d,e")
         (unspec:HI [(match_operand:DI 0 "register_operand" "r,r,r")
                     (match_operand:DI 2 "register_operand" "r,r,r")
                     (match_operand 3 "" "")] UNSPEC_STOREC))
@@ -7641,7 +7681,7 @@
    (set_attr "length"            "4,               8,              12")]
 )
 (define_insn "*kvx_storech"
-  [(set (match_operand:HI 1 "memfoiled_operand"  "=c,d,e")
+  [(set (match_operand:HI 1 "memsimple_operand"  "=c,d,e")
         (unspec:HI [(ANY_EXTEND:DI (match_operand:HI 0 "register_operand" "r,r,r"))
                     (match_operand:DI 2 "register_operand" "r,r,r")
                     (match_operand 3 "" "")] UNSPEC_STOREC))
@@ -7654,7 +7694,7 @@
 )
 
 (define_insn "kvx_storecw"
-  [(set (match_operand:SI 1 "memfoiled_operand"  "=c,d,e")
+  [(set (match_operand:SI 1 "memsimple_operand"  "=c,d,e")
         (unspec:SI [(match_operand:DI 0 "register_operand" "r,r,r")
                     (match_operand:DI 2 "register_operand" "r,r,r")
                     (match_operand 3 "" "")] UNSPEC_STOREC))
@@ -7666,7 +7706,7 @@
    (set_attr "length"            "4,               8,              12")]
 )
 (define_insn "*kvx_storecw"
-  [(set (match_operand:SI 1 "memfoiled_operand"  "=c,d,e")
+  [(set (match_operand:SI 1 "memsimple_operand"  "=c,d,e")
         (unspec:SI [(ANY_EXTEND:DI (match_operand:SI 0 "register_operand" "r,r,r"))
                     (match_operand:DI 2 "register_operand" "r,r,r")
                     (match_operand 3 "" "")] UNSPEC_STOREC))
@@ -7679,7 +7719,7 @@
 )
 
 (define_insn "kvx_storecd"
-  [(set (match_operand:DI 1 "memfoiled_operand"  "=c,d,e")
+  [(set (match_operand:DI 1 "memsimple_operand"  "=c,d,e")
         (unspec:DI [(match_operand:DI 0 "register_operand" "r,r,r")
                     (match_operand:DI 2 "register_operand" "r,r,r")
                     (match_operand 3 "" "")] UNSPEC_STOREC))
@@ -7692,7 +7732,7 @@
 )
 
 (define_insn "kvx_storecq"
-  [(set (match_operand:TI 1 "memfoiled_operand"  "=c,d,e")
+  [(set (match_operand:TI 1 "memsimple_operand"  "=c,d,e")
         (unspec:TI [(match_operand:TI 0 "register_operand" "r,r,r")
                     (match_operand:DI 2 "register_operand" "r,r,r")
                     (match_operand 3 "" "")] UNSPEC_STOREC))
@@ -7705,7 +7745,7 @@
 )
 
 (define_insn "kvx_storechf"
-  [(set (match_operand:HF 1 "memfoiled_operand"  "=c,d,e")
+  [(set (match_operand:HF 1 "memsimple_operand"  "=c,d,e")
         (unspec:HF [(match_operand:HF 0 "register_operand" "r,r,r")
                     (match_operand:DI 2 "register_operand" "r,r,r")
                     (match_operand 3 "" "")] UNSPEC_STOREC))
@@ -7718,7 +7758,7 @@
 )
 
 (define_insn "kvx_storecwf"
-  [(set (match_operand:SF 1 "memfoiled_operand"  "=c,d,e")
+  [(set (match_operand:SF 1 "memsimple_operand"  "=c,d,e")
         (unspec:SF [(match_operand:SF 0 "register_operand" "r,r,r")
                     (match_operand:DI 2 "register_operand" "r,r,r")
                     (match_operand 3 "" "")] UNSPEC_STOREC))
@@ -7731,7 +7771,7 @@
 )
 
 (define_insn "kvx_storecdf"
-  [(set (match_operand:DF 1 "memfoiled_operand"  "=c,d,e")
+  [(set (match_operand:DF 1 "memsimple_operand"  "=c,d,e")
         (unspec:DF [(match_operand:DF 0 "register_operand" "r,r,r")
                     (match_operand:DI 2 "register_operand" "r,r,r")
                     (match_operand 3 "" "")] UNSPEC_STOREC))
@@ -7744,7 +7784,7 @@
 )
 
 (define_expand "kvx_storec64"
-  [(match_operand:V64 1 "memfoiled_operand"  "")
+  [(match_operand:V64 1 "memsimple_operand"  "")
    (match_operand:V64 0 "register_operand" "")
    (match_operand:DI 2 "register_operand" "")
    (match_operand 3 "" "")
@@ -7777,7 +7817,7 @@
 )
 
 (define_insn "kvx_storec64_"
-  [(set (match_operand:V64 1 "memfoiled_operand"  "=c,d,e")
+  [(set (match_operand:V64 1 "memsimple_operand"  "=c,d,e")
         (unspec:V64 [(match_operand:V64 0 "register_operand" "r,r,r")
                      (match_operand:DI 2 "register_operand" "r,r,r")
                      (match_operand 3 "" "")] UNSPEC_STOREC))
@@ -7790,7 +7830,7 @@
 )
 
 (define_expand "kvx_storec128"
-  [(match_operand:V128 1 "memfoiled_operand"  "")
+  [(match_operand:V128 1 "memsimple_operand"  "")
    (match_operand:V128 0 "register_operand" "")
    (match_operand:DI 2 "register_operand" "")
    (match_operand 3 "" "")
@@ -7823,7 +7863,7 @@
 )
 
 (define_insn "kvx_storec128_"
-  [(set (match_operand:V128 1 "memfoiled_operand"  "=c,d,e")
+  [(set (match_operand:V128 1 "memsimple_operand"  "=c,d,e")
         (unspec:V128 [(match_operand:V128 0 "register_operand" "r,r,r")
                       (match_operand:DI 2 "register_operand" "r,r,r")
                       (match_operand 3 "" "")] UNSPEC_STOREC))
@@ -7836,7 +7876,7 @@
 )
 
 (define_insn "kvx_storec256"
-  [(set (match_operand:V256 1 "memfoiled_operand"  "=c,d,e")
+  [(set (match_operand:V256 1 "memsimple_operand"  "=c,d,e")
         (unspec:V256 [(match_operand:V256 0 "register_operand" "r,r,r")
                       (match_operand:DI 2 "register_operand" "r,r,r")
                       (match_operand 3 "" "")] UNSPEC_STOREC))
