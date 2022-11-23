@@ -4226,7 +4226,6 @@ kvx_emit_post_barrier (rtx model)
     case MEMMODEL_RELEASE:
       // No post barrier is required for RELAXED, and ACQUIRE .
       break;
-    case MEMMODEL_ACQUIRE:
     case MEMMODEL_ACQ_REL:
       // Clobber MEM to prevent moving around load and stores.
       {
@@ -4240,6 +4239,7 @@ kvx_emit_post_barrier (rtx model)
 	emit_insn (gen_kvx_fence (modifier));
 	break;
       }
+    case MEMMODEL_ACQUIRE:
     case MEMMODEL_CONSUME:
       // FENCE.R.
       {
