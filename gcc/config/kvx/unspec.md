@@ -1,6 +1,6 @@
 
 (define_c_enum "unspec"
-  [     
+  [
         UNSPEC_CARRY
         UNSPEC_BORROW
         UNSPEC_EFFECT
@@ -8,6 +8,15 @@
         UNSPEC_BARRIER
         UNSPEC_SLEEP
         UNSPEC_STOP
+
+        UNSPEC_SXLBHQ
+        UNSPEC_SXMBHQ
+        UNSPEC_SXLHWP
+        UNSPEC_SXMHWP
+        UNSPEC_ZXLBHQ
+        UNSPEC_ZXMBHQ
+        UNSPEC_ZXLHWP
+        UNSPEC_ZXMHWP
 
         UNSPEC_ALOAD
         UNSPEC_ASTORE

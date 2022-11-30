@@ -5310,6 +5310,81 @@ kvx_expand_load_store_multiple (rtx operands[], bool is_load)
   return true;
 }
 
+
+/* This function is used to expand the SPNs vec_unpack[us]_{hi,lo}.
+   Let V(nmemb, elem_size) be a vector of NMEMB of size ELEM_SIZE,
+   the SPNs vec_unpack[us]_{hi,lo} extract the high (resp. low) part
+   of a vector of type V(N,M) into a vector of type V(N/2,2M) and
+   zero (resp. sign) extend the elements.
+
+   op0: destination operand
+   op1: source operand
+   signed_p: is the source operand signed
+   hi_p: if set extracts the high part of op1. */
+bool
+kvx_expand_unpack (rtx op0, rtx op1, bool signed_p, bool hi_p)
+{
+  machine_mode op0_mode = GET_MODE (op0);
+  unsigned op0_mode_size = GET_MODE_SIZE (op0_mode);
+  scalar_mode op0_inner_mode = GET_MODE_INNER (op0_mode);
+  unsigned op0_inner_size = GET_MODE_SIZE (op0_inner_mode);
+  unsigned op0_nmemb = op0_mode_size / op0_inner_size;
+  machine_mode op0_half_mode =
+    mode_for_vector (op0_inner_mode, op0_nmemb / 2).require ();
+
+  machine_mode op1_mode = GET_MODE (op1);
+  unsigned op1_mode_size = GET_MODE_SIZE (op1_mode);
+  scalar_mode op1_inner_mode = GET_MODE_INNER (op1_mode);
+  unsigned op1_inner_size = GET_MODE_SIZE (op1_inner_mode);
+  unsigned op1_nmemb = op1_mode_size / op1_inner_size;
+  machine_mode op1_half_mode =
+    mode_for_vector (op1_inner_mode, op1_nmemb / 2).require ();
+
+  gcc_assert (op0_mode_size == op1_mode_size
+	      && op0_inner_size == 2 * op1_inner_size);
+
+  int V4HI = 0;
+  int V2SI = 1;
+  rtx (*fns[2][2][2]) (rtx, rtx) =
+  {
+    /* [V4HI][Z][LO] = */ gen_kvx_zxlbhq, /* [V4HI][Z][HI] = */ gen_kvx_zxmbhq,
+    /* [V4HI][S][LO] = */ gen_kvx_sxlbhq, /* [V4HI][S][HI] = */ gen_kvx_sxmbhq,
+    /* [V2SI][Z][LO] = */ gen_kvx_zxlhwp, /* [V2SI][Z][HI] = */ gen_kvx_zxmhwp,
+    /* [V2SI][S][LO] = */ gen_kvx_sxlhwp, /* [V2SI][S][HI] = */ gen_kvx_sxmhwp,
+  };
+
+  switch (op0_mode)
+    {
+    case E_V4HImode:
+      emit_insn ((fns[V4HI][signed_p][hi_p]) (op0, op1));
+      break;
+    case E_V2SImode:
+      emit_insn ((fns[V2SI][signed_p][hi_p]) (op0, op1));
+      break;
+    case E_V4SImode:
+    case E_V8SImode:
+    case E_V16SImode:
+    case E_V8HImode:
+    case E_V16HImode:
+    case E_V32HImode:
+      {
+	rtx op0_half_lo =
+	  simplify_gen_subreg (op0_half_mode, op0, op0_mode, 0);
+	rtx op0_half_hi = simplify_gen_subreg (op0_half_mode, op0, op0_mode,
+					       op0_mode_size / 2);
+	rtx op1_half = simplify_gen_subreg (op1_half_mode, op1, op1_mode,
+					    hi_p ? op1_mode_size / 2 : 0);
+	kvx_expand_unpack (op0_half_lo, op1_half, signed_p, /*hi_p= */ 0);
+	kvx_expand_unpack (op0_half_hi, op1_half, signed_p, /*hi_p= */ 1);
+	break;
+      }
+    default:
+      gcc_unreachable ();
+    }
+
+  return true;
+}
+
 /* Expands a store multiple with operand 0 being the first destination
    address, operand 1 the first source register and operand 2 the
    number of consecutive stores to pack. */

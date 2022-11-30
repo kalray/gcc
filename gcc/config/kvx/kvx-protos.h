@@ -83,6 +83,7 @@ extern bool kvx_expand_load_multiple (rtx operands[]);
 extern bool kvx_expand_store_multiple (rtx operands[]);
 
 extern bool kvx_load_multiple_operation_p (rtx op, bool is_uncached);
+extern bool kvx_expand_unpack (rtx op0, rtx op1, bool signed_p, bool hi_p);
 
 extern bool kvx_store_multiple_operation_p (rtx op);
 

@@ -7299,6 +7299,7 @@ proc check_effective_target_vect_unpack { } {
     return [check_cached_effective_target_indexed vect_unpack {
       expr { ([istarget powerpc*-*-*] && ![istarget powerpc-*paired*])
              || [istarget i?86-*-*] || [istarget x86_64-*-*]
+             || [istarget kvx-*-*]
              || [istarget ia64-*-*]
              || [istarget aarch64*-*-*]
 	     || ([istarget mips*-*-*]
