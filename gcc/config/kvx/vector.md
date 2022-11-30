@@ -8130,4 +8130,196 @@
   }
 )
 
+;; PACK / UNPACK
+
+(define_insn "kvx_sxmbhq"
+  [(set (match_operand:V4HI 0 "register_operand" "=r")
+	(unspec:V4HI [(match_operand:V8QI 1 "register_operand" "r")]
+		       UNSPEC_SXMBHQ))]
+  ""
+  "sxmbhq %0 = %1"
+  [(set_attr "type" "alu_lite")
+   (set_attr "length" "4")]
+)
+
+(define_insn "kvx_sxlbhq"
+  [(set (match_operand:V4HI 0 "register_operand" "=r")
+	(unspec:V4HI [(match_operand:V8QI 1 "register_operand" "r")]
+		       UNSPEC_SXLBHQ))]
+  ""
+  "sxlbhq %0 = %1"
+  [(set_attr "type" "alu_lite")
+   (set_attr "length" "4")]
+)
+
+(define_insn "kvx_zxmbhq_2"
+  [(set (match_operand:V4HI 0 "register_operand" "=r")
+	(unspec:V4HI [(match_operand:V8QI 1 "register_operand" "r")]
+		       UNSPEC_ZXMBHQ))]
+  "KV3_2"
+  "zxmbhq %0 = %1"
+  [(set_attr "type" "alu_lite")
+   (set_attr "length" "4")]
+)
+
+(define_expand "kvx_zxmbhq"
+  [(match_operand:V4HI 0 "register_operand")
+   (match_operand:V8QI 1 "register_operand")]
+  ""
+  {
+    if (KV3_1)
+      {
+	rtx expand_msb = GEN_INT (0x0008000400020001ULL << 4);
+	operands[0] = simplify_gen_subreg (DImode, operands[0], V4HImode, 0);
+	operands[1] = simplify_gen_subreg (DImode, operands[1], V8QImode, 0);
+	emit_insn (gen_kvx_sbmm8 (operands[0], operands[1], expand_msb));
+      }
+    else
+      emit_insn (gen_kvx_zxmbhq_2 (operands[0], operands[1]));
+    DONE;
+  }
+)
+
+(define_insn "kvx_zxlbhq_2"
+  [(set (match_operand:V4HI 0 "register_operand" "=r")
+	(unspec:V4HI [(match_operand:V8QI 1 "register_operand" "r")]
+		       UNSPEC_ZXLBHQ))]
+  "KV3_2"
+  "zxlbhq %0 = %1"
+  [(set_attr "type" "alu_lite")
+   (set_attr "length" "4")]
+)
+
+(define_expand "kvx_zxlbhq"
+  [(match_operand:V4HI 0 "register_operand")
+   (match_operand:V8QI 1 "register_operand")]
+  ""
+  {
+    if (KV3_1)
+      {
+	rtx expand_lsb = GEN_INT (0x0008000400020001ULL);
+	operands[0] = simplify_gen_subreg (DImode, operands[0], V4HImode, 0);
+	operands[1] = simplify_gen_subreg (DImode, operands[1], V8QImode, 0);
+	emit_insn (gen_kvx_sbmm8 (operands[0], operands[1], expand_lsb));
+      }
+    else
+      emit_insn (gen_kvx_zxlbhq_2 (operands[0], operands[1]));
+    DONE;
+  }
+)
+
+(define_insn "kvx_sxmhwp"
+  [(set (match_operand:V2SI 0 "register_operand" "=r")
+	(unspec:V2SI [(match_operand:V4HI 1 "register_operand" "r")]
+		       UNSPEC_SXMHWP))]
+  ""
+  "sxmhwp %0 = %1"
+  [(set_attr "type" "alu_lite")
+   (set_attr "length" "4")]
+)
+
+(define_insn "kvx_sxlhwp"
+  [(set (match_operand:V2SI 0 "register_operand" "=r")
+	(unspec:V2SI [(match_operand:V4HI 1 "register_operand" "r")]
+		       UNSPEC_SXLHWP))]
+  ""
+  "sxlhwp %0 = %1"
+  [(set_attr "type" "alu_lite")
+   (set_attr "length" "4")]
+)
+
+(define_insn "kvx_zxmhwp_2"
+  [(set (match_operand:V2SI 0 "register_operand" "=r")
+	(unspec:V2SI [(match_operand:V4HI 1 "register_operand" "r")]
+		       UNSPEC_ZXMHWP))]
+  "KV3_2"
+  "zxmhwp %0 = %1"
+  [(set_attr "type" "alu_lite")
+   (set_attr "length" "4")]
+)
+
+(define_expand "kvx_zxmhwp"
+  [(match_operand:V2SI 0 "register_operand")
+   (match_operand:V4HI 1 "register_operand")]
+  ""
+  {
+    if (KV3_1)
+      {
+	rtx expand_msb = GEN_INT (0x0000080400000201ULL << 4);
+	operands[0] = simplify_gen_subreg (DImode, operands[0], V2SImode, 0);
+	operands[1] = simplify_gen_subreg (DImode, operands[1], V4HImode, 0);
+	emit_insn (gen_kvx_sbmm8 (operands[0], operands[1], expand_msb));
+      }
+    else
+      emit_insn (gen_kvx_zxmhwp_2 (operands[0], operands[1]));
+    DONE;
+  }
+)
+
+(define_insn "kvx_zxlhwp_2"
+  [(set (match_operand:V2SI 0 "register_operand" "=r")
+	(unspec:V2SI [(match_operand:V4HI 1 "register_operand" "r")]
+		       UNSPEC_ZXLHWP))]
+  "KV3_2"
+  "zxlhwp %0 = %1"
+  [(set_attr "type" "alu_lite")
+   (set_attr "length" "4")])
+
+(define_expand "kvx_zxlhwp"
+  [(match_operand:V2SI 0 "register_operand")
+   (match_operand:V4HI 1 "register_operand")]
+  ""
+  {
+    if (KV3_1)
+      {
+	rtx expand_lsb = GEN_INT (0x0000080400000201ULL);
+	operands[0] = simplify_gen_subreg (DImode, operands[0], V2SImode, 0);
+	operands[1] = simplify_gen_subreg (DImode, operands[1], V4HImode, 0);
+	emit_insn (gen_kvx_sbmm8 (operands[0], operands[1], expand_lsb));
+      }
+    else
+      emit_insn (gen_kvx_zxlhwp_2 (operands[0], operands[1]));
+    DONE;
+  }
+)
+
+(define_expand "vec_unpacks_hi_<packi>"
+  [(set (match_operand:UNPACKI 0 "register_operand")
+        (match_operand:<PACKI> 1 "register_operand"))]
+  ""
+  {
+    kvx_expand_unpack (operands[0], operands[1], /*signed_p*/1, /*hi_p*/1);
+    DONE;
+  }
+)
+
+(define_expand "vec_unpacks_lo_<packi>"
+  [(set (match_operand:UNPACKI 0 "register_operand")
+        (match_operand:<PACKI> 1 "register_operand"))]
+  ""
+  {
+    kvx_expand_unpack (operands[0], operands[1], /*signed_p*/1, /*hi_p*/0);
+    DONE;
+  }
+)
+
+(define_expand "vec_unpacku_hi_<packi>"
+  [(match_operand:UNPACKI 0 "register_operand")
+   (match_operand:<PACKI> 1 "register_operand")]
+  ""
+  {
+    kvx_expand_unpack (operands[0], operands[1], /*signed_p*/0, /*hi_p*/1);
+    DONE;
+  }
+)
+
+(define_expand "vec_unpacku_lo_<packi>"
+  [(match_operand:UNPACKI 0 "register_operand")
+   (match_operand:<PACKI> 1 "register_operand")]
+  ""
+  {
+    kvx_expand_unpack (operands[0], operands[1], /*signed_p*/0, /*hi_p*/0);
+    DONE;
+  }
+)
 

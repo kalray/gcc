@@ -919,6 +919,42 @@
   (V8SF    "wdq")
 ])
 
+;; Iterator for all the Integral SIMD modes to which a vector can be unpacked.
+(define_mode_iterator UNPACKI [
+    V2SI V4SI V8SI V16SI
+    V4HI V8HI V16HI V32HI
+])
+
+;; Attribute to get the packed mode of a vector
+(define_mode_attr PACKI [
+    (V2SI "V4HI")
+    (V4SI "V8HI")
+    (V8SI "V16HI")
+    (V16SI "V32HI")
+
+    (V4HI "V8QI")
+    (V8HI "V16QI")
+    (V16HI "V32QI")
+    (V32HI "V64QI")
+])
+
+(define_mode_attr packi [
+   ;(DI   "v2si")
+    (V2DI "v4si")
+    (V4DI "v8si")
+    (V8DI "v16si")
+
+    (V2SI  "v4hi")
+    (V4SI  "v8hi")
+    (V8SI  "v16hi")
+    (V16SI "v32hi")
+
+    (V4HI  "v8qi")
+    (V8HI  "v16qi")
+    (V16HI "v32qi")
+    (V32HI "v64qi")
+])
+
 ;; Attribute to get the trunc(ate) suffix of a vector mode.
 (define_mode_attr truncx [
   (V8QI    "hbo")
