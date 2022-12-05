@@ -6071,6 +6071,7 @@ enum cp_decl_spec {
   ds_storage_class,
   ds_long_long,
   ds_concept,
+  ds_addr_space,
   ds_last /* This enumerator must always be the last one.  */
 };
 
@@ -6099,6 +6100,8 @@ struct cp_decl_specifier_seq {
   cp_storage_class storage_class;
   /* For the __intN declspec, this stores the index into the int_n_* arrays.  */
   int int_n_idx;
+  /* The address space that the declaration belongs to.  */
+  addr_space_t address_space;
   /* True iff TYPE_SPEC defines a class or enum.  */
   BOOL_BITFIELD type_definition_p : 1;
   /* True iff multiple types were (erroneously) specified for this

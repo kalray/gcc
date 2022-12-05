@@ -2523,6 +2523,7 @@ dump_expr (cxx_pretty_printer *pp, tree t, int flags)
     CASE_CONVERT:
     case IMPLICIT_CONV_EXPR:
     case VIEW_CONVERT_EXPR:
+    case ADDR_SPACE_CONVERT_EXPR:
       {
 	tree op = TREE_OPERAND (t, 0);
 	tree ttype = TREE_TYPE (t);

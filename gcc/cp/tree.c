@@ -411,6 +411,7 @@ cp_stabilize_reference (tree ref)
     case PARM_DECL:
     case RESULT_DECL:
     CASE_CONVERT:
+    case ADDR_SPACE_CONVERT_EXPR:
     case FLOAT_EXPR:
     case FIX_TRUNC_EXPR:
     case INDIRECT_REF:
@@ -1976,6 +1977,7 @@ strip_typedefs_expr (tree t, bool *remove_attributes, unsigned int flags)
   switch (code)
     {
     CASE_CONVERT:
+    case ADDR_SPACE_CONVERT_EXPR:
     case IMPLICIT_CONV_EXPR:
     case DYNAMIC_CAST_EXPR:
     case STATIC_CAST_EXPR:
@@ -4085,6 +4087,7 @@ cp_tree_equal (tree t1, tree t2)
     case NEW_EXPR:
     case BIT_CAST_EXPR:
     CASE_CONVERT:
+    case ADDR_SPACE_CONVERT_EXPR:
       if (!same_type_p (TREE_TYPE (t1), TREE_TYPE (t2)))
 	return false;
       /* Now compare operands as usual.  */
@@ -5954,15 +5957,6 @@ cp_free_lang_data (tree t)
     /* We do not need the leftover chaining of namespaces from the
        binding level.  */
     DECL_CHAIN (t) = NULL_TREE;
-}
-
-/* Stub for c-common.  Please keep in sync with c-decl.c.
-   FIXME: If address space support is target specific, then this
-   should be a C target hook.  But currently this is not possible,
-   because this function is called via REGISTER_TARGET_PRAGMAS.  */
-void
-c_register_addr_space (const char * /*word*/, addr_space_t /*as*/)
-{
 }
 
 /* Return the number of operands in T that we care about for things like

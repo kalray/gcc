@@ -7066,6 +7066,7 @@ invalid_tparm_referent_p (tree type, tree expr, tsubst_flags_t complain)
   switch (TREE_CODE (expr))
     {
     CASE_CONVERT:
+    case ADDR_SPACE_CONVERT_EXPR:
       return invalid_tparm_referent_p (type, TREE_OPERAND (expr, 0),
 				       complain);
 
@@ -17784,6 +17785,7 @@ tsubst_omp_clauses (tree clauses, enum c_omp_region_type ort,
 		    case MEM_REF:
 		    case INDIRECT_REF:
 		    CASE_CONVERT:
+		    case ADDR_SPACE_CONVERT_EXPR:
 		    case POINTER_PLUS_EXPR:
 		      v = TREE_OPERAND (v, 0);
 		      continue;
@@ -17968,6 +17970,7 @@ tsubst_omp_for_iterator (tree t, int i, tree declv, tree &orig_declv,
 		  case MEM_REF:
 		  case INDIRECT_REF:
 		  CASE_CONVERT:
+		  case ADDR_SPACE_CONVERT_EXPR:
 		  case POINTER_PLUS_EXPR:
 		    v = TREE_OPERAND (v, 0);
 		    continue;
@@ -23201,8 +23204,16 @@ template_decl_level (tree decl)
 static int
 check_cv_quals_for_unify (int strict, tree arg, tree parm)
 {
-  int arg_quals = cp_type_quals (arg);
-  int parm_quals = cp_type_quals (parm);
+  int arg_quals = CLEAR_QUAL_ADDR_SPACE (cp_type_quals (arg));
+  int parm_quals = CLEAR_QUAL_ADDR_SPACE (cp_type_quals (parm));
+
+  /*   Try to unify ARG's address space into PARM's address space.
+      If PARM does not have any address space qualifiers (ie., as_parm is 0),
+      there are no constraints on address spaces for this type.  */
+  addr_space_t as_arg = DECODE_QUAL_ADDR_SPACE (cp_type_quals (arg));
+  addr_space_t as_parm = DECODE_QUAL_ADDR_SPACE (cp_type_quals (parm));
+  addr_space_t as_common;
+  addr_space_superset (as_arg, as_parm, &as_common);
 
   if (TREE_CODE (parm) == TEMPLATE_TYPE_PARM
       && !(strict & UNIFY_ALLOW_OUTER_MORE_CV_QUAL))
@@ -23222,6 +23233,9 @@ check_cv_quals_for_unify (int strict, tree arg, tree parm)
 	  && (parm_quals & TYPE_QUAL_RESTRICT))
 	return 0;
     }
+
+  if (!(as_parm == as_common || as_parm == 0))
+    return 0;
 
   if (!(strict & (UNIFY_ALLOW_MORE_CV_QUAL | UNIFY_ALLOW_OUTER_MORE_CV_QUAL))
       && (arg_quals & parm_quals) != parm_quals)
@@ -23834,10 +23848,28 @@ unify (tree tparms, tree targs, tree parm, tree arg, int strict,
 					 arg, parm))
 	    return unify_cv_qual_mismatch (explain_p, parm, arg);
 
+	  int arg_cv_quals = cp_type_quals (arg);
+	  int parm_cv_quals = cp_type_quals (parm);
+
+	  /* If PARM does not contain any address spaces constraints it can
+	     fully match the address space of ARG.  However, if PARM contains an
+	     address space constraints, it becomes the upper bound.  That is,
+	     AS_ARG may be promoted to AS_PARM but not the converse.  If we
+	     ended up here, it means that `check_cv_quals_for_unify' succeeded
+	     and that either AS_PARM is 0 (ie., no constraints) or AS_COMMON ==
+	     AS_PARM.  */
+	  addr_space_t as_arg = DECODE_QUAL_ADDR_SPACE (arg_cv_quals);
+	  addr_space_t as_parm = DECODE_QUAL_ADDR_SPACE (parm_cv_quals);
+	  addr_space_t as_common = as_parm ? 0 : as_arg;
+
 	  /* Consider the case where ARG is `const volatile int' and
 	     PARM is `const T'.  Then, T should be `volatile int'.  */
 	  arg = cp_build_qualified_type_real
 	    (arg, cp_type_quals (arg) & ~cp_type_quals (parm), tf_none);
+	  int unified_cv =
+	    (CLEAR_QUAL_ADDR_SPACE (arg_cv_quals & ~parm_cv_quals)
+	     | ENCODE_QUAL_ADDR_SPACE (as_common));
+	  arg = cp_build_qualified_type_real (arg, unified_cv, tf_none);
 	  if (arg == error_mark_node)
 	    return unify_invalid (explain_p);
 

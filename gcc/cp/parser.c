@@ -22,6 +22,7 @@ along with GCC; see the file COPYING3.  If not see
 #define INCLUDE_UNIQUE_PTR
 #include "system.h"
 #include "coretypes.h"
+#include "target.h"
 #include "cp-tree.h"
 #include "c-family/c-common.h"
 #include "timevar.h"
@@ -886,6 +887,14 @@ cp_lexer_get_preprocessor_token (unsigned flags, cp_token *token)
 	  token->type = CPP_KEYWORD;
 	  /* Record which keyword.  */
 	  token->keyword = C_RID_CODE (token->u.value);
+
+	  if (token->keyword >= RID_FIRST_ADDR_SPACE
+	      && token->keyword <= RID_LAST_ADDR_SPACE)
+	    {
+	      addr_space_t as
+		= (addr_space_t) (token->keyword - RID_FIRST_ADDR_SPACE);
+	      targetm.addr_space.diagnose_usage (as, token->location);
+	    }
 	}
       else
 	{
@@ -7502,6 +7511,15 @@ cp_parser_postfix_expression (cp_parser *parser, bool address_p, bool cast_p,
 		    postfix_expression = error_mark_node;
 		    break;
 		  }
+		if (type != error_mark_node
+		    && !ADDR_SPACE_GENERIC_P (TYPE_ADDR_SPACE (type))
+		    && current_function_decl)
+		  {
+		    error
+		      ("compound literal qualified by address-space "
+		       "qualifier");
+		    type = error_mark_node;
+		  }
 		/* Form the representation of the compound-literal.  */
 		postfix_expression
 		  = finish_compound_literal (type, initializer,
@@ -7909,6 +7927,7 @@ cp_parser_dot_deref_incomplete (tree *scope, cp_expr *postfix_expression,
     case STATIC_CAST_EXPR:
     case DYNAMIC_CAST_EXPR:
     case IMPLICIT_CONV_EXPR:
+    case ADDR_SPACE_CONVERT_EXPR:
     case VIEW_CONVERT_EXPR:
     case NON_LVALUE_EXPR:
       kind = DK_ERROR;
@@ -18560,6 +18579,14 @@ cp_parser_type_specifier (cp_parser* parser,
       break;
     }
 
+    if (RID_FIRST_ADDR_SPACE <= keyword
+	&& keyword <= RID_LAST_ADDR_SPACE)
+      {
+	ds = ds_addr_space;
+	if (is_cv_qualifier)
+	  *is_cv_qualifier = true;
+      }
+
   /* Handle simple keywords.  */
   if (ds != ds_last)
     {
@@ -22860,6 +22887,7 @@ cp_parser_ptr_operator (cp_parser* parser,
    GNU Extension:
 
    cv-qualifier:
+     address-space-qualifier
      __restrict__
 
    Returns a bitmask representing the cv-qualifiers.  */
@@ -22895,6 +22923,11 @@ cp_parser_cv_qualifier_seq_opt (cp_parser* parser)
 	  cv_qualifier = TYPE_UNQUALIFIED;
 	  break;
 	}
+
+      if (RID_FIRST_ADDR_SPACE <= token->keyword
+	  && token->keyword <= RID_LAST_ADDR_SPACE)
+	cv_qualifier
+	  = ENCODE_QUAL_ADDR_SPACE (token->keyword - RID_FIRST_ADDR_SPACE);
 
       if (!cv_qualifier)
 	break;
@@ -31547,6 +31580,8 @@ set_and_check_decl_spec_loc (cp_decl_specifier_seq *decl_specs,
       decl_specs->locations[ds] = location;
       if (ds == ds_thread)
 	decl_specs->gnu_thread_keyword_p = token_is__thread (token);
+      else if (ds == ds_addr_space)
+	decl_specs->address_space = token->keyword - RID_FIRST_ADDR_SPACE;
     }
   else
     {
@@ -31578,6 +31613,24 @@ set_and_check_decl_spec_loc (cp_decl_specifier_seq *decl_specs,
 	      richloc.add_fixit_remove ();
 	      error_at (&richloc, "duplicate %qD", token->u.value);
 	    }
+	}
+      else if (ds == ds_addr_space)
+	{
+	  addr_space_t as1 = decl_specs->address_space;
+	  addr_space_t as2 = token->keyword - RID_FIRST_ADDR_SPACE;
+
+	  gcc_rich_location richloc (location);
+	  richloc.add_fixit_remove ();
+	  if (!ADDR_SPACE_GENERIC_P (as1) && !ADDR_SPACE_GENERIC_P (as2)
+	      && as1 != as2)
+	    error_at (&richloc,
+		      "incompatible address space qualifiers %qs and %qs",
+		      c_addr_space_name (as1), c_addr_space_name (as2));
+	  if (as1 == as2 && !ADDR_SPACE_GENERIC_P (as1))
+	    error_at (&richloc, "duplicate named address space %qs",
+		      c_addr_space_name (as1));
+
+	  decl_specs->address_space = as2;
 	}
       else
 	{

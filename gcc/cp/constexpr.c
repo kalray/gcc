@@ -6822,6 +6822,7 @@ cxx_eval_constant_expression (const constexpr_ctx *ctx, tree t,
       /* FALLTHROUGH.  */
     case CONVERT_EXPR:
     case VIEW_CONVERT_EXPR:
+    case ADDR_SPACE_CONVERT_EXPR:
     case UNARY_PLUS_EXPR:
       {
 	tree oldop = TREE_OPERAND (t, 0);
@@ -8312,6 +8313,7 @@ potential_constant_expression_1 (tree t, bool want_rval, bool strict, bool now,
       /* FALLTHRU */
     case CONVERT_EXPR:
     case VIEW_CONVERT_EXPR:
+    case ADDR_SPACE_CONVERT_EXPR:
       /* -- a reinterpret_cast.  FIXME not implemented, and this rule
 	 may change to something more specific to type-punning (DR 1312).  */
       {

@@ -2488,6 +2488,15 @@ write_CV_qualifiers_for_type (const tree type)
      array.  */
   cp_cv_quals quals = TYPE_QUALS (type);
 
+  if (addr_space_t as = DECODE_QUAL_ADDR_SPACE (quals))
+    {
+      const char *as_name = c_addr_space_name (as);
+      write_char ('U');
+      write_unsigned_number (strlen (as_name));
+      write_string (as_name);
+      ++num_qualifiers;
+    }
+
   if (quals & TYPE_QUAL_RESTRICT)
     {
       write_char ('r');
