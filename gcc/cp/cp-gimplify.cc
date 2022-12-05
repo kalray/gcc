@@ -2598,6 +2598,7 @@ cp_fold (tree x, fold_flags_t flags)
       /* FALLTHRU */
     case NON_LVALUE_EXPR:
     CASE_CONVERT:
+    case ADDR_SPACE_CONVERT_EXPR:
 
       if (VOID_TYPE_P (TREE_TYPE (x)))
 	{

@@ -214,6 +214,7 @@ mark_use (tree expr, bool rvalue_p, bool read_p,
 	}
       gcc_fallthrough();
     CASE_CONVERT:
+    case ADDR_SPACE_CONVERT_EXPR:
       recurse_op[0] = true;
       break;
 
@@ -373,6 +374,7 @@ mark_exp_read (tree exp)
     case FLOAT_EXPR:
     case NON_DEPENDENT_EXPR:
     case VIEW_CONVERT_EXPR:
+    case ADDR_SPACE_CONVERT_EXPR:
       mark_exp_read (TREE_OPERAND (exp, 0));
       break;
     case COMPOUND_EXPR:
