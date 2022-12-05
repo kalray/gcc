@@ -1308,7 +1308,10 @@ recompute_todo_spec (rtx_insn *next, bool for_backtrack)
 	pro = other;
 
       cond = sched_get_reverse_condition_uncached (pro);
-      regno = REGNO (XEXP (cond, 0));
+      rtx cond_reg = XEXP (cond, 0);
+      if (GET_CODE (cond_reg) != REG)
+	cond_reg = (XEXP (cond_reg, 0));
+      regno = REGNO (cond_reg);
 
       /* Find the last scheduled insn that modifies the condition register.
 	 We can stop looking once we find the insn we depend on through the
