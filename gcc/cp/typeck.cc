@@ -546,13 +546,32 @@ composite_pointer_type_r (const op_location_t &location,
 	return error_mark_node;
       result_type = void_type_node;
     }
+
+  /* If possible merge the address space into the superset of the address
+     spaces of t1 and t2, or raise an error. */
   const int q1 = cp_type_quals (pointee1);
   const int q2 = cp_type_quals (pointee2);
-  const int quals = q1 | q2;
+  addr_space_t as_t1 = DECODE_QUAL_ADDR_SPACE (q1);
+  addr_space_t as_t2 = DECODE_QUAL_ADDR_SPACE (q2);
+  addr_space_t as_common;
+
+  /*  If the two named address spaces are different, determine the common
+      superset address space.  If there isn't one, raise an error.  */
+  if (!addr_space_superset (as_t1, as_t2, &as_common))
+    {
+      as_common = as_t1;
+      error_at (location, "%qT and %qT are in disjoint named address spaces",
+		t1, t2);
+      return error_mark_node;
+    }
+
+  const int quals = CLEAR_QUAL_ADDR_SPACE (q1 | q2)
+    | ENCODE_QUAL_ADDR_SPACE (as_common);
   result_type = cp_build_qualified_type (result_type,
 					 (quals | (*add_const
 						   ? TYPE_QUAL_CONST
 						   : TYPE_UNQUALIFIED)));
+
   /* The cv-combined type can add "const" as per [conv.qual]/3.3 (except for
      the TLQ).  The reason is that both T1 and T2 can then be converted to the
      cv-combined type of T1 and T2.  */
@@ -656,10 +675,27 @@ composite_pointer_type (const op_location_t &location,
 	  else
 	    return error_mark_node;
         }
+
+      addr_space_t as_t1 = TYPE_ADDR_SPACE (t1);
+      addr_space_t as_t2 = TYPE_ADDR_SPACE (t2);
+      addr_space_t as_common;
+
+      /* If the two named address spaces are different, determine the common
+	 superset address space.  If there isn't one, raise an error.  */
+      if (!addr_space_superset (as_t1, as_t2, &as_common))
+	{
+	  as_common = as_t1;
+	  error_at (location,
+		    "%qT and %qT are in disjoint named address spaces",
+		    t1, t2);
+	}
+      int quals_t1 = cp_type_quals (TREE_TYPE (t1));
+      int quals_t2 = cp_type_quals (TREE_TYPE (t2));
       result_type
 	= cp_build_qualified_type (void_type_node,
-				   (cp_type_quals (TREE_TYPE (t1))
-				    | cp_type_quals (TREE_TYPE (t2))));
+				   (CLEAR_QUAL_ADDR_SPACE (quals_t1)
+				    | CLEAR_QUAL_ADDR_SPACE (quals_t2)
+				    | ENCODE_QUAL_ADDR_SPACE (as_common)));
       result_type = build_pointer_type (result_type);
       /* Merge the attributes.  */
       attributes = (*targetm.merge_type_attributes) (t1, t2);
@@ -6376,9 +6412,33 @@ pointer_diff (location_t loc, tree op0, tree op1, tree ptrtype,
 {
   tree result, inttype;
   tree restype = ptrdiff_type_node;
+
+  addr_space_t as0 = TYPE_ADDR_SPACE (TREE_TYPE (TREE_TYPE (op0)));
+  addr_space_t as1 = TYPE_ADDR_SPACE (TREE_TYPE (TREE_TYPE (op1)));
   tree target_type = TREE_TYPE (ptrtype);
 
-  if (!complete_type_or_maybe_complain (target_type, NULL_TREE, complain))
+  /* If the operands point into different address spaces, we need to
+     explicitly convert them to pointers into the common address space
+     before we can subtract the numerical address values.  */
+  if (as0 != as1)
+    {
+      addr_space_t as_common;
+      tree common_type;
+
+      if (!addr_space_superset (as0, as1, &as_common))
+	{
+	  error_at (loc, "pointers to disjoint address spaces "
+		    "%qT and %qT in substraction",
+		    TREE_TYPE (op0), TREE_TYPE (op1));
+	  return error_mark_node;
+	}
+
+      common_type = common_pointer_type (TREE_TYPE (op0), TREE_TYPE (op1));
+      op0 = convert (common_type, op0);
+      op1 = convert (common_type, op1);
+    }
+
+  if (!complete_type_or_else (target_type, NULL_TREE))
     return error_mark_node;
 
   if (VOID_TYPE_P (target_type))
@@ -6837,6 +6897,7 @@ cp_build_addr_expr_1 (tree arg, bool strict_lvalue, tsubst_flags_t complain)
   switch (TREE_CODE (arg))
     {
     CASE_CONVERT:
+    case ADDR_SPACE_CONVERT_EXPR:
     case FLOAT_EXPR:
     case FIX_TRUNC_EXPR:
       /* We should have handled this above in the lvalue_kind check.  */
@@ -7801,6 +7862,41 @@ maybe_warn_about_cast_ignoring_quals (location_t loc, tree type,
 		"type qualifiers ignored on cast result type");
 }
 
+/* Warns if the cast cross address-space boundaries.  */
+static void
+warn_about_cast_crossing_as_boundaries (location_t loc, tree type,
+					tree expr, tsubst_flags_t complain)
+{
+  if (TREE_CODE (type) == POINTER_TYPE
+      && TREE_CODE (TREE_TYPE (expr)) == POINTER_TYPE
+      && !NULLPTR_TYPE_P (expr)
+      && (complain & tf_warning))
+    {
+      addr_space_t as_to = TYPE_ADDR_SPACE (TREE_TYPE (type));
+      addr_space_t as_from = TYPE_ADDR_SPACE (TREE_TYPE (TREE_TYPE (expr)));
+      addr_space_t as_common;
+
+      if (!addr_space_superset (as_to, as_from, &as_common))
+	{
+	  if (ADDR_SPACE_GENERIC_P (as_from))
+	    warning_at (loc, 0, "cast to %qs address space pointer "
+			"from disjoint generic address space pointer",
+			c_addr_space_name (as_to));
+
+	  else if (ADDR_SPACE_GENERIC_P (as_to))
+	    warning_at (loc, 0, "cast to generic address space pointer "
+			"from disjoint %qs address space pointer",
+			c_addr_space_name (as_from));
+
+	  else
+	    warning_at (loc, 0, "cast to %qs address space pointer "
+			"from disjoint %qs address space pointer",
+			c_addr_space_name (as_to),
+			c_addr_space_name (as_from));
+	}
+    }
+}
+
 /* Convert EXPR (an expression with pointer-to-member type) to TYPE
    (another pointer-to-member type in the same hierarchy) and return
    the converted expression.  If ALLOW_INVERSE_P is permitted, a
@@ -8226,6 +8322,7 @@ build_static_cast (location_t loc, tree type, tree oexpr,
 	{
 	  maybe_warn_about_useless_cast (loc, type, expr, complain);
 	  maybe_warn_about_cast_ignoring_quals (loc, type, complain);
+	  warn_about_cast_crossing_as_boundaries (loc, type, expr, complain);
 	}
       if (processing_template_decl)
 	goto tmpl;
@@ -8548,6 +8645,7 @@ build_reinterpret_cast (location_t loc, tree type, tree expr,
     {
       maybe_warn_about_useless_cast (loc, type, expr, complain);
       maybe_warn_about_cast_ignoring_quals (loc, type, complain);
+      warn_about_cast_crossing_as_boundaries (loc, type, expr, complain);
     }
   protected_set_expr_location (r, loc);
   return r;
@@ -8734,6 +8832,7 @@ build_const_cast (location_t loc, tree type, tree expr,
     {
       maybe_warn_about_useless_cast (loc, type, expr, complain);
       maybe_warn_about_cast_ignoring_quals (loc, type, complain);
+      warn_about_cast_crossing_as_boundaries (loc, type, expr, complain);
     }
   protected_set_expr_location (r, loc);
   return r;
@@ -8843,6 +8942,7 @@ cp_build_c_cast (location_t loc, tree type, tree expr,
 	{
 	  maybe_warn_about_useless_cast (loc, type, value, complain);
 	  maybe_warn_about_cast_ignoring_quals (loc, type, complain);
+	  warn_about_cast_crossing_as_boundaries (loc, type, expr, complain);
 	}
       return result;
     }
@@ -8865,6 +8965,7 @@ cp_build_c_cast (location_t loc, tree type, tree expr,
 
       maybe_warn_about_useless_cast (loc, type, value, complain);
       maybe_warn_about_cast_ignoring_quals (loc, type, complain);
+      warn_about_cast_crossing_as_boundaries (loc, type, expr, complain);
 
       /* Non-class rvalues always have cv-unqualified type.  */
       if (!CLASS_TYPE_P (type))
@@ -10807,6 +10908,30 @@ comp_ptr_ttypes_real (tree to, tree from, int constp)
 	      if (constp == 0)
 		return false;
 	      to_more_cv_qualified = true;
+	    }
+
+	  /* Warn about conversions between pointers to disjoint
+	     address spaces.  */
+	  if (TREE_CODE (from) == POINTER_TYPE
+	      && TREE_CODE (to) == POINTER_TYPE)
+	    {
+	      addr_space_t as_from = TYPE_ADDR_SPACE (TREE_TYPE (from));
+	      addr_space_t as_to = TYPE_ADDR_SPACE (TREE_TYPE (to));
+	      addr_space_t as_common;
+
+	      if (!addr_space_superset (as_to, as_from, &as_common)
+		  || as_common != as_to)
+		return false;
+	    }
+	  else
+	    {
+	      addr_space_t as_from = TYPE_ADDR_SPACE ((from));
+	      addr_space_t as_to = TYPE_ADDR_SPACE ((to));
+	      addr_space_t as_common;
+
+	      if (!addr_space_superset (as_to, as_from, &as_common)
+		  || as_common != as_to)
+		return false;
 	    }
 
 	  if (constp > 0)

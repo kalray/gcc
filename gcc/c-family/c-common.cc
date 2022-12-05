@@ -615,6 +615,33 @@ c_addr_space_name (addr_space_t as)
   return IDENTIFIER_POINTER (ridpointers [rid]);
 }
 
+/* Return true if between two named address spaces, whether there is a superset
+   named address space that encompasses both address spaces.  If there is a
+   superset, return which address space is the superset.  */
+
+bool
+addr_space_superset (addr_space_t as1, addr_space_t as2,
+		     addr_space_t * common)
+{
+  if (as1 == as2)
+    {
+      *common = as1;
+      return true;
+    }
+  else if (targetm.addr_space.subset_p (as1, as2))
+    {
+      *common = as2;
+      return true;
+    }
+  else if (targetm.addr_space.subset_p (as2, as1))
+    {
+      *common = as1;
+      return true;
+    }
+  else
+    return false;
+}
+
 /* Push current bindings for the function name VAR_DECLS.  */
 
 void
@@ -2775,6 +2802,25 @@ c_common_signed_or_unsigned_type (int unsignedp, tree type)
 #undef TYPE_OK
 
   return build_nonstandard_integer_type (TYPE_PRECISION (type), unsignedp);
+}
+
+/* Register reserved keyword WORD as qualifier for address space AS.  */
+
+void
+c_register_addr_space (const char *word, addr_space_t as)
+{
+  int rid = RID_FIRST_ADDR_SPACE + as;
+  tree id;
+
+  /* Address space qualifiers are only supported
+     in C with GNU extensions enabled.  */
+  if (c_dialect_objc () || flag_no_asm)
+    return;
+
+  id = get_identifier (word);
+  C_SET_RID_CODE (id, rid);
+  TREE_LANG_FLAG_0 (id) = 1;
+  ridpointers[rid] = id;
 }
 
 /* Build a bit-field integer type for the given WIDTH and UNSIGNEDP.  */

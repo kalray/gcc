@@ -296,32 +296,6 @@ c_type_promotes_to (tree type)
   return type;
 }
 
-/* Return true if between two named address spaces, whether there is a superset
-   named address space that encompasses both address spaces.  If there is a
-   superset, return which address space is the superset.  */
-
-static bool
-addr_space_superset (addr_space_t as1, addr_space_t as2, addr_space_t *common)
-{
-  if (as1 == as2)
-    {
-      *common = as1;
-      return true;
-    }
-  else if (targetm.addr_space.subset_p (as1, as2))
-    {
-      *common = as2;
-      return true;
-    }
-  else if (targetm.addr_space.subset_p (as2, as1))
-    {
-      *common = as1;
-      return true;
-    }
-  else
-    return false;
-}
-
 /* Return a variant of TYPE which has all the type qualifiers of LIKE
    as well as those of TYPE.  */
 

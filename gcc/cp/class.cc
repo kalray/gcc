@@ -7887,6 +7887,7 @@ fixed_type_or_null (tree instance, int *nonnull, int *cdtorp)
       return NULL_TREE;
 
     CASE_CONVERT:
+    case ADDR_SPACE_CONVERT_EXPR:
       return RECUR (TREE_OPERAND (instance, 0));
 
     case ADDR_EXPR:

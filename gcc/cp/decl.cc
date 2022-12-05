@@ -5280,6 +5280,8 @@ get_type_quals (const cp_decl_specifier_seq *declspecs)
     type_quals |= TYPE_QUAL_VOLATILE;
   if (decl_spec_seq_has_spec_p (declspecs, ds_restrict))
     type_quals |= TYPE_QUAL_RESTRICT;
+  if (decl_spec_seq_has_spec_p (declspecs, ds_addr_space))
+    type_quals |= ENCODE_QUAL_ADDR_SPACE (declspecs->address_space);
 
   return type_quals;
 }
@@ -5401,6 +5403,10 @@ check_tag_decl (cp_decl_specifier_seq *declspecs,
       else if (decl_spec_seq_has_spec_p (declspecs, ds_restrict))
 	error_at (declspecs->locations[ds_restrict],
 		  "%<__restrict%> can only be specified for objects and "
+		  "functions");
+      else if (decl_spec_seq_has_spec_p (declspecs, ds_addr_space))
+	error_at (declspecs->locations[ds_addr_space],
+		  "address space can only be specified for objects and "
 		  "functions");
       else if (decl_spec_seq_has_spec_p (declspecs, ds_thread))
 	error_at (declspecs->locations[ds_thread],
@@ -14574,6 +14580,49 @@ grokdeclarator (const cp_declarator *declarator,
        for the instantiated declaration based on the type of DECL.  */
     if (!processing_template_decl)
       cp_apply_type_quals_to_decl (type_quals, decl);
+
+    /*  Warn about address space used for things other than static memory or
+       pointers.  */
+    addr_space_t address_space = DECODE_QUAL_ADDR_SPACE (type_quals);
+    if (!ADDR_SPACE_GENERIC_P (address_space))
+      {
+	if (VAR_P (decl) && decl_context == NORMAL)
+	  {
+	    duration_kind dk = decl_storage_duration (decl);
+	    switch (dk)
+	      {
+	      case dk_auto:
+		if (! toplevel_bindings_p ())
+		  error ("%qs specified for variable %qs with automatic storage",
+			 c_addr_space_name (address_space), name);
+		break;
+	      case dk_static:
+	      case dk_thread:
+	      case dk_dynamic:
+		break;
+	      default:
+		gcc_unreachable ();
+	      }
+	  }
+	else if (decl_context == PARM && TREE_CODE (type) != ARRAY_TYPE)
+	  {
+	    if (name)
+	      error ("%qs specified for parameter %qs",
+		     c_addr_space_name (address_space), name);
+	    else
+	      error ("%qs specified for unnamed parameter",
+		     c_addr_space_name (address_space));
+	  }
+	else if (decl_context == FIELD)
+	  {
+	    if (name)
+	      error ("%qs specified for structure field %qs",
+		     c_addr_space_name (address_space), name);
+	    else
+	      error ("%qs specified for structure field",
+		     c_addr_space_name (address_space));
+	  }
+      }
 
     return decl;
   }

@@ -2454,6 +2454,7 @@ cp_fold (tree x)
     case CONVERT_EXPR:
     case NOP_EXPR:
     case NON_LVALUE_EXPR:
+    case ADDR_SPACE_CONVERT_EXPR:
 
       if (VOID_TYPE_P (TREE_TYPE (x)))
 	{

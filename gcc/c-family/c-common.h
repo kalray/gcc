@@ -829,12 +829,10 @@ extern const struct attribute_spec c_common_format_attribute_table[];
 
 extern tree (*make_fname_decl) (location_t, tree, int);
 
-/* In c-decl.cc and cp/tree.cc.  FIXME.  */
-extern void c_register_addr_space (const char *str, addr_space_t as);
-
 /* In c-common.cc.  */
 extern bool in_late_binary_op;
 extern const char *c_addr_space_name (addr_space_t as);
+extern bool addr_space_superset (addr_space_t, addr_space_t, addr_space_t *);
 extern tree identifier_global_value (tree);
 extern tree identifier_global_tag (tree);
 extern bool names_builtin_p (const char *);
@@ -952,6 +950,7 @@ extern void c_common_finish (void);
 extern void c_common_parse_file (void);
 extern FILE *get_dump_info (int, dump_flags_t *);
 extern alias_set_type c_common_get_alias_set (tree);
+extern void c_register_addr_space (const char *, addr_space_t);
 extern void c_register_builtin_type (tree, const char*);
 extern bool c_promoting_integer_type_p (const_tree);
 extern bool self_promoting_args_p (const_tree);

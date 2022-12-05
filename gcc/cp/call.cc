@@ -7914,6 +7914,31 @@ convert_like_internal (conversion *convs, tree expr, tree fn, int argnum,
 				 /*c_cast_p=*/false, complain);
 	  else if (t->kind == ck_identity)
 	    break;
+	  else if (t->kind == ck_ptr
+		   && INDIRECT_TYPE_P (TREE_TYPE (expr))
+		   && INDIRECT_TYPE_P (totype))
+	    {
+	      tree from = TREE_TYPE (TREE_TYPE (expr));
+	      tree to = TREE_TYPE (totype);
+
+	      int from_full_quals = cp_type_quals (from);
+	      int to_full_quals = cp_type_quals (to);
+	      int from_quals = CLEAR_QUAL_ADDR_SPACE (from_full_quals);
+	      int to_quals = CLEAR_QUAL_ADDR_SPACE (to_full_quals);
+	      addr_space_t as_from = DECODE_QUAL_ADDR_SPACE (from_full_quals);
+	      addr_space_t as_to = DECODE_QUAL_ADDR_SPACE (to_full_quals);
+	      if (same_type_ignoring_top_level_qualifiers_p (from, to)
+		  && from_quals == to_quals && as_from != as_to)
+		{
+		  addr_space_t as_common;
+
+		  /* If AS_FROM can be converted to AS_TO fold convert to force the
+		     selection of ADDR_SPACE_CONVERT_EXPR instead of NOP_EXPR.  */
+		  if (addr_space_superset (as_from, as_to, &as_common)
+		      && as_common == as_to)
+		    return cp_fold_convert (totype, expr);
+		}
+	    }
 	}
       if (!complained && expr != error_mark_node)
 	{
