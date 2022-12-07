@@ -1117,7 +1117,7 @@ change_spec_dep_to_hard (sd_iterator_def sd_it)
 
   DEP_STATUS (dep) &= ~SPECULATIVE;
 
-  if (true_dependency_cache != NULL)
+  if (spec_dependency_cache != NULL)
     /* Clear the cache entry.  */
     bitmap_clear_bit (&spec_dependency_cache[INSN_LUID (insn)],
 		      INSN_LUID (elem));
