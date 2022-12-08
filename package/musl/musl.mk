@@ -4,11 +4,19 @@
 #
 ################################################################################
 
-MUSL_VERSION = 1.2.3
-MUSL_SITE = http://www.musl-libc.org/releases
+MUSL_VERSION = $(call qstrip,$(BR2_MUSL_VERSION))
+MUSL_SOURCE = musl-$(MUSL_VERSION).tar.gz
 MUSL_LICENSE = MIT
 MUSL_LICENSE_FILES = COPYRIGHT
 MUSL_CPE_ID_VENDOR = musl-libc
+ifeq ($(BR2_kvx),y)
+MUSL_SITE = $(call kalray,musl,$(MUSL_VERSION))
+ifneq ($(call qstrip,$(BR2_KALRAY_SITE)),)
+BR_NO_CHECK_HASH_FOR += $(MUSL_SOURCE)
+endif
+else
+MUSL_SITE = http://www.musl-libc.org/releases
+endif
 
 # Before musl is configured, we must have the first stage
 # cross-compiler and the kernel headers
