@@ -3664,20 +3664,6 @@
   }
 )
 
-(define_expand "divdf3"
-  [(set (match_operand:DF 0 "register_operand" "")
-        (div:DF (match_operand:DF 1 "reg_or_float1_operand" "")
-                (match_operand:DF 2 "register_operand" "")))]
-  ""
-  {
-    emit_library_call_value
-      (gen_rtx_SYMBOL_REF (Pmode, "__divdf3"),
-      operands[0], LCT_CONST, DFmode,
-      operands[1], DFmode, operands[2], DFmode);
-      DONE;
-  }
-)
-
 (define_insn "fmasf4"
   [(set (match_operand:SF 0 "register_operand" "=r")
         (fma:SF  (match_operand:SF 1 "register_operand" "r")
@@ -3980,6 +3966,20 @@
   ""
   "fmuld %0 = %1, %2"
   [(set_attr "type" "mau_fpu")]
+)
+
+(define_expand "divdf3"
+  [(set (match_operand:DF 0 "register_operand" "")
+        (div:DF (match_operand:DF 1 "register_operand" "")
+                (match_operand:DF 2 "register_operand" "")))]
+  ""
+  {
+    emit_library_call_value
+      (gen_rtx_SYMBOL_REF (Pmode, "__divdf3"),
+      operands[0], LCT_CONST, DFmode,
+      operands[1], DFmode, operands[2], DFmode);
+    DONE;
+  }
 )
 
 (define_insn "fmadf4"
