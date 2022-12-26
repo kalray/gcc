@@ -120,6 +120,7 @@
   mod
   umod
 ])
+
 ;; Binary arithmetic commutative code iterator for expanding VXQI patterns.
 (define_code_iterator BINARITHC [
   plus
@@ -171,41 +172,56 @@
   rotatert
 ])
 
-;; Code attribute for mapping code to prefix of pattern name.
+;; Code attribute for mapping ALU code to prefix of pattern name.
 (define_code_attr prefix [
+  (bswap "bswap")
   (neg "neg")
   (ss_neg "ssneg")
   (abs "abs")
   (ss_abs "ssabs")
+  (clrsb "clrsb")
+  (clz "clz")
+  (ctz "ctz")
+  (popcount "popcount")
+  (not "one_cmpl")
   (plus "add")
   (ss_plus "ssadd")
   (us_plus "usadd")
   (minus "sub")
   (ss_minus "sssub")
   (us_minus "ussub")
+  (mult "mul")
   (div "div")
-  (mod "mod")
   (udiv "udiv")
+  (mod "mod")
   (umod "umod")
   (smin "smin")
   (smax "smax")
   (umin "umin")
   (umax "umax")
+  (and  "and")
+  (ior  "ior")
+  (xor  "xor")
   (ashift "ashl")
   (ss_ashift "ssashl")
   (us_ashift "usashl")
-  (rotate "rotl")
   (ashiftrt "ashr")
   (lshiftrt "lshr")
+  (rotate "rotl")
   (rotatert "rotr")
 ])
 
-;; Code attribute for mapping code to instruction mnemonic stem.
+;; Code attribute for mapping ALU code to instruction mnemonic stem.
 (define_code_attr stem [
   (neg "neg")
   (ss_neg "negs")
   (abs "abs")
   (ss_abs "abss")
+  (clrsb "cls")
+  (clz "clz")
+  (ctz "ctz")
+  (popcount "cbs")
+  (not "not")
   (plus "add")
   (ss_plus "adds")
   (us_plus "addus")
@@ -219,9 +235,9 @@
   (ashift "sll")
   (ss_ashift "sls")
   (us_ashift "slus")
-  (rotate "rol")
   (ashiftrt "sra")
   (lshiftrt "srl")
+  (rotate "rol")
   (rotatert "ror")
 ])
 
@@ -231,6 +247,7 @@
   (ss_neg "true")
   (abs "false")
   (ss_abs "true")
+  (not "true")
   (plus "false")
   (ss_plus "true")
   (us_plus "true")
@@ -687,6 +704,63 @@
   (V8DF    "v8di")
 ])
 
+;; Attribute to get the wide MODE of a vector mode.
+(define_mode_attr WIDE [
+  (V8QI    "V8HI")
+  (V4HI    "V4SI")
+  (V4HF    "V4SF")
+  (V2SI    "V2DI")
+  (V2SF    "V2DF")
+  (V16QI   "V16HI")
+  (V8HI    "V8SI")
+  (V8HF    "V8SF")
+  (V4SI    "V4DI")
+  (V4SF    "V4DF")
+  (V32QI   "V32HI")
+  (V16HI   "V16SI")
+  (V16HF   "V16SF")
+  (V8SI    "V8DI")
+  (V8SF    "V8DF")
+])
+
+;; Attribute to get the wide mode of a vector mode.
+(define_mode_attr wide [
+  (V8QI    "v8hi")
+  (V4HI    "v4si")
+  (V4HF    "v4sf")
+  (V2SI    "v2di")
+  (V2SF    "v2df")
+  (V16QI   "v16hi")
+  (V8HI    "v8si")
+  (V8HF    "v8sf")
+  (V4SI    "v4di")
+  (V4SF    "v4df")
+  (V32QI   "v32hi")
+  (V16HI   "v16si")
+  (V16HF   "v16sf")
+  (V8SI    "v8di")
+  (V8SF    "v8df")
+])
+
+;; Attribute to get the widening suffix of a vector mode.
+(define_mode_attr widenx [
+  (V8QI    "bho")
+  (V4HI    "hwq")
+  (V4HF    "hwq")
+  (V2SI    "wdp")
+  (V2SF    "wdp")
+  (V16QI   "bhx")
+  (V8HI    "hwo")
+  (V8HF    "hwo")
+  (V4SI    "wdq")
+  (V4SF    "wdq")
+  (V32QI   "bhv")
+  (V16HI   "hwx")
+  (V16HF   "hwx")
+  (V8SI    "wdo")
+  (V8SF    "wdo")
+])
+
 ;; Attribute to get the half MODE of a vector mode.
 (define_mode_attr HALF [
   (OI      "TI")
@@ -764,111 +838,29 @@
   (V8DF    "V4DI")
 ])
 
-;; Attribute to get the quarter MODE of a vector mode.
-(define_mode_attr QUART [
-  (V32QI   "V8QI")
-  (V16HI   "V4HI")
-  (V16HF   "V4HF")
-  (V8SI    "V2SI")
-  (V8SF    "V2SF")
-  (V4DI    "DI")
-  (V4DF    "DF")
-  (V64QI   "V16QI")
-  (V32HI   "V8HI")
-  (V32HF   "V8HF")
-  (V16SI   "V4SI")
-  (V16SF   "V4SF")
-  (V8DI    "V2DI")
-  (V8DF    "V2DF")
-])
-
-;; Attribute to get the quarter mask MODE of a vector mode.
-(define_mode_attr QMASK [
-  (V32QI   "V8QI")
-  (V16HI   "V4HI")
-  (V16HF   "V4HI")
-  (V8SI    "V2SI")
-  (V8SF    "V2SI")
-  (V4DI    "DI")
-  (V4DF    "DI")
-  (V64QI   "V16QI")
-  (V32HI   "V8HI")
-  (V32HF   "V8HI")
-  (V16SI   "V4SI")
-  (V16SF   "V4SI")
-  (V8DI    "V2DI")
-  (V8DF    "V2DI")
-])
-
-;; Attribute to get the wide MODE of a vector mode.
-(define_mode_attr WIDE [
-  (V8QI    "V8HI")
-  (V4HI    "V4SI")
-  (V4HF    "V4SF")
-  (V2SI    "V2DI")
-  (V2SF    "V2DF")
-  (V16QI   "V16HI")
-  (V8HI    "V8SI")
-  (V8HF    "V8SF")
-  (V4SI    "V4DI")
-  (V4SF    "V4DF")
-  (V32QI   "V32HI")
-  (V16HI   "V16SI")
-  (V16HF   "V16SF")
-  (V8SI    "V8DI")
-  (V8SF    "V8DF")
-])
-
-;; Attribute to get the wide mode of a vector mode.
-(define_mode_attr wide [
-  (V8QI    "v8hi")
-  (V4HI    "v4si")
-  (V4HF    "v4sf")
-  (V2SI    "v2di")
-  (V2SF    "v2df")
-  (V16QI   "v16hi")
-  (V8HI    "v8si")
-  (V8HF    "v8sf")
-  (V4SI    "v4di")
-  (V4SF    "v4df")
-])
-
-;; Attribute to get the wide suffix of a vector mode.
-(define_mode_attr widex [
-  (V8QI    "ho")
-  (V4HI    "wq")
-  (V4HF    "wq")
-  (V2SI    "dp")
-  (V2SF    "dp")
-  (V16QI   "hx")
-  (V8HI    "wo")
-  (V8HF    "wo")
-  (V4SI    "dq")
-  (V4SF    "dq")
-  (V32QI   "hv")
-  (V16HI   "wx")
-  (V16HF   "wx")
-  (V8SI    "do")
-  (V8SF    "do")
-])
-
-;; Attribute to get the widening suffix of a vector mode.
-(define_mode_attr widenx [
-  (V8QI    "bho")
-  (V4HI    "hwq")
-  (V4HF    "hwq")
-  (V2SI    "wdp")
-  (V2SF    "wdp")
-  (V16QI   "bhx")
-  (V8HI    "hwo")
-  (V8HF    "hwo")
-  (V4SI    "wdq")
-  (V4SF    "wdq")
-  (V32QI   "bhv")
-  (V16HI   "hwx")
-  (V16HF   "hwx")
-  (V8SI    "wdo")
-  (V8SF    "wdo")
+;; Attribute to get the half mask mode of a vector mode.
+(define_mode_attr hmask [
+  (V16QI   "v8qi")
+  (V8HI    "v4hi")
+  (V8HF    "v4hi")
+  (V4SI    "v2si")
+  (V4SF    "v2si")
+  (V2DI    "di")
+  (V2DF    "di")
+  (V32QI   "v16qi")
+  (V16HI   "v8hi")
+  (V16HF   "v8hi")
+  (V8SI    "v4si")
+  (V8SF    "v4si")
+  (V4DI    "v2di")
+  (V4DF    "v2di")
+  (V64QI   "v32qi")
+  (V32HI   "v16hi")
+  (V32HF   "v16hi")
+  (V16SI   "v8si")
+  (V16SF   "v8si")
+  (V8DI    "v4di")
+  (V8DF    "v4di")
 ])
 
 ;; Attribute to get the half wide MODE of a vector mode.
@@ -926,6 +918,61 @@
   (V16HF   "hwo")
   (V8SI    "wdq")
   (V8SF    "wdq")
+])
+
+;; Attribute to get the quarter MODE of a vector mode.
+(define_mode_attr QUART [
+  (V32QI   "V8QI")
+  (V16HI   "V4HI")
+  (V16HF   "V4HF")
+  (V8SI    "V2SI")
+  (V8SF    "V2SF")
+  (V4DI    "DI")
+  (V4DF    "DF")
+  (V64QI   "V16QI")
+  (V32HI   "V8HI")
+  (V32HF   "V8HF")
+  (V16SI   "V4SI")
+  (V16SF   "V4SF")
+  (V8DI    "V2DI")
+  (V8DF    "V2DF")
+])
+
+;; Attribute to get the quarter mask MODE of a vector mode.
+(define_mode_attr QMASK [
+  (V32QI   "V8QI")
+  (V16HI   "V4HI")
+  (V16HF   "V4HI")
+  (V8SI    "V2SI")
+  (V8SF    "V2SI")
+  (V4DI    "DI")
+  (V4DF    "DI")
+  (V64QI   "V16QI")
+  (V32HI   "V8HI")
+  (V32HF   "V8HI")
+  (V16SI   "V4SI")
+  (V16SF   "V4SI")
+  (V8DI    "V2DI")
+  (V8DF    "V2DI")
+])
+
+;; Attribute to get the quarter wide MODE of a vector mode.
+(define_mode_attr QWIDE [
+  (V16QI   "V4HI")
+  (V8HI    "V2SI")
+  (V8HF    "V2SF")
+  (V4SI    "DI")
+  (V4SF    "DF")
+  (V32QI   "V8HI")
+  (V16HI   "V4SI")
+  (V16HF   "V4SF")
+  (V8SI    "V2DI")
+  (V8SF    "V2DF")
+  (V64QI   "V16HI")
+  (V32HI   "V8SI")
+  (V32HF   "V8SF")
+  (V16SI   "V4DI")
+  (V16SF   "V4DF")
 ])
 
 ;; Iterator for all the Integral SIMD modes to which a vector can be unpacked.
@@ -1196,6 +1243,11 @@
   V8HF V4SF V2DF
 ])
 
+;; Iterator for all the 128-bit vector FP modes without half float.
+(define_mode_iterator V128G [
+  V4SF V2DF
+])
+
 ;; Iterator for the non-byte non-standard 128-bit vector integer modes.
 (define_mode_iterator V128I [
   V8HI V2DI
@@ -1214,6 +1266,11 @@
 ;; Iterator for all the 128-bit vector integer modes.
 (define_mode_iterator V128L [
   V16QI V8HI V4SI V2DI
+])
+
+;; Iterator sames as V128J on kv3-1 and same as V128I on kv3-2.
+(define_mode_iterator V128M [
+  V8HI (V4SI "KV3_1") V2DI
 ])
 
 ;; Iterator for the small element 256-bit vector FP modes.
@@ -1248,7 +1305,12 @@
   V16HF V8SF V4DF
 ])
 
-;; Iterator for V16HI V4DI
+;; Iterator for all the 256-bit vector FP modes without half float.
+(define_mode_iterator V256G [
+  V8SF V4DF
+])
+
+;; Iterator for the non-byte non-standard 256-bit vector integer modes.
 (define_mode_iterator V256I [
   V16HI V4DI
 ])
@@ -1268,6 +1330,11 @@
   V32QI V16HI V8SI V4DI
 ])
 
+;; Iterator sames as V256J on kv3-1 and same as V256I on kv3-2.
+(define_mode_iterator V256M [
+  V16HI (V8SI "KV3_1") V4DI
+])
+
 (define_mode_iterator V512B [
   (V64QI "KV3_2")
   V32HI V32HF
@@ -1275,9 +1342,24 @@
   V8DI V8DF
 ])
 
+;; Iterator for the non-byte 512-bit vector integer modes.
+(define_mode_iterator V512J [
+  V32HI V16SI V8DI
+])
+
 ;; Iterator for all the 512-bit vector FP modes.
 (define_mode_iterator V512F [
   V32HF V16SF V8DF
+])
+
+;; Iterator for all the 512-bit vector FP modes without half float.
+(define_mode_iterator V512G [
+  V16SF V8DF
+])
+
+;; Iterator same as V512J on kv3-1 and same as V512L on kv3-2.
+(define_mode_iterator V512K [
+  (V64QI "KV3_2") V32HI V16SI V8DI
 ])
 
 ;; Iterator for all the 512-bit vector integer modes.
@@ -1285,11 +1367,25 @@
   V64QI V32HI V16SI V8DI
 ])
 
+;; Iterator for the vector HF modes.
+(define_mode_iterator VXHF [
+  V4HF
+  V8HF
+  V16HF
+  V32HF
+])
+
 ;; Iterator for the vector SF modes.
 (define_mode_iterator VXSF [
   V2SF
   V4SF
   V8SF
+])
+
+;; Iterator for the vector DF modes.
+(define_mode_iterator VXDF [
+  V2DF
+  V4DF
 ])
 
 ;; Iterator for the vector QI modes.
@@ -1303,6 +1399,13 @@
 (define_mode_iterator VWXI [
   V4HI V2SI
   V8HI V4SI
+])
+
+;; Iterator for KVX integer vector builtins
+(define_mode_iterator KVXI [
+  V8QI V4HI V2SI
+  V16QI V8HI V4SI V2DI
+  V32QI V16HI V8SI V4DI
 ])
 
 ;; Iterator for the all the widening integer vector modes.
