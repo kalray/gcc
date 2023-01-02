@@ -3447,10 +3447,8 @@ kvx_expand_masked_move (rtx target, rtx select1, rtx select2, rtx pred)
   int vector_any_and_zero = 0, vector_any_and_mone = 0;
   if (vector_modes_p)
     {
-      vector_any_and_zero = (select2 == const0_mode_rtx)
-			  - (select1 == const0_mode_rtx);
-      vector_any_and_mone = (select2 == constm1_mode_rtx)
-			  - (select1 == constm1_mode_rtx);
+      vector_any_and_zero = (select2 == const0_mode_rtx) - (select1 == const0_mode_rtx);
+      vector_any_and_mone = (select2 == constm1_mode_rtx) - (select1 == constm1_mode_rtx);
     }
 
   // Normalize conditional move as `dst = comp ? src : dst;`.
@@ -3485,28 +3483,30 @@ kvx_expand_masked_move (rtx target, rtx select1, rtx select2, rtx pred)
 
   if (vector_any_and_zero || vector_any_and_mone)
     {
+      select1 = simplify_gen_subreg (pred_mode, force_reg (mode, select1), mode, 0);
+      select2 = simplify_gen_subreg (pred_mode, force_reg (mode, select2), mode, 0);
       if (vector_any_and_zero > 0 && select1 != constm1_mode_rtx)
 	{
-	  select1 = simplify_gen_subreg (pred_mode, force_reg (mode, select1), mode, 0);
-	  emit_insn (gen_rtx_SET (pred, gen_rtx_AND (pred_mode, pred, select1)));
+	  if (pred_mode == mode)
+	    emit_insn (gen_rtx_SET (dst, gen_rtx_AND (pred_mode, pred, select1)));
+	  else
+	    {
+	      emit_insn (gen_rtx_SET (pred, gen_rtx_AND (pred_mode, pred, select1)));
+	      pred = simplify_gen_subreg (mode, pred, pred_mode, 0);
+	      emit_insn (gen_rtx_SET (dst, pred));
+	    }
 	}
       if (vector_any_and_zero < 0 && select2 != constm1_mode_rtx)
 	{
-      if (vector_any_and_mone > 0 && select1 != const0_mode_rtx)
-	{
-	  select1 = simplify_gen_subreg (pred_mode, force_reg (mode, select1), mode, 0);
-	  emit_insn (gen_rtx_SET (pred, gen_rtx_IOR (pred_mode, pred, select1)));
-	}
-      if (vector_any_and_mone < 0 && select2 != const0_mode_rtx)
-	{
-	  select2 = simplify_gen_subreg (pred_mode, force_reg (mode, select2), mode, 0);
-	  emit_insn (gen_rtx_SET (pred, gen_rtx_IOR (pred_mode, pred, select2)));
-	}
-	  select2 = simplify_gen_subreg (pred_mode, force_reg (mode, select2), mode, 0);
+	  if (vector_any_and_mone > 0 && select1 != const0_mode_rtx)
+	    emit_insn (gen_rtx_SET (pred, gen_rtx_IOR (pred_mode, pred, select1)));
+	  if (vector_any_and_mone < 0 && select2 != const0_mode_rtx)
+	    emit_insn (gen_rtx_SET (pred, gen_rtx_IOR (pred_mode, pred, select2)));
+
 	  emit_insn (gen_rtx_SET (pred, gen_rtx_AND (pred_mode, pred, select2)));
+	  pred = simplify_gen_subreg (mode, pred, pred_mode, 0);
+	  emit_insn (gen_rtx_SET (dst, pred));
 	}
-      pred = simplify_gen_subreg (mode, pred, pred_mode, 0);
-      emit_insn (gen_rtx_SET (dst, pred));
     }
   else if (KV3_1 && vector_modes_p && GET_MODE_INNER (mode) == QImode)
     kvx_emulate_vxqi_simplecond_move (pred, comp_code, src, dst);
