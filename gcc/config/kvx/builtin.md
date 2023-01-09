@@ -4,7 +4,8 @@
   [(set (match_operand:DI 0 "register_operand" "=r,r")
         (unspec:DI [(match_operand:DI 1 "register_operand" "r,r")
                     (match_operand:DI 2 "register_s32_operand" "r,B32")
-                    (match_operand 3 "" "")] UNSPEC_ADDCD))
+                    (match_operand 3 "" "")
+                    (reg:DI KV3_CS_REGNO)] UNSPEC_ADDCD))
    (set (reg:DI KV3_CS_REGNO)
         (unspec:DI [(reg:DI KV3_CS_REGNO) (match_dup 1) (match_dup 2)] UNSPEC_CARRY))]
   ""
@@ -17,7 +18,8 @@
   [(set (match_operand:DI 0 "register_operand" "=r,r")
         (unspec:DI [(match_operand:DI 1 "register_operand" "r,r")
                     (match_operand:DI 2 "register_s32_operand" "r,B32")
-                    (match_operand 3 "" "")] UNSPEC_SBFCD))
+                    (match_operand 3 "" "")
+                    (reg:DI KV3_CS_REGNO)] UNSPEC_SBFCD))
    (set (reg:DI KV3_CS_REGNO)
         (unspec:DI [(reg:DI KV3_CS_REGNO) (match_dup 1) (match_dup 2)] UNSPEC_BORROW))]
   ""
