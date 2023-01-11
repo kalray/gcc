@@ -6927,8 +6927,9 @@ kvx_hwloop_optimize (hwloop_info loop)
   start_sequence ();
   insn = emit_insn (gen_kvx_loopdo (loop->iter_reg, loop->end_label));
   seq = get_insns ();
+  end_sequence ();
 
-  /* Place the zero_cost_loop_start instruction before the loop.  */
+  /* Place the loopdo instruction in its own basic block before the loop.  */
   basic_block entry_bb = entry_edge->src;
   if (!single_succ_p (entry_bb) || vec_safe_length (loop->incoming) > 1)
     {
@@ -6936,8 +6937,12 @@ kvx_hwloop_optimize (hwloop_info loop)
       edge e;
       edge_iterator ei;
 
-      emit_insn_before (seq, BB_HEAD (loop->head));
-      seq = emit_label_before (gen_label_rtx (), seq);
+      /* Split the head basic block of the loop before the first instruction to
+         create a header wherein the loopdo instruction will be emitted.  */
+      basic_block hwloop_start =
+	split_block (loop->head, BB_HEAD (loop->head))->src;
+      emit_insn_after (seq, BB_HEAD (hwloop_start));
+
       new_bb = create_basic_block (seq, insn, entry_bb);
       FOR_EACH_EDGE (e, ei, loop->incoming)
 	{
@@ -6962,8 +6967,6 @@ kvx_hwloop_optimize (hwloop_info loop)
       commit_one_edge_insertion (
 	single_succ_edge (ENTRY_BLOCK_PTR_FOR_FN (cfun)));
     }
-
-  end_sequence ();
 
   return true;
 }
