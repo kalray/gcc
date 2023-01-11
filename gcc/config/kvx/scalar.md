@@ -3029,6 +3029,22 @@
 
 ;; TI
 
+(define_insn "kvx_tilow64"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (subreg:DI (match_operand:TI 1 "nonimmediate_operand" "r") 0))]
+  ""
+  "copyd %0 = %x1"
+  [(set_attr "type" "alu_tiny")]
+)
+
+(define_insn "kvx_tihigh64"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (subreg:DI (match_operand:TI 1 "nonimmediate_operand" "r") 8))]
+  ""
+  "copyd %0 = %y1"
+  [(set_attr "type" "alu_tiny")]
+)
+
 (define_expand "addti3"
   [(set (match_operand:TI 0 "register_operand" "")
         (plus:TI (match_operand:TI 1 "register_operand" "")
