@@ -3244,7 +3244,7 @@ kvx_lower_comparison (rtx pred, rtx comp, machine_mode comp_mode)
     }
 
   machine_mode pred_mode = GET_MODE (pred);
-  rtx cmp = gen_rtx_fmt_ee (comp_code, pred_mode, left, right);
+  rtx cmp = gen_rtx_fmt_ee (comp_code, pred_mode, force_reg (comp_mode, left), force_reg (comp_mode, right));
 
   if (float_compare_p)
     {
