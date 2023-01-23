@@ -73,6 +73,7 @@
 #include "cfgrtl.h"
 #include "ddg.h"
 #include "ifcvt.h"
+#include "cfganal.h"
 #define NULL_BLOCK ((basic_block) NULL)
 
 /* This file should be included last.  */
@@ -7463,30 +7464,32 @@ kvx_hwloop_optimize (hwloop_info loop)
   seq = get_insns ();
   end_sequence ();
 
-  /* Place the loopdo instruction in its own basic block before the loop.  */
+  /* Place the loopdo instruction in a header before the loop body.  */
   basic_block entry_bb = entry_edge->src;
   if (!single_succ_p (entry_bb) || vec_safe_length (loop->incoming) > 1)
     {
-      basic_block new_bb;
       edge e;
       edge_iterator ei;
 
       /* Split the head basic block of the loop before the first instruction to
          create a header wherein the loopdo instruction will be emitted.  */
-      basic_block hwloop_start =
-	split_block (loop->head, BB_HEAD (loop->head))->src;
-      emit_insn_after (seq, BB_HEAD (hwloop_start));
+      edge ee = split_block (loop->head, NEXT_INSN (BB_HEAD (loop->head)));
+      basic_block hwloop_hdr = ee->src;
+      basic_block hwloop_body = ee->dest;
+      emit_insn_after (seq, NEXT_INSN (BB_HEAD (hwloop_hdr)));
 
-      new_bb = create_basic_block (seq, insn, entry_bb);
       FOR_EACH_EDGE (e, ei, loop->incoming)
 	{
 	  if (!(e->flags & EDGE_FALLTHRU))
-	    redirect_edge_and_branch_force (e, new_bb);
+	    redirect_edge_and_branch_force (e, hwloop_hdr);
 	  else
-	    redirect_edge_succ (e, new_bb);
+	    redirect_edge_succ (e, hwloop_hdr);
 	}
 
-      make_edge (new_bb, loop->head, 0);
+      e = find_edge (hwloop_body, hwloop_hdr);
+      if (e != NULL)
+	remove_edge (e);
+      make_edge (hwloop_body, hwloop_body, 0);
     }
   else if (entry_bb != ENTRY_BLOCK_PTR_FOR_FN (cfun))
     {
