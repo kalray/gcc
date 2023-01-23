@@ -73,6 +73,8 @@
 #include "cfgrtl.h"
 #include "ddg.h"
 #include "ifcvt.h"
+#include "cfganal.h"
+#define NULL_BLOCK ((basic_block) NULL)
 
 /* This file should be included last.  */
 #include "target-def.h"
