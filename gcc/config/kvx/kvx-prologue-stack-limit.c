@@ -143,7 +143,6 @@ kvx_prologue_stack_limit (function *fun)
       /* Adjust probabilities. */
       e2->probability = profile_probability::always ();
       e1->probability = profile_probability::never ();
-      stack_overflow_handler->count = e1->count ();
     }
 
   return 0;

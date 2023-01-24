@@ -120,23 +120,6 @@
 (define_predicate "float_comparison_operator"
   (match_code "ne,eq,ge,lt,uneq,unge,unlt,ltgt"))
 
-;; Return 1 if this is predicable unary operator
-(define_predicate "pred_unary_operator"
-  (ior
-    (match_code "neg,ss_neg,abs,ss_abs,not")
-    (match_code "sign_extend,zero_extend,truncate,bswap,ffs,clrsb,ctz,popcount")
-    (match_code "float_extend,float_truncate,float,fix,unsigned_float,unsigned_fix")))
-
-;; Return 1 if this is predicable shift/rotate operator
-(define_predicate "pred_shift_operator"
-  (match_code "ashift,ss_ashift,us_ashift,ashiftrt,lshiftrt,rotate,rotatert"))
-
-;; Return 1 if this is predicable binary operator (no mult because of immediates)
-(define_predicate "pred_binary_operator"
-  (ior
-    (match_code "plus,ss_plus,us_plus,minus,ss_minus,us_minus")
-    (match_code "and,ior,xor,smin,smax,umin,umax")))
-
 ;; Returns TRUE if op is a register or an immediate suitable for sign
 ;; extension from the format signed10, upper27_lower10 or
 ;; extend27_upper27_lower10
