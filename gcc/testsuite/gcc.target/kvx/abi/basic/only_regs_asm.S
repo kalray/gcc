@@ -5,59 +5,59 @@
 check_args_are_correct:
     andd $r16 = $sp, 0x1f
     ;;
-    cb.dnez $r16, 1f
+    cb.dnez $r16? 1f
     ;;
     compd.eq $r15 = $r0, 0
     ;;
-    cb.deqz $r15, 1f
+    cb.deqz $r15? 1f
     ;;
     compd.eq $r15 = $r1, 1
     ;;
-    cb.deqz $r15, 1f
+    cb.deqz $r15? 1f
     ;;
     compd.eq $r15 = $r2, 2
     ;;
-    cb.deqz $r15, 1f
+    cb.deqz $r15? 1f
     ;;
     compd.eq $r15 = $r3, 3
     ;;
-    cb.deqz $r15, 1f
+    cb.deqz $r15? 1f
     ;;
     compd.eq $r15 = $r4, 4
     ;;
-    cb.deqz $r15, 1f
+    cb.deqz $r15? 1f
     ;;
     compd.eq $r15 = $r5, 5
     ;;
-    cb.deqz $r15, 1f
+    cb.deqz $r15? 1f
     ;;
     compd.eq $r15 = $r6, 6
     ;;
-    cb.deqz $r15, 1f
+    cb.deqz $r15? 1f
     ;;
     compd.eq $r15 = $r6, 6
     ;;
-    cb.deqz $r15, 1f
+    cb.deqz $r15? 1f
     ;;
     compd.eq $r15 = $r7, 7
     ;;
-    cb.deqz $r15, 1f
+    cb.deqz $r15? 1f
     ;;
     compd.eq $r15 = $r8, 8
     ;;
-    cb.deqz $r15, 1f
+    cb.deqz $r15? 1f
     ;;
     compd.eq $r15 = $r9, 9
     ;;
-    cb.deqz $r15, 1f
+    cb.deqz $r15? 1f
     ;;
     compd.eq $r15 = $r10, 10
     ;;
-    cb.deqz $r15, 1f
+    cb.deqz $r15? 1f
     ;;
     compd.eq $r15 = $r11, 11
     ;;
-    cb.deqz $r15, 1f
+    cb.deqz $r15? 1f
     ;;
     make $r0 = 0
     ;;
