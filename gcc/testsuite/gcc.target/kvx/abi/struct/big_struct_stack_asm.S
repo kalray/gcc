@@ -5,55 +5,55 @@
 check_args_are_correct:
     andd $r16 = $sp, 0x1f
     ;;
-    cb.dnez $r16, 1f
+    cb.dnez $r16? 1f
     ;;
     compd.eq $r15 = $r0, 0
     ;;
-    cb.deqz $r15, 1f
+    cb.deqz $r15? 1f
     ;;
     compd.eq $r15 = $r1, 1
     ;;
-    cb.deqz $r15, 1f
+    cb.deqz $r15? 1f
     ;;
     compd.eq $r15 = $r2, 2
     ;;
-    cb.deqz $r15, 1f
+    cb.deqz $r15? 1f
     ;;
     compd.eq $r15 = $r3, 3
     ;;
-    cb.deqz $r15, 1f
+    cb.deqz $r15? 1f
     ;;
     compd.eq $r15 = $r4, 4
     ;;
-    cb.deqz $r15, 1f
+    cb.deqz $r15? 1f
     ;;
     compd.eq $r15 = $r5, 5
     ;;
-    cb.deqz $r15, 1f
+    cb.deqz $r15? 1f
     ;;
     compd.eq $r15 = $r6, 6
     ;;
-    cb.deqz $r15, 1f
+    cb.deqz $r15? 1f
     ;;
     compd.eq $r15 = $r7, 7
     ;;
-    cb.deqz $r15, 1f
+    cb.deqz $r15? 1f
     ;;
     compd.eq $r15 = $r8, 8
     ;;
-    cb.deqz $r15, 1f
+    cb.deqz $r15? 1f
     ;;
     compd.eq $r15 = $r9, 9
     ;;
-    cb.deqz $r15, 1f
+    cb.deqz $r15? 1f
     ;;
     compd.eq $r15 = $r10, 10
     ;;
-    cb.deqz $r15, 1f
+    cb.deqz $r15? 1f
     ;;
     compd.eq $r15 = $r11, 11
     ;;
-    cb.deqz $r15, 1f
+    cb.deqz $r15? 1f
     ;;
     ld $r15 = 0[$sp]
     ;;
@@ -61,7 +61,7 @@ check_args_are_correct:
     ;;
     compd.eq $r15 = $r15, 0xdeadbeefffeeddcc
     ;;
-    cb.deqz $r15, 1f
+    cb.deqz $r15? 1f
     ;;
     ld $r15 = 0[$sp]
     ;;
@@ -69,7 +69,7 @@ check_args_are_correct:
     ;;
     compd.eq $r15 = $r15, 0xAABBCCDDEEFF0102
     ;;
-    cb.deqz $r15, 1f
+    cb.deqz $r15? 1f
     ;;
     ld $r15 = 0[$sp]
     ;;
@@ -77,7 +77,7 @@ check_args_are_correct:
     ;;
     compd.eq $r15 = $r15, 0x0304050607080910
     ;;
-    cb.deqz $r15, 1f
+    cb.deqz $r15? 1f
     ;;
     ld $r15 = 0[$sp]
     ;;
@@ -85,7 +85,7 @@ check_args_are_correct:
     ;;
     compd.eq $r15 = $r15, 0x1112131415161718
     ;;
-    cb.deqz $r15, 1f
+    cb.deqz $r15? 1f
     ;;
     ld $r15 = 0[$sp]
     ;;
@@ -93,19 +93,19 @@ check_args_are_correct:
     ;;
     compd.eq $r15 = $r15, 0x4444444444444444
     ;;
-    cb.deqz $r15, 1f
+    cb.deqz $r15? 1f
     ;;
     lwz $r16 = 8[$sp]
     ;;
     compd.eq $r16 = $r16, 5
     ;;
-    cb.deqz $r16, 1f
+    cb.deqz $r16? 1f
     ;;
     lwz $r16 = 16[$sp]
     ;;
     compd.eq $r16 = $r16, 6
     ;;
-    cb.deqz $r16, 1f
+    cb.deqz $r16? 1f
     ;;
     make $r0 = 0
     ;;
