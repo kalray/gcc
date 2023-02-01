@@ -785,6 +785,11 @@
   (V16SF   "V8SF")
   (V8DI    "V4DI")
   (V8DF    "V4DF")
+  (V2OI    "V1OI")
+  (V4OI    "V2OI")
+  (V8OI    "V4OI")
+  (V16OI   "V8OI")
+  (V32OI   "V16OI")
 ])
 
 ;; Attribute to get the half mode of a vector mode.
@@ -1081,6 +1086,12 @@
   (V16SF   "V2SF")
   (V8DI    "DI")
   (V8DF    "DF")
+  (V1OI    "V1OI")
+  (V2OI    "V1OI")
+  (V4OI    "V1OI")
+  (V8OI    "V1OI")
+  (V16OI   "V1OI")
+  (V32OI   "V1OI")
 ])
 
 ;; Attribute to get the chunk mode of a vector mode.
@@ -1532,5 +1543,25 @@
   (V8OI    "2048")
   (V16OI   "4096")
   (V32OI   "8192")
+])
+
+;; Attribute to map to chunk 2x mode.
+(define_mode_attr CHUNK2 [
+  (V1OI    "V2OI")
+  (V2OI    "V2OI")
+  (V4OI    "V2OI")
+  (V8OI    "V2OI")
+  (V16OI   "V2OI")
+  (V32OI   "V2OI")
+])
+
+;; Attribute to map to chunk 4x mode.
+(define_mode_attr CHUNK4 [
+  (V1OI    "V4OI")
+  (V2OI    "V4OI")
+  (V4OI    "V4OI")
+  (V8OI    "V4OI")
+  (V16OI   "V4OI")
+  (V32OI   "V4OI")
 ])
 
