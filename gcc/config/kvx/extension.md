@@ -23,12 +23,22 @@
 
 ;; XZERO
 
-(define_insn_and_split "kvx_xzero256"
+(define_insn "kvx_xzero256"
   [(set (match_operand:X256 0 "register_operand" "=x")
         (match_operand:X256 1 "const_zero_operand" ""))]
   ""
-  "#"
-  ""
+  {
+    if (KV3_1)
+      return "#";
+    return "xxoro %0 = %0, %0";
+  }
+  [(set_attr "type" "tca_int")]
+)
+
+(define_split
+  [(set (match_operand:X256 0 "register_operand" "")
+        (match_operand:X256 1 "const_zero_operand" ""))]
+  "KV3_1"
   [(set (match_dup 1) (const_int 0))
    (set (match_dup 0)
         (unspec:X256 [(match_dup 1)] UNSPEC_XSPLATD))]
@@ -37,17 +47,33 @@
   }
 )
 
-(define_insn_and_split "kvx_xzero<bitsize>"
+(define_insn "kvx_xzero<bitsize>"
   [(set (match_operand:XBUFF 0 "register_operand" "=x")
         (match_operand:XBUFF 1 "const_zero_operand" ""))]
   ""
   "#"
-  ""
+)
+
+(define_split
+  [(set (match_operand:XBUFF 0 "register_operand" "")
+        (match_operand:XBUFF 1 "const_zero_operand" ""))]
+  "KV3_1"
   [(set (match_dup 1) (const_int 0))
    (set (match_dup 0)
         (unspec:XBUFF [(match_dup 1)] UNSPEC_XSPLATD))]
   {
     operands[1] = gen_reg_rtx (DImode);
+  }
+)
+
+(define_split
+  [(set (match_operand:XBUFF 0 "register_operand" "")
+        (match_operand:XBUFF 1 "const_zero_operand" ""))]
+  "KV3_2"
+  [(use (const_int 0))]
+  {
+    emit_insn (gen_kvx_xzero256 (gen_rtx_SUBREG (<CHUNK>mode, operands[0], 0), CONST0_RTX (<CHUNK>mode)));
+    emit_insn (gen_kvx_xsplato<bitsize> (operands[0], gen_rtx_SUBREG (<CHUNK>mode, operands[0], 0)));
   }
 )
 
@@ -156,14 +182,38 @@
   }
 )
 
-(define_insn_and_split "*mov<X512:mode>"
+(define_insn "*mov<X512:mode>"
   [(set (match_operand:X512 0 "nonimmediate_operand" "=x,x,x,x,a,b,m,r,x")
         (match_operand:X512 1 "nonimmediate_operand"  "x,a,b,m,x,x,x,x,r"))]
   ""
   "#"
-  "reload_completed"
-  [(set (subreg:X256 (match_dup 0) 0) (subreg:X256 (match_dup 1) 0))
-   (set (subreg:X256 (match_dup 0) 32) (subreg:X256 (match_dup 1) 32))]
+)
+
+(define_split
+  [(set (match_operand:X512 0 "nonimmediate_operand" "")
+        (match_operand:X512 1 "nonimmediate_operand" ""))]
+  "reload_completed && (!extension_register_operand (operands[0], VOIDmode)
+                        || !extension_register_operand (operands[1], VOIDmode))"
+  [(set (subreg:<CHUNK> (match_dup 0) 0) (subreg:<CHUNK> (match_dup 1) 0))
+   (set (subreg:<CHUNK> (match_dup 0) 32) (subreg:<CHUNK> (match_dup 1) 32))]
+  ""
+)
+
+(define_split
+  [(set (match_operand:X512 0 "extension_register_operand" "")
+        (match_operand:X512 1 "extension_register_operand" ""))]
+  "KV3_1 && reload_completed"
+  [(set (subreg:<CHUNK> (match_dup 0) 0) (subreg:<CHUNK> (match_dup 1) 0))
+   (set (subreg:<CHUNK> (match_dup 0) 32) (subreg:<CHUNK> (match_dup 1) 32))]
+  ""
+)
+
+(define_split
+  [(set (match_operand:X512 0 "extension_register_operand" "")
+        (match_operand:X512 1 "extension_register_operand" ""))]
+  "KV3_2 && reload_completed"
+  [(set (match_dup 0)
+        (unspec:X512 [(match_dup 1) (const_string "")] UNSPEC_XCOPY))]
   ""
 )
 
@@ -180,16 +230,42 @@
   }
 )
 
-(define_insn_and_split "*mov<X1024:mode>"
+(define_insn "*mov<X1024:mode>"
   [(set (match_operand:X1024 0 "nonimmediate_operand" "=x,x,x,x,a,b,m,r,x")
         (match_operand:X1024 1 "nonimmediate_operand"  "x,a,b,m,x,x,x,x,r"))]
   ""
   "#"
-  "reload_completed"
-  [(set (subreg:X256 (match_dup 0) 0) (subreg:X256 (match_dup 1) 0))
-   (set (subreg:X256 (match_dup 0) 32) (subreg:X256 (match_dup 1) 32))
-   (set (subreg:X256 (match_dup 0) 64) (subreg:X256 (match_dup 1) 64))
-   (set (subreg:X256 (match_dup 0) 96) (subreg:X256 (match_dup 1) 96))]
+)
+
+(define_split
+  [(set (match_operand:X1024 0 "nonimmediate_operand" "")
+        (match_operand:X1024 1 "nonimmediate_operand" ""))]
+  "reload_completed && (!extension_register_operand (operands[0], VOIDmode)
+                        || !extension_register_operand (operands[1], VOIDmode))"
+  [(set (subreg:<CHUNK> (match_dup 0) 0) (subreg:<CHUNK> (match_dup 1) 0))
+   (set (subreg:<CHUNK> (match_dup 0) 32) (subreg:<CHUNK> (match_dup 1) 32))
+   (set (subreg:<CHUNK> (match_dup 0) 64) (subreg:<CHUNK> (match_dup 1) 64))
+   (set (subreg:<CHUNK> (match_dup 0) 96) (subreg:<CHUNK> (match_dup 1) 96))]
+  ""
+)
+
+(define_split
+  [(set (match_operand:X1024 0 "extension_register_operand" "")
+        (match_operand:X1024 1 "extension_register_operand" ""))]
+  "KV3_1 && reload_completed"
+  [(set (subreg:<CHUNK> (match_dup 0) 0) (subreg:<CHUNK> (match_dup 1) 0))
+   (set (subreg:<CHUNK> (match_dup 0) 32) (subreg:<CHUNK> (match_dup 1) 32))
+   (set (subreg:<CHUNK> (match_dup 0) 64) (subreg:<CHUNK> (match_dup 1) 64))
+   (set (subreg:<CHUNK> (match_dup 0) 96) (subreg:<CHUNK> (match_dup 1) 96))]
+  ""
+)
+
+(define_split
+  [(set (match_operand:X1024 0 "extension_register_operand" "")
+        (match_operand:X1024 1 "extension_register_operand" ""))]
+  "KV3_2 && reload_completed"
+  [(set (match_dup 0)
+        (unspec:X1024 [(match_dup 1) (const_string "")] UNSPEC_XCOPY))]
   ""
 )
 
@@ -206,20 +282,52 @@
   }
 )
 
-(define_insn_and_split "*mov<X2048:mode>"
+(define_insn "*mov<X2048:mode>"
   [(set (match_operand:X2048 0 "nonimmediate_operand" "=x,x,x,x,a,b,m,r,x")
         (match_operand:X2048 1 "nonimmediate_operand"  "x,a,b,m,x,x,x,x,r"))]
   ""
   "#"
-  "reload_completed"
-  [(set (subreg:X256 (match_dup 0) 0) (subreg:X256 (match_dup 1) 0))
-   (set (subreg:X256 (match_dup 0) 32) (subreg:X256 (match_dup 1) 32))
-   (set (subreg:X256 (match_dup 0) 64) (subreg:X256 (match_dup 1) 64))
-   (set (subreg:X256 (match_dup 0) 96) (subreg:X256 (match_dup 1) 96))
-   (set (subreg:X256 (match_dup 0) 128) (subreg:X256 (match_dup 1) 128))
-   (set (subreg:X256 (match_dup 0) 160) (subreg:X256 (match_dup 1) 160))
-   (set (subreg:X256 (match_dup 0) 192) (subreg:X256 (match_dup 1) 192))
-   (set (subreg:X256 (match_dup 0) 224) (subreg:X256 (match_dup 1) 224))]
+)
+
+(define_split
+  [(set (match_operand:X2048 0 "nonimmediate_operand" "")
+        (match_operand:X2048 1 "nonimmediate_operand" ""))]
+  "reload_completed && (!extension_register_operand (operands[0], VOIDmode)
+                        || !extension_register_operand (operands[1], VOIDmode))"
+  [(set (subreg:<CHUNK> (match_dup 0) 0) (subreg:<CHUNK> (match_dup 1) 0))
+   (set (subreg:<CHUNK> (match_dup 0) 32) (subreg:<CHUNK> (match_dup 1) 32))
+   (set (subreg:<CHUNK> (match_dup 0) 64) (subreg:<CHUNK> (match_dup 1) 64))
+   (set (subreg:<CHUNK> (match_dup 0) 96) (subreg:<CHUNK> (match_dup 1) 96))
+   (set (subreg:<CHUNK> (match_dup 0) 128) (subreg:<CHUNK> (match_dup 1) 128))
+   (set (subreg:<CHUNK> (match_dup 0) 160) (subreg:<CHUNK> (match_dup 1) 160))
+   (set (subreg:<CHUNK> (match_dup 0) 192) (subreg:<CHUNK> (match_dup 1) 192))
+   (set (subreg:<CHUNK> (match_dup 0) 224) (subreg:<CHUNK> (match_dup 1) 224))]
+  ""
+)
+
+(define_split
+  [(set (match_operand:X2048 0 "extension_register_operand" "")
+        (match_operand:X2048 1 "extension_register_operand" ""))]
+  "KV3_1 && reload_completed"
+  [(set (subreg:<CHUNK> (match_dup 0) 0) (subreg:<CHUNK> (match_dup 1) 0))
+   (set (subreg:<CHUNK> (match_dup 0) 32) (subreg:<CHUNK> (match_dup 1) 32))
+   (set (subreg:<CHUNK> (match_dup 0) 64) (subreg:<CHUNK> (match_dup 1) 64))
+   (set (subreg:<CHUNK> (match_dup 0) 96) (subreg:<CHUNK> (match_dup 1) 96))
+   (set (subreg:<CHUNK> (match_dup 0) 128) (subreg:<CHUNK> (match_dup 1) 128))
+   (set (subreg:<CHUNK> (match_dup 0) 160) (subreg:<CHUNK> (match_dup 1) 160))
+   (set (subreg:<CHUNK> (match_dup 0) 192) (subreg:<CHUNK> (match_dup 1) 192))
+   (set (subreg:<CHUNK> (match_dup 0) 224) (subreg:<CHUNK> (match_dup 1) 224))]
+  ""
+)
+
+(define_split
+  [(set (match_operand:X2048 0 "extension_register_operand" "")
+        (match_operand:X2048 1 "extension_register_operand" ""))]
+  "KV3_2 && reload_completed"
+  [(set (subreg:<CHUNK4> (match_dup 0) 0)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 1) 0) (const_string "")] UNSPEC_XCOPY))
+   (set (subreg:<CHUNK4> (match_dup 0) 128)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 1) 128) (const_string "")] UNSPEC_XCOPY))]
   ""
 )
 
@@ -236,28 +344,72 @@
   }
 )
 
-(define_insn_and_split "*mov<X4096:mode>"
+(define_insn "*mov<X4096:mode>"
   [(set (match_operand:X4096 0 "nonimmediate_operand" "=x,x,x,x,a,b,m,r,x")
         (match_operand:X4096 1 "nonimmediate_operand"  "x,a,b,m,x,x,x,x,r"))]
   ""
   "#"
-  "reload_completed"
-  [(set (subreg:X256 (match_dup 0) 0) (subreg:X256 (match_dup 1) 0))
-   (set (subreg:X256 (match_dup 0) 32) (subreg:X256 (match_dup 1) 32))
-   (set (subreg:X256 (match_dup 0) 64) (subreg:X256 (match_dup 1) 64))
-   (set (subreg:X256 (match_dup 0) 96) (subreg:X256 (match_dup 1) 96))
-   (set (subreg:X256 (match_dup 0) 128) (subreg:X256 (match_dup 1) 128))
-   (set (subreg:X256 (match_dup 0) 160) (subreg:X256 (match_dup 1) 160))
-   (set (subreg:X256 (match_dup 0) 192) (subreg:X256 (match_dup 1) 192))
-   (set (subreg:X256 (match_dup 0) 224) (subreg:X256 (match_dup 1) 224))
-   (set (subreg:X256 (match_dup 0) 256) (subreg:X256 (match_dup 1) 256))
-   (set (subreg:X256 (match_dup 0) 288) (subreg:X256 (match_dup 1) 288))
-   (set (subreg:X256 (match_dup 0) 320) (subreg:X256 (match_dup 1) 320))
-   (set (subreg:X256 (match_dup 0) 352) (subreg:X256 (match_dup 1) 352))
-   (set (subreg:X256 (match_dup 0) 384) (subreg:X256 (match_dup 1) 384))
-   (set (subreg:X256 (match_dup 0) 416) (subreg:X256 (match_dup 1) 416))
-   (set (subreg:X256 (match_dup 0) 448) (subreg:X256 (match_dup 1) 448))
-   (set (subreg:X256 (match_dup 0) 480) (subreg:X256 (match_dup 1) 480))]
+)
+
+(define_split
+  [(set (match_operand:X4096 0 "nonimmediate_operand" "")
+        (match_operand:X4096 1 "nonimmediate_operand" ""))]
+  "reload_completed && (!extension_register_operand (operands[0], VOIDmode)
+                        || !extension_register_operand (operands[1], VOIDmode))"
+  [(set (subreg:<CHUNK> (match_dup 0) 0) (subreg:<CHUNK> (match_dup 1) 0))
+   (set (subreg:<CHUNK> (match_dup 0) 32) (subreg:<CHUNK> (match_dup 1) 32))
+   (set (subreg:<CHUNK> (match_dup 0) 64) (subreg:<CHUNK> (match_dup 1) 64))
+   (set (subreg:<CHUNK> (match_dup 0) 96) (subreg:<CHUNK> (match_dup 1) 96))
+   (set (subreg:<CHUNK> (match_dup 0) 128) (subreg:<CHUNK> (match_dup 1) 128))
+   (set (subreg:<CHUNK> (match_dup 0) 160) (subreg:<CHUNK> (match_dup 1) 160))
+   (set (subreg:<CHUNK> (match_dup 0) 192) (subreg:<CHUNK> (match_dup 1) 192))
+   (set (subreg:<CHUNK> (match_dup 0) 224) (subreg:<CHUNK> (match_dup 1) 224))
+   (set (subreg:<CHUNK> (match_dup 0) 256) (subreg:<CHUNK> (match_dup 1) 256))
+   (set (subreg:<CHUNK> (match_dup 0) 288) (subreg:<CHUNK> (match_dup 1) 288))
+   (set (subreg:<CHUNK> (match_dup 0) 320) (subreg:<CHUNK> (match_dup 1) 320))
+   (set (subreg:<CHUNK> (match_dup 0) 352) (subreg:<CHUNK> (match_dup 1) 352))
+   (set (subreg:<CHUNK> (match_dup 0) 384) (subreg:<CHUNK> (match_dup 1) 384))
+   (set (subreg:<CHUNK> (match_dup 0) 416) (subreg:<CHUNK> (match_dup 1) 416))
+   (set (subreg:<CHUNK> (match_dup 0) 448) (subreg:<CHUNK> (match_dup 1) 448))
+   (set (subreg:<CHUNK> (match_dup 0) 480) (subreg:<CHUNK> (match_dup 1) 480))]
+  ""
+)
+
+(define_split
+  [(set (match_operand:X4096 0 "extension_register_operand" "")
+        (match_operand:X4096 1 "extension_register_operand" ""))]
+  "KV3_1 && reload_completed"
+  [(set (subreg:<CHUNK> (match_dup 0) 0) (subreg:<CHUNK> (match_dup 1) 0))
+   (set (subreg:<CHUNK> (match_dup 0) 32) (subreg:<CHUNK> (match_dup 1) 32))
+   (set (subreg:<CHUNK> (match_dup 0) 64) (subreg:<CHUNK> (match_dup 1) 64))
+   (set (subreg:<CHUNK> (match_dup 0) 96) (subreg:<CHUNK> (match_dup 1) 96))
+   (set (subreg:<CHUNK> (match_dup 0) 128) (subreg:<CHUNK> (match_dup 1) 128))
+   (set (subreg:<CHUNK> (match_dup 0) 160) (subreg:<CHUNK> (match_dup 1) 160))
+   (set (subreg:<CHUNK> (match_dup 0) 192) (subreg:<CHUNK> (match_dup 1) 192))
+   (set (subreg:<CHUNK> (match_dup 0) 224) (subreg:<CHUNK> (match_dup 1) 224))
+   (set (subreg:<CHUNK> (match_dup 0) 256) (subreg:<CHUNK> (match_dup 1) 256))
+   (set (subreg:<CHUNK> (match_dup 0) 288) (subreg:<CHUNK> (match_dup 1) 288))
+   (set (subreg:<CHUNK> (match_dup 0) 320) (subreg:<CHUNK> (match_dup 1) 320))
+   (set (subreg:<CHUNK> (match_dup 0) 352) (subreg:<CHUNK> (match_dup 1) 352))
+   (set (subreg:<CHUNK> (match_dup 0) 384) (subreg:<CHUNK> (match_dup 1) 384))
+   (set (subreg:<CHUNK> (match_dup 0) 416) (subreg:<CHUNK> (match_dup 1) 416))
+   (set (subreg:<CHUNK> (match_dup 0) 448) (subreg:<CHUNK> (match_dup 1) 448))
+   (set (subreg:<CHUNK> (match_dup 0) 480) (subreg:<CHUNK> (match_dup 1) 480))]
+  ""
+)
+
+(define_split
+  [(set (match_operand:X4096 0 "extension_register_operand" "")
+        (match_operand:X4096 1 "extension_register_operand" ""))]
+  "KV3_2 && reload_completed"
+  [(set (subreg:<CHUNK4> (match_dup 0) 0)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 1) 0) (const_string "")] UNSPEC_XCOPY))
+   (set (subreg:<CHUNK4> (match_dup 0) 128)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 1) 128) (const_string "")] UNSPEC_XCOPY))
+   (set (subreg:<CHUNK4> (match_dup 0) 256)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 1) 256) (const_string "")] UNSPEC_XCOPY))
+   (set (subreg:<CHUNK4> (match_dup 0) 384)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 1) 384) (const_string "")] UNSPEC_XCOPY))]
   ""
 )
 
@@ -274,316 +426,574 @@
   }
 )
 
-(define_insn_and_split "*mov<X8192:mode>"
+(define_insn "*mov<X8192:mode>"
   [(set (match_operand:X8192 0 "nonimmediate_operand" "=x,x,x,x,a,b,m,r,x")
         (match_operand:X8192 1 "nonimmediate_operand"  "x,a,b,m,x,x,x,x,r"))]
   ""
   "#"
-  "reload_completed"
-  [(set (subreg:X256 (match_dup 0) 0) (subreg:X256 (match_dup 1) 0))
-   (set (subreg:X256 (match_dup 0) 32) (subreg:X256 (match_dup 1) 32))
-   (set (subreg:X256 (match_dup 0) 64) (subreg:X256 (match_dup 1) 64))
-   (set (subreg:X256 (match_dup 0) 96) (subreg:X256 (match_dup 1) 96))
-   (set (subreg:X256 (match_dup 0) 128) (subreg:X256 (match_dup 1) 128))
-   (set (subreg:X256 (match_dup 0) 160) (subreg:X256 (match_dup 1) 160))
-   (set (subreg:X256 (match_dup 0) 192) (subreg:X256 (match_dup 1) 192))
-   (set (subreg:X256 (match_dup 0) 224) (subreg:X256 (match_dup 1) 224))
-   (set (subreg:X256 (match_dup 0) 256) (subreg:X256 (match_dup 1) 256))
-   (set (subreg:X256 (match_dup 0) 288) (subreg:X256 (match_dup 1) 288))
-   (set (subreg:X256 (match_dup 0) 320) (subreg:X256 (match_dup 1) 320))
-   (set (subreg:X256 (match_dup 0) 352) (subreg:X256 (match_dup 1) 352))
-   (set (subreg:X256 (match_dup 0) 384) (subreg:X256 (match_dup 1) 384))
-   (set (subreg:X256 (match_dup 0) 416) (subreg:X256 (match_dup 1) 416))
-   (set (subreg:X256 (match_dup 0) 448) (subreg:X256 (match_dup 1) 448))
-   (set (subreg:X256 (match_dup 0) 480) (subreg:X256 (match_dup 1) 480))
-   (set (subreg:X256 (match_dup 0) 512) (subreg:X256 (match_dup 1) 512))
-   (set (subreg:X256 (match_dup 0) 544) (subreg:X256 (match_dup 1) 544))
-   (set (subreg:X256 (match_dup 0) 576) (subreg:X256 (match_dup 1) 576))
-   (set (subreg:X256 (match_dup 0) 608) (subreg:X256 (match_dup 1) 608))
-   (set (subreg:X256 (match_dup 0) 640) (subreg:X256 (match_dup 1) 640))
-   (set (subreg:X256 (match_dup 0) 672) (subreg:X256 (match_dup 1) 672))
-   (set (subreg:X256 (match_dup 0) 704) (subreg:X256 (match_dup 1) 704))
-   (set (subreg:X256 (match_dup 0) 736) (subreg:X256 (match_dup 1) 736))
-   (set (subreg:X256 (match_dup 0) 768) (subreg:X256 (match_dup 1) 768))
-   (set (subreg:X256 (match_dup 0) 800) (subreg:X256 (match_dup 1) 800))
-   (set (subreg:X256 (match_dup 0) 832) (subreg:X256 (match_dup 1) 832))
-   (set (subreg:X256 (match_dup 0) 864) (subreg:X256 (match_dup 1) 864))
-   (set (subreg:X256 (match_dup 0) 896) (subreg:X256 (match_dup 1) 896))
-   (set (subreg:X256 (match_dup 0) 928) (subreg:X256 (match_dup 1) 928))
-   (set (subreg:X256 (match_dup 0) 960) (subreg:X256 (match_dup 1) 960))
-   (set (subreg:X256 (match_dup 0) 992) (subreg:X256 (match_dup 1) 992))]
+)
+
+(define_split
+  [(set (match_operand:X8192 0 "nonimmediate_operand" "")
+        (match_operand:X8192 1 "nonimmediate_operand" ""))]
+  "reload_completed && (!extension_register_operand (operands[0], VOIDmode)
+                        || !extension_register_operand (operands[1], VOIDmode))"
+  [(set (subreg:<CHUNK> (match_dup 0) 0) (subreg:<CHUNK> (match_dup 1) 0))
+   (set (subreg:<CHUNK> (match_dup 0) 32) (subreg:<CHUNK> (match_dup 1) 32))
+   (set (subreg:<CHUNK> (match_dup 0) 64) (subreg:<CHUNK> (match_dup 1) 64))
+   (set (subreg:<CHUNK> (match_dup 0) 96) (subreg:<CHUNK> (match_dup 1) 96))
+   (set (subreg:<CHUNK> (match_dup 0) 128) (subreg:<CHUNK> (match_dup 1) 128))
+   (set (subreg:<CHUNK> (match_dup 0) 160) (subreg:<CHUNK> (match_dup 1) 160))
+   (set (subreg:<CHUNK> (match_dup 0) 192) (subreg:<CHUNK> (match_dup 1) 192))
+   (set (subreg:<CHUNK> (match_dup 0) 224) (subreg:<CHUNK> (match_dup 1) 224))
+   (set (subreg:<CHUNK> (match_dup 0) 256) (subreg:<CHUNK> (match_dup 1) 256))
+   (set (subreg:<CHUNK> (match_dup 0) 288) (subreg:<CHUNK> (match_dup 1) 288))
+   (set (subreg:<CHUNK> (match_dup 0) 320) (subreg:<CHUNK> (match_dup 1) 320))
+   (set (subreg:<CHUNK> (match_dup 0) 352) (subreg:<CHUNK> (match_dup 1) 352))
+   (set (subreg:<CHUNK> (match_dup 0) 384) (subreg:<CHUNK> (match_dup 1) 384))
+   (set (subreg:<CHUNK> (match_dup 0) 416) (subreg:<CHUNK> (match_dup 1) 416))
+   (set (subreg:<CHUNK> (match_dup 0) 448) (subreg:<CHUNK> (match_dup 1) 448))
+   (set (subreg:<CHUNK> (match_dup 0) 480) (subreg:<CHUNK> (match_dup 1) 480))
+   (set (subreg:<CHUNK> (match_dup 0) 512) (subreg:<CHUNK> (match_dup 1) 512))
+   (set (subreg:<CHUNK> (match_dup 0) 544) (subreg:<CHUNK> (match_dup 1) 544))
+   (set (subreg:<CHUNK> (match_dup 0) 576) (subreg:<CHUNK> (match_dup 1) 576))
+   (set (subreg:<CHUNK> (match_dup 0) 608) (subreg:<CHUNK> (match_dup 1) 608))
+   (set (subreg:<CHUNK> (match_dup 0) 640) (subreg:<CHUNK> (match_dup 1) 640))
+   (set (subreg:<CHUNK> (match_dup 0) 672) (subreg:<CHUNK> (match_dup 1) 672))
+   (set (subreg:<CHUNK> (match_dup 0) 704) (subreg:<CHUNK> (match_dup 1) 704))
+   (set (subreg:<CHUNK> (match_dup 0) 736) (subreg:<CHUNK> (match_dup 1) 736))
+   (set (subreg:<CHUNK> (match_dup 0) 768) (subreg:<CHUNK> (match_dup 1) 768))
+   (set (subreg:<CHUNK> (match_dup 0) 800) (subreg:<CHUNK> (match_dup 1) 800))
+   (set (subreg:<CHUNK> (match_dup 0) 832) (subreg:<CHUNK> (match_dup 1) 832))
+   (set (subreg:<CHUNK> (match_dup 0) 864) (subreg:<CHUNK> (match_dup 1) 864))
+   (set (subreg:<CHUNK> (match_dup 0) 896) (subreg:<CHUNK> (match_dup 1) 896))
+   (set (subreg:<CHUNK> (match_dup 0) 928) (subreg:<CHUNK> (match_dup 1) 928))
+   (set (subreg:<CHUNK> (match_dup 0) 960) (subreg:<CHUNK> (match_dup 1) 960))
+   (set (subreg:<CHUNK> (match_dup 0) 992) (subreg:<CHUNK> (match_dup 1) 992))]
+  ""
+)
+
+(define_split
+  [(set (match_operand:X8192 0 "extension_register_operand" "")
+        (match_operand:X8192 1 "extension_register_operand" ""))]
+  "KV3_1 && reload_completed"
+  [(set (subreg:<CHUNK> (match_dup 0) 0) (subreg:<CHUNK> (match_dup 1) 0))
+   (set (subreg:<CHUNK> (match_dup 0) 32) (subreg:<CHUNK> (match_dup 1) 32))
+   (set (subreg:<CHUNK> (match_dup 0) 64) (subreg:<CHUNK> (match_dup 1) 64))
+   (set (subreg:<CHUNK> (match_dup 0) 96) (subreg:<CHUNK> (match_dup 1) 96))
+   (set (subreg:<CHUNK> (match_dup 0) 128) (subreg:<CHUNK> (match_dup 1) 128))
+   (set (subreg:<CHUNK> (match_dup 0) 160) (subreg:<CHUNK> (match_dup 1) 160))
+   (set (subreg:<CHUNK> (match_dup 0) 192) (subreg:<CHUNK> (match_dup 1) 192))
+   (set (subreg:<CHUNK> (match_dup 0) 224) (subreg:<CHUNK> (match_dup 1) 224))
+   (set (subreg:<CHUNK> (match_dup 0) 256) (subreg:<CHUNK> (match_dup 1) 256))
+   (set (subreg:<CHUNK> (match_dup 0) 288) (subreg:<CHUNK> (match_dup 1) 288))
+   (set (subreg:<CHUNK> (match_dup 0) 320) (subreg:<CHUNK> (match_dup 1) 320))
+   (set (subreg:<CHUNK> (match_dup 0) 352) (subreg:<CHUNK> (match_dup 1) 352))
+   (set (subreg:<CHUNK> (match_dup 0) 384) (subreg:<CHUNK> (match_dup 1) 384))
+   (set (subreg:<CHUNK> (match_dup 0) 416) (subreg:<CHUNK> (match_dup 1) 416))
+   (set (subreg:<CHUNK> (match_dup 0) 448) (subreg:<CHUNK> (match_dup 1) 448))
+   (set (subreg:<CHUNK> (match_dup 0) 480) (subreg:<CHUNK> (match_dup 1) 480))
+   (set (subreg:<CHUNK> (match_dup 0) 512) (subreg:<CHUNK> (match_dup 1) 512))
+   (set (subreg:<CHUNK> (match_dup 0) 544) (subreg:<CHUNK> (match_dup 1) 544))
+   (set (subreg:<CHUNK> (match_dup 0) 576) (subreg:<CHUNK> (match_dup 1) 576))
+   (set (subreg:<CHUNK> (match_dup 0) 608) (subreg:<CHUNK> (match_dup 1) 608))
+   (set (subreg:<CHUNK> (match_dup 0) 640) (subreg:<CHUNK> (match_dup 1) 640))
+   (set (subreg:<CHUNK> (match_dup 0) 672) (subreg:<CHUNK> (match_dup 1) 672))
+   (set (subreg:<CHUNK> (match_dup 0) 704) (subreg:<CHUNK> (match_dup 1) 704))
+   (set (subreg:<CHUNK> (match_dup 0) 736) (subreg:<CHUNK> (match_dup 1) 736))
+   (set (subreg:<CHUNK> (match_dup 0) 768) (subreg:<CHUNK> (match_dup 1) 768))
+   (set (subreg:<CHUNK> (match_dup 0) 800) (subreg:<CHUNK> (match_dup 1) 800))
+   (set (subreg:<CHUNK> (match_dup 0) 832) (subreg:<CHUNK> (match_dup 1) 832))
+   (set (subreg:<CHUNK> (match_dup 0) 864) (subreg:<CHUNK> (match_dup 1) 864))
+   (set (subreg:<CHUNK> (match_dup 0) 896) (subreg:<CHUNK> (match_dup 1) 896))
+   (set (subreg:<CHUNK> (match_dup 0) 928) (subreg:<CHUNK> (match_dup 1) 928))
+   (set (subreg:<CHUNK> (match_dup 0) 960) (subreg:<CHUNK> (match_dup 1) 960))
+   (set (subreg:<CHUNK> (match_dup 0) 992) (subreg:<CHUNK> (match_dup 1) 992))]
+  ""
+)
+
+(define_split
+  [(set (match_operand:X8192 0 "extension_register_operand" "")
+        (match_operand:X8192 1 "extension_register_operand" ""))]
+  "KV3_2 && reload_completed"
+  [(set (subreg:<CHUNK4> (match_dup 0) 0)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 1) 0) (const_string "")] UNSPEC_XCOPY))
+   (set (subreg:<CHUNK4> (match_dup 0) 128)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 1) 128) (const_string "")] UNSPEC_XCOPY))
+   (set (subreg:<CHUNK4> (match_dup 0) 256)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 1) 256) (const_string "")] UNSPEC_XCOPY))
+   (set (subreg:<CHUNK4> (match_dup 0) 384)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 1) 384) (const_string "")] UNSPEC_XCOPY))
+   (set (subreg:<CHUNK4> (match_dup 0) 512)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 1) 512) (const_string "")] UNSPEC_XCOPY))
+   (set (subreg:<CHUNK4> (match_dup 0) 640)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 1) 640) (const_string "")] UNSPEC_XCOPY))
+   (set (subreg:<CHUNK4> (match_dup 0) 768)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 1) 768) (const_string "")] UNSPEC_XCOPY))
+   (set (subreg:<CHUNK4> (match_dup 0) 896)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 1) 896) (const_string "")] UNSPEC_XCOPY))]
   ""
 )
 
 
-;; XCAT*, KVX_XLOW*, KVX_XHIGH*
+;; XCAT*
 
 (define_insn_and_split "kvx_xcat512"
   [(set (match_operand:X512 0 "register_operand" "=x")
-        (vec_concat:X512 (match_operand:X256 1 "register_operand" "0")
-                         (match_operand:X256 2 "register_operand" "x")))]
+        (vec_concat:X512 (match_operand:<CHUNK> 1 "register_operand" "0")
+                         (match_operand:<CHUNK> 2 "register_operand" "x")))]
   ""
   "#"
   "reload_completed"
-  [(set (subreg:X256 (match_dup 0) 32)
+  [(set (subreg:<CHUNK> (match_dup 0) 32)
         (match_dup 2))]
   ""
 )
 
-(define_insn_and_split "kvx_xcat1024"
+(define_insn "kvx_xcat1024"
   [(set (match_operand:X1024 0 "register_operand" "=x")
-        (vec_concat:X1024 (match_operand:X512 1 "register_operand" "0")
-                          (match_operand:X512 2 "register_operand" "x")))]
+        (vec_concat:X1024 (match_operand:<HALF> 1 "register_operand" "0")
+                          (match_operand:<HALF> 2 "register_operand" "x")))]
   ""
   "#"
-  "reload_completed"
-  [(set (subreg:X256 (match_dup 0) 64)
-        (subreg:X256 (match_dup 2) 0))
-   (set (subreg:X256 (match_dup 0) 96)
-        (subreg:X256 (match_dup 2) 32))]
+)
+
+(define_split
+  [(set (match_operand:X1024 0 "register_operand" "")
+        (vec_concat:X1024 (match_operand:<HALF> 1 "register_operand" "")
+                          (match_operand:<HALF> 2 "register_operand" "")))]
+  "KV3_1 && reload_completed"
+  [(set (subreg:<CHUNK> (match_dup 0) 64)
+        (subreg:<CHUNK> (match_dup 2) 0))
+   (set (subreg:<CHUNK> (match_dup 0) 96)
+        (subreg:<CHUNK> (match_dup 2) 32))]
   ""
 )
 
-(define_insn_and_split "kvx_xcat2048"
+(define_split
+  [(set (match_operand:X1024 0 "register_operand" "")
+        (vec_concat:X1024 (match_operand:<HALF> 1 "register_operand" "")
+                          (match_operand:<HALF> 2 "register_operand" "")))]
+  "KV3_2 && reload_completed"
+  [(set (subreg:<CHUNK2> (match_dup 0) 64)
+        (subreg:<CHUNK2> (match_dup 2) 0))]
+  ""
+)
+
+(define_insn "kvx_xcat2048"
   [(set (match_operand:X2048 0 "register_operand" "=x")
-        (vec_concat:X2048 (match_operand:X1024 1 "register_operand" "0")
-                          (match_operand:X1024 2 "register_operand" "x")))]
+        (vec_concat:X2048 (match_operand:<HALF> 1 "register_operand" "0")
+                          (match_operand:<HALF> 2 "register_operand" "x")))]
   ""
   "#"
-  "reload_completed"
-  [(set (subreg:X256 (match_dup 0) 128)
-        (subreg:X256 (match_dup 2) 0))
-   (set (subreg:X256 (match_dup 0) 160)
-        (subreg:X256 (match_dup 2) 32))
-   (set (subreg:X256 (match_dup 0) 192)
-        (subreg:X256 (match_dup 2) 64))
-   (set (subreg:X256 (match_dup 0) 224)
-        (subreg:X256 (match_dup 2) 96))]
+)
+
+(define_split
+  [(set (match_operand:X2048 0 "register_operand" "")
+        (vec_concat:X2048 (match_operand:<HALF> 1 "register_operand" "")
+                          (match_operand:<HALF> 2 "register_operand" "")))]
+  "KV3_1 && reload_completed"
+  [(set (subreg:<CHUNK> (match_dup 0) 128)
+        (subreg:<CHUNK> (match_dup 2) 0))
+   (set (subreg:<CHUNK> (match_dup 0) 160)
+        (subreg:<CHUNK> (match_dup 2) 32))
+   (set (subreg:<CHUNK> (match_dup 0) 192)
+        (subreg:<CHUNK> (match_dup 2) 64))
+   (set (subreg:<CHUNK> (match_dup 0) 224)
+        (subreg:<CHUNK> (match_dup 2) 96))]
   ""
 )
 
-(define_insn_and_split "kvx_xcat4096"
+(define_split
+  [(set (match_operand:X2048 0 "register_operand" "")
+        (vec_concat:X2048 (match_operand:<HALF> 1 "register_operand" "")
+                          (match_operand:<HALF> 2 "register_operand" "")))]
+  "KV3_2 && reload_completed"
+  [(set (subreg:<CHUNK4> (match_dup 0) 128)
+        (subreg:<CHUNK4> (match_dup 2) 0))]
+  ""
+)
+
+(define_insn "kvx_xcat4096"
   [(set (match_operand:X4096 0 "register_operand" "=x")
-        (vec_concat:X4096 (match_operand:X2048 1 "register_operand" "0")
-                          (match_operand:X2048 2 "register_operand" "x")))]
+        (vec_concat:X4096 (match_operand:<HALF> 1 "register_operand" "0")
+                          (match_operand:<HALF> 2 "register_operand" "x")))]
   ""
   "#"
-  "reload_completed"
-  [(set (subreg:X256 (match_dup 0) 256)
-        (subreg:X256 (match_dup 2) 0))
-   (set (subreg:X256 (match_dup 0) 288)
-        (subreg:X256 (match_dup 2) 32))
-   (set (subreg:X256 (match_dup 0) 320)
-        (subreg:X256 (match_dup 2) 64))
-   (set (subreg:X256 (match_dup 0) 352)
-        (subreg:X256 (match_dup 2) 96))
-   (set (subreg:X256 (match_dup 0) 384)
-        (subreg:X256 (match_dup 2) 128))
-   (set (subreg:X256 (match_dup 0) 416)
-        (subreg:X256 (match_dup 2) 160))
-   (set (subreg:X256 (match_dup 0) 448)
-        (subreg:X256 (match_dup 2) 192))
-   (set (subreg:X256 (match_dup 0) 480)
-        (subreg:X256 (match_dup 2) 224))]
+)
+
+(define_split
+  [(set (match_operand:X4096 0 "register_operand" "")
+        (vec_concat:X4096 (match_operand:<HALF> 1 "register_operand" "")
+                          (match_operand:<HALF> 2 "register_operand" "")))]
+  "KV3_1 && reload_completed"
+  [(set (subreg:<CHUNK> (match_dup 0) 256)
+        (subreg:<CHUNK> (match_dup 2) 0))
+   (set (subreg:<CHUNK> (match_dup 0) 288)
+        (subreg:<CHUNK> (match_dup 2) 32))
+   (set (subreg:<CHUNK> (match_dup 0) 320)
+        (subreg:<CHUNK> (match_dup 2) 64))
+   (set (subreg:<CHUNK> (match_dup 0) 352)
+        (subreg:<CHUNK> (match_dup 2) 96))
+   (set (subreg:<CHUNK> (match_dup 0) 384)
+        (subreg:<CHUNK> (match_dup 2) 128))
+   (set (subreg:<CHUNK> (match_dup 0) 416)
+        (subreg:<CHUNK> (match_dup 2) 160))
+   (set (subreg:<CHUNK> (match_dup 0) 448)
+        (subreg:<CHUNK> (match_dup 2) 192))
+   (set (subreg:<CHUNK> (match_dup 0) 480)
+        (subreg:<CHUNK> (match_dup 2) 224))]
   ""
 )
 
-(define_insn_and_split "kvx_xcat8192"
-  [(set (match_operand:X8192 0 "register_operand" "=x")
-        (vec_concat:X8192 (match_operand:X4096 1 "register_operand" "0")
-                          (match_operand:X4096 2 "register_operand" "x")))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:X256 (match_dup 0) 512)
-        (subreg:X256 (match_dup 2) 0))
-   (set (subreg:X256 (match_dup 0) 544)
-        (subreg:X256 (match_dup 2) 32))
-   (set (subreg:X256 (match_dup 0) 576)
-        (subreg:X256 (match_dup 2) 64))
-   (set (subreg:X256 (match_dup 0) 608)
-        (subreg:X256 (match_dup 2) 96))
-   (set (subreg:X256 (match_dup 0) 640)
-        (subreg:X256 (match_dup 2) 128))
-   (set (subreg:X256 (match_dup 0) 672)
-        (subreg:X256 (match_dup 2) 160))
-   (set (subreg:X256 (match_dup 0) 704)
-        (subreg:X256 (match_dup 2) 192))
-   (set (subreg:X256 (match_dup 0) 736)
-        (subreg:X256 (match_dup 2) 224))
-   (set (subreg:X256 (match_dup 0) 768)
-        (subreg:X256 (match_dup 2) 256))
-   (set (subreg:X256 (match_dup 0) 800)
-        (subreg:X256 (match_dup 2) 288))
-   (set (subreg:X256 (match_dup 0) 832)
-        (subreg:X256 (match_dup 2) 320))
-   (set (subreg:X256 (match_dup 0) 864)
-        (subreg:X256 (match_dup 2) 352))
-   (set (subreg:X256 (match_dup 0) 896)
-        (subreg:X256 (match_dup 2) 384))
-   (set (subreg:X256 (match_dup 0) 928)
-        (subreg:X256 (match_dup 2) 416))
-   (set (subreg:X256 (match_dup 0) 960)
-        (subreg:X256 (match_dup 2) 448))
-   (set (subreg:X256 (match_dup 0) 992)
-        (subreg:X256 (match_dup 2) 480))]
+(define_split
+  [(set (match_operand:X4096 0 "register_operand" "")
+        (vec_concat:X4096 (match_operand:<HALF> 1 "register_operand" "")
+                          (match_operand:<HALF> 2 "register_operand" "")))]
+  "KV3_2 && reload_completed"
+  [(set (subreg:<CHUNK4> (match_dup 0) 256)
+        (subreg:<CHUNK4> (match_dup 2) 0))
+   (set (subreg:<CHUNK4> (match_dup 0) 384)
+        (subreg:<CHUNK4> (match_dup 2) 128))]
   ""
 )
+
+(define_insn "kvx_xcat8192"
+  [(set (match_operand:X8192 0 "register_operand" "=x")
+        (vec_concat:X8192 (match_operand:<HALF> 1 "register_operand" "0")
+                          (match_operand:<HALF> 2 "register_operand" "x")))]
+  ""
+  "#"
+)
+
+(define_split
+  [(set (match_operand:X8192 0 "register_operand" "")
+        (vec_concat:X8192 (match_operand:<HALF> 1 "register_operand" "")
+                          (match_operand:<HALF> 2 "register_operand" "")))]
+  "KV3_1 && reload_completed"
+  [(set (subreg:<CHUNK> (match_dup 0) 512)
+        (subreg:<CHUNK> (match_dup 2) 0))
+   (set (subreg:<CHUNK> (match_dup 0) 544)
+        (subreg:<CHUNK> (match_dup 2) 32))
+   (set (subreg:<CHUNK> (match_dup 0) 576)
+        (subreg:<CHUNK> (match_dup 2) 64))
+   (set (subreg:<CHUNK> (match_dup 0) 608)
+        (subreg:<CHUNK> (match_dup 2) 96))
+   (set (subreg:<CHUNK> (match_dup 0) 640)
+        (subreg:<CHUNK> (match_dup 2) 128))
+   (set (subreg:<CHUNK> (match_dup 0) 672)
+        (subreg:<CHUNK> (match_dup 2) 160))
+   (set (subreg:<CHUNK> (match_dup 0) 704)
+        (subreg:<CHUNK> (match_dup 2) 192))
+   (set (subreg:<CHUNK> (match_dup 0) 736)
+        (subreg:<CHUNK> (match_dup 2) 224))
+   (set (subreg:<CHUNK> (match_dup 0) 768)
+        (subreg:<CHUNK> (match_dup 2) 256))
+   (set (subreg:<CHUNK> (match_dup 0) 800)
+        (subreg:<CHUNK> (match_dup 2) 288))
+   (set (subreg:<CHUNK> (match_dup 0) 832)
+        (subreg:<CHUNK> (match_dup 2) 320))
+   (set (subreg:<CHUNK> (match_dup 0) 864)
+        (subreg:<CHUNK> (match_dup 2) 352))
+   (set (subreg:<CHUNK> (match_dup 0) 896)
+        (subreg:<CHUNK> (match_dup 2) 384))
+   (set (subreg:<CHUNK> (match_dup 0) 928)
+        (subreg:<CHUNK> (match_dup 2) 416))
+   (set (subreg:<CHUNK> (match_dup 0) 960)
+        (subreg:<CHUNK> (match_dup 2) 448))
+   (set (subreg:<CHUNK> (match_dup 0) 992)
+        (subreg:<CHUNK> (match_dup 2) 480))]
+  ""
+)
+
+(define_split
+  [(set (match_operand:X8192 0 "register_operand" "")
+        (vec_concat:X8192 (match_operand:<HALF> 1 "register_operand" "")
+                          (match_operand:<HALF> 2 "register_operand" "")))]
+  "KV3_2 && reload_completed"
+  [(set (subreg:<CHUNK4> (match_dup 0) 512)
+        (subreg:<CHUNK4> (match_dup 2) 0))
+   (set (subreg:<CHUNK4> (match_dup 0) 640)
+        (subreg:<CHUNK4> (match_dup 2) 128))
+   (set (subreg:<CHUNK4> (match_dup 0) 768)
+        (subreg:<CHUNK4> (match_dup 2) 256))
+   (set (subreg:<CHUNK4> (match_dup 0) 896)
+        (subreg:<CHUNK4> (match_dup 2) 384))]
+  ""
+)
+
+
+;; XLOW*
 
 (define_insn_and_split "kvx_xlow256"
-  [(set (match_operand:X256 0 "register_operand" "=x")
-        (subreg:X256 (match_operand:X512 1 "register_operand" "x") 0))]
+  [(set (match_operand:<HALF> 0 "register_operand" "=x")
+        (subreg:<HALF> (match_operand:X512 1 "register_operand" "x") 0))]
   ""
   "#"
-  ""
-  [(set (match_dup 0) (subreg:X256 (match_dup 1) 0))]
+  "reload_completed"
+  [(set (match_dup 0) (subreg:<CHUNK> (match_dup 1) 0))]
   ""
 )
 
-(define_insn_and_split "kvx_xlow512"
-  [(set (match_operand:X512 0 "register_operand" "=x")
-        (subreg:X512 (match_operand:X1024 1 "register_operand" "x") 0))]
+(define_insn "kvx_xlow512"
+  [(set (match_operand:<HALF> 0 "register_operand" "=x")
+        (subreg:<HALF> (match_operand:X1024 1 "register_operand" "x") 0))]
   ""
   "#"
-  ""
-  [(set (subreg:X256 (match_dup 0) 0) (subreg:X256 (match_dup 1) 0))
-   (set (subreg:X256 (match_dup 0) 32) (subreg:X256 (match_dup 1) 32))]
+)
+
+(define_split
+  [(set (match_operand:<HALF> 0 "register_operand" "")
+        (subreg:<HALF> (match_operand:X1024 1 "register_operand" "") 0))]
+  "KV3_1 && reload_completed"
+  [(set (subreg:<CHUNK> (match_dup 0) 0) (subreg:<CHUNK> (match_dup 1) 0))
+   (set (subreg:<CHUNK> (match_dup 0) 32) (subreg:<CHUNK> (match_dup 1) 32))]
   ""
 )
 
-(define_insn_and_split "kvx_xlow1024"
-  [(set (match_operand:X1024 0 "register_operand" "=x")
-        (subreg:X1024 (match_operand:X2048 1 "register_operand" "x") 0))]
-  ""
-  "#"
-  ""
-  [(set (subreg:X256 (match_dup 0) 0) (subreg:X256 (match_dup 1) 0))
-   (set (subreg:X256 (match_dup 0) 32) (subreg:X256 (match_dup 1) 32))
-   (set (subreg:X256 (match_dup 0) 64) (subreg:X256 (match_dup 1) 64))
-   (set (subreg:X256 (match_dup 0) 96) (subreg:X256 (match_dup 1) 96))]
+(define_split
+  [(set (match_operand:<HALF> 0 "register_operand" "")
+        (subreg:<HALF> (match_operand:X1024 1 "register_operand" "") 0))]
+  "KV3_2 && reload_completed"
+  [(set (subreg:<CHUNK2> (match_dup 0) 0) (subreg:<CHUNK2> (match_dup 1) 0))]
   ""
 )
 
-(define_insn_and_split "kvx_xlow2048"
-  [(set (match_operand:X2048 0 "register_operand" "=x")
-        (subreg:X2048 (match_operand:X4096 1 "register_operand" "x") 0))]
+(define_insn "kvx_xlow1024"
+  [(set (match_operand:<HALF> 0 "register_operand" "=x")
+        (subreg:<HALF> (match_operand:X2048 1 "register_operand" "x") 0))]
   ""
   "#"
-  ""
-  [(set (subreg:X256 (match_dup 0) 0) (subreg:X256 (match_dup 1) 0))
-   (set (subreg:X256 (match_dup 0) 32) (subreg:X256 (match_dup 1) 32))
-   (set (subreg:X256 (match_dup 0) 64) (subreg:X256 (match_dup 1) 64))
-   (set (subreg:X256 (match_dup 0) 96) (subreg:X256 (match_dup 1) 96))
-   (set (subreg:X256 (match_dup 0) 128) (subreg:X256 (match_dup 1) 128))
-   (set (subreg:X256 (match_dup 0) 160) (subreg:X256 (match_dup 1) 160))
-   (set (subreg:X256 (match_dup 0) 192) (subreg:X256 (match_dup 1) 192))
-   (set (subreg:X256 (match_dup 0) 224) (subreg:X256 (match_dup 1) 224))]
+)
+
+(define_split
+  [(set (match_operand:<HALF> 0 "register_operand" "")
+        (subreg:<HALF> (match_operand:X2048 1 "register_operand" "") 0))]
+  "KV3_1 && reload_completed"
+  [(set (subreg:<CHUNK> (match_dup 0) 0) (subreg:<CHUNK> (match_dup 1) 0))
+   (set (subreg:<CHUNK> (match_dup 0) 32) (subreg:<CHUNK> (match_dup 1) 32))
+   (set (subreg:<CHUNK> (match_dup 0) 64) (subreg:<CHUNK> (match_dup 1) 64))
+   (set (subreg:<CHUNK> (match_dup 0) 96) (subreg:<CHUNK> (match_dup 1) 96))]
   ""
 )
 
-(define_insn_and_split "kvx_xlow4096"
-  [(set (match_operand:X4096 0 "register_operand" "=x")
-        (subreg:X4096 (match_operand:X8192 1 "register_operand" "x") 0))]
-  ""
-  "#"
-  ""
-  [(set (subreg:X256 (match_dup 0) 0) (subreg:X256 (match_dup 1) 0))
-   (set (subreg:X256 (match_dup 0) 32) (subreg:X256 (match_dup 1) 32))
-   (set (subreg:X256 (match_dup 0) 64) (subreg:X256 (match_dup 1) 64))
-   (set (subreg:X256 (match_dup 0) 96) (subreg:X256 (match_dup 1) 96))
-   (set (subreg:X256 (match_dup 0) 128) (subreg:X256 (match_dup 1) 128))
-   (set (subreg:X256 (match_dup 0) 160) (subreg:X256 (match_dup 1) 160))
-   (set (subreg:X256 (match_dup 0) 192) (subreg:X256 (match_dup 1) 192))
-   (set (subreg:X256 (match_dup 0) 224) (subreg:X256 (match_dup 1) 224))
-   (set (subreg:X256 (match_dup 0) 256) (subreg:X256 (match_dup 1) 256))
-   (set (subreg:X256 (match_dup 0) 288) (subreg:X256 (match_dup 1) 288))
-   (set (subreg:X256 (match_dup 0) 320) (subreg:X256 (match_dup 1) 320))
-   (set (subreg:X256 (match_dup 0) 352) (subreg:X256 (match_dup 1) 352))
-   (set (subreg:X256 (match_dup 0) 384) (subreg:X256 (match_dup 1) 384))
-   (set (subreg:X256 (match_dup 0) 416) (subreg:X256 (match_dup 1) 416))
-   (set (subreg:X256 (match_dup 0) 448) (subreg:X256 (match_dup 1) 448))
-   (set (subreg:X256 (match_dup 0) 480) (subreg:X256 (match_dup 1) 480))]
+(define_split
+  [(set (match_operand:<HALF> 0 "register_operand" "")
+        (subreg:<HALF> (match_operand:X2048 1 "register_operand" "") 0))]
+  "KV3_2 && reload_completed"
+  [(set (subreg:<CHUNK4> (match_dup 0) 0) (subreg:<CHUNK4> (match_dup 1) 0))]
   ""
 )
+
+(define_insn "kvx_xlow2048"
+  [(set (match_operand:<HALF> 0 "register_operand" "=x")
+        (subreg:<HALF> (match_operand:X4096 1 "register_operand" "x") 0))]
+  ""
+  "#"
+)
+
+(define_split
+  [(set (match_operand:<HALF> 0 "register_operand" "")
+        (subreg:<HALF> (match_operand:X4096 1 "register_operand" "") 0))]
+  "KV3_1 && reload_completed"
+  [(set (subreg:<CHUNK> (match_dup 0) 0) (subreg:<CHUNK> (match_dup 1) 0))
+   (set (subreg:<CHUNK> (match_dup 0) 32) (subreg:<CHUNK> (match_dup 1) 32))
+   (set (subreg:<CHUNK> (match_dup 0) 64) (subreg:<CHUNK> (match_dup 1) 64))
+   (set (subreg:<CHUNK> (match_dup 0) 96) (subreg:<CHUNK> (match_dup 1) 96))
+   (set (subreg:<CHUNK> (match_dup 0) 128) (subreg:<CHUNK> (match_dup 1) 128))
+   (set (subreg:<CHUNK> (match_dup 0) 160) (subreg:<CHUNK> (match_dup 1) 160))
+   (set (subreg:<CHUNK> (match_dup 0) 192) (subreg:<CHUNK> (match_dup 1) 192))
+   (set (subreg:<CHUNK> (match_dup 0) 224) (subreg:<CHUNK> (match_dup 1) 224))]
+  ""
+)
+
+(define_split
+  [(set (match_operand:<HALF> 0 "register_operand" "")
+        (subreg:<HALF> (match_operand:X4096 1 "register_operand" "") 0))]
+  "KV3_2 && reload_completed"
+  [(set (subreg:<CHUNK4> (match_dup 0) 0) (subreg:<CHUNK4> (match_dup 1) 0))
+   (set (subreg:<CHUNK4> (match_dup 0) 128) (subreg:<CHUNK4> (match_dup 1) 128))]
+  ""
+)
+
+(define_insn "kvx_xlow4096"
+  [(set (match_operand:<HALF> 0 "register_operand" "=x")
+        (subreg:<HALF> (match_operand:X8192 1 "register_operand" "x") 0))]
+  ""
+  "#"
+)
+
+(define_split
+  [(set (match_operand:<HALF> 0 "register_operand" "")
+        (subreg:<HALF> (match_operand:X8192 1 "register_operand" "") 0))]
+  "KV3_1 && reload_completed"
+  [(set (subreg:<CHUNK> (match_dup 0) 0) (subreg:<CHUNK> (match_dup 1) 0))
+   (set (subreg:<CHUNK> (match_dup 0) 32) (subreg:<CHUNK> (match_dup 1) 32))
+   (set (subreg:<CHUNK> (match_dup 0) 64) (subreg:<CHUNK> (match_dup 1) 64))
+   (set (subreg:<CHUNK> (match_dup 0) 96) (subreg:<CHUNK> (match_dup 1) 96))
+   (set (subreg:<CHUNK> (match_dup 0) 128) (subreg:<CHUNK> (match_dup 1) 128))
+   (set (subreg:<CHUNK> (match_dup 0) 160) (subreg:<CHUNK> (match_dup 1) 160))
+   (set (subreg:<CHUNK> (match_dup 0) 192) (subreg:<CHUNK> (match_dup 1) 192))
+   (set (subreg:<CHUNK> (match_dup 0) 224) (subreg:<CHUNK> (match_dup 1) 224))
+   (set (subreg:<CHUNK> (match_dup 0) 256) (subreg:<CHUNK> (match_dup 1) 256))
+   (set (subreg:<CHUNK> (match_dup 0) 288) (subreg:<CHUNK> (match_dup 1) 288))
+   (set (subreg:<CHUNK> (match_dup 0) 320) (subreg:<CHUNK> (match_dup 1) 320))
+   (set (subreg:<CHUNK> (match_dup 0) 352) (subreg:<CHUNK> (match_dup 1) 352))
+   (set (subreg:<CHUNK> (match_dup 0) 384) (subreg:<CHUNK> (match_dup 1) 384))
+   (set (subreg:<CHUNK> (match_dup 0) 416) (subreg:<CHUNK> (match_dup 1) 416))
+   (set (subreg:<CHUNK> (match_dup 0) 448) (subreg:<CHUNK> (match_dup 1) 448))
+   (set (subreg:<CHUNK> (match_dup 0) 480) (subreg:<CHUNK> (match_dup 1) 480))]
+  ""
+)
+
+(define_split
+  [(set (match_operand:<HALF> 0 "register_operand" "")
+        (subreg:<HALF> (match_operand:X8192 1 "register_operand" "") 0))]
+  "KV3_2 && reload_completed"
+  [(set (subreg:<CHUNK4> (match_dup 0) 0) (subreg:<CHUNK4> (match_dup 1) 0))
+   (set (subreg:<CHUNK4> (match_dup 0) 128) (subreg:<CHUNK4> (match_dup 1) 128))
+   (set (subreg:<CHUNK4> (match_dup 0) 256) (subreg:<CHUNK4> (match_dup 1) 256))
+   (set (subreg:<CHUNK4> (match_dup 0) 384) (subreg:<CHUNK4> (match_dup 1) 384))]
+  ""
+)
+
+
+;; XHIGH*
 
 (define_insn_and_split "kvx_xhigh256"
-  [(set (match_operand:X256 0 "register_operand" "=x")
-        (subreg:X256 (match_operand:X512 1 "register_operand" "x") 32))]
+  [(set (match_operand:<HALF> 0 "register_operand" "=x")
+        (subreg:<HALF> (match_operand:X512 1 "register_operand" "x") 32))]
   ""
   "#"
-  ""
+  "reload_completed"
   [(set (match_dup 0) (subreg:X256 (match_dup 1) 32))]
   ""
 )
 
-(define_insn_and_split "kvx_xhigh512"
-  [(set (match_operand:X512 0 "register_operand" "=x")
-        (subreg:X512 (match_operand:X1024 1 "register_operand" "x") 64))]
+(define_insn "kvx_xhigh512"
+  [(set (match_operand:<HALF> 0 "register_operand" "=x")
+        (subreg:<HALF> (match_operand:X1024 1 "register_operand" "x") 64))]
   ""
   "#"
-  ""
-  [(set (subreg:X256 (match_dup 0) 0) (subreg:X256 (match_dup 1) 64))
-   (set (subreg:X256 (match_dup 0) 32) (subreg:X256 (match_dup 1) 96))]
+)
+
+(define_split
+  [(set (match_operand:<HALF> 0 "register_operand" "")
+        (subreg:<HALF> (match_operand:X1024 1 "register_operand" "") 64))]
+  "KV3_1 && reload_completed"
+  [(set (subreg:<CHUNK> (match_dup 0) 0) (subreg:<CHUNK> (match_dup 1) 64))
+   (set (subreg:<CHUNK> (match_dup 0) 32) (subreg:<CHUNK> (match_dup 1) 96))]
   ""
 )
 
-(define_insn_and_split "kvx_xhigh1024"
-  [(set (match_operand:X1024 0 "register_operand" "=x")
-        (subreg:X1024 (match_operand:X2048 1 "register_operand" "x") 128))]
-  ""
-  "#"
-  ""
-  [(set (subreg:X256 (match_dup 0) 0) (subreg:X256 (match_dup 1) 128))
-   (set (subreg:X256 (match_dup 0) 32) (subreg:X256 (match_dup 1) 160))
-   (set (subreg:X256 (match_dup 0) 64) (subreg:X256 (match_dup 1) 192))
-   (set (subreg:X256 (match_dup 0) 96) (subreg:X256 (match_dup 1) 224))]
+(define_split
+  [(set (match_operand:<HALF> 0 "register_operand" "")
+        (subreg:<HALF> (match_operand:X1024 1 "register_operand" "") 64))]
+  "KV3_2 && reload_completed"
+  [(set (subreg:<CHUNK2> (match_dup 0) 0) (subreg:<CHUNK2> (match_dup 1) 64))]
   ""
 )
 
-(define_insn_and_split "kvx_xhigh2048"
-  [(set (match_operand:X2048 0 "register_operand" "=x")
-        (subreg:X2048 (match_operand:X4096 1 "register_operand" "x") 256))]
+(define_insn "kvx_xhigh1024"
+  [(set (match_operand:<HALF> 0 "register_operand" "=x")
+        (subreg:<HALF> (match_operand:X2048 1 "register_operand" "x") 128))]
   ""
   "#"
-  ""
-  [(set (subreg:X256 (match_dup 0) 0) (subreg:X256 (match_dup 1) 256))
-   (set (subreg:X256 (match_dup 0) 32) (subreg:X256 (match_dup 1) 288))
-   (set (subreg:X256 (match_dup 0) 64) (subreg:X256 (match_dup 1) 320))
-   (set (subreg:X256 (match_dup 0) 96) (subreg:X256 (match_dup 1) 352))
-   (set (subreg:X256 (match_dup 0) 128) (subreg:X256 (match_dup 1) 384))
-   (set (subreg:X256 (match_dup 0) 160) (subreg:X256 (match_dup 1) 416))
-   (set (subreg:X256 (match_dup 0) 192) (subreg:X256 (match_dup 1) 448))
-   (set (subreg:X256 (match_dup 0) 224) (subreg:X256 (match_dup 1) 480))]
+)
+
+(define_split
+  [(set (match_operand:<HALF> 0 "register_operand" "")
+        (subreg:<HALF> (match_operand:X2048 1 "register_operand" "") 128))]
+  "KV3_1 && reload_completed"
+  [(set (subreg:<CHUNK> (match_dup 0) 0) (subreg:<CHUNK> (match_dup 1) 128))
+   (set (subreg:<CHUNK> (match_dup 0) 32) (subreg:<CHUNK> (match_dup 1) 160))
+   (set (subreg:<CHUNK> (match_dup 0) 64) (subreg:<CHUNK> (match_dup 1) 192))
+   (set (subreg:<CHUNK> (match_dup 0) 96) (subreg:<CHUNK> (match_dup 1) 224))]
   ""
 )
 
-(define_insn_and_split "kvx_xhigh4096"
-  [(set (match_operand:X4096 0 "register_operand" "=x")
-        (subreg:X4096 (match_operand:X8192 1 "register_operand" "x") 512))]
+(define_split
+  [(set (match_operand:<HALF> 0 "register_operand" "")
+        (subreg:<HALF> (match_operand:X2048 1 "register_operand" "") 128))]
+  "KV3_2 && reload_completed"
+  [(set (subreg:<CHUNK4> (match_dup 0) 0) (subreg:<CHUNK4> (match_dup 1) 128))]
+  ""
+)
+
+(define_insn "kvx_xhigh2048"
+  [(set (match_operand:<HALF> 0 "register_operand" "=x")
+        (subreg:<HALF> (match_operand:X4096 1 "register_operand" "x") 256))]
   ""
   "#"
+)
+
+(define_split
+  [(set (match_operand:<HALF> 0 "register_operand" "")
+        (subreg:<HALF> (match_operand:X4096 1 "register_operand" "") 256))]
+  "KV3_1 && reload_completed"
+  [(set (subreg:<CHUNK> (match_dup 0) 0) (subreg:<CHUNK> (match_dup 1) 256))
+   (set (subreg:<CHUNK> (match_dup 0) 32) (subreg:<CHUNK> (match_dup 1) 288))
+   (set (subreg:<CHUNK> (match_dup 0) 64) (subreg:<CHUNK> (match_dup 1) 320))
+   (set (subreg:<CHUNK> (match_dup 0) 96) (subreg:<CHUNK> (match_dup 1) 352))
+   (set (subreg:<CHUNK> (match_dup 0) 128) (subreg:<CHUNK> (match_dup 1) 384))
+   (set (subreg:<CHUNK> (match_dup 0) 160) (subreg:<CHUNK> (match_dup 1) 416))
+   (set (subreg:<CHUNK> (match_dup 0) 192) (subreg:<CHUNK> (match_dup 1) 448))
+   (set (subreg:<CHUNK> (match_dup 0) 224) (subreg:<CHUNK> (match_dup 1) 480))]
   ""
-  [(set (subreg:X256 (match_dup 0) 0) (subreg:X256 (match_dup 1) 512))
-   (set (subreg:X256 (match_dup 0) 32) (subreg:X256 (match_dup 1) 544))
-   (set (subreg:X256 (match_dup 0) 64) (subreg:X256 (match_dup 1) 576))
-   (set (subreg:X256 (match_dup 0) 96) (subreg:X256 (match_dup 1) 608))
-   (set (subreg:X256 (match_dup 0) 128) (subreg:X256 (match_dup 1) 640))
-   (set (subreg:X256 (match_dup 0) 160) (subreg:X256 (match_dup 1) 672))
-   (set (subreg:X256 (match_dup 0) 192) (subreg:X256 (match_dup 1) 704))
-   (set (subreg:X256 (match_dup 0) 224) (subreg:X256 (match_dup 1) 736))
-   (set (subreg:X256 (match_dup 0) 256) (subreg:X256 (match_dup 1) 768))
-   (set (subreg:X256 (match_dup 0) 288) (subreg:X256 (match_dup 1) 800))
-   (set (subreg:X256 (match_dup 0) 320) (subreg:X256 (match_dup 1) 832))
-   (set (subreg:X256 (match_dup 0) 352) (subreg:X256 (match_dup 1) 864))
-   (set (subreg:X256 (match_dup 0) 384) (subreg:X256 (match_dup 1) 896))
-   (set (subreg:X256 (match_dup 0) 416) (subreg:X256 (match_dup 1) 928))
-   (set (subreg:X256 (match_dup 0) 448) (subreg:X256 (match_dup 1) 960))
-   (set (subreg:X256 (match_dup 0) 480) (subreg:X256 (match_dup 1) 992))]
+)
+
+(define_split
+  [(set (match_operand:<HALF> 0 "register_operand" "")
+        (subreg:<HALF> (match_operand:X4096 1 "register_operand" "") 256))]
+  "KV3_2 && reload_completed"
+  [(set (subreg:<CHUNK4> (match_dup 0) 0) (subreg:<CHUNK4> (match_dup 1) 256))
+   (set (subreg:<CHUNK4> (match_dup 0) 128) (subreg:<CHUNK4> (match_dup 1) 384))]
+  ""
+)
+
+(define_insn "kvx_xhigh4096"
+  [(set (match_operand:<HALF> 0 "register_operand" "=x")
+        (subreg:<HALF> (match_operand:X8192 1 "register_operand" "x") 512))]
+  ""
+  "#"
+)
+
+(define_split
+  [(set (match_operand:<HALF> 0 "register_operand" "")
+        (subreg:<HALF> (match_operand:X8192 1 "register_operand" "") 512))]
+  "KV3_1 && reload_completed"
+  [(set (subreg:<CHUNK> (match_dup 0) 0) (subreg:<CHUNK> (match_dup 1) 512))
+   (set (subreg:<CHUNK> (match_dup 0) 32) (subreg:<CHUNK> (match_dup 1) 544))
+   (set (subreg:<CHUNK> (match_dup 0) 64) (subreg:<CHUNK> (match_dup 1) 576))
+   (set (subreg:<CHUNK> (match_dup 0) 96) (subreg:<CHUNK> (match_dup 1) 608))
+   (set (subreg:<CHUNK> (match_dup 0) 128) (subreg:<CHUNK> (match_dup 1) 640))
+   (set (subreg:<CHUNK> (match_dup 0) 160) (subreg:<CHUNK> (match_dup 1) 672))
+   (set (subreg:<CHUNK> (match_dup 0) 192) (subreg:<CHUNK> (match_dup 1) 704))
+   (set (subreg:<CHUNK> (match_dup 0) 224) (subreg:<CHUNK> (match_dup 1) 736))
+   (set (subreg:<CHUNK> (match_dup 0) 256) (subreg:<CHUNK> (match_dup 1) 768))
+   (set (subreg:<CHUNK> (match_dup 0) 288) (subreg:<CHUNK> (match_dup 1) 800))
+   (set (subreg:<CHUNK> (match_dup 0) 320) (subreg:<CHUNK> (match_dup 1) 832))
+   (set (subreg:<CHUNK> (match_dup 0) 352) (subreg:<CHUNK> (match_dup 1) 864))
+   (set (subreg:<CHUNK> (match_dup 0) 384) (subreg:<CHUNK> (match_dup 1) 896))
+   (set (subreg:<CHUNK> (match_dup 0) 416) (subreg:<CHUNK> (match_dup 1) 928))
+   (set (subreg:<CHUNK> (match_dup 0) 448) (subreg:<CHUNK> (match_dup 1) 960))
+   (set (subreg:<CHUNK> (match_dup 0) 480) (subreg:<CHUNK> (match_dup 1) 992))]
+  ""
+)
+
+(define_split
+  [(set (match_operand:<HALF> 0 "register_operand" "")
+        (subreg:<HALF> (match_operand:X8192 1 "register_operand" "") 512))]
+  "KV3_2 && reload_completed"
+  [(set (subreg:<CHUNK> (match_dup 0) 0) (subreg:<CHUNK> (match_dup 1) 512))
+   (set (subreg:<CHUNK> (match_dup 0) 128) (subreg:<CHUNK> (match_dup 1) 640))
+   (set (subreg:<CHUNK> (match_dup 0) 256) (subreg:<CHUNK> (match_dup 1) 768))
+   (set (subreg:<CHUNK> (match_dup 0) 384) (subreg:<CHUNK> (match_dup 1) 896))]
   ""
 )
 
 
-;; XLOAD256, KVX_XLOAD512, KVX_XLOAD1024
+;; XLOAD256, XLOAD512, XLOAD1024
 
 (define_insn "kvx_xload256"
   [(set (match_operand:X256 0 "register_operand" "=x,x,x")
@@ -600,49 +1010,49 @@
 
 (define_insn_and_split "kvx_xload512"
   [(set (match_operand:X512 0 "register_operand" "=x,x,x")
-        (unspec:X512 [(match_operand:X512 1 "memory_operand" "a,b,m")
+        (unspec:X512 [(match_operand:X512 1 "memsimple_operand" "c,d,e")
                         (match_operand 2 "" "")] UNSPEC_XLOAD))]
   ""
   "#"
   "reload_completed"
-  [(set (subreg:X256 (match_dup 0) 0)
-        (unspec:X256 [(subreg:X256 (match_dup 1) 0)
-                        (match_dup 2)] UNSPEC_XLOAD))
-   (set (subreg:X256 (match_dup 0) 32)
-        (unspec:X256 [(subreg:X256 (match_dup 1) 32)
-                        (match_dup 2)] UNSPEC_XLOAD))]
+  [(set (subreg:<CHUNK> (match_dup 0) 0)
+        (unspec:<CHUNK> [(subreg:<CHUNK> (match_dup 1) 0)
+                         (match_dup 2)] UNSPEC_XLOAD))
+   (set (subreg:<CHUNK> (match_dup 0) 32)
+        (unspec:<CHUNK> [(subreg:<CHUNK> (match_dup 1) 32)
+                         (match_dup 2)] UNSPEC_XLOAD))]
   ""
 )
 
 (define_insn_and_split "kvx_xload1024"
   [(set (match_operand:X1024 0 "register_operand" "=x,x,x")
-        (unspec:X1024 [(match_operand:X1024 1 "memory_operand" "a,b,m")
+        (unspec:X1024 [(match_operand:X1024 1 "memsimple_operand" "c,d,e")
                          (match_operand 2 "" "")] UNSPEC_XLOAD))]
   ""
   "#"
   "reload_completed"
-  [(set (subreg:X256 (match_dup 0) 0)
-        (unspec:X256 [(subreg:X256 (match_dup 1) 0)
-                        (match_dup 2)] UNSPEC_XLOAD))
-   (set (subreg:X256 (match_dup 0) 32)
-        (unspec:X256 [(subreg:X256 (match_dup 1) 32)
-                        (match_dup 2)] UNSPEC_XLOAD))
-   (set (subreg:X256 (match_dup 0) 64)
-        (unspec:X256 [(subreg:X256 (match_dup 1) 64)
-                        (match_dup 2)] UNSPEC_XLOAD))
-   (set (subreg:X256 (match_dup 0) 96)
-        (unspec:X256 [(subreg:X256 (match_dup 1) 96)
-                        (match_dup 2)] UNSPEC_XLOAD))]
+  [(set (subreg:<CHUNK> (match_dup 0) 0)
+        (unspec:<CHUNK> [(subreg:<CHUNK> (match_dup 1) 0)
+                         (match_dup 2)] UNSPEC_XLOAD))
+   (set (subreg:<CHUNK> (match_dup 0) 32)
+        (unspec:<CHUNK> [(subreg:<CHUNK> (match_dup 1) 32)
+                         (match_dup 2)] UNSPEC_XLOAD))
+   (set (subreg:<CHUNK> (match_dup 0) 64)
+        (unspec:<CHUNK> [(subreg:<CHUNK> (match_dup 1) 64)
+                         (match_dup 2)] UNSPEC_XLOAD))
+   (set (subreg:<CHUNK> (match_dup 0) 96)
+        (unspec:<CHUNK> [(subreg:<CHUNK> (match_dup 1) 96)
+                         (match_dup 2)] UNSPEC_XLOAD))]
   ""
 )
 
 
-;; XLOADS1024, KVX_XLOADSC1024
+;; XLOADS1024, XLOADSC1024
 
 (define_insn "kvx_xloads1024"
   [(set (match_operand:X1024 0 "register_operand" "=x,x,x")
         (unspec:X1024 [(match_operand:X1024 1 "register_operand" "0,0,0")
-                         (match_operand:X256 2 "memory_operand" "a,b,m")
+                         (match_operand:<CHUNK> 2 "memsimple_operand" "c,d,e")
                          (match_operand 3 "" "")] UNSPEC_XLOADS))]
   ""
   "xlo%3%X2 %0 = %2"
@@ -656,7 +1066,7 @@
 (define_insn "kvx_xloadsc1024"
   [(set (match_operand:X1024 0 "register_operand" "=x,x,x")
         (unspec:X1024 [(match_operand:X1024 1 "register_operand" "0,0,0")
-                         (match_operand:X256 2 "memsimple_operand" "c,d,e")
+                         (match_operand:<CHUNK> 2 "memsimple_operand" "c,d,e")
                          (match_operand:DI 3 "register_operand" "r,r,r")
                          (match_operand 4 "" "")] UNSPEC_XLOADS))]
   ""
@@ -669,7 +1079,7 @@
 )
 
 
-;; kvx_xsplatd256, kvx_xsplatd512, kvx_xsplatd1024, kvx_xsplatd2048, kvx_xsplatd4096, kvx_xsplatd8192
+;; XSPLATD
 
 (define_insn "kvx_xsplatd256"
   [(set (match_operand:X256 0 "register_operand" "=x")
@@ -680,112 +1090,259 @@
    (set_attr "length"                   "8")]
 )
 
-(define_insn_and_split "kvx_xsplatd512"
-  [(set (match_operand:X512 0 "register_operand" "=x")
-        (unspec:X512 [(match_operand:DI 1 "register_operand" "r")] UNSPEC_XSPLATD))]
+(define_insn "kvx_xsplatd<bitsize>"
+  [(set (match_operand:XBUFF 0 "register_operand" "=x")
+        (unspec:XBUFF [(match_operand:DI 1 "register_operand" "r")] UNSPEC_XSPLATD))]
   ""
   "#"
-  ""
-  [(set (subreg:X256 (match_dup 0) 0)
-        (unspec:X256 [(match_dup 1)] UNSPEC_XSPLATD))
-   (set (subreg:X256 (match_dup 0) 32)
-        (subreg:X256 (match_dup 0) 0))]
+)
+
+(define_split
+  [(set (match_operand:X512 0 "register_operand" "")
+        (unspec:X512 [(match_operand:DI 1 "register_operand" "")] UNSPEC_XSPLATD))]
+  "reload_completed"
+  [(set (subreg:<CHUNK> (match_dup 0) 0)
+        (unspec:<CHUNK> [(match_dup 1)] UNSPEC_XSPLATD))
+   (set (subreg:<CHUNK> (match_dup 0) 32)
+        (subreg:<CHUNK> (match_dup 0) 0))]
   ""
 )
 
-(define_insn_and_split "kvx_xsplatd1024"
-  [(set (match_operand:X1024 0 "register_operand" "=x")
-        (unspec:X1024 [(match_operand:DI 1 "register_operand" "r")] UNSPEC_XSPLATD))]
-  ""
-  "#"
-  ""
-  [(set (subreg:X256 (match_dup 0) 0)
-        (unspec:X256 [(match_dup 1)] UNSPEC_XSPLATD))
-   (set (subreg:X256 (match_dup 0) 32)
-        (subreg:X256 (match_dup 0) 0))
-   (set (subreg:X256 (match_dup 0) 64)
-        (subreg:X256 (match_dup 0) 0))
-   (set (subreg:X256 (match_dup 0) 96)
-        (subreg:X256 (match_dup 0) 0))]
+(define_split
+  [(set (match_operand:X1024 0 "register_operand" "")
+        (unspec:X1024 [(match_operand:DI 1 "register_operand" "")] UNSPEC_XSPLATD))]
+  "KV3_1 && reload_completed"
+  [(set (subreg:<CHUNK> (match_dup 0) 0)
+        (unspec:<CHUNK> [(match_dup 1)] UNSPEC_XSPLATD))
+   (set (subreg:<CHUNK> (match_dup 0) 32)
+        (subreg:<CHUNK> (match_dup 0) 0))
+   (set (subreg:<CHUNK> (match_dup 0) 64)
+        (subreg:<CHUNK> (match_dup 0) 0))
+   (set (subreg:<CHUNK> (match_dup 0) 96)
+        (subreg:<CHUNK> (match_dup 0) 0))]
   ""
 )
 
-(define_insn_and_split "kvx_xsplatd2048"
-  [(set (match_operand:X2048 0 "register_operand" "=x")
-        (unspec:X2048 [(match_operand:DI 1 "register_operand" "r")] UNSPEC_XSPLATD))]
-  ""
-  "#"
-  ""
-  [(set (subreg:X256 (match_dup 0) 0)
-        (unspec:X256 [(match_dup 1)] UNSPEC_XSPLATD))
-   (set (subreg:X256 (match_dup 0) 32)
-        (subreg:X256 (match_dup 0) 0))
-   (set (subreg:X256 (match_dup 0) 64)
-        (subreg:X256 (match_dup 0) 0))
-   (set (subreg:X256 (match_dup 0) 96)
-        (subreg:X256 (match_dup 0) 0))
-   (set (subreg:X1024 (match_dup 0) 128)
-        (unspec:X1024 [(subreg:X1024 (match_dup 0) 0)] UNSPEC_XMT44D))]
+(define_split
+  [(set (match_operand:X1024 0 "register_operand" "")
+        (unspec:X1024 [(match_operand:DI 1 "register_operand" "")] UNSPEC_XSPLATD))]
+  "KV3_2 && reload_completed"
+  [(set (subreg:<CHUNK> (match_dup 0) 0)
+        (unspec:<CHUNK> [(match_dup 1)] UNSPEC_XSPLATD))
+   (set (subreg:<CHUNK> (match_dup 0) 32)
+        (subreg:<CHUNK> (match_dup 0) 0))
+   (set (subreg:<CHUNK2> (match_dup 0) 64)
+        (unspec:<CHUNK2> [(subreg:<CHUNK2> (match_dup 0) 0) (const_string "")] UNSPEC_XCOPY))]
   ""
 )
 
-(define_insn_and_split "kvx_xsplatd4096"
-  [(set (match_operand:X4096 0 "register_operand" "=x")
-        (unspec:X4096 [(match_operand:DI 1 "register_operand" "r")] UNSPEC_XSPLATD))]
-  ""
-  "#"
-  ""
-  [(set (subreg:X256 (match_dup 0) 0)
-        (unspec:X256 [(match_dup 1)] UNSPEC_XSPLATD))
-   (set (subreg:X256 (match_dup 0) 32)
-        (subreg:X256 (match_dup 0) 0))
-   (set (subreg:X256 (match_dup 0) 64)
-        (subreg:X256 (match_dup 0) 0))
-   (set (subreg:X256 (match_dup 0) 96)
-        (subreg:X256 (match_dup 0) 0))
-   (set (subreg:X1024 (match_dup 0) 128)
-        (unspec:X1024 [(subreg:X1024 (match_dup 0) 0)] UNSPEC_XMT44D))
-   (set (subreg:X1024 (match_dup 0) 256)
-        (unspec:X1024 [(subreg:X1024 (match_dup 0) 128)] UNSPEC_XMT44D))
-   (set (subreg:X1024 (match_dup 0) 384)
-        (unspec:X1024 [(subreg:X1024 (match_dup 0) 256)] UNSPEC_XMT44D))]
+(define_split
+  [(set (match_operand:X2048 0 "register_operand" "")
+        (unspec:X2048 [(match_operand:DI 1 "register_operand" "")] UNSPEC_XSPLATD))]
+  "KV3_1 && reload_completed"
+  [(set (subreg:<CHUNK> (match_dup 0) 0)
+        (unspec:<CHUNK> [(match_dup 1)] UNSPEC_XSPLATD))
+   (set (subreg:<CHUNK> (match_dup 0) 32)
+        (subreg:<CHUNK> (match_dup 0) 0))
+   (set (subreg:<CHUNK> (match_dup 0) 64)
+        (subreg:<CHUNK> (match_dup 0) 0))
+   (set (subreg:<CHUNK> (match_dup 0) 96)
+        (subreg:<CHUNK> (match_dup 0) 0))
+   (set (subreg:<CHUNK4> (match_dup 0) 128)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 0) 0)] UNSPEC_XMT44D))]
   ""
 )
 
-(define_insn_and_split "kvx_xsplatd8192"
-  [(set (match_operand:X8192 0 "register_operand" "=x")
-        (unspec:X8192 [(match_operand:DI 1 "register_operand" "r")] UNSPEC_XSPLATD))]
+(define_split
+  [(set (match_operand:X2048 0 "register_operand" "")
+        (unspec:X2048 [(match_operand:DI 1 "register_operand" "")] UNSPEC_XSPLATD))]
+  "KV3_2 && reload_completed"
+  [(set (subreg:<CHUNK> (match_dup 0) 0)
+        (unspec:<CHUNK> [(match_dup 1)] UNSPEC_XSPLATD))
+   (set (subreg:<CHUNK> (match_dup 0) 32)
+        (subreg:<CHUNK> (match_dup 0) 0))
+   (set (subreg:<CHUNK2> (match_dup 0) 64)
+        (unspec:<CHUNK2> [(subreg:<CHUNK2> (match_dup 0) 0) (const_string "")] UNSPEC_XCOPY))
+   (set (subreg:<CHUNK4> (match_dup 0) 128)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 0) 0) (const_string "")] UNSPEC_XCOPY))]
   ""
-  "#"
-  ""
-  [(set (subreg:X256 (match_dup 0) 0)
-        (unspec:X256 [(match_dup 1)] UNSPEC_XSPLATD))
-   (set (subreg:X256 (match_dup 0) 32)
-        (subreg:X256 (match_dup 0) 0))
-   (set (subreg:X256 (match_dup 0) 64)
-        (subreg:X256 (match_dup 0) 0))
-   (set (subreg:X256 (match_dup 0) 96)
-        (subreg:X256 (match_dup 0) 0))
-   (set (subreg:X1024 (match_dup 0) 128)
-        (unspec:X1024 [(subreg:X1024 (match_dup 0) 0)] UNSPEC_XMT44D))
-   (set (subreg:X1024 (match_dup 0) 256)
-        (unspec:X1024 [(subreg:X1024 (match_dup 0) 128)] UNSPEC_XMT44D))
-   (set (subreg:X1024 (match_dup 0) 384)
-        (unspec:X1024 [(subreg:X1024 (match_dup 0) 256)] UNSPEC_XMT44D))
-   (set (subreg:X1024 (match_dup 0) 512)
-        (unspec:X1024 [(subreg:X1024 (match_dup 0) 384)] UNSPEC_XMT44D))
-   (set (subreg:X1024 (match_dup 0) 640)
-        (unspec:X1024 [(subreg:X1024 (match_dup 0) 512)] UNSPEC_XMT44D))
-   (set (subreg:X1024 (match_dup 0) 768)
-        (unspec:X1024 [(subreg:X1024 (match_dup 0) 640)] UNSPEC_XMT44D))
-   (set (subreg:X1024 (match_dup 0) 896)
-        (unspec:X1024 [(subreg:X1024 (match_dup 0) 768)] UNSPEC_XMT44D))]
+)
 
+(define_split
+  [(set (match_operand:X4096 0 "register_operand" "")
+        (unspec:X4096 [(match_operand:DI 1 "register_operand" "")] UNSPEC_XSPLATD))]
+  "KV3_1 && reload_completed"
+  [(set (subreg:<CHUNK> (match_dup 0) 0)
+        (unspec:<CHUNK> [(match_dup 1)] UNSPEC_XSPLATD))
+   (set (subreg:<CHUNK> (match_dup 0) 32)
+        (subreg:<CHUNK> (match_dup 0) 0))
+   (set (subreg:<CHUNK> (match_dup 0) 64)
+        (subreg:<CHUNK> (match_dup 0) 0))
+   (set (subreg:<CHUNK> (match_dup 0) 96)
+        (subreg:<CHUNK> (match_dup 0) 0))
+   (set (subreg:<CHUNK4> (match_dup 0) 128)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 0) 0)] UNSPEC_XMT44D))
+   (set (subreg:<CHUNK4> (match_dup 0) 256)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 0) 128)] UNSPEC_XMT44D))
+   (set (subreg:<CHUNK4> (match_dup 0) 384)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 0) 256)] UNSPEC_XMT44D))]
+  ""
+)
+
+(define_split
+  [(set (match_operand:X4096 0 "register_operand" "")
+        (unspec:X4096 [(match_operand:DI 1 "register_operand" "")] UNSPEC_XSPLATD))]
+  "KV3_2 && reload_completed"
+  [(set (subreg:<CHUNK> (match_dup 0) 0)
+        (unspec:<CHUNK> [(match_dup 1)] UNSPEC_XSPLATD))
+   (set (subreg:<CHUNK> (match_dup 0) 32)
+        (subreg:<CHUNK> (match_dup 0) 0))
+   (set (subreg:<CHUNK2> (match_dup 0) 64)
+        (unspec:<CHUNK2> [(subreg:<CHUNK2> (match_dup 0) 0) (const_string "")] UNSPEC_XCOPY))
+   (set (subreg:<CHUNK4> (match_dup 0) 128)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 0) 0) (const_string "")] UNSPEC_XCOPY))
+   (set (subreg:<CHUNK4> (match_dup 0) 256)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 0) 0) (const_string "")] UNSPEC_XCOPY))
+   (set (subreg:<CHUNK4> (match_dup 0) 384)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 0) 0) (const_string "")] UNSPEC_XCOPY))]
+  ""
+)
+
+(define_split
+  [(set (match_operand:X8192 0 "register_operand" "")
+        (unspec:X8192 [(match_operand:DI 1 "register_operand" "")] UNSPEC_XSPLATD))]
+  "KV3_1 && reload_completed"
+  [(set (subreg:<CHUNK> (match_dup 0) 0)
+        (unspec:<CHUNK> [(match_dup 1)] UNSPEC_XSPLATD))
+   (set (subreg:<CHUNK> (match_dup 0) 32)
+        (subreg:<CHUNK> (match_dup 0) 0))
+   (set (subreg:<CHUNK> (match_dup 0) 64)
+        (subreg:<CHUNK> (match_dup 0) 0))
+   (set (subreg:<CHUNK> (match_dup 0) 96)
+        (subreg:<CHUNK> (match_dup 0) 0))
+   (set (subreg:<CHUNK4> (match_dup 0) 128)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 0) 0)] UNSPEC_XMT44D))
+   (set (subreg:<CHUNK4> (match_dup 0) 256)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 0) 128)] UNSPEC_XMT44D))
+   (set (subreg:<CHUNK4> (match_dup 0) 384)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 0) 256)] UNSPEC_XMT44D))
+   (set (subreg:<CHUNK4> (match_dup 0) 512)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 0) 384)] UNSPEC_XMT44D))
+   (set (subreg:<CHUNK4> (match_dup 0) 640)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 0) 512)] UNSPEC_XMT44D))
+   (set (subreg:<CHUNK4> (match_dup 0) 768)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 0) 640)] UNSPEC_XMT44D))
+   (set (subreg:<CHUNK4> (match_dup 0) 896)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 0) 768)] UNSPEC_XMT44D))]
+  ""
+)
+
+(define_split
+  [(set (match_operand:X8192 0 "register_operand" "")
+        (unspec:X8192 [(match_operand:DI 1 "register_operand" "")] UNSPEC_XSPLATD))]
+  "KV3_2 && reload_completed"
+  [(set (subreg:<CHUNK> (match_dup 0) 0)
+        (unspec:<CHUNK> [(match_dup 1)] UNSPEC_XSPLATD))
+   (set (subreg:<CHUNK> (match_dup 0) 32)
+        (subreg:<CHUNK> (match_dup 0) 0))
+   (set (subreg:<CHUNK2> (match_dup 0) 64)
+        (unspec:<CHUNK2> [(subreg:<CHUNK2> (match_dup 0) 0) (const_string "")] UNSPEC_XCOPY))
+   (set (subreg:<CHUNK4> (match_dup 0) 128)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 0) 0) (const_string "")] UNSPEC_XCOPY))
+   (set (subreg:<CHUNK4> (match_dup 0) 256)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 0) 0) (const_string "")] UNSPEC_XCOPY))
+   (set (subreg:<CHUNK4> (match_dup 0) 384)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 0) 0) (const_string "")] UNSPEC_XCOPY))
+   (set (subreg:<CHUNK4> (match_dup 0) 512)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 0) 0) (const_string "")] UNSPEC_XCOPY))
+   (set (subreg:<CHUNK4> (match_dup 0) 640)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 0) 0) (const_string "")] UNSPEC_XCOPY))
+   (set (subreg:<CHUNK4> (match_dup 0) 768)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 0) 0) (const_string "")] UNSPEC_XCOPY))
+   (set (subreg:<CHUNK4> (match_dup 0) 896)
+        (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 0) 0) (const_string "")] UNSPEC_XCOPY))]
   ""
 )
 
 
-;; XLOADC256, KVX_XLOADC512, KVX_XLOADC1024
+;; XSPLATO
+
+(define_insn "kvx_xsplato<bitsize>"
+  [(set (match_operand:XBUFF 0 "register_operand" "=x")
+        (unspec:XBUFF [(match_operand:<CHUNK> 1 "register_operand" "x")] UNSPEC_XSPLATO))]
+  ""
+  "#"
+)
+
+(define_split
+  [(set (match_operand:X512 0 "register_operand" "")
+        (unspec:X512 [(match_operand:<CHUNK> 1 "register_operand" "")] UNSPEC_XSPLATO))]
+  "KV3_2"
+  [(set (match_dup 0)
+        (unspec:X512 [(match_dup 1) (const_string "")] UNSPEC_XSPLATO))]
+  ""
+)
+
+(define_split
+  [(set (match_operand:X1024 0 "register_operand" "")
+        (unspec:X1024 [(match_operand:<CHUNK> 1 "register_operand" "")] UNSPEC_XSPLATO))]
+  "KV3_2"
+  [(set (match_dup 0)
+        (unspec:X1024 [(match_dup 1) (const_string "")] UNSPEC_XSPLATO))]
+  ""
+)
+
+(define_split
+  [(set (match_operand:X2048 0 "register_operand" "")
+        (unspec:X2048 [(match_operand:<CHUNK> 1 "register_operand" "")] UNSPEC_XSPLATO))]
+  "KV3_2 && reload_completed"
+  [(set (subreg:<CHUNK4> (match_dup 0) 0)
+        (unspec:<CHUNK4> [(match_dup 1) (const_string "")] UNSPEC_XSPLATO))
+   (set (subreg:<CHUNK4> (match_dup 0) 128)
+        (unspec:<CHUNK4> [(match_dup 1) (const_string "")] UNSPEC_XSPLATO))]
+  ""
+)
+
+(define_split
+  [(set (match_operand:X4096 0 "register_operand" "")
+        (unspec:X4096 [(match_operand:<CHUNK> 1 "register_operand" "")] UNSPEC_XSPLATO))]
+  "KV3_2 && reload_completed"
+  [(set (subreg:<CHUNK4> (match_dup 0) 0)
+        (unspec:<CHUNK4> [(match_dup 1) (const_string "")] UNSPEC_XSPLATO))
+   (set (subreg:<CHUNK4> (match_dup 0) 128)
+        (unspec:<CHUNK4> [(match_dup 1) (const_string "")] UNSPEC_XSPLATO))
+   (set (subreg:<CHUNK4> (match_dup 0) 256)
+        (unspec:<CHUNK4> [(match_dup 1) (const_string "")] UNSPEC_XSPLATO))
+   (set (subreg:<CHUNK4> (match_dup 0) 384)
+        (unspec:<CHUNK4> [(match_dup 1) (const_string "")] UNSPEC_XSPLATO))]
+  ""
+)
+
+(define_split
+  [(set (match_operand:X8192 0 "register_operand" "")
+        (unspec:X8192 [(match_operand:<CHUNK> 1 "register_operand" "")] UNSPEC_XSPLATO))]
+  "KV3_2 && reload_completed"
+  [(set (subreg:<CHUNK4> (match_dup 0) 0)
+        (unspec:<CHUNK4> [(match_dup 1) (const_string "")] UNSPEC_XSPLATO))
+   (set (subreg:<CHUNK4> (match_dup 0) 128)
+        (unspec:<CHUNK4> [(match_dup 1) (const_string "")] UNSPEC_XSPLATO))
+   (set (subreg:<CHUNK4> (match_dup 0) 256)
+        (unspec:<CHUNK4> [(match_dup 1) (const_string "")] UNSPEC_XSPLATO))
+   (set (subreg:<CHUNK4> (match_dup 0) 384)
+        (unspec:<CHUNK4> [(match_dup 1) (const_string "")] UNSPEC_XSPLATO))
+   (set (subreg:<CHUNK4> (match_dup 0) 512)
+        (unspec:<CHUNK4> [(match_dup 1) (const_string "")] UNSPEC_XSPLATO))
+   (set (subreg:<CHUNK4> (match_dup 0) 640)
+        (unspec:<CHUNK4> [(match_dup 1) (const_string "")] UNSPEC_XSPLATO))
+   (set (subreg:<CHUNK4> (match_dup 0) 768)
+        (unspec:<CHUNK4> [(match_dup 1) (const_string "")] UNSPEC_XSPLATO))
+   (set (subreg:<CHUNK4> (match_dup 0) 896)
+        (unspec:<CHUNK4> [(match_dup 1) (const_string "")] UNSPEC_XSPLATO))]
+  ""
+)
+
+
+;; XLOADC256, XLOADC512, XLOADC1024
 
 (define_expand "kvx_xloadc256"
   [(match_operand:X256 0 "register_operand" "")
@@ -850,16 +1407,16 @@
     if (!const_zero_operand (operands[1], <MODE>mode))
       for (int i = 0; i < 2; i++)
         {
-          rtx opnd0 = simplify_gen_subreg (V1OImode, operands[0], <MODE>mode, i*32);
-          rtx opnd1 = simplify_gen_subreg (V1OImode, operands[1], <MODE>mode, i*32);
-          rtx opnd2 = simplify_gen_subreg (V1OImode, operands[2], <MODE>mode, i*32);
+          rtx opnd0 = simplify_gen_subreg (<CHUNK>mode, operands[0], <MODE>mode, i*32);
+          rtx opnd1 = simplify_gen_subreg (<CHUNK>mode, operands[1], <MODE>mode, i*32);
+          rtx opnd2 = simplify_gen_subreg (<CHUNK>mode, operands[2], <MODE>mode, i*32);
           emit_insn (gen_kvx_xloadc_ (opnd0, opnd1, opnd2, masks[i], operands[4]));
         }
     else
       for (int i = 0; i < 2; i++)
         {
-          rtx opnd0 = simplify_gen_subreg (V1OImode, operands[0], <MODE>mode, i*32);
-          rtx opnd2 = simplify_gen_subreg (V1OImode, operands[2], <MODE>mode, i*32);
+          rtx opnd0 = simplify_gen_subreg (<CHUNK>mode, operands[0], <MODE>mode, i*32);
+          rtx opnd2 = simplify_gen_subreg (<CHUNK>mode, operands[2], <MODE>mode, i*32);
           emit_insn (gen_kvx_xloadc__ (opnd0, opnd2, masks[i], operands[4]));
         }
     DONE;
@@ -888,16 +1445,16 @@
     if (!const_zero_operand (operands[1], <MODE>mode))
       for (int i = 0; i < 4; i++)
         {
-          rtx opnd0 = simplify_gen_subreg (V1OImode, operands[0], <MODE>mode, i*32);
-          rtx opnd1 = simplify_gen_subreg (V1OImode, operands[1], <MODE>mode, i*32);
-          rtx opnd2 = simplify_gen_subreg (V1OImode, operands[2], <MODE>mode, i*32);
+          rtx opnd0 = simplify_gen_subreg (<CHUNK>mode, operands[0], <MODE>mode, i*32);
+          rtx opnd1 = simplify_gen_subreg (<CHUNK>mode, operands[1], <MODE>mode, i*32);
+          rtx opnd2 = simplify_gen_subreg (<CHUNK>mode, operands[2], <MODE>mode, i*32);
           emit_insn (gen_kvx_xloadc_ (opnd0, opnd1, opnd2, masks[i], operands[4]));
         }
     else
       for (int i = 0; i < 4; i++)
         {
-          rtx opnd0 = simplify_gen_subreg (V1OImode, operands[0], <MODE>mode, i*32);
-          rtx opnd2 = simplify_gen_subreg (V1OImode, operands[2], <MODE>mode, i*32);
+          rtx opnd0 = simplify_gen_subreg (<CHUNK>mode, operands[0], <MODE>mode, i*32);
+          rtx opnd2 = simplify_gen_subreg (<CHUNK>mode, operands[2], <MODE>mode, i*32);
           emit_insn (gen_kvx_xloadc__ (opnd0, opnd2, masks[i], operands[4]));
         }
     DONE;
@@ -905,7 +1462,7 @@
 )
 
 
-;; XSTORE256, KVX_XSTORE512, KVX_XSTORE1024
+;; XSTORE256, XSTORE512, XSTORE1024
 
 (define_insn "kvx_xstore256"
   [(set (match_operand:X256 1 "memory_operand"  "=a,b,m")
@@ -918,51 +1475,51 @@
 )
 
 (define_insn_and_split "kvx_xstore512"
-  [(set (match_operand:X512 1 "memory_operand"  "=a,b,m")
+  [(set (match_operand:X512 1 "memsimple_operand" "=c,d,e")
         (unspec:X512 [(match_operand:X512 0 "register_operand" "x,x,x")] UNSPEC_XSTORE))
    (use (match_operand:SI 2 "nonmemory_operand" ""))]
   ""
   "#"
   "reload_completed"
   [(parallel
-    [(set (subreg:X256 (match_dup 1) 0)
-          (unspec:X256 [(subreg:X256 (match_dup 0) 0)] UNSPEC_XSTORE))
+    [(set (subreg:<CHUNK> (match_dup 1) 0)
+          (unspec:<CHUNK> [(subreg:<CHUNK> (match_dup 0) 0)] UNSPEC_XSTORE))
      (use (match_operand:SI 2 "nonmemory_operand" ""))])
    (parallel
-    [(set (subreg:X256 (match_dup 1) 32)
-          (unspec:X256 [(subreg:X256 (match_dup 0) 32)] UNSPEC_XSTORE))
+    [(set (subreg:<CHUNK> (match_dup 1) 32)
+          (unspec:<CHUNK> [(subreg:<CHUNK> (match_dup 0) 32)] UNSPEC_XSTORE))
      (use (match_operand:SI 2 "nonmemory_operand" ""))])]
   ""
 )
 
 (define_insn_and_split "kvx_xstore1024"
-  [(set (match_operand:X1024 1 "memory_operand"  "=a,b,m")
+  [(set (match_operand:X1024 1 "memsimple_operand" "=c,d,e")
         (unspec:X1024 [(match_operand:X1024 0 "register_operand" "x,x,x")] UNSPEC_XSTORE))
    (use (match_operand:SI 2 "nonmemory_operand" ""))]
   ""
   "#"
   "reload_completed"
   [(parallel
-    [(set (subreg:X256 (match_dup 1) 0)
-          (unspec:X256 [(subreg:X256 (match_dup 0) 0)] UNSPEC_XSTORE))
+    [(set (subreg:<CHUNK> (match_dup 1) 0)
+          (unspec:<CHUNK> [(subreg:<CHUNK> (match_dup 0) 0)] UNSPEC_XSTORE))
      (use (match_operand:SI 2 "nonmemory_operand" ""))])
    (parallel
-    [(set (subreg:X256 (match_dup 1) 32)
-          (unspec:X256 [(subreg:X256 (match_dup 0) 32)] UNSPEC_XSTORE))
+    [(set (subreg:<CHUNK> (match_dup 1) 32)
+          (unspec:<CHUNK> [(subreg:<CHUNK> (match_dup 0) 32)] UNSPEC_XSTORE))
      (use (match_operand:SI 2 "nonmemory_operand" ""))])
    (parallel
-    [(set (subreg:X256 (match_dup 1) 64)
-          (unspec:X256 [(subreg:X256 (match_dup 0) 64)] UNSPEC_XSTORE))
+    [(set (subreg:<CHUNK> (match_dup 1) 64)
+          (unspec:<CHUNK> [(subreg:<CHUNK> (match_dup 0) 64)] UNSPEC_XSTORE))
      (use (match_operand:SI 2 "nonmemory_operand" ""))])
    (parallel
-    [(set (subreg:X256 (match_dup 1) 96)
-          (unspec:X256 [(subreg:X256 (match_dup 0) 96)] UNSPEC_XSTORE))
+    [(set (subreg:<CHUNK> (match_dup 1) 96)
+          (unspec:<CHUNK> [(subreg:<CHUNK> (match_dup 0) 96)] UNSPEC_XSTORE))
      (use (match_operand:SI 2 "nonmemory_operand" ""))])]
   ""
 )
 
 
-;; XSTOREC256, KVX_XSTOREC512, KVX_XSTOREC1024
+;; XSTOREC256, XSTOREC512, XSTOREC1024
 
 (define_insn "kvx_xstorec256"
   [(set (match_operand:X256 1 "memsimple_operand"  "=c,d,e")
@@ -994,8 +1551,8 @@
       }
     for (int i = 0; i < 2; i++)
       {
-        rtx opnd0 = simplify_gen_subreg (V1OImode, operands[0], <MODE>mode, i*32);
-        rtx opnd1 = simplify_gen_subreg (V1OImode, operands[1], <MODE>mode, i*32);
+        rtx opnd0 = simplify_gen_subreg (<CHUNK>mode, operands[0], <MODE>mode, i*32);
+        rtx opnd1 = simplify_gen_subreg (<CHUNK>mode, operands[1], <MODE>mode, i*32);
         emit_insn (gen_kvx_xstorec256 (opnd0, opnd1, masks[i], operands[3], operands[4]));
       }
     DONE;
@@ -1023,8 +1580,8 @@
       }
     for (int i = 0; i < 4; i++)
       {
-        rtx opnd0 = simplify_gen_subreg (V1OImode, operands[0], <MODE>mode, i*32);
-        rtx opnd1 = simplify_gen_subreg (V1OImode, operands[1], <MODE>mode, i*32);
+        rtx opnd0 = simplify_gen_subreg (<CHUNK>mode, operands[0], <MODE>mode, i*32);
+        rtx opnd1 = simplify_gen_subreg (<CHUNK>mode, operands[1], <MODE>mode, i*32);
         emit_insn (gen_kvx_xstorec256 (opnd0, opnd1, masks[i], operands[3], operands[4]));
       }
     DONE;
@@ -1037,7 +1594,7 @@
 (define_insn "kvx_xpreload<XBUFF:bitsize>"
   [(set (match_operand:XBUFF 0 "register_operand" "=x,x,x")
         (unspec:XBUFF [(match_operand:XBUFF 1 "register_operand" "0,0,0")
-                       (match_operand:X256 2 "memsimple_operand" "c,d,e")
+                       (match_operand:<CHUNK> 2 "memsimple_operand" "c,d,e")
                        (match_operand:DI 3 "register_operand" "r,r,r")
                        (match_operand 4 "" "")] UNSPEC_XPRELOAD))]
   "KV3_2"
@@ -1047,12 +1604,12 @@
 )
 
 
-;; XALIGN*O, KVX_XACCESS*O
+;; XALIGN*O, XACCESS*O
 
 (define_insn "kvx_xalign<XBUFF:bitsize>o"
-  [(set (match_operand:X256 0 "register_operand" "=x")
-        (unspec:X256 [(match_operand:XBUFF 1 "register_operand" "x")
-                      (match_operand:DI 2 "register_operand" "r")] UNSPEC_XALIGN256))]
+  [(set (match_operand:<CHUNK> 0 "register_operand" "=x")
+        (unspec:<CHUNK> [(match_operand:XBUFF 1 "register_operand" "x")
+                         (match_operand:DI 2 "register_operand" "r")] UNSPEC_XALIGN256))]
   "KV3_2"
   "xaligno %0 = %b1, %2"
   [(set_attr "type" "bcu_crrp_crwl_crwh")]
@@ -1269,7 +1826,7 @@
 )
 
 
-;; XMADD44BW0, KVX_XMADD44BW1
+;; XMADD44BW0, XMADD44BW1
 
 (define_expand "kvx_xmadd44bw0"
   [(match_operand:X512 0 "register_operand" "")
@@ -1374,7 +1931,7 @@
 )
 
 
-;; XMADDIFWO, KVX_XMSBFIFWO, KVX_XFFMA44HW
+;; XMADDIFWO, XMSBFIFWO, XFFMA44HW
 
 (define_insn "kvx_xmaddifwo"
   [(set (match_operand:X256 0 "register_operand" "=x")
@@ -1469,10 +2026,10 @@
   {
     if (KV3_1)
       {
-        rtx lo256_1 = gen_reg_rtx (V1OImode);
-        rtx lo256_2 = gen_reg_rtx (V1OImode);
-        rtx hi256_1 = gen_reg_rtx (V1OImode);
-        rtx hi256_2 = gen_reg_rtx (V1OImode);
+        rtx lo256_1 = gen_reg_rtx (<CHUNK>mode);
+        rtx lo256_2 = gen_reg_rtx (<CHUNK>mode);
+        rtx hi256_1 = gen_reg_rtx (<CHUNK>mode);
+        rtx hi256_2 = gen_reg_rtx (<CHUNK>mode);
         emit_insn (gen_kvx_xlow256 (lo256_1, operands[1]));
         emit_insn (gen_kvx_xlow256 (lo256_2, operands[2]));
         emit_insn (gen_kvx_xhigh256 (hi256_1, operands[1]));
@@ -1486,7 +2043,7 @@
     DONE;
   })
 
-;; XFNARROW44WH, KVX_XCLAMPWO
+;; XFNARROW44WH, XCLAMPWO
 
 (define_insn "kvx_xfnarrow44wh"
   [(set (match_operand:X256 0 "register_operand" "=x")
@@ -1508,7 +2065,7 @@
 )
 
 
-;; XTRUNC48WB, KVX_XSX48BW, KVX_XZX48BW
+;; XTRUNC48WB, XSX48BW, XZX48BW
 
 (define_insn "kvx_xtrunc48wb"
   [(set (match_operand:X256 0 "register_operand" "=x")
@@ -1535,7 +2092,7 @@
 )
 
 
-;; XSENDO, KVX_XRECVO, KVX_XSENDRECVO
+;; XSENDO, XRECVO, XSENDRECVO
 
 (define_insn "kvx_xsendo"
   [(unspec_volatile [(match_operand:X256 0 "register_operand" "x")
@@ -1563,6 +2120,59 @@
 )
 
 
+;; XSPLATOX, XSPLATOV
+
+(define_insn "kvx_xsplatox"
+  [(set (match_operand:X512 0 "register_operand" "=x")
+        (unspec:X512 [(match_operand:X256 1 "register_operand" "x")
+                      (match_operand 2 "" "")] UNSPEC_XSPLATO))]
+  ""
+  "xsplatox%2 %0 = %1"
+  [(set_attr "type" "tca_int")]
+)
+
+(define_insn "kvx_xsplatov"
+  [(set (match_operand:X1024 0 "register_operand" "=x")
+        (unspec:X1024 [(match_operand:X256 1 "register_operand" "x")
+                       (match_operand 2 "" "")] UNSPEC_XSPLATO))]
+  ""
+  "xsplatov%2 %0 = %1"
+  [(set_attr "type" "tca_int")]
+)
+
+
+;; XCOPYX, XCOPYV
+
+(define_insn "kvx_xcopyx"
+  [(set (match_operand:X512 0 "register_operand" "=x")
+        (unspec:X512 [(match_operand:X512 1 "register_operand" "x")
+                      (match_operand 2 "" "")] UNSPEC_XCOPY))]
+  ""
+  "xcopyx%2 %0 = %1"
+  [(set_attr "type" "tca_int")]
+)
+
+(define_insn "kvx_xcopyv"
+  [(set (match_operand:X1024 0 "register_operand" "=x")
+        (unspec:X1024 [(match_operand:X1024 1 "register_operand" "x")
+                       (match_operand 2 "" "")] UNSPEC_XCOPY))]
+  ""
+  "xcopyv%2 %0 = %1"
+  [(set_attr "type" "tca_int")]
+)
+
+
+;; XMT44D
+
+(define_insn "kvx_xmt44d"
+  [(set (match_operand:X1024 0 "register_operand" "=x")
+        (unspec:X1024 [(match_operand:X1024 1 "register_operand" "x")] UNSPEC_XMT44D))]
+  ""
+  "xmt44d %0 = %1"
+  [(set_attr "type" "tca_int")]
+)
+
+
 ;; XSWAP256
 
 (define_expand "kvx_xswap256"
@@ -1587,16 +2197,5 @@
   "xmovefo %0 = %1\n\txmovetq %1.lo = %x2, %y2\n\txmovetq %1.hi = %z2, %t2"
   [(set_attr "type" "all")
    (set_attr "length" "12")]
-)
-
-
-;; XMT44D
-
-(define_insn "kvx_xmt44d"
-  [(set (match_operand:X1024 0 "register_operand" "=x")
-        (unspec:X1024 [(match_operand:X1024 1 "register_operand" "x")] UNSPEC_XMT44D))]
-  ""
-  "xmt44d %0 = %1"
-  [(set_attr "type" "tca_int")]
 )
 

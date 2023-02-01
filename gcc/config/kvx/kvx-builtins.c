@@ -886,6 +886,10 @@ enum kvx_builtin
   KVX_BUILTIN_XTRUNC48WB,
   KVX_BUILTIN_XSX48BW,
   KVX_BUILTIN_XZX48BW,
+  KVX_BUILTIN_XSPLATOX,
+  KVX_BUILTIN_XCOPYX,
+  KVX_BUILTIN_XSPLATOV,
+  KVX_BUILTIN_XCOPYV,
   KVX_BUILTIN_XMT44D,
   KVX_BUILTIN_XSENDO,
   KVX_BUILTIN_XRECVO,
@@ -1083,8 +1087,10 @@ kvx_init_builtins (void)
 #define XLOADQC STRING
 #define XPRELOAD STRING
 #define XMATMUL STRING
-#define CHANNEL STRING
-#define CHANNELS STRING
+#define XSHUFFLEX STRING
+#define XSHUFFLEV STRING
+#define XCHANNEL STRING
+#define XCHANNELS STRING
 #define UNUSED STRING
 
   ADD_KVX_BUILTIN (ADDCD, "addcd", UINT64, UINT64, UINT64, CARRY); // Scalar
@@ -1931,10 +1937,14 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (XTRUNC48WB, "xtrunc48wb", X256, X1024); // Extension kv3-2
   ADD_KVX_BUILTIN (XSX48BW, "xsx48bw", X1024, X256); // Extension kv3-2
   ADD_KVX_BUILTIN (XZX48BW, "xzx48bw", X1024, X256); // Extension kv3-2
+  ADD_KVX_BUILTIN (XSPLATOX, "xsplatox", X512, X256, XSHUFFLEX); // Extension kv3-2
+  ADD_KVX_BUILTIN (XCOPYX, "xcopyx", X512, X512, XSHUFFLEX); // Extension kv3-2
+  ADD_KVX_BUILTIN (XSPLATOV, "xsplatov", X1024, X256, XSHUFFLEV); // Extension kv3-2
+  ADD_KVX_BUILTIN (XCOPYV, "xcopyv", X1024, X1024, XSHUFFLEV); // Extension kv3-2
   ADD_KVX_BUILTIN (XMT44D, "xmt44d", X1024, X1024); // Extension
-  ADD_KVX_BUILTIN (XSENDO, "xsendo", VOID, X256, CHANNEL); // Extension kv3-2
-  ADD_KVX_BUILTIN (XRECVO, "xrecvo", X256, CHANNEL); // Extension kv3-2
-  ADD_KVX_BUILTIN (XSENDRECVO, "xsendrecvo", X256, X256, CHANNELS); // Extension kv3-2
+  ADD_KVX_BUILTIN (XSENDO, "xsendo", VOID, X256, XCHANNEL); // Extension kv3-2
+  ADD_KVX_BUILTIN (XRECVO, "xrecvo", X256, XCHANNEL); // Extension kv3-2
+  ADD_KVX_BUILTIN (XSENDRECVO, "xsendrecvo", X256, X256, XCHANNELS); // Extension kv3-2
 
   ADD_KVX_BUILTIN (XSWAP256, "xswap256", V4DI, _X256, V4DI); // Extension
 
@@ -2543,7 +2553,39 @@ build_xmatmul_arg (tree arg, const char *name)
 }
 
 static rtx
-build_channel_arg (tree arg, const char *name)
+build_xshufflex_arg (tree arg, const char *name)
+{
+  const char *modifier = kvx_tree_string_constant (arg, name);
+  static const char *table[] = {
+    "", ".zd", ".ud", ".tq", ".tw", ".zw", ".uw",
+  };
+  for (int i = 0; i < (int) (sizeof (table) / sizeof (*table)); i++)
+    {
+      if (!strcmp (modifier, table[i]))
+	return gen_rtx_CONST_STRING (VOIDmode, table[i]);
+    }
+  error ("__builtin_kvx_%s modifier \"%s\" not recognized.", name, modifier);
+  return 0;
+}
+
+static rtx
+build_xshufflev_arg (tree arg, const char *name)
+{
+  const char *modifier = kvx_tree_string_constant (arg, name);
+  static const char *table[] = {
+    "", ".td",
+  };
+  for (int i = 0; i < (int) (sizeof (table) / sizeof (*table)); i++)
+    {
+      if (!strcmp (modifier, table[i]))
+	return gen_rtx_CONST_STRING (VOIDmode, table[i]);
+    }
+  error ("__builtin_kvx_%s modifier \"%s\" not recognized.", name, modifier);
+  return 0;
+}
+
+static rtx
+build_xchannel_arg (tree arg, const char *name)
 {
   const char *modifier = kvx_tree_string_constant (arg, name);
   static const char *table[] = {
@@ -2559,7 +2601,7 @@ build_channel_arg (tree arg, const char *name)
 }
 
 static rtx
-build_channels_arg (tree arg, const char *name)
+build_xchannels_arg (tree arg, const char *name)
 {
   const char *modifier = kvx_tree_string_constant (arg, name);
   static const char *table[] = {
@@ -2699,7 +2741,7 @@ verify_sfr_regno (int regno, const char *name, const char *where)
     if (KV3_N_ONLY)                                                            \
       error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
-    rtx arg2 = build_channel_arg (CALL_EXPR_ARG (args, 1), #name);             \
+    rtx arg2 = build_xchannel_arg (CALL_EXPR_ARG (args, 1), #name);            \
     arg1 = force_reg (smode, arg1);                                            \
     emit_insn (gen_##name2 (arg1, arg2));                                      \
     return NULL_RTX;                                                           \
@@ -2710,13 +2752,13 @@ verify_sfr_regno (int regno, const char *name, const char *where)
   {                                                                            \
     if (KV3_N_ONLY)                                                            \
       error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
-    rtx arg1 = build_channel_arg (CALL_EXPR_ARG (args, 0), #name);             \
+    rtx arg1 = build_xchannel_arg (CALL_EXPR_ARG (args, 0), #name);            \
     if (!target)                                                               \
       target = gen_reg_rtx (tmode);                                            \
     else                                                                       \
       target = force_reg (tmode, target);                                      \
     emit_insn (gen_##name2 (target, arg1));                                    \
-    return target;                                                           \
+    return target;                                                             \
   }
 
 #define KVX_EXPAND_BUILTIN_2_VOID(name, name2, smode)                          \
@@ -2792,8 +2834,12 @@ verify_sfr_regno (int regno, const char *name, const char *where)
   KVX_EXPAND_BUILTIN_2_MODIFIERS(floatings, name, name2, tmode, smode)
 #define KVX_EXPAND_BUILTIN_2_SILENT(name, name2, tmode, smode)                 \
   KVX_EXPAND_BUILTIN_2_MODIFIERS(silent, name, name2, tmode, smode)
-#define KVX_EXPAND_BUILTIN_2_CHANNELS(name, name2, tmode, smode)               \
-  KVX_EXPAND_BUILTIN_2_MODIFIERS(channels, name, name2, tmode, smode)
+#define KVX_EXPAND_BUILTIN_2_XSHUFFLEX(name, name2, tmode, smode)               \
+  KVX_EXPAND_BUILTIN_2_MODIFIERS(xshufflex, name, name2, tmode, smode)
+#define KVX_EXPAND_BUILTIN_2_XSHUFFLEV(name, name2, tmode, smode)               \
+  KVX_EXPAND_BUILTIN_2_MODIFIERS(xshufflev, name, name2, tmode, smode)
+#define KVX_EXPAND_BUILTIN_2_XCHANNELS(name, name2, tmode, smode)               \
+  KVX_EXPAND_BUILTIN_2_MODIFIERS(xchannels, name, name2, tmode, smode)
 
 #define KVX_EXPAND_BUILTIN_3_STANDARD(name, name2, tmode, smode)               \
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
@@ -4375,9 +4421,13 @@ KVX_EXPAND_BUILTIN_4_STANDARD (xclampwo, kvx_xclampwo, X256mode, X256mode)
 KVX_EXPAND_BUILTIN_2_STANDARD (xtrunc48wb, kvx_xtrunc48wb, X256mode, X1024mode)
 KVX_EXPAND_BUILTIN_2_STANDARD (xsx48bw, kvx_xsx48bw, X1024mode, X256mode)
 KVX_EXPAND_BUILTIN_2_STANDARD (xzx48bw, kvx_xzx48bw, X1024mode, X256mode)
+KVX_EXPAND_BUILTIN_2_XSHUFFLEX (xsplatox, kvx_xsplatox, X512mode, X256mode)
+KVX_EXPAND_BUILTIN_2_XSHUFFLEX (xcopyx, kvx_xcopyx, X512mode, X512mode)
+KVX_EXPAND_BUILTIN_2_XSHUFFLEV (xsplatov, kvx_xsplatov, X1024mode, X256mode)
+KVX_EXPAND_BUILTIN_2_XSHUFFLEV (xcopyv, kvx_xcopyv, X1024mode, X1024mode)
 KVX_EXPAND_BUILTIN_XSENDO (xsendo, kvx_xsendo, X256mode)
 KVX_EXPAND_BUILTIN_XRECVO (xrecvo, kvx_xrecvo, X256mode)
-KVX_EXPAND_BUILTIN_2_CHANNELS (xsendrecvo, kvx_xsendrecvo, X256mode, X256mode)
+KVX_EXPAND_BUILTIN_2_XCHANNELS (xsendrecvo, kvx_xsendrecvo, X256mode, X256mode)
 
 #undef KV3_N_ONLY
 #define KV3_N_ONLY ((!KV3_1) * 1)
@@ -5255,6 +5305,10 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_XTRUNC48WB: return kvx_expand_builtin_xtrunc48wb (target, exp);
     case KVX_BUILTIN_XSX48BW: return kvx_expand_builtin_xsx48bw (target, exp);
     case KVX_BUILTIN_XZX48BW: return kvx_expand_builtin_xzx48bw (target, exp);
+    case KVX_BUILTIN_XSPLATOX: return kvx_expand_builtin_xsplatox (target, exp);
+    case KVX_BUILTIN_XCOPYX: return kvx_expand_builtin_xcopyx (target, exp);
+    case KVX_BUILTIN_XSPLATOV: return kvx_expand_builtin_xsplatov (target, exp);
+    case KVX_BUILTIN_XCOPYV: return kvx_expand_builtin_xcopyv (target, exp);
     case KVX_BUILTIN_XMT44D: return kvx_expand_builtin_xmt44d (target, exp);
     case KVX_BUILTIN_XSENDO: return kvx_expand_builtin_xsendo (target, exp);
     case KVX_BUILTIN_XRECVO: return kvx_expand_builtin_xrecvo (target, exp);
