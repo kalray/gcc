@@ -1130,7 +1130,10 @@ cond_clobbered_p (rtx_insn *insn, HARD_REG_SET set_regs)
 {
   rtx pat = PATTERN (insn);
   gcc_assert (GET_CODE (pat) == COND_EXEC);
-  if (TEST_HARD_REG_BIT (set_regs, REGNO (XEXP (COND_EXEC_TEST (pat), 0))))
+  rtx cond_reg = XEXP (COND_EXEC_TEST (pat), 0);
+  if (GET_CODE (cond_reg) != REG)
+    cond_reg = (XEXP (cond_reg, 0));
+  if (TEST_HARD_REG_BIT (set_regs, REGNO (cond_reg)))
     {
       sd_iterator_def sd_it;
       dep_t dep;

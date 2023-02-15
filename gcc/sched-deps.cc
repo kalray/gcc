@@ -1544,8 +1544,8 @@ add_dependence (rtx_insn *con, rtx_insn *pro, enum reg_note dep_type)
       if (dep_type == REG_DEP_CONTROL)
 	{
 	  if (sched_verbose >= 5)
-	    fprintf (sched_dump, "making DEP_CONTROL for %d\n",
-		     INSN_UID (real_pro));
+	    fprintf (sched_dump, "making DEP_CONTROL for %d -> %d\n",
+		     INSN_UID (real_pro), INSN_UID (con));
 	  add_dependence_list (con, INSN_COND_DEPS (real_pro), 0,
 			       REG_DEP_TRUE, false);
 	}
@@ -3631,22 +3631,21 @@ deps_analyze_insn (class deps_desc *deps, rtx_insn *insn)
   /* Record the condition for this insn.  */
   if (NONDEBUG_INSN_P (insn))
     {
-      rtx t;
+      rtx t, r;
       sched_get_condition_with_rev (insn, NULL);
       t = INSN_CACHED_COND (insn);
       INSN_COND_DEPS (insn) = NULL;
       if (reload_completed
 	  && (current_sched_info->flags & DO_PREDICATION)
 	  && COMPARISON_P (t)
-	  && REG_P (XEXP (t, 0))
+	  && (REG_P (r = XEXP (t, 0)) || REG_P (r = XEXP (r, 0)))
 	  && CONSTANT_P (XEXP (t, 1)))
 	{
 	  unsigned int regno;
 	  int nregs;
 	  rtx_insn_list *cond_deps = NULL;
-	  t = XEXP (t, 0);
-	  regno = REGNO (t);
-	  nregs = REG_NREGS (t);
+	  regno = REGNO (r);
+	  nregs = REG_NREGS (r);
 	  while (nregs-- > 0)
 	    {
 	      struct deps_reg *reg_last = &deps->reg_last[regno + nregs];
