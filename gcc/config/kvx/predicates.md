@@ -23,14 +23,10 @@
             (match_test "op == CONSTM1_RTX (mode)"))))
 
 ;; Register or constant 1.0 (floating-point).
-(define_predicate "reg_or_float1_operand"
+(define_predicate "register_float1_operand"
   (and (match_code "reg,subreg,const_double,const_vector")
        (ior (match_operand 0 "register_operand")
             (match_test "op == CONST1_RTX (mode)"))))
-
-;; Wide immediate operand for scalar or vector MODE
-(define_predicate "wide_immediate_operand"
-  (match_code "const_int,const_wide_int,const_vector"))
 
 ;; Allow for LABELs to be used in the mov expander
 ;; It will split it using add_pcrel insn.
@@ -41,12 +37,7 @@
       (and (match_test "flag_pic")
            (match_code "label_ref"))))
 
-(define_predicate "rotate_operand"
- (and (match_code "reg,subreg,const_int")
-      (ior (match_operand 0 "register_operand")
-           (match_test "satisfies_constraint_U05(op)"))))
-
-(define_predicate "sat_shift_operand"
+(define_predicate "reg_shift_operand"
  (and (match_code "reg,subreg,const_int")
       (ior (match_operand 0 "register_operand")
            (match_test "satisfies_constraint_U06(op)"))))

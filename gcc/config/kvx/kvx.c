@@ -950,13 +950,6 @@ kvx_has_unspec_reference (rtx x)
 static bool
 kvx_legitimate_address_register_p (rtx reg, bool strict)
 {
-  return (REG_P (reg) && IS_GENERAL_REGNO (REGNO (reg), strict)
-	  && GET_MODE (reg) == Pmode);
-}
-
-static bool
-kvx_legitimate_address_offset_register_p (rtx reg, bool strict)
-{
   machine_mode mode = GET_MODE (reg);
 
   if (GET_CODE (reg) == SUBREG)
@@ -1018,7 +1011,7 @@ kvx_legitimate_address_p (machine_mode mode, rtx x, bool strict)
    */
   if (GET_CODE (x) == PLUS
       && kvx_legitimate_address_register_p (XEXP (x, 0), strict)
-      && kvx_legitimate_address_offset_register_p (XEXP (x, 1), strict))
+      && kvx_legitimate_address_register_p (XEXP (x, 1), strict))
     return true;
 
   /*
@@ -1029,8 +1022,7 @@ kvx_legitimate_address_p (machine_mode mode, rtx x, bool strict)
       && GET_CODE (XEXP (x, 0)) == MULT
       && GET_CODE (XEXP (XEXP (x, 0), 1)) == CONST_INT
       && INTVAL (XEXP (XEXP (x, 0), 1)) == GET_MODE_SIZE (mode)
-      && kvx_legitimate_address_offset_register_p (XEXP (XEXP (x, 0), 0),
-						   strict))
+      && kvx_legitimate_address_register_p (XEXP (XEXP (x, 0), 0), strict))
     // The .xs addressing mode applies to object sizes 2, 4, 8, 16, 32.
     return GET_MODE_SIZE (mode) > 1 && GET_MODE_SIZE (mode) <= 32;
 

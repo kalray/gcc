@@ -24,11 +24,6 @@
             (match_test "op == CONST0_RTX (mode)")
             (match_test "op == CONSTM1_RTX (mode)"))))
 
-(define_constraint "U05"
-  "An unsigned 5-bit constant."
-  (and (match_code "const_int")
-       (match_test "UNSIGNED_INT_FITS_N_BITS (ival, 5)")))
-
 (define_constraint "U06"
   "An unsigned 6-bit constant."
   (and (match_code "const_int")

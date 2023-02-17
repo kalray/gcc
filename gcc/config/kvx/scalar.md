@@ -114,29 +114,27 @@
 )
 
 (define_insn "ashl<mode>3"
-  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
-        (ashift:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
-                     (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
+  [(set (match_operand:SIDI 0 "register_operand" "=r")
+        (ashift:SIDI (match_operand:SIDI 1 "register_operand" "r")
+                     (match_operand:SI 2 "reg_shift_operand" "rU06")))]
   ""
   "sll<suffix> %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny")
-   (set_attr "length" "     4,       4")]
+  [(set_attr "type" "alu_tiny")]
 )
 
 (define_insn "ssashl<mode>3"
-  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
-        (ss_ashift:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
-                        (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
+  [(set (match_operand:SIDI 0 "register_operand" "=r")
+        (ss_ashift:SIDI (match_operand:SIDI 1 "register_operand" "r")
+                        (match_operand:SI 2 "reg_shift_operand" "rU06")))]
   ""
   "sls<suffix> %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite")
-   (set_attr "length" "     4,       4")]
+  [(set_attr "type" "alu_lite")]
 )
 
 (define_expand "usashl<mode>3"
   [(match_operand:SIDI 0 "register_operand" "")
    (match_operand:SIDI 1 "register_operand" "")
-   (match_operand:SI 2 "sat_shift_operand" "")]
+   (match_operand:SI 2 "reg_shift_operand" "")]
   ""
   {
     if (KV3_1)
@@ -150,11 +148,11 @@
 )
 
 (define_insn_and_split "usashl<mode>3_1"
-  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
-        (us_ashift:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
-                        (match_operand:SI 2 "sat_shift_operand" "r,U06")))
-   (clobber (match_scratch:SIDI 3 "=&r,&r"))
-   (clobber (match_scratch:SIDI 4 "=&r,&r"))]
+  [(set (match_operand:SIDI 0 "register_operand" "=r")
+        (us_ashift:SIDI (match_operand:SIDI 1 "register_operand" "r")
+                        (match_operand:SI 2 "reg_shift_operand" "rU06")))
+   (clobber (match_scratch:SIDI 3 "=&r"))
+   (clobber (match_scratch:SIDI 4 "=&r"))]
   "KV3_1"
   "#"
   "KV3_1"
@@ -178,43 +176,39 @@
 )
 
 (define_insn "usashl<mode>3_2"
-  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
-        (us_ashift:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
-                        (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
+  [(set (match_operand:SIDI 0 "register_operand" "=r")
+        (us_ashift:SIDI (match_operand:SIDI 1 "register_operand" "r")
+                        (match_operand:SI 2 "reg_shift_operand" "rU06")))]
   "KV3_2"
   "slus<suffix> %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite")
-   (set_attr "length"      "4,       4")]
+  [(set_attr "type" "alu_lite")]
 )
 
 (define_insn "ashr<mode>3"
-  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
-        (ashiftrt:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
-                       (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
+  [(set (match_operand:SIDI 0 "register_operand" "=r")
+        (ashiftrt:SIDI (match_operand:SIDI 1 "register_operand" "r")
+                       (match_operand:SI 2 "reg_shift_operand" "rU06")))]
   ""
   "sra<suffix> %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny")
-   (set_attr "length" "     4,       4")]
+  [(set_attr "type" "alu_tiny")]
 )
 
 (define_insn "lshr<mode>3"
-  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
-        (lshiftrt:SIDI (match_operand:SIDI 1 "register_operand" "r,r")
-                       (match_operand:SI 2 "sat_shift_operand" "r,U06")))]
+  [(set (match_operand:SIDI 0 "register_operand" "=r")
+        (lshiftrt:SIDI (match_operand:SIDI 1 "register_operand" "r")
+                       (match_operand:SI 2 "reg_shift_operand" "rU06")))]
   ""
   "srl<suffix> %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny")
-   (set_attr "length" "     4,       4")]
+  [(set_attr "type" "alu_tiny")]
 )
 
 (define_insn "sshr<mode>3"
-  [(set (match_operand:SIDI 0 "register_operand" "=r,r")
-        (unspec:SIDI [(match_operand:SIDI 1 "register_operand" "r,r")
-                      (match_operand:SI 2 "sat_shift_operand" "r,U06")] UNSPEC_SRS))]
+  [(set (match_operand:SIDI 0 "register_operand" "=r")
+        (unspec:SIDI [(match_operand:SIDI 1 "register_operand" "r")
+                      (match_operand:SI 2 "reg_shift_operand" "rU06")] UNSPEC_SRS))]
   ""
   "srs<suffix> %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite")
-   (set_attr "length" "     4,       4")]
+  [(set_attr "type" "alu_lite")]
 )
 
 (define_insn "neg<mode>2"
@@ -1571,108 +1565,98 @@
 
 ;; zero-extend version of ashlsi3
 (define_insn "*ashlsi3_zext"
-  [(set (match_operand:DI 0 "register_operand" "=r,r")
-        (zero_extend:DI (ashift:SI (match_operand:SI 1 "register_operand" "r,r")
-                                   (match_operand:SI 2 "sat_shift_operand" "r,U06"))))]
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (zero_extend:DI (ashift:SI (match_operand:SI 1 "register_operand" "r")
+                                   (match_operand:SI 2 "reg_shift_operand" "rU06"))))]
   ""
   "sllw %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny")
-   (set_attr "length" "     4,       4")]
+  [(set_attr "type" "alu_tiny")]
 )
 
 ;; zero-extend version of ssashlsi3
 (define_insn "*ssashlsi3_zext"
-  [(set (match_operand:DI 0 "register_operand" "=r,r")
-        (zero_extend:DI (ss_ashift:SI (match_operand:SI 1 "register_operand" "r,r")
-                                      (match_operand:SI 2 "sat_shift_operand" "r,U06"))))]
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (zero_extend:DI (ss_ashift:SI (match_operand:SI 1 "register_operand" "r")
+                                      (match_operand:SI 2 "reg_shift_operand" "rU06"))))]
   ""
   "slsw %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite")
-   (set_attr "length" "     4,       4")]
+  [(set_attr "type" "alu_lite")]
 )
 
 ;; zero-extend version of usashlsi3
 (define_insn "*usashlsi3_zext"
-  [(set (match_operand:DI 0 "register_operand" "=r,r")
-        (zero_extend:DI (us_ashift:SI (match_operand:SI 1 "register_operand" "r,r")
-                                      (match_operand:SI 2 "sat_shift_operand" "r,U06"))))]
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (zero_extend:DI (us_ashift:SI (match_operand:SI 1 "register_operand" "r")
+                                      (match_operand:SI 2 "reg_shift_operand" "rU06"))))]
   "KV3_2"
   "slusw %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite")
-   (set_attr "length"      "4,       4")]
+  [(set_attr "type" "alu_lite")]
 )
 
 ;; zero-extend version of ashrsi3
 (define_insn "*ashrsi3_zext"
-  [(set (match_operand:DI 0 "register_operand" "=r,r")
-        (zero_extend:DI (ashiftrt:SI (match_operand:SI 1 "register_operand" "r,r")
-                                     (match_operand:SI 2 "sat_shift_operand" "r,U06"))))]
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (zero_extend:DI (ashiftrt:SI (match_operand:SI 1 "register_operand" "r")
+                                     (match_operand:SI 2 "reg_shift_operand" "rU06"))))]
   ""
   "sraw %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny")
-   (set_attr "length" "     4,       4")]
+  [(set_attr "type" "alu_tiny")]
 )
 
 ;; zero-extend version of lshrsi3
 (define_insn "*lshrsi3_zext"
-  [(set (match_operand:DI 0 "register_operand" "=r,r")
-        (zero_extend:DI (lshiftrt:SI (match_operand:SI 1 "register_operand" "r,r")
-                                     (match_operand:SI 2 "sat_shift_operand" "r,U06"))))]
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (zero_extend:DI (lshiftrt:SI (match_operand:SI 1 "register_operand" "r")
+                                     (match_operand:SI 2 "reg_shift_operand" "rU06"))))]
   ""
   "srlw %0 = %1, %2"
-  [(set_attr "type" "alu_tiny,alu_tiny")
-   (set_attr "length" "     4,       4")]
+  [(set_attr "type" "alu_tiny")]
 )
 
 ;; zero-extend version of sshrsi3
 (define_insn "*sshrsi3_zext"
-  [(set (match_operand:DI 0 "register_operand" "=r,r")
-        (zero_extend:DI (unspec:SI [(match_operand:SI 1 "register_operand" "r,r")
-                                    (match_operand:SI 2 "sat_shift_operand" "r,U06")] UNSPEC_SRS)))]
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (zero_extend:DI (unspec:SI [(match_operand:SI 1 "register_operand" "r")
+                                    (match_operand:SI 2 "reg_shift_operand" "rU06")] UNSPEC_SRS)))]
   ""
   "srsw %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite")
-   (set_attr "length" "     4,       4")]
+  [(set_attr "type" "alu_lite")]
 )
 
 (define_insn "rotlsi3"
-  [(set (match_operand:SI 0 "register_operand" "=r,r")
-        (rotate:SI (match_operand:SI 1 "register_operand" "r,r")
-                   (match_operand:SI 2 "rotate_operand" "r,U05")))]
+  [(set (match_operand:SI 0 "register_operand" "=r")
+        (rotate:SI (match_operand:SI 1 "register_operand" "r")
+                   (match_operand:SI 2 "reg_shift_operand" "rU06")))]
   ""
   "rolw %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite")
-   (set_attr "length" "     4,       4")]
+  [(set_attr "type" "alu_lite")]
 )
 ;; zero-extend version of rotlsi3
 (define_insn "*rotlsi3_zext"
-  [(set (match_operand:DI 0 "register_operand" "=r,r")
-        (zero_extend:DI (rotate:SI (match_operand:SI 1 "register_operand" "r,r")
-                                   (match_operand:SI 2 "rotate_operand" "r,U05"))))]
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (zero_extend:DI (rotate:SI (match_operand:SI 1 "register_operand" "r")
+                                   (match_operand:SI 2 "reg_shift_operand" "rU06"))))]
   ""
   "rolw %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite")
-   (set_attr "length" "     4,       4")]
+  [(set_attr "type" "alu_lite")]
 )
 
 (define_insn "rotrsi3"
-  [(set (match_operand:SI 0 "register_operand" "=r,r")
-        (rotatert:SI (match_operand:SI 1 "register_operand" "r,r")
-                     (match_operand:SI 2 "rotate_operand" "r,U05")))]
+  [(set (match_operand:SI 0 "register_operand" "=r")
+        (rotatert:SI (match_operand:SI 1 "register_operand" "r")
+                     (match_operand:SI 2 "reg_shift_operand" "rU06")))]
   ""
   "rorw %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite")
-   (set_attr "length" "     4,       4")]
+  [(set_attr "type" "alu_lite")]
 )
 ;; zero-extend version of rotrsi3
 (define_insn "*rotrsi3_zext"
-  [(set (match_operand:DI 0 "register_operand" "=r,r")
-        (zero_extend:DI (rotatert:SI (match_operand:SI 1 "register_operand" "r,r")
-                                     (match_operand:SI 2 "rotate_operand" "r,U05"))))]
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (zero_extend:DI (rotatert:SI (match_operand:SI 1 "register_operand" "r")
+                                     (match_operand:SI 2 "reg_shift_operand" "rU06"))))]
   ""
   "rorw %0 = %1, %2"
-  [(set_attr "type" "alu_lite,alu_lite")
-   (set_attr "length" "     4,       4")]
+  [(set_attr "type" "alu_lite")]
 )
 
 (define_insn "avgsi3_floor"
@@ -3396,7 +3380,7 @@
 
 (define_expand "divhf3"
   [(set (match_operand:HF 0 "register_operand" "")
-        (div:HF (match_operand:HF 1 "reg_or_float1_operand" "")
+        (div:HF (match_operand:HF 1 "register_float1_operand" "")
                 (match_operand:HF 2 "register_operand" "")))]
   ""
   {
@@ -3641,7 +3625,7 @@
 
 (define_expand "divsf3"
   [(set (match_operand:SF 0 "register_operand" "")
-        (div:SF (match_operand:SF 1 "reg_or_float1_operand" "")
+        (div:SF (match_operand:SF 1 "register_float1_operand" "")
                 (match_operand:SF 2 "register_operand" "")))]
   ""
   {
