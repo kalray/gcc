@@ -5988,6 +5988,18 @@ kvx_asm_final_postscan_insn (FILE *file, rtx_insn *insn,
     }
 }
 
+/* Implement TARGET_USE_BY_PIECES_INFRASTRUCTURE_P.  */
+static bool
+kvx_use_by_pieces_infrastructure_p (unsigned HOST_WIDE_INT size,
+				    unsigned int align ATTRIBUTE_UNUSED,
+				    enum by_pieces_operation op ATTRIBUTE_UNUSED,
+				    bool speed_p ATTRIBUTE_UNUSED)
+{
+  if (speed_p)
+    return size <= 256;
+  return size <= 64;
+}
+
 /* Compute the cost of an addressing mode that contains X.  */
 static int
 kvx_address_cost (rtx x, machine_mode mode ATTRIBUTE_UNUSED,
@@ -7706,6 +7718,43 @@ kvx_is_farcall_p (rtx op)
   return farcall;
 }
 
+/* Expand the specific case where mul is used to splat the memset `int c` arg
+ * into a 128-bit or 256-bit value so that the corresonding stores can be used.
+ * Cannot enable this for SImode or DImode as the mul could be computing the
+ * argument values, because the currently_expanding_gimple_stmt is already set.
+ */
+bool
+kvx_expand_memset_mul (rtx *operands, machine_mode mode)
+{
+  if (GET_MODE_SIZE (mode) <= UNITS_PER_WORD
+      || !currently_expanding_gimple_stmt
+      || !gimple_call_builtin_p (currently_expanding_gimple_stmt, BUILT_IN_MEMSET))
+    return false;
+
+  if (CONST_WIDE_INT_P (operands[2]))
+    {
+      HOST_WIDE_INT v8qi_ones = 0x0101010101010101LL;
+      int nunits = CONST_WIDE_INT_NUNITS (operands[2]);
+      for (int i = 0; i < nunits; i++)
+	if (CONST_WIDE_INT_ELT (operands[2], i) != v8qi_ones)
+	  return false;
+    }
+  else
+    return false;
+
+  rtx op0[MOVE_MAX / UNITS_PER_WORD];
+  int nwords = GET_MODE_SIZE (mode) / UNITS_PER_WORD;
+  for (int i = 0; i < nwords; i++)
+    op0[i] = simplify_gen_subreg (DImode, operands[0], mode, i * UNITS_PER_WORD);
+
+  rtx op1 = simplify_gen_subreg (DImode, operands[1], mode, 0);
+  kvx_expand_chunk_splat (op0[0], op1, QImode);
+  for (int i = 1; i < nwords; i++)
+    emit_move_insn (op0[i], op0[0]);
+
+  return true;
+}
+
 #ifdef GCC_KVX_MPPA_LINUX
 void
 kvx_output_function_profiler (FILE *file)
@@ -7831,6 +7880,9 @@ kvx_constant_alignment (const_tree exp, HOST_WIDE_INT align)
 
 #undef TARGET_CANNOT_FORCE_CONST_MEM
 #define TARGET_CANNOT_FORCE_CONST_MEM kvx_cannot_force_const_mem
+
+#undef TARGET_USE_BY_PIECES_INFRASTRUCTURE_P
+#define TARGET_USE_BY_PIECES_INFRASTRUCTURE_P kvx_use_by_pieces_infrastructure_p
 
 #undef TARGET_ADDRESS_COST
 #define TARGET_ADDRESS_COST kvx_address_cost

@@ -3264,17 +3264,21 @@
 (define_expand "multi3"
   [(set (match_operand:TI 0 "register_operand")
         (mult:TI (match_operand:TI 1 "register_operand")
-                 (match_operand:TI 2 "register_operand")))]
+                 (match_operand:TI 2 "nonmemory_operand")))]
   ""
   {
-    rtx hi_0 = simplify_gen_subreg (DImode, operands[0], TImode, 8);
-    rtx lo_1 = simplify_gen_subreg (DImode, operands[1], TImode, 0);
-    rtx hi_1 = simplify_gen_subreg (DImode, operands[1], TImode, 8);
-    rtx lo_2 = simplify_gen_subreg (DImode, operands[2], TImode, 0);
-    rtx hi_2 = simplify_gen_subreg (DImode, operands[2], TImode, 8);
-    emit_insn (gen_umulditi3 (operands[0], lo_1, lo_2));
-    emit_insn (gen_madddidi4 (hi_0, lo_1, hi_2, hi_0));
-    emit_insn (gen_madddidi4 (hi_0, hi_1, lo_2, hi_0));
+    if (!kvx_expand_memset_mul (operands, TImode))
+      {
+        operands[2] = force_reg (TImode, operands[2]);
+        rtx hi_0 = simplify_gen_subreg (DImode, operands[0], TImode, 8);
+        rtx lo_1 = simplify_gen_subreg (DImode, operands[1], TImode, 0);
+        rtx hi_1 = simplify_gen_subreg (DImode, operands[1], TImode, 8);
+        rtx lo_2 = simplify_gen_subreg (DImode, operands[2], TImode, 0);
+        rtx hi_2 = simplify_gen_subreg (DImode, operands[2], TImode, 8);
+        emit_insn (gen_umulditi3 (operands[0], lo_1, lo_2));
+        emit_insn (gen_madddidi4 (hi_0, lo_1, hi_2, hi_0));
+        emit_insn (gen_madddidi4 (hi_0, hi_1, lo_2, hi_0));
+      }
     DONE;
   }
 )
@@ -3333,6 +3337,22 @@
     operands[2] = GEN_INT (INTVAL (operands[2]) & 63);
   }
   [(set_attr "type" "alu_tiny_x2")]
+)
+
+
+;; OI
+
+;; Pattern for the expansion of the stored constant in memset.
+(define_expand "muloi3"
+  [(set (match_operand:OI 0 "register_operand")
+        (mult:OI (match_operand:OI 1 "register_operand")
+                 (match_operand:OI 2 "nonmemory_operand")))]
+  ""
+  {
+    if (kvx_expand_memset_mul (operands, OImode))
+      DONE;
+    FAIL;
+  }
 )
 
 
