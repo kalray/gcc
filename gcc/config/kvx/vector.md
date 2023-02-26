@@ -693,8 +693,8 @@
   [(set (match_operand:SIMD128 0 "register_operand" "=r")
         (vec_duplicate:SIMD128 (match_operand:<CHUNK> 1 "nonmemory_operand" "r")))]
   ""
-  "copyd %x0 = %1\n\tcopyd %y0 = %1"
-  ""
+  "#"
+  "reload_completed"
   [(set (subreg:<CHUNK> (match_dup 0) 0) (match_dup 1))
    (set (subreg:<CHUNK> (match_dup 0) 8) (match_dup 1))]
   ""
@@ -706,8 +706,8 @@
   [(set (match_operand:SIMD256 0 "register_operand" "=r")
         (vec_duplicate:SIMD256 (match_operand:<CHUNK> 1 "nonmemory_operand" "r")))]
   ""
-  "copyd %x0 = %1\n\tcopyd %y0 = %1\n\tcopyd %z0 = %1\n\tcopyd %t0 = %1"
-  ""
+  "#"
+  "reload_completed"
   [(set (subreg:<CHUNK> (match_dup 0) 0) (match_dup 1))
    (set (subreg:<CHUNK> (match_dup 0) 8) (match_dup 1))
    (set (subreg:<CHUNK> (match_dup 0) 16) (match_dup 1))
@@ -722,7 +722,7 @@
         (vec_duplicate:SIMD512 (match_operand:<CHUNK> 1 "nonmemory_operand" "r")))]
   ""
   "#"
-  ""
+  "reload_completed"
   [(set (subreg:<CHUNK> (match_dup 0) 0) (match_dup 1))
    (set (subreg:<CHUNK> (match_dup 0) 8) (match_dup 1))
    (set (subreg:<CHUNK> (match_dup 0) 16) (match_dup 1))

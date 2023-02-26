@@ -111,6 +111,8 @@ extern bool kvx_pack_load_store (rtx operands[], int nops);
 
 extern bool kvx_is_farcall_p (rtx);
 
+extern bool kvx_expand_memset_mul (rtx *operands, machine_mode mode);
+
 extern void kvx_override_options (void);
 
 extern bool kvx_hardreg_misaligned_p (rtx op, int align);
