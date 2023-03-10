@@ -58,4 +58,12 @@
 #define PROFILE_REGNO (32)
 #define NO_PROFILE_COUNTERS 1
 
+/* Do not force alignment on word boundaries on linux. */
+#undef DATA_ALIGNMENT
+
+/* Align at least on BITS_PER_WORD for local variables. */
+#undef LOCAL_ALIGNMENT
+#define LOCAL_ALIGNMENT(EXP, ALIGN)                                            \
+  ((ALIGN) < BITS_PER_WORD ? BITS_PER_WORD : (ALIGN))
+
 #endif
