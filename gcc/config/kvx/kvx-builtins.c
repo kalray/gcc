@@ -4320,11 +4320,6 @@ KVX_EXPAND_BUILTIN_XPRELOAD (xpreload8192, kvx_xpreload8192, X8192mode, X256mode
   {                                                                            \
     if (KV3_N_ONLY)                                                            \
       error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KV3_N_ONLY);   \
-    if (!target)                                                               \
-      target = gen_reg_rtx (tmode);                                            \
-    else                                                                       \
-      target = force_reg (tmode, target);                                      \
-    emit_insn (gen_##name2 (target));                                          \
     return target;                                                             \
   }
 

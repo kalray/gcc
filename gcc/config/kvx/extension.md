@@ -1,26 +1,3 @@
-
-;; XUNDEF
-;;
-
-(define_insn_and_split "kvx_xundef256"
-  [(set (match_operand:X256 0 "register_operand" "=x")
-        (unspec:X256 [(const_int 0)] UNSPEC_DEF))]
-  ""
-  "#"
-  "reload_completed"
-  [(use (const_int 0))]
-)
-
-(define_insn_and_split "kvx_xundef<bitsize>"
-  [(set (match_operand:XBUFF 0 "register_operand" "=x")
-        (unspec:XBUFF [(const_int 0)] UNSPEC_DEF))]
-  ""
-  "#"
-  "reload_completed"
-  [(use (const_int 0))]
-)
-
-
 ;; XZERO
 
 (define_insn "kvx_xzero256"
