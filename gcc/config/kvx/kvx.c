@@ -4317,7 +4317,7 @@ kvx_emit_post_barrier (rtx model)
 }
 
 /* Expand a compare and swap pattern. We do not support weak operation
-   (operands[5], operands[6] and operands[7] can be ignored).  */
+   (operands[5]), hence the retry loop.  */
 
 void
 kvx_expand_compare_and_swap (rtx operands[])
@@ -4327,6 +4327,8 @@ kvx_expand_compare_and_swap (rtx operands[])
   rtx cas_return = gen_label_rtx ();
   rtx (*gen) (rtx, rtx, rtx);
   machine_mode mode = GET_MODE (operands[2]);
+  rtx success_mm = operands[6];
+  rtx failure_mm = operands[7];
 
   gcc_assert ((mode == SImode || mode == DImode));
 
@@ -4338,10 +4340,12 @@ kvx_expand_compare_and_swap (rtx operands[])
   rtx low = gen_lowpart (DImode, tmp);
   rtx high = gen_highpart (DImode, tmp);
 
-  // We don't care of operands[6] and operands[7] (memory models to
-  // use after the operation). We just need to ensure that memory is
-  // consistent before the compare-and-swap.
-  emit_insn (gen_mem_thread_fence (GEN_INT (MEMMODEL_SEQ_CST)));
+  // The failure memory order cannot be __ATOMIC_RELEASE nor __ATOMIC_ACQ_REL.
+  // It also cannot be a stronger order than that specified by success_memorder.
+  // No need to perform this check here as it is already done in the generic
+  // part.
+
+  kvx_emit_pre_barrier (success_mm);
 
   // Packing data to swap for acswap[wd] insns.
   emit_move_insn (gen_lowpart (mode, high), oldval);
@@ -4362,6 +4366,8 @@ kvx_expand_compare_and_swap (rtx operands[])
   gen = mode == SImode ? gen_atomic_loadsi : gen_atomic_loaddi;
   emit_insn (
     gen (gen_lowpart (mode, currval), mem, GEN_INT (MEMMODEL_RELAXED)));
+
+  kvx_emit_post_barrier (failure_mm);
 
   // If the reloaded MEM is equal to the expected one (HIGH), retry
   // the acswap.
