@@ -24,10 +24,11 @@ along with GCC; see the file COPYING3.  If not see
 enum kvx_arch_type
 {
   KVX_ARCH_KV3_1,
-  KVX_ARCH_KV3_2
+  KVX_ARCH_KV3_2,
+  KVX_ARCH_KV4_1
 };
 
 #define KV3_1 (kvx_arch_name == KVX_ARCH_KV3_1)
-#define KV3_2 (kvx_arch_name == KVX_ARCH_KV3_2)
+#define KV3_2 (kvx_arch_name == KVX_ARCH_KV3_2 || kvx_arch_name == KVX_ARCH_KV4_1)
 
 #endif
