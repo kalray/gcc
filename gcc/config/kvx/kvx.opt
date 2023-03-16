@@ -28,6 +28,9 @@ Enum(kvx_arch_type) String(kv3-1) Value(KVX_ARCH_KV3_1)
 EnumValue
 Enum(kvx_arch_type) String(kv3-2) Value(KVX_ARCH_KV3_2)
 
+EnumValue
+Enum(kvx_arch_type) String(kv4-1) Value(KVX_ARCH_KV4_1)
+
 mfarcall
 Target Var(KVX_FARCALL)
 Avoid all range limits on call instructions

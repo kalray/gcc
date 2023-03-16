@@ -50,7 +50,9 @@ enum kvx_abi_type
       builtin_assert ("cpu=kvx");                                              \
       builtin_define ("__KVX__");                                              \
       builtin_define ("__kvx__");                                              \
-      if (kvx_arch_name == KVX_ARCH_KV3_1 || kvx_arch_name == KVX_ARCH_KV3_2)  \
+      if (kvx_arch_name == KVX_ARCH_KV3_1 ||				       \
+	  kvx_arch_name == KVX_ARCH_KV3_2 ||				       \
+	  kvx_arch_name == KVX_ARCH_KV4_1)				       \
 	{                                                                      \
 	  builtin_define ("__KV3__");                                          \
 	  builtin_define ("__kv3__");                                          \
@@ -60,11 +62,18 @@ enum kvx_abi_type
 	      builtin_define ("__kvxarch_kv3_1");                              \
 	      builtin_define ("__kv3_1__");                                    \
 	    }                                                                  \
-	  if (kvx_arch_name == KVX_ARCH_KV3_2)                                 \
+	  if (kvx_arch_name == KVX_ARCH_KV3_2 ||                               \
+	      kvx_arch_name == KVX_ARCH_KV4_1)				       \
 	    {                                                                  \
 	      builtin_assert ("machine=kv3-2");                                \
 	      builtin_define ("__kvxarch_kv3_2");                              \
 	      builtin_define ("__kv3_2__");                                    \
+	    }                                                                  \
+	  if (kvx_arch_name == KVX_ARCH_KV4_1)				       \
+	    {                                                                  \
+	      builtin_assert ("machine=kv4-1");                                \
+	      builtin_define ("__kvxarch_kv4_1");                              \
+	      builtin_define ("__kv4_1__");                                    \
 	    }                                                                  \
 	  if (TARGET_STRICT_ALIGN)                                             \
 	    builtin_define ("__STRICT_ALIGN__");                               \
