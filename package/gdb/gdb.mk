@@ -244,6 +244,17 @@ endef
 GDB_POST_INSTALL_TARGET_HOOKS += GDB_REMOVE_UNNEEDED_FILES
 endif
 
+ifeq ($(BR2_kvx),y)
+GDB_CONF_ENV += LDFLAGS="$$LDFLAGS -latomic"
+GDB_CONF_OPTS += --with-libgmp-prefix
+GDB_DEPENDENCIES += gmp libiconv
+define GDB_INSTALL_SOS
+	$(INSTALL) $(@D)/$(GDB_SUBDIR)/opcodes/.libs/libopcodes-*.so $(TARGET_DIR)/usr/lib
+	$(INSTALL) $(@D)/$(GDB_SUBDIR)/bfd/.libs/libbfd-*.so $(TARGET_DIR)/usr/lib
+endef
+GDB_POST_INSTALL_TARGET_HOOKS += GDB_INSTALL_SOS
+endif
+
 # This installs the gdbserver somewhere into the $(HOST_DIR) so that
 # it becomes an integral part of the SDK, if the toolchain generated
 # by Buildroot is later used as an external toolchain. We install it
@@ -307,6 +318,20 @@ define HOST_GDB_CONFIGURE_SYMLINK
 	ln -sf ../configure $(@D)/build/configure
 endef
 HOST_GDB_PRE_CONFIGURE_HOOKS += HOST_GDB_CONFIGURE_SYMLINK
+
+ifeq ($(BR2_kvx),y)
+define HOST_GDB_HIDE_LIBIBERTY
+	[ -f $(HOST_DIR)/lib/libiberty.a ] && mv $(HOST_DIR)/lib/libiberty.a $(HOST_DIR)/lib/libiberty.a_
+endef
+HOST_GDB_PRE_BUILD_HOOKS += HOST_GDB_HIDE_LIBIBERTY
+
+define HOST_GDB_UNHIDE_LIBIBERTY_INSTALL_SOS
+	[ -f $(HOST_DIR)/lib/libiberty.a_ ] && mv $(HOST_DIR)/lib/libiberty.a_ $(HOST_DIR)/lib/libiberty.a
+	$(INSTALL) $(@D)/build/opcodes/.libs/libopcodes-*.so $(HOST_DIR)/lib
+	$(INSTALL) $(@D)/build/bfd/.libs/libbfd-*.so $(HOST_DIR)/lib
+endef
+HOST_GDB_POST_BUILD_HOOKS += HOST_GDB_UNHIDE_LIBIBERTY_INSTALL_SOS
+endif
 
 # legacy $arch-linux-gdb symlink
 define HOST_GDB_ADD_SYMLINK
