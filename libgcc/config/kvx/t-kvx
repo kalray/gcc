@@ -14,6 +14,8 @@ LIB2ADD += $(srcdir)/config/kvx/divmoddi.c \
            $(srcdir)/config/kvx/divv4sf3.c \
            $(srcdir)/config/kvx/divv8sf3.c
 
+SHLIB_MAPFILES += $(srcdir)/config/kvx/libgcc-vector.ver
+
 crtcxa.o: $(srcdir)/config/kvx/crtcxa.c
 	$(crt_compile) -c $<
 
