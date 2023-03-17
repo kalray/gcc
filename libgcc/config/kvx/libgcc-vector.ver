@@ -1,0 +1,90 @@
+# Copyright (C) 2020-2022 Free Software Foundation, Inc.
+#
+# This file is part of GCC.
+#
+# GCC is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# GCC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# This file exposes the routines working on vector modes.
+
+%inherit GCC_12.0.0 GCC_7.0.0
+GCC_12.0.0 {
+  __divv2df3
+  __divv2sf3
+  __divv4df3
+  __divv4sf3
+  __divv8sf3
+  __udivmodsi4
+  __udivv2di3
+  __umodv2di3
+  __udivmodv2di4
+  __divv2di3
+  __modv2di3
+  __udivv4di3
+  __umodv4di3
+  __udivmodv4di4
+  __divv4di3
+  __modv4di3
+  __udivv2si3
+  __umodv2si3
+  __udivmodv2si4
+  __divv2si3
+  __modv2si3
+  __udivv4si3
+  __umodv4si3
+  __udivmodv4si4
+  __divv4si3
+  __modv4si3
+  __udivv8si3
+  __umodv8si3
+  __udivmodv8si4
+  __divv8si3
+  __modv8si3
+  __udivv4hi3
+  __umodv4hi3
+  __udivmodv4hi4
+  __divv4hi3
+  __modv4hi3
+  __udivv8hi3
+  __umodv8hi3
+  __udivmodv8hi4
+  __divv8hi3
+  __modv8hi3
+  __udivv16hi3
+  __umodv16hi3
+  __udivmodv16hi4
+  __divv16hi3
+  __modv16hi3
+}
+
+%ifdef __kv3_2__
+%inherit GCC_12.0.0 GCC_7.0.0
+GCC_12.0.0 {
+  __udivv8qi3
+  __umodv8qi3
+  __udivmodv8qi4
+  __divv8qi3
+  __modv8qi3
+  __udivv16qi3
+  __umodv16qi3
+  __udivmodv16qi4
+  __divv16qi3
+  __modv16qi3
+  __udivv32qi3
+  __umodv32qi3
+  __udivmodv32qi4
+  __divv32qi3
+  __modv32qi3
+}
+%endif
