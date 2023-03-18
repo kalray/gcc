@@ -6,7 +6,7 @@
 (include "unspec.md")
 
 ;; Register numbers
-(include "kv3-registers.md")
+(include "kvx-registers.md")
 
 ;; Iterators
 (include "iterators.md")
@@ -385,8 +385,8 @@
 (define_insn "kvx_syncgroup"
   [(unspec [(match_operand:DI 0 "register_operand" "r")] UNSPEC_SYNCGROUP)
    (clobber (mem:BLK (scratch)))
-   (set (reg:DI KV3_IPE_REGNO)
-        (unspec:DI [(reg:DI KV3_IPE_REGNO) (match_dup 0)] UNSPEC_EFFECT))]
+   (set (reg:DI KVX_IPE_REGNO)
+        (unspec:DI [(reg:DI KVX_IPE_REGNO) (match_dup 0)] UNSPEC_EFFECT))]
   ""
   "syncgroup %0"
   [(set_attr "type" "bcu")]
@@ -768,7 +768,7 @@
 (define_insn "*icall_<mode>"
   [(call (mem:P (match_operand:P 0 "register_operand" "r"))
          (match_operand 1 "general_operand" ""))
-   (clobber (reg:DI KV3_RA_REGNO))]
+   (clobber (reg:DI KVX_RA_REGNO))]
   ""
   "icall %0"
 [(set_attr "type" "bcu")]
@@ -777,7 +777,7 @@
 (define_expand "call"
   [(parallel [(call (match_operand 0 "memory_operand" "")
 		    (match_operand 1 "general_operand" ""))
-	      (clobber (reg:DI KV3_RA_REGNO))])]
+	      (clobber (reg:DI KVX_RA_REGNO))])]
   ""
 {
   rtx callee = XEXP (operands[0], 0);
@@ -788,7 +788,7 @@
 (define_insn "*call_<mode>"
   [(call (match_operand:P 0 "jump_operand" "")
          (match_operand 1 "" ""))
-   (clobber (reg:DI KV3_RA_REGNO))]
+   (clobber (reg:DI KVX_RA_REGNO))]
   ""
   "call %0"
 [(set_attr "type" "bcu")]
@@ -798,7 +798,7 @@
   [(parallel [(set (match_operand 0 "" "")
 		   (call (match_operand 1 "memory_operand" "")
 			 (match_operand 2 "general_operand" "")))
-	      (clobber (reg:DI KV3_RA_REGNO))])]
+	      (clobber (reg:DI KVX_RA_REGNO))])]
   ""
 {
   rtx callee = XEXP (operands[1], 0);
@@ -810,7 +810,7 @@
   [(set (match_operand 0 "" "")
         (call (match_operand:P 1 "jump_operand" "")
               (match_operand 2 "" "")))
-   (clobber (reg:DI KV3_RA_REGNO))]
+   (clobber (reg:DI KVX_RA_REGNO))]
   ""
   "call %1"
 [(set_attr "type" "bcu")]
@@ -887,7 +887,7 @@
   [(set (match_operand 0 "" "")
         (call (mem:P (match_operand:P 1 "register_operand" "r"))
               (match_operand 2 "general_operand" "")))
-   (clobber (reg:DI KV3_RA_REGNO))]
+   (clobber (reg:DI KVX_RA_REGNO))]
   ""
   "icall %1"
 [(set_attr "type" "bcu")]
@@ -985,7 +985,7 @@
 
 (define_expand "epilogue"
   [(parallel [(return)
-              (use (reg:DI KV3_RA_REGNO))])]
+              (use (reg:DI KVX_RA_REGNO))])]
   ""
   "
 {
@@ -994,18 +994,18 @@
 
 (define_expand "sibcall_epilogue"
   [(parallel [(return)
-              (use (reg:DI KV3_RA_REGNO))])]
+              (use (reg:DI KVX_RA_REGNO))])]
   ""
   "
 {
-  emit_use (gen_rtx_REG (DImode, KV3_RA_REGNO));
+  emit_use (gen_rtx_REG (DImode, KVX_RA_REGNO));
   kvx_expand_epilogue ();
   DONE; /* DO NOT generate the ret in this case! */
 }")
 
 (define_insn "ret"
   [(return)
-   (use (reg:DI KV3_RA_REGNO))]
+   (use (reg:DI KVX_RA_REGNO))]
   ""
   "ret"
 [(set_attr "type" "bcu")]
@@ -1019,7 +1019,7 @@
   ""
   {
     int i;
-    rtx reg = gen_rtx_REG (OImode, KV3_ARGUMENT_POINTER_REGNO);
+    rtx reg = gen_rtx_REG (OImode, KVX_ARGUMENT_POINTER_REGNO);
 
     /* We need to use call_value so the return value registers don't get
      * clobbered. */

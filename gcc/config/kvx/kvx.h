@@ -7,7 +7,7 @@
 #include "vec.h"
 #endif
 
-#include "kv3-registers.h"
+#include "kvx-registers.h"
 
 /* Support for a compile-time default arch.  The rules are:
    --with-arch is ignored if -march is specified. */
@@ -33,7 +33,7 @@ enum kvx_abi_type
    else, thus it causes no correctness issue. */
 #define IS_GENERAL_REGNO(num, strict)                                          \
   (TEST_REGNO (num, <, 64, strict)                                             \
-   || TEST_REGNO (num, ==, (KV3_FRAME_POINTER_VIRT_REGNO), strict))
+   || TEST_REGNO (num, ==, (KVX_FRAME_POINTER_VIRT_REGNO), strict))
 
 /* ******** kvx shaker ******** */
 #define ASM_OUTPUT_OPCODE(STREAM, PTR)	\
@@ -69,7 +69,7 @@ enum kvx_abi_type
 	  if (TARGET_STRICT_ALIGN)                                             \
 	    builtin_define ("__STRICT_ALIGN__");                               \
 	  if (TARGET_STACK_CHECK_USE_TLS)                                      \
-	    builtin_define ("__KV3_STACK_LIMIT_TLS");                          \
+	    builtin_define ("__KVX_STACK_LIMIT_TLS");                          \
 	  if (!TARGET_32)                                                      \
 	    builtin_define ("__KV3_64__");                                     \
 	}                                                                      \
@@ -175,18 +175,18 @@ enum kvx_abi_type
 
 #define FIXED_REGISTERS                                                        \
   {                                                                            \
-    KV3_ABI_REGULAR_FIXED_REGISTERS                                            \
+    KVX_ABI_REGULAR_FIXED_REGISTERS                                            \
   }
 
 /*#define CALL_USED_REGISTERS						\
   {                                                                            \
-    KV3_ABI_REGULAR_CALL_USED_REGISTERS                                        \
+    KVX_ABI_REGULAR_CALL_USED_REGISTERS                                        \
   }
 */
 
 #define CALL_REALLY_USED_REGISTERS					\
   {                                                                            \
-    KV3_ABI_REGULAR_CALL_REALLY_USED_REGISTERS                                 \
+    KVX_ABI_REGULAR_CALL_REALLY_USED_REGISTERS                                 \
   }
 
 #define PC_REGNUM KVX_PROGRAM_POINTER_REGNO
@@ -302,16 +302,16 @@ enum kvx_abi_type
 #define DWARF2_UNWIND_INFO 1
 #define DWARF2_ASM_LINE_DEBUG_INFO 1
 
-#define INCOMING_RETURN_ADDR_RTX gen_rtx_REG (Pmode, KV3_RETURN_POINTER_REGNO)
+#define INCOMING_RETURN_ADDR_RTX gen_rtx_REG (Pmode, KVX_RETURN_POINTER_REGNO)
 
 #define DBX_REGISTER_NUMBER(REGNO) (REGNO)
 
-#define DWARF_FRAME_RETURN_COLUMN DBX_REGISTER_NUMBER (KV3_RETURN_POINTER_REGNO)
+#define DWARF_FRAME_RETURN_COLUMN DBX_REGISTER_NUMBER (KVX_RETURN_POINTER_REGNO)
 
-#define STACK_POINTER_REGNUM KV3_STACK_POINTER_REGNO
+#define STACK_POINTER_REGNUM KVX_STACK_POINTER_REGNO
 
-#define FRAME_POINTER_REGNUM KV3_FRAME_POINTER_VIRT_REGNO
-#define HARD_FRAME_POINTER_REGNUM KV3_FRAME_POINTER_REGNO
+#define FRAME_POINTER_REGNUM KVX_FRAME_POINTER_VIRT_REGNO
+#define HARD_FRAME_POINTER_REGNUM KVX_FRAME_POINTER_REGNO
 
 #define ARG_POINTER_REGNUM FRAME_POINTER_REGNUM
 
@@ -375,8 +375,8 @@ struct kvx_args
    used for this purpose since all function arguments are pushed on‰
    the stack. */
 #define FUNCTION_ARG_REGNO_P(regno)                                            \
-  ((int) (regno) >= KV3_ARGUMENT_POINTER_REGNO                                 \
-   && (regno) < KV3_ARGUMENT_POINTER_REGNO + KV3_ARG_REG_SLOTS)
+  ((int) (regno) >= KVX_ARGUMENT_POINTER_REGNO                                 \
+   && (regno) < KVX_ARGUMENT_POINTER_REGNO + KVX_ARG_REG_SLOTS)
 
 /* ********** Scalar Return ********** */
 
@@ -387,7 +387,7 @@ struct kvx_args
    support routine, used to perform arithmetic, whose name is known
    specially by the compiler and was not mentioned in the C code being
    compiled. */
-#define LIBCALL_VALUE(MODE) gen_rtx_REG (MODE, KV3_ARGUMENT_POINTER_REGNO)
+#define LIBCALL_VALUE(MODE) gen_rtx_REG (MODE, KVX_ARGUMENT_POINTER_REGNO)
 
 /* A C expression that is nonzero if REGNO is the number of a hard register in
    which the values of called function may come back.  */
@@ -423,7 +423,7 @@ struct kvx_args
    that are used by the epilogue or the `return' pattern. The stack
    and frame pointer registers are already assumed to be used as
    needed. */
-#define EPILOGUE_USES(regno) (regno == KV3_RETURN_POINTER_REGNO)
+#define EPILOGUE_USES(regno) (regno == KVX_RETURN_POINTER_REGNO)
 
 /* ********** Tail calls ********** */
 
@@ -596,7 +596,7 @@ extern void kvx_profile_hook (void);
    register numbers in the compiler into assembler language. */
 #define REGISTER_NAMES                                                         \
   {                                                                            \
-    KV3_REGISTER_NAMES                                                         \
+    KVX_REGISTER_NAMES                                                         \
   }
 
 /* If defined, a C initializer for an array of structures containing a
