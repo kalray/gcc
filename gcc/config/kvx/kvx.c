@@ -219,9 +219,9 @@ kvx_compute_frame_info (void)
   inc_sp_offset += crtl->args.pretend_args_size;
 
   /* If any anonymous arg may be in register, push them on the stack */
-  if (cfun->stdarg && crtl->args.info.next_arg_reg < KV3_ARG_REG_SLOTS)
+  if (cfun->stdarg && crtl->args.info.next_arg_reg < KVX_ARG_REG_SLOTS)
     inc_sp_offset
-      += UNITS_PER_WORD * (KV3_ARG_REG_SLOTS - crtl->args.info.next_arg_reg);
+      += UNITS_PER_WORD * (KVX_ARG_REG_SLOTS - crtl->args.info.next_arg_reg);
 
   if (cfun->machine->static_chain_needed)
     inc_sp_offset += UNITS_PER_WORD;
@@ -259,10 +259,10 @@ kvx_compute_frame_info (void)
   if (frame_pointer_needed)
     {
       SET_HARD_REG_BIT (frame->saved_regs, HARD_FRAME_POINTER_REGNUM);
-      SET_HARD_REG_BIT (frame->saved_regs, KV3_RETURN_POINTER_REGNO);
+      SET_HARD_REG_BIT (frame->saved_regs, KVX_RETURN_POINTER_REGNO);
 
       cfun->machine->frame.reg_rel_offset[HARD_FRAME_POINTER_REGNUM] = 0;
-      cfun->machine->frame.reg_rel_offset[KV3_RETURN_POINTER_REGNO]
+      cfun->machine->frame.reg_rel_offset[KVX_RETURN_POINTER_REGNO]
 	= UNITS_PER_WORD;
       reg_offset = UNITS_PER_WORD * 2;
     }
@@ -318,7 +318,7 @@ kvx_debug_frame_info (struct kvx_frame_info *fi)
 	   " |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX| %ld/0 (caller frame) <- $sp "
 	   "(incoming) %s \n",
 	   fi->frame_size.to_constant (),
-	   cfun->stdarg && crtl->args.info.next_arg_reg < KV3_ARG_REG_SLOTS
+	   cfun->stdarg && crtl->args.info.next_arg_reg < KVX_ARG_REG_SLOTS
 	     ? ""
 	     : "and virt frame pointer");
 
@@ -336,7 +336,7 @@ kvx_debug_frame_info (struct kvx_frame_info *fi)
 	   (fi->frame_size.to_constant ()) - (bottom), decorate_down)
 
   DFI_SEP;
-  if (cfun->stdarg && crtl->args.info.next_arg_reg < KV3_ARG_REG_SLOTS)
+  if (cfun->stdarg && crtl->args.info.next_arg_reg < KVX_ARG_REG_SLOTS)
     {
       DFI_FIELD ("varargs", (fi->frame_size - fi->arg_pointer_offset).to_constant(),
 		 fi->arg_pointer_offset.to_constant(), "", " <- arg pointer");
@@ -545,8 +545,8 @@ kvx_trampoline_init (rtx m_tramp, tree fndecl, rtx chain_value)
 static const char *
 kvx_pgr_reg_name (unsigned regno)
 {
-  static const char *pgr_reg_names[] = {KV3_PGR_REGISTER_NAMES};
-  unsigned index = regno - KV3_GPR_FIRST_REGNO;
+  static const char *pgr_reg_names[] = {KVX_PGR_REGISTER_NAMES};
+  unsigned index = regno - KVX_GPR_FIRST_REGNO;
   gcc_assert (index % 2 == 0);
   return pgr_reg_names[index / 2];
 }
@@ -554,8 +554,8 @@ kvx_pgr_reg_name (unsigned regno)
 static const char *
 kvx_qgr_reg_name (unsigned regno)
 {
-  static const char *qgr_reg_names[] = {KV3_QGR_REGISTER_NAMES};
-  unsigned index = regno - KV3_GPR_FIRST_REGNO;
+  static const char *qgr_reg_names[] = {KVX_QGR_REGISTER_NAMES};
+  unsigned index = regno - KVX_GPR_FIRST_REGNO;
   gcc_assert (index % 4 == 0);
   return qgr_reg_names[index / 4];
 }
@@ -563,8 +563,8 @@ kvx_qgr_reg_name (unsigned regno)
 static const char *
 kvx_xvr_reg_name (unsigned regno)
 {
-  static const char *xvr_reg_names[] = {KV3_XVR_REGISTER_NAMES};
-  unsigned index = regno - KV3_XCR_FIRST_REGNO;
+  static const char *xvr_reg_names[] = {KVX_XVR_REGISTER_NAMES};
+  unsigned index = regno - KVX_XCR_FIRST_REGNO;
   gcc_assert (index % 4 == 0);
   return xvr_reg_names[index / 4];
 }
@@ -572,8 +572,8 @@ kvx_xvr_reg_name (unsigned regno)
 static const char *
 kvx_xtr_reg_name (unsigned regno)
 {
-  static const char *xwr_reg_names[] = {KV3_XTR_REGISTER_NAMES};
-  unsigned index = regno - KV3_XCR_FIRST_REGNO;
+  static const char *xwr_reg_names[] = {KVX_XTR_REGISTER_NAMES};
+  unsigned index = regno - KVX_XCR_FIRST_REGNO;
   gcc_assert (index % 8 == 0);
   return xwr_reg_names[index / 8];
 }
@@ -581,8 +581,8 @@ kvx_xtr_reg_name (unsigned regno)
 static const char *
 kvx_xmr_reg_name (unsigned regno)
 {
-  static const char *xmr_reg_names[] = {KV3_XMR_REGISTER_NAMES};
-  unsigned index = regno - KV3_XCR_FIRST_REGNO;
+  static const char *xmr_reg_names[] = {KVX_XMR_REGISTER_NAMES};
+  unsigned index = regno - KVX_XCR_FIRST_REGNO;
   gcc_assert (index % 16 == 0);
   return xmr_reg_names[index / 16];
 }
@@ -795,19 +795,19 @@ kvx_hard_regno_mode_ok (unsigned regno, enum machine_mode mode)
   nwords = nwords >= 1 ? nwords : 1;
   gcc_assert (__builtin_popcount (nwords) == 1);
   // GPR
-  if (IN_RANGE (regno, KV3_GPR_FIRST_REGNO, KV3_GPR_LAST_REGNO))
+  if (IN_RANGE (regno, KVX_GPR_FIRST_REGNO, KVX_GPR_LAST_REGNO))
     {
       // Maximum GPR aligment is 4 64-bit words (256 bits).
       nwords = nwords > 4 ? 4 : nwords;
       return !(regno & (nwords - 1));
     }
   // SFR
-  if (IN_RANGE (regno, KV3_SFR_FIRST_REGNO, KV3_SFR_LAST_REGNO))
+  if (IN_RANGE (regno, KVX_SFR_FIRST_REGNO, KVX_SFR_LAST_REGNO))
     {
       return nwords == 1;
     }
   // XCR
-  if (IN_RANGE (regno, KV3_XCR_FIRST_REGNO, KV3_XCR_LAST_REGNO))
+  if (IN_RANGE (regno, KVX_XCR_FIRST_REGNO, KVX_XCR_LAST_REGNO))
     {
       return !(regno & (nwords - 1)) && kvx_extension_mode_p (mode);
     }
@@ -1032,12 +1032,12 @@ kvx_legitimate_address_p (machine_mode mode, rtx x, bool strict)
 static void
 kvx_conditional_register_usage (void)
 {
-  kvx_link_reg_rtx = gen_rtx_REG (Pmode, KV3_RETURN_POINTER_REGNO);
+  kvx_link_reg_rtx = gen_rtx_REG (Pmode, KVX_RETURN_POINTER_REGNO);
   if (KV3_1)
     {
       // On the kv3-1, only 48 coprocessor registers are available.
-      unsigned int regno = KV3_XCR_FIRST_REGNO + (48 * 4);
-      for (; regno <= KV3_XCR_LAST_REGNO; regno++)
+      unsigned int regno = KVX_XCR_FIRST_REGNO + (48 * 4);
+      for (; regno <= KVX_XCR_LAST_REGNO; regno++)
 	fixed_regs[regno] = call_used_regs[regno] = 1;
     }
 }
@@ -1045,7 +1045,7 @@ kvx_conditional_register_usage (void)
 rtx
 kvx_return_addr_rtx (int count, rtx frameaddr ATTRIBUTE_UNUSED)
 {
-  return count == 0 ? get_hard_reg_initial_val (Pmode, KV3_RETURN_POINTER_REGNO)
+  return count == 0 ? get_hard_reg_initial_val (Pmode, KVX_RETURN_POINTER_REGNO)
 		    : NULL_RTX;
 }
 
@@ -1096,14 +1096,14 @@ kvx_get_arg_info (struct kvx_arg_info *info, cumulative_args_t cum_v,
 
   /* If all register argument slots are used, then it must go on the
      stack. */
-  if (cum->next_arg_reg >= KV3_ARG_REG_SLOTS)
+  if (cum->next_arg_reg >= KVX_ARG_REG_SLOTS)
     {
       info->num_stack = n_words;
       info->num_regs = 0;
       return NULL_RTX;
     }
 
-  info->num_regs = KV3_ARG_REG_SLOTS - info->first_reg;
+  info->num_regs = KVX_ARG_REG_SLOTS - info->first_reg;
 
   if (info->num_regs >= n_words)
     {
@@ -1117,7 +1117,7 @@ kvx_get_arg_info (struct kvx_arg_info *info, cumulative_args_t cum_v,
       info->num_stack = n_words - info->num_regs;
     }
 
-  return gen_rtx_REG (mode, KV3_ARGUMENT_POINTER_REGNO + info->first_reg);
+  return gen_rtx_REG (arg.mode, KVX_ARGUMENT_POINTER_REGNO + info->first_reg);
 }
 
 /* Implements TARGET_PROMOTE_FUNCTION_MODE.  */
@@ -1207,12 +1207,12 @@ kvx_function_value (const_tree ret_type, const_tree func,
 	XVECEXP (ret, 0, i)
 	  = gen_rtx_EXPR_LIST (VOIDmode,
 			       gen_rtx_REG (DImode,
-					    KV3_ARGUMENT_POINTER_REGNO + i),
+					    KVX_ARGUMENT_POINTER_REGNO + i),
 			       GEN_INT (i * UNITS_PER_WORD));
       return ret;
     }
 
-  return gen_rtx_REG (mode, KV3_ARGUMENT_POINTER_REGNO);
+  return gen_rtx_REG (mode, KVX_ARGUMENT_POINTER_REGNO);
 }
 
 /* Implements TARGET_RETURN_IN_MSB.  */
@@ -1242,7 +1242,7 @@ static rtx
 kvx_struct_value_rtx (tree fndecl ATTRIBUTE_UNUSED,
 		      int incoming ATTRIBUTE_UNUSED)
 {
-  return gen_rtx_REG (Pmode, KV3_STRUCT_POINTER_REGNO);
+  return gen_rtx_REG (Pmode, KVX_STRUCT_POINTER_REGNO);
 }
 
 static void
@@ -1311,7 +1311,7 @@ kvx_expand_builtin_saveregs (void)
   rtx area = gen_rtx_PLUS (Pmode, frame_pointer_rtx, GEN_INT (arg_fp_offset));
 
   /* All argument register slots used for named args, nothing to push */
-  if (crtl->args.info.next_arg_reg >= KV3_ARG_REG_SLOTS)
+  if (crtl->args.info.next_arg_reg >= KVX_ARG_REG_SLOTS)
     return const0_rtx;
 
   /* use arg_pointer since saved register slots are not known at that time */
@@ -1320,7 +1320,7 @@ kvx_expand_builtin_saveregs (void)
   if (regno & 1)
     {
       rtx insn = emit_move_insn (gen_rtx_MEM (DImode, area),
-				 gen_rtx_REG (DImode, KV3_ARGUMENT_POINTER_REGNO
+				 gen_rtx_REG (DImode, KVX_ARGUMENT_POINTER_REGNO
 							+ regno));
       RTX_FRAME_RELATED_P (insn) = 1;
       /* Do not attach a NOTE here as the frame has not been laid out yet.
@@ -1331,13 +1331,13 @@ kvx_expand_builtin_saveregs (void)
       slot++;
     }
 
-  for (; regno < KV3_ARG_REG_SLOTS; regno += 2, slot += 2)
+  for (; regno < KVX_ARG_REG_SLOTS; regno += 2, slot += 2)
     {
       rtx addr
 	= gen_rtx_MEM (TImode, gen_rtx_PLUS (Pmode, frame_pointer_rtx,
 					     GEN_INT (slot * UNITS_PER_WORD
 						      + arg_fp_offset)));
-      rtx src = gen_rtx_REG (TImode, KV3_ARGUMENT_POINTER_REGNO + regno);
+      rtx src = gen_rtx_REG (TImode, KVX_ARGUMENT_POINTER_REGNO + regno);
 
       rtx insn = emit_move_insn (addr, src);
       RTX_FRAME_RELATED_P (insn) = 1;
@@ -2138,7 +2138,7 @@ should_be_saved_in_prologue (int regno)
   return (df_regs_ever_live_p (regno)	   // reg is used
 	  && !call_used_regs[regno] // reg is callee-saved
 	  && REGNO_REG_CLASS (regno) != XCR_REGS
-	  && (regno == KV3_RETURN_POINTER_REGNO || !fixed_regs[regno]));
+	  && (regno == KVX_RETURN_POINTER_REGNO || !fixed_regs[regno]));
 }
 
 static bool
@@ -2253,7 +2253,7 @@ kvx_save_or_restore_callee_save_registers (bool restore)
 	rtx saved_reg = gen_rtx_REG (DImode, regno);
 	rtx orig_save_reg = saved_reg;
 
-	if (regno == KV3_RETURN_POINTER_REGNO)
+	if (regno == KVX_RETURN_POINTER_REGNO)
 	  {
 	    saved_reg = kvx_get_callersaved_nonfixed_reg (DImode, 0);
 	    gcc_assert (saved_reg != NULL_RTX);
@@ -2269,7 +2269,7 @@ kvx_save_or_restore_callee_save_registers (bool restore)
 	      }
 	  }
 
-	if (regno == KV3_RETURN_POINTER_REGNO)
+	if (regno == KVX_RETURN_POINTER_REGNO)
 	  {
 	    if (restore)
 	      {
@@ -2715,7 +2715,7 @@ static GTY (()) rtx kvx_tls_symbol;
 static rtx_insn *
 kvx_call_tls_get_addr (rtx sym, rtx result, int unspec)
 {
-  rtx a0 = gen_rtx_REG (Pmode, KV3_ARGUMENT_POINTER_REGNO), func;
+  rtx a0 = gen_rtx_REG (Pmode, KVX_ARGUMENT_POINTER_REGNO), func;
   rtx_insn *insn;
 
   if (!kvx_tls_symbol)
@@ -2760,7 +2760,7 @@ kvx_legitimize_tls_reference (rtx x)
       /* address is @tlsle(symbol)[$tp]
        */
       addr
-	= gen_rtx_PLUS (Pmode, gen_rtx_REG (Pmode, KV3_LOCAL_POINTER_REGNO),
+	= gen_rtx_PLUS (Pmode, gen_rtx_REG (Pmode, KVX_LOCAL_POINTER_REGNO),
 			gen_rtx_CONST (Pmode,
 				       gen_rtx_UNSPEC (Pmode, gen_rtvec (1, x),
 						       UNSPEC_TLS_LE)));
@@ -2771,7 +2771,7 @@ kvx_legitimize_tls_reference (rtx x)
        * $r0 = @tlsgd(sym) + $got
        * addr = __tls_get_addr()
        */
-      tmp = gen_rtx_REG (Pmode, KV3_ARGUMENT_POINTER_REGNO);
+      tmp = gen_rtx_REG (Pmode, KVX_ARGUMENT_POINTER_REGNO);
       dest = gen_reg_rtx (Pmode);
       emit_libcall_block (kvx_call_tls_get_addr (x, tmp, UNSPEC_TLS_GD),
 			  dest /* target */, tmp /* result */, x /* equiv */);
@@ -2790,11 +2790,11 @@ kvx_legitimize_tls_reference (rtx x)
 						       UNSPEC_TLS_IE)));
       emit_move_insn (dest, gen_rtx_MEM (Pmode, addr));
 
-      return gen_rtx_PLUS (Pmode, gen_rtx_REG (Pmode, KV3_LOCAL_POINTER_REGNO),
+      return gen_rtx_PLUS (Pmode, gen_rtx_REG (Pmode, KVX_LOCAL_POINTER_REGNO),
 			   dest);
 
     case SYMBOL_TLSLD:
-      tmp = gen_rtx_REG (Pmode, KV3_ARGUMENT_POINTER_REGNO);
+      tmp = gen_rtx_REG (Pmode, KVX_ARGUMENT_POINTER_REGNO);
       dest = gen_reg_rtx (Pmode);
 
       /* Attach a unique REG_EQUIV, to allow the RTL optimizers to
@@ -4677,7 +4677,7 @@ kvx_sched_adjust_cost (rtx_insn *cons_insn, int dep_type, rtx_insn *prod_insn,
 		y = XVECEXP (y, 0, 0);
 	      if (GET_CODE (y) == SET)
 		y = SET_DEST (y);
-	      if (!REG_P (y) || REGNO (y) != KV3_RA_REGNO)
+	      if (!REG_P (y) || REGNO (y) != KVX_RA_REGNO)
 		cost = 0;
 	    }
 	}
@@ -5345,7 +5345,7 @@ kvx_expand_load_store_multiple (rtx operands[], bool is_load)
 	  && ((int) MEM_ALIGN (operands[mem_op_idx]))
 	       < (count * UNITS_PER_WORD))
       || MEM_VOLATILE_P (operands[mem_op_idx])
-      || REGNO (operands[reg_op_idx]) > KV3_GPR_LAST_REGNO)
+      || REGNO (operands[reg_op_idx]) > KVX_GPR_LAST_REGNO)
     return false;
 
   operands[3] = gen_rtx_PARALLEL (VOIDmode, rtvec_alloc (count));
@@ -5814,13 +5814,13 @@ kvx_sched2_fix_insn_issue (rtx_insn *insn, rtx *opvec, int noperands)
   static struct
   {
     int delay;
-    short write[KV3_GPR_LAST_REGNO + 1];
+    short write[KVX_GPR_LAST_REGNO + 1];
   } scoreboard;
   if (kvx_sched2.insn_flags[uid] & KVX_SCHED2_INSN_HEAD)
     {
       scoreboard.delay = 0;
       memset (scoreboard.write, -1, sizeof (scoreboard.write));
-      gcc_assert (KV3_GPR_FIRST_REGNO == 0);
+      gcc_assert (KVX_GPR_FIRST_REGNO == 0);
     }
 
   if (NONDEBUG_INSN_P (insn))
@@ -5836,7 +5836,7 @@ kvx_sched2_fix_insn_issue (rtx_insn *insn, rtx *opvec, int noperands)
 	  int regno_quad = (regno & -4);
 	  machine_mode mode = GET_MODE (opvec[3]);
 	  unsigned mode_size = GET_MODE_SIZE (mode);
-	  gcc_assert (regno <= KV3_GPR_LAST_REGNO);
+	  gcc_assert (regno <= KVX_GPR_LAST_REGNO);
 	  if (mode_size <= UNITS_PER_WORD)
 	    {
 	      for (int i = 0; i < 4; i += 2)
@@ -6807,8 +6807,8 @@ kvx_invalid_within_doloop (const rtx_insn *insn)
 	  rtx clobber = XVECEXP (body, 0, i);
 	  if (GET_CODE (clobber) == CLOBBER && REG_P (XEXP (clobber, 0))
 	      && (regno = REGNO (XEXP (clobber, 0)))
-	      && (regno == KV3_LC_REGNO || regno == KV3_LS_REGNO
-		  || regno == KV3_LE_REGNO))
+	      && (regno == KVX_LC_REGNO || regno == KVX_LS_REGNO
+		  || regno == KVX_LE_REGNO))
 	    return "HW Loop register clobbered by asm.";
 	}
     }
@@ -7767,7 +7767,7 @@ kvx_output_function_profiler (FILE *file)
 void
 kvx_profile_hook (void)
 {
-  rtx ra_arg = get_hard_reg_initial_val (Pmode, KV3_RETURN_POINTER_REGNO);
+  rtx ra_arg = get_hard_reg_initial_val (Pmode, KVX_RETURN_POINTER_REGNO);
   rtx fun = gen_rtx_SYMBOL_REF (Pmode, "__mcount");
   emit_library_call (fun, LCT_NORMAL, VOIDmode, ra_arg, Pmode);
 }

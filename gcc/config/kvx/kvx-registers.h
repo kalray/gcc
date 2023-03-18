@@ -1,5 +1,5 @@
 /*
- * Definitions of target machine for GNU compiler, for Kalray kv3.
+ * Definitions of target machine for GNU compiler, for Kalray kvx.
  * Copyright (C) 2009-2019 Kalray S.A.
  *
  * This file is part of GCC.
@@ -39,16 +39,16 @@ enum reg_class {
   "LIM_REG_CLASSES" \
 }
 
-#define KV3_GPR_FIRST_REGNO 0
-#define KV3_GPR_LAST_REGNO 63
-#define KV3_SFR_FIRST_REGNO 64
-#define KV3_SFR_LAST_REGNO 255
-#define KV3_XCR_FIRST_REGNO 256
-#define KV3_XCR_LAST_REGNO 511
+#define KVX_GPR_FIRST_REGNO 0
+#define KVX_GPR_LAST_REGNO 63
+#define KVX_SFR_FIRST_REGNO 64
+#define KVX_SFR_LAST_REGNO 255
+#define KVX_XCR_FIRST_REGNO 256
+#define KVX_XCR_LAST_REGNO 511
 
-#define KV3_MDS_REGISTERS 512
-#define FIRST_PSEUDO_REGISTER (KV3_MDS_REGISTERS)
-#define KV3_FRAME_POINTER_VIRT_REGNO (KV3_SFR_FIRST_REGNO + 191) // SFR191
+#define KVX_MDS_REGISTERS 512
+#define FIRST_PSEUDO_REGISTER (KVX_MDS_REGISTERS)
+#define KVX_FRAME_POINTER_VIRT_REGNO (KVX_SFR_FIRST_REGNO + 191) // SFR191
 
 #define REG_CLASS_CONTENTS { \
   { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, }, /* NO_REGS */ \
@@ -60,12 +60,12 @@ enum reg_class {
 }
 
 #define REGNO_REG_CLASS(REGNO) ( \
-  (((REGNO) <= KV3_GPR_LAST_REGNO)? GPR_REGS: \
-    (((REGNO) <= KV3_SFR_LAST_REGNO)? SFR_REGS: \
-      (((REGNO) <= KV3_XCR_LAST_REGNO)? XCR_REGS: \
+  (((REGNO) <= KVX_GPR_LAST_REGNO)? GPR_REGS: \
+    (((REGNO) <= KVX_SFR_LAST_REGNO)? SFR_REGS: \
+      (((REGNO) <= KVX_XCR_LAST_REGNO)? XCR_REGS: \
         NO_REGS))))
 
-#define KV3_REGISTER_NAMES \
+#define KVX_REGISTER_NAMES \
 	"r0",	"r1",	"r2",	"r3",	"r4",	"r5",	"r6",	"r7", \
 	"r8",	"r9",	"r10",	"r11",	"r12",	"r13",	"r14",	"r15", \
 	"r16",	"r17",	"r18",	"r19",	"r20",	"r21",	"r22",	"r23", \
@@ -131,17 +131,17 @@ enum reg_class {
 	"a60_x",	"a60_y",	"a60_z",	"a60_t",	"a61_x",	"a61_y",	"a61_z",	"a61_t", \
 	"a62_x",	"a62_y",	"a62_z",	"a62_t",	"a63_x",	"a63_y",	"a63_z",	"a63_t",
 
-#define KV3_PGR_REGISTER_NAMES \
+#define KVX_PGR_REGISTER_NAMES \
 	"r0r1",	"r2r3",	"r4r5",	"r6r7",	"r8r9",	"r10r11",	"r12r13",	"r14r15", \
 	"r16r17",	"r18r19",	"r20r21",	"r22r23",	"r24r25",	"r26r27",	"r28r29",	"r30r31", \
 	"r32r33",	"r34r35",	"r36r37",	"r38r39",	"r40r41",	"r42r43",	"r44r45",	"r46r47", \
 	"r48r49",	"r50r51",	"r52r53",	"r54r55",	"r56r57",	"r58r59",	"r60r61",	"r62r63",
 
-#define KV3_QGR_REGISTER_NAMES \
+#define KVX_QGR_REGISTER_NAMES \
 	"r0r1r2r3",	"r4r5r6r7",	"r8r9r10r11",	"r12r13r14r15",	"r16r17r18r19",	"r20r21r22r23",	"r24r25r26r27",	"r28r29r30r31", \
 	"r32r33r34r35",	"r36r37r38r39",	"r40r41r42r43",	"r44r45r46r47",	"r48r49r50r51",	"r52r53r54r55",	"r56r57r58r59",	"r60r61r62r63",
 
-#define KV3_XBR_REGISTER_NAMES \
+#define KVX_XBR_REGISTER_NAMES \
 	"a0_lo",	"a0_hi",	"a1_lo",	"a1_hi",	"a2_lo",	"a2_hi",	"a3_lo",	"a3_hi", \
 	"a4_lo",	"a4_hi",	"a5_lo",	"a5_hi",	"a6_lo",	"a6_hi",	"a7_lo",	"a7_hi", \
 	"a8_lo",	"a8_hi",	"a9_lo",	"a9_hi",	"a10_lo",	"a10_hi",	"a11_lo",	"a11_hi", \
@@ -159,7 +159,7 @@ enum reg_class {
 	"a56_lo",	"a56_hi",	"a57_lo",	"a57_hi",	"a58_lo",	"a58_hi",	"a59_lo",	"a59_hi", \
 	"a60_lo",	"a60_hi",	"a61_lo",	"a61_hi",	"a62_lo",	"a62_hi",	"a63_lo",	"a63_hi",
 
-#define KV3_XVR_REGISTER_NAMES \
+#define KVX_XVR_REGISTER_NAMES \
 	"a0",	"a1",	"a2",	"a3",	"a4",	"a5",	"a6",	"a7", \
 	"a8",	"a9",	"a10",	"a11",	"a12",	"a13",	"a14",	"a15", \
 	"a16",	"a17",	"a18",	"a19",	"a20",	"a21",	"a22",	"a23", \
@@ -169,28 +169,28 @@ enum reg_class {
 	"a48",	"a49",	"a50",	"a51",	"a52",	"a53",	"a54",	"a55", \
 	"a56",	"a57",	"a58",	"a59",	"a60",	"a61",	"a62",	"a63",
 
-#define KV3_XTR_REGISTER_NAMES \
+#define KVX_XTR_REGISTER_NAMES \
 	"a0a1",	"a2a3",	"a4a5",	"a6a7",	"a8a9",	"a10a11",	"a12a13",	"a14a15", \
 	"a16a17",	"a18a19",	"a20a21",	"a22a23",	"a24a25",	"a26a27",	"a28a29",	"a30a31", \
 	"a32a33",	"a34a35",	"a36a37",	"a38a39",	"a40a41",	"a42a43",	"a44a45",	"a46a47", \
 	"a48a49",	"a50a51",	"a52a53",	"a54a55",	"a56a57",	"a58a59",	"a60a61",	"a62a63",
 
-#define KV3_XMR_REGISTER_NAMES \
+#define KVX_XMR_REGISTER_NAMES \
 	"a0a1a2a3",	"a4a5a6a7",	"a8a9a10a11",	"a12a13a14a15",	"a16a17a18a19",	"a20a21a22a23",	"a24a25a26a27",	"a28a29a30a31", \
 	"a32a33a34a35",	"a36a37a38a39",	"a40a41a42a43",	"a44a45a46a47",	"a48a49a50a51",	"a52a53a54a55",	"a56a57a58a59",	"a60a61a62a63",
 
-#define KV3_ABI_REGULAR 0
-#define KV3_PROGRAM_POINTER_REGNO 64
-#define KV3_STACK_POINTER_REGNO 12
-#define KV3_FRAME_POINTER_REGNO 14
-#define KV3_LOCAL_POINTER_REGNO 13
-#define KV3_STRUCT_POINTER_REGNO 15
-#define KV3_RETURN_POINTER_REGNO 67
-#define KV3_ARGUMENT_POINTER_REGNO 0
-#define KV3_ARG_REG_SLOTS 12
+#define KVX_ABI_REGULAR 0
+#define KVX_PROGRAM_POINTER_REGNO 64
+#define KVX_STACK_POINTER_REGNO 12
+#define KVX_FRAME_POINTER_REGNO 14
+#define KVX_LOCAL_POINTER_REGNO 13
+#define KVX_STRUCT_POINTER_REGNO 15
+#define KVX_RETURN_POINTER_REGNO 67
+#define KVX_ARGUMENT_POINTER_REGNO 0
+#define KVX_ARG_REG_SLOTS 12
 
 
-#define KV3_ABI_REGULAR_FIXED_REGISTERS \
+#define KVX_ABI_REGULAR_FIXED_REGISTERS \
 	0,	0,	0,	0,	0,	0,	0,	0, \
 	0,	0,	0,	0,	1,	1,	0,	0, \
 	0,	0,	0,	0,	0,	0,	0,	0, \
@@ -256,7 +256,7 @@ enum reg_class {
 	0,	0,	0,	0,	0,	0,	0,	0, \
 	0,	0,	0,	0,	0,	0,	0,	0,
 
-#define KV3_ABI_REGULAR_CALL_USED_REGISTERS \
+#define KVX_ABI_REGULAR_CALL_USED_REGISTERS \
 	1,	1,	1,	1,	1,	1,	1,	1, \
 	1,	1,	1,	1,	1,	1,	0,	1, \
 	1,	1,	0,	0,	0,	0,	0,	0, \
@@ -322,7 +322,7 @@ enum reg_class {
 	0,	0,	0,	0,	0,	0,	0,	0, \
 	0,	0,	0,	0,	0,	0,	0,	0,
 
-#define KV3_ABI_REGULAR_CALL_REALLY_USED_REGISTERS \
+#define KVX_ABI_REGULAR_CALL_REALLY_USED_REGISTERS \
 	1,	1,	1,	1,	1,	1,	1,	1, \
 	1,	1,	1,	1,	1,	1,	0,	1, \
 	1,	1,	0,	0,	0,	0,	0,	0, \
