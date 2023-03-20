@@ -539,62 +539,6 @@
   [(set_attr "type" "alu_thin")]
 )
 
-(define_insn "*sbmm8d"
-  [(set (match_operand:ALL64 0 "register_operand" "=r")
-        (unspec:ALL64 [(match_operand:FITGPR 1 "register_operand" "r")
-                       (match_operand:DI 2 "register_operand" "r")] UNSPEC_SBMM8))]
-  ""
-  "sbmm8 %0 = %1, %2"
-  [(set_attr "type" "alu_thin")]
-)
-
-(define_insn "*sbmm8dp"
-  [(set (match_operand:ALL128 0 "register_operand" "=r")
-        (unspec:ALL128 [(match_operand:SIMD128 1 "register_operand" "r")
-                        (match_operand:DI 2 "register_operand" "r")] UNSPEC_SBMM8))]
-  ""
-  "sbmm8 %x0 = %x1, %2\n\tsbmm8 %y0 = %y1, %2"
-  [(set_attr "type" "alu_thin_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn_and_split "*sbmm8dq"
-  [(set (match_operand:ALL256 0 "register_operand" "=&r")
-        (unspec:ALL256 [(match_operand:SIMD256 1 "register_operand" "r")
-                        (match_operand:DI 2 "register_operand" "r")] UNSPEC_SBMM8))]
-  ""
-  "#"
-  "reload_completed"
-  [(set (subreg:<ALL256:HALF> (match_dup 0) 0)
-        (unspec:<ALL256:HALF> [(subreg:<SIMD256:HALF> (match_dup 1) 0)
-                               (match_dup 2)] UNSPEC_SBMM8))
-   (set (subreg:<ALL256:HALF> (match_dup 0) 16)
-        (unspec:<ALL256:HALF> [(subreg:<SIMD256:HALF> (match_dup 1) 16)
-                               (match_dup 2)] UNSPEC_SBMM8))]
-  ""
-)
-
-(define_insn "*sbmm8s"
-  [(set (match_operand:ALL64 0 "register_operand" "=r")
-        (unspec:ALL64 [(match_operand:FITGPR 1 "register_operand" "r")
-                       (match_operand:DI 2 "register_operand" "r")] UNSPEC_SBMM8S))]
-  ""
-  "sbmm8.@ %0 = %1, %2"
-  [(set_attr "type" "alu_thin_x")
-   (set_attr "length"        "8")]
-)
-
-(define_insn "*sbmm8xy"
-  [(set (match_operand:ALL128 0 "register_operand" "=r")
-        (unspec:ALL128 [(match_operand:SIMD128 1 "register_operand" "r")
-                        (match_operand:DI 2 "register_operand" "r")
-                        (match_operand:DI 3 "register_operand" "r")] UNSPEC_SBMM8XY))]
-  ""
-  "sbmm8 %x0 = %x1, %2\n\tsbmm8 %y0 = %y1, %3"
-  [(set_attr "type" "alu_thin_x2")
-   (set_attr "length"         "8")]
-)
-
 
 ;; Vector Insert/Extract Helpers
 
@@ -1548,11 +1492,19 @@
         rtx evenbmm = gen_reg_rtx (DImode), oddbmm = gen_reg_rtx (DImode);
         emit_insn (gen_rtx_SET (evenbmm, GEN_INT (0x4040101004040101)));
         emit_insn (gen_rtx_SET (oddbmm, GEN_INT (0x8080202008080202)));
+        rtx vevenbmm = evenbmm, voddbmm = oddbmm;
+        unsigned nwords = GET_MODE_SIZE (<MODE>mode) / UNITS_PER_WORD;
+        if (nwords > 1)
+          {
+            machine_mode vmode = mode_for_vector (DImode, nwords).require ();
+            vevenbmm = gen_rtx_VEC_DUPLICATE (vmode, evenbmm);
+            voddbmm = gen_rtx_VEC_DUPLICATE (vmode, oddbmm);
+          }
         rtx op2 = gen_reg_rtx (SImode);
         emit_insn (gen_andsi3 (op2, operands[2], GEN_INT (0x7)));
         rtx op1o = gen_reg_rtx (<HWIDE>mode), op1e = gen_reg_rtx (<HWIDE>mode);
-        emit_insn (gen_rtx_SET (op1o, gen_rtx_UNSPEC (<HWIDE>mode, gen_rtvec (2, operands[1], oddbmm), UNSPEC_SBMM8)));
-        emit_insn (gen_rtx_SET (op1e, gen_rtx_UNSPEC (<HWIDE>mode, gen_rtvec (2, operands[1], evenbmm), UNSPEC_SBMM8)));
+        emit_insn (gen_rtx_SET (op1o, gen_rtx_UNSPEC (<HWIDE>mode, gen_rtvec (2, operands[1], voddbmm), UNSPEC_SBMM8D)));
+        emit_insn (gen_rtx_SET (op1e, gen_rtx_UNSPEC (<HWIDE>mode, gen_rtvec (2, operands[1], vevenbmm), UNSPEC_SBMM8D)));
         rtx op0o = gen_reg_rtx (<HWIDE>mode), op0e = gen_reg_rtx (<HWIDE>mode);
         emit_insn (gen_ashl<hwide>3 (op0o, op1o, op2));
         emit_insn (gen_ashl<hwide>3 (op0e, op1e, op2));
@@ -1592,11 +1544,19 @@
         rtx evenbmm = gen_reg_rtx (DImode), oddbmm = gen_reg_rtx (DImode);
         emit_insn (gen_rtx_SET (evenbmm, GEN_INT (0x4040101004040101)));
         emit_insn (gen_rtx_SET (oddbmm, GEN_INT (0x8080202008080202)));
+        rtx vevenbmm = evenbmm, voddbmm = oddbmm;
+        unsigned nwords = GET_MODE_SIZE (<MODE>mode) / UNITS_PER_WORD;
+        if (nwords > 1)
+          {
+            machine_mode vmode = mode_for_vector (DImode, nwords).require ();
+            vevenbmm = gen_rtx_VEC_DUPLICATE (vmode, evenbmm);
+            voddbmm = gen_rtx_VEC_DUPLICATE (vmode, oddbmm);
+          }
         rtx op2 = gen_reg_rtx (SImode);
         emit_insn (gen_andsi3 (op2, operands[2], GEN_INT (0x7)));
         rtx op1o = gen_reg_rtx (<HWIDE>mode), op1e = gen_reg_rtx (<HWIDE>mode);
-        emit_insn (gen_rtx_SET (op1o, gen_rtx_UNSPEC (<HWIDE>mode, gen_rtvec (2, operands[1], oddbmm), UNSPEC_SBMM8)));
-        emit_insn (gen_rtx_SET (op1e, gen_rtx_UNSPEC (<HWIDE>mode, gen_rtvec (2, operands[1], evenbmm), UNSPEC_SBMM8)));
+        emit_insn (gen_rtx_SET (op1o, gen_rtx_UNSPEC (<HWIDE>mode, gen_rtvec (2, operands[1], voddbmm), UNSPEC_SBMM8D)));
+        emit_insn (gen_rtx_SET (op1e, gen_rtx_UNSPEC (<HWIDE>mode, gen_rtvec (2, operands[1], vevenbmm), UNSPEC_SBMM8D)));
         rtx op0o = gen_reg_rtx (<HWIDE>mode), op0e = gen_reg_rtx (<HWIDE>mode);
         emit_insn (gen_lshr<hwide>3 (op0o, op1o, op2));
         emit_insn (gen_lshr<hwide>3 (op0e, op1e, op2));
@@ -8665,7 +8625,7 @@
         rtx expand_msb = GEN_INT (0x0008000400020001ULL << 4);
         operands[0] = simplify_gen_subreg (DImode, operands[0], V4HImode, 0);
         operands[1] = simplify_gen_subreg (DImode, operands[1], V8QImode, 0);
-        emit_insn (gen_kvx_sbmm8 (operands[0], operands[1], expand_msb));
+        emit_insn (gen_kvx_sbmm8d (operands[0], operands[1], expand_msb));
       }
     else
       emit_insn (gen_kvx_zxmbhq_2 (operands[0], operands[1]));
@@ -8693,7 +8653,7 @@
         rtx expand_lsb = GEN_INT (0x0008000400020001ULL);
         operands[0] = simplify_gen_subreg (DImode, operands[0], V4HImode, 0);
         operands[1] = simplify_gen_subreg (DImode, operands[1], V8QImode, 0);
-        emit_insn (gen_kvx_sbmm8 (operands[0], operands[1], expand_lsb));
+        emit_insn (gen_kvx_sbmm8d (operands[0], operands[1], expand_lsb));
       }
     else
       emit_insn (gen_kvx_zxlbhq_2 (operands[0], operands[1]));
@@ -8741,7 +8701,7 @@
         rtx expand_msb = GEN_INT (0x0000080400000201ULL << 4);
         operands[0] = simplify_gen_subreg (DImode, operands[0], V2SImode, 0);
         operands[1] = simplify_gen_subreg (DImode, operands[1], V4HImode, 0);
-        emit_insn (gen_kvx_sbmm8 (operands[0], operands[1], expand_msb));
+        emit_insn (gen_kvx_sbmm8d (operands[0], operands[1], expand_msb));
       }
     else
       emit_insn (gen_kvx_zxmhwp_2 (operands[0], operands[1]));
@@ -8769,7 +8729,7 @@
         rtx expand_lsb = GEN_INT (0x0000080400000201ULL);
         operands[0] = simplify_gen_subreg (DImode, operands[0], V2SImode, 0);
         operands[1] = simplify_gen_subreg (DImode, operands[1], V4HImode, 0);
-        emit_insn (gen_kvx_sbmm8 (operands[0], operands[1], expand_lsb));
+        emit_insn (gen_kvx_sbmm8d (operands[0], operands[1], expand_lsb));
       }
     else
       emit_insn (gen_kvx_zxlhwp_2 (operands[0], operands[1]));

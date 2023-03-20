@@ -2980,36 +2980,6 @@
   [(set_attr "type" "alu_tiny")]
 )
 
-(define_insn "kvx_sbmm8"
-  [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
-        (unspec:DI [(match_operand:DI 1 "register_operand" "r,r,r,r")
-                    (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")] UNSPEC_SBMM8))]
-  ""
-  "sbmm8 %0 = %1, %2"
-  [(set_attr "type" "alu_thin,alu_thin,alu_thin_x,alu_thin_y")
-   (set_attr "length" "4,4,8,12")]
-)
-
-(define_insn "kvx_sbmmt8"
-  [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
-        (unspec:DI [(match_operand:DI 1 "register_operand" "r,r,r,r")
-                    (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")] UNSPEC_SBMMT8))]
-  ""
-  "sbmmt8 %0 = %1, %2"
-  [(set_attr "type" "alu_thin,alu_thin,alu_thin_x,alu_thin_y")
-   (set_attr "length" "4,4,8,12")]
-)
-
-(define_insn "kvx_stsud"
-  [(set (match_operand:DI 0 "register_operand" "=r")
-        (unspec:DI [(match_operand:DI 1 "register_operand" "r")
-                    (match_operand:DI 2 "register_operand" "r")] UNSPEC_STSU))]
-  ""
-  "stsud %0 = %1, %2"
-  [(set_attr "type" "alu_thin")
-   (set_attr "length" "4")]
-)
-
 
 ;; TI
 
