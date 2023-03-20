@@ -2020,6 +2020,7 @@
     DONE;
   })
 
+
 ;; XFNARROW44WH, XCLAMPWO
 
 (define_insn "kvx_xfnarrow44wh"
@@ -2146,6 +2147,99 @@
         (unspec:X1024 [(match_operand:X1024 1 "register_operand" "x")] UNSPEC_XMT44D))]
   ""
   "xmt44d %0 = %1"
+  [(set_attr "type" "tca_int")]
+)
+
+
+;; XANDO, XNANDO, XANDNO, XIORO, XNIORO, XIORNO, XXORO, XNXORO, XSBMM8DQ, XSBMMT8DQ
+
+(define_insn "kvx_xando"
+  [(set (match_operand:X256 0 "register_operand" "=x")
+        (and:X256 (match_operand:X256 1 "register_operand" "x")
+                  (match_operand:X256 2 "register_operand" "x")))]
+  "KV3_2"
+  "xando %0 = %1, %2"
+  [(set_attr "type" "tca_int")]
+)
+
+(define_insn "kvx_xnando"
+  [(set (match_operand:X256 0 "register_operand" "=x")
+        (ior:X256 (not:X256 (match_operand:X256 1 "register_operand" "x"))
+                  (not:X256 (match_operand:X256 2 "register_operand" "x"))))]
+  "KV3_2"
+  "xnando %0 = %1, %2"
+  [(set_attr "type" "tca_int")]
+)
+
+(define_insn "kvx_xandno"
+  [(set (match_operand:X256 0 "register_operand" "=x")
+        (and:X256 (not:X256 (match_operand:X256 1 "register_operand" "x"))
+                  (match_operand:X256 2 "register_operand" "x")))]
+  "KV3_2"
+  "xandno %0 = %1, %2"
+  [(set_attr "type" "tca_int")]
+)
+
+(define_insn "kvx_xioro"
+  [(set (match_operand:X256 0 "register_operand" "=x")
+        (ior:X256 (match_operand:X256 1 "register_operand" "x")
+                  (match_operand:X256 2 "register_operand" "x")))]
+  "KV3_2"
+  "xoro %0 = %1, %2"
+  [(set_attr "type" "tca_int")]
+)
+
+(define_insn "kvx_xnioro"
+  [(set (match_operand:X256 0 "register_operand" "=x")
+        (and:X256 (not:X256 (match_operand:X256 1 "register_operand" "x"))
+                  (not:X256 (match_operand:X256 2 "register_operand" "x"))))]
+  "KV3_2"
+  "xnoro %0 = %1, %2"
+  [(set_attr "type" "tca_int")]
+)
+
+(define_insn "kvx_xiorno"
+  [(set (match_operand:X256 0 "register_operand" "=x")
+        (ior:X256 (not:X256 (match_operand:X256 1 "register_operand" "x"))
+                  (match_operand:X256 2 "register_operand" "x")))]
+  "KV3_2"
+  "xorno %0 = %1, %2"
+  [(set_attr "type" "tca_int")]
+)
+
+(define_insn "kvx_xxoro"
+  [(set (match_operand:X256 0 "register_operand" "=x")
+        (xor:X256 (match_operand:X256 1 "register_operand" "x")
+                  (match_operand:X256 2 "register_operand" "x")))]
+  "KV3_2"
+  "xxoro %0 = %1, %2"
+  [(set_attr "type" "tca_int")]
+)
+
+(define_insn "kvx_xnxoro"
+  [(set (match_operand:X256 0 "register_operand" "=x")
+        (not:X256 (xor:X256 (match_operand:X256 1 "register_operand" "x")
+                            (match_operand:X256 2 "register_operand" "x"))))]
+  "KV3_2"
+  "xnxoro %0 = %1, %2"
+  [(set_attr "type" "tca_int")]
+)
+
+(define_insn "kvx_xsbmm8dq"
+  [(set (match_operand:X256 0 "register_operand" "=x")
+        (unspec:X256 [(match_operand:X256 1 "register_operand" "x")
+                      (match_operand:X256 2 "register_operand" "x")] UNSPEC_SBMM8D))]
+  ""
+  "xsbmm8dq %0 = %1, %2"
+  [(set_attr "type" "tca_int")]
+)
+
+(define_insn "kvx_xsbmmt8dq"
+  [(set (match_operand:X256 0 "register_operand" "=x")
+        (unspec:X256 [(match_operand:X256 1 "register_operand" "x")
+                      (match_operand:X256 2 "register_operand" "x")] UNSPEC_SBMMT8D))]
+  ""
+  "xsbmmt8dq %0 = %1, %2"
   [(set_attr "type" "tca_int")]
 )
 

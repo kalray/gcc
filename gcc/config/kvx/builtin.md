@@ -1091,7 +1091,7 @@
   "#"
   "reload_completed"
   [(set (match_dup 4)
-        (unspec:<WIDE> [(match_dup 1) (match_dup 2) (match_dup 3)] UNSPEC_SBMM8XY))
+        (unspec:<WIDE> [(match_dup 1) (match_dup 2) (match_dup 3)] UNSPEC_SBMM8DXY))
    (set (match_dup 0)
         (unspec:S64M [(subreg:S64M (match_dup 4) 0)
                       (subreg:S64M (match_dup 4) 8)] UNSPEC_XORD))]
@@ -1180,7 +1180,7 @@
   "#"
   "reload_completed"
   [(set (match_dup 4)
-        (unspec:<WIDE> [(match_dup 1) (match_dup 2) (match_dup 3)] UNSPEC_SBMM8XY))
+        (unspec:<WIDE> [(match_dup 1) (match_dup 2) (match_dup 3)] UNSPEC_SBMM8DXY))
    (set (match_dup 0)
         (unspec:S64M [(subreg:S64M (match_dup 4) 0)
                       (subreg:S64M (match_dup 4) 8)] UNSPEC_XORD))]
@@ -2575,6 +2575,16 @@
   [(set_attr "type" "alu_full")]
 )
 
+(define_insn "kvx_stsud"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (unspec:DI [(match_operand:DI 1 "register_operand" "r")
+                    (match_operand:DI 2 "register_operand" "r")] UNSPEC_STSU))]
+  ""
+  "stsud %0 = %1, %2"
+  [(set_attr "type" "alu_thin")
+   (set_attr "length" "4")]
+)
+
 (define_insn "kvx_stsudp"
   [(set (match_operand:V2DI 0 "register_operand" "=r")
         (unspec:V2DI [(match_operand:V2DI 1 "register_operand" "r")
@@ -2638,6 +2648,402 @@
                       (subreg:V4DI (match_dup 2) 32)] UNSPEC_STSU))]
   ""
   [(set_attr "type" "alu_full")]
+)
+
+
+;; SBMM8D*, SBMMT8D*
+
+(define_insn "kvx_sbmm8d"
+  [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
+        (unspec:DI [(match_operand:DI 1 "register_operand" "r,r,r,r")
+                    (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")] UNSPEC_SBMM8D))]
+  ""
+  "sbmm8 %0 = %1, %2"
+  [(set_attr "type" "alu_thin,alu_thin,alu_thin_x,alu_thin_y")
+   (set_attr "length" "4,4,8,12")]
+)
+
+(define_insn "*sbmm8d"
+  [(set (match_operand:ALL64 0 "register_operand" "=r")
+        (unspec:ALL64 [(match_operand:FITGPR 1 "register_operand" "r")
+                       (match_operand:DI 2 "register_operand" "r")] UNSPEC_SBMM8D))]
+  ""
+  "sbmm8 %0 = %1, %2"
+  [(set_attr "type" "alu_thin")]
+)
+
+(define_insn "*sbmm8d_s2"
+  [(set (match_operand:ALL64 0 "register_operand" "=r")
+        (unspec:ALL64 [(match_operand:FITGPR 1 "register_operand" "r")
+                       (match_operand:DI 2 "register_operand" "r")] UNSPEC_SBMM8DS))]
+  ""
+  "sbmm8.@ %0 = %1, %2"
+  [(set_attr "type" "alu_thin_x")
+   (set_attr "length"        "8")]
+)
+
+(define_insn "kvx_sbmm8dp"
+  [(set (match_operand:V2DI 0 "register_operand" "=r")
+        (unspec:V2DI [(match_operand:V2DI 1 "register_operand" "r")
+                      (match_operand:V2DI 2 "register_operand" "r")] UNSPEC_SBMM8D))]
+  ""
+  "sbmm8 %x0 = %x1, %x2\n\tsbmm8 %y0 = %y1, %y2"
+  [(set_attr "type" "alu_thin_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "*sbmm8dp_s1"
+  [(set (match_operand:ALL128 0 "register_operand" "=r")
+        (unspec:ALL128 [(vec_duplicate:V2DI (match_operand:DI 1 "register_operand" "r"))
+                        (match_operand:SIMD128 2 "register_operand" "r")] UNSPEC_SBMM8D))]
+  ""
+  "sbmm8 %x0 = %1, %x2\n\tsbmm8 %y0 = %1, %y2"
+  [(set_attr "type" "alu_thin_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "*sbmm8dp_s2"
+  [(set (match_operand:ALL128 0 "register_operand" "=r")
+        (unspec:ALL128 [(match_operand:SIMD128 1 "register_operand" "r")
+                        (vec_duplicate:V2DI (match_operand:DI 2 "register_operand" "r"))] UNSPEC_SBMM8D))]
+  ""
+  "sbmm8 %x0 = %x1, %2\n\tsbmm8 %y0 = %y1, %2"
+  [(set_attr "type" "alu_thin_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "*sbmm8dp_xy"
+  [(set (match_operand:ALL128 0 "register_operand" "=r")
+        (unspec:ALL128 [(match_operand:SIMD128 1 "register_operand" "r")
+                        (match_operand:DI 2 "register_operand" "r")
+                        (match_operand:DI 3 "register_operand" "r")] UNSPEC_SBMM8DXY))]
+  ""
+  "sbmm8 %x0 = %x1, %2\n\tsbmm8 %y0 = %y1, %3"
+  [(set_attr "type" "alu_thin_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_expand "kvx_sbmm8dq"
+  [(set (match_operand:V4DI 0 "register_operand" "")
+        (unspec:V4DI [(match_operand:V4DI 1 "register_operand" "")
+                      (match_operand:V4DI 2 "register_operand" "")] UNSPEC_SBMM8D))]
+  ""
+  ""
+)
+
+(define_insn_and_split "kvx_sbmm8dq_1"
+  [(set (match_operand:V4DI 0 "register_operand" "=r")
+        (unspec:V4DI [(match_operand:V4DI 1 "register_operand" "r")
+                      (match_operand:V4DI 2 "register_operand" "r")] UNSPEC_SBMM8D))]
+  "KV3_1"
+  "#"
+  "KV3_1 && reload_completed"
+  [(set (subreg:V2DI (match_dup 0) 0)
+        (unspec:V2DI [(subreg:V2DI (match_dup 1) 0)
+                      (subreg:V2DI (match_dup 2) 0)] UNSPEC_SBMM8D))
+   (set (subreg:V2DI (match_dup 0) 16)
+        (unspec:V2DI [(subreg:V2DI (match_dup 1) 16)
+                      (subreg:V2DI (match_dup 2) 16)] UNSPEC_SBMM8D))]
+  ""
+)
+
+(define_insn_and_split "*sbmm8dq_s1"
+  [(set (match_operand:ALL256 0 "register_operand" "=&r")
+        (unspec:ALL256 [(vec_duplicate:V4DI (match_operand:DI 1 "register_operand" "r"))
+                        (match_operand:SIMD256 2 "register_operand" "r")] UNSPEC_SBMM8D))]
+  "KV3_1"
+  "#"
+  "KV3_1 && reload_completed"
+  [(set (subreg:<ALL256:HALF> (match_dup 0) 0)
+        (unspec:<ALL256:HALF> [(vec_duplicate:V2DI (match_dup 1))
+                               (subreg:<SIMD256:HALF> (match_dup 2) 0)] UNSPEC_SBMM8D))
+   (set (subreg:<ALL256:HALF> (match_dup 0) 16)
+        (unspec:<ALL256:HALF> [(vec_duplicate:V2DI (match_dup 1))
+                               (subreg:<SIMD256:HALF> (match_dup 2) 16)] UNSPEC_SBMM8D))]
+  ""
+)
+
+(define_insn_and_split "*sbmm8dq_s2"
+  [(set (match_operand:ALL256 0 "register_operand" "=&r")
+        (unspec:ALL256 [(match_operand:SIMD256 1 "register_operand" "r")
+                        (vec_duplicate:V4DI (match_operand:DI 2 "register_operand" "r"))] UNSPEC_SBMM8D))]
+  "KV3_1"
+  "#"
+  "KV3_1 && reload_completed"
+  [(set (subreg:<ALL256:HALF> (match_dup 0) 0)
+        (unspec:<ALL256:HALF> [(subreg:<SIMD256:HALF> (match_dup 1) 0)
+                               (vec_duplicate:V2DI (match_dup 2))] UNSPEC_SBMM8D))
+   (set (subreg:<ALL256:HALF> (match_dup 0) 16)
+        (unspec:<ALL256:HALF> [(subreg:<SIMD256:HALF> (match_dup 1) 16)
+                               (vec_duplicate:V2DI (match_dup 2))] UNSPEC_SBMM8D))]
+  ""
+)
+
+(define_insn "kvx_sbmm8dq_2"
+  [(set (match_operand:V4DI 0 "register_operand" "=r")
+        (unspec:V4DI [(match_operand:V4DI 1 "register_operand" "r")
+                      (match_operand:V4DI 2 "register_operand" "r")] UNSPEC_SBMM8D))]
+  "KV3_2"
+  {
+    return "sbmm8 %x0 = %x1, %x2\n\tsbmm8 %y0 = %y1, %y2\n\t"
+           "sbmm8 %z0 = %z1, %z2\n\tsbmm8 %t0 = %t1, %t2";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_insn "*sbmm8dq_s1"
+  [(set (match_operand:ALL256 0 "register_operand" "=r")
+        (unspec:ALL256 [(vec_duplicate:V4DI (match_operand:DI 1 "register_operand" "r"))
+                        (match_operand:SIMD256 2 "register_operand" "r")] UNSPEC_SBMM8D))]
+  "KV3_2"
+  {
+    return "sbmm8 %x0 = %1, %x2\n\tsbmm8 %y0 = %1, %y2\n\t"
+           "sbmm8 %z0 = %1, %z2\n\tsbmm8 %t0 = %1, %t2";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_insn "*sbmm8dq_s2"
+  [(set (match_operand:ALL256 0 "register_operand" "=r")
+        (unspec:ALL256 [(match_operand:SIMD256 1 "register_operand" "r")
+                        (vec_duplicate:V4DI (match_operand:DI 2 "register_operand" "r"))] UNSPEC_SBMM8D))]
+  "KV3_2"
+  {
+    return "sbmm8 %x0 = %x1, %2\n\tsbmm8 %y0 = %y1, %2\n\t"
+           "sbmm8 %z0 = %z1, %2\n\tsbmm8 %t0 = %t1, %2";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_expand "kvx_sbmm8do"
+  [(set (match_operand:V8DI 0 "register_operand" "")
+        (unspec:V8DI [(match_operand:V8DI 1 "register_operand" "")
+                      (match_operand:V8DI 2 "register_operand" "")] UNSPEC_SBMM8D))]
+  ""
+  ""
+)
+
+(define_insn_and_split "kvx_sbmm8do_1"
+  [(set (match_operand:V8DI 0 "register_operand" "=r")
+        (unspec:V8DI [(match_operand:V8DI 1 "register_operand" "r")
+                      (match_operand:V8DI 2 "register_operand" "r")] UNSPEC_SBMM8D))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V2DI (match_dup 0) 0)
+        (unspec:V2DI [(subreg:V2DI (match_dup 1) 0)
+                      (subreg:V2DI (match_dup 2) 0)] UNSPEC_SBMM8D))
+   (set (subreg:V2DI (match_dup 0) 16)
+        (unspec:V2DI [(subreg:V2DI (match_dup 1) 16)
+                      (subreg:V2DI (match_dup 2) 16)] UNSPEC_SBMM8D))
+   (set (subreg:V2DI (match_dup 0) 32)
+        (unspec:V2DI [(subreg:V2DI (match_dup 1) 32)
+                      (subreg:V2DI (match_dup 2) 32)] UNSPEC_SBMM8D))
+   (set (subreg:V2DI (match_dup 0) 48)
+        (unspec:V2DI [(subreg:V2DI (match_dup 1) 48)
+                      (subreg:V2DI (match_dup 2) 48)] UNSPEC_SBMM8D))]
+  ""
+)
+
+(define_insn_and_split "kvx_sbmm8do_2"
+  [(set (match_operand:V8DI 0 "register_operand" "=r")
+        (unspec:V8DI [(match_operand:V8DI 1 "register_operand" "r")
+                      (match_operand:V8DI 2 "register_operand" "r")] UNSPEC_SBMM8D))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V4DI (match_dup 0) 0)
+        (unspec:V4DI [(subreg:V4DI (match_dup 1) 0)
+                      (subreg:V4DI (match_dup 2) 0)] UNSPEC_SBMM8D))
+   (set (subreg:V4DI (match_dup 0) 32)
+        (unspec:V4DI [(subreg:V4DI (match_dup 1) 32)
+                      (subreg:V4DI (match_dup 2) 32)] UNSPEC_SBMM8D))]
+  ""
+)
+
+
+(define_insn "kvx_sbmmt8d"
+  [(set (match_operand:DI 0 "register_operand" "=r,r,r,r")
+        (unspec:DI [(match_operand:DI 1 "register_operand" "r,r,r,r")
+                    (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")] UNSPEC_SBMMT8D))]
+  ""
+  "sbmmt8 %0 = %1, %2"
+  [(set_attr "type" "alu_thin,alu_thin,alu_thin_x,alu_thin_y")
+   (set_attr "length" "4,4,8,12")]
+)
+
+(define_insn "kvx_sbmmt8dp"
+  [(set (match_operand:V2DI 0 "register_operand" "=r")
+        (unspec:V2DI [(match_operand:V2DI 1 "register_operand" "r")
+                      (match_operand:V2DI 2 "register_operand" "r")] UNSPEC_SBMMT8D))]
+  ""
+  "sbmmt8 %x0 = %x1, %x2\n\tsbmmt8 %y0 = %y1, %y2"
+  [(set_attr "type" "alu_thin_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "*sbmmt8dp_s1"
+  [(set (match_operand:ALL128 0 "register_operand" "=r")
+        (unspec:ALL128 [(vec_duplicate:V2DI (match_operand:DI 1 "register_operand" "r"))
+                        (match_operand:SIMD128 2 "register_operand" "r")] UNSPEC_SBMMT8D))]
+  ""
+  "sbmmt8 %x0 = %1, %x2\n\tsbmmt8 %y0 = %1, %y2"
+  [(set_attr "type" "alu_thin_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "*sbmmt8dp_s2"
+  [(set (match_operand:ALL128 0 "register_operand" "=r")
+        (unspec:ALL128 [(match_operand:SIMD128 1 "register_operand" "r")
+                        (vec_duplicate:V2DI (match_operand:DI 2 "register_operand" "r"))] UNSPEC_SBMMT8D))]
+  ""
+  "sbmmt8 %x0 = %x1, %2\n\tsbmmt8 %y0 = %y1, %2"
+  [(set_attr "type" "alu_thin_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_expand "kvx_sbmmt8dq"
+  [(set (match_operand:V4DI 0 "register_operand" "")
+        (unspec:V4DI [(match_operand:V4DI 1 "register_operand" "")
+                      (match_operand:V4DI 2 "register_operand" "")] UNSPEC_SBMMT8D))]
+  ""
+  ""
+)
+
+(define_insn_and_split "kvx_sbmmt8dq_1"
+  [(set (match_operand:V4DI 0 "register_operand" "=r")
+        (unspec:V4DI [(match_operand:V4DI 1 "register_operand" "r")
+                      (match_operand:V4DI 2 "register_operand" "r")] UNSPEC_SBMMT8D))]
+  "KV3_1"
+  "#"
+  "KV3_1 && reload_completed"
+  [(set (subreg:V2DI (match_dup 0) 0)
+        (unspec:V2DI [(subreg:V2DI (match_dup 1) 0)
+                      (subreg:V2DI (match_dup 2) 0)] UNSPEC_SBMMT8D))
+   (set (subreg:V2DI (match_dup 0) 16)
+        (unspec:V2DI [(subreg:V2DI (match_dup 1) 16)
+                      (subreg:V2DI (match_dup 2) 16)] UNSPEC_SBMMT8D))]
+  ""
+)
+
+(define_insn_and_split "*sbmmt8dq_s1"
+  [(set (match_operand:ALL256 0 "register_operand" "=&r")
+        (unspec:ALL256 [(vec_duplicate:V4DI (match_operand:DI 1 "register_operand" "r"))
+                        (match_operand:SIMD256 2 "register_operand" "r")] UNSPEC_SBMMT8D))]
+  "KV3_1"
+  "#"
+  "KV3_1 && reload_completed"
+  [(set (subreg:<ALL256:HALF> (match_dup 0) 0)
+        (unspec:<ALL256:HALF> [(vec_duplicate:V2DI (match_dup 1))
+                               (subreg:<SIMD256:HALF> (match_dup 2) 0)] UNSPEC_SBMMT8D))
+   (set (subreg:<ALL256:HALF> (match_dup 0) 16)
+        (unspec:<ALL256:HALF> [(vec_duplicate:V2DI (match_dup 1))
+                               (subreg:<SIMD256:HALF> (match_dup 2) 16)] UNSPEC_SBMMT8D))]
+  ""
+)
+
+(define_insn_and_split "*sbmmt8dq_s2"
+  [(set (match_operand:ALL256 0 "register_operand" "=&r")
+        (unspec:ALL256 [(match_operand:SIMD256 1 "register_operand" "r")
+                        (vec_duplicate:V4DI (match_operand:DI 2 "register_operand" "r"))] UNSPEC_SBMMT8D))]
+  "KV3_1"
+  "#"
+  "KV3_1 && reload_completed"
+  [(set (subreg:<ALL256:HALF> (match_dup 0) 0)
+        (unspec:<ALL256:HALF> [(subreg:<SIMD256:HALF> (match_dup 1) 0)
+                               (vec_duplicate:V2DI (match_dup 2))] UNSPEC_SBMMT8D))
+   (set (subreg:<ALL256:HALF> (match_dup 0) 16)
+        (unspec:<ALL256:HALF> [(subreg:<SIMD256:HALF> (match_dup 1) 16)
+                               (vec_duplicate:V2DI (match_dup 2))] UNSPEC_SBMMT8D))]
+  ""
+)
+
+(define_insn "kvx_sbmmt8dq_2"
+  [(set (match_operand:V4DI 0 "register_operand" "=r")
+        (unspec:V4DI [(match_operand:V4DI 1 "register_operand" "r")
+                      (match_operand:V4DI 2 "register_operand" "r")] UNSPEC_SBMMT8D))]
+  "KV3_2"
+  {
+    return "sbmmt8 %x0 = %x1, %x2\n\tsbmmt8 %y0 = %y1, %y2\n\t"
+           "sbmmt8 %z0 = %z1, %z2\n\tsbmmt8 %t0 = %t1, %t2";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_insn "*sbmmt8dq_s1"
+  [(set (match_operand:ALL256 0 "register_operand" "=r")
+        (unspec:ALL256 [(vec_duplicate:V4DI (match_operand:DI 1 "register_operand" "r"))
+                        (match_operand:SIMD256 2 "register_operand" "r")] UNSPEC_SBMMT8D))]
+  "KV3_2"
+  {
+    return "sbmmt8 %x0 = %1, %x2\n\tsbmmt8 %y0 = %1, %y2\n\t"
+           "sbmmt8 %z0 = %1, %z2\n\tsbmmt8 %t0 = %1, %t2";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_insn "*sbmmt8dq_s2"
+  [(set (match_operand:ALL256 0 "register_operand" "=r")
+        (unspec:ALL256 [(match_operand:SIMD256 1 "register_operand" "r")
+                        (vec_duplicate:V4DI (match_operand:DI 2 "register_operand" "r"))] UNSPEC_SBMMT8D))]
+  "KV3_2"
+  {
+    return "sbmmt8 %x0 = %x1, %2\n\tsbmmt8 %y0 = %y1, %2\n\t"
+           "sbmmt8 %z0 = %z1, %2\n\tsbmmt8 %t0 = %t1, %2";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_expand "kvx_sbmmt8do"
+  [(set (match_operand:V8DI 0 "register_operand" "")
+        (unspec:V8DI [(match_operand:V8DI 1 "register_operand" "")
+                      (match_operand:V8DI 2 "register_operand" "")] UNSPEC_SBMMT8D))]
+  ""
+  ""
+)
+
+(define_insn_and_split "kvx_sbmmt8do_1"
+  [(set (match_operand:V8DI 0 "register_operand" "=r")
+        (unspec:V8DI [(match_operand:V8DI 1 "register_operand" "r")
+                      (match_operand:V8DI 2 "register_operand" "r")] UNSPEC_SBMMT8D))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V2DI (match_dup 0) 0)
+        (unspec:V2DI [(subreg:V2DI (match_dup 1) 0)
+                      (subreg:V2DI (match_dup 2) 0)] UNSPEC_SBMMT8D))
+   (set (subreg:V2DI (match_dup 0) 16)
+        (unspec:V2DI [(subreg:V2DI (match_dup 1) 16)
+                      (subreg:V2DI (match_dup 2) 16)] UNSPEC_SBMMT8D))
+   (set (subreg:V2DI (match_dup 0) 32)
+        (unspec:V2DI [(subreg:V2DI (match_dup 1) 32)
+                      (subreg:V2DI (match_dup 2) 32)] UNSPEC_SBMMT8D))
+   (set (subreg:V2DI (match_dup 0) 48)
+        (unspec:V2DI [(subreg:V2DI (match_dup 1) 48)
+                      (subreg:V2DI (match_dup 2) 48)] UNSPEC_SBMMT8D))]
+  ""
+)
+
+(define_insn_and_split "kvx_sbmmt8do_2"
+  [(set (match_operand:V8DI 0 "register_operand" "=r")
+        (unspec:V8DI [(match_operand:V8DI 1 "register_operand" "r")
+                      (match_operand:V8DI 2 "register_operand" "r")] UNSPEC_SBMMT8D))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V4DI (match_dup 0) 0)
+        (unspec:V4DI [(subreg:V4DI (match_dup 1) 0)
+                      (subreg:V4DI (match_dup 2) 0)] UNSPEC_SBMMT8D))
+   (set (subreg:V4DI (match_dup 0) 32)
+        (unspec:V4DI [(subreg:V4DI (match_dup 1) 32)
+                      (subreg:V4DI (match_dup 2) 32)] UNSPEC_SBMMT8D))]
+  ""
 )
 
 

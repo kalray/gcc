@@ -706,8 +706,14 @@ enum kvx_builtin
   KVX_BUILTIN_STSUDQ,
   KVX_BUILTIN_STSUDO,
 
-  KVX_BUILTIN_SBMM8,
-  KVX_BUILTIN_SBMMT8,
+  KVX_BUILTIN_SBMM8D,
+  KVX_BUILTIN_SBMM8DP,
+  KVX_BUILTIN_SBMM8DQ,
+  KVX_BUILTIN_SBMM8DO,
+  KVX_BUILTIN_SBMMT8D,
+  KVX_BUILTIN_SBMMT8DP,
+  KVX_BUILTIN_SBMMT8DQ,
+  KVX_BUILTIN_SBMMT8DO,
 
   KVX_BUILTIN_LBZU,
   KVX_BUILTIN_LBSU,
@@ -882,6 +888,16 @@ enum kvx_builtin
   KVX_BUILTIN_XFMMA444HW,
   KVX_BUILTIN_XFMMA484HW,
   KVX_BUILTIN_XFNARROW44WH,
+  KVX_BUILTIN_XANDO,
+  KVX_BUILTIN_XNANDO,
+  KVX_BUILTIN_XANDNO,
+  KVX_BUILTIN_XIORO,
+  KVX_BUILTIN_XNIORO,
+  KVX_BUILTIN_XIORNO,
+  KVX_BUILTIN_XXORO,
+  KVX_BUILTIN_XNXORO,
+  KVX_BUILTIN_XSBMM8DQ,
+  KVX_BUILTIN_XSBMMT8DQ,
   KVX_BUILTIN_XCLAMPWO,
   KVX_BUILTIN_XTRUNC48WB,
   KVX_BUILTIN_XSX48BW,
@@ -894,6 +910,7 @@ enum kvx_builtin
   KVX_BUILTIN_XSENDO,
   KVX_BUILTIN_XRECVO,
   KVX_BUILTIN_XSENDRECVO,
+
   KVX_BUILTIN_XSWAP256,
 
   KVX_BUILTIN__COUNT
@@ -1754,8 +1771,16 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (STSUDQ, "stsudq", V4DI, V4DI, V4DI); // Vector
   ADD_KVX_BUILTIN (STSUDO, "stsudo", V8DI, V8DI, V8DI); // Vector
 
-  ADD_KVX_BUILTIN (SBMM8, "sbmm8", UINT64, UINT64, UINT64); // Scalar
-  ADD_KVX_BUILTIN (SBMMT8, "sbmmt8", UINT64, UINT64, UINT64); // Scalar
+  ADD_KVX_BUILTIN (SBMM8D, "sbmm8", UINT64, UINT64, UINT64); // Deprecated
+  ADD_KVX_BUILTIN (SBMM8D, "sbmm8d", UINT64, UINT64, UINT64); // Scalar
+  ADD_KVX_BUILTIN (SBMM8DP, "sbmm8dp", V2DI, V2DI, V2DI); // Vector
+  ADD_KVX_BUILTIN (SBMM8DQ, "sbmm8dq", V4DI, V4DI, V4DI); // Vector
+  ADD_KVX_BUILTIN (SBMM8DO, "sbmm8do", V8DI, V8DI, V8DI); // Vector
+  ADD_KVX_BUILTIN (SBMMT8D, "sbmmt8", UINT64, UINT64, UINT64); // Deprecated
+  ADD_KVX_BUILTIN (SBMMT8D, "sbmmt8d", UINT64, UINT64, UINT64); // Scalar
+  ADD_KVX_BUILTIN (SBMMT8DP, "sbmmt8dp", V2DI, V2DI, V2DI); // Vector
+  ADD_KVX_BUILTIN (SBMMT8DQ, "sbmmt8dq", V4DI, V4DI, V4DI); // Vector
+  ADD_KVX_BUILTIN (SBMMT8DO, "sbmmt8do", V8DI, V8DI, V8DI); // Vector
 
   ADD_KVX_BUILTIN (LBZU, "lbzu", UINT8, CVPTR); // Deprecated
   ADD_KVX_BUILTIN (LBSU, "lbsu", INT8, CVPTR); // Deprecated
@@ -1933,6 +1958,16 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (XFMMA444HW, "xfmma444hw", X512, X256, X256, X512, FLOATINGS); // Extension kv3-1
   ADD_KVX_BUILTIN (XFMMA484HW, "xfmma484hw", X512, X512, X512, X512, FLOATINGS); // Extension
   ADD_KVX_BUILTIN (XFNARROW44WH, "xfnarrow44wh", X256, X512, FLOATINGS); // Extension kv3-2
+  ADD_KVX_BUILTIN (XANDO, "xando", X256, X256, X256); // Extension kv3-2
+  ADD_KVX_BUILTIN (XNANDO, "xnando", X256, X256, X256); // Extension kv3-2
+  ADD_KVX_BUILTIN (XANDNO, "xandno", X256, X256, X256); // Extension kv3-2
+  ADD_KVX_BUILTIN (XIORO, "xioro", X256, X256, X256); // Extension kv3-2
+  ADD_KVX_BUILTIN (XNIORO, "xnioro", X256, X256, X256); // Extension kv3-2
+  ADD_KVX_BUILTIN (XIORNO, "xiorno", X256, X256, X256); // Extension kv3-2
+  ADD_KVX_BUILTIN (XXORO, "xxoro", X256, X256, X256); // Extension kv3-2
+  ADD_KVX_BUILTIN (XNXORO, "xnxoro", X256, X256, X256); // Extension kv3-2
+  ADD_KVX_BUILTIN (XSBMM8DQ, "xsbmm8dq", X256, X256, X256); // Extension kv3-2
+  ADD_KVX_BUILTIN (XSBMMT8DQ, "xsbmmt8dq", X256, X256, X256); // Extension kv3-2
   ADD_KVX_BUILTIN (XCLAMPWO, "xclampwo", X256, X256, X256, X256); // Extension kv3-2
   ADD_KVX_BUILTIN (XTRUNC48WB, "xtrunc48wb", X256, X1024); // Extension kv3-2
   ADD_KVX_BUILTIN (XSX48BW, "xsx48bw", X1024, X256); // Extension kv3-2
@@ -3830,8 +3865,14 @@ KVX_EXPAND_BUILTIN_3_STANDARD (stsudp, kvx_stsudp, V2DImode, V2DImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (stsudq, kvx_stsudq, V4DImode, V4DImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (stsudo, kvx_stsudo, V8DImode, V8DImode)
 
-KVX_EXPAND_BUILTIN_3_STANDARD (sbmm8, kvx_sbmm8, DImode, DImode)
-KVX_EXPAND_BUILTIN_3_STANDARD (sbmmt8, kvx_sbmmt8, DImode, DImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (sbmm8d, kvx_sbmm8d, DImode, DImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (sbmm8dp, kvx_sbmm8dp, V2DImode, V2DImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (sbmm8dq, kvx_sbmm8dq, V4DImode, V4DImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (sbmm8do, kvx_sbmm8do, V8DImode, V8DImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (sbmmt8d, kvx_sbmmt8d, DImode, DImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (sbmmt8dp, kvx_sbmmt8dp, V2DImode, V2DImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (sbmmt8dq, kvx_sbmmt8dq, V4DImode, V4DImode)
+KVX_EXPAND_BUILTIN_3_STANDARD (sbmmt8do, kvx_sbmmt8do, V8DImode, V8DImode)
 
 #define KVX_EXPAND_BUILTIN_LOADU(name, name2, tmode, mmode)                    \
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
@@ -4412,6 +4453,18 @@ KVX_EXPAND_BUILTIN_4_FLOATINGS (xmaddifwo, kvx_xmaddifwo, X256mode, X256mode)
 KVX_EXPAND_BUILTIN_4_FLOATINGS (xmsbfifwo, kvx_xmsbfifwo, X256mode, X256mode)
 KVX_EXPAND_BUILTIN_4_FLOATINGS (xffma44hw, kvx_xffma44hw, X512mode, X256mode)
 KVX_EXPAND_BUILTIN_2_FLOATINGS (xfnarrow44wh, kvx_xfnarrow44wh, X256mode, X512mode)
+
+KVX_EXPAND_BUILTIN_3_STANDARD (xando, kvx_xando, X256mode, X256mode)
+KVX_EXPAND_BUILTIN_3_STANDARD (xnando, kvx_xnando, X256mode, X256mode)
+KVX_EXPAND_BUILTIN_3_STANDARD (xandno, kvx_xandno, X256mode, X256mode)
+KVX_EXPAND_BUILTIN_3_STANDARD (xioro, kvx_xioro, X256mode, X256mode)
+KVX_EXPAND_BUILTIN_3_STANDARD (xnioro, kvx_xnioro, X256mode, X256mode)
+KVX_EXPAND_BUILTIN_3_STANDARD (xiorno, kvx_xiorno, X256mode, X256mode)
+KVX_EXPAND_BUILTIN_3_STANDARD (xxoro, kvx_xxoro, X256mode, X256mode)
+KVX_EXPAND_BUILTIN_3_STANDARD (xnxoro, kvx_xnxoro, X256mode, X256mode)
+KVX_EXPAND_BUILTIN_3_STANDARD (xsbmm8dq, kvx_xsbmm8dq, X256mode, X256mode)
+KVX_EXPAND_BUILTIN_3_STANDARD (xsbmmt8dq, kvx_xsbmmt8dq, X256mode, X256mode)
+
 KVX_EXPAND_BUILTIN_4_STANDARD (xclampwo, kvx_xclampwo, X256mode, X256mode)
 KVX_EXPAND_BUILTIN_2_STANDARD (xtrunc48wb, kvx_xtrunc48wb, X256mode, X1024mode)
 KVX_EXPAND_BUILTIN_2_STANDARD (xsx48bw, kvx_xsx48bw, X1024mode, X256mode)
@@ -5120,8 +5173,14 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_STSUDQ: return kvx_expand_builtin_stsudq (target, exp);
     case KVX_BUILTIN_STSUDO: return kvx_expand_builtin_stsudo (target, exp);
 
-    case KVX_BUILTIN_SBMM8: return kvx_expand_builtin_sbmm8 (target, exp);
-    case KVX_BUILTIN_SBMMT8: return kvx_expand_builtin_sbmmt8 (target, exp);
+    case KVX_BUILTIN_SBMM8D: return kvx_expand_builtin_sbmm8d (target, exp);
+    case KVX_BUILTIN_SBMM8DP: return kvx_expand_builtin_sbmm8dp (target, exp);
+    case KVX_BUILTIN_SBMM8DQ: return kvx_expand_builtin_sbmm8dq (target, exp);
+    case KVX_BUILTIN_SBMM8DO: return kvx_expand_builtin_sbmm8do (target, exp);
+    case KVX_BUILTIN_SBMMT8D: return kvx_expand_builtin_sbmmt8d (target, exp);
+    case KVX_BUILTIN_SBMMT8DP: return kvx_expand_builtin_sbmmt8dp (target, exp);
+    case KVX_BUILTIN_SBMMT8DQ: return kvx_expand_builtin_sbmmt8dq(target, exp);
+    case KVX_BUILTIN_SBMMT8DO: return kvx_expand_builtin_sbmmt8do (target, exp);
 
     case KVX_BUILTIN_LBZU: return kvx_expand_builtin_lbzu (target, exp);
     case KVX_BUILTIN_LBSU: return kvx_expand_builtin_lbsu (target, exp);
@@ -5296,6 +5355,18 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_XFMMA444HW: return kvx_expand_builtin_xfmma444hw (target, exp);
     case KVX_BUILTIN_XFMMA484HW: return kvx_expand_builtin_xfmma484hw (target, exp);
     case KVX_BUILTIN_XFNARROW44WH: return kvx_expand_builtin_xfnarrow44wh (target, exp);
+
+    case KVX_BUILTIN_XANDO: return kvx_expand_builtin_xando (target, exp);
+    case KVX_BUILTIN_XNANDO: return kvx_expand_builtin_xnando (target, exp);
+    case KVX_BUILTIN_XANDNO: return kvx_expand_builtin_xandno (target, exp);
+    case KVX_BUILTIN_XIORO: return kvx_expand_builtin_xioro (target, exp);
+    case KVX_BUILTIN_XNIORO: return kvx_expand_builtin_xnioro (target, exp);
+    case KVX_BUILTIN_XIORNO: return kvx_expand_builtin_xiorno (target, exp);
+    case KVX_BUILTIN_XXORO: return kvx_expand_builtin_xxoro (target, exp);
+    case KVX_BUILTIN_XNXORO: return kvx_expand_builtin_xnxoro (target, exp);
+    case KVX_BUILTIN_XSBMM8DQ: return kvx_expand_builtin_xsbmm8dq (target, exp);
+    case KVX_BUILTIN_XSBMMT8DQ: return kvx_expand_builtin_xsbmmt8dq (target, exp);
+
     case KVX_BUILTIN_XCLAMPWO: return kvx_expand_builtin_xclampwo (target, exp);
     case KVX_BUILTIN_XTRUNC48WB: return kvx_expand_builtin_xtrunc48wb (target, exp);
     case KVX_BUILTIN_XSX48BW: return kvx_expand_builtin_xsx48bw (target, exp);

@@ -3610,10 +3610,10 @@ kvx_expand_vector_extract (rtx target, rtx source, rtx where)
   gcc_unreachable ();
 }
 
-#define KVX_SBMM8_SPLATB0D 0x0101010101010101ULL
-#define KVX_SBMM8_SPLATH0D 0x0201020102010201ULL
-#define KVX_SBMM8_SPLATW0D 0x0804020108040201ULL
-#define KVX_SBMM8_IDENTITY 0x8040201008040201ULL
+#define KVX_SBMM8D_SPLATB0D 0x0101010101010101ULL
+#define KVX_SBMM8D_SPLATH0D 0x0201020102010201ULL
+#define KVX_SBMM8D_SPLATW0D 0x0804020108040201ULL
+#define KVX_SBMM8D_IDENTITY 0x8040201008040201ULL
 
 /* Splat a value of mode smaller than a word into a word size vector chunk.
  * This is used both for initializing a vector from a scalar, and for the
@@ -3637,21 +3637,21 @@ kvx_expand_chunk_splat (rtx target, rtx source, machine_mode inner_mode)
   switch (inner_size)
     {
     case 1:
-      constant = KVX_SBMM8_SPLATB0D;
+      constant = KVX_SBMM8D_SPLATB0D;
       break;
     case 2:
-      constant = KVX_SBMM8_SPLATH0D;
+      constant = KVX_SBMM8D_SPLATH0D;
       break;
     case 4:
-      constant = KVX_SBMM8_SPLATW0D;
+      constant = KVX_SBMM8D_SPLATW0D;
       break;
     default:
       gcc_unreachable ();
     }
   rtx op2 = force_reg (DImode, GEN_INT (constant));
   rtx op1 = gen_lowpart (inner_mode, source);
-  rtx sbmm8 = gen_rtx_UNSPEC (chunk_mode, gen_rtvec (2, op1, op2), UNSPEC_SBMM8);
-  emit_insn (gen_rtx_SET (target, sbmm8));
+  rtx sbmm8d = gen_rtx_UNSPEC (chunk_mode, gen_rtvec (2, op1, op2), UNSPEC_SBMM8D);
+  emit_insn (gen_rtx_SET (target, sbmm8d));
 }
 
 /* Helper function for kvx_expand_vector_init () in case inner mode size < 64 bits.
@@ -3824,7 +3824,7 @@ kvx_expand_vector_init (rtx target, rtx source)
     }
 }
 
-/* Collect the SBMM8 immdiate values to implement a swizzle or a shuffle.
+/* Collect the SBMM8D immdiate values to implement a swizzle or a shuffle.
    As the largest vector type is 64 bytes and the word is 8 bytes, there
    are at most 8 words to operate in the destination vector. This corresponds
    to the row [8] dimension in values. A shuffle has up to two vector inputs,
@@ -3879,7 +3879,7 @@ kvx_expand_vec_perm_const_emit_move (rtx target, rtx source1, rtx source2,
 }
 
 /* Special case of kvx_expand_vec_perm_const_emit with INSF and MOVE.
-   Logic based on the SBMM8 constants that have at most 1 bit set per byte. */
+   Logic based on the SBMM8D constants that have at most 1 bit set per byte. */
 rtx
 kvx_expand_vec_perm_const_emit_insf (rtx target, rtx source1, rtx source2,
 				     int dest, int orig1, int orig2)
@@ -3891,13 +3891,13 @@ kvx_expand_vec_perm_const_emit_insf (rtx target, rtx source1, rtx source2,
   HOST_WIDE_INT constanti = 0;
   int origm = -1, origi = -1;
 
-  // The move constant is the one with a subset of bits of KVX_SBMM8_IDENTITY.
-  if ((constant1 & ((HOST_WIDE_INT) KVX_SBMM8_IDENTITY)) == constant1)
+  // The move constant is the one with a subset of bits of KVX_SBMM8D_IDENTITY.
+  if ((constant1 & ((HOST_WIDE_INT) KVX_SBMM8D_IDENTITY)) == constant1)
     {
       origm = orig1, origi = orig2;
       constanti = constant2;
     }
-  else if ((constant2 & ((HOST_WIDE_INT) KVX_SBMM8_IDENTITY)) == constant2)
+  else if ((constant2 & ((HOST_WIDE_INT) KVX_SBMM8D_IDENTITY)) == constant2)
     {
       origm = orig2, origi = orig1;
       constanti = constant1;
@@ -3906,13 +3906,13 @@ kvx_expand_vec_perm_const_emit_insf (rtx target, rtx source1, rtx source2,
   if (!constanti)
     return NULL_RTX;
 
-  // The insert constant must be KVX_SBMM8_IDENTITY shifted left and truncated.
+  // The insert constant must be KVX_SBMM8D_IDENTITY shifted left and truncated.
   int shift = __builtin_ctzll (constanti);
   int count = __builtin_popcountll (constanti);
   HOST_WIDE_INT maski
-    = (-1ULL >> __builtin_clzll (constanti)) & (KVX_SBMM8_IDENTITY << shift);
+    = (-1ULL >> __builtin_clzll (constanti)) & (KVX_SBMM8D_IDENTITY << shift);
 
-  // For speed we prevent the generation of extract as SBMM8 is faster.
+  // For speed we prevent the generation of extract as SBMM8D is faster.
   //if (optimize_insn_for_speed_p () && (shift & 7))
     //return NULL_RTX;
 
@@ -3951,7 +3951,7 @@ kvx_expand_vec_perm_const_emit_insf (rtx target, rtx source1, rtx source2,
 }
 
 /* Implements swizzle (NULL source2) or shuffle based on kvx_expand_vec_perm.
-   Before implementing a generic SBMM8-XORD scheme, we special-case the target
+   Before implementing a generic SBMM8D-XORD scheme, we special-case the target
    words that can be computed using a MOVE alone or followed by EXTFZ, INSF. */
 void
 kvx_expand_vec_perm_const_emit (rtx target, rtx source1, rtx source2)
@@ -3969,7 +3969,7 @@ kvx_expand_vec_perm_const_emit (rtx target, rtx source1, rtx source2)
 	  HOST_WIDE_INT constant = kvx_expand_vec_perm.values[orig][dest].dword;
 	  if (constant)
 	    {
-	      if (constant == (HOST_WIDE_INT) KVX_SBMM8_IDENTITY)
+	      if (constant == (HOST_WIDE_INT) KVX_SBMM8D_IDENTITY)
 		orig0 = orig;
 	      else if (orig1 < 0)
 		orig1 = orig;
@@ -4007,7 +4007,7 @@ kvx_expand_vec_perm_const_emit (rtx target, rtx source1, rtx source2)
 	      int offset = orig >= nwords? orig - nwords: orig;
 	      rtx op1 = simplify_gen_subreg (DImode, source, vector_mode, offset*UNITS_PER_WORD);
 	      rtx op2 = force_reg (DImode, GEN_INT (constant));
-	      emit_insn (gen_kvx_sbmm8 (tmp, op1, op2));
+	      emit_insn (gen_kvx_sbmm8d (tmp, op1, op2));
 	      emit_insn (gen_xordi3 (acc, acc, tmp));
 	    }
 	}
@@ -4019,7 +4019,7 @@ kvx_expand_vec_perm_const_emit (rtx target, rtx source1, rtx source2)
 
 /* Called by the vec_perm_const<mode> standard pattern.
    First step identifies whether this is a swizzle (one source) or a shuffle.
-   Second step fills the kvx_expand_vec_perm structure with SBMM8 immediates.
+   Second step fills the kvx_expand_vec_perm structure with SBMM8D immediates.
    Third step emits the permutation with (kvx_expand_vec_perm_const_emit).  */
 bool
 kvx_expand_vec_perm_const (rtx target, rtx source1, rtx source2, rtx selector)
@@ -4054,8 +4054,8 @@ kvx_expand_vec_perm_const (rtx target, rtx source1, rtx source2, rtx selector)
       which = 1;
     }
 
-  // Use the kvx_expand_vec_perm.from[] array to compute the SBMM8 constants.
-  // There is one SBMM8 constant per origin word and per destination word.
+  // Use the kvx_expand_vec_perm.from[] array to compute the SBMM8D constants.
+  // There is one SBMM8D constant per origin word and per destination word.
   for (int i = 0; i < nwords; i++)
     {
       for (int j = 0; j < nunits*ibytes; j++)
@@ -6363,10 +6363,10 @@ kvx_rtx_costs (rtx x, machine_mode mode, int outer_code,
     case UNSPEC:
       switch (XINT (x, 1))
 	{
-	case UNSPEC_SBMM8:
-	case UNSPEC_SBMMT8:
-	case UNSPEC_SBMM8S:
-	case UNSPEC_SBMM8XY:
+	case UNSPEC_SBMM8D:
+	case UNSPEC_SBMMT8D:
+	case UNSPEC_SBMM8DS:
+	case UNSPEC_SBMM8DXY:
 	case UNSPEC_SRS:
 	  *total = kvx_type_tiny_cost (nwords, 0, speed);
 	  goto end_recurse;

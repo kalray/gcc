@@ -40,8 +40,8 @@
         UNSPEC_GET
         UNSPEC_SET
         UNSPEC_STSU
-        UNSPEC_SBMM8
-        UNSPEC_SBMMT8
+        UNSPEC_SBMM8D
+        UNSPEC_SBMMT8D
         UNSPEC_LOADU
         UNSPEC_WAITIT
         UNSPEC_WFXL
@@ -64,8 +64,8 @@
         UNSPEC_ZXWDP
         UNSPEC_SXWDP
         UNSPEC_QXWDP
-        UNSPEC_SBMM8S
-        UNSPEC_SBMM8XY
+        UNSPEC_SBMM8DS
+        UNSPEC_SBMM8DXY
         UNSPEC_TRUNC
         UNSPEC_TRUNCL
         UNSPEC_TRUNCM
