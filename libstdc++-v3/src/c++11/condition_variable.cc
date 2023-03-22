@@ -36,7 +36,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
   condition_variable::~condition_variable() noexcept = default;
 
   void
-  condition_variable::wait(unique_lock<mutex>& __lock)
+  condition_variable::wait(unique_lock<mutex>& __lock) noexcept
   {
     _M_cond.wait(*__lock.mutex());
   }
