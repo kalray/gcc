@@ -465,11 +465,6 @@ options for <code class="option">--enable-libstdcxx-allocator</code> were remove
 For the <code class="literal">new</code> option, <code class="classname">std::allocator</code>
 no longer derives from <code class="classname">__gnu_cxx::new_allocator</code>;
 they both derive from <code class="classname">std::__new_allocator</code> instead.
-</p><p>
-<code class="function">std::condition_variable::wait</code> changed to be
-<code class="code">noexcept(false)</code> to allow thread cancellation exceptions to
-be thrown from <code class="function">pthread_cond_wait</code> without aborting
-the process.
 </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="api.rel_123"></a><code class="constant">12.3</code></h3></div></div></div><p>
 Calling a <code class="code">std::bind</code> result as volatile is ill-formed for C++20
 and later.
