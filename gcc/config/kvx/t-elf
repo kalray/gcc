@@ -1,4 +1,9 @@
 MULTILIB_EXTRA_OPTS = fdata-sections ffunction-sections
+ifeq ($(BUILD_FOR_KV4),true)
 MULTILIB_OPTIONS = m32 march=kv3-2 march=kv4-1
 MULTILIB_DIRNAMES = 32 kv3-2 kv4-1
 MULTILIB_EXCEPTIONS = *kv3-2/*kv4-1
+else
+MULTILIB_OPTIONS = m32 march=kv3-2
+MULTILIB_DIRNAMES = 32 kv3-2
+endif # BUILD_FOR_KV4
