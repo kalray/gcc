@@ -209,5 +209,7 @@ extern GTY (()) rtx kvx_link_reg_rtx;
 
 extern GTY (()) rtx kvx_divmod_zero;
 
+extern GTY (()) unsigned long kvx_xundef_counter;
+
 #endif /* RTX_CODE */
 #endif /* kvx-protos.h */

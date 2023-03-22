@@ -2746,6 +2746,8 @@ verify_sfr_regno (int regno, const char *name, const char *where)
   return gcc_regno;
 }
 
+unsigned long kvx_xundef_counter;
+
 #undef KVX_N_ONLY
 #define KVX_N_ONLY 0
 
@@ -4361,6 +4363,12 @@ KVX_EXPAND_BUILTIN_XPRELOAD (xpreload8192, kvx_xpreload8192, X8192mode, X256mode
   {                                                                            \
     if (KVX_N_ONLY)                                                            \
       error ("__builtin_kvx_%s is only for the kv3-%d.", #name, KVX_N_ONLY);   \
+    if (!target)                                                               \
+      target = gen_reg_rtx (tmode);                                            \
+    else                                                                       \
+      target = force_reg (tmode, target);                                      \
+    rtx arg1 = GEN_INT (kvx_xundef_counter++);                                 \
+    emit_insn (gen_##name2 (target, arg1));                                    \
     return target;                                                             \
   }
 

@@ -2085,6 +2085,8 @@ kvx_init_expanders (void)
     kvx_divmod_zero = const0_rtx;
   else
     kvx_divmod_zero = const1_rtx;
+
+  kvx_xundef_counter = 0;
 }
 
 /* Handle an attribute requiring a FUNCTION_DECL;
