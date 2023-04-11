@@ -1,18 +1,26 @@
 HOST_LIBGCC2_CFLAGS += -ffunction-sections -fdata-sections
 
-LIB2ADD += $(srcdir)/config/kvx/divmoddi.c \
-           $(srcdir)/config/kvx/divmodsi.c \
-           $(srcdir)/config/kvx/divmodvxdi.c \
-           $(srcdir)/config/kvx/divmodvxsi.c \
-           $(srcdir)/config/kvx/divmodvxhi.c \
-           $(srcdir)/config/kvx/divmodvxqi.c \
-           $(srcdir)/config/kvx/divsf3.c \
-           $(srcdir)/config/kvx/divdf3.c \
-           $(srcdir)/config/kvx/divv2df3.c \
-           $(srcdir)/config/kvx/divv2sf3.c \
-           $(srcdir)/config/kvx/divv4df3.c \
-           $(srcdir)/config/kvx/divv4sf3.c \
-           $(srcdir)/config/kvx/divv8sf3.c
+softfp-func-exclude := divsf3 divdf3
+softfp_file_list := \
+  $(filter-out $(addsuffix .c, \
+                           $(addprefix $(srcdir)/soft-fp/, \
+                                       $(softfp-func-exclude))), \
+               $(softfp_file_list))
+
+kvx-libgcc-funcs := \
+  $(softfp-func-exclude) \
+  divmoddi divmodsi \
+  divmodvxdi divmodvxsi divmodvxhi divmodvxqi \
+  divv2df3 divv2sf3 divv4df3 divv4sf3 divv8sf3
+
+kvx-libgcc-c := $(addsuffix .c,$(kvx-libgcc-funcs))
+kvx-libgcc-o := $(addsuffix .o,$(kvx-libgcc-funcs))
+kvx-libgcc-files := $(addprefix $(srcdir)/config/kvx/, $(kvx-libgcc-c))
+
+$(kvx-libgcc-o): CFLAGS += -Werror
+
+LIB2ADD += $(kvx-libgcc-files)
+LIB2FUNCS_EXCLUDE += $(addprefix _,$(softfp-func-exclude))
 
 SHLIB_MAPFILES += $(srcdir)/config/kvx/libgcc-vector.ver
 

@@ -71,7 +71,6 @@ uint8x8_divmod (uint8x8_t a, uint8x8_t b)
     }
   uint8x8_t q = __builtin_kvx_narrowhbo (acc, "");
   uint8x8_t r = __builtin_kvx_narrowhbo (acc >> 8, "");
-end:;
   return __builtin_kvx_cat128 (q, r);
 div0:
 #ifndef __linux__
@@ -142,7 +141,6 @@ uint8x16_divmod (uint8x16_t a, uint8x16_t b)
     }
   uint8x16_t q = __builtin_kvx_narrowhbx (acc, "");
   uint8x16_t r = __builtin_kvx_narrowhbx (acc >> 8, "");
-end:;
   return __builtin_kvx_cat256 (q, r);
 div0:
 #ifndef __linux__
@@ -213,7 +211,6 @@ uint8x32_divmod (uint8x32_t a, uint8x32_t b)
     }
   uint8x32_t q = __builtin_kvx_narrowhbv (acc, "");
   uint8x32_t r = __builtin_kvx_narrowhbv (acc >> 8, "");
-end:;
   return __builtin_kvx_cat512 (q, r);
 div0:
 #ifndef __linux__
