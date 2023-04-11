@@ -567,6 +567,7 @@ kvx-*-*)
 	cpu_type=kvx
 	need_64bit_hwint=yes
 	extra_options="${extra_options}"
+	extra_headers="kvx_builtins.h kvx_macros.h"
 	extra_objs="kvx-builtins.o"
 	case ${target} in
 		kvx-*-cos*)
