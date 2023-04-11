@@ -4401,7 +4401,7 @@ kvx_expand_atomic_op (enum rtx_code code, rtx target, bool after, rtx mem,
   rtx new_mem_val = gen_lowpart (DImode, tmp);
   rtx curr_mem_val = gen_highpart (DImode, tmp);
   rtx (*gen) (rtx, rtx, rtx);
-  rtx op_res, op_res_copy;
+  rtx op_res, op_res_copy = NULL_RTX;
 
   if (target && after)
     op_res_copy = gen_reg_rtx (mode);
@@ -4777,8 +4777,9 @@ kvx_sched_adjust_priority (rtx_insn *insn, int priority)
   return priority;
 }
 
+/* TODO: Does this really serve any purpose? */
 static void
-kvx_sched_dependencies_evaluation_hook (rtx_insn *head, rtx_insn *tail)
+kvx_sched_dependencies_evaluation_hook (rtx_insn *ARG_UNUSED (head), rtx_insn *ARG_UNUSED (tail))
 {
 }
 
@@ -5539,7 +5540,7 @@ kvx_load_store_multiple_operation_p (rtx op, bool is_uncached, bool is_load)
     return false;
 
   HOST_WIDE_INT expected_offset = 0;
-  rtx base;
+  rtx base = NULL_RTX;
 
   for (int i = 0; i < count; i++)
     {
@@ -6860,7 +6861,7 @@ kvx_ifcvt_ce2_recog_pattern (rtx pattern, bool split)
 
 /* Check that INSN is a move that can be changed to conditional move.  */
 static bool
-kvx_ifcvt_ce2_cond_move_ce3 (rtx_insn *insn, rtx reg_cond, basic_block block)
+kvx_ifcvt_ce2_cond_move_ce3 (rtx_insn *insn, rtx reg_cond, basic_block ARG_UNUSED (block))
 {
   rtx pattern = PATTERN (insn);
   gcc_checking_assert (GET_CODE (pattern) == SET);
@@ -6881,7 +6882,7 @@ kvx_ifcvt_ce2_cond_move_ce3 (rtx_insn *insn, rtx reg_cond, basic_block block)
 
 /* Check that INSN is a memory access that can be (pseudo-)predicated.  */
 static bool
-kvx_ifcvt_ce2_cond_mem_ce3 (rtx_insn *insn, rtx reg_cond, basic_block block)
+kvx_ifcvt_ce2_cond_mem_ce3 (rtx_insn *insn, rtx reg_cond, basic_block ARG_UNUSED (block))
 {
   rtx pattern = PATTERN (insn);
   gcc_checking_assert (GET_CODE (pattern) == SET);
@@ -7142,7 +7143,7 @@ kvx_ifcvt_machdep_init (struct ce_if_block *ce_info, bool after_combine)
    which is a COND_EXEC.  */
 rtx
 kvx_ifcvt_modify_insn (ce_if_block *ce_info ATTRIBUTE_UNUSED,
-		       rtx pattern, rtx_insn *insn)
+		       rtx pattern, rtx_insn ARG_UNUSED (*insn))
 {
   return pattern;
 }

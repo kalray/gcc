@@ -76,7 +76,7 @@ kvx_prologue_stack_limit (function *fun)
       rtx_insn *insn;
       edge e1, e2;
 
-      /* The pre-prologue performs to actions: first it loads the stack limit
+      /* The pre-prologue performs 2 actions: first it loads the stack limit
        * either from the dedicated register for our architecture: $sr
        *     get $r17 = $sr
        *     ;;
@@ -127,10 +127,9 @@ kvx_prologue_stack_limit (function *fun)
        *     .Lstack_overflow_detected
        *     call __stack_overflow_detected
        */
-      rtx_insn *label;
       stack_overflow_handler
 	= create_empty_bb (EXIT_BLOCK_PTR_FOR_FN (fun)->prev_bb);
-      label = insn
+      insn
 	= emit_label_before (trap_label,
 			     get_last_bb_insn (stack_overflow_handler));
       insn = emit_call_insn_after (gen_call (handler, const0_rtx),

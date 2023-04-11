@@ -140,7 +140,7 @@ kvx_shaker (function * fun)
 	  {
 	  case INSN:
 	    {
-	      struct kvx_shaker_ls ls_info;
+	      struct kvx_shaker_ls ls_info = { 0, 0 };
 	      int is_load = load_p (cur_insn, &ls_info);
 	      if (shake_p % 51 == 0)
 		emit_insn_before (gen_nop (), cur_insn);
@@ -151,12 +151,17 @@ kvx_shaker (function * fun)
 		    {
 		    case 0:
 		      emit_insn_before (gen_nop (), cur_insn);
+		      /* Fall-through */
 		    case 1:
+		      /* Fall-through */
 		    case 2:
+		      /* Fall-through */
 		    case 3:
+		      /* Fall-through */
 		    case 4:
 		      emit_insn_before (gen_kvx_dtouchl (ls_info.src),
 					cur_insn);
+		      /* Fall-through */
 		    case 5:
 		      if (shake_p % 5 == 0)
 			emit_insn_before (gen_kvx_dflushl (ls_info.src),

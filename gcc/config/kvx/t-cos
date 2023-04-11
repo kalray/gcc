@@ -3,10 +3,11 @@ PASSES_EXTRA += $(srcdir)/config/kvx/kvx-passes.def
 
 kvx-prologue-stack-limit.o: $(srcdir)/config/kvx/kvx-prologue-stack-limit.cc
 	$(COMPILE) $<
+	$(COMPILE) $< -Wall -Wextra -Werror
 	$(POSTCOMPILE)
 
 kvx-shaker.o: $(srcdir)/config/kvx/kvx-shaker.c
-	$(COMPILE) $<
+	$(COMPILE) $< -Wall -Wextra -Werror
 	$(POSTCOMPILE)
 
 MULTILIB_EXTRA_OPTS = fdata-sections ffunction-sections

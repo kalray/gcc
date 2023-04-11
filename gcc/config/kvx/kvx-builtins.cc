@@ -3212,7 +3212,7 @@ KVX_EXPAND_BUILTIN_0_VOID (stop, kvx_stop)
 KVX_EXPAND_BUILTIN_0_VOID (barrier, kvx_barrier)
 KVX_EXPAND_BUILTIN_1_VOID (syncgroup, kvx_syncgroup, DImode)
 
-KVX_EXPAND_BUILTIN_2_STANDARD (waitit, kvx_waitit, SImode, SImode);
+KVX_EXPAND_BUILTIN_2_STANDARD (waitit, kvx_waitit, SImode, SImode)
 
 KVX_EXPAND_BUILTIN_3_CARRY (addcd, kvx_addcd, DImode, VOIDmode)
 KVX_EXPAND_BUILTIN_3_CARRY (sbfcd, kvx_sbfcd, DImode, VOIDmode)
@@ -3498,7 +3498,7 @@ KVX_EXPAND_BUILTIN_3_STANDARD (xcat1024, kvx_xcat1024, X1024mode, X512mode)
 KVX_EXPAND_BUILTIN_3_STANDARD (xcat2048, kvx_xcat2048, X2048mode, X1024mode)
 KVX_EXPAND_BUILTIN_3_STANDARD (xcat4096, kvx_xcat4096, X4096mode, X2048mode)
 #undef KVX_N_ONLY
-#define KVX_N_ONLY ((!KV3_2) * 2)
+#define KVX_N_ONLY (KV3_2 ? 0 : 2)
 KVX_EXPAND_BUILTIN_3_STANDARD (xcat8192, kvx_xcat8192, X8192mode, X4096mode)
 #undef KVX_N_ONLY
 #define KVX_N_ONLY 0
@@ -3850,7 +3850,7 @@ KVX_EXPAND_BUILTIN_2_STANDARD (fsrsrdp, kvx_fsrsrdp, V2DFmode, V2DFmode)
 KVX_EXPAND_BUILTIN_2_STANDARD (fsrsrdq, kvx_fsrsrdq, V4DFmode, V4DFmode)
 
 #undef KVX_N_ONLY
-#define KVX_N_ONLY (!KV3_2 * 2)
+#define KVX_N_ONLY (KV3_2 ? 0 : 2)
 KVX_EXPAND_BUILTIN_3_STANDARD (stsuhq, kvx_stsuhq, V4HImode, V4HImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (stsuho, kvx_stsuho, V8HImode, V8HImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (stsuhx, kvx_stsuhx, V16HImode, V16HImode)
@@ -4452,7 +4452,7 @@ KVX_EXPAND_BUILTIN_XALIGN (xaccess8192o, kvx_xaccess8192o, V256mode, X8192mode)
 
 KVX_EXPAND_BUILTIN_XMATMUL (xmma484bw, kvx_xmma484bw, X512mode, X256mode)
 #undef KVX_N_ONLY
-#define KVX_N_ONLY ((!KV3_2) * 2)
+#define KVX_N_ONLY (KV3_2 ? 0 : 2)
 KVX_EXPAND_BUILTIN_FSCALE (xfscalewo, kvx_xfscalewo, X256mode, X256mode)
 KVX_EXPAND_BUILTIN_XMATMUL (xmma4164bw, kvx_xmma4164bw, X512mode, X512mode)
 KVX_EXPAND_BUILTIN_4_EXTENDMUL (xmadd44bw0, kvx_xmadd44bw0, X512mode, X256mode)
@@ -4486,7 +4486,7 @@ KVX_EXPAND_BUILTIN_XRECVO (xrecvo, kvx_xrecvo, X256mode)
 KVX_EXPAND_BUILTIN_2_XCHANNELS (xsendrecvo, kvx_xsendrecvo, X256mode, X256mode)
 
 #undef KVX_N_ONLY
-#define KVX_N_ONLY ((!KV3_1) * 1)
+#define KVX_N_ONLY (KV3_1 ? 0 : 1)
 KVX_EXPAND_BUILTIN_4_FLOATINGS (xfmma444hw, kvx_xfmma444hw, X512mode, X256mode)
 #undef KVX_N_ONLY
 #define KVX_N_ONLY 0
@@ -5397,12 +5397,12 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
 }
 
 tree
-kvx_resolve_overloaded_builtin (location_t loc,
+kvx_resolve_overloaded_builtin (location_t ARG_UNUSED (loc),
 				tree ob_fndecl,
 				void *passed_arglist)
 {
   vec<tree, va_gc> *arglist = static_cast<vec<tree, va_gc> *> (passed_arglist);
-  unsigned int in_args_num = vec_safe_length (arglist);
+  unsigned int ARG_UNUSED (in_args_num) = vec_safe_length (arglist);
   unsigned int fcode = DECL_FUNCTION_CODE (ob_fndecl);
 
   const char *newname = 0;

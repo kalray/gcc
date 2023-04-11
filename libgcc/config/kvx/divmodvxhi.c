@@ -79,7 +79,6 @@ uint16x4_divmod (uint16x4_t a, uint16x4_t b)
 #endif
   uint16x4_t q = __builtin_kvx_narrowwhq (acc, "");
   uint16x4_t r = __builtin_kvx_narrowwhq (acc >> 16, "");
-end:;
   return __builtin_kvx_cat128 (q, r);
 div0:
 #ifndef __linux__
@@ -159,7 +158,6 @@ uint16x8_divmod (uint16x8_t a, uint16x8_t b)
 #endif
   uint16x8_t q = __builtin_kvx_narrowwho (acc, "");
   uint16x8_t r = __builtin_kvx_narrowwho (acc >> 16, "");
-end:;
   return __builtin_kvx_cat256 (q, r);
 div0:
 #ifndef __linux__
@@ -248,7 +246,6 @@ uint16x16_divmod (uint16x16_t a, uint16x16_t b)
 #endif
   uint16x16_t q = __builtin_kvx_narrowwhx (acc, "");
   uint16x16_t r = __builtin_kvx_narrowwhx (acc >> 16, "");
-end:;
   return __builtin_kvx_cat512 (q, r);
 div0:
 #ifndef __linux__
