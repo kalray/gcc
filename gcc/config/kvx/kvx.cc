@@ -6033,7 +6033,9 @@ kvx_address_cost (rtx x, machine_mode mode ATTRIBUTE_UNUSED,
   return cost;
 }
 
+#ifndef __OPTIMIZE__
 static int kvx_cost_factor = 0;
+#endif//__OPTIMIZE__
 //#define COST_FACTOR(n) (kvx_cost_factor ? (n + kvx_cost_factor - 1)/kvx_cost_factor : n)
 #define COST_FACTOR(n) (((n) + 1) >> 1)
 
@@ -6775,6 +6777,9 @@ kvx_have_conditional_execution (void)
   return reload_completed;
 }
 
+#ifndef __OPTIMIZE__
+int kvx_ifcvt_count = INT_MAX;
+#endif//__OPTIMIZE__
 enum kvx_ifcvt_ce kvx_ifcvt_ce_level;
 static struct kvx_ifcvt
 {
@@ -6784,6 +6789,15 @@ static struct kvx_ifcvt
   sbitmap block_visited;
   rtx_insn *recog_insn;
   recog_data_d recog_data;
+  // Cleared by kvx_ifcvt_reset.
+  unsigned fake_reg_counter;
+  int prep_insns_count;
+  struct { rtx_insn *insn; rtx parallel; }
+    prep_insns[2*MAX_CONDITIONAL_EXECUTE];
+  rtx_insn *then_start;
+  rtx_insn *then_end;
+  rtx_insn *else_start;
+  rtx_insn *else_end;
 } kvx_ifcvt;
 static void
 kvx_ifcvt_ctor (void)
@@ -6807,6 +6821,11 @@ kvx_ifcvt_reset (void)
   if (dump_file)
     fprintf(dump_file, "KVX_IFCVT_RESET(%s, CE%d)\n",
 	    current_function_name(), (int)kvx_ifcvt.ce_level);
+  kvx_ifcvt.fake_reg_counter = 0;
+  kvx_ifcvt.prep_insns_count = 0;
+  memset (kvx_ifcvt.prep_insns, 0, sizeof (kvx_ifcvt.prep_insns));
+  kvx_ifcvt.then_start = kvx_ifcvt.then_end = 0;
+  kvx_ifcvt.else_start = kvx_ifcvt.else_end = 0;
 }
 static void
 kvx_ifcvt_dtor (void)
@@ -6817,6 +6836,20 @@ kvx_ifcvt_dtor (void)
   if (kvx_ifcvt.block_visited)
     sbitmap_free (kvx_ifcvt.block_visited);
   memset (&kvx_ifcvt, 0, sizeof (struct kvx_ifcvt));
+}
+
+/* Allocate fake GPRs in SFRs for the scratch registers used by pseudo-predication.
+   These are remapped to real GPRs in CE3 by (kvx_ifcvt_ce3_fix_pseudo_predicated).
+   Cannot use pseudo-registers for pseudo-predication temporaries as they may be
+   assigned different architectural registers after spill and reload.  */
+static rtx
+kvx_ifcvt_gen_fake_reg_rtx (machine_mode mode)
+{
+  unsigned regno_mask = KVX_SFR_FAKE_GPR_MASK;
+  unsigned first_regno = KVX_SFR_FAKE_GPR_FIRST;
+  gcc_checking_assert (GET_MODE_SIZE (mode) <= UNITS_PER_WORD);
+  unsigned regno = first_regno + (kvx_ifcvt.fake_reg_counter++ & regno_mask);
+  return gen_rtx_REG (mode, regno);
 }
 
 /* Get the test of a register the conditional jump at the end of BLOCK.  */
@@ -6866,7 +6899,7 @@ kvx_ifcvt_ce2_recog_pattern (rtx pattern, bool split)
 
 /* Check that INSN is a move that can be changed to conditional move.  */
 static bool
-kvx_ifcvt_ce2_cond_move_ce3 (rtx_insn *insn, rtx reg_cond, basic_block ARG_UNUSED (block))
+kvx_ifcvt_ce2_cond_move_ce3 (rtx_insn *insn, rtx reg_cond)
 {
   rtx pattern = PATTERN (insn);
   gcc_checking_assert (GET_CODE (pattern) == SET);
@@ -6887,7 +6920,7 @@ kvx_ifcvt_ce2_cond_move_ce3 (rtx_insn *insn, rtx reg_cond, basic_block ARG_UNUSE
 
 /* Check that INSN is a memory access that can be (pseudo-)predicated.  */
 static bool
-kvx_ifcvt_ce2_cond_mem_ce3 (rtx_insn *insn, rtx reg_cond, basic_block ARG_UNUSED (block))
+kvx_ifcvt_ce2_cond_mem_ce3 (rtx_insn *insn, rtx reg_cond)
 {
   rtx pattern = PATTERN (insn);
   gcc_checking_assert (GET_CODE (pattern) == SET);
@@ -6919,7 +6952,17 @@ kvx_ifcvt_ce2_cond_mem_ce3 (rtx_insn *insn, rtx reg_cond, basic_block ARG_UNUSED
 
   bool memsimple = memsimple_operand (mem, VOIDmode);
   if (!memsimple)
-    return false;
+    {
+      rtx fake_reg = kvx_ifcvt_gen_fake_reg_rtx (Pmode);
+      rtx parallel = gen_rtx_PARALLEL (VOIDmode, rtvec_alloc (2));
+      XVECEXP (parallel, 0, 0) = copy_rtx (pattern);
+      XVECEXP (parallel, 0, 1) = gen_rtx_USE (VOIDmode, fake_reg);
+      gcc_assert (kvx_ifcvt.prep_insns_count < 2*MAX_CONDITIONAL_EXECUTE);
+      kvx_ifcvt.prep_insns[kvx_ifcvt.prep_insns_count].parallel = parallel;
+      kvx_ifcvt.prep_insns[kvx_ifcvt.prep_insns_count].insn = insn;
+      kvx_ifcvt.prep_insns_count++;
+      pattern = parallel;
+    }
 
   rtx new_pattern = gen_rtx_COND_EXEC (VOIDmode, reg_cond, pattern);
   int recog = kvx_ifcvt_ce2_recog_pattern (new_pattern, true);
@@ -6960,7 +7003,7 @@ kvx_ifcvt_ce2_candidate_ce3 (basic_block block, rtx reg_cond)
 	    }
 
 	  // Check if insn can be converted to conditional move.
-	  if (kvx_ifcvt_ce2_cond_move_ce3 (insn, reg_cond, block))
+	  if (kvx_ifcvt_ce2_cond_move_ce3 (insn, reg_cond))
 	    {
 	      if (dump_file)
 		fprintf(dump_file, "KVX_IFCVT cond_move (insn %d)\n", INSN_UID (insn));
@@ -6970,7 +7013,7 @@ kvx_ifcvt_ce2_candidate_ce3 (basic_block block, rtx reg_cond)
 	  // Check if insn can be converted to conditional memory access.
 	  if (contains_mem_rtx_p (pattern))
 	    {
-	      if (kvx_ifcvt_ce2_cond_mem_ce3 (insn, reg_cond, block))
+	      if (kvx_ifcvt_ce2_cond_mem_ce3 (insn, reg_cond))
 		{
 		  if (dump_file)
 		    fprintf(dump_file, "KVX_IFCVT cond_mem (insn %d)\n", INSN_UID (insn));
@@ -6993,67 +7036,7 @@ kvx_ifcvt_ce2_candidate_ce3 (basic_block block, rtx reg_cond)
 	}
     }
 
-  return count;
-}
-
-/* Part of IFCVT_MACHDEP_INIT done in CE2.  */
-void
-kvx_ifcvt_ce2_machdep_init (basic_block test_bb, basic_block then_bb,
-			    basic_block else_bb, basic_block join_bb)
-{
-  // Check basic block candidates and prepare for conditional execution.  */
-  rtx tested_reg = NULL_RTX;
-  rtx reg_cond = kvx_ifcvt_get_reg_cond (test_bb, &tested_reg);
-  if (!reg_cond)
-    return;
-
-  bool candidate = true;
-
-  if (candidate && then_bb)
-    candidate &= kvx_ifcvt_ce2_candidate_ce3 (then_bb, reg_cond);
-
-  if (candidate && else_bb)
-    candidate &= kvx_ifcvt_ce2_candidate_ce3 (else_bb, reg_cond);
-
-  if (dump_file)
-    {
-      if (!candidate)
-	fprintf (dump_file, "KVX_IFCVT not a CE3 candidate:\n");
-      else
-	fprintf (dump_file, "KVX_IFCVT is a CE3 candidate:\n");
-      fprintf (dump_file, "\ttest-block %d\n", test_bb ? test_bb->index : -1);
-      fprintf (dump_file, "\tthen-block %d\n", then_bb ? then_bb->index : -1);
-      fprintf (dump_file, "\telse-block %d\n", else_bb ? else_bb->index : -1);
-      fprintf (dump_file, "\tjoin-block %d\n", join_bb ? join_bb->index : -1);
-    }
-
-  if (!candidate)
-    return;
-
-  if (then_bb)
-    {
-      // Find the last insertion point in then_bb.
-      rtx_insn *last_insn = BB_END (then_bb);
-      if (JUMP_P (last_insn))
-	last_insn = PREV_INSN (last_insn);
-
-      // Insert a use of the tested register in then_bb to pull its live range.
-      emit_insn_after (gen_rtx_USE (VOIDmode, tested_reg), last_insn);
-      df_set_bb_dirty (then_bb);
-    }
-
-  if (else_bb)
-    {
-      // Find the last insertion point in else_bb.
-      rtx_insn *last_insn = BB_END (else_bb);
-      if (JUMP_P (last_insn))
-	last_insn = PREV_INSN (last_insn);
-
-      // Insert a use of the tested register in else_bb to pull its live range.
-      rtx tested_reg = XEXP (reg_cond, 0);
-      emit_insn_after (gen_rtx_USE (VOIDmode, tested_reg), last_insn);
-      df_set_bb_dirty (else_bb);
-    }
+  return true;
 }
 
 /* Implements IFCVT_MACHDEP_INIT.
@@ -7071,6 +7054,16 @@ kvx_ifcvt_machdep_init (struct ce_if_block *ce_info, bool after_combine)
   // Nothing else to do in CE1 of if -fno-if-conversion2.
   if (kvx_ifcvt_ce_level < KVX_IFCVT_CE2 || !flag_if_conversion2)
     return;
+
+  // First time in CE2 or CE3, construct kvx_ifcvt else reset.
+  if (kvx_ifcvt.ce_level < kvx_ifcvt_ce_level)
+    {
+      if (kvx_ifcvt.ce_level > KVX_IFCVT_)
+	kvx_ifcvt_dtor();
+      kvx_ifcvt_ctor ();
+    }
+  else
+    kvx_ifcvt_reset ();
 
   // Detect IF-THEN-ELSE-JOIN as in (noce_find_if_block) in ifcvt.c.
   basic_block test_bb = ce_info->test_bb;
@@ -7128,18 +7121,305 @@ kvx_ifcvt_machdep_init (struct ce_if_block *ce_info, bool after_combine)
       fprintf (dump_file, "\tjoin-block %d\n", join_bb ? join_bb->index : -1);
     }
 
-  // First time in CE2 or CE3, construct kvx_ifcvt else reset.
-  if (kvx_ifcvt.ce_level < kvx_ifcvt_ce_level)
-    {
-      if (kvx_ifcvt.ce_level > KVX_IFCVT_)
-	kvx_ifcvt_dtor();
-      kvx_ifcvt_ctor ();
-    }
-  else
-    kvx_ifcvt_reset ();
-
   if (kvx_ifcvt_ce_level == KVX_IFCVT_CE2)
-    kvx_ifcvt_ce2_machdep_init (test_bb, then_bb, else_bb, join_bb);
+    {
+      // Check basic block candidates and prepare for conditional execution.  */
+      rtx tested_reg = NULL_RTX;
+      rtx reg_cond = kvx_ifcvt_get_reg_cond (test_bb, &tested_reg);
+      if (!reg_cond)
+	return;
+
+      bool candidate = true;
+
+      if (candidate && then_bb)
+	candidate &= kvx_ifcvt_ce2_candidate_ce3 (then_bb, reg_cond);
+
+      if (candidate && else_bb)
+	candidate &= kvx_ifcvt_ce2_candidate_ce3 (else_bb, reg_cond);
+
+      if (dump_file)
+	{
+	  if (!candidate)
+	    fprintf (dump_file, "KVX_IFCVT not a CE3 candidate.\n");
+	  else
+	    fprintf (dump_file, "KVX_IFCVT is a CE3 candidate.\n");
+	}
+
+      if (!candidate)
+	return;
+
+      if (then_bb)
+	{
+	  // Find the last insertion point in then_bb.
+	  rtx_insn *last_insn = BB_END (then_bb);
+	  if (JUMP_P (last_insn))
+	    last_insn = PREV_INSN (last_insn);
+
+	  // Insert a use of the tested register in then_bb to pull its live range.
+	  emit_insn_after (gen_rtx_USE (VOIDmode, tested_reg), last_insn);
+	  df_set_bb_dirty (then_bb);
+	}
+
+      if (else_bb)
+	{
+	  // Find the last insertion point in else_bb.
+	  rtx_insn *last_insn = BB_END (else_bb);
+	  if (JUMP_P (last_insn))
+	    last_insn = PREV_INSN (last_insn);
+
+	  // Insert a use of the tested register in else_bb to pull its live range.
+	  rtx tested_reg = XEXP (reg_cond, 0);
+	  emit_insn_after (gen_rtx_USE (VOIDmode, tested_reg), last_insn);
+	  df_set_bb_dirty (else_bb);
+	}
+
+      // Update the pattern of the pseudo-predicated insns.
+      for (int index = 0; index < kvx_ifcvt.prep_insns_count; index++)
+	{
+	  rtx_insn *insn = kvx_ifcvt.prep_insns[index].insn;
+	  rtx parallel = kvx_ifcvt.prep_insns[index].parallel;
+	  gcc_checking_assert (GET_CODE (parallel) == PARALLEL);
+	  PATTERN (insn) = parallel;
+	  INSN_CODE (insn) = -1;
+	  df_insn_rescan (insn);
+	  if (dump_file)
+	    fprintf(dump_file, "KVX_IFCVT prepare cond_exec (insn %d)\n", INSN_UID (insn));
+	}
+    }
+}
+
+/* Access to the scratch register of the pseudo-predicated INSN.  */
+static rtx *
+kvx_ifcvt_ce3_pseudo_predicate__scratch_reg (rtx_insn *insn)
+{
+  rtx pattern = PATTERN (insn);
+  if (GET_CODE (pattern) == PARALLEL && XVECLEN (pattern, 0) == 2)
+    {
+      rtx x0 = XVECEXP (pattern, 0, 0);
+      rtx x1 = XVECEXP (pattern, 0, 1);
+      if (GET_CODE (x0) == SET && GET_CODE (x1) == USE
+	  && GET_CODE (XEXP (x1, 0)) == REG)
+	return &XEXP (x1, 0);
+    }
+
+  return 0;
+}
+
+/* Compute the HARD_REG_SET of registers that are used at BLOCK boundaries so
+   should not be used as scratch registers when if-converting the other block.
+
+   Assume assigning scratch registers to the THEN block, with the if-converted
+   else block laying after the converted then block. Any scratch register will
+   be unconditionally set by the if-converted then block and must not clobber a
+   live-in or live-out register of the else block.
+
+   In case there are no head or tail sequences, the USED_REGS of the else BLOCK
+   is the union of its live-in and live-out registers.  In case BLOCK has a head
+   or a tail sequence, the live-in and live-out sets must be respectively
+   replaced by the live registers before sequence start and after sequence end.
+
+   Because the else block is laid out after the then block, the used registers
+   of the then BLOCK need not include its register live-in / live before the
+   sequence start.  This is controlled by WITH_USED_IN. */
+static void
+kvx_ifcvt_ce3_compute_used_regs (basic_block block, bool with_used_in,
+				 HARD_REG_SET *used_regs)
+{
+  rtx_insn *start_insn = 0;
+  if (kvx_ifcvt.then_start && BLOCK_FOR_INSN (kvx_ifcvt.then_start) == block)
+    start_insn = kvx_ifcvt.then_start;
+  else if (kvx_ifcvt.else_start && BLOCK_FOR_INSN (kvx_ifcvt.else_start) == block)
+    start_insn = kvx_ifcvt.else_start;
+
+  rtx_insn *end_insn = 0;
+  if (kvx_ifcvt.then_end && BLOCK_FOR_INSN (kvx_ifcvt.then_end) == block)
+    end_insn = kvx_ifcvt.then_end;
+  else if (kvx_ifcvt.else_end && BLOCK_FOR_INSN (kvx_ifcvt.else_end) == block)
+    end_insn = kvx_ifcvt.else_end;
+
+  HARD_REG_SET used_in_regs;
+  if (!start_insn)
+    REG_SET_TO_HARD_REG_SET (used_in_regs, df_get_live_in (block));
+
+  HARD_REG_SET used_out_regs;
+  if (!end_insn)
+    REG_SET_TO_HARD_REG_SET (used_out_regs, df_get_live_out (block));
+
+  // Case BLOCK has a head or a tail sequence excluded from if-conversion.
+  if (start_insn || end_insn)
+    {
+    // Prepare to compute live registers at each INSN of BLOCK.
+    HARD_REG_SET live_regs, kill_regs, gen_regs;
+    REG_SET_TO_HARD_REG_SET (live_regs, df_get_live_out (block));
+
+    rtx_insn *insn = 0;
+    FOR_BB_INSNS_REVERSE (block, insn)
+      if (NONDEBUG_INSN_P (insn))
+	{
+	  // Live after INSN (iterating BLOCK in reverse).
+	  if (insn == end_insn)
+	    {
+	      used_out_regs = live_regs;
+	      if (!with_used_in)
+		break;
+	    }
+
+	  // LIVE := (LIVE - KILL) U GEN
+	  CLEAR_HARD_REG_SET (kill_regs);
+	  CLEAR_HARD_REG_SET (gen_regs);
+	  note_stores (insn, record_hard_reg_sets, &kill_regs);
+	  note_uses (&PATTERN (insn), record_hard_reg_uses, &gen_regs);
+	  live_regs &= ~kill_regs;
+	  live_regs |= gen_regs;
+
+	  // Live before INSN (iterating BLOCK in reverse).
+	  if (insn == start_insn)
+	    {
+	      used_in_regs = live_regs;
+	      break;
+	    }
+	}
+    }
+
+  if (with_used_in)
+    *used_regs = used_in_regs | used_out_regs;
+  else
+    *used_regs = used_out_regs;
+}
+
+/* Fix the pseudo-predicated instructions of BLOCK by replacing the fake scratch
+   registers in SFRs by the real GPRs available in BLOCK.  */
+static void
+kvx_ifcvt_ce3_fix_pseudo_predicated (ce_if_block *ce_info,
+				     basic_block block,
+				     unsigned *_last_regno)
+{
+  int index = block->index;
+  if ((unsigned) index >= (unsigned) kvx_ifcvt.block_count
+      || bitmap_bit_p (kvx_ifcvt.block_visited, index))
+    return;
+  bitmap_set_bit (kvx_ifcvt.block_visited, index);
+
+  basic_block other_block = block == ce_info->then_bb ?
+			    ce_info->else_bb : ce_info->then_bb;
+  bool with_used_in = (other_block == ce_info->else_bb);
+
+  unsigned base_regno = KVX_GPR_FIRST_REGNO + 32;
+  unsigned past_regno = KVX_GPR_FIRST_REGNO + 64;
+  unsigned last_regno = *_last_regno < past_regno ? *_last_regno : base_regno;
+
+  // Prepare to compute live registers at each INSN of BLOCK.
+  regset live_out = df_get_live_out (block);
+  HARD_REG_SET live_regs, kill_regs, gen_regs;
+  REG_SET_TO_HARD_REG_SET (live_regs, live_out);
+
+  // Set USED_REGS, the registers used by the if-converted part of OTHER_BLOCK.
+  HARD_REG_SET used_regs;
+  if (!other_block)
+    CLEAR_HARD_REG_SET (used_regs);
+  else
+    kvx_ifcvt_ce3_compute_used_regs (other_block, with_used_in, &used_regs);
+
+  rtx_insn *insn = 0;
+  FOR_BB_INSNS_REVERSE (block, insn)
+    if (NONDEBUG_INSN_P (insn))
+      {
+	// LIVE := (LIVE - KILL) U GEN
+	CLEAR_HARD_REG_SET (kill_regs);
+	CLEAR_HARD_REG_SET (gen_regs);
+	note_stores (insn, record_hard_reg_sets, &kill_regs);
+	note_uses (&PATTERN (insn), record_hard_reg_uses, &gen_regs);
+	live_regs &= ~kill_regs;
+	live_regs |= gen_regs;
+
+	// Process the pseudo-predicated instructions.
+	rtx *_scratch_reg = kvx_ifcvt_ce3_pseudo_predicate__scratch_reg (insn);
+	if (_scratch_reg && REGNO (*_scratch_reg) > KVX_GPR_LAST_REGNO)
+	  {
+	    // Try to assign a scratch GPR in range [BASE_REGNO, PAST_REGNO - 1] scanning
+	    // the available registers by decreasing regno, starting from LAST_REGNO - 1.
+	    rtx fake_reg = *_scratch_reg;
+	    unsigned mask = past_regno - base_regno - 1;
+	    for (unsigned offset = 0; offset <= mask; offset++)
+	      {
+		unsigned scratch_regno = base_regno + ((last_regno - offset - 1) & mask);
+		gcc_assert (scratch_regno >= base_regno && scratch_regno < past_regno);
+		// The scratch register should not be live before INSN nor killed by it.
+		// Also it should not be in use by the if-converted part of OTHER_BLOCK.
+		if (!TEST_HARD_REG_BIT (live_regs, scratch_regno)
+		    && !TEST_HARD_REG_BIT (kill_regs, scratch_regno)
+		    && !TEST_HARD_REG_BIT (used_regs, scratch_regno))
+		  {
+		    // Replace FAKE_REG by SCRATCH_REG in INSN.
+		    rtx scratch_reg = gen_rtx_REG (GET_MODE (fake_reg), scratch_regno);
+		    *_scratch_reg = scratch_reg;
+		    df_insn_rescan (insn);
+		    last_regno = scratch_regno;
+		    // Insert DEF of SCRATCH_REG with unique value before INSN.
+		    unsigned def_counter = kvx_ifcvt.def_counter++ ;
+		    rtvec vec = gen_rtvec (1, GEN_INT (def_counter));
+		    rtx def = gen_rtx_UNSPEC (GET_MODE (scratch_reg), vec, UNSPEC_DEF);
+		    insn = emit_insn_before (gen_rtx_SET (scratch_reg, def), insn);
+		    if (dump_file)
+		      fprintf (dump_file, "KVX_IFCVT assign (insn %d) scratch to %s\n",
+					  INSN_UID (insn), reg_names[REGNO (scratch_reg)]);
+		    break;
+		  }
+	      }
+
+	    if (fake_reg == *_scratch_reg)
+	      {
+		// Failed to find a scratch register for pseudo-predication.
+		if (dump_file)
+		  fprintf (dump_file, "KVX_IFCVT failed to assign (insn %d) a scratch for %s\n",
+				      INSN_UID (insn), reg_names[REGNO (fake_reg)]);
+		return;
+	      }
+	  }
+      }
+
+  *_last_regno = last_regno;
+}
+
+/* Implements IFCVT_MODIFY_TESTS.
+   We don't need to modify the tests. However we need to find the boundaries
+   of the common prefix and suffix of the then block and else blocks. These are
+   available in the scope of IFCVT_MODIFY_TESTS as THEN_START, THEN_END,
+   ELSE_START, ELSE_END.  Then we fix the pseudo-predicated instructions.  */
+void
+kvx_ifcvt_modify_tests (ce_if_block *ce_info ATTRIBUTE_UNUSED,
+			rtx true_expr ATTRIBUTE_UNUSED,
+			rtx false_expr ATTRIBUTE_UNUSED,
+			rtx_insn *then_start, rtx_insn *then_end,
+			rtx_insn *else_start, rtx_insn *else_end)
+{
+  if (dump_file)
+    fprintf(dump_file, "KVX_IFCVT MODIFY_TESTS\n");
+
+  if (then_start && then_end)
+    if (dump_file)
+      fprintf(dump_file, "\t(then_start_insn %d)\t(then_end_insn %d)\n",
+	      INSN_UID (then_start), INSN_UID (then_end));
+
+  if (else_start && else_end)
+    if (dump_file)
+      fprintf(dump_file, "\t(else_start_insn %d)\t(else_end_insn %d)\n",
+	      INSN_UID (else_start), INSN_UID (else_end));
+
+  kvx_ifcvt.then_start = then_start;
+  kvx_ifcvt.then_end = then_end;
+  kvx_ifcvt.else_start = else_start;
+  kvx_ifcvt.else_end = else_end;
+
+  basic_block then_bb = ce_info->then_bb;
+  basic_block else_bb = ce_info->else_bb;
+  unsigned last_regno = FIRST_PSEUDO_REGISTER;
+
+  if (then_bb)
+    kvx_ifcvt_ce3_fix_pseudo_predicated (ce_info, then_bb, &last_regno);
+
+  if (else_bb)
+    kvx_ifcvt_ce3_fix_pseudo_predicated (ce_info, else_bb, &last_regno);
 }
 
 /* Implements IFCVT_MODIFY_INSN.
@@ -7150,6 +7430,26 @@ rtx
 kvx_ifcvt_modify_insn (ce_if_block *ce_info ATTRIBUTE_UNUSED,
 		       rtx pattern, rtx_insn ARG_UNUSED (*insn))
 {
+#ifndef __OPTIMIZE__
+  if (kvx_ifcvt_count-- <= 0)
+    return 0;
+#endif//__OPTIMIZE__
+  rtx old_pattern = PATTERN (insn);
+
+  // Ignore (SET (...) UNSPEC_DEF) at this point.
+  rtx src = GET_CODE (old_pattern) == SET? SET_SRC (old_pattern) : 0;
+  if (src && GET_CODE (src) == UNSPEC && (XINT (src, 1) == UNSPEC_DEF))
+    return old_pattern;
+
+  // Disable pseudo-predicated that did not get a real scratch register.
+  rtx *_scratch_reg = kvx_ifcvt_ce3_pseudo_predicate__scratch_reg (insn);
+  if (_scratch_reg && REGNO (*_scratch_reg) > KVX_GPR_LAST_REGNO)
+    {
+      if (dump_file)
+	fprintf(dump_file, "KVX_IFCVT CE3 no scratch for (insn %d)\n", INSN_UID (insn));
+      return 0;
+    }
+
   return pattern;
 }
 
@@ -7747,9 +8047,14 @@ kvx_option_override (void)
   if (KV3_2)
     kvx_arch_schedule = ARCH_KV3_2;
 
+#ifndef __OPTIMIZE__
   const char *KVX_COST_FACTOR = getenv ("KVX_COST_FACTOR");
   if (KVX_COST_FACTOR)
     kvx_cost_factor = atoi (KVX_COST_FACTOR);
+  const char *KVX_IFCVT_COUNT = getenv("KVX_IFCVT_COUNT");
+  if (KVX_IFCVT_COUNT)
+    kvx_ifcvt_count = atoi (KVX_IFCVT_COUNT);
+#endif//__OPTIMIZE__
 }
 
 /* Recognize machine-specific patterns that may appear within
