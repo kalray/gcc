@@ -6779,6 +6779,7 @@ kvx_have_conditional_execution (void)
 
 #ifndef __OPTIMIZE__
 int kvx_ifcvt_count = INT_MAX;
+int kvx_aspec_count = INT_MAX;
 #endif//__OPTIMIZE__
 enum kvx_ifcvt_ce kvx_ifcvt_ce_level;
 static struct kvx_ifcvt
@@ -6969,6 +6970,35 @@ kvx_ifcvt_ce2_cond_mem_ce3 (rtx_insn *insn, rtx reg_cond)
   return recog >= 0;
 }
 
+/* Check that INSN is arithmetic that can be pseudo-predicated.  */
+static bool
+kvx_ifcvt_ce2_cond_arith_ce3 (rtx_insn *insn, rtx reg_cond)
+{
+  rtx pattern = PATTERN (insn);
+  gcc_checking_assert (GET_CODE (pattern) == SET);
+
+  rtx set_dest = SET_DEST (pattern);
+  machine_mode mode = GET_MODE (set_dest);
+  if (GET_MODE_SIZE (mode) > UNITS_PER_WORD)
+    return false;
+
+  rtx fake_reg = kvx_ifcvt_gen_fake_reg_rtx (mode);
+  if (!fake_reg)
+    return false;
+
+  rtx parallel = gen_rtx_PARALLEL (VOIDmode, rtvec_alloc (2));
+  XVECEXP (parallel, 0, 0) = copy_rtx (pattern);
+  XVECEXP (parallel, 0, 1) = gen_rtx_USE (VOIDmode, fake_reg);
+  gcc_assert (kvx_ifcvt.prep_insns_count < 2*MAX_CONDITIONAL_EXECUTE);
+  kvx_ifcvt.prep_insns[kvx_ifcvt.prep_insns_count].parallel = parallel;
+  kvx_ifcvt.prep_insns[kvx_ifcvt.prep_insns_count].insn = insn;
+  kvx_ifcvt.prep_insns_count++;
+
+  rtx new_pattern = gen_rtx_COND_EXEC (VOIDmode, reg_cond, parallel);
+  int recog = kvx_ifcvt_ce2_recog_pattern (new_pattern, true);
+  return recog >= 0;
+}
+
 /* Check that BLOCK only contains valid candidates for CE3 if-conversion.  */
 static bool
 kvx_ifcvt_ce2_candidate_ce3 (basic_block block, rtx reg_cond)
@@ -7024,9 +7054,30 @@ kvx_ifcvt_ce2_candidate_ce3 (basic_block block, rtx reg_cond)
 	      return false;
 	    }
 
-	  if (dump_file)
-	    fprintf(dump_file, "KVX_IFCVT not candidate (insn %d arith)\n", INSN_UID (insn));
-	  return false;
+	  if (side_effects_p (pattern))
+	    {
+	      if (dump_file)
+		fprintf(dump_file, "KVX_IFCVT not candidate (insn %d has side effects)\n", INSN_UID (insn));
+	      return false;
+	    }
+
+	  if (may_trap_p (pattern))
+	    {
+	      if (dump_file)
+		fprintf(dump_file, "KVX_IFCVT not candidate (insn %d may_trap)\n", INSN_UID (insn));
+	      return false;
+	    }
+
+	  if (kvx_ifcvt_ce2_cond_arith_ce3 (insn, reg_cond))
+	    {
+	      if (dump_file)
+		fprintf(dump_file, "KVX_IFCVT cond_artith (insn %d)\n", INSN_UID (insn));
+	      continue;
+	    }
+
+	    if (dump_file)
+	      fprintf(dump_file, "KVX_IFCVT not candidate (insn %d arith)\n", INSN_UID (insn));
+	    return false;
 	}
       else if (INSN_P (insn))
 	{
@@ -7320,10 +7371,28 @@ kvx_ifcvt_ce3_fix_pseudo_predicated (ce_if_block *ce_info,
   else
     kvx_ifcvt_ce3_compute_used_regs (other_block, with_used_in, &used_regs);
 
+  // Get the end of the if-converted sequence of this BLOCK.
+  rtx_insn *end_insn = 0;
+  if (kvx_ifcvt.then_end && BLOCK_FOR_INSN (kvx_ifcvt.then_end) == block)
+    end_insn = kvx_ifcvt.then_end;
+  else if (kvx_ifcvt.else_end && BLOCK_FOR_INSN (kvx_ifcvt.else_end) == block)
+    end_insn = kvx_ifcvt.else_end;
+
+  // The set of registers live at this BLOCK tail sequence, else BLOCK live-out.
+  HARD_REG_SET live_tail_regs;
+  if (!end_insn)
+    live_tail_regs = live_regs;
+  else
+    CLEAR_HARD_REG_SET (live_tail_regs);
+
   rtx_insn *insn = 0;
   FOR_BB_INSNS_REVERSE (block, insn)
     if (NONDEBUG_INSN_P (insn))
       {
+	// Live after INSN (iterating BLOCK in reverse).
+	if (insn == end_insn)
+	  live_tail_regs = live_regs;
+
 	// LIVE := (LIVE - KILL) U GEN
 	CLEAR_HARD_REG_SET (kill_regs);
 	CLEAR_HARD_REG_SET (gen_regs);
@@ -7336,6 +7405,33 @@ kvx_ifcvt_ce3_fix_pseudo_predicated (ce_if_block *ce_info,
 	rtx *_scratch_reg = kvx_ifcvt_ce3_pseudo_predicate__scratch_reg (insn);
 	if (_scratch_reg && REGNO (*_scratch_reg) > KVX_GPR_LAST_REGNO)
 	  {
+	    // Try to speculate a non-memory INSN identified for pseudo-predication.
+	    // Its target register must not be live at this BLOCK of tail sequence.
+	    // Also it should not be in use by the if-converted part of OTHER_BLOCK.
+	    rtx set = single_set (insn), dest_reg = 0;
+#ifndef __OPTIMIZE__
+	    if (kvx_aspec_count-- <= 0)
+	      set = 0;
+#endif//__OPTIMIZE__
+	    if (set && REG_P ((dest_reg = SET_DEST (set)))
+		&& !contains_mem_rtx_p (PATTERN (insn)))
+	      {
+		unsigned dest_regno = REGNO (dest_reg);
+		if (!TEST_HARD_REG_BIT (live_tail_regs, dest_regno)
+		    && !TEST_HARD_REG_BIT (used_regs, dest_regno))
+		  {
+		    PATTERN (insn) = set;
+		    INSN_CODE (insn) = -1;
+		    df_insn_rescan (insn);
+		    // Use the REG_NONNEG note to flag insn as speculative.
+		    add_reg_note (insn, REG_NONNEG, NULL_RTX);
+		    if (dump_file)
+		      fprintf (dump_file, "KVX_IFCVT speculate (insn %d) dest to %s\n",
+					  INSN_UID (insn), reg_names[dest_regno]);
+		    continue;
+		  }
+	      }
+
 	    // Try to assign a scratch GPR in range [BASE_REGNO, PAST_REGNO - 1] scanning
 	    // the available registers by decreasing regno, starting from LAST_REGNO - 1.
 	    rtx fake_reg = *_scratch_reg;
@@ -7440,6 +7536,11 @@ kvx_ifcvt_modify_insn (ce_if_block *ce_info ATTRIBUTE_UNUSED,
   rtx src = GET_CODE (old_pattern) == SET? SET_SRC (old_pattern) : 0;
   if (src && GET_CODE (src) == UNSPEC && (XINT (src, 1) == UNSPEC_DEF))
     return old_pattern;
+
+  // No changes if the insn was flagged as speculative.
+  for (rtx link = REG_NOTES (insn); link; link = XEXP (link, 1))
+    if (REG_NOTE_KIND (link) == REG_NONNEG)
+      return old_pattern;
 
   // Disable pseudo-predicated that did not get a real scratch register.
   rtx *_scratch_reg = kvx_ifcvt_ce3_pseudo_predicate__scratch_reg (insn);
@@ -8054,6 +8155,9 @@ kvx_option_override (void)
   const char *KVX_IFCVT_COUNT = getenv("KVX_IFCVT_COUNT");
   if (KVX_IFCVT_COUNT)
     kvx_ifcvt_count = atoi (KVX_IFCVT_COUNT);
+  const char *KVX_ASPEC_COUNT = getenv("KVX_ASPEC_COUNT");
+  if (KVX_ASPEC_COUNT)
+    kvx_aspec_count = atoi (KVX_ASPEC_COUNT);
 #endif//__OPTIMIZE__
 }
 

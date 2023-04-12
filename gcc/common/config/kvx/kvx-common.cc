@@ -38,8 +38,8 @@ static const struct default_options kvx_option_optimization_table[] =
 
     {OPT_LEVELS_ALL, OPT__param_prefetch_latency_, NULL, 12 },
     {OPT_LEVELS_ALL, OPT__param_simultaneous_prefetches_, NULL, 10},
-    {OPT_LEVELS_ALL, OPT__param_l1_cache_size_, NULL, 8},
-    {OPT_LEVELS_ALL, OPT__param_l1_cache_line_size_, NULL, 32},
+    {OPT_LEVELS_ALL, OPT__param_l1_cache_size_, NULL, 16},
+    {OPT_LEVELS_ALL, OPT__param_l1_cache_line_size_, NULL, 64},
     {OPT_LEVELS_ALL, OPT__param_l2_cache_size_, NULL, 1024},
     {OPT_LEVELS_ALL, OPT__param_ipa_cp_eval_threshold_, NULL, 400},
     {OPT_LEVELS_ALL, OPT__param_max_inline_insns_auto_, NULL, 40}, /* Default value */
@@ -54,8 +54,18 @@ static const struct default_options kvx_option_optimization_table[] =
     {OPT_LEVELS_NONE, 0, NULL, 0}
   };
 
+/* Implement TARGET_OPTION_INIT_STRUCT.  */
+static void
+kvx_option_init_struct (struct gcc_options *opts)
+{
+  opts->x_flag_trapping_math = 0;
+  opts->x_flag_signaling_nans = 0;
+}
+
 #undef TARGET_OPTION_OPTIMIZATION_TABLE
 #define TARGET_OPTION_OPTIMIZATION_TABLE kvx_option_optimization_table
+#undef TARGET_OPTION_INIT_STRUCT
+#define TARGET_OPTION_INIT_STRUCT kvx_option_init_struct
 #undef TARGET_EXCEPT_UNWIND_INFO
 #define TARGET_EXCEPT_UNWIND_INFO sjlj_except_unwind_info
 #undef TARGET_DEFAULT_TARGET_FLAGS

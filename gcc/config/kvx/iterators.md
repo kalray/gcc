@@ -404,6 +404,18 @@
   SI SF DI DF TI
 ])
 
+;; Iterator for the integer modes that fit in a GPR.
+(define_mode_iterator WI [
+  QI HI SI DI
+  V8QI V4HI V2SI
+])
+
+;; Iterator for the floating-point modes that fit in a GPR.
+(define_mode_iterator WF [
+  HF SF DF
+  V4HF V2SF
+])
+
 ;; Iterator for the modes that fit in a GPR.
 (define_mode_iterator FITGPR [
   QI HI HF SI SF DI DF HC SC
