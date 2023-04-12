@@ -4410,9 +4410,13 @@ kvx_expand_vec_perm_const (rtx target, rtx source1, rtx source2, rtx selector)
 
 /* Implements TARGET_VECTORIZE_VEC_PERM_CONST.  */
 static bool
-kvx_vectorize_vec_perm_const (machine_mode vmode, rtx target, rtx op0,
+kvx_vectorize_vec_perm_const (machine_mode vmode, machine_mode op_mode, rtx target, rtx op0,
 			      rtx op1, const vec_perm_indices &sel)
 {
+
+  if (vmode != op_mode)
+    return false;
+
   if (GET_MODE_SIZE (vmode) > 64)
     return false;
 
