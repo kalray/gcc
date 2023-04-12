@@ -366,6 +366,8 @@
 
 (define_mode_iterator SIDI [SI DI])
 
+(define_mode_iterator DISI [DI SI])
+
 ;; insns length for materializing a symbol depending on pointer size,
 ;; using make insn. Alternatives using these should only be enabled
 ;; for valid pointer modes: SI or DI. Anything else is an error.

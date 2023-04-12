@@ -1681,6 +1681,97 @@
 )
 
 
+;; COND_EXEC CMOVE
+
+(define_insn_and_split "*cond_exec_cmove_<FITGPR:mode>"
+  [(cond_exec
+     (match_operator 6 "zero_comparison_operator"
+      [(match_operand:DISI 5 "register_operand" "r,r,r,r")
+       (const_int 0)])
+     (parallel
+      [(set (match_operand:FITGPR 0 "register_operand" "=r,r,r,r")
+            (if_then_else:FITGPR (match_operator 2 "zero_comparison_operator"
+                                                   [(match_operand:SIDI 3 "register_operand" "r,r,r,r")
+                                                    (const_int 0)])
+                                 (match_operand:FITGPR 1 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")
+                                 (match_operand:FITGPR 4 "register_operand" "0,0,0,0")))
+       (use (match_operand:FITGPR 7 "register_operand" "r,r,r,r"))]))]
+  "kvx_ifcvt_ce_level >= KVX_IFCVT_CE2"
+  "#"
+  "kvx_ifcvt_ce_level >= KVX_IFCVT_CE3"
+  [(set (match_dup 7) (match_dup 4))
+   (cond_exec
+     (match_op_dup 2 [(match_dup 3) (const_int 0)])
+     (set (match_dup 7) (match_dup 1)))
+   (cond_exec
+     (match_op_dup 6 [(match_dup 5) (const_int 0)])
+     (set (match_dup 0) (match_dup 7)))]
+)
+
+(define_insn_and_split "*wrapped_cmove_<FITGPR:mode>"
+  [(set (match_operand:FITGPR 0 "register_operand" "=r,r,r,r")
+        (if_then_else:FITGPR (match_operator 2 "zero_comparison_operator"
+                                               [(match_operand:SIDI 3 "register_operand" "r,r,r,r")
+                                                (const_int 0)])
+                             (match_operand:FITGPR 1 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")
+                             (match_operand:FITGPR 4 "register_operand" "0,0,0,0")))
+   (use (match_operand:FITGPR 5 "register_operand" "r,r,r,r"))]
+  "kvx_ifcvt_ce_level >= KVX_IFCVT_CE2"
+  "#"
+  "kvx_ifcvt_ce_level >= KVX_IFCVT_CE3"
+  [(set (match_dup 0)
+        (if_then_else:FITGPR (match_op_dup 2 [(match_dup 3) (const_int 0)])
+                             (match_dup 1)
+                             (match_dup 4)))]
+)
+
+(define_insn_and_split "*cond_exec_cmove_<FITGPR:mode>.<EQNE:evenodd>"
+  [(cond_exec
+     (match_operator 5 "zero_comparison_operator"
+      [(match_operand:DISI 4 "register_operand" "r,r,r,r")
+       (const_int 0)])
+     (parallel
+      [(set (match_operand:FITGPR 0 "register_operand" "=r,r,r,r")
+            (if_then_else:FITGPR (EQNE (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r,r,r,r")
+                                                          (const_int 1) (const_int 0))
+                                       (const_int 0))
+                                 (match_operand:FITGPR 1 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")
+                                 (match_operand:FITGPR 3 "register_operand" "0,0,0,0")))
+
+       (use (match_operand:FITGPR 6 "register_operand" "r,r,r,r"))]))]
+  "kvx_ifcvt_ce_level >= KVX_IFCVT_CE2"
+  "#"
+  "kvx_ifcvt_ce_level >= KVX_IFCVT_CE3"
+  [(set (match_dup 6) (match_dup 3))
+   (cond_exec
+     (EQNE (zero_extract:SIDI (match_dup 2) (const_int 1) (const_int 0))
+           (const_int 0))
+     (set (match_dup 6) (match_dup 1)))
+   (cond_exec
+     (match_op_dup 5 [(match_dup 4) (const_int 0)])
+     (set (match_dup 0) (match_dup 6)))]
+)
+
+(define_insn_and_split "*wrapped_cmove_<FITGPR:mode>.<EQNE:evenodd>"
+  [(set (match_operand:FITGPR 0 "register_operand" "=r,r,r,r")
+        (if_then_else:FITGPR (EQNE (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r,r,r,r")
+                                                      (const_int 1) (const_int 0))
+                                   (const_int 0))
+                             (match_operand:FITGPR 1 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")
+                             (match_operand:FITGPR 3 "register_operand" "0,0,0,0")))
+
+       (use (match_operand:FITGPR 4 "register_operand" "r,r,r,r"))]
+  "kvx_ifcvt_ce_level >= KVX_IFCVT_CE2"
+  "#"
+  "kvx_ifcvt_ce_level >= KVX_IFCVT_CE3"
+  [(set (match_dup 0)
+        (if_then_else:FITGPR (EQNE (zero_extract:SIDI (match_dup 2) (const_int 1) (const_int 0))
+                                   (const_int 0))
+                             (match_dup 1)
+                             (match_dup 3)))]
+)
+
+
 ;; COND_EXEC STORE
 
 (define_insn "*cond_exec_store<ALLIFV:mode>"
@@ -1696,6 +1787,33 @@
    (set_attr "length"            "4,               8,              12")]
 )
 
+(define_insn_and_split "*cond_exec_store<ALLIFV:mode>"
+  [(cond_exec
+     (match_operator 2 "zero_comparison_operator"
+      [(match_operand:SIDI 3 "register_operand" "r,r,r")
+       (const_int 0)])
+     (parallel
+      [(set (match_operand:ALLIFV 0 "memory_operand" "=a,b,m")
+            (match_operand:ALLIFV 1 "register_operand" "r,r,r"))
+       (use (match_operand:P 4 "register_operand" "r,r,r"))]))]
+  "kvx_ifcvt_ce_level >= KVX_IFCVT_CE2"
+  "#"
+  "kvx_ifcvt_ce_level >= KVX_IFCVT_CE3"
+  [(cond_exec
+     (match_op_dup 2
+      [(match_dup 3) (const_int 0)])
+     (set (match_dup 0) (match_dup 1)))]
+  {
+    if (!memsimple_operand (operands[0], VOIDmode))
+      {
+        rtx address = copy_rtx (XEXP (operands[0], 0));
+        emit_insn (gen_rtx_SET (operands[4], address));
+        operands[0] = gen_rtx_MEM (<ALLIFV:MODE>mode, operands[4]);
+        gcc_checking_assert (memsimple_operand (operands[0], VOIDmode));
+      }
+  }
+)
+
 (define_insn "*cond_exec_store<ALLIFV:mode>.<EQNE:evenodd>"
   [(cond_exec
      (EQNE (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r,r,r")
@@ -1707,6 +1825,43 @@
   "s<ALLIFV:lsusize>%X0.<EQNE:evenodd> %2? %O0 = %1"
   [(set_attr "type" "lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
    (set_attr "length"            "4,               8,              12")]
+)
+
+(define_insn_and_split "*cond_exec_store<ALLIFV:mode>.<EQNE:evenodd>"
+  [(cond_exec
+     (EQNE (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r,r,r")
+                              (const_int 1) (const_int 0))
+           (const_int 0))
+     (parallel
+      [(set (match_operand:ALLIFV 0 "memory_operand" "=a,b,m")
+            (match_operand:ALLIFV 1 "register_operand" "r,r,r"))
+       (use (match_operand:P 3 "register_operand" "r,r,r"))]))]
+  "kvx_ifcvt_ce_level >= KVX_IFCVT_CE2"
+  "#"
+  "kvx_ifcvt_ce_level >= KVX_IFCVT_CE3"
+  [(cond_exec
+     (EQNE (zero_extract:SIDI (match_dup 2) (const_int 1) (const_int 0))
+           (const_int 0))
+     (set (match_dup 0) (match_dup 1)))]
+  {
+    if (!memsimple_operand (operands[0], VOIDmode))
+      {
+        rtx address = copy_rtx (XEXP (operands[0], 0));
+        emit_insn (gen_rtx_SET (operands[3], address));
+        operands[0] = gen_rtx_MEM (<ALLIFV:MODE>mode, operands[3]);
+        gcc_checking_assert (memsimple_operand (operands[0], VOIDmode));
+      }
+  }
+)
+
+(define_insn_and_split "*wrapped_store<ALLIFV:mode>"
+  [(set (match_operand:ALLIFV 0 "memory_operand" "=a,b,m")
+        (match_operand:ALLIFV 1 "register_operand" "r,r,r"))
+   (use (match_operand:P 2 "register_operand" "r,r,r"))]
+  "kvx_ifcvt_ce_level >= KVX_IFCVT_CE2"
+  "#"
+  "kvx_ifcvt_ce_level >= KVX_IFCVT_CE3"
+  [(set (match_dup 0) (match_dup 1))]
 )
 
 
@@ -1725,6 +1880,33 @@
    (set_attr "length"           "4,               8,              12,                      4,                        8,                       12")]
 )
 
+(define_insn_and_split "*cond_exec_load<ALLIFV:mode>"
+  [(cond_exec
+     (match_operator 2 "zero_comparison_operator"
+      [(match_operand:SIDI 3 "register_operand" "r,r,r")
+       (const_int 0)])
+     (parallel
+      [(set (match_operand:ALLIFV 0 "register_operand" "=r,r,r")
+            (match_operand:ALLIFV 1 "memory_operand" "a,b,m"))
+       (use (match_operand:P 4 "register_operand" "r,r,r"))]))]
+  "kvx_ifcvt_ce_level >= KVX_IFCVT_CE2"
+  "#"
+  "kvx_ifcvt_ce_level >= KVX_IFCVT_CE3"
+  [(cond_exec
+     (match_op_dup 2
+      [(match_dup 3) (const_int 0)])
+     (set (match_dup 0) (match_dup 1)))]
+  {
+    if (!memsimple_operand (operands[1], VOIDmode))
+      {
+        rtx address = copy_rtx (XEXP (operands[1], 0));
+        emit_insn (gen_rtx_SET (operands[4], address));
+        operands[1] = gen_rtx_MEM (<ALLIFV:MODE>mode, operands[4]);
+        gcc_checking_assert (memsimple_operand (operands[1], VOIDmode));
+      }
+  }
+)
+
 (define_insn "*cond_exec_load<ALLIFV:mode>.<EQNE:evenodd>"
   [(cond_exec
      (EQNE (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r,r,r,r,r,r")
@@ -1736,6 +1918,44 @@
   "l<ALLIFV:lsusizezx>%V1.<EQNE:evenodd> %2? %0 = %O1"
   [(set_attr "type" "lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_y, lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y")
    (set_attr "length"           "4,               8,              12,                      4,                        8,                       12")]
+)
+
+(define_insn_and_split "*cond_exec_load<ALLIFV:mode>.<EQNE:evenodd>"
+  [(cond_exec
+     (EQNE (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r,r,r")
+                              (const_int 1) (const_int 0))
+           (const_int 0))
+     (parallel
+      [(set (match_operand:ALLIFV 0 "register_operand" "=r,r,r")
+            (match_operand:ALLIFV 1 "memory_operand" "a,b,m"))
+       (use (match_operand:P 3 "register_operand" "r,r,r"))]))]
+  "kvx_ifcvt_ce_level >= KVX_IFCVT_CE2"
+  "#"
+  "kvx_ifcvt_ce_level >= KVX_IFCVT_CE3"
+  [(cond_exec
+     (EQNE (zero_extract:SIDI (match_dup 2) (const_int 1) (const_int 0))
+           (const_int 0))
+     (set (match_dup 0) (match_dup 1)))]
+  {
+    if (!memsimple_operand (operands[1], VOIDmode))
+      {
+        rtx address = copy_rtx (XEXP (operands[1], 0));
+        emit_insn (gen_rtx_SET (operands[3], address));
+        operands[1] = gen_rtx_MEM (<ALLIFV:MODE>mode, operands[3]);
+        gcc_checking_assert (memsimple_operand (operands[1], VOIDmode));
+      }
+  }
+)
+
+(define_insn_and_split "*wrapped_load<ALLIFV:mode>"
+  [(set (match_operand:ALLIFV 0 "register_operand" "=r,r,r")
+        (match_operand:ALLIFV 1 "memory_operand" "a,b,m"))
+   (use (match_operand:P 2 "register_operand" "r,r,r"))]
+  "kvx_ifcvt_ce_level >= KVX_IFCVT_CE2"
+  "#"
+  "kvx_ifcvt_ce_level >= KVX_IFCVT_CE3"
+  [(set (match_dup 0) (match_dup 1))]
+  ""
 )
 
 
@@ -1754,6 +1974,33 @@
    (set_attr "length"           "4,               8,              12,                      4,                        8,                       12")]
 )
 
+(define_insn_and_split "*cond_exec_load<SHORT:mode>_ext<ANY_EXTEND:lsux>"
+  [(cond_exec
+     (match_operator 2 "zero_comparison_operator"
+      [(match_operand:SIDI 3 "register_operand" "r,r,r")
+       (const_int 0)])
+     (parallel
+      [(set (match_operand:DI 0 "register_operand" "=r,r,r")
+            (ANY_EXTEND:DI (match_operand:SHORT 1 "memory_operand" "a,b,m")))
+       (use (match_operand:P 4 "register_operand" "r,r,r"))]))]
+  "kvx_ifcvt_ce_level >= KVX_IFCVT_CE2"
+  "#"
+  "kvx_ifcvt_ce_level >= KVX_IFCVT_CE3"
+  [(cond_exec
+     (match_op_dup 2
+      [(match_dup 3) (const_int 0)])
+     (set (match_dup 0) (ANY_EXTEND:DI (match_dup 1))))]
+  {
+    if (!memsimple_operand (operands[1], VOIDmode))
+      {
+        rtx address = copy_rtx (XEXP (operands[1], 0));
+        emit_insn (gen_rtx_SET (operands[4], address));
+        operands[1] = gen_rtx_MEM (<SHORT:MODE>mode, operands[4]);
+        gcc_checking_assert (memsimple_operand (operands[1], VOIDmode));
+      }
+  }
+)
+
 (define_insn "*cond_exec_load<SHORT:mode><ANY_EXTEND:lsux>.<EQNE:evenodd>"
   [(cond_exec
      (EQNE (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r,r,r,r,r,r")
@@ -1765,6 +2012,56 @@
   "l<SHORT:lsusize><ANY_EXTEND:lsux>%V1.<EQNE:evenodd> %2? %0 = %O1"
   [(set_attr "type" "lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_y, lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y")
    (set_attr "length"           "4,               8,              12,                      4,                        8,                       12")]
+)
+
+(define_insn_and_split "*cond_exec_load<SHORT:mode>_ext<ANY_EXTEND:lsux>.<EQNE:evenodd>"
+  [(cond_exec
+     (EQNE (zero_extract:SIDI (match_operand:SIDI 2 "register_operand" "r,r,r")
+                              (const_int 1) (const_int 0))
+           (const_int 0))
+     (parallel
+      [(set (match_operand:DI 0 "register_operand" "=r,r,r")
+            (ANY_EXTEND:DI (match_operand:SHORT 1 "memory_operand" "a,b,m")))
+       (use (match_operand:P 3 "register_operand" "r,r,r"))]))]
+  "kvx_ifcvt_ce_level >= KVX_IFCVT_CE2"
+  "#"
+  "kvx_ifcvt_ce_level >= KVX_IFCVT_CE3"
+  [(cond_exec
+     (EQNE (zero_extract:SIDI (match_dup 2) (const_int 1) (const_int 0))
+           (const_int 0))
+     (set (match_dup 0) (ANY_EXTEND:DI (match_dup 1))))]
+  {
+    if (!memsimple_operand (operands[1], VOIDmode))
+      {
+        rtx address = copy_rtx (XEXP (operands[1], 0));
+        emit_insn (gen_rtx_SET (operands[3], address));
+        operands[1] = gen_rtx_MEM (<SHORT:MODE>mode, operands[3]);
+        gcc_checking_assert (memsimple_operand (operands[1], VOIDmode));
+      }
+  }
+)
+
+(define_insn_and_split "*wrapped_load<SHORT:mode>_ext<ANY_EXTEND:lsux>"
+  [(set (match_operand:DI 0 "register_operand" "=r,r,r")
+        (ANY_EXTEND:DI (match_operand:SHORT 1 "memory_operand" "a,b,m")))
+   (use (match_operand:P 2 "register_operand" "r,r,r"))]
+  "kvx_ifcvt_ce_level >= KVX_IFCVT_CE2"
+  "#"
+  "kvx_ifcvt_ce_level >= KVX_IFCVT_CE3"
+  [(set (match_dup 0) (ANY_EXTEND:DI (match_dup 1)))]
+  ""
+)
+
+
+;; UNSPEC_DEF
+
+(define_insn_and_split "*unspec_def"
+  [(set (match_operand:FITGPR 0 "register_operand" "=r")
+        (unspec:FITGPR [(match_operand 1)] UNSPEC_DEF))]
+  "kvx_ifcvt_ce_level >= KVX_IFCVT_CE2"
+  "#"
+  "kvx_ifcvt_ce_level >= KVX_IFCVT_CE3"
+  [(use (match_dup 1))]
 )
 
 

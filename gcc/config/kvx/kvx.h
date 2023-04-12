@@ -525,6 +525,10 @@ extern void kvx_profile_hook (void);
 /* Set MAX_CONDITIONAL_EXECUTE to 2*BRANCH_COST */
 #define MAX_CONDITIONAL_EXECUTE 12
 
+#define IFCVT_MODIFY_TESTS(CE_INFO, TRUE_EXPR, FALSE_EXPR)                     \
+  kvx_ifcvt_modify_tests (CE_INFO, TRUE_EXPR, FALSE_EXPR,                      \
+			  then_start, then_end, else_start, else_end)
+
 #define IFCVT_MODIFY_INSN(CE_INFO, PATTERN, INSN)                              \
   ((PATTERN) = kvx_ifcvt_modify_insn (CE_INFO, PATTERN, INSN))
 
