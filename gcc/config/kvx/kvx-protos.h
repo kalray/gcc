@@ -179,7 +179,7 @@ extern void kvx_expand_any64_eqz (rtx target, rtx source, enum machine_mode mode
 
 extern void kvx_emit_pre_barrier (rtx);
 extern void kvx_emit_post_barrier (rtx);
-extern void kvx_expand_compare_and_swap (rtx op[]);
+extern void kvx_expand_compare_and_swap (rtx, rtx, rtx, rtx, rtx, rtx, rtx, rtx);
 extern void kvx_expand_atomic_op (enum rtx_code, rtx, bool, rtx, rtx, rtx);
 extern void kvx_expand_atomic_test_and_set (rtx op[]);
 

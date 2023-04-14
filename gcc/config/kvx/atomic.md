@@ -23,17 +23,18 @@
 
 ;; Atomic compare-and-swap operation with memory model semantics.
 (define_expand "atomic_compare_and_swap<mode>"
-  [(match_operand:SI 0 "register_operand" "")   ;; bool output
-   (match_operand:SIDI 1 "register_operand" "") ;; val output before CAS
-   (match_operand:SIDI 2 "mematomic_operand" "");; memory
-   (match_operand:SIDI 3 "register_operand" "") ;; expected
-   (match_operand:SIDI 4 "register_operand" "") ;; desired
+  [(match_operand:SI 0 "register_operand")   ;; bool output
+   (match_operand:ACSI 1 "register_operand") ;; val output before CAS
+   (match_operand:ACSI 2 "mematomic_operand");; memory
+   (match_operand:ACSI 3 "register_operand") ;; expected
+   (match_operand:ACSI 4 "register_operand") ;; desired
    (match_operand:SI 5 "const_int_operand")     ;; is_weak
    (match_operand:SI 6 "const_int_operand")     ;; model success
    (match_operand:SI 7 "const_int_operand")]    ;; model failure
   ""
   {
-    kvx_expand_compare_and_swap (operands);
+    kvx_expand_compare_and_swap (operands[0], operands[1], operands[2],
+    operands[3], operands[4], operands[5], operands[6], operands[7]);
     DONE;
   }
 )
@@ -281,14 +282,20 @@
 )
 
 ;; Atomic Compare and Swap
+
+(define_mode_iterator ACSWAP_IN [SI DI (TI "KV3_2")])
+(define_mode_attr ACSWAP_EX [(SI "TI") (DI "TI") (TI "OI")])
+(define_mode_attr ACSWAP_RET [(SI "SI") (DI "DI") (TI "TI")])
+(define_mode_attr acswap_reg [(SI "x") (DI "x") (TI "q")])
+
 (define_expand "kvx_acswap<lsusize>"
   [(parallel
-    [(set (match_operand:TI 0 "register_operand" "")
-          (unspec_volatile:TI [(match_operand:SIDI 1 "mematomic_operand" "")
-                               (match_operand 2 "" "")] UNSPEC_ACSWAP))
+    [(set (match_operand:<ACSWAP_EX> 0 "register_operand")
+          (unspec_volatile:<ACSWAP_EX> [(match_operand:ACSWAP_IN 1 "mematomic_operand")
+                               (match_operand 2)] UNSPEC_ACSWAP))
      (set (match_dup 1)
-          (unspec:SIDI [(match_dup 1) (match_dup 0)] UNSPEC_ACSWAP))
-     (use (match_operand:SI 3 "nonmemory_operand" ""))]
+          (unspec:ACSWAP_IN [(match_dup 1) (match_dup 0)] UNSPEC_ACSWAP))
+     (use (match_operand:SI 3 "nonmemory_operand"))]
   )]
   ""
   ""
@@ -307,15 +314,16 @@
    (set_attr "length"                  "4,                     8,                    12")]
 )
 
+
 (define_insn "*acswap<lsusize>_2"
-  [(set (match_operand:TI 0 "register_operand" "+r,r,r")
-        (unspec_volatile:TI [(match_operand:SIDI 1 "mematomic_operand" "+c,d,e")
+  [(set (match_operand:<ACSWAP_EX> 0 "register_operand" "+r,r,r")
+        (unspec_volatile:<ACSWAP_EX> [(match_operand:ACSWAP_IN 1 "mematomic_operand" "+c,d,e")
                              (match_operand 2 "" "")] UNSPEC_ACSWAP))
    (set (match_dup 1)
-        (unspec:SIDI [(match_dup 1) (match_dup 0)] UNSPEC_ACSWAP))
+        (unspec:ACSWAP_IN [(match_dup 1) (match_dup 0)] UNSPEC_ACSWAP))
    (use (match_operand:SI 3 "nonmemory_operand" ""))]
   "KV3_2"
-  "acswap<lsusize>%2%X1 %x0, %O1 = %0"
+  "acswap<lsusize>%2%X1 %<acswap_reg>0, %O1 = %0"
   [(set_attr "type" "lsu_auxr_auxw_atomic,lsu_auxr_auxw_atomic_x,lsu_auxr_auxw_atomic_y")
    (set_attr "length"                  "4,                     8,                    12")]
 )
