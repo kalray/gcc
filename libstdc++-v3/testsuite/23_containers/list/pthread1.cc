@@ -20,6 +20,7 @@
 // { dg-do run }
 // { dg-options "-pthread"  }
 // { dg-require-effective-target pthread }
+// { dg-skip-if "Disabled on KVX since the configuration does not allow enough threads" { "kvx-*-*" } { "*" } { "" } }
 
 // This multi-threading C++/STL/POSIX code adheres to rules outlined here:
 // http://www.sgi.com/tech/stl/thread_safety.html

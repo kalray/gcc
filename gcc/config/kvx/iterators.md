@@ -388,6 +388,11 @@
 ;; Iterator for Atomic Integer modes
 (define_mode_iterator AI [QI HI SI DI TI])
 
+;; Iterator for Atomic Integer modes supported by Compare And Swap
+;; Disable TI for now because it is not supported by QEMU.
+;; (define_mode_iterator ACSI [QI HI SI DI (TI "KV3_2")])
+(define_mode_iterator ACSI [QI HI SI DI])
+
 ;; Iterator for atomic binary operations
 ;; (mult op stands for nand)
 (define_code_iterator atomic_op [plus ior xor minus and mult])
