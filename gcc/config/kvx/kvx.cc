@@ -213,7 +213,13 @@ kvx_compute_frame_info (void)
     return;
 
   frame = &cfun->machine->frame;
+  /* This is due to the poly_int which are not really PODs, but since we don't
+     rely on any special features of poly_int this is fine.  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpragmas"
+#pragma GCC diagnostic ignored "-Wclass-memaccess"
   memset (frame, 0, sizeof (*frame));
+#pragma GCC diagnostic pop
   CLEAR_HARD_REG_SET (frame->saved_regs);
 
   inc_sp_offset += crtl->args.pretend_args_size;
@@ -4777,9 +4783,8 @@ kvx_sched_adjust_priority (rtx_insn *insn, int priority)
   return priority;
 }
 
-/* TODO: Does this really serve any purpose? */
 static void
-kvx_sched_dependencies_evaluation_hook (rtx_insn *ARG_UNUSED (head), rtx_insn *ARG_UNUSED (tail))
+kvx_sched_dependencies_evaluation_hook (rtx_insn ARG_UNUSED (*head), rtx_insn ARG_UNUSED (*tail))
 {
 }
 
@@ -8117,6 +8122,11 @@ kvx_expand_memset_mul (rtx *operands, machine_mode mode)
 
   rtx op0[MOVE_MAX / UNITS_PER_WORD];
   int nwords = GET_MODE_SIZE (mode) / UNITS_PER_WORD;
+
+  /* If this assert is not verified, calling KVX_EXPAND_CHUNK_SPLAT on OP0[0] is
+     undefined behavior.  */
+  gcc_assert (nwords >= 1);
+
   for (int i = 0; i < nwords; i++)
     op0[i] = simplify_gen_subreg (DImode, operands[0], mode, i * UNITS_PER_WORD);
 
