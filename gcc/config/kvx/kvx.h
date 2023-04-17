@@ -672,7 +672,7 @@ extern void kvx_profile_hook (void);
 
 /* The maximum number of bytes that a single instruction can move quickly from
    memory to memory.  */
-#define MOVE_MAX 32
+#define MOVE_MAX 16
 
 #define STORE_FLAG_VALUE 1
 
