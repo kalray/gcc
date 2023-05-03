@@ -183,6 +183,7 @@ extern void kvx_expand_compare_and_swap (rtx, rtx, rtx, rtx, rtx, rtx, rtx, rtx)
 extern void kvx_expand_atomic_op (enum rtx_code, rtx, bool, rtx, rtx, rtx);
 extern void kvx_expand_atomic_test_and_set (rtx op[]);
 
+extern int kvx_branch_tested_bypass_p (rtx_insn *prod_insn, rtx_insn *cons_insn);
 extern int kvx_stored_value_bypass_p (rtx_insn *prod_insn, rtx_insn *cons_insn);
 extern int kvx_accumulator_bypass_p (rtx_insn *prod_insn, rtx_insn *cons_insn);
 

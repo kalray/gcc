@@ -1783,7 +1783,7 @@
           (match_operand:ALLIFV 1 "register_operand" "r,r,r")))]
   ""
   "s<ALLIFV:lsusize>%X0.<SIDI:suffix>%2z %3? %O0 = %1"
-  [(set_attr "type" "lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
+  [(set_attr "type" "store_core,store_core_x,store_core_y")
    (set_attr "length"            "4,               8,              12")]
 )
 
@@ -1823,7 +1823,7 @@
           (match_operand:ALLIFV 1 "register_operand" "r,r,r")))]
   ""
   "s<ALLIFV:lsusize>%X0.<EQNE:evenodd> %2? %O0 = %1"
-  [(set_attr "type" "lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
+  [(set_attr "type" "store_core,store_core_x,store_core_y")
    (set_attr "length"            "4,               8,              12")]
 )
 
@@ -1876,7 +1876,7 @@
           (match_operand:ALLIFV 1 "memsimple_operand" "Cc,Cd,Ce,Zc,Zd,Ze")))]
   ""
   "l<ALLIFV:lsusizezx>%V1.<SIDI:suffix>%2z %3? %0 = %O1"
-  [(set_attr "type" "lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_y, lsu_auxw_uncached_load, lsu_auxw_uncached_load_x, lsu_auxw_uncached_load_y")
+  [(set_attr "type" "load_core, load_core_x, load_core_y, load_core_uncached, load_core_uncached_x, load_core_uncached_y")
    (set_attr "length"           "4,               8,              12,                      4,                        8,                       12")]
 )
 
@@ -1916,7 +1916,7 @@
           (match_operand:ALLIFV 1 "memsimple_operand" "Cc,Cd,Ce,Zc,Zd,Ze")))]
   ""
   "l<ALLIFV:lsusizezx>%V1.<EQNE:evenodd> %2? %0 = %O1"
-  [(set_attr "type" "lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_y, lsu_auxw_uncached_load, lsu_auxw_uncached_load_x, lsu_auxw_uncached_load_y")
+  [(set_attr "type" "load_core, load_core_x, load_core_y, load_core_uncached, load_core_uncached_x, load_core_uncached_y")
    (set_attr "length"           "4,               8,              12,                      4,                        8,                       12")]
 )
 
@@ -1970,7 +1970,7 @@
           (ANY_EXTEND:DI (match_operand:SHORT 1 "memsimple_operand" "Cc,Cd,Ce,Zc,Zd,Ze"))))]
   ""
   "l<SHORT:lsusize><ANY_EXTEND:lsux>%V1.<SIDI:suffix>%2z %3? %0 = %O1"
-  [(set_attr "type" "lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_y, lsu_auxw_uncached_load, lsu_auxw_uncached_load_x, lsu_auxw_uncached_load_y")
+  [(set_attr "type" "load_core, load_core_x, load_core_y, load_core_uncached, load_core_uncached_x, load_core_uncached_y")
    (set_attr "length"           "4,               8,              12,                      4,                        8,                       12")]
 )
 
@@ -2010,7 +2010,7 @@
           (ANY_EXTEND:DI (match_operand:SHORT 1 "memsimple_operand" "Cc,Cd,Ce,Zc,Zd,Ze"))))]
   ""
   "l<SHORT:lsusize><ANY_EXTEND:lsux>%V1.<EQNE:evenodd> %2? %0 = %O1"
-  [(set_attr "type" "lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_y, lsu_auxw_uncached_load, lsu_auxw_uncached_load_x, lsu_auxw_uncached_load_y")
+  [(set_attr "type" "load_core, load_core_x, load_core_y, load_core_uncached, load_core_uncached_x, load_core_uncached_y")
    (set_attr "length"           "4,               8,              12,                      4,                        8,                       12")]
 )
 

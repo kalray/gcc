@@ -85,7 +85,7 @@
                      UNSPEC_XMOVEF))]
    "KV3_1 || (KV3_2||KV4)"
    "xmovefo %0 = %1"
-   [(set_attr "type" "bcu_tiny_auxw_crrp")]
+   [(set_attr "type" "movef_copro")]
 )
 
 (define_insn "kvx_xmovefq"
@@ -95,7 +95,7 @@
                      UNSPEC_XMOVEF))]
    "(KV3_2||KV4)"
    "xmovefq %0 = %1%2"
-   [(set_attr "type" "bcu_tiny_auxw_crrp")]
+   [(set_attr "type" "movef_copro")]
 )
 
 (define_insn "kvx_xmovefd"
@@ -105,7 +105,7 @@
                      UNSPEC_XMOVEF))]
    "(KV3_2||KV4)"
    "xmovefd %0 = %1%2"
-   [(set_attr "type" "bcu_tiny_auxw_crrp")]
+   [(set_attr "type" "movef_copro")]
 )
 
 (define_insn "kvx_xmoveto"
@@ -114,7 +114,7 @@
                      UNSPEC_XMOVET))]
   "KV3_1 || (KV3_2||KV4)"
   "xmovetq %0.lo = %x1, %y1\n\txmovetq %0.hi = %z1, %t1"
-  [(set_attr "type" "alu_thin_x2_crwl_crwh")
+  [(set_attr "type" "movet_copro")
    (set_attr "length" "8")]
 )
 
@@ -126,7 +126,7 @@
                      UNSPEC_XMOVET))]
   "KV3_1 || (KV3_2||KV4)"
   "xmovetq %0%3 = %x2, %y2"
-  [(set_attr "type" "alu_tiny_crwl_crwh")
+  [(set_attr "type" "alu_tiny_recv")
    (set_attr "length" "4")]
 )
 
@@ -138,7 +138,7 @@
                      UNSPEC_XMOVET))]
   "(KV3_2||KV4)"
   "xmovetd %0%3 = %2"
-  [(set_attr "type" "alu_tiny_crwl_crwh")
+  [(set_attr "type" "alu_tiny_recv")
    (set_attr "length" "4")]
 )
 
@@ -183,7 +183,7 @@
         gcc_unreachable ();
       }
   }
-  [(set_attr "type" "bcu_crrp_crwl_crwh,lsu_uncached_load,lsu_uncached_load_x,lsu_uncached_load_y,lsu_crrp_store,lsu_crrp_store_x,lsu_crrp_store_y,bcu_tiny_auxw_crrp,alu_lite_x2_crwl_crwh,lsu_auxr_auxw")
+  [(set_attr "type" "copy_copro,load_copro_uncached,load_copro_uncached_x,load_copro_uncached_y,store_copro,store_copro_x,store_copro_y,movef_copro,movet_copro,copy_core")
    (set_attr "length"                "4,                4,                  8,                 12,             4,               8,              12,                 4,                    8,            4")]
 )
 
@@ -210,7 +210,7 @@
         gcc_unreachable ();
       }
   }
-  [(set_attr "type" "bcu_crrp_crwl_crwh,lsu_load,lsu_load_x,lsu_load_y,lsu_uncached_load,lsu_uncached_load_x,lsu_uncached_load_y,lsu_crrp_store,lsu_crrp_store_x,lsu_crrp_store_y,bcu_tiny_auxw_crrp,alu_thin_x2_crwl_crwh,lsu_auxr_auxw")
+  [(set_attr "type" "copy_copro,load_copro,load_copro_x,load_copro_y,load_copro_uncached,load_copro_uncached_x,load_copro_uncached_y,store_copro,store_copro_x,store_copro_y,movef_copro,movet_copro,copy_core")
    (set_attr "length"                "4,       4,         8,        12,                4,                  8,                 12,             4,               8,              12,                 4,                    8,            4")]
 )
 
@@ -219,7 +219,7 @@
         (match_operand:ALL256 1 "register_operand" "x"))]
   ""
   "xmovefo %0 = %1"
-  [(set_attr "type" "bcu_tiny_auxw_crrp")
+  [(set_attr "type" "movef_copro")
    (set_attr "length" "4")]
 )
 
@@ -228,7 +228,7 @@
         (match_operand:ALL256 1 "register_operand" "r"))]
   ""
   "xmovetq %0.lo = %x1, %y1\n\txmovetq %0.hi = %z1, %t1"
-  [(set_attr "type" "alu_thin_x2_crwl_crwh")
+  [(set_attr "type" "movet_copro")
    (set_attr "length" "8")]
 )
 
@@ -1064,9 +1064,9 @@
   ""
   "xlo%2%X1 %0 = %1"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_uncached_load") (const_string "lsu_load"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_uncached_load_x") (const_string "lsu_load_x"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_uncached_load_y") (const_string "lsu_load_y"))])
+    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "load_copro_uncached") (const_string "load_copro"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "load_copro_uncached_x") (const_string "load_copro_x"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "load_copro_uncached_y") (const_string "load_copro_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -1119,9 +1119,9 @@
   ""
   "xlo%3%X2 %0 = %2"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_uncached_load") (const_string "lsu_load"))
-     (if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_uncached_load_x") (const_string "lsu_load_x"))
-     (if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_uncached_load_y") (const_string "lsu_load_y"))])
+    [(if_then_else (match_operand 3 "uncached_modifier") (const_string "load_copro_uncached") (const_string "load_copro"))
+     (if_then_else (match_operand 3 "uncached_modifier") (const_string "load_copro_uncached_x") (const_string "load_copro_x"))
+     (if_then_else (match_operand 3 "uncached_modifier") (const_string "load_copro_uncached_y") (const_string "load_copro_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -1134,9 +1134,9 @@
   ""
   "xlo%4%X2 %3? %0 = %O2"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_uncached_load") (const_string "lsu_load"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_uncached_load_x") (const_string "lsu_load_x"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_uncached_load_y") (const_string "lsu_load_y"))])
+    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "load_copro_uncached") (const_string "load_copro"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "load_copro_uncached_x") (const_string "load_copro_x"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "load_copro_uncached_y") (const_string "load_copro_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -1148,7 +1148,7 @@
         (unspec:X256 [(match_operand:DI 1 "register_operand" "r")] UNSPEC_XSPLATD))]
   ""
   "xmovetq %0.lo = %1, %1\n\txmovetq %0.hi = %1, %1";
-  [(set_attr "type" "alu_thin_x2_crwl_crwh")
+  [(set_attr "type" "movet_copro")
    (set_attr "length"                   "8")]
 )
 
@@ -1431,9 +1431,9 @@
   ""
   "xlo%4%X2 %3? %0 = %O2"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_uncached_load") (const_string "lsu_load"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_uncached_load_x") (const_string "lsu_load_x"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_uncached_load_y") (const_string "lsu_load_y"))])
+    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "load_copro_uncached") (const_string "load_copro"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "load_copro_uncached_x") (const_string "load_copro_x"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "load_copro_uncached_y") (const_string "load_copro_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -1445,9 +1445,9 @@
   ""
   "xlo%3%X1 %2? %0 = %O1"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_uncached_load") (const_string "lsu_load"))
-     (if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_uncached_load_x") (const_string "lsu_load_x"))
-     (if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_uncached_load_y") (const_string "lsu_load_y"))])
+    [(if_then_else (match_operand 3 "uncached_modifier") (const_string "load_copro_uncached") (const_string "load_copro"))
+     (if_then_else (match_operand 3 "uncached_modifier") (const_string "load_copro_uncached_x") (const_string "load_copro_x"))
+     (if_then_else (match_operand 3 "uncached_modifier") (const_string "load_copro_uncached_y") (const_string "load_copro_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -1532,7 +1532,7 @@
    (use (match_operand:SI 2 "nonmemory_operand" ""))]
   ""
   "xso%X1 %1 = %0"
-  [(set_attr "type" "lsu_crrp_store,lsu_crrp_store_x,lsu_crrp_store_y")
+  [(set_attr "type" "store_copro,store_copro_x,store_copro_y")
    (set_attr "length"            "4,               8,              12")]
 )
 
@@ -1592,7 +1592,7 @@
    (clobber (match_dup 1))]
   ""
   "xso%3%X1 %2? %O1 = %0"
-  [(set_attr "type" "lsu_crrp_store,lsu_crrp_store_x,lsu_crrp_store_y")
+  [(set_attr "type" "store_copro,store_copro_x,store_copro_y")
    (set_attr "length"            "4,               8,              12")]
 )
 
@@ -1661,7 +1661,7 @@
                        (match_operand 4 "" "")] UNSPEC_XPRELOAD))]
   "(KV3_2||KV4)"
   "xlo%4%X2 %b0, %3 = %O2"
-  [(set_attr "type" "lsu,lsu_x,lsu_y")
+  [(set_attr "type" "preload,preload_x,preload_y")
    (set_attr "length" "4,   8,   12")]
 )
 
@@ -1673,7 +1673,7 @@
                        (match_operand 4 "" "")] UNSPEC_XPRELOAD))]
   "(KV3_2||KV4)"
   "xlo%4.<AI:lsusize>%X2 %b0, %3 = %O2"
-  [(set_attr "type" "lsu,lsu_x,lsu_y")
+  [(set_attr "type" "preload,preload_x,preload_y")
    (set_attr "length" "4,   8,   12")]
 )
 
@@ -1686,7 +1686,7 @@
                          (match_operand:DI 2 "register_operand" "r")] UNSPEC_XALIGN256))]
   "(KV3_2||KV4)"
   "xaligno %0 = %b1, %2"
-  [(set_attr "type" "bcu_crrp_crwl_crwh")]
+  [(set_attr "type" "copy_copro")]
 )
 
 (define_insn "kvx_xaccesso<XBUFF:bitsize>"
@@ -1695,7 +1695,7 @@
                       (match_operand:DI 2 "register_operand" "r")] UNSPEC_XACCESS256))]
   "(KV3_2||KV4)"
   "xaccesso %0 = %b1, %2"
-  [(set_attr "type" "bcu_tiny_auxw_crrp")]
+  [(set_attr "type" "movef_copro")]
 )
 
 (define_expand "kvx_xaccessq<XBUFF:bitsize>"
@@ -1734,7 +1734,7 @@
                       (match_operand 3 "" "")] UNSPEC_XFSCALEWO))]
   "(KV3_2||KV4)"
   "xfscalewo%3 %0 = %1, %2"
-  [(set_attr "type" "bcu_crrp_crwl_crwh")]
+  [(set_attr "type" "copy_copro")]
 )
 
 
@@ -2200,7 +2200,7 @@
                      (match_operand 1 "" "")] UNSPEC_XSENDO)]
   "(KV3_2||KV4)"
   "xsendo%1 %0"
-  [(set_attr "type" "alu_tiny_crrp")]
+  [(set_attr "type" "alu_tiny_send")]
 )
 
 (define_insn "kvx_xrecvo"
@@ -2208,7 +2208,7 @@
         (unspec_volatile:X256 [(match_operand 1 "" "")] UNSPEC_XRECVO))]
   "(KV3_2||KV4)"
   "xrecvo%1 %0"
-  [(set_attr "type" "alu_tiny_crwl_crwh")]
+  [(set_attr "type" "alu_tiny_recv")]
 )
 
 (define_insn "kvx_xsendrecvo"
@@ -2217,7 +2217,7 @@
                                (match_operand 2 "" "")] UNSPEC_XSENDRECVO))]
   "(KV3_2||KV4)"
   "xsendrecvo%2 %0, %1"
-  [(set_attr "type" "alu_tiny_crrp_crwl_crwh")]
+  [(set_attr "type" "alu_tiny_sendrecv")]
 )
 
 

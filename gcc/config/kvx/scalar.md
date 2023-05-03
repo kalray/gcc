@@ -1122,7 +1122,7 @@
                  (match_operand:SI 2 "kvx_r_any32_operand" "r,i")))]
   ""
   "mulw %0 = %1, %2"
-  [(set_attr "type" "alu_mul2, alu_mul2_x")
+  [(set_attr "type" "mult_int, mult_int_x")
    (set_attr "length"      "4,          8")]
 )
 ;; zero extend version of mulsi3
@@ -1132,7 +1132,7 @@
                                  (match_operand:SI 2 "kvx_r_any32_operand" "r,i"))))]
   ""
   "mulw %0 = %1, %2"
-  [(set_attr "type" "alu_mul2, alu_mul2_x")
+  [(set_attr "type" "mult_int, mult_int_x")
    (set_attr "length"      "4,          8")]
 )
 
@@ -1142,7 +1142,7 @@
                  (sign_extend:DI (match_operand:SI 2 "register_operand" "r"))))]
   ""
   "mulwd %0 = %1, %2"
-  [(set_attr "type" "alu_mul2")]
+  [(set_attr "type" "mult_int")]
 )
 
 (define_insn "umulsidi3"
@@ -1151,7 +1151,7 @@
                  (zero_extend:DI (match_operand:SI 2 "register_operand" "r"))))]
   ""
   "muluwd %0 = %1, %2"
-  [(set_attr "type" "alu_mul2")]
+  [(set_attr "type" "mult_int")]
 )
 
 (define_insn "usmulsidi3"
@@ -1160,7 +1160,7 @@
                  (sign_extend:DI (match_operand:SI 2 "register_operand" "r"))))]
   ""
   "mulsuwd %0 = %2, %1"
-  [(set_attr "type" "alu_mul2")]
+  [(set_attr "type" "mult_int")]
 )
 
 (define_expand "divsi3"
@@ -1420,7 +1420,7 @@
                  (match_operand:SI 3 "register_operand" "0")))]
   ""
   "maddw %0 = %1, %2"
-  [(set_attr "type" "alu_mac2")]
+  [(set_attr "type" "madd_int")]
 )
 ;; zero-extend version of maddsisi4
 (define_insn "*maddsisi4_zext"
@@ -1430,7 +1430,7 @@
                                  (match_operand:SI 3 "register_operand" "0"))))]
   ""
   "maddw %0 = %1, %2"
-  [(set_attr "type" "alu_mac2")]
+  [(set_attr "type" "madd_int")]
 )
 
 (define_insn "maddsidi4"
@@ -1440,7 +1440,7 @@
                  (match_operand:DI 3 "register_operand" "0")))]
   ""
   "maddwd %0 = %1, %2"
-  [(set_attr "type" "alu_mac2")]
+  [(set_attr "type" "madd_int")]
 )
 
 (define_insn "umaddsidi4"
@@ -1450,7 +1450,7 @@
                  (match_operand:DI 3 "register_operand" "0")))]
   ""
   "madduwd %0 = %1, %2"
-  [(set_attr "type" "alu_mac2")]
+  [(set_attr "type" "madd_int")]
 )
 
 (define_insn "*maddsuwd"
@@ -1460,7 +1460,7 @@
                  (match_operand:DI 3 "register_operand" "0")))]
   ""
   "maddsuwd %0 = %1, %2"
-  [(set_attr "type" "alu_mac2")]
+  [(set_attr "type" "madd_int")]
 )
 
 (define_insn "usmaddsidi4"
@@ -1470,7 +1470,7 @@
                  (match_operand:DI 3 "register_operand" "0")))]
   ""
   "maddsuwd %0 = %2, %1"
-  [(set_attr "type" "alu_mac2")]
+  [(set_attr "type" "madd_int")]
 )
 
 (define_insn "msubsisi4"
@@ -1480,7 +1480,7 @@
                            (match_operand:SI 2 "register_operand" "r"))))]
   ""
   "msbfw %0 = %1, %2"
-  [(set_attr "type" "alu_mac2")]
+  [(set_attr "type" "madd_int")]
 )
 ;; zero-extend version of msubsisi4
 (define_insn "*msubsisi4_zext"
@@ -1490,7 +1490,7 @@
                                            (match_operand:SI 2 "register_operand" "r")))))]
   ""
   "msbfw %0 = %1, %2"
-  [(set_attr "type" "alu_mac2")]
+  [(set_attr "type" "madd_int")]
 )
 
 (define_insn "msubsidi4"
@@ -1500,7 +1500,7 @@
                            (sign_extend:DI (match_operand:SI 2 "register_operand" "r")))))]
   ""
   "msbfwd %0 = %1, %2"
-  [(set_attr "type" "alu_mac2")]
+  [(set_attr "type" "madd_int")]
 )
 
 (define_insn "umsubsidi4"
@@ -1510,7 +1510,7 @@
                            (zero_extend:DI (match_operand:SI 2 "register_operand" "r")))))]
   ""
   "msbfuwd %0 = %1, %2"
-  [(set_attr "type" "alu_mac2")]
+  [(set_attr "type" "madd_int")]
 )
 
 (define_insn "*msbfsuwd"
@@ -1520,7 +1520,7 @@
                            (zero_extend:DI (match_operand:SI 2 "register_operand" "r")))))]
   ""
   "msbfsuwd %0 = %1, %2"
-  [(set_attr "type" "alu_mac2")]
+  [(set_attr "type" "madd_int")]
 )
 
 (define_insn "usmsubsidi4"
@@ -1530,7 +1530,7 @@
                            (sign_extend:DI (match_operand:SI 2 "register_operand" "r")))))]
   ""
   "msbfsuwd %0 = %2, %1"
-  [(set_attr "type" "alu_mac2")]
+  [(set_attr "type" "madd_int")]
 )
 
 (define_insn "sminsi3"
@@ -2431,7 +2431,7 @@
                  (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")))]
   "KV3_1"
   "muld %0 = %1, %2"
-  [(set_attr "type" "alu_mul2, alu_mul2, alu_mul2_x, alu_mul2_y")
+  [(set_attr "type" "mult_int, mult_int, mult_int_x, mult_int_y")
    (set_attr "length"      "4,        4,          8,         12")]
 )
 (define_insn "muldi3_4"
@@ -2440,7 +2440,7 @@
                  (match_operand:DI 2 "register_s32_operand" "r,B32")))]
   "!KV3_1"
   "muld %0 = %1, %2"
-  [(set_attr "type" "alu_mul2, alu_mul2_x")
+  [(set_attr "type" "mult_int, mult_int_x")
    (set_attr "length"      "4,          8")]
 )
 
@@ -2782,7 +2782,7 @@
                  (sign_extend:TI (match_operand:DI 2 "register_operand" "r"))))]
   ""
   "muldt %0 = %1, %2"
-  [(set_attr "type" "alu_mul2")]
+  [(set_attr "type" "mult_int")]
 )
 
 (define_insn "umulditi3"
@@ -2791,7 +2791,7 @@
                  (zero_extend:TI (match_operand:DI 2 "register_operand" "r"))))]
   ""
   "muludt %0 = %1, %2"
-  [(set_attr "type" "alu_mul2")]
+  [(set_attr "type" "mult_int")]
 )
 
 (define_insn "usmulditi3"
@@ -2800,7 +2800,7 @@
                  (sign_extend:TI (match_operand:DI 2 "register_operand" "r"))))]
   ""
   "mulsudt %0 = %2, %1"
-  [(set_attr "type" "alu_mul2")]
+  [(set_attr "type" "mult_int")]
 )
 
 (define_insn_and_split "smuldi3_highpart"
@@ -2858,7 +2858,7 @@
                  (match_operand:DI 3 "register_operand" "0")))]
   ""
   "maddd %0 = %1, %2"
-  [(set_attr "type" "alu_mac2")]
+  [(set_attr "type" "madd_int")]
 )
 
 (define_insn "maddditi4"
@@ -2868,7 +2868,7 @@
                  (match_operand:TI 3 "register_operand" "0")))]
   ""
   "madddt %0 = %1, %2"
-  [(set_attr "type" "alu_mac2")]
+  [(set_attr "type" "madd_int")]
 )
 
 (define_insn "umaddditi4"
@@ -2878,7 +2878,7 @@
                  (match_operand:TI 3 "register_operand" "0")))]
   ""
   "maddudt %0 = %1, %2"
-  [(set_attr "type" "alu_mac2")]
+  [(set_attr "type" "madd_int")]
 )
 
 (define_insn "*madduzdt"
@@ -2888,7 +2888,7 @@
                  (lshiftrt:TI (match_operand:TI 3 "register_operand" "0") (const_int 64))))]
   ""
   "madduzdt %0 = %1, %2"
-  [(set_attr "type" "alu_mac2")]
+  [(set_attr "type" "madd_int")]
 )
 
 (define_insn "*maddsudt"
@@ -2898,7 +2898,7 @@
                  (match_operand:TI 3 "register_operand" "0")))]
   ""
   "maddsudt %0 = %1, %2"
-  [(set_attr "type" "alu_mac2")]
+  [(set_attr "type" "madd_int")]
 )
 
 (define_insn "usmaddditi4"
@@ -2908,7 +2908,7 @@
                  (match_operand:TI 3 "register_operand" "0")))]
   ""
   "maddsudt %0 = %2, %1"
-  [(set_attr "type" "alu_mac2")]
+  [(set_attr "type" "madd_int")]
 )
 
 (define_insn "msubdidi4"
@@ -2918,7 +2918,7 @@
                            (match_operand:DI 2 "register_operand" "r"))))]
   ""
   "msbfd %0 = %1, %2"
-  [(set_attr "type" "alu_mac2")]
+  [(set_attr "type" "madd_int")]
 )
 
 (define_insn "msubditi4"
@@ -2928,7 +2928,7 @@
                            (sign_extend:TI (match_operand:DI 2 "register_operand" "r")))))]
   ""
   "msbfdt %0 = %1, %2"
-  [(set_attr "type" "alu_mac2")]
+  [(set_attr "type" "madd_int")]
 )
 
 (define_insn "umsubditi4"
@@ -2938,7 +2938,7 @@
                            (zero_extend:TI (match_operand:DI 2 "register_operand" "r")))))]
   ""
   "msbfudt %0 = %1, %2"
-  [(set_attr "type" "alu_mac2")]
+  [(set_attr "type" "madd_int")]
 )
 
 (define_insn "*msbfuzdt"
@@ -2948,7 +2948,7 @@
                            (zero_extend:TI (match_operand:DI 2 "register_operand" "r")))))]
   ""
   "msbfuzdt %0 = %1, %2"
-  [(set_attr "type" "alu_mac2")]
+  [(set_attr "type" "madd_int")]
 )
 
 (define_insn "*msbfsudt"
@@ -2958,7 +2958,7 @@
                            (zero_extend:TI (match_operand:DI 2 "register_operand" "r")))))]
   ""
   "msbfsudt %0 = %1, %2"
-  [(set_attr "type" "alu_mac2")]
+  [(set_attr "type" "madd_int")]
 )
 
 (define_insn "usmsubditi4"
@@ -2968,7 +2968,7 @@
                            (sign_extend:TI (match_operand:DI 2 "register_operand" "r")))))]
   ""
   "msbfsudt %0 = %2, %1"
-  [(set_attr "type" "alu_mac2")]
+  [(set_attr "type" "madd_int")]
 )
 
 (define_insn "smindi3"
@@ -3667,7 +3667,7 @@
                  (match_operand:CSI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")))]
   "KV3_1"
   "mulwc %0 = %1, %2"
-  [(set_attr "type" "alu_mul2,alu_mul2,alu_mul2_x,alu_mul2_y")
+  [(set_attr "type" "mult_int,mult_int,mult_int_x,mult_int_y")
    (set_attr "length"      "4,       4,         8,        12")]
 )
 
@@ -3677,7 +3677,7 @@
                   (match_operand:CSI 2 "register_operand" "r")))]
   "KV3_1"
   "mulwc.c %0 = %1, %2"
-  [(set_attr "type"   "alu_mul2")]
+  [(set_attr "type"   "mult_int")]
 )
 
 ;; CDI
@@ -3729,7 +3729,7 @@
                  (match_operand:HF 2 "register_operand" "r")))]
   ""
   "faddhq %0 = %1, %2"
-  [(set_attr "type" "fpu_mul3")]
+  [(set_attr "type" "mult_fp3")]
 )
 
 (define_insn "subhf3"
@@ -3738,7 +3738,7 @@
                   (match_operand:HF 2 "register_operand" "r")))]
   ""
   "fsbfhq %0 = %2, %1"
-  [(set_attr "type" "fpu_mul3")]
+  [(set_attr "type" "mult_fp3")]
 )
 
 (define_insn "mulhf3"
@@ -3747,7 +3747,7 @@
                  (match_operand:HF 2 "register_operand" "r")))]
   ""
   "fmulhq %0 = %1, %2"
-  [(set_attr "type" "fpu_mul3")]
+  [(set_attr "type" "mult_fp3")]
 )
 
 (define_insn "*fmulhw"
@@ -3756,7 +3756,7 @@
                  (float_extend:SF (match_operand:HF 2 "register_operand" "r"))))]
   ""
   "fmulhw %0 = %1, %2"
-  [(set_attr "type" "fpu_mul3")]
+  [(set_attr "type" "mult_fp3")]
 )
 
 (define_expand "divhf3"
@@ -3786,7 +3786,7 @@
                  (match_operand:HF 3 "register_operand" "0")))]
   ""
   "ffmahq %0 = %1, %2"
-  [(set_attr "type" "fpu_fma3")]
+  [(set_attr "type" "madd_fp3")]
 )
 
 (define_insn "*ffmahw"
@@ -3796,7 +3796,7 @@
                  (match_operand:SF 3 "register_operand" "0")))]
   ""
   "ffmahw %0 = %1, %2"
-  [(set_attr "type" "fpu_fma3")]
+  [(set_attr "type" "madd_fp3")]
 )
 
 (define_insn "fnmahf4"
@@ -3806,7 +3806,7 @@
                  (match_operand:HF 3 "register_operand" "0")))]
   ""
   "ffmshq %0 = %1, %2"
-  [(set_attr "type" "fpu_fma3")]
+  [(set_attr "type" "madd_fp3")]
 )
 
 (define_insn "*ffmshw"
@@ -3816,7 +3816,7 @@
                 (match_operand:SF 3 "register_operand" "0")))]
   ""
   "ffmshw %0 = %1, %2"
-  [(set_attr "type" "fpu_fma3")]
+  [(set_attr "type" "madd_fp3")]
 )
 
 (define_insn "*ffmshw2"
@@ -3826,7 +3826,7 @@
                 (match_operand:SF 3 "register_operand" "0")))]
   ""
   "ffmshw %0 = %1, %2"
-  [(set_attr "type" "fpu_fma3")]
+  [(set_attr "type" "madd_fp3")]
 )
 
 (define_insn "fminhf3"
@@ -3988,7 +3988,7 @@
                  (match_operand:SF 2 "register_operand" "r")))]
   ""
   "faddw %0 = %1, %2"
-  [(set_attr "type" "fpu_mul4")]
+  [(set_attr "type" "mult_fp4")]
 )
 
 (define_insn "subsf3"
@@ -3997,7 +3997,7 @@
                   (match_operand:SF 2 "register_operand" "r")))]
   ""
   "fsbfw %0 = %2, %1"
-  [(set_attr "type" "fpu_mul4")]
+  [(set_attr "type" "mult_fp4")]
 )
 
 (define_insn "mulsf3"
@@ -4006,7 +4006,7 @@
                  (match_operand:SF 2 "register_operand" "r")))]
   ""
   "fmulw %0 = %1, %2"
-  [(set_attr "type" "fpu_mul4")]
+  [(set_attr "type" "mult_fp4")]
 )
 
 (define_insn "*fmulwd"
@@ -4015,7 +4015,7 @@
                  (float_extend:DF (match_operand:SF 2 "register_operand" "r"))))]
   ""
   "fmulwd %0 = %1, %2"
-  [(set_attr "type" "fpu_mul4")]
+  [(set_attr "type" "mult_fp4")]
 )
 
 (define_expand "divsf3"
@@ -4070,7 +4070,7 @@
                  (match_operand:SF 3 "register_operand" "0")))]
   ""
   "ffmaw %0 = %1, %2"
-  [(set_attr "type" "fpu_fma4")]
+  [(set_attr "type" "madd_fp4")]
 )
 
 (define_insn "*ffmawd"
@@ -4080,7 +4080,7 @@
                  (match_operand:DF 3 "register_operand" "0")))]
   ""
   "ffmawd %0 = %1, %2"
-  [(set_attr "type" "fpu_fma4")]
+  [(set_attr "type" "madd_fp4")]
 )
 
 (define_insn "fnmasf4"
@@ -4090,7 +4090,7 @@
                  (match_operand:SF 3 "register_operand" "0")))]
   ""
   "ffmsw %0 = %1, %2"
-  [(set_attr "type" "fpu_fma4")]
+  [(set_attr "type" "madd_fp4")]
 )
 
 (define_insn "*ffmswd"
@@ -4100,7 +4100,7 @@
                 (match_operand:DF 3 "register_operand" "0")))]
   ""
   "ffmswd %0 = %1, %2"
-  [(set_attr "type" "fpu_fma4")]
+  [(set_attr "type" "madd_fp4")]
 )
 
 (define_insn "*ffmswd2"
@@ -4110,7 +4110,7 @@
                 (match_operand:DF 3 "register_operand" "0")))]
   ""
   "ffmswd %0 = %1, %2"
-  [(set_attr "type" "fpu_fma4")]
+  [(set_attr "type" "madd_fp4")]
 )
 
 (define_insn "fminsf3"
@@ -4196,7 +4196,7 @@
         (float:SF (match_operand:SI 1 "register_operand" "r")))]
   ""
   "floatw.rn %0 = %1, 0"
-  [(set_attr "type" "fpu_mul4")]
+  [(set_attr "type" "conv_fp4")]
 )
 
 (define_insn "floatunssisf2"
@@ -4204,7 +4204,7 @@
         (unsigned_float:SF (match_operand:SI 1 "register_operand" "r")))]
   ""
   "floatuw.rn %0 = %1, 0"
-  [(set_attr "type" "fpu_mul4")]
+  [(set_attr "type" "conv_fp4")]
 )
 
 (define_expand "floatdisf2"
@@ -4258,7 +4258,7 @@
         (fix:SI (match_operand:SF 1 "register_operand" "r")))]
   ""
   "fixedw.rz %0 = %1, 0"
-  [(set_attr "type" "fpu_mul4")]
+  [(set_attr "type" "conv_fp4")]
 )
 ;; zero-extend version of fix_truncsfsi2
 (define_insn "*fix_truncsfsi2_zext"
@@ -4266,7 +4266,7 @@
         (zero_extend:DI (fix:SI (match_operand:SF 1 "register_operand" "r"))))]
   ""
   "fixedw.rz %0 = %1, 0"
-  [(set_attr "type" "fpu_mul4")]
+  [(set_attr "type" "conv_fp4")]
 )
 
 (define_insn "fixuns_truncsfsi2"
@@ -4274,7 +4274,7 @@
         (unsigned_fix:SI (match_operand:SF 1 "register_operand" "r")))]
   ""
   "fixeduw.rz %0 = %1, 0"
-  [(set_attr "type" "fpu_mul4")]
+  [(set_attr "type" "conv_fp4")]
 )
 ;; zero-extend version of fixuns_truncsfsi2
 (define_insn "*fixuns_truncsfsi2_zext"
@@ -4282,7 +4282,7 @@
         (zero_extend:DI (unsigned_fix:SI (match_operand:SF 1 "register_operand" "r"))))]
   ""
   "fixeduw.rz %0 = %1, 0"
-  [(set_attr "type" "fpu_mul4")]
+  [(set_attr "type" "conv_fp4")]
 )
 
 (define_insn "truncsfhf2"
@@ -4360,7 +4360,7 @@
                  (match_operand:DF 2 "register_operand" "r")))]
   ""
   "faddd %0 = %1, %2"
-  [(set_attr "type" "fpu_mul4")]
+  [(set_attr "type" "mult_fp4")]
 )
 
 (define_insn "subdf3"
@@ -4369,7 +4369,7 @@
                   (match_operand:DF 2 "register_operand" "r")))]
   ""
   "fsbfd %0 = %2, %1"
-  [(set_attr "type" "fpu_mul4")]
+  [(set_attr "type" "mult_fp4")]
 )
 
 (define_insn "muldf3"
@@ -4378,7 +4378,7 @@
                  (match_operand:DF 2 "register_operand" "r")))]
   ""
   "fmuld %0 = %1, %2"
-  [(set_attr "type" "fpu_mul4")]
+  [(set_attr "type" "mult_fp4")]
 )
 
 (define_expand "divdf3"
@@ -4402,7 +4402,7 @@
                  (match_operand:DF 3 "register_operand" "0")))]
   ""
   "ffmad %0 = %1, %2"
-  [(set_attr "type" "fpu_fma4")]
+  [(set_attr "type" "madd_fp4")]
 )
 
 (define_insn "fnmadf4"
@@ -4412,7 +4412,7 @@
                  (match_operand:DF 3 "register_operand" "0")))]
   ""
   "ffmsd %0 = %1, %2"
-  [(set_attr "type" "fpu_fma4")]
+  [(set_attr "type" "madd_fp4")]
 )
 
 (define_insn "fmindf3"
@@ -4498,7 +4498,7 @@
         (float:DF (match_operand:DI 1 "register_operand" "r")))]
   ""
   "floatd.rn %0 = %1, 0"
-  [(set_attr "type" "fpu_mul4")]
+  [(set_attr "type" "conv_fp4")]
 )
 
 (define_insn "floatunsdidf2"
@@ -4506,7 +4506,7 @@
         (unsigned_float:DF (match_operand:DI 1 "register_operand" "r")))]
   ""
   "floatud.rn %0 = %1, 0"
-  [(set_attr "type" "fpu_mul4")]
+  [(set_attr "type" "conv_fp4")]
 )
 
 (define_insn "fix_truncdfdi2"
@@ -4514,7 +4514,7 @@
         (fix:DI (match_operand:DF 1 "register_operand" "r")))]
   ""
   "fixedd.rz %0 = %1, 0"
-  [(set_attr "type" "fpu_mul4")]
+  [(set_attr "type" "conv_fp4")]
 )
 
 (define_insn "fixuns_truncdfdi2"
@@ -4522,7 +4522,7 @@
         (unsigned_fix:DI (match_operand:DF 1 "register_operand" "r")))]
   ""
   "fixedud.rz %0 = %1, 0"
-  [(set_attr "type" "fpu_mul4")]
+  [(set_attr "type" "conv_fp4")]
 )
 
 (define_expand "truncdfhf2"
@@ -4579,7 +4579,7 @@
                  (match_operand:SC 2 "register_operand" "r")))]
   ""
   "faddwc %0 = %1, %2"
-  [(set_attr "type" "fpu_mul4")]
+  [(set_attr "type" "mult_fp4")]
 )
 
 (define_insn "subsc3"
@@ -4588,7 +4588,7 @@
                   (match_operand:SC 2 "register_operand" "r")))]
   ""
   "fsbfwc %0 = %2, %1"
-  [(set_attr "type" "fpu_mul4")]
+  [(set_attr "type" "mult_fp4")]
 )
 
 (define_insn "negsc2"
@@ -4605,7 +4605,7 @@
                  (match_operand:SC 2 "register_operand" "r")))]
   ""
   "fmulwc %0 = %1, %2"
-  [(set_attr "type" "fpu_mul4")]
+  [(set_attr "type" "mult_fp4")]
 )
 
 (define_insn "fmasc4"
@@ -4615,7 +4615,7 @@
                 (match_operand:SC 3 "register_operand" "0")))]
   "(KV3_2||KV4)"
   "ffmawc %0 = %1, %2"
-  [(set_attr "type" "fpu_fma4")]
+  [(set_attr "type" "madd_fp4")]
 )
 
 (define_insn "fnmasc4"
@@ -4625,7 +4625,7 @@
                 (match_operand:SC 3 "register_operand" "0")))]
   "(KV3_2||KV4)"
   "ffmswc %0 = %1, %2"
-  [(set_attr "type" "fpu_fma4")]
+  [(set_attr "type" "madd_fp4")]
 )
 
 (define_insn "addconjsc3"
@@ -4634,7 +4634,7 @@
                  (match_operand:SC 2 "register_operand" "r")))]
   ""
   "faddwc.c %0 = %1, %2"
-  [(set_attr "type" "fpu_mul4")]
+  [(set_attr "type" "mult_fp4")]
 )
 
 (define_insn "subconjsc3"
@@ -4643,7 +4643,7 @@
                   (conj:SC (match_operand:SC 2 "register_operand" "r"))))]
   ""
   "fsbfwc.c %0 = %2, %1"
-  [(set_attr "type" "fpu_mul4")]
+  [(set_attr "type" "mult_fp4")]
 )
 
 (define_insn "mulconjsc3"
@@ -4652,7 +4652,7 @@
                  (match_operand:SC 2 "register_operand" "r")))]
   ""
   "fmulwc.c %0 = %1, %2"
-  [(set_attr "type" "fpu_mul4")]
+  [(set_attr "type" "mult_fp4")]
 )
 
 (define_insn "fmaconjsc4"
@@ -4662,7 +4662,7 @@
                 (match_operand:SC 3 "register_operand" "0")))]
   "(KV3_2||KV4)"
   "ffmawc.c %0 = %1, %2"
-  [(set_attr "type" "fpu_fma4")]
+  [(set_attr "type" "madd_fp4")]
 )
 
 (define_insn "fnmaconjsc4"
@@ -4672,7 +4672,7 @@
                 (match_operand:SC 3 "register_operand" "0")))]
   "(KV3_2||KV4)"
   "ffmswc.c %0 = %2, %1"
-  [(set_attr "type" "fpu_fma4")]
+  [(set_attr "type" "madd_fp4")]
 )
 
 (define_insn "conjsc2"
@@ -4722,7 +4722,7 @@
   "fadddc %0 = %1, %2"
   [(set (attr "type")
    (if_then_else (match_test "KV3_1")
-                 (const_string "fpu_fma4") (const_string "fpu_mul4")))]
+                 (const_string "madd_fp4") (const_string "mult_fp4")))]
 )
 
 (define_insn "subdc3"
@@ -4733,7 +4733,7 @@
   "fsbfdc %0 = %2, %1"
   [(set (attr "type")
    (if_then_else (match_test "KV3_1")
-                 (const_string "fpu_fma4") (const_string "fpu_mul4")))]
+                 (const_string "madd_fp4") (const_string "mult_fp4")))]
 )
 
 (define_insn "negdc2"
@@ -4753,7 +4753,7 @@
   "fadddc.c %0 = %1, %2"
   [(set (attr "type")
    (if_then_else (match_test "KV3_1")
-                 (const_string "fpu_fma4") (const_string "fpu_mul4")))]
+                 (const_string "madd_fp4") (const_string "mult_fp4")))]
 )
 
 (define_insn "subconjdc3"
@@ -4764,7 +4764,7 @@
   "fsbfdc.c %0 = %2, %1"
   [(set (attr "type")
    (if_then_else (match_test "KV3_1")
-                 (const_string "fpu_fma4") (const_string "fpu_mul4")))]
+                 (const_string "madd_fp4") (const_string "mult_fp4")))]
 )
 
 (define_insn_and_split "conjdc2"
