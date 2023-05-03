@@ -4739,6 +4739,17 @@ kvx_expand_atomic_test_and_set (rtx operands[])
 }
 
 int
+kvx_branch_tested_bypass_p (rtx_insn *prod_insn ATTRIBUTE_UNUSED,
+			    rtx_insn *cons_insn ATTRIBUTE_UNUSED)
+{
+  // There is no extra delay between PROD_INSN and CONS_INSN in case of KV4.
+  if (KV4)
+    return 0;
+
+  return JUMP_P (cons_insn) && !simplejump_p (cons_insn);
+}
+
+int
 kvx_stored_value_bypass_p (rtx_insn *prod_insn, rtx_insn *cons_insn)
 {
   rtx prod_set = single_set (prod_insn);
@@ -4811,7 +4822,7 @@ kvx_dependencies_fprint (FILE *file, rtx_insn *insn)
 static int
 kvx_sched_issue_rate (void)
 {
-  return 6;
+  return KV4 ? 8: 6;
 }
 
 /* Implements TARGET_SCHED_ADJUST_COST.  */
@@ -4874,7 +4885,7 @@ kvx_sched_adjust_cost (rtx_insn *cons_insn, int dep_type, rtx_insn *prod_insn,
 	  enum attr_type prod_type = get_attr_type (prod_insn);
 	  // If the producer is a load feeding the target of a conditional
 	  // or a scatter load, set cost to 1 instead of the load latency.
-	  if (prod_type >= TYPE_LSU_LOAD && prod_type < TYPE_LSU_AUXR_STORE)
+	  if (prod_type >= TYPE_LOAD_CORE && prod_type < TYPE_STORE_CORE)
 	    {
 	      rtx x = prod_set ? SET_DEST (prod_set) : 0;
 	      rtx op = cons_set ? SET_SRC (cons_set) : 0;
@@ -4898,9 +4909,14 @@ kvx_sched_adjust_cost (rtx_insn *cons_insn, int dep_type, rtx_insn *prod_insn,
     {
       cost = 0;
       if (JUMP_P (prod_insn) || CALL_P (prod_insn))
-	// Consumer INSN must issue after a JUMP or CALL producer.
+	// Producer INSN is a control-flow change, so consumer INSN cannot issue
+	// at same cycle after unless target is KV4. If KV4, two JUMP INSNs can
+	// be bundled if the first is conditional and the second is any JUMP.
 	{
-	  cost = 1;
+	  if (KV4)
+	    cost = !(JUMP_P (prod_insn) && !simplejump_p (prod_insn) && JUMP_P (cons_insn));
+	  else
+	    cost = 1;
 	}
       else if (GET_CODE (PATTERN (prod_insn)) == CLOBBER)
 	// Delay consumer INSN of CLOBBER for non-zero number of clock cycles.
@@ -5158,6 +5174,7 @@ struct kvx_sched_resources {
   unsigned lite_count;
   unsigned full_count;
   unsigned auxr_count;
+  unsigned xfer_count;
   unsigned lsu_count;
   unsigned mau_count;
   unsigned bcu_count;
@@ -5180,9 +5197,9 @@ kvx_sched_resources_add (struct kvx_sched_resources *resources, rtx_insn *insn)
 	  resources->lsu_count++, resources->mau_count++;
 	  resources->bcu_count++, resources->tca_count++;
 	}
-      else if (type == TYPE_ALU_NOP)
+      else if (type == TYPE_NOP)
 	;
-      else if (type >= TYPE_ALU_TINY && type < TYPE_LSU)
+      else if (type >= TYPE_ALU_TINY && type < TYPE_CACHE)
 	{
 	  if (type >= TYPE_ALU_TINY && type < TYPE_ALU_TINY_X2)
 	    resources->tiny_count++;
@@ -5198,25 +5215,29 @@ kvx_sched_resources_add (struct kvx_sched_resources *resources, rtx_insn *insn)
 	    resources->lite_count++;
 	  else if (type >= TYPE_ALU_LITE_X2 && type < TYPE_ALU_FULL)
 	    resources->lite_count += 2;
-	  else if (type >= TYPE_ALU_FULL && type < TYPE_LSU)
+	  else if (type >= TYPE_ALU_FULL && type < TYPE_CACHE)
 	    resources->full_count++;
 	  else
 	    gcc_unreachable ();
 	}
-      else if (type >= TYPE_LSU && type < TYPE_ALU_MUL2)
+      else if (type >= TYPE_CACHE && type < TYPE_MULT_INT)
 	{
 	  resources->lsu_count++;
-	  if (type >= TYPE_LSU_AUXR_STORE && type < TYPE_LSU_CRRP_STORE)
+	  if (type >= TYPE_STORE_CORE && type < TYPE_STORE_COPRO)
 	    resources->auxr_count++;
 	}
-      else if (type >= TYPE_ALU_MUL2 && type < TYPE_BCU)
+      else if (type >= TYPE_MULT_INT && type < TYPE_BCU)
 	{
 	  resources->mau_count++;
-	  if (type >= TYPE_ALU_MAC2)
+	  if (type >= TYPE_MADD_INT)
 	    resources->auxr_count++;
 	}
       else if (type >= TYPE_BCU && type < TYPE_TCA)
-	resources->bcu_count++;
+	{
+	  resources->bcu_count++;
+	  if (type == TYPE_BCU_XFER)
+	    resources->xfer_count++;
+	}
       else if (type >= TYPE_TCA && type <= TYPE_TCA_FLOAT)
 	resources->tca_count++;
       else
@@ -5240,6 +5261,8 @@ kvx_sched_resources_full_bundles (struct kvx_sched_resources *resources)
     result = (resources->lite_count + 1)/2;
   if (result < resources->full_count)
     result = resources->full_count;
+  if (result < resources->xfer_count)
+    result = resources->xfer_count;
   if (result < resources->auxr_count)
     result = resources->auxr_count;
   if (result < resources->lsu_count)
@@ -6057,7 +6080,7 @@ kvx_sched2_fix_insn_issue (rtx_insn *insn, rtx *opvec, int noperands)
       int cycle = kvx_sched2.insn_cycle[uid] + scoreboard.delay;
       enum attr_type type = get_attr_type (insn);
       // Keep TYPE tests in sync with the order of the types.md file.
-      if (type >= TYPE_ALU_MAC2 && type <= TYPE_FPU_FMA4
+      if (type >= TYPE_MADD_INT && type <= TYPE_MADD_FP4
 	  && noperands > 3 && REG_P (opvec[3]))
 	{
 	  int regno = REGNO (opvec[3]);
@@ -6087,7 +6110,7 @@ kvx_sched2_fix_insn_issue (rtx_insn *insn, rtx *opvec, int noperands)
 		}
 	    }
 	}
-      if (type >= TYPE_ALU_MUL2 && type < TYPE_BCU && noperands > 0
+      if (type >= TYPE_MULT_INT && type < TYPE_BCU && noperands > 0
 	  && REG_P (opvec[0]))
 	{
 	  int regno = REGNO (opvec[0]);
@@ -6684,7 +6707,7 @@ kvx_insn_cost (rtx_insn *insn, bool speed)
     }
 
   enum attr_type type = get_attr_type (insn);
-  if (type == TYPE_ALU_NOP)
+  if (type == TYPE_NOP)
     return 0;
 
   if (!speed)
@@ -6718,29 +6741,30 @@ kvx_insn_cost (rtx_insn *insn, bool speed)
 	nunits = 2;
       cost += kvx_type_lite_cost (nunits, 0, speed);
     }
-  else if (type >= TYPE_ALU_FULL && type < TYPE_LSU)
+  else if (type >= TYPE_ALU_FULL && type < TYPE_CACHE)
     {
       int penalty = (type == TYPE_ALU_FULL_SFU) * (15 - 1);
       cost += kvx_type_full_cost (1, penalty, speed);
     }
-  else if (type >= TYPE_LSU && type < TYPE_ALU_MUL2)
+  else if (type >= TYPE_CACHE && type < TYPE_MULT_INT)
     {
       int penalty = 0;
-      if (type >= TYPE_LSU_LOAD && type <= TYPE_LSU_AUXW_LOAD_Y)
+      if (type >= TYPE_LOAD_CORE && type <= TYPE_LOAD_COPRO_Y)
 	penalty = (3 - 1);
-      if ((type >= TYPE_LSU_AUXW_UNCACHED_LOAD
-	   && type <= TYPE_LSU_UNCACHED_LOAD_Y)
-	  || (type >= TYPE_LSU_AUXW_ATOMIC
-	      && type <= TYPE_LSU_AUXR_AUXW_ATOMIC_Y))
+      if ((type >= TYPE_LOAD_CORE_UNCACHED
+	   && type <= TYPE_LOAD_COPRO_UNCACHED_Y)
+	  || (type >= TYPE_ALOAD_CORE
+	      && type <= TYPE_ATOMIC_CORE_Y))
 	penalty = (24 - 1);
       cost += kvx_type_lsu_cost (1, penalty, speed);
     }
-  else if (type >= TYPE_ALU_MUL2 && type < TYPE_BCU)
+  else if (type >= TYPE_MULT_INT && type < TYPE_BCU)
     {
       int penalty = (2 - 1);
-      if (type == TYPE_FPU_MUL3 || type == TYPE_FPU_FMA3)
+      if (type == TYPE_MULT_FP3 || type == TYPE_MADD_FP3)
 	penalty = (3 - 1);
-      if (type == TYPE_FPU_MUL4 || type == TYPE_FPU_FMA4)
+      if (type == TYPE_MULT_FP4 || type == TYPE_MADD_FP4
+	  || type == TYPE_CONV_FP4)
 	penalty = (4 - 1);
       cost += kvx_type_mau_cost (1, penalty, speed);
     }

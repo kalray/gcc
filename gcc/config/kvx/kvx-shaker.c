@@ -82,7 +82,7 @@ load_p (rtx_insn * insn, struct kvx_shaker_ls *ls_info)
     return 0;
 
   enum attr_type insn_type = get_attr_type (insn);
-  if (!(insn_type >= TYPE_LSU_LOAD && insn_type < TYPE_LSU_AUXR_STORE))
+  if (!(insn_type >= TYPE_LOAD_CORE && insn_type < TYPE_STORE_CORE))
     return 0;
 
   if (ls_info)

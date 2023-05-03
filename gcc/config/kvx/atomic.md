@@ -195,7 +195,7 @@
    (use (match_dup 1))]
   "(KV3_2||KV4)"
   "al<lsusize>%2%X1 %0 = %O1"
-  [(set_attr "type" "lsu_auxw_atomic,lsu_auxw_atomic_x,lsu_auxw_atomic_y")
+  [(set_attr "type" "aload_core,aload_core_x,aload_core_y")
    (set_attr "length"             "4,                8,               12")]
 )
 
@@ -207,7 +207,7 @@
    (clobber (match_dup 1))]
   "(KV3_2||KV4)"
   "as<lsusize>%2%X1 %O1 = %0"
-  [(set_attr "type" "lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
+  [(set_attr "type" "store_core,store_core_x,store_core_y")
    (set_attr "length"            "4,               8,              12")]
 )
 
@@ -227,7 +227,7 @@
                                 (match_operand 2 "" "")] UNSPEC_ALCLR))]
   "KV3_1"
   "alclr<lsusize>%2%X1 %0 = %1"
-  [(set_attr "type" "lsu_auxw_atomic,lsu_auxw_atomic_x,lsu_auxw_atomic_y")
+  [(set_attr "type" "aload_core,aload_core_x,aload_core_y")
    (set_attr "length"             "4,                8,               12")]
 )
 
@@ -237,7 +237,7 @@
                                (match_operand 2 "" "")] UNSPEC_ALCLR))]
   "(KV3_2||KV4)"
   "alclr<lsusize>%2%X1 %0 = %O1"
-  [(set_attr "type" "lsu_auxw_atomic,lsu_auxw_atomic_x,lsu_auxw_atomic_y")
+  [(set_attr "type" "aload_core,aload_core_x,aload_core_y")
    (set_attr "length"             "4,                8,               12")]
 )
 
@@ -264,7 +264,7 @@
                    (match_operand:SIDI 2 "nonmemory_operand" "0,0,0")))]
   "KV3_1"
   "aladd<lsusize>%3%X1 %1 = %0"
-  [(set_attr "type" "lsu_auxr_auxw_atomic,lsu_auxr_auxw_atomic_x,lsu_auxr_auxw_atomic_y")
+  [(set_attr "type" "atomic_core,atomic_core_x,atomic_core_y")
    (set_attr "length"                  "4,                     8,                    12")]
 )
 
@@ -277,7 +277,7 @@
                    (match_operand:SIDI 2 "nonmemory_operand" "0,0,0")))]
   "(KV3_2||KV4)"
   "aladd<lsusize>%3%X1 %O1 = %0"
-  [(set_attr "type" "lsu_auxr_auxw_atomic,lsu_auxr_auxw_atomic_x,lsu_auxr_auxw_atomic_y")
+  [(set_attr "type" "atomic_core,atomic_core_x,atomic_core_y")
    (set_attr "length"                  "4,                     8,                    12")]
 )
 
@@ -310,7 +310,7 @@
    (use (match_operand:SI 3 "nonmemory_operand" ""))]
   "KV3_1"
   "acswap<lsusize>%2%X1 %1 = %0"
-  [(set_attr "type" "lsu_auxr_auxw_atomic,lsu_auxr_auxw_atomic_x,lsu_auxr_auxw_atomic_y")
+  [(set_attr "type" "atomic_core,atomic_core_x,atomic_core_y")
    (set_attr "length"                  "4,                     8,                    12")]
 )
 
@@ -324,7 +324,7 @@
    (use (match_operand:SI 3 "nonmemory_operand" ""))]
   "(KV3_2||KV4)"
   "acswap<lsusize>%2%X1 %<acswap_reg>0, %O1 = %0"
-  [(set_attr "type" "lsu_auxr_auxw_atomic,lsu_auxr_auxw_atomic_x,lsu_auxr_auxw_atomic_y")
+  [(set_attr "type" "atomic_core,atomic_core_x,atomic_core_y")
    (set_attr "length"                  "4,                     8,                    12")]
 )
 
