@@ -1535,13 +1535,10 @@ add_dependence (rtx_insn *con, rtx_insn *pro, enum reg_note dep_type)
 	dep_type = REG_DEP_ANTI;
       else if (INSN_CACHED_COND (real_pro) == const_true_rtx)
 	{
-	  HARD_REG_SET uses;
-	  CLEAR_HARD_REG_SET (uses);
-	  note_uses (&PATTERN (con), record_hard_reg_uses, &uses);
 	  rtx cond_reg = XEXP (cond, 0);
 	  if (GET_CODE (cond_reg) != REG)
 	    cond_reg = (XEXP (cond_reg, 0));
-	  if (TEST_HARD_REG_BIT (uses, REGNO (cond_reg)))
+	  if (reg_set_between_p (cond_reg, pro, con))
 	    dep_type = REG_DEP_ANTI;
 	}
       if (dep_type == REG_DEP_CONTROL)
