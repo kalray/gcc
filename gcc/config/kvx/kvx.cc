@@ -4603,52 +4603,30 @@ kvx_dependencies_fprint (FILE *file, rtx_insn *insn)
   FOR_EACH_DEP (insn, SD_LIST_FORW, sd_it, dep)
     {
       enum reg_note dep_type = DEP_TYPE (dep);
-      const char *dtype = "<none>";
-      if (dep_type == REG_DEP_TRUE)
-	dtype = "true";
-      if (dep_type == REG_DEP_ANTI)
-	dtype = "anti";
-      if (dep_type == REG_DEP_OUTPUT)
-	dtype = "output";
-      if (dep_type == REG_DEP_CONTROL)
-	dtype = "control";
-      fprintf (file, "\t%s -> (insn %d)\n", dtype, INSN_UID (DEP_CON (dep)));
+      char type = (dep_type == REG_DEP_TRUE ? 'T' :
+		    (dep_type == REG_DEP_OUTPUT ? 'O' :
+		      (dep_type == REG_DEP_ANTI ? 'A' :
+			(dep_type == REG_DEP_CONTROL ? 'C' : '?'))));
+      char reg = (!DEP_NONREG(dep) && !DEP_MULTIPLE(dep)) ? 'r': ' ';
+      fprintf (file, "\t%c%c-> (insn %d)\n", type, reg, INSN_UID (DEP_CON (dep)));
     }
   fprintf (file, "backward dependences (insn %d)\n", INSN_UID (insn));
   FOR_EACH_DEP (insn, SD_LIST_BACK, sd_it, dep)
     {
       enum reg_note dep_type = DEP_TYPE (dep);
-      const char *dtype = "<none>";
-      if (dep_type == REG_DEP_TRUE)
-	dtype = "true";
-      if (dep_type == REG_DEP_ANTI)
-	dtype = "anti";
-      if (dep_type == REG_DEP_OUTPUT)
-	dtype = "output";
-      if (dep_type == REG_DEP_CONTROL)
-	dtype = "control";
-      fprintf (file, "\t%s <- (insn %d)\n", dtype, INSN_UID (DEP_PRO (dep)));
+      char type = (dep_type == REG_DEP_TRUE ? 'T' :
+		    (dep_type == REG_DEP_OUTPUT ? 'O' :
+		      (dep_type == REG_DEP_ANTI ? 'A' :
+			(dep_type == REG_DEP_CONTROL ? 'C' : '?'))));
+      char reg = (!DEP_NONREG(dep) && !DEP_MULTIPLE(dep)) ? 'r': ' ';
+      fprintf (file, "\t<-%c%c (insn %d)\n", type, reg, INSN_UID (DEP_PRO (dep)));
     }
 }
 
 static int
 kvx_sched_issue_rate (void)
 {
-  return 5;
-}
-
-static int
-kvx_sched_variable_issue (FILE *file ATTRIBUTE_UNUSED,
-			  int verbose ATTRIBUTE_UNUSED, rtx_insn *insn,
-			  int more)
-{
-  rtx x = PATTERN (insn);
-  if (GET_CODE (x) == CLOBBER || GET_CODE (x) == USE)
-    return more;
-  // Cannot issue further insns at the same cycle as JUMP or CALL.
-  if (JUMP_P (insn) || CALL_P (insn))
-    return 0;
-  return more - 1;
+  return 6;
 }
 
 /* Implements TARGET_SCHED_ADJUST_COST.  */
@@ -4770,6 +4748,16 @@ kvx_sched_adjust_cost (rtx_insn *cons_insn, int dep_type, rtx_insn *prod_insn,
 	}
     }
 
+  if (sched_dump && sched_verbose >= 8)
+    {
+      char type = (dep_type == REG_DEP_TRUE ? 'T' :
+		    (dep_type == REG_DEP_OUTPUT ? 'O' :
+		      (dep_type == REG_DEP_ANTI ? 'A' :
+			(dep_type == REG_DEP_CONTROL ? 'C' : '?'))));
+      fprintf (sched_dump, "\tadjust_cost (insn %d) %c-> (insn %d)\t%d cycles\n",
+	       INSN_UID (prod_insn), type, INSN_UID (cons_insn), cost);
+    }
+
   return cost;
 }
 
@@ -4779,13 +4767,43 @@ kvx_sched_adjust_priority (rtx_insn *insn, int priority)
   rtx x = PATTERN (insn);
   // CLOBBER insns better remain first in scheduling group after SCHED1.
   if (GET_CODE (x) == CLOBBER)
-    priority += 10;
+    if (!reload_completed)
+      priority += 10;
   return priority;
+}
+
+static int
+kvx_sched_reorder2 (FILE *file ATTRIBUTE_UNUSED,
+		    int verbose ATTRIBUTE_UNUSED,
+		    rtx_insn **ready ATTRIBUTE_UNUSED,
+		    int *nreadyp ATTRIBUTE_UNUSED,
+		    int clock ATTRIBUTE_UNUSED)
+{
+  if (!reload_completed)
+    return 0;
+
+  if (sched_dump && sched_verbose >= 8)
+    {
+      fprintf (sched_dump, "kvx_sched_reorder2(%d):", *nreadyp);
+      for (int i = *nreadyp - 1; i >= 0; i--)
+	{
+	  fprintf (sched_dump, "\t(insn %d)", INSN_UID (ready[i]));
+	}
+      fprintf (sched_dump, "\n");
+    }
+
+  return *nreadyp;
 }
 
 static void
 kvx_sched_dependencies_evaluation_hook (rtx_insn ARG_UNUSED (*head), rtx_insn ARG_UNUSED (*tail))
 {
+  if (!sched_dump || sched_verbose < 9)
+    return;
+
+  rtx_insn *next_tail = NEXT_INSN (tail);
+  for (rtx_insn *insn = head; insn != next_tail; insn = NEXT_INSN (insn))
+    kvx_dependencies_fprint (sched_dump, insn);
 }
 
 /* SCHED2 data structure. */
@@ -4884,27 +4902,22 @@ kvx_sched_dfa_new_cycle (FILE *dump ATTRIBUTE_UNUSED,
 	  kvx_sched2.insn_flags[uid]
 	    = KVX_SCHED2_INSN_HEAD | KVX_SCHED2_INSN_START;
 	}
-      else if (clock > kvx_sched2.insn_cycle[prev_uid])
+      else if (clock > last_clock)
 	{
 	  // Advanced clock, stop previous bundle and start a new one.
 	  kvx_sched2.insn_flags[prev_uid] |= KVX_SCHED2_INSN_STOP;
 	  kvx_sched2.insn_flags[uid] = KVX_SCHED2_INSN_START;
 	}
-      else if (kvx_sched2.insn_flags[prev_uid] & KVX_SCHED2_INSN_STOP)
-	{
-	  // Previous bundle was stopped for some reason, start a new one.
-	  kvx_sched2.insn_flags[uid] |= KVX_SCHED2_INSN_START;
-	}
 
       if (JUMP_P (insn) || CALL_P (insn))
-	{
-	  // JUMP or CALL, stop the current bundle regardless of clock.
-	  kvx_sched2.insn_flags[uid]
-	    |= KVX_SCHED2_INSN_STOP | KVX_SCHED2_INSN_JUMP;
-	}
+	kvx_sched2.insn_flags[uid] |= KVX_SCHED2_INSN_JUMP;
 
       kvx_sched2.insn_cycle[uid] = clock;
       kvx_sched2.prev_uid = uid;
+
+      if (sched_dump && sched_verbose >= 8)
+	fprintf (sched_dump, "kvx_sched_dfa_new_cycle(insn %d) clock=%d last=%d\n",
+		 INSN_UID (insn), clock, last_clock);
     }
   return 0;
 }
@@ -4915,18 +4928,41 @@ kvx_sched_set_sched_flags (struct spec_info_def *spec_info)
   unsigned int *flags = &(current_sched_info->flags);
 
   // DO_PREDICATION prevents mapping of REG_DEP_CONTROL to REG_DEP_ANTI.
-  if (*flags & SCHED_EBB) // Implies reload-completed.
+  if (*flags & SCHED_EBB) // Implies reload_completed.
     *flags |= DO_PREDICATION;
 
   // Speculative scheduling is enabled by non-zero spec_info->mask.
   spec_info->mask = 0;
 }
 
-// Always return true, as long-running instructions are fully pipelined.
+/* Implements TARGET_SCHED_CAN_SPECULATE_INSN.
+   Always return true, as long-running instructions are fully pipelined.  */
 static bool
 kvx_sched_can_speculate_insn (rtx_insn *insn ATTRIBUTE_UNUSED)
 {
   return true;
+}
+
+/* Implements TARGET_SCHED_SPECULATE_INSN.
+   Called from (sched-ebb.cc:add_deps_for_risky_insns).  */
+static int
+kvx_sched_speculate_insn (rtx_insn *insn, ds_t ts, rtx *ARG_UNUSED (new_pat))
+{
+  const_rtx set = 0, mem = 0;
+  if ((ts & BEGIN_CONTROL) && ((set = single_set (insn))))
+    {
+      rtx x = SET_SRC (set);
+      subrtx_iterator::array_type array;
+      FOR_EACH_SUBRTX (iter, array, x, ALL)
+	if (MEM_P ((mem = *iter)))
+	  {
+	    addr_space_t as = MEM_ADDR_SPACE (mem);
+	    if (as == KVX_ADDR_SPACE_PRELOAD
+		|| as == KVX_ADDR_SPACE_SPECULATE)
+	      return 0;
+	  }
+    }
+  return -1;
 }
 
 struct kvx_sched_resources {
@@ -7116,7 +7152,7 @@ kvx_ifcvt_machdep_init (struct ce_if_block *ce_info, bool after_combine)
   else
     kvx_ifcvt_reset ();
 
-  // Detect IF-THEN-ELSE-JOIN as in (noce_find_if_block) in ifcvt.c.
+  // Detect IF-THEN-ELSE-JOIN as in (noce_find_if_block) in ifcvt.cc.
   basic_block test_bb = ce_info->test_bb;
   basic_block then_bb = 0, else_bb = 0, join_bb = 0;
   /* Recognize an IF-THEN-ELSE-JOIN block.  */
@@ -7844,7 +7880,7 @@ kvx_loop_unroll_adjust (unsigned nunroll, struct loop *loop)
 
   // Force unrolling of non-constant, non-runtime loop trip count
   // by setting LOOP->LPT_DECISION.DECISION to LPT_UNROLL_STUPID.
-  // This an abuse of the loop-runroll.c:(decide_unroll_stupid) code
+  // This an abuse of the (loop-unroll.cc:decide_unroll_stupid) code
   // which normally rejects unrolling of loops with branches inside.
   if (unroll_stupid_p)
     {
@@ -7878,74 +7914,6 @@ kvx_loop_unroll_adjust (unsigned nunroll, struct loop *loop)
   return nunroll;
 }
 
-/* Traverse the CFG and split EBBs that may grow too large.  */
-static void
-kvx_split_ebbs (void)
-{
-  unsigned block_count = 0;
-  // Find ebb HEAD and TAIL as in (schedule_ebbs).
-  basic_block bb;
-  int probability_cutoff;
-
-  if (profile_info && profile_status_for_fn (cfun) == PROFILE_READ)
-    probability_cutoff = param_tracer_min_branch_probability_feedback;
-  else
-    probability_cutoff = param_tracer_min_branch_probability;
-  probability_cutoff = REG_BR_PROB_BASE / 100 * probability_cutoff;
-
-  FOR_EACH_BB_FN (bb, cfun)
-    {
-      rtx_insn *head = BB_HEAD (bb);
-      rtx_insn *tail = BB_END (bb);
-
-      if (bb->flags & BB_DISABLE_SCHEDULE)
-	continue;
-
-      for (;;)
-	{
-	  tail = BB_END (bb);
-	  if (bb->next_bb == EXIT_BLOCK_PTR_FOR_FN (cfun)
-	      || LABEL_P (BB_HEAD (bb->next_bb)))
-	    break;
-	  edge e = find_fallthru_edge (bb->succs);
-	  if (! e)
-	    break;
-	  if (e->probability.initialized_p ()
-	      && e->probability.to_reg_br_prob_base () <= probability_cutoff)
-	    break;
-	  if (e->dest->flags & BB_DISABLE_SCHEDULE)
-	    break;
-	  if (++block_count > 256)
-	    {
-	      // Adding a label will make (schedule_ebbs) start a new EBB.
-	      BB_HEAD (bb) = emit_label_before (gen_label_rtx (), BB_HEAD (bb));
-	      break;
-	    }
-	  bb = bb->next_bb;
-	}
-
-      // Start of a new EBB.
-      block_count = 1;
-
-      // Logic from (schedule_ebb) to return the same value into bb.
-      while (head != tail)
-	{
-	  if (NOTE_P (head) || DEBUG_INSN_P (head))
-	    head = NEXT_INSN (head);
-	  else if (NOTE_P (tail) || DEBUG_INSN_P (tail))
-	    tail = PREV_INSN (tail);
-	  else if (LABEL_P (head))
-	    head = NEXT_INSN (head);
-	  else
-	    break;
-	}
-      basic_block last_bb = BLOCK_FOR_INSN (tail);
-      if (EDGE_COUNT (last_bb->preds) == 0)
-	last_bb = last_bb->prev_bb;
-      bb = last_bb;
-    }
-}
-
 /* Implements TARGET_MACHINE_DEPENDENT_REORG.  */
 static void
 kvx_machine_dependent_reorg (void)
@@ -7965,10 +7933,7 @@ kvx_machine_dependent_reorg (void)
       if (flag_selective_scheduling2 && !maybe_skip_selective_scheduling ())
 	run_selective_scheduling ();
       else
-	{
-	  kvx_split_ebbs ();
-	  schedule_ebbs ();
-	}
+	schedule_ebbs ();
 
       timevar_pop (TV_SCHED2);
     }
@@ -8700,14 +8665,14 @@ kvx_constant_alignment (const_tree exp, HOST_WIDE_INT align)
 #undef TARGET_SCHED_ISSUE_RATE
 #define TARGET_SCHED_ISSUE_RATE kvx_sched_issue_rate
 
-#undef TARGET_SCHED_VARIABLE_ISSUE
-#define TARGET_SCHED_VARIABLE_ISSUE kvx_sched_variable_issue
-
 #undef TARGET_SCHED_ADJUST_COST
 #define TARGET_SCHED_ADJUST_COST kvx_sched_adjust_cost
 
 #undef TARGET_SCHED_ADJUST_PRIORITY
 #define TARGET_SCHED_ADJUST_PRIORITY kvx_sched_adjust_priority
+
+#undef TARGET_SCHED_REORDER2
+#define TARGET_SCHED_REORDER2 kvx_sched_reorder2
 
 #undef TARGET_SCHED_DEPENDENCIES_EVALUATION_HOOK
 #define TARGET_SCHED_DEPENDENCIES_EVALUATION_HOOK                              \
@@ -8733,6 +8698,9 @@ kvx_constant_alignment (const_tree exp, HOST_WIDE_INT align)
 
 #undef TARGET_SCHED_CAN_SPECULATE_INSN
 #define TARGET_SCHED_CAN_SPECULATE_INSN kvx_sched_can_speculate_insn
+
+#undef TARGET_SCHED_SPECULATE_INSN
+#define TARGET_SCHED_SPECULATE_INSN kvx_sched_speculate_insn
 
 #undef TARGET_SCHED_SMS_RES_MII
 #define TARGET_SCHED_SMS_RES_MII kvx_sched_sms_res_mii
