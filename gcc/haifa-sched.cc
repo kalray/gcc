@@ -1135,12 +1135,18 @@ cond_clobbered_p (rtx_insn *insn, HARD_REG_SET set_regs)
     cond_reg = (XEXP (cond_reg, 0));
   if (TEST_HARD_REG_BIT (set_regs, REGNO (cond_reg)))
     {
+      int tick = INSN_TICK (insn);
       sd_iterator_def sd_it;
       dep_t dep;
       haifa_change_pattern (insn, ORIG_PAT (insn));
       FOR_EACH_DEP (insn, SD_LIST_BACK, sd_it, dep)
 	DEP_STATUS (dep) &= ~DEP_CANCELLED;
       TODO_SPEC (insn) = HARD_DEP;
+      if (sd_lists_empty_p (insn, SD_LIST_BACK))
+	{
+	  INSN_TICK (insn) = tick;
+	  return false;
+	}
       if (sched_verbose >= 2)
 	fprintf (sched_dump,
 		 ";;\t\tdequeue insn %s because of clobbered condition\n",
