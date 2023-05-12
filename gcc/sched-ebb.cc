@@ -626,6 +626,7 @@ schedule_ebbs (void)
 
   schedule_ebbs_init ();
 
+  unsigned ebb_block_count = 1;
   /* Schedule every region in the subroutine.  */
   FOR_EACH_BB_FN (bb, cfun)
     {
@@ -649,10 +650,13 @@ schedule_ebbs (void)
 	    break;
 	  if (e->dest->flags & BB_DISABLE_SCHEDULE)
  	    break;
+	  if (++ebb_block_count > param_max_pipeline_region_blocks)
+	    break;
 	  bb = bb->next_bb;
 	}
 
       bb = schedule_ebb (head, tail, false);
+      ebb_block_count = 1;
     }
   schedule_ebbs_finish ();
 }
