@@ -29,6 +29,7 @@
 #include "libgomp.h"
 #include <stdio.h>
 
+volatile struct gomp_offload_icvs GOMP_ADDITIONAL_ICVS;
 static int is_offloading_device = 0;
 static int mppa_multi_device_p = 0;
 
@@ -100,3 +101,37 @@ omp_get_device_num (void)
 }
 
 ialias (omp_get_device_num)
+
+int
+omp_get_max_teams (void)
+{
+  return GOMP_ADDITIONAL_ICVS.nteams;
+}
+
+ialias (omp_get_max_teams)
+
+void
+omp_set_num_teams (int num_teams)
+{
+  if (num_teams >= 0)
+    GOMP_ADDITIONAL_ICVS.nteams = num_teams;
+}
+
+ialias (omp_set_num_teams)
+
+int
+omp_get_teams_thread_limit (void)
+{
+  return GOMP_ADDITIONAL_ICVS.teams_thread_limit;
+}
+
+ialias (omp_get_teams_thread_limit)
+
+void
+omp_set_teams_thread_limit (int thread_limit)
+{
+  if (thread_limit >= 0)
+    GOMP_ADDITIONAL_ICVS.teams_thread_limit = thread_limit;
+}
+
+ialias (omp_set_teams_thread_limit)

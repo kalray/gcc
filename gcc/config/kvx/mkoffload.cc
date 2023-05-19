@@ -371,6 +371,7 @@ process_asm (FILE * in, FILE * out, FILE * cfile)
   char **fns = XOBFINISH (&fns_os, char **);
 
   fprintf (cfile, "#include <stdlib.h>\n");
+  fprintf (cfile, "#include <stdint.h>\n");
   fprintf (cfile, "#include <stdbool.h>\n\n");
 
   char **vars = XOBFINISH (&vars_os, char **);
@@ -403,7 +404,7 @@ process_asm (FILE * in, FILE * out, FILE * cfile)
 }
 
 static void
-process_obj (FILE * in, FILE * cfile)
+process_obj (FILE * in, FILE * cfile, uint32_t omp_requires)
 {
   size_t len = 0;
   const char *input = read_file (in, &len);
@@ -427,16 +428,20 @@ process_obj (FILE * in, FILE * cfile)
 
   fprintf (cfile,
 	   "static const struct kvx_image_desc {\n"
+	   "  uintptr_t omp_requires_mask;\n"
 	   "  const struct kvx_image *kvx_image;\n"
 	   "  unsigned kernel_count;\n"
 	   "  const struct kvx_kernel_description *kernel_infos;\n"
 	   "  unsigned global_variable_count;\n"
 	   "  const struct global_var_info *global_variables;\n"
 	   "} target_data = {\n"
+	   " %d,\n"
 	   "  &kvx_image,\n"
 	   "  sizeof (kvx_kernels) / sizeof (kvx_kernels[0]),\n"
-	   "  kvx_kernels,"
-	   "  sizeof (vars) / sizeof (vars[0]),\n" "  vars\n" "};\n\n");
+	   "  kvx_kernels,\n"
+	   "  sizeof (vars) / sizeof (vars[0]),\n"
+	   "  vars\n"
+	   "};\n\n", omp_requires);
 
   fprintf (cfile,
 	   "#ifdef __cplusplus\n"
@@ -611,6 +616,9 @@ main (int argc, char **argv)
 	fpic = true;
       else if (strcmp (argv[i], "-fPIC") == 0)
 	fPIC = true;
+      else if (strcmp (argv[i], "-dumpbase") == 0
+	       && i + 1 < argc)
+	dumppfx = argv[++i];
       else if (strcmp (argv[i], "-v") == 0)
 	verbose = true;
     }
@@ -687,9 +695,28 @@ main (int argc, char **argv)
       unsetenv ("COMPILER_PATH");
       unsetenv ("LIBRARY_PATH");
 
-      fork_execute (cc_argv[0], CONST_CAST (char **, cc_argv), true,
-		    ".gcc_args");
+      char *omp_requires_file;
+      if (save_temps)
+	omp_requires_file = concat (dumppfx, ".mkoffload.omp_requires", NULL);
+      else
+	omp_requires_file = make_temp_file (".mkoffload.omp_requires");
+
+      KVX_DEBUG ("dumppfx: %s, omp_requires_file: %s\n", dumppfx, omp_requires_file);
+
+      xputenv (concat ("GCC_OFFLOAD_OMP_REQUIRES_FILE=", omp_requires_file, NULL));
+      fork_execute (cc_argv[0], CONST_CAST (char **, cc_argv), true, ".gcc_args");
       obstack_free (&cc_argv_obstack, NULL);
+      unsetenv ("GCC_OFFLOAD_OMP_REQUIRES_FILE");
+
+      in = fopen (omp_requires_file, "rb");
+      if (!in)
+	fatal_error (input_location, "cannot open omp_requires file %qs",
+		     omp_requires_file);
+      uint32_t omp_requires;
+      if (fread (&omp_requires, sizeof (omp_requires), 1, in) != 1)
+	fatal_error (input_location, "cannot read omp_requires file %qs",
+		     omp_requires_file);
+      fclose (in);
 
       in = fopen (kvx_s1_name, "r");
       if (!in)
@@ -713,7 +740,7 @@ main (int argc, char **argv)
       if (!in)
 	fatal_error (input_location, "cannot open intermediate kvx obj file");
 
-      process_obj (in, cfile);
+      process_obj (in, cfile, omp_requires);
 
       fclose (in);
 

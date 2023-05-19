@@ -1153,7 +1153,7 @@ GOMP_OFFLOAD_version (void)
 
 /* Return the number of KVX devices (agents) on the system.  */
 int
-GOMP_OFFLOAD_get_num_devices (void)
+GOMP_OFFLOAD_get_num_devices (unsigned int omp_requires_mask)
 {
   KVX_LOG (TRACE, "GOMP_OFFLOAD_get_num_devices\n");
   if (!init_kvx_context ())
@@ -1183,7 +1183,8 @@ GOMP_OFFLOAD_init_device (int n)
 int
 GOMP_OFFLOAD_load_image (int target_id, unsigned version,
 			 const void *target_data,
-			 struct addr_pair **target_table)
+			 struct addr_pair **target_table,
+			 uint64_t **rev_fn_table)
 {
   KVX_LOG (TRACE, "load_image: start\n");
   struct kvx_image_desc *image_desc = (struct kvx_image_desc *) target_data;
