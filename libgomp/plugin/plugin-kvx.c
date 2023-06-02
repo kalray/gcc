@@ -588,19 +588,27 @@ GOMP_OFFLOAD_run (int device, void *fn_ptr, void *vars, void **args)
   uint64_t function_ptr = (uintptr_t) fn_ptr;	/* get this from kernel */
   uint64_t arg_offset = (uintptr_t) vars;	/* address of the paramter of the function_ptr  void (function_ptr*)(void*) */
 
-  // struct mppa_gomp_buffer *arg_buffer = malloc(sizeof(*arg_buffer));
-  // if (mppa_offload_alloc(queue, 8 * 4, MPPA_GOMP_DEFAULT_BUFFER_ALIGN, MPPA_OFFLOAD_ALLOC_DDR, &arg_buffer->kvx_cpu_virt, &arg_buffer->dma_phys) != 0) {
-  //   KVX_DEBUG ("mppa offload alloc failed\n");
-  //   return;
-  // }
-  // arg_offset = arg_buffer->kvx_cpu_virt;
+  if (!vars)
+    {
+      struct mppa_gomp_buffer *arg_buffer = malloc (sizeof (*arg_buffer));
+      if (mppa_offload_alloc (queue, 8 * 4, MPPA_GOMP_DEFAULT_BUFFER_ALIGN,
+			      MPPA_OFFLOAD_ALLOC_DDR,
+			      &arg_buffer->kvx_cpu_virt,
+			      &arg_buffer->dma_phys) != 0)
+	{
+	  KVX_DEBUG ("mppa offload alloc failed\n");
+	  return;
+	}
+      arg_offset = arg_buffer->kvx_cpu_virt;
+    }
 
 #if 1
   if (!args)
     GOMP_PLUGIN_fatal ("No target arguments provided");
+
   while (*args)
     {
-      intptr_t id = (intptr_t) * args++, val;
+      intptr_t id = (intptr_t) *args++, val;
       if (id & GOMP_TARGET_ARG_SUBSEQUENT_PARAM)
 	val = (intptr_t) * args++;
       else
@@ -616,7 +624,7 @@ GOMP_OFFLOAD_run (int device, void *fn_ptr, void *vars, void **args)
     }
 #endif
 
-  KVX_DEBUG ("run: fn_ptr: %p\n", fn_ptr);
+  KVX_DEBUG ("run: fn_ptr: %p, vars: %p\n", fn_ptr, vars);
 
   if (mppa_offload_exec
       (queue, function_ptr, arg_offset,
