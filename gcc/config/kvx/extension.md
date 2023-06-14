@@ -1590,10 +1590,10 @@
 
 ;; XPRELOAD*
 
-(define_insn "kvx_xpreload<XBUFF:bitsize>"
+(define_insn "kvx_xpreloado<XBUFF:bitsize>"
   [(set (match_operand:XBUFF 0 "register_operand" "=x,x,x")
         (unspec:XBUFF [(match_operand:XBUFF 1 "register_operand" "0,0,0")
-                       (match_operand:<CHUNK> 2 "memsimple_operand" "c,d,e")
+                       (match_operand:OI 2 "memsimple_operand" "c,d,e")
                        (match_operand:DI 3 "register_operand" "r,r,r")
                        (match_operand 4 "" "")] UNSPEC_XPRELOAD))]
   "KV3_2"
@@ -1602,10 +1602,22 @@
    (set_attr "length" "4,   8,   12")]
 )
 
+(define_insn "kvx_xpreload<AI:lsusize><XBUFF:bitsize>"
+  [(set (match_operand:XBUFF 0 "register_operand" "=x,x,x")
+        (unspec:XBUFF [(match_operand:XBUFF 1 "register_operand" "0,0,0")
+                       (match_operand:AI 2 "memsimple_operand" "c,d,e")
+                       (match_operand:DI 3 "register_operand" "r,r,r")
+                       (match_operand 4 "" "")] UNSPEC_XPRELOAD))]
+  "KV3_2"
+  "xlo%4.<AI:lsusize>%X2 %b0, %3 = %O2"
+  [(set_attr "type" "lsu,lsu_x,lsu_y")
+   (set_attr "length" "4,   8,   12")]
+)
 
-;; XALIGN*O, XACCESS*O
 
-(define_insn "kvx_xalign<XBUFF:bitsize>o"
+;; XALIGN*, XACCESS*
+
+(define_insn "kvx_xaligno<XBUFF:bitsize>"
   [(set (match_operand:<CHUNK> 0 "register_operand" "=x")
         (unspec:<CHUNK> [(match_operand:XBUFF 1 "register_operand" "x")
                          (match_operand:DI 2 "register_operand" "r")] UNSPEC_XALIGN256))]
@@ -1614,13 +1626,39 @@
   [(set_attr "type" "bcu_crrp_crwl_crwh")]
 )
 
-(define_insn "kvx_xaccess<XBUFF:bitsize>o"
+(define_insn "kvx_xaccesso<XBUFF:bitsize>"
   [(set (match_operand:V256 0 "register_operand" "=r")
         (unspec:V256 [(match_operand:XBUFF 1 "register_operand" "x")
-                      (match_operand:DI 2 "register_operand" "r")] UNSPEC_XALIGN256))]
+                      (match_operand:DI 2 "register_operand" "r")] UNSPEC_XACCESS256))]
   "KV3_2"
   "xaccesso %0 = %b1, %2"
   [(set_attr "type" "bcu_tiny_auxw_crrp")]
+)
+
+(define_expand "kvx_xaccessq<XBUFF:bitsize>"
+  [(match_operand:V2DI 0 "register_operand")
+   (match_operand:XBUFF 1 "register_operand")
+   (match_operand:DI 2 "register_operand")]
+  ""
+  {
+    rtx access = gen_reg_rtx (V4DImode);
+    emit_insn (gen_kvx_xaccesso<XBUFF:bitsize> (access, operands[1], operands[2]));
+    emit_move_insn (operands[0], gen_rtx_SUBREG (V2DImode, access, 0));
+    DONE;
+  }
+)
+
+(define_expand "kvx_xaccessd<XBUFF:bitsize>"
+  [(match_operand:V1DI 0 "register_operand")
+   (match_operand:XBUFF 1 "register_operand")
+   (match_operand:DI 2 "register_operand")]
+  ""
+  {
+    rtx access = gen_reg_rtx (V4DImode);
+    emit_insn (gen_kvx_xaccesso<XBUFF:bitsize> (access, operands[1], operands[2]));
+    emit_move_insn (operands[0], gen_rtx_SUBREG (V1DImode, access, 0));
+    DONE;
+  }
 )
 
 

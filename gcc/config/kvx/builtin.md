@@ -3271,6 +3271,34 @@
   [(set_attr "type" "mau_auxr_fpu")]
 )
 
+(define_insn_and_split "kvx_fadddcq"
+  [(set (match_operand:V8DF 0 "register_operand" "=r")
+        (unspec:V8DF [(match_operand:V8DF 1 "register_operand" "r")
+                      (match_operand:V8DF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FADD))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V2DF (match_dup 0) 0)
+        (unspec:V2DF [(subreg:V2DF (match_dup 1) 0)
+                      (subreg:V2DF (match_dup 2) 0)
+                      (match_dup 3)] UNSPEC_FADD))
+   (set (subreg:V2DF (match_dup 0) 16)
+        (unspec:V2DF [(subreg:V2DF (match_dup 1) 16)
+                      (subreg:V2DF (match_dup 2) 16)
+                      (match_dup 3)] UNSPEC_FADD))
+   (set (subreg:V2DF (match_dup 0) 32)
+        (unspec:V2DF [(subreg:V2DF (match_dup 1) 32)
+                      (subreg:V2DF (match_dup 2) 32)
+                      (match_dup 3)] UNSPEC_FADD))
+   (set (subreg:V2DF (match_dup 0) 48)
+        (unspec:V2DF [(subreg:V2DF (match_dup 1) 48)
+                      (subreg:V2DF (match_dup 2) 48)
+                      (match_dup 3)] UNSPEC_FADD))]
+  ""
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
 (define_insn_and_split "kvx_faddwcq"
   [(set (match_operand:V8SF 0 "register_operand" "=r")
         (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "r")
@@ -3534,6 +3562,34 @@
    (set (subreg:V2DF (match_dup 0) 16)
         (unspec:V2DF [(subreg:V2DF (match_dup 1) 16)
                       (subreg:V2DF (match_dup 2) 16)
+                      (match_dup 3)] UNSPEC_FSBF))]
+  ""
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn_and_split "kvx_fsbfdcq"
+  [(set (match_operand:V8DF 0 "register_operand" "=r")
+        (unspec:V8DF [(match_operand:V8DF 1 "register_operand" "r")
+                      (match_operand:V8DF 2 "register_operand" "r")
+                      (match_operand 3 "" "")] UNSPEC_FSBF))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V2DF (match_dup 0) 0)
+        (unspec:V2DF [(subreg:V2DF (match_dup 1) 0)
+                      (subreg:V2DF (match_dup 2) 0)
+                      (match_dup 3)] UNSPEC_FSBF))
+   (set (subreg:V2DF (match_dup 0) 16)
+        (unspec:V2DF [(subreg:V2DF (match_dup 1) 16)
+                      (subreg:V2DF (match_dup 2) 16)
+                      (match_dup 3)] UNSPEC_FSBF))
+   (set (subreg:V2DF (match_dup 0) 32)
+        (unspec:V2DF [(subreg:V2DF (match_dup 1) 32)
+                      (subreg:V2DF (match_dup 2) 32)
+                      (match_dup 3)] UNSPEC_FSBF))
+   (set (subreg:V2DF (match_dup 0) 48)
+        (unspec:V2DF [(subreg:V2DF (match_dup 1) 48)
+                      (subreg:V2DF (match_dup 2) 48)
                       (match_dup 3)] UNSPEC_FSBF))]
   ""
   [(set_attr "type" "mau_auxr_fpu")]
@@ -4025,31 +4081,7 @@
                       (match_operand 3 "" "")] UNSPEC_FMULC))]
   ""
   {
-    rtx modifiers = operands[3];
-    bool conjugate = kvx_modifier_enabled_p (".c", modifiers);
-    if (conjugate)
-      modifiers = kvx_modifier_rounding (modifiers);
-    rtx real_0 = simplify_gen_subreg (DFmode, operands[0], V2DFmode, 0);
-    rtx imag_0 = simplify_gen_subreg (DFmode, operands[0], V2DFmode, 8);
-    rtx real_1 = simplify_gen_subreg (DFmode, operands[1], V2DFmode, 0);
-    rtx imag_1 = simplify_gen_subreg (DFmode, operands[1], V2DFmode, 8);
-    rtx real_2 = simplify_gen_subreg (DFmode, operands[2], V2DFmode, 0);
-    rtx imag_2 = simplify_gen_subreg (DFmode, operands[2], V2DFmode, 8);
-    rtx real_t = gen_reg_rtx (DFmode), imag_t = gen_reg_rtx (DFmode);
-    if (conjugate)
-      {
-        emit_insn (gen_kvx_fmuld (real_t, real_1, real_2, modifiers));
-        emit_insn (gen_kvx_ffmad (real_0, imag_1, imag_2, real_t, modifiers));
-        emit_insn (gen_kvx_fmuld (imag_t, real_1, imag_2, modifiers));
-        emit_insn (gen_kvx_ffmsd (imag_0, real_2, imag_1, imag_t, modifiers));
-      }
-    else
-      {
-        emit_insn (gen_kvx_fmuld (real_t, real_1, real_2, modifiers));
-        emit_insn (gen_kvx_ffmsd (real_0, imag_1, imag_2, real_t, modifiers));
-        emit_insn (gen_kvx_fmuld (imag_t, real_1, imag_2, modifiers));
-        emit_insn (gen_kvx_ffmad (imag_0, real_2, imag_1, imag_t, modifiers));
-      }
+    kvx_expand_builtin_fmuldc (operands, 1);
     DONE;
   }
 )
@@ -4112,34 +4144,19 @@
                       (match_operand 3 "" "")] UNSPEC_FMULC))]
   ""
   {
-    rtx modifiers = operands[3];
-    bool conjugate = kvx_modifier_enabled_p (".c", modifiers);
-    if (conjugate)
-      modifiers = kvx_modifier_rounding (modifiers);
-    for (int i = 0; i < 2; i++)
-      {
-        rtx real_0 = gen_rtx_SUBREG (DFmode, operands[0], i*16+0);
-        rtx imag_0 = gen_rtx_SUBREG (DFmode, operands[0], i*16+8);
-        rtx real_1 = gen_rtx_SUBREG (DFmode, operands[1], i*16+0);
-        rtx imag_1 = gen_rtx_SUBREG (DFmode, operands[1], i*16+8);
-        rtx real_2 = gen_rtx_SUBREG (DFmode, operands[2], i*16+0);
-        rtx imag_2 = gen_rtx_SUBREG (DFmode, operands[2], i*16+8);
-        rtx real_t = gen_reg_rtx (DFmode), imag_t = gen_reg_rtx (DFmode);
-        if (conjugate)
-          {
-            emit_insn (gen_kvx_fmuld (real_t, real_1, real_2, modifiers));
-            emit_insn (gen_kvx_ffmad (real_0, imag_1, imag_2, real_t, modifiers));
-            emit_insn (gen_kvx_fmuld (imag_t, real_1, imag_2, modifiers));
-            emit_insn (gen_kvx_ffmsd (imag_0, real_2, imag_1, imag_t, modifiers));
-          }
-        else
-          {
-            emit_insn (gen_kvx_fmuld (real_t, real_1, real_2, modifiers));
-            emit_insn (gen_kvx_ffmsd (real_0, imag_1, imag_2, real_t, modifiers));
-            emit_insn (gen_kvx_fmuld (imag_t, real_1, imag_2, modifiers));
-            emit_insn (gen_kvx_ffmad (imag_0, real_2, imag_1, imag_t, modifiers));
-          }
-      }
+    kvx_expand_builtin_fmuldc (operands, 2);
+    DONE;
+  }
+)
+
+(define_expand "kvx_fmuldcq"
+  [(set (match_operand:V8DF 0 "register_operand" "")
+        (unspec:V8DF [(match_operand:V8DF 1 "register_operand" "")
+                      (match_operand:V8DF 2 "register_operand" "")
+                      (match_operand 3 "" "")] UNSPEC_FMULC))]
+  ""
+  {
+    kvx_expand_builtin_fmuldc (operands, 4);
     DONE;
   }
 )
@@ -4786,7 +4803,22 @@
   {
     rtx product = gen_reg_rtx (V4DFmode);
     emit_insn (gen_kvx_fmuldcp (product, operands[2], operands[1], operands[4]));
-    emit_insn (gen_kvx_fadddq (operands[0], product, operands[3], operands[4]));
+    emit_insn (gen_kvx_fadddcp (operands[0], product, operands[3], operands[4]));
+    DONE;
+  }
+)
+
+(define_expand "kvx_ffmadcq"
+  [(set (match_operand:V8DF 0 "register_operand")
+        (unspec:V8DF [(match_operand:V8DF 1 "register_operand")
+                      (match_operand:V8DF 2 "register_operand")
+                      (match_operand:V8DF 3 "register_operand")
+                      (match_operand 4 "" "")] UNSPEC_FFMAC))]
+  ""
+  {
+    rtx product = gen_reg_rtx (V8DFmode);
+    emit_insn (gen_kvx_fmuldcq (product, operands[2], operands[1], operands[4]));
+    emit_insn (gen_kvx_fadddcq (operands[0], product, operands[3], operands[4]));
     DONE;
   }
 )
@@ -5199,7 +5231,22 @@
   {
     rtx product = gen_reg_rtx (V4DFmode);
     emit_insn (gen_kvx_fmuldcp (product, operands[2], operands[1], operands[4]));
-    emit_insn (gen_kvx_fsbfdq (operands[0], product, operands[3], operands[4]));
+    emit_insn (gen_kvx_fsbfdcp (operands[0], product, operands[3], operands[4]));
+    DONE;
+  }
+)
+
+(define_expand "kvx_ffmsdcq"
+  [(set (match_operand:V8DF 0 "register_operand")
+        (unspec:V8DF [(match_operand:V8DF 1 "register_operand")
+                      (match_operand:V8DF 2 "register_operand")
+                      (match_operand:V8DF 3 "register_operand")
+                      (match_operand 4 "" "")] UNSPEC_FFMSC))]
+  ""
+  {
+    rtx product = gen_reg_rtx (V8DFmode);
+    emit_insn (gen_kvx_fmuldcq (product, operands[2], operands[1], operands[4]));
+    emit_insn (gen_kvx_fsbfdcq (operands[0], product, operands[3], operands[4]));
     DONE;
   }
 )
@@ -6797,6 +6844,20 @@
   "copyd %x0 = %x1\n\tfnegd %y0 = %y1\n\tcopyd %z0 = %z1\n\tfnegd %t0 = %t1"
   [(set_attr "type" "alu_tiny_x4")
    (set_attr "length"        "16")]
+)
+
+(define_insn_and_split "kvx_fconjdcq"
+  [(set (match_operand:V8DF 0 "register_operand" "=r")
+        (unspec:V8DF [(match_operand:V8DF 1 "register_operand" "r")] UNSPEC_FCONJ))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V4DF (match_dup 0) 0)
+        (unspec:V4DF [(subreg:V4DF (match_dup 1) 0)] UNSPEC_FCONJ))
+   (set (subreg:V4DF (match_dup 0) 32)
+        (unspec:V4DF [(subreg:V4DF (match_dup 1) 32)] UNSPEC_FCONJ))]
+  ""
+  [(set_attr "type" "alu_thin_x2")]
 )
 
 

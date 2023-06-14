@@ -24,6 +24,7 @@ along with GCC; see the file COPYING3.  If not see
 void expand_builtin_trap (void);
 
 void kvx_expand_builtin_maddt (rtx operands[], int add);
+void kvx_expand_builtin_fmuldc (rtx operands[], int lanes);
 
 #ifdef HAVE_ATTR_arch
 extern enum attr_arch kvx_arch_schedule;
