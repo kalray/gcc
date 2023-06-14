@@ -8547,6 +8547,32 @@ kvx_constant_alignment (const_tree exp, HOST_WIDE_INT align)
 	  ? BITS_PER_WORD : (align));
 }
 
+/* Return 1 if TRAIT NAME is present in the OpenMP context's
+   device trait set, return 0 if not present in any OpenMP context in the
+   whole translation unit, or -1 if not present in the current OpenMP context
+   but might be present in another OpenMP context in the same TU.  */
+
+int
+kvx_omp_device_kind_arch_isa (enum omp_device_kind_arch_isa trait,
+			      const char *name)
+{
+  switch (trait)
+    {
+    case omp_device_kind:
+      return strcmp (name, "gpu") == 0;
+    case omp_device_arch:
+      return strcmp (name, "kvx") == 0;
+    case omp_device_isa:
+      if (!strcmp (name, "kv3-1"))
+	return KVX_ARCH_KV3_1;
+      if (!strcmp (name, "kv3-2"))
+	return KVX_ARCH_KV3_1;
+      return 0;
+    default:
+      gcc_unreachable ();
+    }
+}
+
 /* Initialize the GCC target structure.  */
 
 #undef TARGET_OPTION_OVERRIDE
@@ -8828,6 +8854,8 @@ kvx_constant_alignment (const_tree exp, HOST_WIDE_INT align)
 #undef TARGET_VECTORIZE_VEC_PERM_CONST
 #define TARGET_VECTORIZE_VEC_PERM_CONST kvx_vectorize_vec_perm_const
 
+#undef TARGET_OMP_DEVICE_KIND_ARCH_ISA
+#define TARGET_OMP_DEVICE_KIND_ARCH_ISA kvx_omp_device_kind_arch_isa
 
 void kvx_init_builtins (void);
 tree kvx_builtin_decl (unsigned code, bool initialize_p);
