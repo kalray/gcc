@@ -274,13 +274,23 @@ process_asm (FILE * in, FILE * out, FILE * cfile)
 	{
 	case IN_CODE:
 	  {
-	    char funname[256] = { 0 };
-	    if (sscanf (buf, " .type %256[^,], @function", funname) > 0)
+	    char name[256] = { 0 };
+	    char type[256] = { 0 };
+	    if (sscanf (buf, " .type %256[^,], @%256[^\n]", name, type) > 0)
 	      {
 		/*  TODO: ??? Is this really needed even though we are compiling
 		   with -shared?
 		   or can we have the compiler auto export them? */
-		fprintf (out, "\t.global %s\n", funname);
+		fprintf (out, "\t.global %s\n", name);
+	      }
+	    else if (sscanf (buf, " .local %256[^\n]", name) > 0)
+	      {
+		fprintf (out, "\t.global %s\n", name);
+		/* We replace .local (which is used for static variables) into
+		 * .global so that the static variables can be shared between
+		 * the function which executes on the host and the function
+		 * which executes on the device. */
+		keep_in_asm = false;
 	      }
 	    break;
 	  }
@@ -330,8 +340,9 @@ process_asm (FILE * in, FILE * out, FILE * cfile)
 	       || sscanf (buf, " .ident %c", &dummy) > 0)
 	state = IN_CODE;
 
-      if (state == IN_CODE)
+      if (state == IN_CODE && keep_in_asm)
 	fputs (buf, out);
+      keep_in_asm = true;
     }
 
   char **fns = XOBFINISH (&fns_os, char **);
