@@ -886,6 +886,19 @@ GOMP_OFFLOAD_load_image (int target_id, unsigned version,
       agent->blocks = block;
     }
 
+  /* Special kernel that must run before everything else. */
+  struct kernel_info init_kernel = {
+    .name = ".omp.offload.device_init",
+    .vars = 0,
+    .args = 0,
+    .initialized = false,
+    .initialization_failed = false,
+    .agent = agent,
+  };
+
+  GOMP_OFFLOAD_can_run (&init_kernel);
+  GOMP_OFFLOAD_run (target_id, &init_kernel, NULL, NULL);
+
   KVX_DEBUG ("load_image: end\n");
   return nb_offloaded_objects;
 }
