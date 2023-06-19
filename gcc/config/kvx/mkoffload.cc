@@ -265,9 +265,29 @@ process_asm (FILE * in, FILE * out, FILE * cfile)
   obstack_init (&vars_os);
   obstack_init (&varsizes_os);
 
+  /* Support for omp_is_initial_device.
+     omp_is_initial_device performs its detection by trying to locate the symbol .__omp.kvx.target_p;
+   */
+
+  fputs ("\t.text\n", out);
+  fputs ("\t.global	.omp.offload.device_init\n", out);
+  fputs ("\t.type	.omp.offload.device_init, @function\n", out);
+  fputs (".omp.offload.device_init:\n\t"
+	 "addd $r12 = $r12, -32\n\t"
+	 "get $r16 = $ra\n\t"
+	 "pcrel $r0 = @gotaddr()\n\t;;\n\t"
+	 "sd 24[$r12] = $r16\n\t;;\n\t"
+	 "ld $r0 = @got(omp_offload_init)[$r0]\n\t;;\n\t"
+	 "icall $r0\n\t;;\n\t"
+	 "ld $r16 = 24[$r12]\n\t"
+	 "addd $r12 = $r12, 32\n\t;;\n\t"
+	 "set $ra = $r16\n\t;;\n\t"
+	 "ret\n\t;;\n", out);
+
+
   char buf[1000];
-  enum
-  { IN_CODE, IN_VARS, IN_FUNCS } state = IN_CODE;
+  int keep_in_asm = true;
+  enum { IN_CODE, IN_VARS, IN_FUNCS } state = IN_CODE;
   while (fgets (buf, sizeof (buf), in))
     {
       switch (state)

@@ -28,6 +28,8 @@
 
 #include "libgomp.h"
 
+static int is_offloading_device = 0;
+
 void
 omp_set_default_device (int device_num)
 {
@@ -62,15 +64,17 @@ omp_get_num_devices (void)
 
 ialias (omp_get_num_devices)
 
+void
+omp_offload_init (void)
+{
+  is_offloading_device = 1;
+}
+
+/* Should be 1 on host, 0 on device.  */
 int
 omp_is_initial_device (void)
 {
-  /* Hardcoded to 1 on host, should be 0 on MIC, HSAIL, PTX.  */
-#ifdef PLUGIN_KVX
-  return 0;
-#else
-  return 1;
-#endif
+  return !is_offloading_device;
 }
 
 ialias (omp_is_initial_device)
