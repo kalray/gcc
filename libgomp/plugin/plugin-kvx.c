@@ -91,6 +91,41 @@ static mppa_offload_host_config_t mppa_offload_cfg_data = {
   .accelerator_configs = &mppa_offload_host_acc_cfg,
 };
 
+enum offload_kind { KIND_UNKNOWN, KIND_OPENMP, KIND_OPENACC };
+
+struct kernel_info
+{
+  /* Name of the kernel, required to locate it within the GCN object-code
+     module.  */
+  const char *name;
+  /* The specific agent the kernel has been or will be finalized for and run
+     on.  */
+  struct agent_info *agent;
+//  /* The specific module where the kernel takes place.  */
+//  struct module_info *module;
+//  /* Information provided by mkoffload associated with the kernel.  */
+//  struct hsa_kernel_description *description;
+  /* Mutex enforcing that at most once thread ever initializes a kernel for
+     use.  A thread should have locked agent->module_rwlock for reading before
+     acquiring it.  */
+  pthread_mutex_t init_mutex;
+//  /* Flag indicating whether the kernel has been initialized and all fields
+//     below it contain valid data.  */
+  bool initialized;
+  /* Flag indicating that the kernel has a problem that blocks an execution.  */
+  bool initialization_failed;
+  /* The object to be put into the dispatch queue.  */
+  uint64_t object;
+//  /* Required size of kernel arguments.  */
+//  uint32_t kernarg_segment_size;
+//  /* Required size of group segment.  */
+//  uint32_t group_segment_size;
+//  /* Required size of private segment.  */
+//  uint32_t private_segment_size;
+  /* Set up for OpenMP or OpenACC?  */
+  enum offload_kind kind;
+  void *async_data;
+};
 
 /* An async queue header.
 
@@ -289,6 +324,113 @@ find_block (struct agent_info *agent, const void *ptr,
   return false;
 }
 
+static void
+kvx_kernel_exec (struct agent_info *agent, void *fn_ptr, void *vars,
+		 int async_p)
+{
+
+  if (async_p)
+    {
+      /* TODO: Implement async support.  */
+      /* fallback to synchronous execution.  */
+      kvx_kernel_exec (agent, fn_ptr, vars, false);
+    }
+  else
+    {
+      mppa_offload_accelerator_t *acc = NULL;
+      mppa_offload_sysqueue_t *queue = NULL;
+
+      struct kernel_info *kernel = (struct kernel_info *) fn_ptr;
+      kernel->agent = agent;
+
+      int vars_offset = 0;
+      kernel->kind = KIND_OPENMP;
+
+      if (!(acc = mppa_offload_get_accelerator (&agent->ctx, 0)))
+	KVX_DEBUG ("Failed to get accelerator.\n");
+
+      int queue_num = 0;
+      while (queue_num < NB_SYSTEM_QUEUE
+	     && (pthread_mutex_trylock (&agent->queue_locks[queue_num]) == EBUSY))
+	queue_num++;
+
+      /* If all queues are busy, enqueue on queue 0.  */
+      if (queue_num == NB_SYSTEM_QUEUE)
+	{
+	  queue_num = 0;
+	  KVX_DEBUG ("No more queues available, waiting on queue 0.\n");
+	  pthread_mutex_lock (&agent->queue_locks[queue_num]);
+	}
+
+      KVX_DEBUG ("Locked queue %d\n", queue_num);
+
+      if (!(queue = mppa_offload_get_sysqueue (acc, queue_num)))
+	KVX_DEBUG ("Failed to get system queue %d.\n", queue_num);
+
+      /* get this from kernel */
+      uint64_t function_ptr = (uintptr_t) kernel->object;
+
+      /* When a kernel does not have arguments VARS is NULL, this is a problem since
+       * mppa_offload_exec expects a valid pointer to the argument list.  Thus, we
+       * allocate a dummy buffer.  */
+      struct mppa_gomp_buffer *arg_buffer = NULL;
+      if (!vars)
+	find_block (agent, GOMP_OFFLOAD_alloc (agent->id, 32), &arg_buffer,
+		    NULL);
+      else
+	{
+	  if (!find_block (agent, vars, &arg_buffer, &vars_offset))
+	    {
+	      KVX_DEBUG ("translation failed!\n");
+	      return;
+	    }
+	}
+
+      /* Currently, only used for debug purposes.  */
+//      parse_target_attributes (args);
+
+      struct mppa_offload_buffer_exec_cmd *cmd_buffer = NULL;
+      if (!(cmd_buffer = calloc (1, sizeof (*cmd_buffer))))
+	{
+	  KVX_DEBUG ("allocation of cmd buffer failed\n");
+	  return;
+	}
+      cmd_buffer->virt_func_ptr = (uint64_t) function_ptr;
+      cmd_buffer->virt_arg_ptr = (uint64_t) (arg_buffer->vaddr + vars_offset);
+
+      KVX_DEBUG ("run: fn_ptr: %lx, vars: %lx\n",
+		 cmd_buffer->virt_func_ptr, cmd_buffer->virt_arg_ptr);
+
+      struct mppa_gomp_buffer *cmd_buffer_host = NULL;
+      find_block (agent, GOMP_OFFLOAD_alloc (agent->id, sizeof (*cmd_buffer)),
+		  &cmd_buffer_host, NULL);
+      GOMP_OFFLOAD_host2dev (agent->id, (void *) cmd_buffer_host->vaddr,
+			     cmd_buffer, sizeof (*cmd_buffer));
+
+      free (cmd_buffer);
+
+      if (mppa_offload_buffer_exec (queue, 1, cmd_buffer_host->vaddr, 1, 1,
+				    true, true, NULL))
+	{
+	  KVX_DEBUG ("mppa_offload_exec failed\n");
+	  return;
+	}
+      else
+	KVX_DEBUG ("mppa_offload_exec success\n");
+
+      if (!vars)
+	{
+	  if (mppa_offload_free (queue, MPPA_OFFLOAD_ALLOC_DDR,
+				 arg_buffer->vaddr) != 0)
+	    KVX_DEBUG ("mppa_offload_free: failed.");
+	}
+
+      KVX_DEBUG ("unlock queue %d\n", queue_num);
+      pthread_mutex_unlock (&agent->queue_locks[queue_num]);
+    }
+
+}
+
 static bool
 init_kvx_context (void)
 {
@@ -403,6 +545,61 @@ kvx_init_device (int n, int version)
 }
 
 
+/*
+ * \param kernel:
+ * \param queue:
+ */
+static bool
+kvx_init_kernel (struct kernel_info *kernel, mppa_offload_sysqueue_t * queue)
+{
+  struct agent_info *agent = kernel->agent;
+  if (mppa_offload_query_symbol (queue, agent->reloc_offset, kernel->name,
+				 &kernel->object) != 0)
+    {
+      KVX_DEBUG ("mppa offload query symbol failed\n");
+      return false;
+    }
+  /* function_ptr now contain the function pointer to be used to next calls/runs */
+  /* to be saved somewhere for reuse */
+  KVX_DEBUG ("pulled and saved fn '%s' (0x%lx) from image.\n",
+	     kernel->name, kernel->object);
+  return true;
+}
+
+/* \brief Extract the revision number from the flag field of the elf header.
+   \param elf_image: A valid elf blob.  */
+static int
+kvx_get_isa_revision (void *elf_image)
+{
+  return (((char *) elf_image)[0x31] & 0xf0) >> 4;
+}
+
+static bool __attribute__ ((unused))
+parse_target_attributes (void **input)
+{
+  /* Read target arguments (nb of teams, thread_limit) from ARGS.  */
+  if (!input)
+    GOMP_PLUGIN_fatal ("No target arguments provided");
+
+  while (*input)
+    {
+      intptr_t id = (intptr_t) *input++, val;
+      if (id & GOMP_TARGET_ARG_SUBSEQUENT_PARAM)
+	val = (intptr_t) * input++;
+      else
+	val = id >> GOMP_TARGET_ARG_VALUE_SHIFT;
+      if ((id & GOMP_TARGET_ARG_DEVICE_MASK) != GOMP_TARGET_ARG_DEVICE_ALL)
+	continue;
+      val = val > INT_MAX ? INT_MAX : val;
+      id &= GOMP_TARGET_ARG_ID_MASK;
+      if (id == GOMP_TARGET_ARG_NUM_TEAMS)
+	KVX_DEBUG ("nb_teams: %ld\n", val);
+      else if (id == GOMP_TARGET_ARG_THREAD_LIMIT)
+	KVX_DEBUG ("thread_limit: %ld\n", val);
+    }
+  return true;
+}
+
 /* {{{ Generic Plugin API  */
 
 /* Return the name of the accelerator, which is "kvx".  */
@@ -480,9 +677,7 @@ GOMP_OFFLOAD_load_image (int target_id, unsigned version,
   KVX_DEBUG ("load_image: start\n");
   struct kvx_image_desc *image_desc = (struct kvx_image_desc *) target_data;
 
-  /* Scan the flag field of the ELF header to scrap the processor version.  */
-  int proc_version =
-    (0xf0 & ((char *) image_desc->kvx_image->image)[0x31]) >> 4;
+  int proc_version = kvx_get_isa_revision (image_desc->kvx_image->image);
   KVX_DEBUG ("Proc ver: %d\n", proc_version);
 
   kvx_init_device (target_id, proc_version);
@@ -491,8 +686,12 @@ GOMP_OFFLOAD_load_image (int target_id, unsigned version,
   struct addr_pair *pair;
   mppa_offload_accelerator_t *acc = NULL;
   mppa_offload_sysqueue_t *queue = NULL;
+  struct mppa_gomp_buffer *ptr;
 
-  uint64_t virt_ptr, phys_ptr;
+  if (!(acc = mppa_offload_get_accelerator (&agent->ctx, 0)))
+    KVX_DEBUG ("Failed to get accelerator.");
+  if (!(queue = mppa_offload_get_sysqueue (acc, 0)))
+    KVX_DEBUG ("Failed to get system queue 0");
 
   /* Size fo the image.  */
   size_t elf_size = image_desc->kvx_image->size;
@@ -506,40 +705,35 @@ GOMP_OFFLOAD_load_image (int target_id, unsigned version,
   pair = GOMP_PLUGIN_malloc (nb_offloaded_objects * sizeof (struct addr_pair));
   *target_table = pair;
 
-  if (mppa_offload_alloc
-      (queue, elf_size, MPPA_GOMP_DEFAULT_BUFFER_ALIGN,
-       MPPA_OFFLOAD_ALLOC_DDR, &virt_ptr, &phys_ptr) != 0)
-    KVX_DEBUG ("mppa offload alloc failed\n");
-  if (mppa_offload_acc_load (acc, elf_ptr, elf_size, 0, virt_ptr, phys_ptr,
-			     &agent->reloc_offset) != 0)
+  find_block (agent, GOMP_OFFLOAD_alloc (target_id, elf_size), &ptr, NULL);
+  if (mppa_offload_acc_load (acc, elf_ptr, elf_size, 0, ptr->vaddr,
+			     ptr->paddr, &agent->reloc_offset) != 0)
     KVX_DEBUG ("mppa offload load failed\n");
   KVX_DEBUG ("reloc_offset: %lx\n", agent->reloc_offset);
-  if (mppa_offload_free (queue, MPPA_OFFLOAD_ALLOC_DDR, virt_ptr) != 0)
-    KVX_DEBUG ("mppa offload free failed\n");
+
+  GOMP_OFFLOAD_free (0, (void *) ptr->vaddr);
 
   /* Extract symbols from the image to offload.  */
   for (uint32_t i = 0; i < nb_offloaded_functions; i++)
     {
-      uint64_t function_ptr;
-      if (mppa_offload_query_symbol
-	  (queue, agent->reloc_offset, image_desc->kernel_infos[i].name,
-	   &function_ptr) != 0)
-	KVX_DEBUG ("mppa offload query symbol failed\n");
-      /* function_ptr now contain the function pointer to be used to next calls/runs */
-      /* to be saved somewhere for reuse */
-      KVX_DEBUG ("pulled and saved fn '%s' (0x%lx) from image.\n",
-		 image_desc->kernel_infos[i].name, function_ptr);
-      pair->start = function_ptr;
-      pair->end = function_ptr + 1;
+      struct kernel_info *kernel = malloc (sizeof (*kernel));
+      kernel->name = strdup (image_desc->kernel_infos[i].name);
+      kernel->initialized = false;
+      kernel->initialization_failed = false;
+      kernel->agent = agent;
+      pthread_mutex_init (&kernel->init_mutex, NULL);
+
+      pair->start = (uint64_t) (uintptr_t) kernel;
+      pair->end = (uint64_t) (uintptr_t) kernel + 1;
       pair++;
     }
 
   for (uint32_t i = 0; i < nb_offloaded_variables; i++)
     {
       struct mppa_gomp_buffer *var_buf = malloc (sizeof (*var_buf));
-      if (mppa_offload_query_symbol
-	  (queue, agent->reloc_offset, image_desc->global_variables[i].name,
-	   &var_buf->vaddr) != 0)
+      if (mppa_offload_query_symbol (queue, agent->reloc_offset,
+				     image_desc->global_variables[i].name,
+				     &var_buf->vaddr) != 0)
 	KVX_DEBUG ("mppa offload query symbol failed\n");
       /* function_ptr now contain the function pointer to be used to next calls/runs */
       /* to be saved somewhere for reuse */
@@ -571,8 +765,19 @@ GOMP_OFFLOAD_load_image (int target_id, unsigned version,
 bool
 GOMP_OFFLOAD_unload_image (int n, unsigned version, const void *target_data)
 {
+  struct agent_info *agent = get_agent_info (n);
   KVX_DEBUG ("unload_image\n");
-  /* TODO: should unload image.  */
+  mppa_offload_accelerator_t *acc = NULL;
+
+  if (!(acc = mppa_offload_get_accelerator (&agent->ctx, 0)))
+    {
+      KVX_DEBUG ("Failed to get accelerator.\n");
+      return false;
+    }
+
+  if (mppa_offload_acc_unload (acc, (uint64_t) target_data, 0) != 0)
+    return false;
+
   return true;
 }
 
@@ -616,10 +821,32 @@ GOMP_OFFLOAD_fini_device (int n)
 bool
 GOMP_OFFLOAD_can_run (void *fn_ptr)
 {
-  /* TODO: should be a bit more defensive.  */
   KVX_DEBUG ("can_run: start\n");
-  return true;
+  struct kernel_info *kernel = (struct kernel_info *) fn_ptr;
+  struct agent_info *agent = kernel->agent;
+
+  mppa_offload_accelerator_t *acc = NULL;
+  mppa_offload_sysqueue_t *queue = NULL;
+  if (!(acc = mppa_offload_get_accelerator (&agent->ctx, 0)))
+    KVX_DEBUG ("Failed to get accelerator.");
+
+  if (!(queue = mppa_offload_get_sysqueue (acc, 0)))
+    KVX_DEBUG ("Failed to get system queue 0");
+
+  pthread_mutex_lock (&kernel->init_mutex);
+  if (!kernel->initialized)
+    kvx_init_kernel (kernel, queue);
+  pthread_mutex_unlock (&kernel->init_mutex);
+
+  if (kernel->initialization_failed)
+    {
+      KVX_DEBUG ("Kernel %s initialization failed\n", kernel->name);
+      KVX_DEBUG ("can_run: end\n");
+      return false;
+    }
+
   KVX_DEBUG ("can_run: end\n");
+  return true;
 }
 
 /* Allocate memory on device N.  */
@@ -641,7 +868,7 @@ GOMP_OFFLOAD_alloc (int n, size_t size)
     KVX_DEBUG ("Failed allocate buffer\n");
 
   if (mppa_offload_alloc (queue, size, MPPA_GOMP_DEFAULT_BUFFER_ALIGN,
-			  MPPA_OFFLOAD_ALLOC_DDR, &buffer->vaddr,
+			  OFFLOAD_ALLOC_MODE, &buffer->vaddr,
 			  &buffer->paddr) != 0)
     {
       KVX_DEBUG ("mppa_offload_alloc failed\n");
@@ -694,7 +921,7 @@ GOMP_OFFLOAD_free (int device, void *ptr)
   if (!(queue = mppa_offload_get_sysqueue (acc, 0)))
     KVX_DEBUG ("Failed to get queue %d.\n", 0);
 
-  if (mppa_offload_free (queue, MPPA_OFFLOAD_ALLOC_DDR, buf->vaddr) != 0)
+  if (mppa_offload_free (queue, OFFLOAD_ALLOC_MODE, buf->vaddr) != 0)
     {
       KVX_DEBUG ("mppa offload free failed\n");
       return false;
@@ -832,81 +1059,8 @@ void
 GOMP_OFFLOAD_run (int device, void *fn_ptr, void *vars, void **args)
 {
   KVX_DEBUG ("GOMP_OFFLOAD_run: start\n");
-  mppa_offload_accelerator_t *acc = NULL;
-  mppa_offload_sysqueue_t *queue = NULL;
   struct agent_info *agent = get_agent_info (device);
-
-  int vars_offset = 0;
-
-  if (!(acc = mppa_offload_get_accelerator (&agent->ctx, 0)))
-    KVX_DEBUG ("Failed to get accelerator.\n");
-
-  int queue_num = 0;
-
-  KVX_DEBUG ("Locked queue %d\n", queue_num);
-
-  if (!(queue = mppa_offload_get_sysqueue (acc, queue_num)))
-    KVX_DEBUG ("Failed to get system queue %d.\n", queue_num);
-
-  /* get this from kernel */
-  uint64_t function_ptr = (uintptr_t) fn_ptr;
-
-  /* When a kernel does not have arguments VARS is NULL, this is a problem since
-   * mppa_offload_exec expects a valid pointer to the argument list.  Thus, we
-   * allocate a dummy buffer.  */
-  struct mppa_gomp_buffer *arg_buffer = NULL;
-  if (!vars)
-    {
-      find_block (agent, GOMP_OFFLOAD_alloc (agent->id, 32), &arg_buffer,
-		  NULL);
-    }
-  else
-    {
-      if (!find_block (agent, vars, &arg_buffer, &vars_offset))
-	{
-	  KVX_DEBUG ("translation failed!\n");
-	  return;
-	}
-    }
-
-  /* Currently, only used for debug purposes.  */
-  //      parse_target_attributes (args);
-
-  struct mppa_offload_buffer_exec_cmd *cmd_buffer = NULL;
-  if (!(cmd_buffer = calloc (1, sizeof (*cmd_buffer))))
-    {
-      KVX_DEBUG ("allocation of cmd buffer failed\n");
-      return;
-    }
-  cmd_buffer->virt_func_ptr = (uint64_t) function_ptr;
-  cmd_buffer->virt_arg_ptr = (uint64_t) (arg_buffer->vaddr + vars_offset);
-
-  KVX_DEBUG ("run: fn_ptr: %lx, vars: %lx\n",
-	     cmd_buffer->virt_func_ptr, cmd_buffer->virt_arg_ptr);
-
-  struct mppa_gomp_buffer *cmd_buffer_host = NULL;
-  find_block (agent, GOMP_OFFLOAD_alloc (agent->id, sizeof (*cmd_buffer)),
-	      &cmd_buffer_host, NULL);
-  GOMP_OFFLOAD_host2dev (agent->id, (void *) cmd_buffer_host->vaddr,
-			 cmd_buffer, sizeof (*cmd_buffer));
-
-  free (cmd_buffer);
-
-  if (mppa_offload_buffer_exec (queue, 1, cmd_buffer_host->vaddr, 1, 1, true,
-				true, NULL))
-    {
-      KVX_DEBUG ("mppa_offload_exec failed\n");
-      return;
-    }
-  else
-    KVX_DEBUG ("mppa_offload_exec success\n");
-
-  if (!vars)
-    {
-      if (mppa_offload_free (queue, MPPA_OFFLOAD_ALLOC_DDR,
-			     arg_buffer->vaddr) != 0)
-	KVX_DEBUG ("mppa_offload_free: failed.");
-    }
+  kvx_kernel_exec (agent, fn_ptr, vars, false);
 }
 
 /* Run an asynchronous OpenMP kernel on DEVICE.  This is similar to
@@ -931,6 +1085,8 @@ GOMP_OFFLOAD_openacc_exec (void (*fn_ptr) (void *), size_t mapnum,
 			   void **hostaddrs, void **devaddrs, unsigned *dims,
 			   void *targ_mem_desc)
 {
+  struct kernel_info *kernel = (struct kernel_info *) fn_ptr;
+  kernel->kind = KIND_OPENACC;
 }
 
 /* Run an asynchronous OpenACC kernel on the specified queue.  */
