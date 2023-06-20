@@ -78,6 +78,7 @@ static mppa_offload_host_acc_config_t mppa_offload_host_acc_cfg = {
 };
 
 
+/* MPPA_OFFLOAD_QUEUE_TYPE := MPPA_OFFLOAD_QUEUE_RPMSG || MPPA_OFFLOAD_QUEUE_MMIO */
 static mppa_offload_host_config_t mppa_offload_cfg_data = {
   .common = {
 	     .system_queue_type = MPPA_OFFLOAD_QUEUE_RPMSG,
@@ -92,6 +93,7 @@ static mppa_offload_host_config_t mppa_offload_cfg_data = {
 };
 
 enum offload_kind { KIND_UNKNOWN, KIND_OPENMP, KIND_OPENACC };
+enum queue_type { MMIO, RPMSG };
 
 struct kernel_info
 {
@@ -180,6 +182,8 @@ struct agent_info
   /* Mutex garding system queues.  */
   pthread_mutex_t queue_locks[NB_SYSTEM_QUEUE];
   struct block_node *blocks;
+  enum queue_type queue_type;
+  mppa_offload_mmio_queue_t *mmio_queues;
   int id;
 };
 
@@ -294,6 +298,36 @@ init_environment_variables (void)
     debug = false;
 }
 
+static pthread_t async_ths[NB_SYSTEM_QUEUE];
+static pthread_cond_t async_queue_cond = PTHREAD_COND_INITIALIZER;
+static pthread_mutex_t async_queue_mutex = PTHREAD_MUTEX_INITIALIZER;
+static int async_queue_stop = 0;
+static struct goacc_asyncqueue *async_queue = NULL;
+
+struct goacc_asyncqueue *
+async_queue_enqueue (struct kernel_info *kernel, void *vars,
+		     struct goacc_asyncqueue *queue)
+{
+  struct goacc_asyncqueue *head = GOMP_PLUGIN_malloc (sizeof (*head));
+  head->kernel = kernel;
+  head->vars = vars;
+  head->next = queue;
+  return head;
+}
+
+void
+async_queue_pop (struct goacc_asyncqueue *queue, struct kernel_info **kernel,
+		 void **vars)
+{
+  struct goacc_asyncqueue *to_free = queue;
+
+  *kernel = queue->kernel;
+  *vars = queue->vars;
+
+  queue = queue->next;
+  free (to_free), to_free = NULL;
+}
+
 /* \brief Retrieve the buffer (holding the vaddr and paddr on the device) and an
  * offset corresponding to ptr.
  * \param ptr: An opaque pointer which is exposed to the host.  This pointer is
@@ -331,9 +365,9 @@ kvx_kernel_exec (struct agent_info *agent, void *fn_ptr, void *vars,
 
   if (async_p)
     {
-      /* TODO: Implement async support.  */
-      /* fallback to synchronous execution.  */
-      kvx_kernel_exec (agent, fn_ptr, vars, false);
+      async_queue = async_queue_enqueue ((struct kernel_info *) fn_ptr,
+					 vars, async_queue);
+      pthread_cond_signal (&async_queue_cond);
     }
   else
     {
@@ -364,8 +398,9 @@ kvx_kernel_exec (struct agent_info *agent, void *fn_ptr, void *vars,
 
       KVX_DEBUG ("Locked queue %d\n", queue_num);
 
-      if (!(queue = mppa_offload_get_sysqueue (acc, queue_num)))
-	KVX_DEBUG ("Failed to get system queue %d.\n", queue_num);
+      if (agent->queue_type == RPMSG)
+	if (!(queue = mppa_offload_get_sysqueue (acc, queue_num)))
+	  KVX_DEBUG ("Failed to get system queue %d.\n", queue_num);
 
       /* get this from kernel */
       uint64_t function_ptr = (uintptr_t) kernel->object;
@@ -409,14 +444,29 @@ kvx_kernel_exec (struct agent_info *agent, void *fn_ptr, void *vars,
 
       free (cmd_buffer);
 
-      if (mppa_offload_buffer_exec (queue, 1, cmd_buffer_host->vaddr, 1, 1,
-				    true, true, NULL))
+      if (agent->queue_type == RPMSG)
 	{
-	  KVX_DEBUG ("mppa_offload_exec failed\n");
-	  return;
+	  if (mppa_offload_buffer_exec (queue, 1, cmd_buffer_host->vaddr, 1,
+					1, true, true, NULL))
+	    {
+	      KVX_DEBUG ("[rpmsg] mppa_offload_exec failed\n");
+	      return;
+	    }
+	  else
+	    KVX_DEBUG ("[rpmsg] mppa_offload_exec success\n");
 	}
-      else
-	KVX_DEBUG ("mppa_offload_exec success\n");
+      else			/* MMIO */
+	{
+	  if (mppa_offload_mmio_buffer_exec (&agent->mmio_queues[queue_num],
+					     1, cmd_buffer_host->vaddr, 1, 1,
+					     true, true, NULL))
+	    {
+	      KVX_DEBUG ("[rpmsg] mppa_offload_exec failed\n");
+	      return;
+	    }
+	  else
+	    KVX_DEBUG ("[rpmsg] mppa_offload_exec success\n");
+	}
 
       if (!vars)
 	{
@@ -429,6 +479,34 @@ kvx_kernel_exec (struct agent_info *agent, void *fn_ptr, void *vars,
       pthread_mutex_unlock (&agent->queue_locks[queue_num]);
     }
 
+}
+
+static void *
+async_queue_worker (void *q)
+{
+  mppa_offload_sysqueue_t *queue = q;
+  int queue_id = queue->cluster_id;
+
+  while (1)
+    {
+      if (async_queue_stop)
+	break;
+      /* cond and mutex control the access to the shared async job queue. */
+      pthread_cond_wait (&async_queue_cond, &async_queue_mutex);
+
+      struct kernel_info *kernel = NULL;
+      void *vars = NULL;
+      async_queue_pop (async_queue, &kernel, &vars);
+
+      struct agent_info *agent = kernel->agent;
+      pthread_mutex_lock (&agent->queue_locks[queue_id]);
+      kvx_kernel_exec (agent, kernel, vars, false);
+      GOMP_PLUGIN_target_task_completion (kernel->async_data);
+      /* unlock the queue */
+      pthread_mutex_unlock (&agent->queue_locks[queue_id]);
+    }
+
+  return 0;
 }
 
 static bool
@@ -535,10 +613,62 @@ kvx_init_device (int n, int version)
     }
   KVX_DEBUG ("firmware: %s\n", *fw_name);
 
+  char *queue_type = getenv ("MPPA_OFFLOAD_QUEUE_TYPE");
+  if (queue_type && !strcmp (queue_type, "MMIO"))
+    agent->queue_type = MMIO;
+  else
+    agent->queue_type = RPMSG;
+
   if (mppa_offload_create (&agent->ctx, &mppa_offload_cfg_data))
     KVX_DEBUG ("mppa offload create failed\n");
+  else if (agent->queue_type == MMIO)
+    {
+      agent->mmio_queues =
+	calloc (NB_SYSTEM_QUEUE, sizeof (*agent->mmio_queues));
+      if (!agent->mmio_queues)
+	{
+	  KVX_DEBUG ("mmio alloc failed\n");
+	  agent->initialized_p = 0;
+	  return false;
+	}
+      else
+	{
+	  KVX_DEBUG ("mmio alloc success\n");
+	  for (int i = 0; i < NB_SYSTEM_QUEUE; i++)
+	    {
+	      mppa_offload_accelerator_t *acc =
+		mppa_offload_get_accelerator (&agent->ctx, 0);
+	      mppa_offload_sysqueue_t *queue =
+		mppa_offload_get_sysqueue (acc, i);
+	      assert (queue);
+
+	      pthread_mutex_lock (&agent->queue_locks[i]);
+	      if (mppa_offload_create_mmio_queue
+		  (queue, 1, MPPA_OFFLOAD_ALLOC_LOCALMEM_0 + i,
+		   &agent->mmio_queues[i]) != 0)
+		KVX_DEBUG ("mmio create failed\n");	//TODO exit?
+	      else
+		KVX_DEBUG ("mmio create success\n");
+	      pthread_mutex_unlock (&agent->queue_locks[i]);
+	    }
+	}
+      KVX_DEBUG ("mppa offload create success\n");
+    }
   else
     KVX_DEBUG ("mppa offload create success\n");
+
+  mppa_offload_accelerator_t *acc = mppa_offload_get_accelerator (&agent->ctx,
+								  0);
+
+  /* Create the async worker queues.  */
+  int nb_workers = NB_SYSTEM_QUEUE;
+  for (int i = 0; i < nb_workers; ++i)
+    {
+      mppa_offload_sysqueue_t *queue = mppa_offload_get_sysqueue (acc, i);
+      if (pthread_create (&async_ths[i], NULL, async_queue_worker,
+			  (void *) queue))
+	KVX_DEBUG ("failed to create async queue %d\n", i);
+    }
 
   agent->initialized_p = 1;
   return true;
@@ -806,6 +936,10 @@ GOMP_OFFLOAD_fini_device (int n)
       cur = tmp;
     }
 
+  /* NOTE since precond assumes synchronicity, no need to make free thread safe */
+  if (agent->queue_type == MMIO)
+    free (agent->mmio_queues);
+
   if (mppa_offload_destroy (&agent->ctx) != 0)
     KVX_DEBUG ("mppa offload destroy failed\n");
 
@@ -1072,6 +1206,10 @@ GOMP_OFFLOAD_async_run (int device, void *tgt_fn, void *tgt_vars,
 			void **args, void *async_data)
 {
   KVX_DEBUG ("async run\n");
+  struct kernel_info *kernel = tgt_fn;
+  struct agent_info *agent = get_agent_info (device);
+  kernel->async_data = async_data;
+  kvx_kernel_exec (agent, kernel, tgt_vars, true);
 }
 
 /* }}} */
