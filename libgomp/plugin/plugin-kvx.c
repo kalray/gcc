@@ -3,6 +3,7 @@
    Copyright (C) 2022 Free Software Foundation, Inc.
 
    Contributed by Kalray Inc.
+   Heavily inspired from plugin-gcn.c
 
    This file is part of the GNU Offloading and Multi Processing Library
    (libgomp).
@@ -46,57 +47,7 @@
 #include "oacc-int.h"
 #include <mppa_offload_host.h>
 #include <assert.h>
-#include <mppa_offload_host.h>
 
-/* }}} */
-
-/* {{{ Debug & Diagnostic  */
-
-/* Flag to decide whether print to stderr information about what is going on.
-   Set in init_debug depending on environment variables.  */
-
-static bool debug;
-
-/* Print a message to stderr if KVX_DEBUG value is set to true.  */
-
-#define DEBUG_PRINT(...) \
-  do \
-  { \
-    if (debug) \
-      { \
-	fprintf (stderr, __VA_ARGS__); \
-      } \
-  } \
-  while (false);
-
-/* Flush stderr if KVX_DEBUG value is set to true.  */
-
-#define DEBUG_FLUSH()				\
-  do {						\
-    if (debug)					\
-      fflush (stderr);				\
-  } while (false)
-
-/* Print a logging message with PREFIX to stderr if KVX_DEBUG value
-   is set to true.  */
-
-#define DEBUG_LOG(prefix, ...)			\
-  do						\
-    {						\
-      DEBUG_PRINT (prefix);			\
-      DEBUG_PRINT (__VA_ARGS__);			\
-      DEBUG_FLUSH ();				\
-    } while (false)
-
-/* Print a debugging message to stderr.  */
-
-#define KVX_DEBUG(...) DEBUG_LOG ("KVX debug: ", __VA_ARGS__)
-
-/* Print a warning message to stderr.  */
-
-#define KVX_WARNING(...) DEBUG_LOG ("KVX warning: ", __VA_ARGS__)
-
-/* }}}  */
 
 #if 1
 #define MPPA_OFFLOAD_BOOT_MODE (MPPA_OFFLOAD_BOOT_MODE_DEFAULT)
@@ -104,17 +55,20 @@ static bool debug;
 #define MPPA_OFFLOAD_BOOT_MODE (MPPA_OFFLOAD_BOOT_MODE_DAEMON)
 #endif
 
-#define MPPA_OFFLOAD_NB_ACCELERATOR_DEFAULT (1)
+/* The size max of buffers used in this file.  */
+#define BUF_MAX 512
 
-#ifndef __kvx__
+/* As of now, we only support one MPPA.  */
+#define MPPA_OFFLOAD_NB_ACCELERATOR_DEFAULT (1)
+/* Each MPPA has 5 clusters, hence 5 system queues.  */
 #define NB_SYSTEM_QUEUE (5)
+/* The cluster where COS is actually booted.  */
 #define MPPA_OFFLOAD_CC_ID (0)
-#else
-#define NB_SYSTEM_QUEUE (4)
-#define MPPA_OFFLOAD_CC_ID (1)
-#endif
 
 #define MPPA_GOMP_DEFAULT_BUFFER_ALIGN (64)
+
+#define OFFLOAD_ALLOC_MODE MPPA_OFFLOAD_ALLOC_DDR
+// #define OFFLOAD_ALLOC_MODE MPPA_OFFLOAD_ALLOC_LOCALMEM_0
 
 static mppa_offload_host_acc_config_t mppa_offload_host_acc_cfg = {
   .board_id = 0,
@@ -124,23 +78,32 @@ static mppa_offload_host_acc_config_t mppa_offload_host_acc_cfg = {
 };
 
 
-static mppa_offload_host_config_t mppa_offload_config_data = {
+static mppa_offload_host_config_t mppa_offload_cfg_data = {
   .common = {
 	     .system_queue_type = MPPA_OFFLOAD_QUEUE_RPMSG,
 	     .queue_type = MPPA_OFFLOAD_QUEUE_RPMSG,
-	     .rdma_type = MPPA_OFFLOAD_RDMA_PCIE,
-	     },
+	     .rdma_type = MPPA_OFFLOAD_RDMA_PCIE},
   .image_type = MPPA_OFFLOAD_IMAGE_PATH,
-  .images = NULL,		/* file system, no meta data */
+  /* file system, no meta data */
+  .images = NULL,
   .boot_mode = MPPA_OFFLOAD_BOOT_MODE,
   .nb_accelerators = MPPA_OFFLOAD_NB_ACCELERATOR_DEFAULT,
   .accelerator_configs = &mppa_offload_host_acc_cfg,
 };
 
-static mppa_offload_host_context_t mppa_offload_context;
-static int is_device_initialized = 0;
-struct block_node *blocks = NULL;
 
+/* An async queue header.
+
+   OpenMP may create one of these.
+   OpenACC may create many.  */
+
+struct goacc_asyncqueue
+{
+
+  struct kernel_info *kernel;
+  void *vars;
+  struct goacc_asyncqueue *next;
+};
 
 /* Opaque type to represent pointers on the device.  */
 struct mppa_gomp_buffer
@@ -202,12 +165,15 @@ struct kvx_context_info
 
 struct kvx_image
 {
+  /* Size of the code. */
   size_t size;
+  /* Actual ELF image.  */
   void *image;
 };
 
 struct kvx_kernel_description
 {
+  /* Kernel name.  */
   const char *name;
 };
 
@@ -237,6 +203,53 @@ struct kvx_image_desc
 
 static struct kvx_context_info kvx_context;
 
+/* {{{ Debug & Diagnostic  */
+
+/* Flag to decide whether print to stderr information about what is going on.
+   Set in init_debug depending on environment variables.  */
+
+static bool debug;
+
+/* Print a message to stderr if KVX_DEBUG value is set to true.  */
+
+#define DEBUG_PRINT(...) \
+  do \
+  { \
+    if (debug) \
+      { \
+	fprintf (stderr, __VA_ARGS__); \
+      } \
+  } \
+  while (false);
+
+/* Flush stderr if KVX_DEBUG value is set to true.  */
+
+#define DEBUG_FLUSH()				\
+  do {						\
+    if (debug)					\
+      fflush (stderr);				\
+  } while (false)
+
+/* Print a logging message with PREFIX to stderr if KVX_DEBUG value
+   is set to true.  */
+
+#define DEBUG_LOG(prefix, ...)			\
+  do						\
+    {						\
+      DEBUG_PRINT (prefix);			\
+      DEBUG_PRINT (__VA_ARGS__);			\
+      DEBUG_FLUSH ();				\
+    } while (false)
+
+/* Print a debugging message to stderr.  */
+
+#define KVX_DEBUG(...) DEBUG_LOG ("KVX debug: ", __VA_ARGS__)
+
+/* Print a warning message to stderr.  */
+
+#define KVX_WARNING(...) DEBUG_LOG ("KVX warning: ", __VA_ARGS__)
+
+/* }}}  */
 static void
 init_environment_variables (void)
 {
@@ -275,60 +288,6 @@ find_block (struct agent_info *agent, const void *ptr,
     }
   return false;
 }
-
-
-/* {{{ Generic Plugin API  */
-
-/* Return the name of the accelerator, which is "kvx".  */
-
-const char *
-GOMP_OFFLOAD_get_name (void)
-{
-  return "kvx";
-}
-
-/* Return the specific capabilities the HSA accelerator have.  */
-
-unsigned int
-GOMP_OFFLOAD_get_caps (void)
-{
-  /* cf. libgomp-plugin.h
-     GOMP_OFFLOAD_CAP_SHARED_MEM
-     GOMP_OFFLOAD_CAP_OPENMP_400
-     GOMP_OFFLOAD_CAP_OPENACC_200  */
-  /* Currently the only supported mode is OpenMP offloadind through
-     #pragma omp target ... */
-  return GOMP_OFFLOAD_CAP_OPENMP_400;
-}
-
-/* Identify as KVX accelerator.  */
-int
-GOMP_OFFLOAD_get_type (void)
-{
-  return OFFLOAD_TARGET_TYPE_KVX;
-}
-
-/* Return the libgomp version number we're compatible with.  There is
-   no requirement for cross-version compatibility.  */
-unsigned
-GOMP_OFFLOAD_version (void)
-{
-  KVX_DEBUG ("version %d\n", GOMP_VERSION);
-  return GOMP_VERSION;
-}
-
-/* Return the number of KVX devices on the system.  */
-/* FIXME: Is a device a cluster or a whole MPPA? */
-static bool init_kvx_context (void);
-int
-GOMP_OFFLOAD_get_num_devices (void)
-{
-  KVX_DEBUG ("GOMP_OFFLOAD_get_num_devices\n");
-  if (!init_kvx_context ())
-    return 0;
-  return kvx_context.agent_count;
-}
-
 
 static bool
 init_kvx_context (void)
@@ -404,21 +363,21 @@ kvx_init_device (int n, int version)
      the ISS simulator. */
   const char *rproc_sim_str = getenv ("MPPA_RPROC_PLATFORM_MODE");
   const bool sim_enabled = rproc_sim_str && !strcmp (rproc_sim_str, "sim");
-  char **fw_name = &(mppa_offload_config_data.accelerator_configs->firmware_name);
+  char **fw_name = &(mppa_offload_cfg_data.accelerator_configs->firmware_name);
 
-  mppa_offload_config_data.images = GOMP_PLUGIN_malloc (sizeof *(mppa_offload_config_data.images));
+  mppa_offload_cfg_data.images = GOMP_PLUGIN_malloc (sizeof *(mppa_offload_cfg_data.images));
 
   char *fw = getenv ("OMP_MPPA_FIRMWARE_NAME");
   if (!fw)
     fw = default_fw;
 
-  *fw_name = GOMP_PLUGIN_malloc (512 * sizeof (**fw_name));
+  *fw_name = GOMP_PLUGIN_malloc (BUF_MAX * sizeof (**fw_name));
 
   /* If the simulator is not enabled use the hardware firmwares.  */
   if (!sim_enabled)
     {
-      if (snprintf (*fw_name, 512, hw_firmware_path,
-		    version == 2 ? "kv3-2/" : "", fw) >= 512)
+      if (snprintf (*fw_name, BUF_MAX, hw_firmware_path,
+		    version == 2 ? "kv3-2/" : "", fw) >= BUF_MAX)
 	KVX_DEBUG ("Path to the driver too long. (>= 512)");
     }
   /* Otherwise, lookup the firmware in the kENV of the user.  */
@@ -428,13 +387,13 @@ kvx_init_device (int n, int version)
       if (!toolchain)
 	KVX_DEBUG ("KALRAY_TOOLCHAIN_DIR not set");
 
-      if (snprintf (*fw_name, 512, "%s/share/pocl/linux_pcie/%s%s", toolchain,
-		    version == 2 ? "kv3-2/" : "", fw) >= 512)
+      if (snprintf (*fw_name, BUF_MAX, "%s/share/pocl/linux_pcie/%s%s",
+		    toolchain, version == 2 ? "kv3-2/" : "", fw) >= BUF_MAX)
 	KVX_DEBUG ("Path to the driver too long. (>= 512)");
     }
   KVX_DEBUG ("firmware: %s\n", *fw_name);
 
-  if (mppa_offload_create (&agent->ctx, &mppa_offload_config_data))
+  if (mppa_offload_create (&agent->ctx, &mppa_offload_cfg_data))
     KVX_DEBUG ("mppa offload create failed\n");
   else
     KVX_DEBUG ("mppa offload create success\n");
@@ -443,6 +402,56 @@ kvx_init_device (int n, int version)
   return true;
 }
 
+
+/* {{{ Generic Plugin API  */
+
+/* Return the name of the accelerator, which is "kvx".  */
+
+const char *
+GOMP_OFFLOAD_get_name (void)
+{
+  return "kvx";
+}
+
+/* Return the specific capabilities the HSA accelerator have.  */
+
+unsigned int
+GOMP_OFFLOAD_get_caps (void)
+{
+  /* cf. libgomp-plugin.h
+     GOMP_OFFLOAD_CAP_SHARED_MEM
+     GOMP_OFFLOAD_CAP_OPENMP_400
+     GOMP_OFFLOAD_CAP_OPENACC_200  */
+  /* Currently the only supported mode is OpenMP offloadind through
+     #pragma omp target ... */
+  return GOMP_OFFLOAD_CAP_OPENMP_400;
+}
+
+/* Identify as KVX accelerator.  */
+int
+GOMP_OFFLOAD_get_type (void)
+{
+  return OFFLOAD_TARGET_TYPE_KVX;
+}
+
+/* Return the libgomp version number we're compatible with.  There is
+   no requirement for cross-version compatibility.  */
+unsigned
+GOMP_OFFLOAD_version (void)
+{
+  KVX_DEBUG ("version %d\n", GOMP_VERSION);
+  return GOMP_VERSION;
+}
+
+/* Return the number of KVX devices on the system.  */
+int
+GOMP_OFFLOAD_get_num_devices (void)
+{
+  KVX_DEBUG ("GOMP_OFFLOAD_get_num_devices\n");
+  if (!init_kvx_context ())
+    return 0;
+  return kvx_context.agent_count;
+}
 
 bool
 GOMP_OFFLOAD_init_device (int n)
@@ -480,11 +489,9 @@ GOMP_OFFLOAD_load_image (int target_id, unsigned version,
   struct agent_info *agent = get_agent_info (target_id);
 
   struct addr_pair *pair;
-  mppa_offload_accelerator_t *acc =
-    mppa_offload_get_accelerator (&mppa_offload_context, target_id);
-  assert (acc);
-  mppa_offload_sysqueue_t *queue = mppa_offload_get_sysqueue (acc, 0);
-  assert (queue);
+  mppa_offload_accelerator_t *acc = NULL;
+  mppa_offload_sysqueue_t *queue = NULL;
+
   uint64_t virt_ptr, phys_ptr;
 
   /* Size fo the image.  */
@@ -494,11 +501,9 @@ GOMP_OFFLOAD_load_image (int target_id, unsigned version,
 
   uint32_t nb_offloaded_functions = image_desc->kernel_count;
   uint32_t nb_offloaded_variables = image_desc->global_variable_count;
-  uint32_t nb_offloaded_objects =
-    nb_offloaded_functions + nb_offloaded_variables;
+  uint32_t nb_offloaded_objects = nb_offloaded_functions + nb_offloaded_variables;
 
-  pair =
-    GOMP_PLUGIN_malloc (nb_offloaded_objects * sizeof (struct addr_pair));
+  pair = GOMP_PLUGIN_malloc (nb_offloaded_objects * sizeof (struct addr_pair));
   *target_table = pair;
 
   if (mppa_offload_alloc
@@ -585,25 +590,29 @@ GOMP_OFFLOAD_fini_device (int n)
 
   KVX_DEBUG ("fini_device\n");
 
-  free (mppa_offload_config_data.accelerator_configs->firmware_name);
-  free (mppa_offload_config_data.images);
+  free (mppa_offload_cfg_data.accelerator_configs->firmware_name);
+  free (mppa_offload_cfg_data.images);
 
-  struct block_node *cur = blocks;
+  struct block_node *cur = agent->blocks;
   while (cur)
     {
       struct block_node *tmp = cur->nxt;
       free (cur);
       cur = tmp;
     }
-  if (mppa_offload_destroy (&mppa_offload_context) != 0)
+
+  if (mppa_offload_destroy (&agent->ctx) != 0)
     KVX_DEBUG ("mppa offload destroy failed\n");
 
   KVX_DEBUG ("mppa offload destroy success\n");
-  is_device_initialized = 0;
+  agent->initialized_p = 0;
   return true;
 }
 
-/* Return true if the KVX runtime can run function FN_PTR.  */
+/* Return true if the KVX runtime can run function FN_PTR.
+  If the kernel is not initialized, try to initialize it,
+  the function can be run as long as the initialization succeeds.
+ */
 bool
 GOMP_OFFLOAD_can_run (void *fn_ptr)
 {
@@ -813,6 +822,7 @@ GOMP_OFFLOAD_dev2dev (int device, void *dst, const void *src, size_t n)
 
 /* }}}  */
 /* {{{ OpenMP Plugin API  */
+
 
 /* Run a synchronous OpenMP kernel on DEVICE and pass it an array of pointers
    in VARS as a parameter.  The kernel is identified by FN_PTR which must point
