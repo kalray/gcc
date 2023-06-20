@@ -359,8 +359,8 @@ GOMP_OFFLOAD_load_image (int target_id, unsigned version,
       (queue, elf_size, MPPA_GOMP_DEFAULT_BUFFER_ALIGN,
        MPPA_OFFLOAD_ALLOC_DDR, &virt_ptr, &phys_ptr) != 0)
     KVX_DEBUG ("mppa offload alloc failed\n");
-  if (mppa_offload_load
-      (queue, elf_ptr, elf_size, 0, virt_ptr, phys_ptr, &reloc_offset) != 0)
+  if (mppa_offload_acc_load
+      (acc, elf_ptr, elf_size, 0, virt_ptr, phys_ptr, &reloc_offset) != 0)
     KVX_DEBUG ("mppa offload load failed\n");
   KVX_DEBUG ("reloc_offset: %lx\n", reloc_offset);
   if (mppa_offload_free (queue, MPPA_OFFLOAD_ALLOC_DDR, virt_ptr) != 0)
