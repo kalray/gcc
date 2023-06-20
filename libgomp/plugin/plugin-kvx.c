@@ -563,8 +563,14 @@ bool
 GOMP_OFFLOAD_dev2dev (int device, void *dst, const void *src, size_t n)
 {
   KVX_DEBUG ("dev2dev\n");
-  /* FIXME */
-  /* malloc -> dev2host -> host2dev -> free */
+  char *buffer = malloc (n * sizeof (*buffer));
+  if (!buffer)
+    {
+      KVX_DEBUG ("dev2dev: fail to allocate internal buffer\n");
+    }
+  GOMP_OFFLOAD_dev2host (device, buffer, src, n);
+  GOMP_OFFLOAD_host2dev (device, dst, buffer, n);
+  free (buffer);
   return true;
 }
 
