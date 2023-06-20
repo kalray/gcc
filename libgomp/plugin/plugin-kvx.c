@@ -140,11 +140,35 @@ static mppa_offload_host_config_t mppa_offload_config_data = {
 static mppa_offload_host_context_t mppa_offload_context;
 static int nb_device = MPPA_OFFLOAD_NB_ACCELERATOR_DEFAULT;
 static int is_device_initialized = 0;
+struct block_node *blocks = NULL;
 
+
+/* Opaque type to represent pointers on the device.  */
 struct mppa_gomp_buffer
 {
-  uint64_t kvx_cpu_virt;
-  uint64_t dma_phys;
+  /* An address in the virtual address space of the MPPA.  */
+  uint64_t vaddr;
+  /* Its corresponding physical address for use by DMA accesses.  */
+  uint64_t paddr;
+  /* Its size.  */
+  int size;
+};
+
+/* A block which has been allocated on the device and whose address is known to
+   the host.  It is used to translate back addresses provided by the host which
+   have been offsetted.
+
+FIXME: Currently, the index is the virtual address, this should be fixed and
+virtual addresses should be used desambiguated by devices and by memory spaces
+(DDR, SMEM1/2/.../5).  */
+struct block_node
+{
+  /* The base address of the block.  */
+  uint64_t base_addr;
+  /* A pointer to the buffer.  */
+  struct mppa_gomp_buffer *buffer;
+  /* Pointer to the next block.  */
+  struct block_node *nxt;
 };
 
 struct kvx_image
@@ -190,6 +214,36 @@ init_environment_variables (void)
   else
     debug = false;
 }
+
+/* \brief Retrieve the buffer (holding the vaddr and paddr on the device) and an
+ * offset corresponding to ptr.
+ * \param ptr: An opaque pointer which is exposed to the host.  This pointer is
+ * resiliant to pointer arithmetic.
+ * \param buf: A pointer to a buffer which will hold the real allocated
+ * addresses
+ * \param offest: A pointer to an int which will hold the offset by which ptr is
+ * offsetted with respect to buf.
+ */
+static bool
+find_block (const void *ptr, struct mppa_gomp_buffer **buf, int *offset)
+{
+  struct block_node *cur = blocks;
+  uint64_t ptr_addr = (uint64_t) (uintptr_t) ptr;
+  while (cur)
+    {
+      if ((uint64_t) (ptr_addr - cur->base_addr) < (uint64_t) cur->buffer->size)
+	{
+	  *buf = cur->buffer;
+	  if (offset)
+	    *offset = ptr_addr - cur->base_addr;
+	  KVX_DEBUG ("buf: %p, offset: %d\n", *buf, offset ? *offset : 0);
+	  return true;
+	}
+      cur = cur->nxt;
+    }
+  return false;
+}
+
 
 /* {{{ Generic Plugin API  */
 
@@ -385,20 +439,30 @@ GOMP_OFFLOAD_load_image (int target_id, unsigned version,
 
   for (uint32_t i = 0; i < nb_offloaded_variables; i++)
     {
-      uint64_t var_ptr;
+      struct mppa_gomp_buffer *var_buf = malloc (sizeof (*var_buf));
       if (mppa_offload_query_symbol
 	  (queue, reloc_offset, image_desc->global_variables[i].name,
-	   &var_ptr) != 0)
+	   &var_buf->vaddr) != 0)
 	KVX_DEBUG ("mppa offload query symbol failed\n");
       /* function_ptr now contain the function pointer to be used to next calls/runs */
       /* to be saved somewhere for reuse */
-      KVX_DEBUG
-	("pulled and saved var '%s' (0x%lx) from image (%lx - %lx).\n",
-	 image_desc->global_variables[i].name, var_ptr,
-	 var_ptr + image_desc->global_variables[i].size, var_ptr);
-      pair->start = var_ptr;
-      pair->end = var_ptr + image_desc->global_variables[i].size;
+      KVX_DEBUG ("pulled and saved var '%s' (0x%lx) from image"
+		 " (%lx - %lx).\n", image_desc->global_variables[i].name,
+		 var_buf->vaddr,
+		 var_buf->vaddr + image_desc->global_variables[i].size,
+		 var_buf->vaddr);
+      pair->start = var_buf->vaddr;
+      pair->end = var_buf->vaddr + image_desc->global_variables[i].size;
       pair++;
+      var_buf->paddr = var_buf->vaddr;
+      var_buf->size = image_desc->global_variables[i].size;
+
+      struct block_node *block = malloc (sizeof *block);
+      block->base_addr = var_buf->vaddr;
+      block->buffer = var_buf;
+      block->nxt = blocks;
+
+      blocks = block;
     }
 
   KVX_DEBUG ("load_image: end\n");
@@ -427,6 +491,13 @@ GOMP_OFFLOAD_fini_device (int n)
   free (mppa_offload_config_data.accelerator_configs->firmware_name);
   free (mppa_offload_config_data.images);
 
+  struct block_node *cur = blocks;
+  while (cur)
+    {
+      struct block_node *tmp = cur->nxt;
+      free (cur);
+      cur = tmp;
+    }
   if (mppa_offload_destroy (&mppa_offload_context) != 0)
     KVX_DEBUG ("mppa offload destroy failed\n");
 
@@ -450,54 +521,77 @@ void *
 GOMP_OFFLOAD_alloc (int n, size_t size)
 {
   KVX_DEBUG ("alloc: start\n");
-  struct mppa_gomp_buffer *buffer = malloc (sizeof (*buffer));
-  mppa_offload_accelerator_t *acc =
-    mppa_offload_get_accelerator (&mppa_offload_context, n);
-  assert (acc);
-  mppa_offload_sysqueue_t *queue = mppa_offload_get_sysqueue (acc, 0);
-  assert (queue);
-  assert (buffer);
+  struct mppa_gomp_buffer *buffer = NULL;
+  mppa_offload_accelerator_t *acc = NULL;
+  mppa_offload_sysqueue_t *queue = NULL;
 
-  if (mppa_offload_alloc
-      (queue, size, MPPA_GOMP_DEFAULT_BUFFER_ALIGN, MPPA_OFFLOAD_ALLOC_DDR,
-       &buffer->kvx_cpu_virt, &buffer->dma_phys) != 0)
+  if (!(acc = mppa_offload_get_accelerator (&mppa_offload_context, 0)))
+    KVX_DEBUG ("Failed to get accelerator.\n");
+  if (!(queue = mppa_offload_get_sysqueue (acc, 0)))
+    KVX_DEBUG ("Failed to get queue %d.\n", 0);
+  if (!(buffer = GOMP_PLUGIN_malloc (sizeof (*buffer))))
+    KVX_DEBUG ("Failed allocate buffer\n");
+
+  if (mppa_offload_alloc (queue, size, MPPA_GOMP_DEFAULT_BUFFER_ALIGN,
+			  MPPA_OFFLOAD_ALLOC_DDR, &buffer->vaddr,
+			  &buffer->paddr) != 0)
     {
-      KVX_DEBUG ("mppa offload alloc failed\n");
+      KVX_DEBUG ("mppa_offload_alloc failed\n");
       return NULL;
     }
-  void *virt = (void *) buffer->kvx_cpu_virt;
-  KVX_DEBUG
-    ("mppa offload alloc success: buffer = (virt: 0x%lx, phys: 0x%lx)\n",
-     buffer->kvx_cpu_virt, buffer->dma_phys);
-  free (buffer);
+
+  buffer->size = size;
+
+  KVX_DEBUG ("mppa_offload_alloc success: buffer (%p) = "
+	     "(virt: 0x%lx, phys: 0x%lx), size: %lu\n",
+	     buffer, buffer->vaddr, buffer->paddr, size);
   KVX_DEBUG ("alloc: end\n");
-  return virt;
+
+  struct block_node *block = malloc (sizeof *block);
+  block->base_addr = buffer->vaddr;
+  block->buffer = buffer;
+  block->nxt = blocks;
+
+  blocks = block;
+
+  return (void *) buffer->vaddr;
 }
 
 /* Free memory from device N.  */
 bool
 GOMP_OFFLOAD_free (int device, void *ptr)
 {
-  KVX_DEBUG ("free (%d, %p)\n", device, ptr);
-  /* FIXME: use mppa_gomp_buffer */
-  /*
-     struct mppa_gomp_buffer *buffer = ptr;
-     assert(buffer);
-     assert(buffer->kvx_cpu_virt);
-   */
-  /* In DDR virt == phys */
-  uint64_t virt_addr = (uintptr_t) ptr;
-  mppa_offload_accelerator_t *acc =
-    mppa_offload_get_accelerator (&mppa_offload_context, device);
-  assert (acc);
-  mppa_offload_sysqueue_t *queue = mppa_offload_get_sysqueue (acc, 0);
-  assert (queue);
+  mppa_offload_accelerator_t *acc = NULL;
+  mppa_offload_sysqueue_t *queue = NULL;
+  struct mppa_gomp_buffer *buf = NULL;
+  int offset = 0;
 
-  if (mppa_offload_free (queue, MPPA_OFFLOAD_ALLOC_DDR, virt_addr) != 0)
+  KVX_DEBUG ("free (%d, %p)\n", device, ptr);
+
+  if (!ptr)
+    return true;
+
+  if (!find_block (ptr, &buf, &offset))
+    {
+      KVX_DEBUG ("translation failed!\n");
+      return false;
+    }
+
+  KVX_DEBUG ("free (%d, %p [virt: %p; phys: %p])\n",
+	     device, buf, (void *) buf->vaddr, (void *) buf->paddr);
+
+  if (!(acc = mppa_offload_get_accelerator (&mppa_offload_context, 0)))
+    KVX_DEBUG ("Failed to get accelerator.\n");
+  if (!(queue = mppa_offload_get_sysqueue (acc, 0)))
+    KVX_DEBUG ("Failed to get queue %d.\n", 0);
+
+  if (mppa_offload_free (queue, MPPA_OFFLOAD_ALLOC_DDR, buf->vaddr) != 0)
     {
       KVX_DEBUG ("mppa offload free failed\n");
       return false;
     }
+
+  free (buf);
   KVX_DEBUG ("mppa offload free success\n");
   return true;
 }
@@ -507,52 +601,95 @@ bool
 GOMP_OFFLOAD_dev2host (int device, void *dst, const void *src, size_t n)
 {
   KVX_DEBUG ("dev2host (%d, %p, %p, %ld): start\n", device, dst, src, n);
-  /* FIXME: use mppa_gomp_buffer */
-  /*
-     struct mppa_gomp_buffer *buffer = src;
-     assert(buffer);
-     assert(buffer->kvx_cpu_virt);
-   */
-  /* In DDR virt == phys */
-  uint64_t phys_addr = (uintptr_t) src;
-  assert (src);
-  mppa_offload_accelerator_t *acc =
-    mppa_offload_get_accelerator (&mppa_offload_context, device);
-  assert (acc);
 
-  if (mppa_offload_read (acc, dst, phys_addr, n, NULL) != 0)
+  mppa_offload_accelerator_t *acc = NULL;
+  struct mppa_gomp_buffer *buf = NULL;
+  int offset = 0;
+
+  if (!find_block (src, &buf, &offset))
+    {
+      KVX_DEBUG ("translation failed!\n");
+      return false;
+    }
+
+  if (!buf)
+    {
+      KVX_DEBUG ("src pointer is corrupted.");
+      return false;
+    }
+
+  if (!buf->vaddr || !buf->paddr)
+    {
+      KVX_DEBUG ("Invalid source address [virt: %p, phys: %p]\n",
+		 (void *) buf->vaddr, (void *) buf->paddr);
+    }
+  if (!(acc = mppa_offload_get_accelerator (&mppa_offload_context, 0)))
+    KVX_DEBUG ("Failed to get accelerator.\n");
+
+  if (offset + n >= buf->size)
+    {
+      KVX_DEBUG ("out of bound access.");
+      return false;
+    }
+
+  if (mppa_offload_read (acc, dst, buf->paddr + offset, n, NULL) != 0)
     {
       KVX_DEBUG ("mppa offload read dev2host failed\n");
       return false;
     }
+
   KVX_DEBUG ("mppa offload read dev2host success\n");
   KVX_DEBUG ("dev2host: end\n");
   return true;
 }
+
 
 /* Copy data from host to DEVICE.  */
 
 bool
 GOMP_OFFLOAD_host2dev (int device, void *dst, const void *src, size_t n)
 {
+  mppa_offload_accelerator_t *acc = NULL;
+  struct mppa_gomp_buffer *buf = NULL;
+  int offset = 0;
   KVX_DEBUG ("host2dev(%d, %p, %p, %ld): start\n", device, dst, src, n);
-  /* TODO: use mppa_gomp_buffer
-     struct mppa_gomp_buffer *buffer = dst;
-     assert(buffer);
-     assert(buffer->kvx_cpu_virt);
-     assert(buffer->dma_phys);
-   */
-  uint64_t phys_addr = (uintptr_t) dst;	/* FIXME: In the DDR, virt == phys */
-  mppa_offload_accelerator_t *acc =
-    mppa_offload_get_accelerator (&mppa_offload_context, device);
-  assert (acc);
 
-  if (mppa_offload_write (acc, src, phys_addr, n, NULL) != 0)
+  if (!find_block (dst, &buf, &offset))
+    {
+      KVX_DEBUG ("translation failed!\n");
+      return false;
+    }
+
+  if (!buf)
+    {
+      KVX_DEBUG ("dst pointer is corrupted.");
+      return false;
+    }
+
+  if (!buf->vaddr || !buf->paddr)
+    {
+      KVX_DEBUG ("Invalid destination address [virt: %p, phys: %p]\n",
+		 (void *) (buf->vaddr + offset),
+		 (void *) (buf->paddr + offset));
+      return false;
+    }
+  if (!(acc = mppa_offload_get_accelerator (&mppa_offload_context, 0)))
+    KVX_DEBUG ("Failed to get accelerator.\n");
+
+  if (offset + n > buf->size)
+    {
+      KVX_DEBUG ("out of bound access of size %lu at offset %d into a buffer"
+		 " of size %d.\n", n, offset, buf->size);
+      return false;
+    }
+
+  if (mppa_offload_write (acc, src, buf->paddr + offset, n, NULL) != 0)
     {
       KVX_DEBUG ("mppa offload write host2dev failed\n");
       KVX_DEBUG ("host2dev: end");
       return false;
     }
+
   KVX_DEBUG ("mppa offload write host2dev success\n");
   KVX_DEBUG ("host2dev: end\n");
   return true;
@@ -565,9 +702,7 @@ GOMP_OFFLOAD_dev2dev (int device, void *dst, const void *src, size_t n)
   KVX_DEBUG ("dev2dev\n");
   char *buffer = malloc (n * sizeof (*buffer));
   if (!buffer)
-    {
-      KVX_DEBUG ("dev2dev: fail to allocate internal buffer\n");
-    }
+    KVX_DEBUG ("dev2dev: fail to allocate internal buffer\n");
   GOMP_OFFLOAD_dev2host (device, buffer, src, n);
   GOMP_OFFLOAD_host2dev (device, dst, buffer, n);
   free (buffer);
@@ -585,14 +720,8 @@ void
 GOMP_OFFLOAD_run (int device, void *fn_ptr, void *vars, void **args)
 {
   KVX_DEBUG ("run\n");
-  int device_id = 0;		/* check which one ? */
-  mppa_offload_accelerator_t *acc =
-    mppa_offload_get_accelerator (&mppa_offload_context, device_id);
-  assert (acc);
-  mppa_offload_sysqueue_t *queue = mppa_offload_get_sysqueue (acc, 0);
-  assert (queue);
-  uint64_t function_ptr = (uintptr_t) fn_ptr;	/* get this from kernel */
-  uint64_t arg_offset = (uintptr_t) vars;	/* address of the paramter of the function_ptr  void (function_ptr*)(void*) */
+  mppa_offload_accelerator_t *acc = NULL;
+  mppa_offload_sysqueue_t *queue = NULL;
 
   if (!vars)
     {
@@ -607,39 +736,75 @@ GOMP_OFFLOAD_run (int device, void *fn_ptr, void *vars, void **args)
 	}
       arg_offset = arg_buffer->kvx_cpu_virt;
     }
+  int vars_offset = 0;
 
-#if 1
-  if (!args)
-    GOMP_PLUGIN_fatal ("No target arguments provided");
+  if (!(acc = mppa_offload_get_accelerator (&mppa_offload_context, 0)))
+    KVX_DEBUG ("Failed to get accelerator.\n");
 
-  while (*args)
+  int queue_num = 0;
+
+  if (!(queue = mppa_offload_get_sysqueue (acc, queue_num)))
+    KVX_DEBUG ("Failed to get system queue %d.\n", queue_num);
+
+  /* get this from kernel */
+  uint64_t function_ptr = (uintptr_t) fn_ptr;
+
+  /* When a kernel does not have arguments VARS is NULL, this is a problem since
+   * mppa_offload_exec expects a valid pointer to the argument list.  Thus, we
+   * allocate a dummy buffer.  */
+  struct mppa_gomp_buffer *arg_buffer = NULL;
+  if (!vars)
     {
-      intptr_t id = (intptr_t) *args++, val;
-      if (id & GOMP_TARGET_ARG_SUBSEQUENT_PARAM)
-	val = (intptr_t) * args++;
-      else
-	val = id >> GOMP_TARGET_ARG_VALUE_SHIFT;
-      if ((id & GOMP_TARGET_ARG_DEVICE_MASK) != GOMP_TARGET_ARG_DEVICE_ALL)
-	continue;
-      val = val > INT_MAX ? INT_MAX : val;
-      id &= GOMP_TARGET_ARG_ID_MASK;
-      if (id == GOMP_TARGET_ARG_NUM_TEAMS)
-	KVX_DEBUG ("teams: %ld\n", val);
-      else if (id == GOMP_TARGET_ARG_THREAD_LIMIT)
-	KVX_DEBUG ("threads: %ld\n", val);
+      find_block (GOMP_OFFLOAD_alloc (device, 32), &arg_buffer, NULL);
     }
-#endif
-
-  KVX_DEBUG ("run: fn_ptr: %p, vars: %p\n", fn_ptr, vars);
-
-  if (mppa_offload_exec
-      (queue, function_ptr, arg_offset,
-       NULL /*null for blocking call */ ) != 0)
+  else
     {
-      KVX_DEBUG ("mppa offload exec failed\n");
-      return;			// false;
+      if (!find_block (vars, &arg_buffer, &vars_offset))
+	{
+	  KVX_DEBUG ("translation failed!\n");
+	  return;
+	}
     }
-  KVX_DEBUG ("mppa offload exec success\n");
+
+  /* Currently, only used for debug purposes.  */
+//      parse_target_attributes (args);
+
+  struct mppa_offload_buffer_exec_cmd *cmd_buffer = NULL;
+  if (!(cmd_buffer = calloc (1, sizeof (*cmd_buffer))))
+    {
+      KVX_DEBUG ("allocation of cmd buffer failed\n");
+      return;
+    }
+  cmd_buffer->virt_func_ptr = (uint64_t) function_ptr;
+  cmd_buffer->virt_arg_ptr = (uint64_t) (arg_buffer->vaddr + vars_offset);
+
+  KVX_DEBUG ("run: fn_ptr: %lx, vars: %lx\n",
+	     cmd_buffer->virt_func_ptr, cmd_buffer->virt_arg_ptr);
+
+  struct mppa_gomp_buffer *cmd_buffer_host = NULL;
+  find_block (GOMP_OFFLOAD_alloc (device, sizeof (*cmd_buffer)),
+	      &cmd_buffer_host, NULL);
+  GOMP_OFFLOAD_host2dev (device, (void *) cmd_buffer_host->vaddr, cmd_buffer,
+			 sizeof (*cmd_buffer));
+
+  free (cmd_buffer);
+
+  if (mppa_offload_buffer_exec
+      (queue, 1, cmd_buffer_host->vaddr, 1, 1, true, true, NULL))
+    {
+      KVX_DEBUG ("mppa_offload_exec failed\n");
+      return;
+    }
+  else
+    KVX_DEBUG ("mppa_offload_exec success\n");
+
+  if (!vars)
+    {
+      if (mppa_offload_free (queue, MPPA_OFFLOAD_ALLOC_DDR, arg_buffer->vaddr)
+	  != 0)
+	KVX_DEBUG ("mppa_offload_free: failed.");
+    }
+
 }
 
 /* Run an asynchronous OpenMP kernel on DEVICE.  This is similar to
