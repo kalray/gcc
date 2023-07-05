@@ -132,7 +132,9 @@ struct kernel_info
   /* Kernel variables. Can be NULL.  */
   void *vars;
   /* Kernel arguments.  */
-  void *args;
+  void **args;
+  /* Parsed target attributes will be stored in these.  */
+  int num_teams, thread_limit;
 };
 
 /* An async queue header.
@@ -330,7 +332,7 @@ static bool kvx_init_agent (int n, int version);
 static bool kvx_init_kernel (struct kernel_info *kernel,
 			     mppa_offload_sysqueue_t * queue);
 static int kvx_get_isa_revision (void *elf_image);
-static bool __attribute__ ((unused)) parse_target_attributes (void **input);
+static bool parse_target_attributes (struct kernel_info **kernel);
 
 /* }}}  */
 static void
@@ -425,7 +427,7 @@ kvx_kernel_exec (int agent_n, void *fn_ptr)
 
   int queue_num = 0;
   while (queue_num < NB_SYSTEM_QUEUE
-	 && (pthread_mutex_trylock (&agent->queue_locks[queue_num]) == EBUSY))
+	  && (pthread_mutex_trylock (&agent->queue_locks[queue_num]) == EBUSY))
     queue_num++;
 
   /* If all queues are busy, enqueue on queue 0.  */
@@ -465,8 +467,7 @@ kvx_kernel_exec (int agent_n, void *fn_ptr)
 	}
     }
 
-  /* Currently, only used for debug purposes.  */
-  //      parse_target_attributes (args);
+  parse_target_attributes (&kernel);
 
   struct mppa_offload_buffer_exec_cmd *cmd_buffer = NULL;
   if (!(cmd_buffer = calloc (1, sizeof (*cmd_buffer))))
@@ -491,8 +492,9 @@ kvx_kernel_exec (int agent_n, void *fn_ptr)
 
   if (agent->queue_type == RPMSG)
     {
-      if (mppa_offload_buffer_exec
-	  (queue, 1, cmd_buffer_host->vaddr, 1, 1, true, true, NULL))
+      if (mppa_offload_buffer_exec (queue, 1, cmd_buffer_host->vaddr,
+				    kernel->num_teams == 0 ? 1 : kernel->num_teams,
+				    1, true, true, NULL))
 	{
 	  KVX_DEBUG ("[rpmsg] mppa_offload_exec failed\n");
 	  return;
@@ -502,9 +504,9 @@ kvx_kernel_exec (int agent_n, void *fn_ptr)
     }
   else				/* MMIO */
     {
-      if (mppa_offload_mmio_buffer_exec (&agent->mmio_queues[queue_num], 1,
-					 cmd_buffer_host->vaddr, 1, 1, true,
-					 true, NULL))
+      if (mppa_offload_mmio_buffer_exec
+	  (&agent->mmio_queues[queue_num], 1, cmd_buffer_host->vaddr, 
+	   kernel->num_teams == 0 ? 1 : kernel->num_teams, 1, true, true, NULL))
 	{
 	  KVX_DEBUG ("[mmio] mppa_offload_exec failed\n");
 	  return;
@@ -810,7 +812,6 @@ kvx_init_agent (int n, int version)
     {
       KVX_DEBUG ("Initializing asnyc queue %d\n", i);
       mppa_offload_sysqueue_t *queue = mppa_offload_get_sysqueue (acc, i);
-      //FIXME causes memory leaks
       if (pthread_create
 	  (&agent->async_context->async_ths[i], NULL, kvx_async_queue_worker,
 	   (void *) queue))
@@ -853,19 +854,20 @@ kvx_get_isa_revision (void *elf_image)
   return (((char *) elf_image)[0x31] & 0xf0) >> 4;
 }
 
-//TODO store args in kernel_info
-static bool __attribute__ ((unused))
-parse_target_attributes (void **input)
+static bool
+parse_target_attributes (struct kernel_info **kernel)
 {
+  void **input = (*kernel)->args;
+
   /* Read target arguments (nb of teams, thread_limit) from ARGS.  */
   if (!input)
     GOMP_PLUGIN_fatal ("No target arguments provided");
 
   while (*input)
     {
-      intptr_t id = (intptr_t) * input++, val;
+      intptr_t id = (intptr_t) *input++, val;
       if (id & GOMP_TARGET_ARG_SUBSEQUENT_PARAM)
-	val = (intptr_t) * input++;
+	val = (intptr_t) *input++;
       else
 	val = id >> GOMP_TARGET_ARG_VALUE_SHIFT;
       if ((id & GOMP_TARGET_ARG_DEVICE_MASK) != GOMP_TARGET_ARG_DEVICE_ALL)
@@ -873,13 +875,21 @@ parse_target_attributes (void **input)
       val = val > INT_MAX ? INT_MAX : val;
       id &= GOMP_TARGET_ARG_ID_MASK;
       if (id == GOMP_TARGET_ARG_NUM_TEAMS)
-	KVX_DEBUG ("nb_teams: %ld\n", val);
+	{
+	  KVX_DEBUG ("nb_teams: %ld\n", val);
+	  if (val > NB_SYSTEM_QUEUE - 1)
+	    val = NB_SYSTEM_QUEUE - 1;
+	  (*kernel)->num_teams = val;
+	}
       else if (id == GOMP_TARGET_ARG_THREAD_LIMIT)
-	KVX_DEBUG ("thread_limit: %ld\n", val);
+	{
+	  //TODO check thread limit
+	  KVX_DEBUG ("thread_limit: %ld\n", val);
+	  (*kernel)->thread_limit = val;
+	}
     }
   return true;
 }
-
 /* {{{ Generic Plugin API  */
 
 /* Return the name of the accelerator, which is "kvx".  */
@@ -1084,6 +1094,8 @@ GOMP_OFFLOAD_unload_image (int n, unsigned version, const void *target_data)
    do not attempt any synchronization, assuming the user and libgomp will not
    attempt deinitialization of a agent that is in any way being used at the
    same time.  Return TRUE on success.  */
+//FIXME iterating over the agent list in kvx_context after fini_device yields
+//undefined behavior
 bool
 GOMP_OFFLOAD_fini_device (int n)
 {
@@ -1396,6 +1408,7 @@ GOMP_OFFLOAD_run (int agent_n, void *fn_ptr, void *vars, void **args)
   KVX_DEBUG ("GOMP_OFFLOAD_run: start\n");
   struct kernel_info *kernel = (struct kernel_info *) fn_ptr;
   kernel->vars = vars;
+  kernel->args = args;
   kvx_kernel_exec (agent_n, kernel);
 }
 
@@ -1410,6 +1423,7 @@ GOMP_OFFLOAD_async_run (int agent_n, void *tgt_fn, void *tgt_vars,
   KVX_DEBUG ("async run\n");
   struct kernel_info *kernel = tgt_fn;
   kernel->vars = tgt_vars;
+  kernel->args = args;
   kernel->async_data = async_data;
   kvx_enqueue_async_kernel (agent_n, kernel);
 }
