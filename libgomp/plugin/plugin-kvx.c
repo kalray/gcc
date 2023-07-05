@@ -573,28 +573,27 @@ static void *
 kvx_async_queue_worker (void *q)
 {
   mppa_offload_sysqueue_t *queue = q;
-  int queue_id = queue->cluster_id;
   struct agent_info *agent = get_agent_info_from_acc (queue->acc);
 
   while (1)
     {
-      pthread_mutex_lock (agent->async_context->async_queue_mutex);
       /* cond and mutex control the access to the shared async job queue. */
       pthread_cond_wait (agent->async_context->async_queue_cond,
 			 agent->async_context->async_queue_mutex);
-      pthread_mutex_unlock (agent->async_context->async_queue_mutex);
 
       if (agent->async_context->async_queue_stop)
-	pthread_exit (NULL);
+	{
+	  pthread_mutex_unlock (agent->async_context->async_queue_mutex);
+	  pthread_exit (NULL);
+	}
 
       struct kernel_info *kernel = NULL;
       kvx_async_queue_pop (agent->async_context->async_queue, &kernel);
+      pthread_mutex_unlock (agent->async_context->async_queue_mutex);
       struct agent_info *kernel_agent = kernel->agent;
-      pthread_mutex_lock (&kernel_agent->queue_locks[queue_id]);
       kvx_kernel_exec (kernel_agent->id, kernel);
       GOMP_PLUGIN_target_task_completion (kernel->async_data);
       /* unlock the queue */
-      pthread_mutex_unlock (&kernel_agent->queue_locks[queue_id]);
     }
 
   return 0;
@@ -615,7 +614,7 @@ init_kvx_context (void)
   kvx_context.agent_count = mppa_rproc_count_get (it);
   KVX_DEBUG ("Found %d offloading devices.\n", kvx_context.agent_count);
 
-  //TODO free kvx_context at program end; causes memory leaks
+  //FIXME free kvx_context at program end; causes memory leaks
   kvx_context.agents =
     GOMP_PLUGIN_malloc_cleared (kvx_context.agent_count
 				* sizeof (struct agent_info));
@@ -841,6 +840,8 @@ kvx_init_kernel (struct kernel_info *kernel, mppa_offload_sysqueue_t * queue)
   /* to be saved somewhere for reuse */
   KVX_DEBUG ("pulled and saved fn '%s' (0x%lx) from image.\n",
 	     kernel->name, kernel->object);
+
+  kernel->initialized = true;
   return true;
 }
 
@@ -996,6 +997,7 @@ GOMP_OFFLOAD_load_image (int target_id, unsigned version,
   /* Extract symbols from the image to offload.  */
   for (uint32_t i = 0; i < nb_offloaded_functions; i++)
     {
+      //FIXME still reachable at program end
       struct kernel_info *kernel = malloc (sizeof (*kernel));
       //NOTE valgrind says there is possibly lost memory here, 
       //but I think it's fine - the kernel pointer is stored in target_table
