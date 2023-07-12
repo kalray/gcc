@@ -1399,6 +1399,8 @@ compare_tree_sccs_1 (tree t1, tree t2, tree **map)
     {
       compare_tree_edges (TREE_REALPART (t1), TREE_REALPART (t2));
       compare_tree_edges (TREE_IMAGPART (t1), TREE_IMAGPART (t2));
+      compare_tree_edges (TREE_COMPLEX_BOTH_PARTS (t1),
+			  TREE_COMPLEX_BOTH_PARTS (t2));
     }
 
   if (CODE_CONTAINS_STRUCT (code, TS_DECL_MINIMAL))

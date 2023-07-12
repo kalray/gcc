@@ -700,6 +700,7 @@ lto_input_ts_complex_tree_pointers (class lto_input_block *ib,
 {
   TREE_REALPART (expr) = stream_read_tree_ref (ib, data_in);
   TREE_IMAGPART (expr) = stream_read_tree_ref (ib, data_in);
+  TREE_COMPLEX_BOTH_PARTS (expr) = stream_read_tree_ref (ib, data_in);
 }
 
 
