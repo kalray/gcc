@@ -978,6 +978,7 @@ DFS::DFS_write_tree_body (struct output_block *ob,
     {
       DFS_follow_tree_edge (TREE_REALPART (expr));
       DFS_follow_tree_edge (TREE_IMAGPART (expr));
+      DFS_follow_tree_edge (TREE_COMPLEX_BOTH_PARTS (expr));
     }
 
   if (CODE_CONTAINS_STRUCT (code, TS_DECL_MINIMAL))
@@ -1411,6 +1412,7 @@ hash_tree (struct streamer_tree_cache_d *cache, hash_map<tree, hashval_t> *map, 
     {
       visit (TREE_REALPART (t));
       visit (TREE_IMAGPART (t));
+      visit (TREE_COMPLEX_BOTH_PARTS (t));
     }
 
   if (CODE_CONTAINS_STRUCT (code, TS_DECL_MINIMAL))

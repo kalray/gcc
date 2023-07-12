@@ -593,6 +593,7 @@ write_ts_complex_tree_pointers (struct output_block *ob, tree expr)
 {
   stream_write_tree_ref (ob, TREE_REALPART (expr));
   stream_write_tree_ref (ob, TREE_IMAGPART (expr));
+  stream_write_tree_ref (ob, TREE_COMPLEX_BOTH_PARTS (expr));
 }
 
 

@@ -1479,6 +1479,7 @@ struct GTY(()) tree_complex {
   struct tree_typed typed;
   tree real;
   tree imag;
+  tree both;
 };
 
 struct GTY(()) tree_vector {
