@@ -611,6 +611,12 @@ extern void omp_clause_range_check_failed (const_tree, const char *, int,
 
 #define SCALAR_FLOAT_TYPE_P(TYPE) (TREE_CODE (TYPE) == REAL_TYPE)
 
+/* Nonzero if TYPE represents a complex integer type.  */
+
+#define COMPLEX_INTEGER_TYPE_P(TYPE)	\
+  (TREE_CODE (TYPE) == COMPLEX_TYPE	\
+   && TREE_CODE (TREE_TYPE (TYPE)) == INTEGER_TYPE)
+
 /* Nonzero if TYPE represents a complex floating-point type.  */
 
 #define COMPLEX_FLOAT_TYPE_P(TYPE)	\
@@ -1129,6 +1135,7 @@ extern void omp_clause_range_check_failed (const_tree, const char *, int,
 /* In a COMPLEX_CST node.  */
 #define TREE_REALPART(NODE) (COMPLEX_CST_CHECK (NODE)->complex.real)
 #define TREE_IMAGPART(NODE) (COMPLEX_CST_CHECK (NODE)->complex.imag)
+#define TREE_COMPLEX_BOTH_PARTS(NODE) (COMPLEX_CST_CHECK (NODE)->complex.both)
 
 /* In a VECTOR_CST node.  See generic.texi for details.  */
 #define VECTOR_CST_NELTS(NODE) (TYPE_VECTOR_SUBPARTS (TREE_TYPE (NODE)))
@@ -2183,6 +2190,8 @@ class auto_suppress_location_wrappers
   (as_a <scalar_int_mode> (TYPE_CHECK (NODE)->type_common.mode))
 #define SCALAR_FLOAT_TYPE_MODE(NODE) \
   (as_a <scalar_float_mode> (TYPE_CHECK (NODE)->type_common.mode))
+#define COMPLEX_TYPE_MODE(NODE) \
+  (as_a <complex_mode> (TYPE_CHECK (NODE)->type_common.mode))
 #define SET_TYPE_MODE(NODE, MODE) \
   (TYPE_CHECK (NODE)->type_common.mode = (MODE))
 
@@ -6582,7 +6591,11 @@ extern const builtin_structptr_type builtin_structptr_types[6];
 inline bool
 type_has_mode_precision_p (const_tree t)
 {
-  return known_eq (TYPE_PRECISION (t), GET_MODE_PRECISION (TYPE_MODE (t)));
+  if (TREE_CODE (t) == COMPLEX_TYPE)
+    return known_eq (2 * TYPE_PRECISION (TREE_TYPE (t)),
+		     GET_MODE_PRECISION (TYPE_MODE (t)));
+  else
+    return known_eq (TYPE_PRECISION (t), GET_MODE_PRECISION (TYPE_MODE (t)));
 }
 
 /* Return true if a FUNCTION_DECL NODE is a GCC built-in function.

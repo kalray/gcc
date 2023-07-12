@@ -42,6 +42,10 @@ along with GCC; see the file COPYING3.  If not see
 #include "cfganal.h"
 #include "gimple-fold.h"
 #include "diagnostic-core.h"
+#include "target.h"
+#include "memmodel.h"
+#include "optabs-tree.h"
+#include "internal-fn.h"
 
 
 /* For each complex ssa name, a lattice value.  We're interested in finding
@@ -74,7 +78,7 @@ static vec<complex_lattice_t> complex_lattice_values;
    the hashtable.  */
 static int_tree_htab_type *complex_variable_components;
 
-/* For each complex SSA_NAME, a pair of ssa names for the components.  */
+/* For each complex SSA_NAME, three ssa names for the components.  */
 static vec<tree> complex_ssa_name_components;
 
 /* Vector of PHI triplets (original complex PHI and corresponding real and
@@ -476,17 +480,27 @@ create_one_component_var (tree type, tree orig, const char *prefix,
 /* Retrieve a value for a complex component of VAR.  */
 
 static tree
-get_component_var (tree var, bool imag_p)
+get_component_var (tree var, complex_part_t part)
 {
-  size_t decl_index = DECL_UID (var) * 2 + imag_p;
+  size_t decl_index = DECL_UID (var) * 3 + part;
   tree ret = cvc_lookup (decl_index);
 
   if (ret == NULL)
     {
-      ret = create_one_component_var (TREE_TYPE (TREE_TYPE (var)), var,
-				      imag_p ? "CI" : "CR",
-				      imag_p ? "$imag" : "$real",
-				      imag_p ? IMAGPART_EXPR : REALPART_EXPR);
+      switch (part)
+	{
+	case REAL_P:
+	  ret = create_one_component_var (TREE_TYPE (TREE_TYPE (var)), var,
+					  "CR", "$real", REALPART_EXPR);
+	  break;
+	case IMAG_P:
+	  ret = create_one_component_var (TREE_TYPE (TREE_TYPE (var)), var,
+					  "CI", "$imag", IMAGPART_EXPR);
+	  break;
+	case BOTH_P:
+	  ret = var;
+	  break;
+	}
       cvc_insert (decl_index, ret);
     }
 
@@ -496,13 +510,15 @@ get_component_var (tree var, bool imag_p)
 /* Retrieve a value for a complex component of SSA_NAME.  */
 
 static tree
-get_component_ssa_name (tree ssa_name, bool imag_p)
+get_component_ssa_name (tree ssa_name, complex_part_t part)
 {
   complex_lattice_t lattice = find_lattice_value (ssa_name);
   size_t ssa_name_index;
   tree ret;
 
-  if (lattice == (imag_p ? ONLY_REAL : ONLY_IMAG))
+  if (((lattice == ONLY_IMAG) && (part == REAL_P))
+      || ((lattice == ONLY_REAL) && (part == IMAG_P)))
+
     {
       tree inner_type = TREE_TYPE (TREE_TYPE (ssa_name));
       if (SCALAR_FLOAT_TYPE_P (inner_type))
@@ -511,14 +527,33 @@ get_component_ssa_name (tree ssa_name, bool imag_p)
 	return build_int_cst (inner_type, 0);
     }
 
-  ssa_name_index = SSA_NAME_VERSION (ssa_name) * 2 + imag_p;
+  if (part == BOTH_P)
+    return ssa_name;
+
+  ssa_name_index = SSA_NAME_VERSION (ssa_name) * 3 + part;
+  unsigned length = complex_ssa_name_components.length ();
+
+  /* Increase size of dynamic array if needed.  */
+  if (ssa_name_index >= length)
+    {
+      size_t new_size = 2 * length;
+      complex_ssa_name_components.safe_grow_cleared (new_size, true);
+      complex_lattice_values.safe_grow_cleared (new_size, true);
+    }
+
   ret = complex_ssa_name_components[ssa_name_index];
   if (ret == NULL)
     {
       if (SSA_NAME_VAR (ssa_name))
-	ret = get_component_var (SSA_NAME_VAR (ssa_name), imag_p);
+	ret = get_component_var (SSA_NAME_VAR (ssa_name), part);
       else
-	ret = TREE_TYPE (TREE_TYPE (ssa_name));
+	{
+	  if (part == BOTH_P)
+	    ret = TREE_TYPE (ssa_name);
+	  else
+	    ret = TREE_TYPE (TREE_TYPE (ssa_name));
+	}
+
       ret = make_ssa_name (ret);
 
       /* Copy some properties from the original.  In particular, whether it
@@ -542,7 +577,7 @@ get_component_ssa_name (tree ssa_name, bool imag_p)
    gimple_seq of stuff that needs doing.  */
 
 static gimple_seq
-set_component_ssa_name (tree ssa_name, bool imag_p, tree value)
+set_component_ssa_name (tree ssa_name, complex_part_t part, tree value)
 {
   complex_lattice_t lattice = find_lattice_value (ssa_name);
   size_t ssa_name_index;
@@ -553,14 +588,25 @@ set_component_ssa_name (tree ssa_name, bool imag_p, tree value)
   /* We know the value must be zero, else there's a bug in our lattice
      analysis.  But the value may well be a variable known to contain
      zero.  We should be safe ignoring it.  */
-  if (lattice == (imag_p ? ONLY_REAL : ONLY_IMAG))
+  if (((lattice == ONLY_IMAG) && (part == REAL_P))
+      || ((lattice == ONLY_REAL) && (part == IMAG_P)))
     return NULL;
 
   /* If we've already assigned an SSA_NAME to this component, then this
      means that our walk of the basic blocks found a use before the set.
      This is fine.  Now we should create an initialization for the value
      we created earlier.  */
-  ssa_name_index = SSA_NAME_VERSION (ssa_name) * 2 + imag_p;
+  ssa_name_index = SSA_NAME_VERSION (ssa_name) * 3 + part;
+  unsigned length = complex_ssa_name_components.length ();
+
+  /* Increase size of dynamic array if needed.  */
+  if (ssa_name_index >= length)
+    {
+      size_t new_size = 2 * length;
+      complex_ssa_name_components.safe_grow (new_size, true);
+      complex_lattice_values.safe_grow (new_size, true);
+    }
+
   comp = complex_ssa_name_components[ssa_name_index];
   if (comp)
     ;
@@ -584,7 +630,7 @@ set_component_ssa_name (tree ssa_name, bool imag_p, tree value)
 	  && (!SSA_NAME_VAR (value) || DECL_IGNORED_P (SSA_NAME_VAR (value)))
 	  && !DECL_IGNORED_P (SSA_NAME_VAR (ssa_name)))
 	{
-	  comp = get_component_var (SSA_NAME_VAR (ssa_name), imag_p);
+	  comp = get_component_var (SSA_NAME_VAR (ssa_name), part);
 	  replace_ssa_name_symbol (value, comp);
 	}
 
@@ -595,7 +641,7 @@ set_component_ssa_name (tree ssa_name, bool imag_p, tree value)
   /* Finally, we need to stabilize the result by installing the value into
      a new ssa name.  */
   else
-    comp = get_component_ssa_name (ssa_name, imag_p);
+    comp = get_component_ssa_name (ssa_name, part);
 
   /* Do all the work to assign VALUE to COMP.  */
   list = NULL;
@@ -612,13 +658,14 @@ set_component_ssa_name (tree ssa_name, bool imag_p, tree value)
    Emit any new code before gsi.  */
 
 static tree
-extract_component (gimple_stmt_iterator *gsi, tree t, bool imagpart_p,
+extract_component (gimple_stmt_iterator * gsi, tree t, complex_part_t part,
 		   bool gimple_p, bool phiarg_p = false)
 {
   switch (TREE_CODE (t))
     {
     case COMPLEX_CST:
-      return imagpart_p ? TREE_IMAGPART (t) : TREE_REALPART (t);
+      return (part == BOTH_P) ? t : (part == IMAG_P) ?
+	TREE_IMAGPART (t) : TREE_REALPART (t);
 
     case COMPLEX_EXPR:
       gcc_unreachable ();
@@ -627,11 +674,14 @@ extract_component (gimple_stmt_iterator *gsi, tree t, bool imagpart_p,
       {
 	tree inner_type = TREE_TYPE (TREE_TYPE (t));
 	t = unshare_expr (t);
-	TREE_TYPE (t) = inner_type;
-	TREE_OPERAND (t, 1) = TYPE_SIZE (inner_type);
-	if (imagpart_p)
-	  TREE_OPERAND (t, 2) = size_binop (PLUS_EXPR, TREE_OPERAND (t, 2),
-					    TYPE_SIZE (inner_type));
+	if (part != BOTH_P)
+	  {
+	    TREE_TYPE (t) = inner_type;
+	    TREE_OPERAND (t, 1) = TYPE_SIZE (inner_type);
+	    if (part == IMAG_P)
+	      TREE_OPERAND (t, 2) = size_binop (PLUS_EXPR, TREE_OPERAND (t, 2),
+						TYPE_SIZE (inner_type));
+	  }
 	if (gimple_p)
 	  t = force_gimple_operand_gsi (gsi, t, true, NULL, true,
 					GSI_SAME_STMT);
@@ -646,10 +696,11 @@ extract_component (gimple_stmt_iterator *gsi, tree t, bool imagpart_p,
     case VIEW_CONVERT_EXPR:
     case MEM_REF:
       {
-	tree inner_type = TREE_TYPE (TREE_TYPE (t));
-
-	t = build1 ((imagpart_p ? IMAGPART_EXPR : REALPART_EXPR),
-		    inner_type, unshare_expr (t));
+	if (part == BOTH_P)
+	  t = unshare_expr (t);
+	else
+	  t = build1 (((part == IMAG_P) ? IMAGPART_EXPR : REALPART_EXPR),
+		      (TREE_TYPE (TREE_TYPE (t))), unshare_expr (t));
 
 	if (gimple_p)
 	  t = force_gimple_operand_gsi (gsi, t, true, NULL, true,
@@ -659,10 +710,12 @@ extract_component (gimple_stmt_iterator *gsi, tree t, bool imagpart_p,
       }
 
     case SSA_NAME:
-      t = get_component_ssa_name (t, imagpart_p);
-      if (TREE_CODE (t) == SSA_NAME && SSA_NAME_DEF_STMT (t) == NULL)
-	gcc_assert (phiarg_p);
-      return t;
+      {
+	t = get_component_ssa_name (t, part);
+	if (TREE_CODE (t) == SSA_NAME && SSA_NAME_DEF_STMT (t) == NULL)
+	  gcc_assert (phiarg_p);
+	return t;
+      }
 
     default:
       gcc_unreachable ();
@@ -673,18 +726,29 @@ extract_component (gimple_stmt_iterator *gsi, tree t, bool imagpart_p,
 
 static void
 update_complex_components (gimple_stmt_iterator *gsi, gimple *stmt, tree r,
-			   tree i)
+			   tree i, tree b = NULL)
 {
   tree lhs;
   gimple_seq list;
 
+  gcc_assert (b || (r && i));
   lhs = gimple_get_lhs (stmt);
+  if (!b)
+    b = lhs;
+  if (!r)
+    r = build1 (REALPART_EXPR, TREE_TYPE (TREE_TYPE (b)), unshare_expr (b));
+  if (!i)
+    i = build1 (IMAGPART_EXPR, TREE_TYPE (TREE_TYPE (b)), unshare_expr (b));
 
-  list = set_component_ssa_name (lhs, false, r);
+  list = set_component_ssa_name (lhs, REAL_P, r);
   if (list)
     gsi_insert_seq_after (gsi, list, GSI_CONTINUE_LINKING);
 
-  list = set_component_ssa_name (lhs, true, i);
+  list = set_component_ssa_name (lhs, IMAG_P, i);
+  if (list)
+    gsi_insert_seq_after (gsi, list, GSI_CONTINUE_LINKING);
+
+  list = set_component_ssa_name (lhs, BOTH_P, b);
   if (list)
     gsi_insert_seq_after (gsi, list, GSI_CONTINUE_LINKING);
 }
@@ -694,11 +758,11 @@ update_complex_components_on_edge (edge e, tree lhs, tree r, tree i)
 {
   gimple_seq list;
 
-  list = set_component_ssa_name (lhs, false, r);
+  list = set_component_ssa_name (lhs, REAL_P, r);
   if (list)
     gsi_insert_seq_on_edge (e, list);
 
-  list = set_component_ssa_name (lhs, true, i);
+  list = set_component_ssa_name (lhs, IMAG_P, i);
   if (list)
     gsi_insert_seq_on_edge (e, list);
 }
@@ -707,18 +771,23 @@ update_complex_components_on_edge (edge e, tree lhs, tree r, tree i)
 /* Update an assignment to a complex variable in place.  */
 
 static void
-update_complex_assignment (gimple_stmt_iterator *gsi, tree r, tree i)
+update_complex_assignment (gimple_stmt_iterator * gsi, tree r, tree i,
+			   tree b = NULL)
 {
   gimple *old_stmt = gsi_stmt (*gsi);
-  gimple_assign_set_rhs_with_ops (gsi, COMPLEX_EXPR, r, i);
+  if (b == NULL)
+    gimple_assign_set_rhs_with_ops (gsi, COMPLEX_EXPR, r, i);
+  else
+    /* dummy assignment, but pr45569.C fails if removed.  */
+    gimple_assign_set_rhs_from_tree (gsi, b);
+
   gimple *stmt = gsi_stmt (*gsi);
   update_stmt (stmt);
   if (maybe_clean_or_replace_eh_stmt (old_stmt, stmt))
     bitmap_set_bit (need_eh_cleanup, gimple_bb (stmt)->index);
 
-  update_complex_components (gsi, gsi_stmt (*gsi), r, i);
+  update_complex_components (gsi, gsi_stmt (*gsi), r, i, b);
 }
-
 
 /* Generate code at the entry point of the function to initialize the
    component variables for a complex parameter.  */
@@ -768,7 +837,8 @@ update_phi_components (basic_block bb)
 
 	  for (j = 0; j < 2; j++)
 	    {
-	      tree l = get_component_ssa_name (gimple_phi_result (phi), j > 0);
+	      tree l = get_component_ssa_name (gimple_phi_result (phi),
+					       (complex_part_t) j);
 	      if (TREE_CODE (l) == SSA_NAME)
 		p[j] = create_phi_node (l, bb);
 	    }
@@ -779,7 +849,9 @@ update_phi_components (basic_block bb)
 	      for (j = 0; j < 2; j++)
 		if (p[j])
 		  {
-		    comp = extract_component (NULL, arg, j > 0, false, true);
+		    comp =
+		      extract_component (NULL, arg, (complex_part_t) j, false,
+					 true);
 		    if (TREE_CODE (comp) == SSA_NAME
 			&& SSA_NAME_DEF_STMT (comp) == NULL)
 		      {
@@ -815,7 +887,7 @@ static void
 expand_complex_move (gimple_stmt_iterator *gsi, tree type)
 {
   tree inner_type = TREE_TYPE (type);
-  tree r, i, lhs, rhs;
+  tree r, i, b, lhs, rhs;
   gimple *stmt = gsi_stmt (*gsi);
 
   if (is_gimple_assign (stmt))
@@ -862,16 +934,13 @@ expand_complex_move (gimple_stmt_iterator *gsi, tree type)
       else
 	{
 	  if (gimple_assign_rhs_code (stmt) != COMPLEX_EXPR)
-	    {
-	      r = extract_component (gsi, rhs, 0, true);
-	      i = extract_component (gsi, rhs, 1, true);
-	    }
+	    update_complex_assignment (gsi, NULL, NULL,
+				       extract_component (gsi, rhs,
+							  BOTH_P, true));
 	  else
-	    {
-	      r = gimple_assign_rhs1 (stmt);
-	      i = gimple_assign_rhs2 (stmt);
-	    }
-	  update_complex_assignment (gsi, r, i);
+	    update_complex_assignment (gsi,
+				       gimple_assign_rhs1 (stmt),
+				       gimple_assign_rhs2 (stmt), NULL);
 	}
     }
   else if (rhs
@@ -883,24 +952,18 @@ expand_complex_move (gimple_stmt_iterator *gsi, tree type)
       location_t loc;
 
       loc = gimple_location (stmt);
-      r = extract_component (gsi, rhs, 0, false);
-      i = extract_component (gsi, rhs, 1, false);
-
-      x = build1 (REALPART_EXPR, inner_type, unshare_expr (lhs));
-      t = gimple_build_assign (x, r);
-      gimple_set_location (t, loc);
-      gsi_insert_before (gsi, t, GSI_SAME_STMT);
+      b = extract_component (gsi, rhs, BOTH_P, false);
 
       if (stmt == gsi_stmt (*gsi))
 	{
-	  x = build1 (IMAGPART_EXPR, inner_type, unshare_expr (lhs));
+	  x = unshare_expr (lhs);
 	  gimple_assign_set_lhs (stmt, x);
-	  gimple_assign_set_rhs1 (stmt, i);
+	  gimple_assign_set_rhs1 (stmt, b);
 	}
       else
 	{
-	  x = build1 (IMAGPART_EXPR, inner_type, unshare_expr (lhs));
-	  t = gimple_build_assign (x, i);
+	  x = unshare_expr (lhs);
+	  t = gimple_build_assign (x, b);
 	  gimple_set_location (t, loc);
 	  gsi_insert_before (gsi, t, GSI_SAME_STMT);
 
@@ -1641,24 +1704,99 @@ expand_complex_asm (gimple_stmt_iterator *gsi)
 		}
 	      /* Make sure to not ICE later, see PR105165.  */
 	      tree zero = build_zero_cst (TREE_TYPE (TREE_TYPE (op)));
-	      set_component_ssa_name (op, false, zero);
-	      set_component_ssa_name (op, true, zero);
+	      set_component_ssa_name (op, REAL_P, zero);
+	      set_component_ssa_name (op, IMAG_P, zero);
+	      set_component_ssa_name (op, BOTH_P, zero);
 	      continue;
 	    }
 	  tree type = TREE_TYPE (op);
 	  tree inner_type = TREE_TYPE (type);
 	  tree r = build1 (REALPART_EXPR, inner_type, op);
 	  tree i = build1 (IMAGPART_EXPR, inner_type, op);
-	  gimple_seq list = set_component_ssa_name (op, false, r);
+	  tree b = op;
+	  gimple_seq list = set_component_ssa_name (op, REAL_P, r);
 
 	  if (list)
 	    gsi_insert_seq_after (gsi, list, GSI_CONTINUE_LINKING);
 
-	  list = set_component_ssa_name (op, true, i);
+	  list = set_component_ssa_name (op, IMAG_P, i);
+	  if (list)
+	    gsi_insert_seq_after (gsi, list, GSI_CONTINUE_LINKING);
+
+	  list = set_component_ssa_name (op, BOTH_P, b);
 	  if (list)
 	    gsi_insert_seq_after (gsi, list, GSI_CONTINUE_LINKING);
 	}
     }
+}
+
+/* Returns true if a complex component is a constant.  */
+
+static bool
+complex_component_cst_p (tree cplx, complex_part_t part)
+{
+  switch (TREE_CODE (cplx))
+    {
+    case COMPLEX_CST:
+      return true;
+
+    case SSA_NAME:
+      {
+	size_t ssa_name_index = SSA_NAME_VERSION (cplx) * 3 + part;
+	tree val = complex_ssa_name_components[ssa_name_index];
+	return (val) ? CONSTANT_CLASS_P (val) : false;
+      }
+
+    default:
+      return false;
+    }
+}
+
+/* Returns true if the target support a particular complex operation
+   natively.  */
+
+static bool
+target_native_complex_operation (enum tree_code code, tree type,
+				 tree inner_type, tree ac, tree bc,
+				 complex_lattice_t al, complex_lattice_t bl)
+{
+  /* Lower trivial complex operations.
+     -------------------------------------------------------------------
+     |    a  \  b    | UNINITIALIZED | ONLY_REAL | ONLY_IMAG | VARYING |
+     -------------------------------------------------------------------
+     | UNINITIALIZED | xxxxxxxxxxxxx | xxxxxxxxx | xxxxxxxxx | xxxxxxx |
+     -------------------------------------------------------------------
+     |   ONLY_REAL   |     lower     |   lower   |   native  | native  |
+     -------------------------------------------------------------------
+     |   ONLY_IMAG   |     lower     |   native  |   lower   | native  |
+     -------------------------------------------------------------------
+     |    VARYING    |     native    |   native  |   native  | native  |
+     ------------------------------------------------------------------- */
+  if (((al != VARYING) && (bl != VARYING))
+      && ((bl == UNINITIALIZED)
+       || (al == bl)))
+    return false;
+
+  /* Do not use native operations when a part of the result is constant.  */
+  if ((bl == UNINITIALIZED)
+      && (complex_component_cst_p (ac, REAL_P)
+	  || complex_component_cst_p (ac, IMAG_P)))
+    return false;
+  else if ((bl != UNINITIALIZED)
+	   &&
+	   ((complex_component_cst_p (ac, REAL_P)
+	     && complex_component_cst_p (bc, REAL_P))
+	    || (complex_component_cst_p (ac, IMAG_P)
+		&& complex_component_cst_p (bc, IMAG_P))))
+    return false;
+
+  optab op = optab_for_tree_code (code, inner_type, optab_default);
+
+  /* No need to search if operation is not in the optab.  */
+  if (op == unknown_optab)
+    return false;
+
+  return optab_handler (op, TYPE_MODE (type)) != CODE_FOR_nothing;
 }
 
 /* Process one statement.  If we identify a complex operation, expand it.  */
@@ -1729,14 +1867,17 @@ expand_complex_operations_1 (gimple_stmt_iterator *gsi)
 		 && TREE_CODE (lhs) == SSA_NAME)
 	  {
 	    rhs = gimple_assign_rhs1 (stmt);
+	    enum tree_code rhs_code = gimple_assign_rhs_code (stmt);
 	    rhs = extract_component (gsi, TREE_OPERAND (rhs, 0),
-		                     gimple_assign_rhs_code (stmt)
-				       == IMAGPART_EXPR,
-				     false);
+				     (rhs_code == IMAGPART_EXPR) ? IMAG_P
+				     : (rhs_code == REALPART_EXPR) ? REAL_P
+				     : BOTH_P, false);
 	    gimple_assign_set_rhs_from_tree (gsi, rhs);
 	    stmt = gsi_stmt (*gsi);
 	    update_stmt (stmt);
 	  }
+	else if (is_gimple_call (stmt))
+	  return;
       }
       return;
     }
@@ -1755,19 +1896,6 @@ expand_complex_operations_1 (gimple_stmt_iterator *gsi)
       bc = gimple_cond_rhs (stmt);
     }
 
-  ar = extract_component (gsi, ac, false, true);
-  ai = extract_component (gsi, ac, true, true);
-
-  if (ac == bc)
-    br = ar, bi = ai;
-  else if (bc)
-    {
-      br = extract_component (gsi, bc, 0, true);
-      bi = extract_component (gsi, bc, 1, true);
-    }
-  else
-    br = bi = NULL_TREE;
-
   al = find_lattice_value (ac);
   if (al == UNINITIALIZED)
     al = VARYING;
@@ -1782,6 +1910,102 @@ expand_complex_operations_1 (gimple_stmt_iterator *gsi)
       if (bl == UNINITIALIZED)
 	bl = VARYING;
     }
+
+  if (target_native_complex_operation
+      (code, type, inner_type, ac, bc, al, bl))
+    {
+      tree ab, bb, rb;
+      gimple_seq stmts = NULL;
+      location_t loc = gimple_location (gsi_stmt (*gsi));
+
+      ab = extract_component (gsi, ac, BOTH_P, true);
+      if (ac == bc)
+	bb = ab;
+      else if (bc)
+	{
+	  bb = extract_component (gsi, bc, BOTH_P, true);
+	}
+      else
+	bb = NULL_TREE;
+
+      switch (code)
+	{
+	case PLUS_EXPR:
+	case MINUS_EXPR:
+	case MULT_EXPR:
+	  rb = gimple_build (&stmts, loc, code, type, ab, bb);
+	  gsi_insert_seq_before (gsi, stmts, GSI_SAME_STMT);
+	  update_complex_assignment (gsi, NULL, NULL, rb);
+	  break;
+
+	case NEGATE_EXPR:
+	case CONJ_EXPR:
+	  rb = gimple_build (&stmts, loc, code, type, ab);
+	  gsi_insert_seq_before (gsi, stmts, GSI_SAME_STMT);
+	  update_complex_assignment (gsi, NULL, NULL, rb);
+	  break;
+
+	case EQ_EXPR:
+	case NE_EXPR:
+	  {
+	    gimple *stmt = gsi_stmt (*gsi);
+	    rb = gimple_build (&stmts, loc, code, type, ab, bb);
+	    switch (gimple_code (stmt))
+	      {
+	      case GIMPLE_RETURN:
+		{
+		  greturn *return_stmt = as_a < greturn * >(stmt);
+		  gimple_return_set_retval (return_stmt,
+					    fold_convert (type, rb));
+		}
+		break;
+
+	      case GIMPLE_ASSIGN:
+		update_complex_assignment (gsi, NULL, NULL, rb);
+		gsi_insert_seq_before (gsi, stmts, GSI_SAME_STMT);
+		break;
+
+	      case GIMPLE_COND:
+		{
+		  gcond *cond_stmt = as_a < gcond * >(stmt);
+		  gimple_cond_set_code (cond_stmt, EQ_EXPR);
+		  gimple_cond_set_lhs (cond_stmt, rb);
+		  gimple_cond_set_rhs (cond_stmt, boolean_true_node);
+		}
+		break;
+
+	      default:
+		break;
+	      }
+	    break;
+	  }
+
+
+	/* Not supported yet.  */
+	case TRUNC_DIV_EXPR:
+	case CEIL_DIV_EXPR:
+	case FLOOR_DIV_EXPR:
+	case ROUND_DIV_EXPR:
+	case RDIV_EXPR:
+
+	default:
+	  gcc_unreachable ();
+	}
+      return;
+    }
+
+  ar = extract_component (gsi, ac, REAL_P, true);
+  ai = extract_component (gsi, ac, IMAG_P, true);
+
+  if (ac == bc)
+    br = ar, bi = ai;
+  else if (bc)
+    {
+      br = extract_component (gsi, bc, REAL_P, true);
+      bi = extract_component (gsi, bc, IMAG_P, true);
+    }
+  else
+    br = bi = NULL_TREE;
 
   switch (code)
     {
@@ -1819,8 +2043,8 @@ expand_complex_operations_1 (gimple_stmt_iterator *gsi)
       gcc_unreachable ();
     }
 }
-
 
+
 /* Entry point for complex operation lowering during optimization.  */
 
 static unsigned int
@@ -1845,8 +2069,8 @@ tree_lower_complex (void)
 
   complex_variable_components = new int_tree_htab_type (10);
 
-  complex_ssa_name_components.create (2 * num_ssa_names);
-  complex_ssa_name_components.safe_grow_cleared (2 * num_ssa_names, true);
+  complex_ssa_name_components.create (3 * num_ssa_names);
+  complex_ssa_name_components.safe_grow_cleared (3 * num_ssa_names, true);
 
   update_parameter_components ();
 
@@ -1879,7 +2103,8 @@ tree_lower_complex (void)
 		      || is_gimple_min_invariant (op))
 		    continue;
 		  tree arg = gimple_phi_arg_def (phis_to_revisit[j], l);
-		  op = extract_component (NULL, arg, k > 0, false, false);
+		  op = extract_component (NULL, arg, (complex_part_t) k,
+					  false, false);
 		  SET_PHI_ARG_DEF (phi, l, op);
 		}
 	    }

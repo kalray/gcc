@@ -394,6 +394,9 @@ get_ref_base_and_extent (tree exp, poly_int64_pod *poffset,
       size_tree = TREE_OPERAND (exp, 1);
       exp = TREE_OPERAND (exp, 0);
     }
+  else if (TREE_CODE (exp) == REALPART_EXPR
+	   || TREE_CODE (exp) == IMAGPART_EXPR)
+    exp = TREE_OPERAND (exp, 0);
   else if (!VOID_TYPE_P (TREE_TYPE (exp)))
     {
       machine_mode mode = TYPE_MODE (TREE_TYPE (exp));
