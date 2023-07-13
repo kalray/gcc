@@ -4593,6 +4593,12 @@ to return a nonzero value when it is required, the compiler will run out
 of spill registers and print a fatal error message.
 @end deftypefn
 
+@deftypefn {Target Hook} rtx TARGET_GEN_RTX_COMPLEX (machine_mode @var{mode}, rtx @var{real_part}, rtx @var{imag_part})
+This hook should return an rtx representing a complex of mode @var{machine_mode} built from @var{real_part} and @var{imag_part}.
+  If both arguments are @code{NULL}, create them as registers.
+ The default is @code{gen_rtx_CONCAT}.
+@end deftypefn
+
 @deftypefn {Target Hook} rtx TARGET_READ_COMPLEX_PART (rtx @var{cplx}, complex_part_t @var{part})
 This hook should return the rtx representing the specified @var{part} of the complex given by @var{cplx}.
   @var{part} can be the real part, the imaginary part, or both of them.

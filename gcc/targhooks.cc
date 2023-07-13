@@ -1531,6 +1531,33 @@ default_preferred_simd_mode (scalar_mode)
   return word_mode;
 }
 
+/* By default, call gen_rtx_CONCAT.  */
+
+rtx
+default_gen_rtx_complex (machine_mode mode, rtx real_part, rtx imag_part)
+{
+  /* For complex modes, don't make a single pseudo.
+     Instead, make a CONCAT of two pseudos.
+     This allows noncontiguous allocation of the real and imaginary parts,
+     which makes much better code.  Besides, allocating DCmode
+     pseudos overstrains reload on some machines like the 386.  */
+  machine_mode imode = GET_MODE_INNER (mode);
+
+  if (real_part == NULL)
+    real_part = gen_reg_rtx (imode);
+  else
+    gcc_assert ((GET_MODE (real_part) == imode)
+		|| (GET_MODE (real_part) == E_VOIDmode));
+
+  if (imag_part == NULL)
+    imag_part = gen_reg_rtx (imode);
+  else
+    gcc_assert ((GET_MODE (imag_part) == imode)
+		|| (GET_MODE (imag_part) == E_VOIDmode));
+
+  return gen_rtx_CONCAT (mode, real_part, imag_part);
+}
+
 /* By default, extract one of the components of the complex value CPLX.  Extract the
    real part if part is REAL_P, and the imaginary part if it is IMAG_P. If part is
    BOTH_P, return cplx directly.  */

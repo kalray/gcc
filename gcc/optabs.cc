@@ -1001,16 +1001,17 @@ expand_doubleword_mod (machine_mode mode, rtx op0, rtx op1, bool unsignedp)
 	  machine_mode cmode = TYPE_MODE (ctype);
 	  rtx op00 = operand_subword_force (op0, 0, mode);
 	  rtx op01 = operand_subword_force (op0, 1, mode);
-	  rtx cres = gen_rtx_CONCAT (cmode, gen_reg_rtx (word_mode),
-				     gen_reg_rtx (word_mode));
+	  rtx cres = targetm.gen_rtx_complex (cmode, gen_reg_rtx (word_mode),
+					      gen_reg_rtx (word_mode));
 	  tree lhs = make_tree (ctype, cres);
 	  tree arg0 = make_tree (wtype, op00);
 	  tree arg1 = make_tree (wtype, op01);
 	  expand_addsub_overflow (UNKNOWN_LOCATION, PLUS_EXPR, lhs, arg0,
 				  arg1, true, true, true, false, NULL);
-	  sum = expand_simple_binop (word_mode, PLUS, XEXP (cres, 0),
-				     XEXP (cres, 1), NULL_RTX, 1,
-				     OPTAB_DIRECT);
+	  sum = expand_simple_binop (word_mode, PLUS,
+				     read_complex_part (cres, REAL_P),
+				     read_complex_part (cres, IMAG_P),
+				     NULL_RTX, 1, OPTAB_DIRECT);
 	  if (sum == NULL_RTX)
 	    return NULL_RTX;
 	}

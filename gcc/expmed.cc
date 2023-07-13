@@ -400,7 +400,7 @@ flip_storage_order (machine_mode mode, rtx x)
       real = flip_storage_order (GET_MODE_INNER (mode), real);
       imag = flip_storage_order (GET_MODE_INNER (mode), imag);
 
-      return gen_rtx_CONCAT (mode, real, imag);
+      return targetm.gen_rtx_complex (mode, real, imag);
     }
 
   if (UNLIKELY (reverse_storage_order_supported < 0))
