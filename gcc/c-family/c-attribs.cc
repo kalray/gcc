@@ -1994,6 +1994,8 @@ vector_mode_valid_p (machine_mode mode)
   /* Doh!  What's going on?  */
   if (mclass != MODE_VECTOR_INT
       && mclass != MODE_VECTOR_FLOAT
+      && mclass != MODE_VECTOR_COMPLEX_INT
+      && mclass != MODE_VECTOR_COMPLEX_FLOAT
       && mclass != MODE_VECTOR_FRACT
       && mclass != MODE_VECTOR_UFRACT
       && mclass != MODE_VECTOR_ACCUM
@@ -2100,6 +2102,8 @@ handle_mode_attribute (tree *node, tree name, tree args,
 
 	case MODE_VECTOR_INT:
 	case MODE_VECTOR_FLOAT:
+	case MODE_VECTOR_COMPLEX_INT:
+	case MODE_VECTOR_COMPLEX_FLOAT:
 	case MODE_VECTOR_FRACT:
 	case MODE_VECTOR_UFRACT:
 	case MODE_VECTOR_ACCUM:
@@ -4281,9 +4285,13 @@ type_valid_for_vector_size (tree type, tree atname, tree args,
 
   if ((!INTEGRAL_TYPE_P (type)
        && !SCALAR_FLOAT_TYPE_P (type)
+       && !COMPLEX_INTEGER_TYPE_P (type)
+       && !COMPLEX_FLOAT_TYPE_P (type)
        && !FIXED_POINT_TYPE_P (type))
-      || (!SCALAR_FLOAT_MODE_P (orig_mode)
-	  && GET_MODE_CLASS (orig_mode) != MODE_INT
+      || ((!SCALAR_FLOAT_MODE_P (orig_mode)
+	   && GET_MODE_CLASS (orig_mode) != MODE_INT)
+	  && (!COMPLEX_FLOAT_MODE_P (orig_mode)
+	      && GET_MODE_CLASS (orig_mode) != MODE_COMPLEX_INT)
 	  && !ALL_SCALAR_FIXED_POINT_MODE_P (orig_mode))
       || !tree_fits_uhwi_p (TYPE_SIZE_UNIT (type))
       || TREE_CODE (type) == BOOLEAN_TYPE)

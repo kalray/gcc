@@ -2467,7 +2467,23 @@ c_common_type_for_mode (machine_mode mode, int unsignedp)
 	      : make_signed_type (precision));
     }
 
-  if (COMPLEX_MODE_P (mode))
+  if (GET_MODE_CLASS (mode) == MODE_VECTOR_BOOL
+      && valid_vector_subparts_p (GET_MODE_NUNITS (mode)))
+    {
+      unsigned int elem_bits = vector_element_size (GET_MODE_BITSIZE (mode),
+						    GET_MODE_NUNITS (mode));
+      tree bool_type = build_nonstandard_boolean_type (elem_bits);
+      return build_vector_type_for_mode (bool_type, mode);
+    }
+  else if (VECTOR_MODE_P (mode)
+	   && valid_vector_subparts_p (GET_MODE_NUNITS (mode)))
+    {
+      machine_mode inner_mode = GET_MODE_INNER (mode);
+      tree inner_type = c_common_type_for_mode (inner_mode, unsignedp);
+      if (inner_type != NULL_TREE)
+	return build_vector_type_for_mode (inner_type, mode);
+    }
+  else if (COMPLEX_MODE_P (mode))
     {
       machine_mode inner_mode;
       tree inner_type;
@@ -8112,10 +8128,11 @@ vector_types_compatible_elements_p (tree t1, tree t2)
 
   gcc_assert ((INTEGRAL_TYPE_P (t1)
 	       || c1 == REAL_TYPE
+	       || c1 == COMPLEX_TYPE
 	       || c1 == FIXED_POINT_TYPE)
 	      && (INTEGRAL_TYPE_P (t2)
 		  || c2 == REAL_TYPE
-		  || c2 == FIXED_POINT_TYPE));
+		  || c2 == COMPLEX_TYPE || c2 == FIXED_POINT_TYPE));
 
   t1 = c_common_signed_type (t1);
   t2 = c_common_signed_type (t2);
