@@ -11655,30 +11655,6 @@ fold_binary_loc (location_t loc, enum tree_code code, tree type,
 	}
       else
 	{
-	  /* Fold z * +-I to __complex__ (-+__imag z, +-__real z).
-	     This is not the same for NaNs or if signed zeros are
-	     involved.  */
-	  if (!HONOR_NANS (arg0)
-	      && !HONOR_SIGNED_ZEROS (arg0)
-	      && COMPLEX_FLOAT_TYPE_P (TREE_TYPE (arg0))
-	      && TREE_CODE (arg1) == COMPLEX_CST
-	      && real_zerop (TREE_REALPART (arg1)))
-	    {
-	      tree rtype = TREE_TYPE (TREE_TYPE (arg0));
-	      if (real_onep (TREE_IMAGPART (arg1)))
-		return
-		  fold_build2_loc (loc, COMPLEX_EXPR, type,
-			       negate_expr (fold_build1_loc (loc, IMAGPART_EXPR,
-							     rtype, arg0)),
-			       fold_build1_loc (loc, REALPART_EXPR, rtype, arg0));
-	      else if (real_minus_onep (TREE_IMAGPART (arg1)))
-		return
-		  fold_build2_loc (loc, COMPLEX_EXPR, type,
-			       fold_build1_loc (loc, IMAGPART_EXPR, rtype, arg0),
-			       negate_expr (fold_build1_loc (loc, REALPART_EXPR,
-							     rtype, arg0)));
-	    }
-
 	  /* Optimize z * conj(z) for floating point complex numbers.
 	     Guarded by flag_unsafe_math_optimizations as non-finite
 	     imaginary components don't produce scalar results.  */
@@ -11691,6 +11667,127 @@ fold_binary_loc (location_t loc, enum tree_code code, tree type,
 	      && operand_equal_p (arg0, TREE_OPERAND (arg1, 0), 0))
 	    return fold_mult_zconjz (loc, type, arg0);
 	}
+
+      /* Fold z * +-I to __complex__ (-+__imag z, +-__real z).
+	 This is not the same for NaNs or if signed zeros are
+	 involved.  */
+      if (!HONOR_NANS (arg0)
+	  && !HONOR_SIGNED_ZEROS (arg0)
+	  && TREE_CODE (arg1) == COMPLEX_CST
+	  && (COMPLEX_FLOAT_TYPE_P (TREE_TYPE (arg0))
+	      && real_zerop (TREE_REALPART (arg1))))
+	{
+	  if (real_onep (TREE_IMAGPART (arg1)))
+	    {
+	      tree rtype = TREE_TYPE (TREE_TYPE (arg0));
+	      tree cplx_build = fold_build2_loc (loc, COMPLEX_EXPR, type,
+						 negate_expr (fold_build1_loc
+							      (loc,
+							       IMAGPART_EXPR,
+							       rtype, arg0)),
+						 fold_build1_loc (loc,
+								  REALPART_EXPR,
+								  rtype,
+								  arg0));
+	      if (cplx_build
+		  && TREE_CODE (TREE_OPERAND (cplx_build, 0)) != NEGATE_EXPR)
+		return cplx_build;
+
+	      if ((TREE_CODE (arg0) == COMPLEX_EXPR)
+		  && real_zerop (TREE_OPERAND (arg0, 1)))
+		return fold_build2_loc (loc, COMPLEX_EXPR, type,
+					TREE_OPERAND (arg0, 1),
+					TREE_OPERAND (arg0, 0));
+
+	      if (TREE_CODE (arg0) == CALL_EXPR)
+		{
+		  if (CALL_EXPR_IFN (arg0) == IFN_COMPLEX_ROT90)
+		    return negate_expr (CALL_EXPR_ARG (arg0, 0));
+		  else if (CALL_EXPR_IFN (arg0) == IFN_COMPLEX_ROT270)
+		    return CALL_EXPR_ARG (arg0, 0);
+		}
+	      else if (TREE_CODE (arg0) == NEGATE_EXPR)
+		return build_call_expr_internal_loc (loc, IFN_COMPLEX_ROT270,
+						     TREE_TYPE (arg0), 1,
+						     TREE_OPERAND (arg0, 0));
+	      else
+		return build_call_expr_internal_loc (loc, IFN_COMPLEX_ROT90,
+						     TREE_TYPE (arg0), 1,
+						     arg0);
+	    }
+	  else if (real_minus_onep (TREE_IMAGPART (arg1)))
+	    {
+	      if (real_zerop (TREE_OPERAND (arg0, 1)))
+		return fold_build2_loc (loc, COMPLEX_EXPR, type,
+					TREE_OPERAND (arg0, 1),
+					negate_expr (TREE_OPERAND (arg0, 0)));
+
+	      return build_call_expr_internal_loc (loc, IFN_COMPLEX_ROT270,
+						   TREE_TYPE (arg0), 1,
+						   fold (arg0));
+	    }
+	}
+
+      /* Fold z * +-I to __complex__ (-+__imag z, +-__real z).
+	 This is not the same for NaNs or if signed zeros are
+	 involved.  */
+      if (!HONOR_NANS (arg0)
+	  && !HONOR_SIGNED_ZEROS (arg0)
+	  && TREE_CODE (arg1) == COMPLEX_CST
+	  && (COMPLEX_INTEGER_TYPE_P (TREE_TYPE (arg0))
+	      && integer_zerop (TREE_REALPART (arg1))))
+	{
+	  if (integer_onep (TREE_IMAGPART (arg1)))
+	    {
+	      tree rtype = TREE_TYPE (TREE_TYPE (arg0));
+	      tree cplx_build = fold_build2_loc (loc, COMPLEX_EXPR, type,
+						 negate_expr (fold_build1_loc
+							      (loc,
+							       IMAGPART_EXPR,
+							       rtype, arg0)),
+						 fold_build1_loc (loc,
+								  REALPART_EXPR,
+								  rtype,
+								  arg0));
+	      if (cplx_build
+		  && TREE_CODE (TREE_OPERAND (cplx_build, 0)) != NEGATE_EXPR)
+		return cplx_build;
+
+	      if ((TREE_CODE (arg0) == COMPLEX_EXPR)
+		  && integer_zerop (TREE_OPERAND (arg0, 1)))
+		return fold_build2_loc (loc, COMPLEX_EXPR, type,
+					TREE_OPERAND (arg0, 1),
+					TREE_OPERAND (arg0, 0));
+
+	      if (TREE_CODE (arg0) == CALL_EXPR)
+		{
+		  if (CALL_EXPR_IFN (arg0) == IFN_COMPLEX_ROT90)
+		    return negate_expr (CALL_EXPR_ARG (arg0, 0));
+		  else if (CALL_EXPR_IFN (arg0) == IFN_COMPLEX_ROT270)
+		    return CALL_EXPR_ARG (arg0, 0);
+		}
+	      else if (TREE_CODE (arg0) == NEGATE_EXPR)
+		return build_call_expr_internal_loc (loc, IFN_COMPLEX_ROT270,
+						     TREE_TYPE (arg0), 1,
+						     TREE_OPERAND (arg0, 0));
+	      else
+		return build_call_expr_internal_loc (loc, IFN_COMPLEX_ROT90,
+						     TREE_TYPE (arg0), 1,
+						     arg0);
+	    }
+	  else if (integer_minus_onep (TREE_IMAGPART (arg1)))
+	    {
+	      if (integer_zerop (TREE_OPERAND (arg0, 1)))
+		return fold_build2_loc (loc, COMPLEX_EXPR, type,
+					TREE_OPERAND (arg0, 1),
+					negate_expr (TREE_OPERAND (arg0, 0)));
+
+	      return build_call_expr_internal_loc (loc, IFN_COMPLEX_ROT270,
+						   TREE_TYPE (arg0), 1,
+						   fold (arg0));
+	    }
+	}
+
       goto associate;
 
     case BIT_IOR_EXPR:

@@ -3286,6 +3286,118 @@ last_fma_candidate_feeds_initial_phi (fma_deferring_state *state,
   return false;
 }
 
+/* Convert complex rotation to addition with one operation rotated
+   in a similar way than FMAs.  */
+
+static void
+convert_crot_1 (tree crot_result, tree op1, internal_fn cadd_fn)
+{
+  gimple *use_stmt;
+  imm_use_iterator imm_iter;
+  gcall *cadd_stmt;
+
+  FOR_EACH_IMM_USE_STMT (use_stmt, imm_iter, crot_result)
+  {
+    gimple_stmt_iterator gsi = gsi_for_stmt (use_stmt);
+    tree add_op, result = crot_result;
+
+    if (is_gimple_debug (use_stmt))
+      continue;
+
+    add_op = (gimple_assign_rhs1 (use_stmt) != result)
+      ? gimple_assign_rhs1 (use_stmt) : gimple_assign_rhs2 (use_stmt);
+
+
+    cadd_stmt = gimple_build_call_internal (cadd_fn, 2, add_op, op1);
+    gimple_set_lhs (cadd_stmt, gimple_get_lhs (use_stmt));
+    gimple_call_set_nothrow (cadd_stmt, !stmt_can_throw_internal (cfun,
+								  use_stmt));
+    gsi_replace (&gsi, cadd_stmt, true);
+
+    if (dump_file && (dump_flags & TDF_DETAILS))
+      {
+	fprintf (dump_file, "Generated COMPLEX_ADD_ROT ");
+	print_gimple_stmt (dump_file, gsi_stmt (gsi), 0, TDF_NONE);
+	fprintf (dump_file, "\n");
+      }
+  }
+}
+
+
+/* Convert complex rotation to addition with one operation rotated
+   in a similar way than FMAs.  */
+
+static bool
+convert_crot (gimple *crot_stmt, tree op1, combined_fn crot_kind)
+{
+  internal_fn cadd_fn;
+  switch (crot_kind)
+    {
+    case CFN_COMPLEX_ROT90:
+      cadd_fn = IFN_COMPLEX_ADD_ROT90;
+      break;
+    case CFN_COMPLEX_ROT270:
+      cadd_fn = IFN_COMPLEX_ADD_ROT270;
+      break;
+    default:
+      gcc_unreachable ();
+    }
+
+
+  tree crot_result = gimple_get_lhs (crot_stmt);
+  /* If there isn't a LHS then this can't be an CADD.  There can be no LHS
+     if the statement was left just for the side-effects.  */
+  if (!crot_result)
+    return false;
+  tree type = TREE_TYPE (crot_result);
+  gimple *use_stmt;
+  use_operand_p use_p;
+  imm_use_iterator imm_iter;
+
+  if (COMPLEX_FLOAT_TYPE_P (type) && flag_fp_contract_mode == FP_CONTRACT_OFF)
+    return false;
+
+  /* We don't want to do bitfield reduction ops.  */
+  if (INTEGRAL_TYPE_P (type)
+      && (!type_has_mode_precision_p (type) || TYPE_OVERFLOW_TRAPS (type)))
+    return false;
+
+  /* If the target doesn't support it, don't generate it. */
+  optimization_type opt_type = bb_optimization_type (gimple_bb (crot_stmt));
+  if (!direct_internal_fn_supported_p (cadd_fn, type, opt_type))
+    return false;
+
+  /* If the crot has zero uses, it is kept around probably because
+     of -fnon-call-exceptions.  Don't optimize it away in that case,
+     it is DCE job.  */
+  if (has_zero_uses (crot_result))
+    return false;
+
+  /* Make sure that the crot statement becomes dead after
+     the transformation, thus that all uses are transformed to FMAs.
+     This means we assume that an FMA operation has the same cost
+     as an addition.  */
+  FOR_EACH_IMM_USE_FAST (use_p, imm_iter, crot_result)
+  {
+    use_stmt = USE_STMT (use_p);
+
+    if (is_gimple_debug (use_stmt))
+      continue;
+
+    if (gimple_bb (use_stmt) != gimple_bb (crot_stmt))
+      return false;
+
+    if (!is_gimple_assign (use_stmt))
+      return false;
+
+    if (gimple_assign_rhs_code (use_stmt) != PLUS_EXPR)
+      return false;
+  }
+
+  convert_crot_1 (crot_result, op1, cadd_fn);
+  return true;
+}
+
 /* Combine the multiplication at MUL_STMT with operands MULOP1 and MULOP2
    with uses in additions and subtractions to form fused multiply-add
    operations.  Returns true if successful and MUL_STMT should be removed.
@@ -5106,6 +5218,22 @@ math_opts_dom_walker::after_dom_children (basic_block bb)
 
 	    case CFN_LAST:
 	      cancel_fma_deferring (&fma_state);
+	      break;
+
+	    case CFN_COMPLEX_ROT90:
+	    case CFN_COMPLEX_ROT270:
+	      if (gimple_call_lhs (stmt)
+		  && convert_crot (stmt,
+				   gimple_call_arg (stmt, 0),
+				   gimple_call_combined_fn (stmt)))
+		{
+		  unlink_stmt_vdef (stmt);
+		  if (gsi_remove (&gsi, true)
+		      && gimple_purge_dead_eh_edges (bb))
+		    *m_cfg_changed_p = true;
+		  release_defs (stmt);
+		  continue;
+		}
 	      break;
 
 	    default:

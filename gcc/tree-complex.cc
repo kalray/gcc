@@ -241,7 +241,10 @@ init_dont_simulate_again (void)
 	  switch (gimple_code (stmt))
 	    {
 	    case GIMPLE_CALL:
-	      if (gimple_call_lhs (stmt))
+	      if (gimple_call_combined_fn (stmt) == CFN_COMPLEX_ROT90
+		  || gimple_call_combined_fn (stmt) == CFN_COMPLEX_ROT270)
+		saw_a_complex_op = true;
+	      else if (gimple_call_lhs (stmt))
 	        sim_again_p = is_complex_reg (gimple_call_lhs (stmt));
 	      break;
 
@@ -1730,6 +1733,69 @@ expand_complex_asm (gimple_stmt_iterator *gsi)
     }
 }
 
+/* Expand complex rotations represented as internal functions
+   This function assumes that lowered complex rotation is still better
+   than a complex multiplication, else the backend would have redefined
+   crot90 and crot270.  */
+
+static void
+expand_complex_rotation (gimple_stmt_iterator *gsi)
+{
+  gimple *stmt = gsi_stmt (*gsi);
+  tree ac = gimple_call_arg (stmt, 0);
+  gimple_seq stmts = NULL;
+  location_t loc = gimple_location (gsi_stmt (*gsi));
+
+  tree lhs = gimple_get_lhs (stmt);
+  tree type = TREE_TYPE (ac);
+  tree inner_type = TREE_TYPE (type);
+
+
+  tree rr, ri, rb;
+  optab op = optab_for_tree_code (MULT_EXPR, inner_type, optab_default);
+  if (optab_handler (op, TYPE_MODE (type)) != CODE_FOR_nothing)
+    {
+      tree cst_i = build_complex (type, build_zero_cst (inner_type),
+				  build_one_cst (inner_type));
+      rb = gimple_build (&stmts, loc, MULT_EXPR, type, ac, cst_i);
+
+      gsi_insert_seq_before (gsi, stmts, GSI_SAME_STMT);
+
+      gassign *new_assign = gimple_build_assign (lhs, rb);
+      gimple_set_lhs (new_assign, lhs);
+      gsi_replace (gsi, new_assign, true);
+
+      update_complex_assignment (gsi, NULL, NULL, rb);
+    }
+  else
+    {
+      tree ar = extract_component (gsi, ac, REAL_P, true);
+      tree ai = extract_component (gsi, ac, IMAG_P, true);
+
+      if (gimple_call_internal_fn (stmt) == IFN_COMPLEX_ROT90)
+	{
+	  rr = gimple_build (&stmts, loc, NEGATE_EXPR, inner_type, ai);
+	  ri = ar;
+	}
+      else if (gimple_call_internal_fn (stmt) == IFN_COMPLEX_ROT270)
+	{
+	  rr = ai;
+	  ri = gimple_build (&stmts, loc, NEGATE_EXPR, inner_type, ar);
+	}
+      else
+	gcc_unreachable ();
+
+      gsi_insert_seq_before (gsi, stmts, GSI_SAME_STMT);
+
+      gassign *new_assign =
+	gimple_build_assign (gimple_get_lhs (stmt), COMPLEX_EXPR, rr, ri);
+      gimple_set_lhs (new_assign, gimple_get_lhs (stmt));
+      gsi_replace (gsi, new_assign, true);
+
+      update_complex_assignment (gsi, rr, ri);
+    }
+}
+
 /* Returns true if a complex component is a constant.  */
 
 static bool
@@ -1858,6 +1924,21 @@ expand_complex_operations_1 (gimple_stmt_iterator *gsi)
 	   do anything with it.  */
 	if (gimple_code (stmt) == GIMPLE_COND)
 	  return;
+
+	if (is_gimple_call (stmt)
+	    && (gimple_call_combined_fn (stmt) == CFN_COMPLEX_ROT90
+		|| gimple_call_combined_fn (stmt) == CFN_COMPLEX_ROT270))
+	  {
+	    if (!direct_internal_fn_supported_p
+		(gimple_call_internal_fn (stmt), type,
+		 bb_optimization_type (gimple_bb (stmt))))
+	      expand_complex_rotation (gsi);
+	    else
+	      update_complex_components (gsi, stmt, NULL, NULL,
+					 gimple_call_lhs (stmt));
+
+	    return;
+	  }
 
 	if (TREE_CODE (type) == COMPLEX_TYPE)
 	  expand_complex_move (gsi, type);
