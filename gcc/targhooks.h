@@ -120,6 +120,8 @@ extern opt_machine_mode default_get_mask_mode (machine_mode);
 extern bool default_empty_mask_is_expensive (unsigned);
 extern vector_costs *default_vectorize_create_costs (vec_info *, bool);
 
+extern rtx default_gen_rtx_complex (machine_mode mode, rtx real_part,
+				    rtx imag_part);
 extern rtx default_read_complex_part (rtx cplx, complex_part_t part);
 extern void default_write_complex_part (rtx cplx, rtx val,
 					complex_part_t part);

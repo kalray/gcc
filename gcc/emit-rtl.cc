@@ -1181,19 +1181,7 @@ gen_reg_rtx (machine_mode mode)
   if (generating_concat_p
       && (GET_MODE_CLASS (mode) == MODE_COMPLEX_FLOAT
 	  || GET_MODE_CLASS (mode) == MODE_COMPLEX_INT))
-    {
-      /* For complex modes, don't make a single pseudo.
-	 Instead, make a CONCAT of two pseudos.
-	 This allows noncontiguous allocation of the real and imaginary parts,
-	 which makes much better code.  Besides, allocating DCmode
-	 pseudos overstrains reload on some machines like the 386.  */
-      rtx realpart, imagpart;
-      machine_mode partmode = GET_MODE_INNER (mode);
-
-      realpart = gen_reg_rtx (partmode);
-      imagpart = gen_reg_rtx (partmode);
-      return gen_rtx_CONCAT (mode, realpart, imagpart);
-    }
+    return targetm.gen_rtx_complex (mode, NULL, NULL);
 
   /* Do not call gen_reg_rtx with uninitialized crtl.  */
   gcc_assert (crtl->emit.regno_pointer_align_length);
@@ -6263,14 +6251,18 @@ init_emit_once (void)
 
   FOR_EACH_MODE_IN_CLASS (mode, MODE_COMPLEX_INT)
     {
-      rtx inner = const_tiny_rtx[0][(int)GET_MODE_INNER (mode)];
-      const_tiny_rtx[0][(int) mode] = gen_rtx_CONCAT (mode, inner, inner);
+      machine_mode imode = GET_MODE_INNER (mode);
+      rtx inner = const_tiny_rtx[0][(int) imode];
+      const_tiny_rtx[0][(int) mode] =
+	targetm.gen_rtx_complex (mode, inner, inner);
     }
 
   FOR_EACH_MODE_IN_CLASS (mode, MODE_COMPLEX_FLOAT)
     {
-      rtx inner = const_tiny_rtx[0][(int)GET_MODE_INNER (mode)];
-      const_tiny_rtx[0][(int) mode] = gen_rtx_CONCAT (mode, inner, inner);
+      machine_mode imode = GET_MODE_INNER (mode);
+      rtx inner = const_tiny_rtx[0][(int) imode];
+      const_tiny_rtx[0][(int) mode] =
+	targetm.gen_rtx_complex (mode, inner, inner);
     }
 
   FOR_EACH_MODE_IN_CLASS (mode, MODE_VECTOR_BOOL)
