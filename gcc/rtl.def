@@ -460,6 +460,9 @@ DEF_RTL_EXPR(MINUS, "minus", "ee", RTX_BIN_ARITH)
 /* Minus operand 0.  */
 DEF_RTL_EXPR(NEG, "neg", "e", RTX_UNARY)
 
+/* Conj operand 0.  */
+DEF_RTL_EXPR(CONJ, "conj", "e", RTX_UNARY)
+
 DEF_RTL_EXPR(MULT, "mult", "ee", RTX_COMM_ARITH)
 
 /* Multiplication with signed saturation */
