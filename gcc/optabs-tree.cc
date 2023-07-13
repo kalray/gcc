@@ -287,6 +287,9 @@ optab_for_tree_code (enum tree_code code, const_tree type,
 	return TYPE_UNSIGNED (type) ? usneg_optab : ssneg_optab;
       return trapv ? negv_optab : neg_optab;
 
+    case CONJ_EXPR:
+      return conj_optab;
+
     case ABS_EXPR:
       return trapv ? absv_optab : abs_optab;
 

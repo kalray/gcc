@@ -10483,6 +10483,18 @@ expand_expr_real_2 (sepops ops, rtx target, machine_mode tmode,
 	return dst;
       }
 
+    case CONJ_EXPR:
+      op0 = expand_expr (treeop0, subtarget, VOIDmode, EXPAND_NORMAL);
+      if (modifier == EXPAND_STACK_PARM)
+	target = 0;
+      temp = expand_unop (mode,
+			  optab_for_tree_code (CONJ_EXPR, type,
+					       optab_default),
+			  op0, target, 0);
+      gcc_assert (temp);
+      return REDUCE_BIT_FIELD (temp);
+
+
     default:
       gcc_unreachable ();
     }
@@ -12048,6 +12060,10 @@ expand_expr_real_1 (tree exp, rtx target, machine_mode tmode,
       op0 = expand_normal (treeop0);
       return read_complex_part (op0, IMAG_P);
 
+    case CONJ_EXPR:
+      op0 = expand_normal (treeop0);
+      return op0;
+
     case RETURN_EXPR:
     case LABEL_EXPR:
     case GOTO_EXPR:
@@ -12071,7 +12087,6 @@ expand_expr_real_1 (tree exp, rtx target, machine_mode tmode,
     case VA_ARG_EXPR:
     case BIND_EXPR:
     case INIT_EXPR:
-    case CONJ_EXPR:
     case COMPOUND_EXPR:
     case PREINCREMENT_EXPR:
     case PREDECREMENT_EXPR:
