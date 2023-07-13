@@ -190,19 +190,30 @@ gen_int_libfunc (optab optable, const char *opname, char suffix,
   int maxsize = 2 * BITS_PER_WORD;
   int minsize = BITS_PER_WORD;
   scalar_int_mode int_mode;
+  complex_mode cplx_int_mode;
+  int bitsize;
 
-  if (!is_int_mode (mode, &int_mode))
+  if (is_int_mode (mode, &int_mode))
+    bitsize = GET_MODE_BITSIZE (int_mode);
+  else if (is_complex_int_mode (mode, &cplx_int_mode))
+    bitsize = GET_MODE_BITSIZE (cplx_int_mode);
+  else
     return;
+
   if (maxsize < LONG_LONG_TYPE_SIZE)
     maxsize = LONG_LONG_TYPE_SIZE;
   if (minsize > INT_TYPE_SIZE
       && (trapv_binoptab_p (optable)
 	  || trapv_unoptab_p (optable)))
     minsize = INT_TYPE_SIZE;
-  if (GET_MODE_BITSIZE (int_mode) < minsize
-      || GET_MODE_BITSIZE (int_mode) > maxsize)
+
+  if (bitsize < minsize || bitsize > maxsize)
     return;
-  gen_libfunc (optable, opname, suffix, int_mode);
+
+  if (GET_MODE_CLASS (mode) == MODE_INT)
+    gen_libfunc (optable, opname, suffix, int_mode);
+  else
+    gen_libfunc (optable, opname, suffix, cplx_int_mode);
 }
 
 /* Like gen_libfunc, but verify that FP and set decimal prefix if needed.  */
@@ -280,9 +291,11 @@ void
 gen_intv_fp_libfunc (optab optable, const char *name, char suffix,
 		     machine_mode mode)
 {
-  if (DECIMAL_FLOAT_MODE_P (mode) || GET_MODE_CLASS (mode) == MODE_FLOAT)
+  if (DECIMAL_FLOAT_MODE_P (mode) || GET_MODE_CLASS (mode) == MODE_FLOAT
+      || GET_MODE_CLASS (mode) == MODE_COMPLEX_FLOAT)
     gen_fp_libfunc (optable, name, suffix, mode);
-  if (GET_MODE_CLASS (mode) == MODE_INT)
+  if (GET_MODE_CLASS (mode) == MODE_INT
+      || GET_MODE_CLASS (mode) == MODE_COMPLEX_INT)
     {
       int len = strlen (name);
       char *v_name = XALLOCAVEC (char, len + 2);

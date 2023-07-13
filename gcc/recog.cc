@@ -1441,6 +1441,7 @@ general_operand (rtx op, machine_mode mode)
      if the caller wants something floating.  */
   if (GET_MODE (op) == VOIDmode && mode != VOIDmode
       && GET_MODE_CLASS (mode) != MODE_INT
+      && GET_MODE_CLASS (mode) != MODE_COMPLEX_INT
       && GET_MODE_CLASS (mode) != MODE_PARTIAL_INT)
     return false;
 

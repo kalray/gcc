@@ -946,7 +946,7 @@ validate_subreg (machine_mode omode, machine_mode imode,
      if this ought to be represented at all -- why can't this all be hidden
      in post-reload splitters that make arbitrarily mode changes to the
      registers themselves.  */
-  else if (VECTOR_MODE_P (omode)
+  else if ((VECTOR_MODE_P (omode) || COMPLEX_MODE_P (omode))
 	   && GET_MODE_INNER (omode) == GET_MODE_INNER (imode))
     ;
   /* Subregs involving floating point modes are not allowed to

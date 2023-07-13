@@ -3847,8 +3847,14 @@ emit_move_complex_parts (rtx x, rtx y)
       && REG_P (x) && !reg_overlap_mentioned_p (x, y))
     emit_clobber (x);
 
-  write_complex_part (x, read_complex_part (y, REAL_P), REAL_P, true);
-  write_complex_part (x, read_complex_part (y, IMAG_P), IMAG_P, false);
+  machine_mode mode = GET_MODE (x);
+  if (optab_handler (mov_optab, mode) != CODE_FOR_nothing)
+    write_complex_part (x, read_complex_part (y, BOTH_P), BOTH_P, true);
+  else
+    {
+      write_complex_part (x, read_complex_part (y, REAL_P), REAL_P, true);
+      write_complex_part (x, read_complex_part (y, IMAG_P), IMAG_P, false);
+    }
 
   return get_last_insn ();
 }
@@ -3868,14 +3874,14 @@ emit_move_complex (machine_mode mode, rtx x, rtx y)
 
   /* See if we can coerce the target into moving both values at once, except
      for floating point where we favor moving as parts if this is easy.  */
-  if (GET_MODE_CLASS (mode) == MODE_COMPLEX_FLOAT
+  scalar_int_mode imode;
+  if (!int_mode_for_mode (mode).exists (&imode))
+    try_int = false;
+  else if (GET_MODE_CLASS (mode) == MODE_COMPLEX_FLOAT
       && optab_handler (mov_optab, GET_MODE_INNER (mode)) != CODE_FOR_nothing
-      && !(REG_P (x)
-	   && HARD_REGISTER_P (x)
-	   && REG_NREGS (x) == 1)
-      && !(REG_P (y)
-	   && HARD_REGISTER_P (y)
-	   && REG_NREGS (y) == 1))
+      && optab_handler (mov_optab, mode) != CODE_FOR_nothing
+      && !(REG_P (x) && HARD_REGISTER_P (x))
+      && !(REG_P (y) && HARD_REGISTER_P (y)))
     try_int = false;
   /* Not possible if the values are inherently not adjacent.  */
   else if (GET_CODE (x) == CONCAT || GET_CODE (y) == CONCAT)
@@ -10993,6 +10999,48 @@ expand_expr_real_1 (tree exp, rtx target, machine_mode tmode,
 
 	  return original_target;
 	}
+      else if (original_target && (GET_CODE (original_target) == REG)
+	       &&
+	       ((GET_MODE_CLASS (GET_MODE (original_target)) ==
+		 MODE_COMPLEX_INT)
+		|| (GET_MODE_CLASS (GET_MODE (original_target)) ==
+		    MODE_COMPLEX_FLOAT)))
+	{
+	  mode = TYPE_MODE (TREE_TYPE (exp));
+
+	  /* Move both parts at the same time if it is possible.  */
+	  if (TREE_COMPLEX_BOTH_PARTS (exp) != NULL)
+	    {
+	      op0 = expand_expr (TREE_COMPLEX_BOTH_PARTS (exp),
+				 original_target, mode, EXPAND_NORMAL);
+	      write_complex_part (original_target, op0, BOTH_P, true);
+	    }
+	  else
+	    {
+	      mode = TYPE_MODE (TREE_TYPE (TREE_TYPE (exp)));
+
+	      rtx rtarg = gen_reg_rtx (mode);
+	      rtx itarg = gen_reg_rtx (mode);
+	      op0 =
+		expand_expr (TREE_REALPART (exp), rtarg, mode, EXPAND_NORMAL);
+	      op1 =
+		expand_expr (TREE_IMAGPART (exp), itarg, mode, EXPAND_NORMAL);
+
+	      write_complex_part (original_target, op0, REAL_P, true);
+	      write_complex_part (original_target, op1, IMAG_P, true);
+	    }
+	  return original_target;
+	}
+      else if ((TREE_COMPLEX_BOTH_PARTS (exp) != NULL)
+	       && (known_le (GET_MODE_BITSIZE (mode), 2 * BITS_PER_WORD)))
+	{
+	  op0 =
+	    expand_expr (TREE_COMPLEX_BOTH_PARTS (exp), original_target, mode,
+			 EXPAND_NORMAL);
+	  rtx tmp = gen_reg_rtx (mode);
+	  write_complex_part (tmp, op0, BOTH_P, true);
+	  return tmp;
+	}
 
       /* fall through */
 
@@ -13243,6 +13291,10 @@ const_vector_from_tree (tree exp)
       else if (TREE_CODE (elt) == FIXED_CST)
 	builder.quick_push (CONST_FIXED_FROM_FIXED_VALUE
 			    (TREE_FIXED_CST (elt), inner));
+      else if (TREE_CODE (elt) == COMPLEX_CST)
+	builder.quick_push (expand_expr
+			    (TREE_COMPLEX_BOTH_PARTS (elt), NULL_RTX, mode,
+			     EXPAND_NORMAL));
       else
 	builder.quick_push (immed_wide_int_const (wi::to_poly_wide (elt),
 						  inner));
