@@ -1378,6 +1378,10 @@ type_for_widest_vector_mode (tree type, optab op)
     mode = MIN_MODE_VECTOR_ACCUM;
   else if (SCALAR_UACCUM_MODE_P (inner_mode))
     mode = MIN_MODE_VECTOR_UACCUM;
+  else if (COMPLEX_INT_MODE_P (inner_mode))
+    mode = MIN_MODE_VECTOR_COMPLEX_INT;
+  else if (COMPLEX_FLOAT_MODE_P (inner_mode))
+    mode = MIN_MODE_VECTOR_COMPLEX_FLOAT;
   else if (inner_mode == BImode)
     mode = MIN_MODE_VECTOR_BOOL;
   else

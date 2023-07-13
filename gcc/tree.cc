@@ -10010,6 +10010,8 @@ build_vector_type_for_mode (tree innertype, machine_mode mode)
     case MODE_VECTOR_UFRACT:
     case MODE_VECTOR_ACCUM:
     case MODE_VECTOR_UACCUM:
+    case MODE_VECTOR_COMPLEX_INT:
+    case MODE_VECTOR_COMPLEX_FLOAT:
       nunits = GET_MODE_NUNITS (mode);
       break;
 
