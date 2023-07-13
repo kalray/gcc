@@ -4583,7 +4583,9 @@ build_unary_op (location_t location, enum tree_code code, tree xarg,
       /* ~ works on integer types and non float vectors. */
       if (typecode == INTEGER_TYPE
 	  || (gnu_vector_type_p (TREE_TYPE (arg))
-	      && !VECTOR_FLOAT_TYPE_P (TREE_TYPE (arg))))
+	      && !VECTOR_FLOAT_TYPE_P (TREE_TYPE (arg))
+	      && !COMPLEX_INTEGER_TYPE_P (TREE_TYPE (TREE_TYPE (arg)))
+	      && !COMPLEX_FLOAT_TYPE_P (TREE_TYPE (TREE_TYPE (arg)))))
 	{
 	  tree e = arg;
 
@@ -4606,7 +4608,9 @@ build_unary_op (location_t location, enum tree_code code, tree xarg,
 	  if (!noconvert)
 	    arg = default_conversion (arg);
 	}
-      else if (typecode == COMPLEX_TYPE)
+      else if (typecode == COMPLEX_TYPE
+	       || COMPLEX_INTEGER_TYPE_P (TREE_TYPE (TREE_TYPE (arg)))
+	       || COMPLEX_FLOAT_TYPE_P (TREE_TYPE (TREE_TYPE (arg))))
 	{
 	  code = CONJ_EXPR;
 	  pedwarn (location, OPT_Wpedantic,

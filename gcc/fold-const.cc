@@ -11155,6 +11155,7 @@ fold_binary_loc (location_t loc, enum tree_code code, tree type,
 	     to __complex__ ( x, y ).  This is not the same for SNaNs or
 	     if signed zeros are involved.  */
 	  if (!HONOR_SNANS (arg0)
+	      && !(VECTOR_TYPE_P (TREE_TYPE (arg0)))
 	      && !HONOR_SIGNED_ZEROS (arg0)
 	      && COMPLEX_FLOAT_TYPE_P (TREE_TYPE (arg0)))
 	    {
