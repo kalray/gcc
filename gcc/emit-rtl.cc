@@ -6284,6 +6284,16 @@ init_emit_once (void)
 	targetm.gen_rtx_complex (mode, inner, inner);
     }
 
+  FOR_EACH_MODE_IN_CLASS (mode, MODE_VECTOR_COMPLEX_INT)
+  {
+    const_tiny_rtx[0][(int) mode] = gen_const_vector (mode, 0);
+  }
+
+  FOR_EACH_MODE_IN_CLASS (mode, MODE_VECTOR_COMPLEX_FLOAT)
+  {
+    const_tiny_rtx[0][(int) mode] = gen_const_vector (mode, 0);
+  }
+
   FOR_EACH_MODE_IN_CLASS (mode, MODE_VECTOR_BOOL)
     {
       const_tiny_rtx[0][(int) mode] = gen_const_vector (mode, 0);

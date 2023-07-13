@@ -1531,6 +1531,15 @@ default_preferred_simd_mode (scalar_mode)
   return word_mode;
 }
 
+/* By default, only attempt to parallelize bitwise operations, and
+   possibly adds/subtracts using bit-twiddling.  */
+
+machine_mode
+default_preferred_simd_mode_complex (complex_mode)
+{
+  return word_mode;
+}
+
 /* By default, call gen_rtx_CONCAT.  */
 
 rtx
@@ -1719,6 +1728,26 @@ opt_machine_mode
 default_vectorize_related_mode (machine_mode vector_mode,
 				scalar_mode element_mode,
 				poly_uint64 nunits)
+{
+  machine_mode result_mode;
+  if ((maybe_ne (nunits, 0U)
+       || multiple_p (GET_MODE_SIZE (vector_mode),
+		      GET_MODE_SIZE (element_mode), &nunits))
+      && mode_for_vector (element_mode, nunits).exists (&result_mode)
+      && VECTOR_MODE_P (result_mode)
+      && targetm.vector_mode_supported_p (result_mode))
+    return result_mode;
+
+  return opt_machine_mode ();
+}
+
+
+/* The default implementation of TARGET_VECTORIZE_RELATED_MODE_COMPLEX.  */
+
+opt_machine_mode
+default_vectorize_related_mode_complex (machine_mode vector_mode,
+					complex_mode element_mode,
+					poly_uint64 nunits)
 {
   machine_mode result_mode;
   if ((maybe_ne (nunits, 0U)

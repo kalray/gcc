@@ -142,6 +142,8 @@ vector_class (enum mode_class cl)
     case MODE_UFRACT: return MODE_VECTOR_UFRACT;
     case MODE_ACCUM: return MODE_VECTOR_ACCUM;
     case MODE_UACCUM: return MODE_VECTOR_UACCUM;
+    case MODE_COMPLEX_INT: return MODE_VECTOR_COMPLEX_INT;
+    case MODE_COMPLEX_FLOAT: return MODE_VECTOR_COMPLEX_FLOAT;
     default:
       error ("no vector class for class %s", mode_class_names[cl]);
       return MODE_RANDOM;
@@ -400,6 +402,8 @@ complete_mode (struct mode_data *m)
     case MODE_VECTOR_UFRACT:
     case MODE_VECTOR_ACCUM:
     case MODE_VECTOR_UACCUM:
+    case MODE_VECTOR_COMPLEX_INT:
+    case MODE_VECTOR_COMPLEX_FLOAT:
       /* Vector modes should have a component and a number of components.  */
       validate_mode (m, UNSET, UNSET, SET, SET, UNSET);
       if (m->component->precision != (unsigned int)-1)
@@ -460,6 +464,10 @@ make_complex_modes (enum mode_class cl,
 
       /* Skip BImode.  FIXME: BImode probably shouldn't be MODE_INT.  */
       if (m->boolean)
+	continue;
+
+      /* Skip already created mode.  */
+      if (m->complex)
 	continue;
 
       m_len = strlen (m->name);

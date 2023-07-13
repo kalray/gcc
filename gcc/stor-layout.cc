@@ -378,6 +378,8 @@ int_mode_for_mode (machine_mode mode)
 
     case MODE_COMPLEX_INT:
     case MODE_COMPLEX_FLOAT:
+    case MODE_VECTOR_COMPLEX_INT:
+    case MODE_VECTOR_COMPLEX_FLOAT:
     case MODE_FLOAT:
     case MODE_DECIMAL_FLOAT:
     case MODE_FRACT:
@@ -480,8 +482,8 @@ bitwise_type_for_mode (machine_mode mode)
    elements of mode INNERMODE, if one exists.  The returned mode can be
    either an integer mode or a vector mode.  */
 
-opt_machine_mode
-mode_for_vector (scalar_mode innermode, poly_uint64 nunits)
+static opt_machine_mode
+mode_for_vector (machine_mode innermode, poly_uint64 nunits)
 {
   machine_mode mode;
 
@@ -496,8 +498,14 @@ mode_for_vector (scalar_mode innermode, poly_uint64 nunits)
     mode = MIN_MODE_VECTOR_ACCUM;
   else if (SCALAR_UACCUM_MODE_P (innermode))
     mode = MIN_MODE_VECTOR_UACCUM;
-  else
+  else if (SCALAR_INT_MODE_P (innermode))
     mode = MIN_MODE_VECTOR_INT;
+  else if (COMPLEX_FLOAT_MODE_P (innermode))
+    mode = MIN_MODE_VECTOR_COMPLEX_FLOAT;
+  else if (COMPLEX_INT_MODE_P (innermode))
+    mode = MIN_MODE_VECTOR_COMPLEX_INT;
+  else
+    gcc_unreachable ();
 
   /* Do not check vector_mode_supported_p here.  We'll do that
      later in vector_type_mode.  */
@@ -509,13 +517,33 @@ mode_for_vector (scalar_mode innermode, poly_uint64 nunits)
   /* For integers, try mapping it to a same-sized scalar mode.  */
   if (GET_MODE_CLASS (innermode) == MODE_INT)
     {
-      poly_uint64 nbits = nunits * GET_MODE_BITSIZE (innermode);
+      poly_uint64 nbits = nunits * GET_MODE_BITSIZE (innermode).coeffs[0];
       if (int_mode_for_size (nbits, 0).exists (&mode)
 	  && have_regs_of_mode[mode])
 	return mode;
     }
 
   return opt_machine_mode ();
+}
+
+/* Find a mode that is suitable for representing a vector with NUNITS
+   elements of scalar mode INNERMODE, if one exists.  The returned mode
+   can be either an integer mode or a vector mode.  */
+
+opt_machine_mode
+mode_for_vector (scalar_mode innermode, poly_uint64 nunits)
+{
+  return mode_for_vector (machine_mode (innermode), nunits);
+}
+
+/* Find a mode that is suitable for representing a vector with NUNITS
+   elements of complex mode INNERMODE, if one exists.  The returned mode
+   can be either an integer mode or a vector mode.  */
+
+opt_machine_mode
+mode_for_vector (complex_mode innermode, poly_uint64 nunits)
+{
+  return mode_for_vector (machine_mode (innermode), nunits);
 }
 
 /* If a piece of code is using vector mode VECTOR_MODE and also wants
@@ -536,6 +564,15 @@ related_vector_mode (machine_mode vector_mode, scalar_mode element_mode,
 {
   gcc_assert (VECTOR_MODE_P (vector_mode));
   return targetm.vectorize.related_mode (vector_mode, element_mode, nunits);
+}
+
+opt_machine_mode
+related_vector_mode (machine_mode vector_mode,
+		     complex_mode element_mode, poly_uint64 nunits)
+{
+  gcc_assert (VECTOR_MODE_P (vector_mode));
+  return targetm.vectorize.related_mode_complex (vector_mode, element_mode,
+						 nunits);
 }
 
 /* If a piece of code is using vector mode VECTOR_MODE and also wants
