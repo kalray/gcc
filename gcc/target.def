@@ -3266,6 +3266,16 @@ a pointer to int.",
  bool, (ao_ref *ref),
  default_ref_may_alias_errno)
 
+/* Return the rtx representation of a complex with a specified mode.  */
+DEFHOOK
+(gen_rtx_complex,
+ "This hook should return an rtx representing a complex of mode @var{machine_mode} built from @var{real_part} and @var{imag_part}.\n\
+  If both arguments are @code{NULL}, create them as registers.\n\
+ The default is @code{gen_rtx_CONCAT}.",
+ rtx,
+ (machine_mode mode, rtx real_part, rtx imag_part),
+ default_gen_rtx_complex)
+
 /* Returns the value corresponding to the specified part of a complex.  */
 DEFHOOK
 (read_complex_part,
