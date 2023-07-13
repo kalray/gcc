@@ -3516,7 +3516,7 @@ pass_forwprop::execute (function *fun)
 	    {
 	      /* Rewrite stores of a single-use complex build expression
 	         to component-wise stores.  */
-	      use_operand_p use_p;
+	      /*use_operand_p use_p;
 	      gimple *use_stmt;
 	      if (single_imm_use (lhs, &use_p, &use_stmt)
 		  && gimple_store_p (use_stmt)
@@ -3552,7 +3552,8 @@ pass_forwprop::execute (function *fun)
 		  gsi_remove (&gsi, true);
 		}
 	      else
-		gsi_next (&gsi);
+		gsi_next (&gsi);*/
+	      gsi_next (&gsi);
 	    }
 	  else if (code == CONSTRUCTOR
 		   && VECTOR_TYPE_P (TREE_TYPE (rhs))

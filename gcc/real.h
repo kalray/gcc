@@ -189,7 +189,8 @@ extern const struct real_format *
 			: (gcc_unreachable (), 0)])
 
 #define FLOAT_MODE_FORMAT(MODE) \
-  (REAL_MODE_FORMAT (as_a <scalar_float_mode> (GET_MODE_INNER (MODE))))
+  (REAL_MODE_FORMAT (as_a <scalar_float_mode> \
+    (GET_MODE_INNER ((COMPLEX_FLOAT_MODE_P (MODE)) ? (GET_MODE_INNER (MODE)) : (MODE)))))
 
 /* The following macro determines whether the floating point format is
    composite, i.e. may contain non-consecutive mantissa bits, in which
