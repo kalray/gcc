@@ -7404,7 +7404,7 @@ kvx_addr_space_legitimize_address (rtx x, rtx oldx, machine_mode mode,
 				   addr_space_t as)
 {
   if (as == KVX_ADDR_SPACE_CONVERT)
-    error ("__convert should be used only in explicit pointer casting");
+    error ("%<__convert%> should be used only in explicit pointer casting");
 
   return kvx_legitimize_address (x, oldx, mode);
 }
@@ -7432,7 +7432,7 @@ kvx_addr_space_convert (rtx op, tree from_type, tree to_type ATTRIBUTE_UNUSED)
 		 ? "Implicit conversion from uncached pointer to cached one"
 		 : "Implicit conversion from cached pointer to uncached one");
       inform (input_location,
-	      "Use (__convert <type> *) to acknowledge this conversion");
+	      "Use %<(__convert <type> *)%> to acknowledge this conversion");
     }
   return op;
 }
@@ -8765,7 +8765,7 @@ kvx_handle_fixed_reg_option (const char *arg)
 
   if (first_reg < 0)
     {
-      error ("Unknown register %s passed to -ffixed-reg.", arg);
+      error ("Unknown register %<%s%> passed to %<-ffixed-reg%>", arg);
       return false;
     }
 
@@ -8779,7 +8779,7 @@ kvx_handle_fixed_reg_option (const char *arg)
 	  }
       if (last_reg < 0)
 	{
-	  error ("Unknown register %s passed to -ffixed-reg.", dash + 1);
+	  error ("Unknown register %<%s%> passed to %<-ffixed-reg%>", dash + 1);
 	  return false;
 	}
     }
@@ -8810,7 +8810,7 @@ kvx_handle_stack_limit_symbol_option (const char *arg)
       /* Only allow $sr as stack-limit register */
       if (strncmp (arg, "__cos_stack_limit", 17))
 	{
-	  error ("only `__cos_stack_limit' can be used as stack-limit symbol");
+	  error ("only %<__cos_stack_limit%> can be used as stack-limit symbol");
 	}
       else
 	{
@@ -8823,7 +8823,7 @@ kvx_handle_stack_limit_symbol_option (const char *arg)
     }
   else
     {
-      error ("-fstack-limit-* is not supported.");
+      error ("%<-fstack-limit-*%> is not supported");
     }
 
   return false;
@@ -8853,7 +8853,7 @@ kvx_handle_stack_limit_register_option (const char *arg)
     }
   else
     {
-      error ("-fstack-limit-* is not supported.");
+      error ("%<-fstack-limit-*%> is not supported");
     }
 
   return false;
