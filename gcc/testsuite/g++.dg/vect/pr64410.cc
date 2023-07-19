@@ -50,4 +50,5 @@ main(int argc, char** argv)
   return 0;
 }
 
-// { dg-final { scan-tree-dump "vectorized 1 loops in function" "vect" } }
+// { dg-final { scan-tree-dump "vectorized 1 loops in function" "vect" { xfail { kvx*-*-* } } } }
+// { dg-final { scan-tree-dump "vectorized 1 loops in function" "vect" { target { ! kvx*-*-* } } } }

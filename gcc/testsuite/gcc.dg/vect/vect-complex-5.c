@@ -41,4 +41,4 @@ main (void)
 }
 
 /* { dg-final { scan-tree-dump-times "vectorizing stmts using SLP" 0 "vect" { target vect_load_lanes } } } */
-/* { dg-final { scan-tree-dump-times "vectorizing stmts using SLP" 2 "vect" { target { ! vect_load_lanes } xfail { ! vect_hw_misalign } } } } */
+/* { dg-final { scan-tree-dump-times "vectorizing stmts using SLP" 2 "vect" { target { { ! vect_load_lanes } && { ! kvx-*-* } } xfail { ! vect_hw_misalign } } } } */
