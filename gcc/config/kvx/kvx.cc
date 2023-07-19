@@ -1491,6 +1491,16 @@ kvx_vectorize_preferred_simd_mode (scalar_mode mode)
   return mode_for_vector (inner_mode, nunits).require ();
 }
 
+static machine_mode
+kvx_vectorize_preferred_simd_mode_complex (complex_mode mode)
+{
+  unsigned inner_size = GET_MODE_SIZE (mode);
+  unsigned nunits = (UNITS_PER_WORD * 2) / inner_size;
+  if (nunits <= 1)
+    return word_mode;
+  return mode_for_vector (mode, nunits).require ();
+}
+
 static rtx
 kvx_gen_rtx_complex (machine_mode mode, rtx real_part, rtx imag_part)
 {
@@ -2154,7 +2164,8 @@ kvx_print_operand (FILE *file, rtx x, int code)
 	}
       return;
 
-    case CONST_DOUBLE: {
+    case CONST_DOUBLE:
+      {
 	long l[2];
 	REAL_VALUE_TYPE r = *CONST_DOUBLE_REAL_VALUE (operand);
 	if (GET_MODE (x) == HFmode)
@@ -2203,8 +2214,8 @@ kvx_print_operand (FILE *file, rtx x, int code)
       {
 	HOST_WIDE_INT value = INTVAL (x);
 	int signed10 = value >= -512 && value < 512;
-	const char *format = signed10? HOST_WIDE_INT_PRINT_DEC:
-				       "0x" HOST_WIDE_INT_PRINT_PADDED_HEX;
+	const char *format = signed10 ? HOST_WIDE_INT_PRINT_DEC :
+	  "0x" HOST_WIDE_INT_PRINT_PADDED_HEX;
 	fprintf (file, format, INTVAL (x));
       }
       return;
@@ -3834,14 +3845,22 @@ kvx_get_chunk_mode (enum machine_mode mode)
   machine_mode chunk_mode = mode;
   if (VECTOR_MODE_P (mode))
     {
-      scalar_mode inner_mode = GET_MODE_INNER (mode);
+      machine_mode inner_mode = GET_MODE_INNER (mode);
       unsigned inner_size = GET_MODE_SIZE (inner_mode);
       if (inner_size >= UNITS_PER_WORD)
 	chunk_mode = inner_mode;
       else
 	{
 	  unsigned nunits = UNITS_PER_WORD / inner_size;
-	  chunk_mode = mode_for_vector (inner_mode, nunits).require ();
+	  complex_mode cplx_mode;
+	  if (is_complex_int_mode (GET_MODE_INNER (mode), &cplx_mode)
+	      || is_complex_float_mode (GET_MODE_INNER (mode), &cplx_mode))
+	    chunk_mode = mode_for_vector (cplx_mode, nunits).require ();
+	  else
+	    {
+	      scalar_mode sc_mode = GET_MODE_INNER (mode);
+	      chunk_mode = mode_for_vector (sc_mode, nunits).require ();
+	    }
 	}
     }
   gcc_assert (GET_MODE_SIZE (chunk_mode) == UNITS_PER_WORD);
@@ -5899,7 +5918,7 @@ kvx_const_vector_value (rtx x, int slice)
 	  value = ((HOST_WIDE_INT) val_0 & 0xFFFFFFFF)
 		  | ((HOST_WIDE_INT) val_1 & 0xFFFFFFFF) << 32;
 	}
-      else if (inner_mode == DFmode)
+      else if ((inner_mode == DFmode))
 	{
 	  long val[2] = {0, 0};
 	  rtx elt_0 = CONST_VECTOR_ELT (x, index + 0);
@@ -9404,6 +9423,9 @@ kvx_omp_device_kind_arch_isa (enum omp_device_kind_arch_isa trait,
 
 #undef TARGET_VECTORIZE_PREFERRED_SIMD_MODE
 #define TARGET_VECTORIZE_PREFERRED_SIMD_MODE kvx_vectorize_preferred_simd_mode
+
+#undef TARGET_VECTORIZE_PREFERRED_SIMD_MODE_COMPLEX
+#define TARGET_VECTORIZE_PREFERRED_SIMD_MODE_COMPLEX kvx_vectorize_preferred_simd_mode_complex
 
 #undef TARGET_GEN_RTX_COMPLEX
 #define TARGET_GEN_RTX_COMPLEX kvx_gen_rtx_complex

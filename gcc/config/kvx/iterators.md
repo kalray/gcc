@@ -434,7 +434,7 @@
 ;; Iterator for the modes that fit in a GPR.
 (define_mode_iterator FITGPR [
   QI HI HF SI SF DI DF HC SC CQI CHI CSI
-  V8QI V4HI V4HF V2SI V2SF
+  V8QI V4HI V4HF V2SI V2SF V4CQI V2CHI
 ])
 
 ;; Iterator for the scalar integer complex modes that fit in a GPR.
@@ -451,7 +451,7 @@
 ;; Iterator for all 64-bit modes.
 (define_mode_iterator ALL64 [
   DI DF SC
-  V8QI V4HI V4HF V2SI V2SF V1DI
+  V8QI V4HI V4HF V2SI V2SF V1DI V4CQI V2CHI
 ])
 
 ;; Iterator for the 8-bit x8 vector modes.
@@ -469,15 +469,33 @@
   V2SI V2SF
 ])
 
-;; Iterator for the 64-bit vector modes.
+;; Iterator for the 64-bit vector of real modes.
 (define_mode_iterator SIMD64 [
   V8QI V4HI V4HF V2SI V2SF V1DI
 ])
 
-;; Iterator for all 128-bit modes.
+;; Iterator for the 64-bit vector of real and complex modes.
+(define_mode_iterator SIMD64_CPLX [
+  V8QI V4HI V4HF V2SI V2SF V1DI
+  V2CHI V4CQI
+])
+
+;; Iterator for all 128-bit real modes.
 (define_mode_iterator ALL128 [
   TI
   V16QI V8HI V8HF V4SI V2DI V4SF V2DF
+])
+
+;; Iterator for all 128-bit real and complex modes.
+(define_mode_iterator ALL128_CPLX [
+  TI
+  V16QI V8HI V8HF V4SI V2DI V4SF V2DF
+  DC V4CHI V8CQI V2SC V2CSI
+])
+
+;; Iterator for the 128-bit vector modes.
+(define_mode_iterator SIMD128_CPLX [
+  V4CHI V8CQI V2SC V2CSI
 ])
 
 ;; Iterator for the 128-bit vector modes.
@@ -581,6 +599,8 @@
   (V16SF   "wx")
   (V8DI    "do")
   (V8DF    "do")
+  (V4CQI   "bo")
+  (V2CHI   "hq")
 ])
 
 ;; Attribute to get the suffix of a complex instruction with conj.
@@ -856,6 +876,8 @@
   (V8OI    "V4OI")
   (V16OI   "V8OI")
   (V32OI   "V16OI")
+  (V4CHI   "V2CHI")
+  (V2CSI   "CSI")
 ])
 
 ;; Attribute to get the half mode of a vector mode.
@@ -882,6 +904,8 @@
   (V16SF   "v8sf")
   (V8DI    "v4di")
   (V8DF    "v4df")
+  (V4CHI   "v2chi")
+  (V2CSI   "csi")
 ])
 
 ;; Attribute to get the half mask MODE of a vector mode.
@@ -1225,6 +1249,9 @@
   (V16SF   "wp")
   (V8DI    "d")
   (V8DF    "d")
+  (V8CQI   "bo")
+  (V4CHI   "hq")
+  (V2CSI   "wp")
 ])
 
 ;; Attribute to get the suffix of a vector by scalar instruction.
@@ -1259,6 +1286,12 @@
   (V8DF    "d")
 ])
 
+;; Attribute to get the suffix of a vector by complex instruction with conj.
+(define_mode_attr chunkxc [
+  (V4CHI   "hcp.c")
+  (V2CSI   "wc.c")
+])
+
 ;; Iterator for the non-byte small element 64-bit vector modes.
 (define_mode_iterator S64B [
   (V8QI "KV3_2") V4HI V2SI
@@ -1288,6 +1321,11 @@
 ;; Iterator for the non-standard 64-bit vector integer modes.
 (define_mode_iterator S64M [
   V8QI V4HI
+])
+
+;; Iterator for the 64-bit vector complex integer modes.
+(define_mode_iterator V64CI [
+  (V4CQI "KV3_2") V2CHI
 ])
 
 ;; Iterator for the small element 128-bit vector FP modes.
@@ -1350,6 +1388,22 @@
 ;; Iterator sames as V128J on kv3-1 and same as V128I on kv3-2.
 (define_mode_iterator V128M [
   V8HI (V4SI "KV3_1") V2DI
+])
+
+;; Iterator for all the 128-bit vector complex integer modes.
+(define_mode_iterator V128CI [
+  (V8CQI "KV3_2") V4CHI V2CSI
+])
+
+;; Iterator for all the 128-bit vector complex integer modes with conjugate.
+(define_mode_iterator V128CC [
+  (V4CHI "KV3_1") (V2CSI "KV3_1")
+])
+
+;; Iterator for all the 128-bit vector complex integer modes supported both on 
+;; KV3_1 and KV3_2.
+(define_mode_iterator V128CB [
+  V4CHI V2CSI
 ])
 
 ;; Iterator for the small element 256-bit vector FP modes.
