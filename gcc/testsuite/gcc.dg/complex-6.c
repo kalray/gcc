@@ -9,5 +9,6 @@ foo (__complex float a, __complex float b)
   return a * b;
 }
 
-/* { dg-final { scan-tree-dump-times "unord" 1 "cplxlower1" { target { ! rx*-*-* } } } } */
-/* { dg-final { scan-tree-dump-times "__mulsc3" 1 "cplxlower1" { target { ! rx*-*-* } } } } */
+/* { dg-final { scan-tree-dump-times "unord" 1 "cplxlower1" { target { ! { rx*-*-* kvx*-*-* } } } } } */
+/* { dg-final { scan-tree-dump-times "__mulsc3" 1 "cplxlower1" { target { ! { rx*-*-* kvx*-*-* } } } } } */
+/* { dg-final { scan-tree-dump-times "__mulsc3" 0 "cplxlower1" { target { kvx*-*-* } } } } */
