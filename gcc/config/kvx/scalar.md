@@ -219,6 +219,24 @@
   [(set_attr "type" "alu_tiny")]
 )
 
+(define_insn "neghi2"
+  [(set (match_operand:HI 0 "register_operand" "=r")
+        (neg:HI (match_operand:HI 1 "register_operand" "r")))]
+  ""
+  "neghq %0 = %1"
+  [(set_attr "type" "alu_tiny_x")
+   (set_attr "length" "8")]
+)
+
+(define_insn "negqi2"
+  [(set (match_operand:QI 0 "register_operand" "=r")
+        (neg:QI (match_operand:QI 1 "register_operand" "r")))]
+  "KV3_2"
+  "negbo %0 = %1"
+  [(set_attr "type" "alu_tiny_x")
+   (set_attr "length" "8")]
+)
+
 (define_insn "ssneg<mode>2"
   [(set (match_operand:SIDI 0 "register_operand" "=r")
         (ss_neg:SIDI (match_operand:SIDI 1 "register_operand" "r")))]
@@ -3485,6 +3503,210 @@
   }
 )
 
+;; CPLX_I
+
+(define_insn "add<mode>3"
+  [(set (match_operand:CPLX_I 0 "register_operand" "=r,r")
+          (plus:CPLX_I
+           (match_operand:CPLX_I 1 "register_operand" "r,r")
+           (match_operand:CPLX_I 2 "register_s32_operand" "r,i")))]
+  ""
+  "add<suffix> %0 = %1, %2"
+  [(set_attr "type"   "alu_tiny,alu_tiny_x")
+   (set_attr "length" "4,8")]
+)
+
+(define_insn "sub<mode>3"
+  [(set (match_operand:CPLX_I 0 "register_operand" "=r,r")
+          (minus:CPLX_I
+           (match_operand:CPLX_I 1 "register_s32_operand" "r,i")
+           (match_operand:CPLX_I 2 "register_operand" "r,r")))]
+  ""
+  "sbf<suffix> %0 = %2, %1"
+  [(set_attr "type"   "alu_tiny,alu_tiny_x")
+   (set_attr "length" "4,8")]
+)
+
+(define_insn "neg<mode>2"
+  [(set (match_operand:CPLX_I 0 "register_operand" "=r")
+          (neg:CPLX_I (match_operand:CPLX_I 1 "register_operand" "r")))]
+  ""
+  "neg<suffix> %0 = %1"
+  [(set_attr "type" "alu_tiny_x")
+   (set_attr "length" "8")]
+)
+
+(define_insn "addconj<mode>3"
+  [(set (match_operand:CPLX_C 0 "register_operand" "=r,r")
+          (plus:CPLX_C
+           (conj:CPLX_C (match_operand:CPLX_C 1 "register_operand" "r,r"))
+           (match_operand:CPLX_C 2 "register_s32_operand" "r,i")))]
+  "KV3_1"
+  "add<suffixc> %0 = %1, %2"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "4,8")]
+)
+
+(define_insn "subconj<mode>3"
+  [(set (match_operand:CPLX_C 0 "register_operand" "=r,r")
+          (minus:CPLX_C
+           (match_operand:CPLX_C 1 "register_s32_operand" "r,i")
+           (conj:CPLX_C (match_operand:CPLX_C 2 "register_operand" "r,r"))))]
+  "KV3_1"
+  "sbf<suffixc> %0 = %2, %1"
+  [(set_attr "type" "alu_lite,alu_lite_x")
+   (set_attr "length" "4,8")]
+)
+
+(define_expand "conj<mode>2"
+  [(set (match_operand:CPLX_C 0 "register_operand" "=r")
+        (conj:CPLX_C (match_operand:CPLX_C 1 "register_operand" "r")))]
+  ""
+  {
+    if (KV3_1)
+      emit_insn (gen_addconj<mode>3 (operands[0], operands[1], gen_rtx_CONST_INT (<MODE>mode, 0)));
+    else if (KV3_2)
+      emit_insn (gen_conj<mode>2_2 (operands[0], operands[1]));
+    else
+      gcc_unreachable ();
+    DONE;
+  }
+)
+
+(define_insn_and_split "conj<mode>2_2"
+  [(set (match_operand:CPLX_C 0 "register_operand" "=r")
+        (conj:CPLX_C (match_operand:CPLX_C 1 "register_operand" "r")))
+   (clobber (match_scratch:CPLX_C 2 "=&r"))]
+  "KV3_2"
+  "#"
+  "KV3_2 && reload_completed"
+  [(set (match_dup 2) (match_dup 1))
+   (set (match_dup 0)
+        (neg:<MODE> (match_dup 1)))
+   (set (zero_extract:<HWIDE> (subreg:<HWIDE> (match_dup 0) 0)
+                        (const_int <innersize>)
+                        (const_int 0))
+        (subreg:<HWIDE> (match_dup 2) 0))]
+  {
+    if (GET_CODE (operands[2]) == SCRATCH)
+      operands[2] = gen_reg_rtx (<MODE>mode);
+  }
+)
+
+;; CQI
+
+(define_insn_and_split "conjcqi2"
+  [(set (match_operand:CQI 0 "register_operand" "=r")
+        (conj:CQI (match_operand:CQI 1 "register_operand" "r")))
+   (clobber (match_scratch:CQI 2 "=&r"))]
+  "KV3_2"
+  "#"
+  "KV3_2"
+  [(set (match_dup 2) (match_dup 1))
+   (set (match_dup 0)
+        (neg:CQI (match_dup 1)))
+   (set (zero_extract:SI (subreg:SI (match_dup 0) 0)
+                        (const_int 8)
+                        (const_int 0))
+        (subreg:SI (match_dup 2) 0))]
+  {
+    if (GET_CODE (operands[2]) == SCRATCH)
+      operands[2] = gen_reg_rtx (CQImode);
+  }
+)
+
+;; CSI
+
+(define_expand "mulcsi3"
+[(set (match_operand:CSI 0 "register_operand" "=r")
+      (mult:CSI (match_operand:CSI 1 "register_operand" "r")
+                (match_operand:CSI 2 "register_operand" "r")))]
+  ""
+  {
+    if (KV3_1)
+      emit_insn (gen_mulcsi3_1 (operands[0], operands[1], operands[2]));
+    else if (KV3_2)
+      {
+        rtx temp0 = gen_reg_rtx (V2CSImode);
+        rtx temp0_lo = gen_lowpart (CSImode, temp0);
+        rtx temp0_hi = gen_highpart (CSImode, temp0);
+        rtx temp0_lo_di = simplify_gen_subreg (DImode, temp0_lo, CSImode, 0);
+        rtx temp0_hi_di = simplify_gen_subreg (DImode, temp0_hi, CSImode, 0);
+        rtx op0_di = simplify_gen_subreg (DImode, operands[0], CSImode, 0);
+        emit_insn (gen_kvx_mm212w (simplify_gen_subreg (V4SImode, temp0, V2CSImode, 0),
+                                   simplify_gen_subreg (V2SImode, operands[1], CSImode, 0),
+                                   simplify_gen_subreg (V2SImode, operands[2], CSImode, 0)));
+        emit_insn (gen_kvx_sbmm8d (temp0_hi_di, temp0_hi_di, gen_rtx_CONST_INT (DImode, 0x0804020180402010)));
+        emit_insn (gen_addcsi3 (operands[0], temp0_lo, temp0_hi));
+        emit_insn (gen_subcsi3 (temp0_lo, temp0_lo, temp0_hi));
+        emit_insn (gen_insvdi (op0_di, GEN_INT (32), GEN_INT (0), temp0_lo_di));
+      }
+    else
+      gcc_unreachable ();
+    DONE;
+  }
+)
+
+(define_insn "mulcsi3_1"
+  [(set (match_operand:CSI 0 "register_operand" "=r,r,r,r")
+        (mult:CSI (match_operand:CSI 1 "register_operand" "r,r,r,r")
+                 (match_operand:CSI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")))]
+  "KV3_1"
+  "mulwc %0 = %1, %2"
+  [(set_attr "type" "mau,mau,mau_x,mau_y")
+   (set_attr "length" "4,4,8,12")]
+)
+
+(define_insn "mulconjcsi3"
+  [(set (match_operand:CSI 0 "register_operand" "=r")
+        (mult:CSI (conj:CSI (match_operand:CSI 1 "register_operand" "r"))
+                  (match_operand:CSI 2 "register_operand" "r")))]
+  "KV3_1"
+  "mulwc.c %0 = %1, %2"
+  [(set_attr "type" "mau")
+   (set_attr "length" "4")]
+)
+
+;; CDI
+
+(define_insn "addcdi3"
+  [(set (match_operand:CDI 0 "register_operand" "=r")
+          (plus:CDI
+           (match_operand:CDI 1 "register_operand" "r")
+           (match_operand:CDI 2 "register_operand" "r")))]
+  ""
+  "addd %x0 = %x1, %x2\n\taddd %y0 = %y1, %y2"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length" "8")]
+)
+
+(define_insn "subcdi3"
+  [(set (match_operand:CDI 0 "register_operand" "=r")
+        (minus:CDI (match_operand:CDI 1 "register_operand" "r")
+                  (match_operand:CDI 2 "register_operand" "r")))]
+  ""
+  "sbfd %x0 = %x2, %x1\n\tsbfd %y0 = %y2, %y1"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length" "8")]
+)
+
+(define_insn "negcdi2"
+  [(set (match_operand:CDI 0 "register_operand" "=r")
+          (neg:CDI (match_operand:CDI 1 "register_operand" "r")))]
+  ""
+  "negd %x0 = %x1\n\tnegd %y0 = %y1"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length" "8")]
+)
+
+(define_insn "conjcdi2"
+  [(set (match_operand:CDI 0 "register_operand" "=r")
+          (conj:CDI (match_operand:CDI 1 "register_operand" "r")))]
+  ""
+  "copyd %x0 = %x1\n\tnegd %y0 = %y1"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length" "8")]
+)
 
 ;; HF
 
@@ -4294,3 +4516,216 @@
   }
 )
 
+;; SC
+
+(define_insn "addsc3"
+  [(set (match_operand:SC 0 "register_operand" "=r")
+        (plus:SC (match_operand:SC 1 "register_operand" "r")
+                 (match_operand:SC 2 "register_operand" "r")))]
+  ""
+  "faddwc %0 = %1, %2"
+  [(set_attr "type" "mau_fpu")]
+)
+
+(define_insn "subsc3"
+  [(set (match_operand:SC 0 "register_operand" "=r")
+        (minus:SC (match_operand:SC 1 "register_operand" "r")
+                  (match_operand:SC 2 "register_operand" "r")))]
+  ""
+  "fsbfwc %0 = %2, %1"
+  [(set_attr "type" "mau_fpu")]
+)
+
+(define_insn "negsc2"
+  [(set (match_operand:SC 0 "register_operand" "=r")
+        (neg:SC (match_operand:SC 1 "register_operand" "r")))]
+  ""
+  "fnegwp %0 = %1"
+  [(set (attr "type")
+   (if_then_else (match_test "KV3_1")
+                      (const_string "alu_lite") (const_string "alu_tiny")))]
+)
+
+(define_insn "mulsc3"
+  [(set (match_operand:SC 0 "register_operand" "=r")
+        (mult:SC (match_operand:SC 1 "register_operand" "r")
+                 (match_operand:SC 2 "register_operand" "r")))]
+  ""
+  "fmulwc %0 = %1, %2"
+  [(set_attr "type" "mau_fpu")]
+)
+
+(define_insn "fmasc4"
+  [(set (match_operand:SC 0 "register_operand" "=r")
+        (fma:SC (match_operand:SC 1 "register_operand" "r")
+                (match_operand:SC 2 "register_operand" "r")
+                (match_operand:SC 3 "register_operand" "0")))]
+  "KV3_2"
+  "ffmawc %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn "fnmasc4"
+  [(set (match_operand:SC 0 "register_operand" "=r")
+        (fma:SC (neg:SC (match_operand:SC 1 "register_operand" "r"))
+                (match_operand:SC 2 "register_operand" "r")
+                (match_operand:SC 3 "register_operand" "0")))]
+  "KV3_2"
+  "ffmswc %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn "addconjsc3"
+  [(set (match_operand:SC 0 "register_operand" "=r")
+        (plus:SC (conj:SC (match_operand:SC 1 "register_operand" "r"))
+                 (match_operand:SC 2 "register_operand" "r")))]
+  ""
+  "faddwc.c %0 = %1, %2"
+  [(set_attr "type" "mau_fpu")]
+)
+
+(define_insn "subconjsc3"
+  [(set (match_operand:SC 0 "register_operand" "=r")
+        (minus:SC (match_operand:SC 1 "register_operand" "r")
+                  (conj:SC (match_operand:SC 2 "register_operand" "r"))))]
+  ""
+  "fsbfwc.c %0 = %2, %1"
+  [(set_attr "type" "mau_fpu")]
+)
+
+(define_insn "mulconjsc3"
+  [(set (match_operand:SC 0 "register_operand" "=r")
+        (mult:SC (conj:SC (match_operand:SC 1 "register_operand" "r"))
+                 (match_operand:SC 2 "register_operand" "r")))]
+  ""
+  "fmulwc.c %0 = %1, %2"
+  [(set_attr "type" "mau_fpu")]
+)
+
+(define_insn "fmaconjsc4"
+  [(set (match_operand:SC 0 "register_operand" "=r")
+        (fma:SC (conj:SC (match_operand:SC 1 "register_operand" "r"))
+                (match_operand:SC 2 "register_operand" "r")
+                (match_operand:SC 3 "register_operand" "0")))]
+  "KV3_2"
+  "ffmawc.c %0 = %1, %2"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn "fnmaconjsc4"
+  [(set (match_operand:SC 0 "register_operand" "=r")
+        (fma:SC (neg:SC (match_operand:SC 1 "register_operand" "r"))
+                (conj:SC (match_operand:SC 2 "register_operand" "r"))
+                (match_operand:SC 3 "register_operand" "0")))]
+  "KV3_2"
+  "ffmswc.c %0 = %2, %1"
+  [(set_attr "type" "mau_auxr_fpu")]
+)
+
+(define_insn "conjsc2"
+  [(set (match_operand:SC 0 "register_operand" "=r")
+        (conj:SC (match_operand:SC 1 "register_operand" "r")))]
+  ""
+  "fnegd %0 = %1"
+  [(set (attr "type")
+   (if_then_else (match_test "KV3_1")
+		      (const_string "alu_lite") (const_string "alu_tiny")))]
+)
+
+(define_expand "crot90sc2"
+  [(match_operand:SC 0 "register_operand" "")
+   (match_operand:SC 1 "register_operand" "")]
+  ""
+  {
+    emit_insn (gen_conjsc2 (operands[0], operands[1]));
+    emit_insn (gen_kvx_sbmm8d (simplify_gen_subreg (DImode, operands[0], SCmode, 0),
+			       simplify_gen_subreg (DImode, operands[0], SCmode, 0),
+			       gen_rtx_CONST_INT (DImode, 0x0804020180402010)));
+    DONE;
+  }
+)
+
+(define_expand "crot270sc2"
+  [(match_operand:SC 0 "register_operand" "")
+   (match_operand:SC 1 "register_operand" "")]
+  ""
+  {
+    emit_insn (gen_kvx_sbmm8d (simplify_gen_subreg (DImode, operands[0], SCmode, 0),
+			       simplify_gen_subreg (DImode, operands[1], SCmode, 0),
+			       gen_rtx_CONST_INT (DImode, 0x0804020180402010)));
+    emit_insn (gen_conjsc2 (operands[0], operands[0]));
+    DONE;
+  }
+)
+
+;; Patterns for cadd90sc3 and cadd270sc3 are not implemented because KVX cannot
+;; accelerate these operations
+
+;; DC
+
+(define_insn "adddc3"
+  [(set (match_operand:DC 0 "register_operand" "=r")
+        (plus:DC (match_operand:DC 1 "register_operand" "r")
+                 (match_operand:DC 2 "register_operand" "r")))]
+  ""
+  "fadddc %0 = %1, %2"
+  [(set (attr "type")
+   (if_then_else (match_test "KV3_1")
+                      (const_string "mau_auxr_fpu") (const_string "mau_fpu")))]
+)
+
+(define_insn "subdc3"
+  [(set (match_operand:DC 0 "register_operand" "=r")
+        (minus:DC (match_operand:DC 1 "register_operand" "r")
+                  (match_operand:DC 2 "register_operand" "r")))]
+  ""
+  "fsbfdc %0 = %2, %1"
+  [(set (attr "type")
+   (if_then_else (match_test "KV3_1")
+                      (const_string "mau_auxr_fpu") (const_string "mau_fpu")))]
+)
+
+(define_insn "negdc2"
+  [(set (match_operand:DC 0 "register_operand" "=r")
+        (neg:DC (match_operand:DC 1 "register_operand" "r")))]
+  ""
+  "fnegd %x0 = %x1\n\tfnegd %y0 = %y1"
+  [(set (attr "type")
+   (if_then_else (match_test "KV3_1")
+                      (const_string "alu_lite_x2") (const_string "alu_tiny_x2")))
+   (set_attr "length" "8")]
+)
+
+(define_insn "addconjdc3"
+  [(set (match_operand:DC 0 "register_operand" "=r")
+        (plus:DC (conj:DC (match_operand:DC 1 "register_operand" "r"))
+                 (match_operand:DC 2 "register_operand" "r")))]
+  ""
+  "fadddc.c %0 = %1, %2"
+  [(set (attr "type")
+   (if_then_else (match_test "KV3_1")
+                      (const_string "mau_auxr_fpu") (const_string "mau_fpu")))]
+)
+
+(define_insn "subconjdc3"
+  [(set (match_operand:DC 0 "register_operand" "=r")
+        (minus:DC (match_operand:DC 1 "register_operand" "r")
+                  (conj:DC (match_operand:DC 2 "register_operand" "r"))))]
+  ""
+  "fsbfdc.c %0 = %2, %1"
+  [(set (attr "type")
+   (if_then_else (match_test "KV3_1")
+                      (const_string "mau_auxr_fpu") (const_string "mau_fpu")))]
+)
+
+(define_insn_and_split "conjdc2"
+  [(set (match_operand:DC 0 "register_operand" "=r")
+        (conj:DC (match_operand:DC 1 "register_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:DF (match_dup 0) 0) (subreg:DF (match_dup 1) 0))
+   (set (subreg:DF (match_dup 0) 8)
+        (neg:DF (subreg:DF (match_dup 1) 8)))]
+  ""
+)

@@ -20,6 +20,8 @@ along with GCC; see the file COPYING3.  If not see
 INT_MODE (OI, 32);
 FLOAT_MODE (HF, 2, 0);
 ADJUST_FLOAT_FORMAT (HF, &ieee_half_format);
+COMPLEX_MODES (INT);
+COMPLEX_MODES (FLOAT);
 
 VECTOR_MODE (INT, QI, 8);          /* V8QI */
 VECTOR_MODE (INT, QI, 16);         /* V16QI */
