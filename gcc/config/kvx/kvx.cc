@@ -57,6 +57,7 @@
 #include "output.h"
 #include "flags.h"
 #include "explow.h"
+#include "expmed.h"
 #include "expr.h"
 #include "reload.h"
 #include "langhooks.h"
@@ -1490,6 +1491,292 @@ kvx_vectorize_preferred_simd_mode (scalar_mode mode)
   return mode_for_vector (inner_mode, nunits).require ();
 }
 
+static rtx
+kvx_gen_rtx_complex (machine_mode mode, rtx real_part, rtx imag_part)
+{
+  machine_mode imode = GET_MODE_INNER (mode);
+
+  if ((real_part == imag_part) && (real_part == CONST0_RTX (imode)))
+    {
+      if (CONST_DOUBLE_P (real_part))
+	return const_double_from_real_value (dconst0, mode);
+      else if (CONST_INT_P (real_part))
+	return GEN_INT (0);
+      else
+	gcc_unreachable ();
+    }
+
+  bool saved_generating_concat_p = generating_concat_p;
+  generating_concat_p = false;
+  rtx complex_reg = gen_reg_rtx (mode);
+  generating_concat_p = saved_generating_concat_p;
+
+  if (real_part)
+    {
+      gcc_assert (imode == GET_MODE (real_part));
+      write_complex_part (complex_reg, real_part, REAL_P, true);
+    }
+
+  if (imag_part)
+    {
+      gcc_assert (imode == GET_MODE (imag_part));
+      write_complex_part (complex_reg, imag_part, IMAG_P, false);
+    }
+
+  return complex_reg;
+}
+
+rtx
+kvx_read_complex_part (rtx cplx, complex_part_t part)
+{
+  machine_mode cmode;
+  scalar_mode imode;
+  unsigned ibitsize;
+
+  if (GET_CODE (cplx) == CONCAT)
+    return XEXP (cplx, part);
+
+  cmode = GET_MODE (cplx);
+  imode = GET_MODE_INNER (cmode);
+  ibitsize = GET_MODE_BITSIZE (imode);
+
+  if (COMPLEX_MODE_P (cmode) && (part == BOTH_P))
+    return cplx;
+
+  /* For constants under 32-bit vector constans are folded during expand,
+     so we need to compensate for it as cplx is an integer constant
+     In this case cmode and imode are equal.  */
+  if (cmode == imode)
+    ibitsize /= 2;
+
+  /* Cannot get a part of a VOIDmode element.  */
+  if (cmode == E_VOIDmode)
+    return cplx;
+
+  /* There is no zero const_tetra, so we cheat by using zero const_double and
+     catch the case here.  */
+  if ((cmode == E_DCmode) && (GET_CODE (cplx) == CONST_DOUBLE))
+    return CONST0_RTX (E_DFmode);
+
+  /* Special case reads from complex constants that got spilled to memory.  */
+  if (MEM_P (cplx) && GET_CODE (XEXP (cplx, 0)) == SYMBOL_REF)
+    {
+      tree decl = SYMBOL_REF_DECL (XEXP (cplx, 0));
+      if (decl && TREE_CODE (decl) == COMPLEX_CST)
+	{
+	  tree cplx_part = (part == IMAG_P) ? TREE_IMAGPART (decl)
+	    : (part == REAL_P) ? TREE_REALPART (decl)
+	    : TREE_COMPLEX_BOTH_PARTS (decl);
+	  if (CONSTANT_CLASS_P (cplx_part))
+	    return expand_expr (cplx_part, NULL_RTX, imode, EXPAND_NORMAL);
+	}
+    }
+
+  /* For MEMs simplify_gen_subreg may generate an invalid new address
+     because, e.g., the original address is considered mode-dependent
+     by the target, which restricts simplify_subreg from invoking
+     adjust_address_nv.  Instead of preparing fallback support for an
+     invalid address, we call adjust_address_nv directly.  */
+  if (MEM_P (cplx))
+    {
+      if (part == BOTH_P)
+	return adjust_address_nv (cplx, cmode, 0);
+      else
+	return adjust_address_nv (cplx, imode, (part == IMAG_P)
+				  ? GET_MODE_SIZE (imode) : 0);
+    }
+
+  /* If the sub-object is at least word sized, then we know that subregging
+     will work.  This special case is important, since extract_bit_field
+     wants to operate on integer modes, and there's rarely an OImode to
+     correspond to TCmode.  */
+  if (ibitsize >= BITS_PER_WORD
+      /* For hard regs we have exact predicates.  Assume we can split
+	 the original object if it spans an even number of hard regs.
+	 This special case is important for SCmode on 64-bit platforms
+	 where the natural size of floating-point regs is 32-bit.  */
+      || (REG_P (cplx)
+	  && REGNO (cplx) < FIRST_PSEUDO_REGISTER
+	  && REG_NREGS (cplx) % 2 == 0))
+    {
+      rtx ret = simplify_gen_subreg (imode, cplx, cmode, (part == IMAG_P)
+				     ? GET_MODE_SIZE (imode) : 0);
+      if (ret)
+	return ret;
+      else
+	/* simplify_gen_subreg may fail for sub-word MEMs.  */
+	gcc_assert (MEM_P (cplx) && ibitsize < BITS_PER_WORD);
+    }
+
+  if (part == BOTH_P)
+    return extract_bit_field (cplx, 2 * ibitsize, 0, true, NULL_RTX, cmode,
+			      cmode, false, NULL);
+  else
+    return extract_bit_field (cplx, ibitsize, (part == IMAG_P) ? ibitsize : 0,
+			      true, NULL_RTX, imode, imode, false, NULL);
+}
+
+void
+kvx_write_complex_part (rtx cplx, rtx val, complex_part_t part, bool undefined_p)
+{
+  machine_mode cmode;
+  scalar_mode imode;
+  unsigned ibitsize;
+
+  cmode = GET_MODE (cplx);
+  imode = GET_MODE_INNER (cmode);
+  ibitsize = GET_MODE_BITSIZE (imode);
+
+  /* special case for constants */
+  if (GET_CODE (val) == CONST_VECTOR)
+    {
+      if (part == BOTH_P)
+	{
+	  machine_mode temp_mode = E_BLKmode;;
+	  switch (cmode)
+	    {
+	    case E_CQImode:
+	      temp_mode = E_HImode;
+	      break;
+	    case E_CHImode:
+	      temp_mode = E_SImode;
+	      break;
+	    case E_CSImode:
+	      temp_mode = E_DImode;
+	      break;
+	    case E_SCmode:
+	      temp_mode = E_DFmode;
+	      break;
+	    case E_CDImode:
+	      temp_mode = E_TImode;
+	      break;
+	    case E_DCmode:
+	    default:
+	      break;
+	    }
+
+	  if (temp_mode != E_BLKmode)
+	    {
+	      rtx temp_reg = gen_reg_rtx (temp_mode);
+	      store_bit_field (temp_reg, GET_MODE_BITSIZE (temp_mode), 0, 0,
+			       0, GET_MODE (val), val, false, undefined_p);
+	      emit_move_insn (cplx,
+			      simplify_gen_subreg (cmode, temp_reg, temp_mode,
+						   0));
+	    }
+	  else
+	    {
+	      /* write real part and imag part separately */
+	      gcc_assert (GET_CODE (val) == CONST_VECTOR);
+	      write_complex_part (cplx, const_vector_elt (val, 0), REAL_P, true);
+	      write_complex_part (cplx, const_vector_elt (val, 1), IMAG_P, false);
+	    }
+	}
+      else
+	write_complex_part (cplx,
+			    const_vector_elt (val,
+					      ((part == REAL_P) ? 0 : 1)),
+			    part, true);
+      return;
+    }
+
+  if ((part == BOTH_P) && !MEM_P (cplx))
+    {
+      /* Real and imag parts can be passed in a CONCAT during the expand of a
+	 COMPLEX_EXPR.  */
+      if (GET_CODE (val) == CONCAT)
+	{
+	  emit_move_insn (simplify_gen_subreg (imode, cplx, cmode, 0), XEXP (val, 0));
+	  write_complex_part (cplx, XEXP (val, 1), IMAG_P, false);
+	}
+      else
+	emit_move_insn (cplx, val);
+      return;
+    }
+
+  if ((GET_CODE (val) == CONST_DOUBLE) || (GET_CODE (val) == CONST_INT))
+    {
+      if (part == REAL_P)
+	{
+	  emit_move_insn (gen_lowpart (imode, cplx), val);
+	  return;
+	}
+      else if (part == IMAG_P)
+	{
+	  /* cannot set highpart of a pseudo register */
+	  if (REG_P (cplx) && REGNO (cplx) < FIRST_PSEUDO_REGISTER)
+	    {
+	      emit_move_insn (gen_highpart (imode, cplx), val);
+	      return;
+	    }
+	}
+      else
+	gcc_unreachable ();
+    }
+
+  if (GET_CODE (cplx) == CONCAT)
+    {
+      emit_move_insn (XEXP (cplx, part), val);
+      return;
+    }
+
+  /* For MEMs simplify_gen_subreg may generate an invalid new address
+     because, e.g., the original address is considered mode-dependent
+     by the target, which restricts simplify_subreg from invoking
+     adjust_address_nv.  Instead of preparing fallback support for an
+     invalid address, we call adjust_address_nv directly.  */
+  if (MEM_P (cplx))
+    {
+      if (part == BOTH_P)
+	{
+	  /* Real and imag parts can be passed in a CONCAT during the expand of a
+	     COMPLEX_EXPR.  */
+	  if (GET_CODE (val) == CONCAT)
+	  {
+	    write_complex_part (cplx, XEXP (val, 0), REAL_P);
+	    write_complex_part (cplx, XEXP (val, 1), IMAG_P);
+	  }
+	  else
+	    emit_move_insn (adjust_address_nv (cplx, cmode, 0), val);
+	}
+      else
+	emit_move_insn (adjust_address_nv (cplx, imode, (part == IMAG_P)
+					   ? GET_MODE_SIZE (imode) : 0), val);
+      return;
+    }
+
+  /* If the sub-object is at least word sized, then we know that subregging
+     will work.  This special case is important, since store_bit_field
+     wants to operate on integer modes, and there's rarely an OImode to
+     correspond to TCmode.  */
+  if (ibitsize >= BITS_PER_WORD
+      /* For hard regs we have exact predicates.  Assume we can split
+	 the original object if it spans an even number of hard regs.
+	 This special case is important for SCmode on 64-bit platforms
+	 where the natural size of floating-point regs is 32-bit.  */
+      || (REG_P (cplx)
+	  && REGNO (cplx) < FIRST_PSEUDO_REGISTER
+	  && REG_NREGS (cplx) % 2 == 0))
+    {
+      rtx cplx_part = simplify_gen_subreg (imode, cplx, cmode,
+					   (part ==
+					    IMAG_P) ? GET_MODE_SIZE (imode) :
+					   0);
+      if (cplx_part)
+	{
+	  emit_move_insn (cplx_part, val);
+	  return;
+	}
+      else
+	/* simplify_gen_subreg may fail for sub-word MEMs.  */
+	gcc_assert (MEM_P (cplx) && ibitsize < BITS_PER_WORD);
+    }
+
+  store_bit_field (cplx, ibitsize, (part == IMAG_P) ? ibitsize : 0, 0, 0,
+		   imode, val, false, undefined_p);
+}
+
+
 static bool
 kvx_pass_by_reference (cumulative_args_t cum ATTRIBUTE_UNUSED, const function_arg_info &arg)
 {
@@ -1891,9 +2178,27 @@ kvx_print_operand (FILE *file, rtx x, int code)
 		     (unsigned int) l[0]);
 	    return;
 	  }
+	else if (GET_MODE (x) == HCmode)
+	  {
+	    REAL_VALUE_TO_TARGET_SINGLE (r, l[0]);
+	    fprintf (file, "0x%08x", (unsigned int) l[0]);
+	    return;
+	  }
+	else if (GET_MODE (x) == SCmode)
+	  {
+	    REAL_VALUE_TO_TARGET_DOUBLE (r, l);
+	    fprintf (file, "0x%08x%08x", (unsigned int) l[1],
+		     (unsigned int) l[0]);
+	    return;
+	  }
+	else if (GET_MODE (x) == DCmode)
+	  {
+	    gcc_unreachable ();
+	  }
       }
       gcc_unreachable ();
       return;
+
 
     case CONST_INT:
       {
@@ -5492,6 +5797,109 @@ kvx_const_vector_value (rtx x, int slice)
 	{
 	  value = INTVAL (CONST_VECTOR_ELT (x, index + 0));
 	}
+      else if (inner_mode == CQImode)
+	{
+      if (CONST_VECTOR_P (CONST_VECTOR_ELT (x, 0)))
+      {
+	HOST_WIDE_INT val_0_r = INTVAL (CONST_VECTOR_ELT
+				       (CONST_VECTOR_ELT (x, index + 0), 0));
+	HOST_WIDE_INT val_0_i = INTVAL (CONST_VECTOR_ELT
+				       (CONST_VECTOR_ELT (x, index + 0), 1));
+	HOST_WIDE_INT val_1_r = INTVAL (CONST_VECTOR_ELT
+				       (CONST_VECTOR_ELT (x, index + 1), 0));
+	HOST_WIDE_INT val_1_i = INTVAL (CONST_VECTOR_ELT
+				       (CONST_VECTOR_ELT (x, index + 1), 1));
+	HOST_WIDE_INT val_2_r = INTVAL (CONST_VECTOR_ELT
+				       (CONST_VECTOR_ELT (x, index + 2), 0));
+	HOST_WIDE_INT val_2_i = INTVAL (CONST_VECTOR_ELT
+				       (CONST_VECTOR_ELT (x, index + 2), 1));
+	HOST_WIDE_INT val_3_r = INTVAL (CONST_VECTOR_ELT
+				       (CONST_VECTOR_ELT (x, index + 3), 0));
+	HOST_WIDE_INT val_3_i = INTVAL (CONST_VECTOR_ELT
+				       (CONST_VECTOR_ELT (x, index + 3), 1));
+	value = (val_0_r & 0xFF) | (val_0_i & 0xFF) << 8
+		| (val_1_r & 0xFF) << 16 | (val_1_i & 0xFF) << 24
+		| (val_2_r & 0xFF) << 32 | (val_2_i & 0xFF) << 40
+		| (val_3_r & 0xFF) << 48 | (val_3_i & 0xFF) << 56;
+      }
+      else
+      {
+	HOST_WIDE_INT val_0 = INTVAL (CONST_VECTOR_ELT (x, index + 0));
+	HOST_WIDE_INT val_1 = INTVAL (CONST_VECTOR_ELT (x, index + 1));
+	HOST_WIDE_INT val_2 = INTVAL (CONST_VECTOR_ELT (x, index + 2));
+	HOST_WIDE_INT val_3 = INTVAL (CONST_VECTOR_ELT (x, index + 3));
+	value = (val_0 & 0xFFFF) | (val_1 & 0xFFFF) << 16
+		| (val_2 & 0xFFFF) << 32 | (val_3 & 0xFFFF) << 48;
+      }
+
+	}
+       else if (inner_mode == CHImode)
+	{
+	  if (CONST_VECTOR_P (CONST_VECTOR_ELT (x, 0)))
+	    {
+	      HOST_WIDE_INT val_0_r =
+		INTVAL (CONST_VECTOR_ELT
+			(CONST_VECTOR_ELT (x, index + 0), 0));
+	      HOST_WIDE_INT val_0_i =
+		INTVAL (CONST_VECTOR_ELT
+			(CONST_VECTOR_ELT (x, index + 0), 1));
+	      HOST_WIDE_INT val_1_r =
+		INTVAL (CONST_VECTOR_ELT
+			(CONST_VECTOR_ELT (x, index + 1), 0));
+	      HOST_WIDE_INT val_1_i =
+		INTVAL (CONST_VECTOR_ELT
+			(CONST_VECTOR_ELT (x, index + 1), 1));
+	      value =
+		(val_0_r & 0xFFFF) | (val_0_i & 0xFFFF) << 16 | (val_1_r &
+								 0xFFFF) << 32
+		| (val_1_i & 0xFFFF) << 48;
+	    }
+	  else
+	    {
+	      HOST_WIDE_INT val_0 = INTVAL (CONST_VECTOR_ELT (x, index + 0));
+	      HOST_WIDE_INT val_1 = INTVAL (CONST_VECTOR_ELT (x, index + 1));
+	      value = (val_0 & 0xFFFFFFFF) | (val_1 & 0xFFFFFFFF) << 32;
+	    }
+
+	}
+      else if (inner_mode == CSImode)
+	{
+	  if (CONST_VECTOR_P (CONST_VECTOR_ELT (x, 0)))
+	    {
+	      HOST_WIDE_INT val_0_r =
+		INTVAL (CONST_VECTOR_ELT
+			(CONST_VECTOR_ELT (x, index + 0), 0));
+	      HOST_WIDE_INT val_0_i =
+		INTVAL (CONST_VECTOR_ELT
+			(CONST_VECTOR_ELT (x, index + 0), 1));
+	      value = (val_0_r & 0xFFFFFFFF) | (val_0_i & 0xFFFFFFFF) << 32;
+	    }
+	  else
+	    {
+	      value = INTVAL (CONST_VECTOR_ELT (x, index + 0));
+	    }
+	}
+      else if (inner_mode == SCmode)
+	{
+	  if (CONST_VECTOR_P (CONST_VECTOR_ELT (x, 0)))
+      {
+	long val_0 = 0, val_1 = 0;
+	rtx elt_0 = CONST_VECTOR_ELT (CONST_VECTOR_ELT (x, index + 0), 0);
+	rtx elt_1 = CONST_VECTOR_ELT (CONST_VECTOR_ELT (x, index + 0), 1);
+	REAL_VALUE_TO_TARGET_SINGLE (*CONST_DOUBLE_REAL_VALUE (elt_0), val_0);
+	REAL_VALUE_TO_TARGET_SINGLE (*CONST_DOUBLE_REAL_VALUE (elt_1), val_1);
+	value = ((HOST_WIDE_INT) val_0 & 0xFFFFFFFF)
+		| ((HOST_WIDE_INT) val_1 & 0xFFFFFFFF) << 32;
+      }
+      else
+      {
+	long val[2] = {0, 0};
+	rtx elt_0 = CONST_VECTOR_ELT (x, index + 0);
+	REAL_VALUE_TO_TARGET_DOUBLE (*CONST_DOUBLE_REAL_VALUE (elt_0), val);
+	value = ((HOST_WIDE_INT) val[0] & 0xFFFFFFFF)
+		| ((HOST_WIDE_INT) val[1] & 0xFFFFFFFF) << 32;
+      }
+	}
       else if (inner_mode == HFmode)
 	{
 	  long val_0 = 0, val_1 = 0, val_2 = 0, val_3 = 0;
@@ -8614,6 +9022,19 @@ kvx_float_fits_bits (const REAL_VALUE_TYPE *r, unsigned bitsz,
       REAL_VALUE_TO_TARGET_DOUBLE (*r, l);
       value = (l[0] & 0xFFFFFFFFULL) | ((unsigned long long) l[1] << 32);
     }
+  else if (mode == HCmode)
+    {
+      REAL_VALUE_TO_TARGET_SINGLE (*r, l[0]);
+      value = l[0] & 0xFFFFFFFFULL;
+    }
+  else if (mode == SCmode)
+    {
+      REAL_VALUE_TO_TARGET_SINGLE (*r, l[0]);
+      REAL_VALUE_TO_TARGET_SINGLE (*r, l[1]);
+      value = (l[0] & 0xFFFFFFFFULL) | ((unsigned long long) l[1] << 32);
+    }
+  else if (mode == DCmode)
+    return false;
   else
     gcc_unreachable ();
 
@@ -8713,6 +9134,10 @@ kvx_make_128bit_const (rtx dst, rtx src)
     case CONST_INT:
       value_0 = INTVAL (src);
       value_1 = value_0 < 0 ? HOST_WIDE_INT_M1 : HOST_WIDE_INT_0;
+      break;
+    case CONST_DOUBLE:
+      value_0 = HOST_WIDE_INT_0;
+      value_1 = HOST_WIDE_INT_0;
       break;
     case CONST_WIDE_INT:
       nunits = CONST_WIDE_INT_NUNITS (src);
@@ -9011,6 +9436,15 @@ kvx_omp_device_kind_arch_isa (enum omp_device_kind_arch_isa trait,
 
 #undef TARGET_VECTORIZE_PREFERRED_SIMD_MODE
 #define TARGET_VECTORIZE_PREFERRED_SIMD_MODE kvx_vectorize_preferred_simd_mode
+
+#undef TARGET_GEN_RTX_COMPLEX
+#define TARGET_GEN_RTX_COMPLEX kvx_gen_rtx_complex
+
+#undef TARGET_READ_COMPLEX_PART
+#define TARGET_READ_COMPLEX_PART kvx_read_complex_part
+
+#undef TARGET_WRITE_COMPLEX_PART
+#define TARGET_WRITE_COMPLEX_PART kvx_write_complex_part
 
 #undef TARGET_PROMOTE_FUNCTION_MODE
 #define TARGET_PROMOTE_FUNCTION_MODE kvx_promote_function_mode

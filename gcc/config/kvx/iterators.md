@@ -7,6 +7,9 @@
   (SF "w")
   (HC "w")
   (DI "d")
+  (CQI "h")
+  (CHI "w")
+  (CSI "d")
   (DF "d")
   (SC "d")
   (TI "q")
@@ -41,6 +44,9 @@
   (SI "wz")
   (SF "wz")
   (HC "wz")
+  (CQI "hz")
+  (CHI "wz")
+  (CSI "d")
   (DI "d")
   (DF "d")
   (SC "d")
@@ -342,8 +348,8 @@
 
 ;; Scalar modes used by the mov pattern that fit in a register.
 ;; TI and OI and to be handled elsewhere.
-;; (define_mode_iterator ALLIF [QI HI HF SI SF DI DF HC SC])
-(define_mode_iterator ALLIF [QI HI HF SI SF DI DF])
+;; (define_mode_iterator ALLIF [QI HI HF SI SF DI DF HC SC CQI CHI CSI])
+(define_mode_iterator ALLIF [QI HI HF SI SF DI DF HC SC CQI CHI CSI])
 
 ;; Attribute for ALLIF copies (COPYW, COPYD, COPYQ, COPYO).
 (define_mode_attr copyx [
@@ -357,7 +363,11 @@
   (HC "w")
   (SC "d")
   (TI "q")
+  (DC "q")
   (OI "o")
+  (CHI "w")
+  (CQI "w")
+  (CSI "d")
 ])
 
 (define_mode_iterator ALLP [SI DI])
@@ -373,10 +383,10 @@
 ;; for valid pointer modes: SI or DI. Anything else is an error.
 ;; Values 999 are used for modes where the alternative must always be disabled.
 (define_mode_attr symlen1 [
-  (SI "_x") (DI "_y") (QI "") (HI "") (HF "") (SF "") (DF "") (HC "") (SC "")
+  (SI "_x") (DI "_y") (QI "") (HI "") (HF "") (SF "") (DF "") (HC "") (SC "") (CQI "") (CHI "") (CSI "")
 ])
 (define_mode_attr symlen2 [
-  (SI "8") (DI "12") (QI "999") (HI "999") (HF "999") (SF "999") (DF "999") (HC "999") (SC "999")
+  (SI "8") (DI "12") (QI "999") (HI "999") (HF "999") (SF "999") (DF "999") (HC "999") (SC "999") (CQI "999") (CHI "999") (CSI "999")
 ])
 
 (define_attr "disabled" "yes,no" (const_string "no"))
@@ -428,8 +438,19 @@
 
 ;; Iterator for the modes that fit in a GPR.
 (define_mode_iterator FITGPR [
-  QI HI HF SI SF DI DF HC SC
+  QI HI HF SI SF DI DF HC SC CQI CHI CSI
   V8QI V4HI V4HF V2SI V2SF
+])
+
+;; Iterator for the scalar integer complex modes that fit in a GPR.
+(define_mode_iterator CPLX_I [
+  (CQI "KV3_2") CHI CSI
+])
+
+;; Iterator for the scalar integer complex modes that fit in a GPR
+;; and have a fused conjugate operations.
+(define_mode_iterator CPLX_C [
+  CHI CSI
 ])
 
 ;; Iterator for all 64-bit modes.
@@ -513,6 +534,7 @@
   V16QI V8HI V4SI V2DI
   V32QI V16HI V8SI V4DI
   V64QI V32HI V16SI V8DI
+  CQI CHI CSI CDI SC DC
 ])
 
 ;; Iterator for all modes (integer, float, vector) for MOV*CC.
@@ -534,6 +556,9 @@
   (HF      "h")
   (SF      "w")
   (DF      "d")
+  (CQI     "bo")
+  (CHI     "hq")
+  (CSI     "wp")
   (V8QI    "bo")
   (V4HI    "hq")
   (V4HF    "hq")
@@ -562,6 +587,19 @@
   (V8DI    "do")
   (V8DF    "do")
 ])
+
+;; Attribute to get the suffix of a complex instruction with conj.
+(define_mode_attr suffixc [
+  (CHI   "hcp.c")
+  (CSI   "wc.c")
+])
+
+;; Attribute to get the bit size of inner elements of complex modes.
+(define_mode_attr innersize [
+  (CHI    "16")
+  (CSI    "32")
+])
+
 
 ;; Attribute for LSU and TCA builtin vector suffixes.
 (define_mode_attr lsvs [
@@ -920,6 +958,8 @@
   (V16HF   "V8SF")
   (V8SI    "V4DI")
   (V8SF    "V4DF")
+  (CHI     "SI")
+  (CSI     "DI")
 ])
 
 ;; Attribute to get the half wide mode of a vector mode.
