@@ -1484,6 +1484,145 @@ default_preferred_simd_mode (scalar_mode)
   return word_mode;
 }
 
+/* By default, extract one of the components of the complex value CPLX.  Extract the
+   real part if part is REAL_P, and the imaginary part if it is IMAG_P. If part is
+   BOTH_P, return cplx directly.  */
+
+rtx
+default_read_complex_part (rtx cplx, complex_part_t part)
+{
+  machine_mode cmode;
+  scalar_mode imode;
+  unsigned ibitsize;
+
+  if (part == BOTH_P)
+    return cplx;
+
+  if (GET_CODE (cplx) == CONCAT)
+    return XEXP (cplx, part);
+
+  cmode = GET_MODE (cplx);
+  imode = GET_MODE_INNER (cmode);
+  ibitsize = GET_MODE_BITSIZE (imode);
+
+  /* Special case reads from complex constants that got spilled to memory.  */
+  if (MEM_P (cplx) && GET_CODE (XEXP (cplx, 0)) == SYMBOL_REF)
+    {
+      tree decl = SYMBOL_REF_DECL (XEXP (cplx, 0));
+      if (decl && TREE_CODE (decl) == COMPLEX_CST)
+	{
+	  tree cplx_part =
+	    (part == IMAG_P) ? TREE_IMAGPART (decl) : TREE_REALPART (decl);
+	  if (CONSTANT_CLASS_P (cplx_part))
+	    return expand_expr (cplx_part, NULL_RTX, imode, EXPAND_NORMAL);
+	}
+    }
+
+  /* For MEMs simplify_gen_subreg may generate an invalid new address
+     because, e.g., the original address is considered mode-dependent
+     by the target, which restricts simplify_subreg from invoking
+     adjust_address_nv.  Instead of preparing fallback support for an
+     invalid address, we call adjust_address_nv directly.  */
+  if (MEM_P (cplx))
+    return adjust_address_nv (cplx, imode, (part == IMAG_P)
+			      ? GET_MODE_SIZE (imode) : 0);
+
+  /* If the sub-object is at least word sized, then we know that subregging
+     will work.  This special case is important, since extract_bit_field
+     wants to operate on integer modes, and there's rarely an OImode to
+     correspond to TCmode.  */
+  if (ibitsize >= BITS_PER_WORD
+      /* For hard regs we have exact predicates.  Assume we can split
+	 the original object if it spans an even number of hard regs.
+	 This special case is important for SCmode on 64-bit platforms
+	 where the natural size of floating-point regs is 32-bit.  */
+      || (REG_P (cplx)
+	  && REGNO (cplx) < FIRST_PSEUDO_REGISTER
+	  && REG_NREGS (cplx) % 2 == 0))
+    {
+      rtx ret = simplify_gen_subreg (imode, cplx, cmode, (part == IMAG_P)
+				     ? GET_MODE_SIZE (imode) : 0);
+      if (ret)
+	return ret;
+      else
+	/* simplify_gen_subreg may fail for sub-word MEMs.  */
+	gcc_assert (MEM_P (cplx) && ibitsize < BITS_PER_WORD);
+    }
+
+  return extract_bit_field (cplx, ibitsize, (part == IMAG_P) ? ibitsize : 0,
+			    true, NULL_RTX, imode, imode, false, NULL);
+}
+
+/* By default, Write to one of the components of the complex value CPLX.  Write VAL to
+   the real part if part is REAL_P, and the imaginary part if it is IMAG_P. If part is
+   BOTH_P, call recursively with REAL_P and IMAG_P.  */
+
+void
+default_write_complex_part (rtx cplx, rtx val, complex_part_t part)
+{
+  machine_mode cmode;
+  scalar_mode imode;
+  unsigned ibitsize;
+
+  if (part == BOTH_P)
+    {
+      write_complex_part (cplx, read_complex_part (val, REAL_P), REAL_P);
+      write_complex_part (cplx, read_complex_part (val, IMAG_P), IMAG_P);
+      return;
+    }
+
+  if (GET_CODE (cplx) == CONCAT)
+    {
+      emit_move_insn (XEXP (cplx, part == IMAG_P), val);
+      return;
+    }
+
+  cmode = GET_MODE (cplx);
+  imode = GET_MODE_INNER (cmode);
+  ibitsize = GET_MODE_BITSIZE (imode);
+
+  /* For MEMs simplify_gen_subreg may generate an invalid new address
+     because, e.g., the original address is considered mode-dependent
+     by the target, which restricts simplify_subreg from invoking
+     adjust_address_nv.  Instead of preparing fallback support for an
+     invalid address, we call adjust_address_nv directly.  */
+  if (MEM_P (cplx))
+    {
+      emit_move_insn (adjust_address_nv (cplx, imode, (part == IMAG_P)
+					 ? GET_MODE_SIZE (imode) : 0), val);
+      return;
+    }
+
+  /* If the sub-object is at least word sized, then we know that subregging
+     will work.  This special case is important, since store_bit_field
+     wants to operate on integer modes, and there's rarely an OImode to
+     correspond to TCmode.  */
+  if (ibitsize >= BITS_PER_WORD
+      /* For hard regs we have exact predicates.  Assume we can split
+	 the original object if it spans an even number of hard regs.
+	 This special case is important for SCmode on 64-bit platforms
+	 where the natural size of floating-point regs is 32-bit.  */
+      || (REG_P (cplx)
+	  && REGNO (cplx) < FIRST_PSEUDO_REGISTER
+	  && REG_NREGS (cplx) % 2 == 0))
+    {
+      rtx cplx_part = simplify_gen_subreg (imode, cplx, cmode,
+					   (part == IMAG_P) ?
+					   GET_MODE_SIZE (imode) : 0);
+      if (cplx_part)
+	{
+	  emit_move_insn (cplx_part, val);
+	  return;
+	}
+      else
+	/* simplify_gen_subreg may fail for sub-word MEMs.  */
+	gcc_assert (MEM_P (cplx) && ibitsize < BITS_PER_WORD);
+    }
+
+  store_bit_field (cplx, ibitsize, (part == IMAG_P) ? ibitsize : 0, 0, 0,
+		   imode, val, false);
+}
+
 /* By default do not split reductions further.  */
 
 machine_mode
