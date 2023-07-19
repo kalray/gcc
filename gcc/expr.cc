@@ -3267,8 +3267,8 @@ clear_storage_hints (rtx object, rtx size, enum block_op_methods method,
 	  zero = CONST0_RTX (GET_MODE_INNER (mode));
 	  if (zero != NULL)
 	    {
-	      write_complex_part (object, zero, 0);
-	      write_complex_part (object, zero, 1);
+	      write_complex_part (object, zero, REAL_P);
+	      write_complex_part (object, zero, IMAG_P);
 	      return NULL;
 	    }
 	}
@@ -3432,126 +3432,18 @@ set_storage_via_setmem (rtx object, rtx size, rtx val, unsigned int align,
    the real part if IMAG_P is false, and the imaginary part if its true.  */
 
 void
-write_complex_part (rtx cplx, rtx val, bool imag_p)
+write_complex_part (rtx cplx, rtx val, complex_part_t part)
 {
-  machine_mode cmode;
-  scalar_mode imode;
-  unsigned ibitsize;
-
-  if (GET_CODE (cplx) == CONCAT)
-    {
-      emit_move_insn (XEXP (cplx, imag_p), val);
-      return;
-    }
-
-  cmode = GET_MODE (cplx);
-  imode = GET_MODE_INNER (cmode);
-  ibitsize = GET_MODE_BITSIZE (imode);
-
-  /* For MEMs simplify_gen_subreg may generate an invalid new address
-     because, e.g., the original address is considered mode-dependent
-     by the target, which restricts simplify_subreg from invoking
-     adjust_address_nv.  Instead of preparing fallback support for an
-     invalid address, we call adjust_address_nv directly.  */
-  if (MEM_P (cplx))
-    {
-      emit_move_insn (adjust_address_nv (cplx, imode,
-					 imag_p ? GET_MODE_SIZE (imode) : 0),
-		      val);
-      return;
-    }
-
-  /* If the sub-object is at least word sized, then we know that subregging
-     will work.  This special case is important, since store_bit_field
-     wants to operate on integer modes, and there's rarely an OImode to
-     correspond to TCmode.  */
-  if (ibitsize >= BITS_PER_WORD
-      /* For hard regs we have exact predicates.  Assume we can split
-	 the original object if it spans an even number of hard regs.
-	 This special case is important for SCmode on 64-bit platforms
-	 where the natural size of floating-point regs is 32-bit.  */
-      || (REG_P (cplx)
-	  && REGNO (cplx) < FIRST_PSEUDO_REGISTER
-	  && REG_NREGS (cplx) % 2 == 0))
-    {
-      rtx part = simplify_gen_subreg (imode, cplx, cmode,
-				      imag_p ? GET_MODE_SIZE (imode) : 0);
-      if (part)
-        {
-	  emit_move_insn (part, val);
-	  return;
-	}
-      else
-	/* simplify_gen_subreg may fail for sub-word MEMs.  */
-	gcc_assert (MEM_P (cplx) && ibitsize < BITS_PER_WORD);
-    }
-
-  store_bit_field (cplx, ibitsize, imag_p ? ibitsize : 0, 0, 0, imode, val,
-		   false);
+  targetm.write_complex_part (cplx, val, part);
 }
 
 /* Extract one of the components of the complex value CPLX.  Extract the
    real part if IMAG_P is false, and the imaginary part if it's true.  */
 
 rtx
-read_complex_part (rtx cplx, bool imag_p)
+read_complex_part (rtx cplx, complex_part_t part)
 {
-  machine_mode cmode;
-  scalar_mode imode;
-  unsigned ibitsize;
-
-  if (GET_CODE (cplx) == CONCAT)
-    return XEXP (cplx, imag_p);
-
-  cmode = GET_MODE (cplx);
-  imode = GET_MODE_INNER (cmode);
-  ibitsize = GET_MODE_BITSIZE (imode);
-
-  /* Special case reads from complex constants that got spilled to memory.  */
-  if (MEM_P (cplx) && GET_CODE (XEXP (cplx, 0)) == SYMBOL_REF)
-    {
-      tree decl = SYMBOL_REF_DECL (XEXP (cplx, 0));
-      if (decl && TREE_CODE (decl) == COMPLEX_CST)
-	{
-	  tree part = imag_p ? TREE_IMAGPART (decl) : TREE_REALPART (decl);
-	  if (CONSTANT_CLASS_P (part))
-	    return expand_expr (part, NULL_RTX, imode, EXPAND_NORMAL);
-	}
-    }
-
-  /* For MEMs simplify_gen_subreg may generate an invalid new address
-     because, e.g., the original address is considered mode-dependent
-     by the target, which restricts simplify_subreg from invoking
-     adjust_address_nv.  Instead of preparing fallback support for an
-     invalid address, we call adjust_address_nv directly.  */
-  if (MEM_P (cplx))
-    return adjust_address_nv (cplx, imode,
-			      imag_p ? GET_MODE_SIZE (imode) : 0);
-
-  /* If the sub-object is at least word sized, then we know that subregging
-     will work.  This special case is important, since extract_bit_field
-     wants to operate on integer modes, and there's rarely an OImode to
-     correspond to TCmode.  */
-  if (ibitsize >= BITS_PER_WORD
-      /* For hard regs we have exact predicates.  Assume we can split
-	 the original object if it spans an even number of hard regs.
-	 This special case is important for SCmode on 64-bit platforms
-	 where the natural size of floating-point regs is 32-bit.  */
-      || (REG_P (cplx)
-	  && REGNO (cplx) < FIRST_PSEUDO_REGISTER
-	  && REG_NREGS (cplx) % 2 == 0))
-    {
-      rtx ret = simplify_gen_subreg (imode, cplx, cmode,
-				     imag_p ? GET_MODE_SIZE (imode) : 0);
-      if (ret)
-        return ret;
-      else
-	/* simplify_gen_subreg may fail for sub-word MEMs.  */
-	gcc_assert (MEM_P (cplx) && ibitsize < BITS_PER_WORD);
-    }
-
-  return extract_bit_field (cplx, ibitsize, imag_p ? ibitsize : 0,
-			    true, NULL_RTX, imode, imode, false, NULL);
+  return targetm.read_complex_part (cplx, part);
 }
 
 /* A subroutine of emit_move_insn_1.  Yet another lowpart generator.
@@ -3722,9 +3614,10 @@ emit_move_complex_push (machine_mode mode, rtx x, rtx y)
     }
 
   emit_move_insn (gen_rtx_MEM (submode, XEXP (x, 0)),
-		  read_complex_part (y, imag_first));
+		  read_complex_part (y, (imag_first) ? IMAG_P : REAL_P));
   return emit_move_insn (gen_rtx_MEM (submode, XEXP (x, 0)),
-			 read_complex_part (y, !imag_first));
+			 read_complex_part (y,
+					    (imag_first) ? REAL_P : IMAG_P));
 }
 
 /* A subroutine of emit_move_complex.  Perform the move from Y to X
@@ -3740,8 +3633,8 @@ emit_move_complex_parts (rtx x, rtx y)
       && REG_P (x) && !reg_overlap_mentioned_p (x, y))
     emit_clobber (x);
 
-  write_complex_part (x, read_complex_part (y, false), false);
-  write_complex_part (x, read_complex_part (y, true), true);
+  write_complex_part (x, read_complex_part (y, REAL_P), REAL_P);
+  write_complex_part (x, read_complex_part (y, IMAG_P), IMAG_P);
 
   return get_last_insn ();
 }
@@ -5583,9 +5476,9 @@ expand_assignment (tree to, tree from, bool nontemporal)
 		  if (from_rtx)
 		    {
 		      emit_move_insn (XEXP (to_rtx, 0),
-				      read_complex_part (from_rtx, false));
+				      read_complex_part (from_rtx, REAL_P));
 		      emit_move_insn (XEXP (to_rtx, 1),
-				      read_complex_part (from_rtx, true));
+				      read_complex_part (from_rtx, IMAG_P));
 		    }
 		  else
 		    {
@@ -5607,14 +5500,16 @@ expand_assignment (tree to, tree from, bool nontemporal)
 	    concat_store_slow:;
 	      rtx temp = assign_stack_temp (GET_MODE (to_rtx),
 					    GET_MODE_SIZE (GET_MODE (to_rtx)));
-	      write_complex_part (temp, XEXP (to_rtx, 0), false);
-	      write_complex_part (temp, XEXP (to_rtx, 1), true);
+	      write_complex_part (temp, XEXP (to_rtx, 0), REAL_P);
+	      write_complex_part (temp, XEXP (to_rtx, 1), IMAG_P);
 	      result = store_field (temp, bitsize, bitpos,
 				    bitregion_start, bitregion_end,
 				    mode1, from, get_alias_set (to),
 				    nontemporal, reversep);
-	      emit_move_insn (XEXP (to_rtx, 0), read_complex_part (temp, false));
-	      emit_move_insn (XEXP (to_rtx, 1), read_complex_part (temp, true));
+	      emit_move_insn (XEXP (to_rtx, 0),
+			      read_complex_part (temp, REAL_P));
+	      emit_move_insn (XEXP (to_rtx, 1),
+			      read_complex_part (temp, IMAG_P));
 	    }
 	}
       /* For calls to functions returning variable length structures, if TO_RTX
@@ -10012,8 +9907,8 @@ expand_expr_real_2 (sepops ops, rtx target, machine_mode tmode,
 	      complex_expr_swap_order:
 		/* Move the imaginary (op1) and real (op0) parts to their
 		   location.  */
-		write_complex_part (target, op1, true);
-		write_complex_part (target, op0, false);
+		write_complex_part (target, op1, IMAG_P);
+		write_complex_part (target, op0, REAL_P);
 
 		return target;
 	      }
@@ -10041,9 +9936,8 @@ expand_expr_real_2 (sepops ops, rtx target, machine_mode tmode,
 	    break;
 	  }
 
-      /* Move the real (op0) and imaginary (op1) parts to their location.  */
-      write_complex_part (target, op0, false);
-      write_complex_part (target, op1, true);
+      /* Temporary use a CONCAT to pass both real and imag parts in one call.  */
+      write_complex_part (target, gen_rtx_CONCAT (GET_MODE (target), op0, op1), BOTH_P);
 
       return target;
 
@@ -11170,7 +11064,8 @@ expand_expr_real_1 (tree exp, rtx target, machine_mode tmode,
 		    rtx parts[2];
 		    for (int i = 0; i < 2; i++)
 		      {
-			rtx op = read_complex_part (op0, i != 0);
+			rtx op = read_complex_part (op0, (i != 0) ? IMAG_P
+						    : REAL_P);
 			if (GET_CODE (op) == SUBREG)
 			  op = force_reg (GET_MODE (op), op);
 			temp = gen_lowpart_common (GET_MODE_INNER (mode1), op);
@@ -11768,11 +11663,11 @@ expand_expr_real_1 (tree exp, rtx target, machine_mode tmode,
 
     case REALPART_EXPR:
       op0 = expand_normal (treeop0);
-      return read_complex_part (op0, false);
+      return read_complex_part (op0, REAL_P);
 
     case IMAGPART_EXPR:
       op0 = expand_normal (treeop0);
-      return read_complex_part (op0, true);
+      return read_complex_part (op0, IMAG_P);
 
     case RETURN_EXPR:
     case LABEL_EXPR:
@@ -13015,8 +12910,8 @@ const_vector_from_tree (tree exp)
 	builder.quick_push (const_double_from_real_value (TREE_REAL_CST (elt),
 							  inner));
       else if (TREE_CODE (elt) == FIXED_CST)
-	builder.quick_push (CONST_FIXED_FROM_FIXED_VALUE (TREE_FIXED_CST (elt),
-							  inner));
+	builder.quick_push (CONST_FIXED_FROM_FIXED_VALUE
+			    (TREE_FIXED_CST (elt), inner));
       else
 	builder.quick_push (immed_wide_int_const (wi::to_poly_wide (elt),
 						  inner));

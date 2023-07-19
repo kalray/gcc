@@ -3266,6 +3266,24 @@ a pointer to int.",
  bool, (ao_ref *ref),
  default_ref_may_alias_errno)
 
+/* Returns the value corresponding to the specified part of a complex.  */
+DEFHOOK
+(read_complex_part,
+ "This hook should return the rtx representing the specified @var{part} of the complex given by @var{cplx}.\n\
+  @var{part} can be the real part, the imaginary part, or both of them.",
+ rtx,
+ (rtx cplx, complex_part_t part),
+ default_read_complex_part)
+
+/* Moves a value to the specified part of a complex  */
+DEFHOOK
+(write_complex_part,
+ "This hook should move the rtx value given by @var{val} to the specified @var{var} of the complex given by @var{cplx}.\n\
+  @var{var} can be the real part, the imaginary part, or both of them.",
+ void,
+ (rtx cplx, rtx val, complex_part_t part),
+ default_write_complex_part)
+
 /* Support for named address spaces.  */
 #undef HOOK_PREFIX
 #define HOOK_PREFIX "TARGET_ADDR_SPACE_"
