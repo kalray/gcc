@@ -61,7 +61,7 @@ void nowarn_complex (double x, double i)
 void warn_complex (double x, double i)
 {
   _Complex double *p = (_Complex double *)a1;
-  *p = __builtin_complex (x, i);  // { dg-warning "\\\[-Wstringop-overflow" "pr101455" { xfail *-*-* } }
+  *p = __builtin_complex (x, i);  // { dg-warning "\\\[-Wstringop-overflow" "pr101455" }
 }
 
 
