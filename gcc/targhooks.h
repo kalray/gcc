@@ -124,6 +124,10 @@ extern opt_machine_mode default_get_mask_mode (machine_mode);
 extern bool default_empty_mask_is_expensive (unsigned);
 extern vector_costs *default_vectorize_create_costs (vec_info *, bool);
 
+extern rtx default_read_complex_part (rtx cplx, complex_part_t part);
+extern void default_write_complex_part (rtx cplx, rtx val,
+					complex_part_t part, bool);
+
 /* OpenACC hooks.  */
 extern bool default_goacc_validate_dims (tree, int [], int, unsigned);
 extern int default_goacc_dim_limit (int);
