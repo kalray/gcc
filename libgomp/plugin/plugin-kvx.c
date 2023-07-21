@@ -113,9 +113,9 @@ struct kernel_info
   pthread_mutex_t init_mutex;
 //  /* Flag indicating whether the kernel has been initialized and all fields
 //     below it contain valid data.  */
-  bool initialized;
+  bool initialized_p;
   /* Flag indicating that the kernel has a problem that blocks an execution.  */
-  bool initialization_failed;
+  bool initialization_failed_p;
   /* The object to be put into the dispatch queue.  */
   uint64_t object;
 //  /* Required size of kernel arguments.  */
@@ -182,7 +182,11 @@ struct agent_info
   /* Mutex garding system queues.  */
   pthread_mutex_t queue_locks[NB_SYSTEM_QUEUE];
   struct block_node *blocks;
+  /* Kernels can be offloaded using MMIO or RPROC over sysqueues. Which way is
+   * to be used is stored here.  */
   enum queue_type queue_type;
+  /* Memory-mapped IO queues used to offload kernels when the queue_type be
+   * MMIO.  */
   mppa_offload_mmio_queue_t *mmio_queues;
   int id;
 };
@@ -385,7 +389,7 @@ kvx_kernel_exec (struct agent_info *agent, void *fn_ptr, void *vars,
 
       int queue_num = 0;
       while (queue_num < NB_SYSTEM_QUEUE
-	     && (pthread_mutex_trylock (&agent->queue_locks[queue_num]) == EBUSY))
+	  && (pthread_mutex_trylock(&agent->queue_locks[queue_num]) == EBUSY))
 	queue_num++;
 
       /* If all queues are busy, enqueue on queue 0.  */
@@ -409,9 +413,12 @@ kvx_kernel_exec (struct agent_info *agent, void *fn_ptr, void *vars,
        * mppa_offload_exec expects a valid pointer to the argument list.  Thus, we
        * allocate a dummy buffer.  */
       struct mppa_gomp_buffer *arg_buffer = NULL;
+
       if (!vars)
-	find_block (agent, GOMP_OFFLOAD_alloc (agent->id, 32), &arg_buffer,
-		    NULL);
+	{
+	  find_block (agent, GOMP_OFFLOAD_alloc (agent->id, 32), &arg_buffer,
+		      NULL);
+	}
       else
 	{
 	  if (!find_block (agent, vars, &arg_buffer, &vars_offset))
@@ -446,8 +453,8 @@ kvx_kernel_exec (struct agent_info *agent, void *fn_ptr, void *vars,
 
       if (agent->queue_type == RPMSG)
 	{
-	  if (mppa_offload_buffer_exec (queue, 1, cmd_buffer_host->vaddr, 1,
-					1, true, true, NULL))
+	  if (mppa_offload_buffer_exec
+	      (queue, 1, cmd_buffer_host->vaddr, 1, 1, true, true, NULL))
 	    {
 	      KVX_DEBUG ("[rpmsg] mppa_offload_exec failed\n");
 	      return;
@@ -457,21 +464,21 @@ kvx_kernel_exec (struct agent_info *agent, void *fn_ptr, void *vars,
 	}
       else			/* MMIO */
 	{
-	  if (mppa_offload_mmio_buffer_exec (&agent->mmio_queues[queue_num],
-					     1, cmd_buffer_host->vaddr, 1, 1,
-					     true, true, NULL))
+	  if (mppa_offload_mmio_buffer_exec
+	      (&agent->mmio_queues[queue_num], 1, cmd_buffer_host->vaddr, 1,
+	       1, true, true, NULL))
 	    {
-	      KVX_DEBUG ("[rpmsg] mppa_offload_exec failed\n");
+	      KVX_DEBUG ("[mmio] mppa_offload_exec failed\n");
 	      return;
 	    }
 	  else
-	    KVX_DEBUG ("[rpmsg] mppa_offload_exec success\n");
+	    KVX_DEBUG ("[mmio] mppa_offload_exec success\n");
 	}
 
-      if (!vars)
+      if (!vars && agent->queue_type == RPMSG)
 	{
-	  if (mppa_offload_free (queue, MPPA_OFFLOAD_ALLOC_DDR,
-				 arg_buffer->vaddr) != 0)
+	  if (mppa_offload_free
+	      (queue, MPPA_OFFLOAD_ALLOC_DDR, arg_buffer->vaddr) != 0)
 	    KVX_DEBUG ("mppa_offload_free: failed.");
 	}
 
@@ -548,8 +555,8 @@ get_agent_info (int n)
     }
   if (n >= kvx_context.agent_count)
     {
-      GOMP_PLUGIN_error ("Request to operate on non-existent "
-			 "KVX MPPA device %i", n);
+      GOMP_PLUGIN_error
+	("Request to operate on non-existent KVX MPPA device %i", n);
       return NULL;
     }
   if (!kvx_context.agents[n].initialized_p)
@@ -607,8 +614,9 @@ kvx_init_device (int n, int version)
       if (!toolchain)
 	KVX_DEBUG ("KALRAY_TOOLCHAIN_DIR not set");
 
-      if (snprintf (*fw_name, BUF_MAX, "%s/share/pocl/linux_pcie/%s%s",
-		    toolchain, version == 2 ? "kv3-2/" : "", fw) >= BUF_MAX)
+      if (snprintf
+	  (*fw_name, BUF_MAX, "%s/share/pocl/linux_pcie/%s%s", toolchain,
+	   version == 2 ? "kv3-2/" : "", fw) >= BUF_MAX)
 	KVX_DEBUG ("Path to the driver too long. (>= 512)");
     }
   KVX_DEBUG ("firmware: %s\n", *fw_name);
@@ -628,8 +636,6 @@ kvx_init_device (int n, int version)
       if (!agent->mmio_queues)
 	{
 	  KVX_DEBUG ("mmio alloc failed\n");
-	  agent->initialized_p = 0;
-	  return false;
 	}
       else
 	{
@@ -788,8 +794,7 @@ GOMP_OFFLOAD_init_device (int n)
 
   if (n >= kvx_context.agent_count)
     {
-      GOMP_PLUGIN_error ("Request to initialize non-existent "
-			 "KVX MPPA device %i", n);
+      GOMP_PLUGIN_error ("Request to initialize non-existent KVX MPPA device %i", n);
       return false;
     }
 
@@ -848,8 +853,8 @@ GOMP_OFFLOAD_load_image (int target_id, unsigned version,
     {
       struct kernel_info *kernel = malloc (sizeof (*kernel));
       kernel->name = strdup (image_desc->kernel_infos[i].name);
-      kernel->initialized = false;
-      kernel->initialization_failed = false;
+      kernel->initialized_p = false;
+      kernel->initialization_failed_p = false;
       kernel->agent = agent;
       pthread_mutex_init (&kernel->init_mutex, NULL);
 
@@ -985,7 +990,7 @@ GOMP_OFFLOAD_can_run (void *fn_ptr)
     kvx_init_kernel (kernel, queue);
   pthread_mutex_unlock (&kernel->init_mutex);
 
-  if (kernel->initialization_failed)
+  if (kernel->initialization_failed_p)
     {
       KVX_DEBUG ("Kernel %s initialization failed\n", kernel->name);
       KVX_DEBUG ("can_run: end\n");
@@ -1025,8 +1030,8 @@ GOMP_OFFLOAD_alloc (int n, size_t size)
   buffer->size = size;
 
   KVX_DEBUG ("mppa_offload_alloc success: buffer (%p) = "
-	     "(virt: 0x%lx, phys: 0x%lx), size: %lu\n", buffer,
-	     buffer->vaddr, buffer->paddr, size);
+	     "(virt: 0x%lx, phys: 0x%lx), size: %lu\n",
+	     buffer, buffer->vaddr, buffer->paddr, size);
   KVX_DEBUG ("alloc: end\n");
 
   struct block_node *block = malloc (sizeof *block);
@@ -1163,8 +1168,9 @@ GOMP_OFFLOAD_host2dev (int device, void *dst, const void *src, size_t n)
 
   if (offset + n > buf->size)
     {
-      KVX_DEBUG ("out of bound access of size %lu at offset %d into a "
-		 "buffer of size %d.\n", n, offset, buf->size);
+      KVX_DEBUG
+	("out of bound access of size %lu at offset %d into a buffer of size %d.\n",
+	 n, offset, buf->size);
       return false;
     }
 
