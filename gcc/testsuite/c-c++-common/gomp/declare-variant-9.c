@@ -55,9 +55,9 @@ test2 (void)
 void
 test3 (void)
 {
-  f06 ();	/* { dg-final { scan-tree-dump-times "f06 \\\(\\\);" 1 "gimple" { target { ! { nvptx*-*-* amdgcn*-*-* } } } } } */
-  f08 ();	/* { dg-final { scan-tree-dump-times "f07 \\\(\\\);" 1 "gimple" { target { ! { nvptx*-*-* amdgcn*-*-* } } } } } */
-  f10 ();	/* { dg-final { scan-tree-dump-times "f10 \\\(\\\);" 1 "gimple" { target { ! { nvptx*-*-* amdgcn*-*-* } } } } } */
+  f06 ();	/* { dg-final { scan-tree-dump-times "f06 \\\(\\\);" 1 "gimple" { target { ! { nvptx*-*-* amdgcn*-*-* kvx*-*-* } } } } } */
+  f08 ();	/* { dg-final { scan-tree-dump-times "f07 \\\(\\\);" 1 "gimple" { target { ! { nvptx*-*-* amdgcn*-*-* kvx*-*-* } } } } } */
+  f10 ();	/* { dg-final { scan-tree-dump-times "f10 \\\(\\\);" 1 "gimple" { target { ! { nvptx*-*-* amdgcn*-*-* kvx*-*-* } } } } } */
   f12 ();	/* { dg-final { scan-tree-dump-times "f12 \\\(\\\);" 1 "gimple" { target { ! { nvptx*-*-* } } } } } */
 		/* { dg-final { scan-tree-dump-times "f11 \\\(\\\);" 1 "gimple" { target { nvptx*-*-* } } } } */
 }
