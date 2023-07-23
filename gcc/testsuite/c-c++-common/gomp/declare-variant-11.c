@@ -68,8 +68,8 @@ test1 (void)
     f23 ();	/* { dg-final { scan-tree-dump-times "f22 \\\(\\\);" 1 "gimple" } } */
   f27 ();	/* { dg-final { scan-tree-dump-times "f25 \\\(\\\);" 1 "gimple" { target { { i?86-*-* x86_64-*-* } && lp64 } } } } */
 		/* { dg-final { scan-tree-dump-times "f24 \\\(\\\);" 1 "gimple" { target { { i?86-*-* x86_64-*-* } && { ! lp64 } } } } } */
-		/* { dg-final { scan-tree-dump-times "f24 \\\(\\\);" 1 "gimple" { target { ! { nvptx*-*-* amdgcn*-*-* i?86-*-* x86_64-*-* } } } } } */
-		/* { dg-final { scan-tree-dump-times "f27 \\\(\\\);" 1 "gimple" { target { nvptx*-*-* amdgcn*-*-* } } } } */
+		/* { dg-final { scan-tree-dump-times "f24 \\\(\\\);" 1 "gimple" { target { ! { nvptx*-*-* amdgcn*-*-* i?86-*-* x86_64-*-* kvx*-*-* } } } } } */
+		/* { dg-final { scan-tree-dump-times "f27 \\\(\\\);" 1 "gimple" { target { nvptx*-*-* amdgcn*-*-* kvx*-*-* } } } } */
 }
 
 #if defined(__i386__) || defined(__x86_64__)
