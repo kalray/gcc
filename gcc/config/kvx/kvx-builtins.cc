@@ -147,6 +147,10 @@ enum kvx_builtin
   KVX_BUILTIN_MSBFXWDP,
   KVX_BUILTIN_MSBFXWDQ,
 
+  KVX_BUILTIN_MM212W,
+  KVX_BUILTIN_MMA212W,
+  KVX_BUILTIN_MMS212W,
+
   KVX_BUILTIN_MINBO,
   KVX_BUILTIN_MINBX,
   KVX_BUILTIN_MINBV,
@@ -1259,6 +1263,10 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (MSBFXHWO, "msbfxhwo", V8SI, V8HI, V8HI, V8SI, EXTENDMUL); // Vector
   ADD_KVX_BUILTIN (MSBFXWDP, "msbfxwdp", V2DI, V2SI, V2SI, V2DI, EXTENDMUL); // Vector
   ADD_KVX_BUILTIN (MSBFXWDQ, "msbfxwdq", V4DI, V4SI, V4SI, V4DI, EXTENDMUL); // Vector
+
+  ADD_KVX_BUILTIN (MM212W, "mm212w", V4SI, V2SI, V2SI); // Vector
+  ADD_KVX_BUILTIN (MMA212W, "mma212w", V4SI, V2SI, V2SI, V4SI); // Vector
+  ADD_KVX_BUILTIN (MMS212W, "mms212w", V4SI, V2SI, V2SI, V4SI); // Vector
 
   ADD_KVX_BUILTIN (MINBO, "minbo", V8QI, V8QI, V8QI); // Vector
   ADD_KVX_BUILTIN (MINBX, "minbx", V16QI, V16QI, V16QI); // Vector
@@ -3423,6 +3431,10 @@ KVX_EXPAND_BUILTIN_4_EXTENDMUL (msbfxhwo, kvx_msbfxhwo, V8SImode, V8HImode)
 KVX_EXPAND_BUILTIN_4_EXTENDMUL (msbfxwdp, kvx_msbfxwdp, V2DImode, V2SImode)
 KVX_EXPAND_BUILTIN_4_EXTENDMUL (msbfxwdq, kvx_msbfxwdq, V4DImode, V4SImode)
 
+KVX_EXPAND_BUILTIN_3_STANDARD (mm212w, kvx_mm212w, V4SImode, V2SImode)
+KVX_EXPAND_BUILTIN_4_STANDARD (mma212w, kvx_mma212w, V4SImode, V2SImode)
+KVX_EXPAND_BUILTIN_4_STANDARD (mms212w, kvx_mms212w, V4SImode, V2SImode)
+
 KVX_EXPAND_BUILTIN_3_STANDARD (minbo, sminv8qi3, V8QImode, V8QImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (minbx, sminv16qi3, V16QImode, V16QImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (minbv, sminv32qi3, V32QImode, V32QImode)
@@ -4776,6 +4788,10 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_MSBFXHWO: return kvx_expand_builtin_msbfxhwo (target, exp);
     case KVX_BUILTIN_MSBFXWDP: return kvx_expand_builtin_msbfxwdp (target, exp);
     case KVX_BUILTIN_MSBFXWDQ: return kvx_expand_builtin_msbfxwdq (target, exp);
+
+    case KVX_BUILTIN_MM212W: return kvx_expand_builtin_mm212w (target, exp);
+    case KVX_BUILTIN_MMA212W: return kvx_expand_builtin_mma212w (target, exp);
+    case KVX_BUILTIN_MMS212W: return kvx_expand_builtin_mms212w (target, exp);
 
     case KVX_BUILTIN_MINBO: return kvx_expand_builtin_minbo (target, exp);
     case KVX_BUILTIN_MINBX: return kvx_expand_builtin_minbx (target, exp);

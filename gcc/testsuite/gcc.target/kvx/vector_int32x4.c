@@ -587,6 +587,21 @@ kvx_int32x4_msbfx_su(int32x4_t a, int32x4_t b, int64x4_t c)
 {
     return __builtin_kvx_msbfxwdq(a, b, c, ".su");
 }
+int32x4_t __attribute__ ((noinline))
+kvx_int16x4_mm212w(int32x2_t a, int32x2_t b)
+{
+    return __builtin_kvx_mm212w(a, b);
+}
+int32x4_t __attribute__ ((noinline))
+kvx_int16x4_mma212w(int32x2_t a, int32x2_t b, int32x4_t c)
+{
+    return __builtin_kvx_mma212w(a, b, c);
+}
+int32x4_t __attribute__ ((noinline))
+kvx_int16x4_mms212w(int32x2_t a, int32x2_t b, int32x4_t c)
+{
+    return __builtin_kvx_mms212w(a, b, c);
+}
 int64x4_t __attribute__ ((noinline))
 kvx_int32x4_sxwdq(int32x4_t a)
 {
