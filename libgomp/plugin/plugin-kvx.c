@@ -68,7 +68,6 @@
 #define MPPA_GOMP_DEFAULT_BUFFER_ALIGN (64)
 
 // #define OFFLOAD_ALLOC_MODE MPPA_OFFLOAD_ALLOC_DDR
-
 #define OFFLOAD_ALLOC_MODE MPPA_OFFLOAD_ALLOC_LOCALMEM_0
 
 // #define MPPA_OFFLOAD_DEFAULT_QUEUE_TYPE MMIO
@@ -107,27 +106,17 @@ struct kernel_info
   /* The specific agent the kernel has been or will be finalized for and run
      on.  */
   struct agent_info *agent;
-  //  /* The specific module where the kernel takes place.  */
-  //  struct module_info *module;
-  //  /* Information provided by mkoffload associated with the kernel.  */
-  //  struct hsa_kernel_description *description;
   /* Mutex enforcing that at most once thread ever initializes a kernel for
      use.  A thread should have locked agent->module_rwlock for reading before
      acquiring it.  */
   pthread_mutex_t init_mutex;
-  //  /* Flag indicating whether the kernel has been initialized and all fields
-  //     below it contain valid data.  */
+   /* Flag indicating whether the kernel has been initialized and all fields
+      below it contain valid data.  */
   bool initialized_p;
   /* Flag indicating that the kernel has a problem that blocks an execution.  */
   bool initialization_failed_p;
   /* The object to be put into the dispatch queue.  */
   uint64_t object;
-  //  /* Required size of kernel arguments.  */
-  //  uint32_t kernarg_segment_size;
-  //  /* Required size of group segment.  */
-  //  uint32_t group_segment_size;
-  //  /* Required size of private segment.  */
-  //  uint32_t private_segment_size;
   /* Set up for OpenMP or OpenACC?  */
   enum offload_kind kind;
   void *async_data;
@@ -145,14 +134,16 @@ struct kernel_info
    OpenACC may create many.  */
 struct goacc_asyncqueue
 {
-  struct goacc_asyncnode *front;
-  struct goacc_asyncnode *rear;
+  struct goacc_asyncnode *_Atomic front;
+  struct goacc_asyncnode *_Atomic rear;
 };
 
 struct goacc_asyncnode
 {
   struct kernel_info *kernel;
-  struct goacc_asyncnode *next;
+  struct goacc_asyncnode *_Atomic next;
+  /* Anti ABA measure: keep track of how many kernels were popped before it.  */
+  atomic_int count;
 };
 
 /* Opaque type to represent pointers on the agent.  */
@@ -190,10 +181,8 @@ struct async_ctx
   pthread_cond_t *worker_wakeup_cond;
   /* Mutex that should be locked before waiting on worker_wakeup_cond.  */
   pthread_mutex_t *worker_wakeup_mutex;
-  /* This mutex controls critical queue accesses, like popping and enqueuing.  */
-  pthread_mutex_t *queue_access_mutex;
   /* Counts how many kernels are in the queue.  */
-  int n_kernels;
+  atomic_int n_kernels;
   /* Boolean to indicate whether the async queue must stop at the next iter.  */
   int async_queue_stop;
   /* The kernel queue, containing none or more nodes.  */
@@ -220,11 +209,11 @@ struct agent_info
   /* agent number.  */
   int id;
   /* Lock for cluster scheduling. Multiple threads may request a schedule at 
-   * the same time, this is to make sure they do not reserve 
-   * the same cluster.  */
+     the same time, this is to make sure they do not reserve 
+     the same cluster.  */
   pthread_mutex_t *schedule_mutex;
   /* Round robin counter for scheduling. Its access must be protected by
-   * locking schedule_mutex. */
+     locking schedule_mutex. */
   int rr_counter;
 };
 
@@ -259,7 +248,7 @@ struct kvx_kernel_description
 
 struct kvx_async_worker_params
 {
-  mppa_offload_sysqueue_t *queue;
+  struct agent_info *agent;
   int cluster_id;
 };
 
@@ -356,8 +345,9 @@ static bool parse_target_attributes (struct kernel_info **kernel);
 
 
 /* @brief: Returns the ID of the next cluster to run a kernel on agent n, 
- * according to the scheduling policy. Right now, the scheduling policy is 
- * round robin. TODO: improve to an actual scheduler.  */
+   according to the scheduling policy. Right now, the scheduling policy is 
+   round robin. Only used for tasks which do not require a specific kernel,
+   such as free, alloc, synchronous kernels, etc.  */
 static int
 kvx_schedule_cluster (int agent_n)
 {
@@ -393,40 +383,55 @@ init_environment_variables (void)
 static void
 kvx_async_queue_pop (struct agent_info *agent, struct kernel_info **kernel)
 {
-  pthread_mutex_lock (agent->async_context->queue_access_mutex);
-  struct goacc_asyncqueue *queue = agent->async_context->async_queue;
+  /* Shorthand for readability.  */
+  struct async_ctx *a_ctx = agent->async_context;
+  struct goacc_asyncqueue *queue = a_ctx->async_queue;
 
-  if (queue->front == NULL)
+  while (1)
     {
-      assert (agent->async_context->n_kernels == 0);
-      KVX_DEBUG ("async pop was called, but the queue is empty.\n");
-      pthread_mutex_unlock (agent->async_context->queue_access_mutex);
-      return;
+      struct goacc_asyncnode *_Atomic head = queue->front;
+      struct goacc_asyncnode *_Atomic tail = queue->rear;
+      struct goacc_asyncnode *_Atomic next = head->next;
+      if (head->count != queue->front->count)
+	{
+	  continue;
+	}
+      if (head == tail)
+	{
+	  if (next == NULL)
+	    {
+	      *kernel = NULL;
+	      return;
+	    }
+
+	  atomic_fetch_add (&next->count, 1);
+	  atomic_compare_exchange_strong (&queue->rear, &tail, next);
+	}
+      else
+	{
+	  struct kernel_info *content = next->kernel;
+	  atomic_store (&next->count, head->count + 1);
+	  if (atomic_compare_exchange_strong (&queue->front, &head, next))
+	    {
+	      atomic_fetch_sub (&a_ctx->n_kernels, 1);
+	      free (head);
+	      *kernel = content;
+	      KVX_DEBUG ("Popped kernel %p with count %d\n", content,
+			 a_ctx->n_kernels);
+	      return;
+	    }
+	}
     }
-
-  struct goacc_asyncnode *temp = queue->front;
-
-  *kernel = temp->kernel;
-  queue->front = queue->front->next;
-
-  if (queue->front == NULL)
-    queue->rear = NULL;
-
-  agent->async_context->n_kernels--;
-  pthread_mutex_unlock (agent->async_context->queue_access_mutex);
-
-  free (temp), temp = NULL;
 }
 
 /* \brief Retrieve the buffer (holding the vaddr and paddr on the agent) and an
- * offset corresponding to ptr.
- * \param ptr: An opaque pointer which is exposed to the host.  This pointer is
- * resiliant to pointer arithmetic.
- * \param buf: A pointer to a buffer which will hold the real allocated
- * addresses
- * \param offest: A pointer to an int which will hold the offset by which ptr is
- * offsetted with respect to buf.
- */
+   offset corresponding to ptr.
+   \param ptr: An opaque pointer which is exposed to the host.  This pointer is
+   resiliant to pointer arithmetic.
+   \param buf: A pointer to a buffer which will hold the real allocated
+   addresses
+   \param offest: A pointer to an int which will hold the offset by which ptr is
+   offsetted with respect to buf.  */
 static struct block_node *
 kvx_find_block (int agent_n, const void *ptr, struct mppa_gomp_buffer **buf,
 		int *offset, bool pop_p)
@@ -480,8 +485,8 @@ kvx_kernel_exec (int agent_n, void *fn_ptr)
   uint64_t function_ptr = (uintptr_t) kernel->object;
 
   /* When a kernel does not have arguments VARS is NULL, this is a problem since
-   * mppa_offload_exec expects a valid pointer to the argument list.  Thus, we
-   * allocate a dummy buffer.  */
+     mppa_offload_exec expects a valid pointer to the argument list.  Thus, we
+     allocate a dummy buffer.  */
   struct mppa_gomp_buffer *arg_buffer = NULL;
 
   int vars_offset = 0;
@@ -578,78 +583,56 @@ kvx_enqueue_async_kernel (int agent_n, void *fn_ptr)
   struct agent_info *agent = get_agent_info (agent_n);
   struct kernel_info *kernel = (struct kernel_info *) fn_ptr;
 
-  struct goacc_asyncqueue *queue = agent->async_context->async_queue;
-  struct goacc_asyncnode *temp = GOMP_PLUGIN_malloc (sizeof (*temp));
+  /* Shorthand for code clarity.  */
+  struct async_ctx *a_ctx = agent->async_context;
 
-  pthread_mutex_lock (agent->async_context->queue_access_mutex);
+  struct goacc_asyncqueue *queue = a_ctx->async_queue;
 
-  temp->kernel = kernel;
-  temp->next = NULL;
-
-  if (queue->rear == NULL)
-    {
-      queue->front = temp;
-      queue->rear = temp;
-    }
-  else
-    {
-      queue->rear->next = temp;
-      queue->rear = temp;
-    }
-
-  KVX_DEBUG ("enqueued kernel on async queue.\n");
-  agent->async_context->n_kernels++;
-
-  pthread_mutex_unlock (agent->async_context->queue_access_mutex);
-  pthread_cond_signal (agent->async_context->worker_wakeup_cond);
-}
-
-/* TODO this is a hack to avoid modifying async_queue_worker's arguments,
- * please refactor me */
-static struct agent_info *
-get_agent_info_from_acc (mppa_offload_accelerator_t *acc)
-{
-  struct agent_info *found = NULL;
-
-  for (int i = 0; i < kvx_context.agent_count; i++)
-    {
-      mppa_offload_accelerator_t *got =
-	mppa_offload_get_accelerator (&kvx_context.agents[i].ctx, i);
-      if (got == acc)
-	found = &kvx_context.agents[i];
-    }
-
-  return found;
-}
-
-/* Execute a queued kernel (from the agent's async kernel queue)
- * on sysqueue q.  */
-static void *
-kvx_async_queue_worker (void *q)
-{
-  struct kvx_async_worker_params *params = q;
-  mppa_offload_sysqueue_t *queue = params->queue;
-  int mycluster = params->cluster_id;
-
-  struct agent_info *agent = get_agent_info_from_acc (queue->acc);
+  struct goacc_asyncnode *_Atomic node =
+    GOMP_PLUGIN_malloc_cleared (sizeof (*node));
+  node->kernel = kernel;
 
   while (1)
     {
-      /* cond and mutex control the access to the shared async job queue. */
-      while (agent->async_context->n_kernels == 0 &&
-	     !agent->async_context->async_queue_stop)
-	{
-	  pthread_mutex_lock (agent->async_context->worker_wakeup_mutex);
-	  pthread_cond_wait (agent->async_context->worker_wakeup_cond,
-			     agent->async_context->worker_wakeup_mutex);
-	}
+      struct goacc_asyncnode *_Atomic tail = queue->rear;
+      struct goacc_asyncnode *_Atomic next = tail->next;
 
-
-      if (agent->async_context->async_queue_stop)
+      if (tail->count != queue->rear->count)
+	continue;
+      if (next != NULL)
 	{
-	  pthread_mutex_unlock (agent->async_context->worker_wakeup_mutex);
-	  pthread_exit (NULL);
+	  atomic_compare_exchange_strong (&queue->rear, &tail, next);
+	  continue;
 	}
+      if (atomic_compare_exchange_strong (&tail->next, &next, node))
+	{
+	  atomic_compare_exchange_strong (&queue->rear, &tail, node);
+	  atomic_fetch_add (&a_ctx->n_kernels, 1);
+	  return;
+	}
+    }
+}
+
+/* Execute a queued kernel (from the agent's async kernel queue)
+   on sysqueue q.  */
+static void *
+kvx_async_queue_worker (void *args)
+{
+  const struct kvx_async_worker_params *worker_args = args;
+  const int MYCLUSTER = worker_args->cluster_id;
+
+  struct agent_info *agent = worker_args->agent;
+  struct async_ctx *a_ctx = agent->async_context;
+
+  while (1)
+    {
+      pthread_mutex_lock (a_ctx->worker_wakeup_mutex);
+      pthread_cond_wait (a_ctx->worker_wakeup_cond,
+			 a_ctx->worker_wakeup_mutex);
+      pthread_mutex_unlock (a_ctx->worker_wakeup_mutex);
+
+      if (a_ctx->async_queue_stop)
+	pthread_exit (NULL);
 
       struct kernel_info *kernel = NULL;
       kvx_async_queue_pop (agent, &kernel);
@@ -660,11 +643,10 @@ kvx_async_queue_worker (void *q)
 	  continue;
 	}
 
-      kernel->cluster_id = mycluster;
+      kernel->cluster_id = MYCLUSTER;
 
       struct agent_info *kernel_agent = kernel->agent;
       kvx_kernel_exec (kernel_agent->id, kernel);
-      pthread_mutex_unlock (agent->async_context->worker_wakeup_mutex);
 
       GOMP_PLUGIN_target_task_completion (kernel->async_data);
       free (kernel);
@@ -722,14 +704,16 @@ kvx_init_async_context (struct agent_info *agent)
     GOMP_PLUGIN_malloc_cleared (sizeof (pthread_cond_t));
   async_context->worker_wakeup_mutex =
     GOMP_PLUGIN_malloc_cleared (sizeof (pthread_mutex_t));
-  async_context->queue_access_mutex =
-    GOMP_PLUGIN_malloc_cleared (sizeof (pthread_mutex_t));
   async_context->async_queue_stop = 0;
+
+  struct goacc_asyncnode *dummy = GOMP_PLUGIN_malloc_cleared (sizeof (*dummy));
+
+  async_context->async_queue->front = dummy;
+  async_context->async_queue->rear = dummy;
   async_context->n_kernels = 0;
 
   pthread_cond_init (async_context->worker_wakeup_cond, NULL);
   pthread_mutex_init (async_context->worker_wakeup_mutex, NULL);
-  pthread_mutex_init (async_context->queue_access_mutex, NULL);
 
   async_context->initialized_p = 1;
   return true;
@@ -879,9 +863,6 @@ kvx_init_agent (int n, int version)
   else
     KVX_DEBUG ("mppa offload create success\n");
 
-  mppa_offload_accelerator_t *acc =
-    mppa_offload_get_accelerator (&agent->ctx, 0);
-
   kvx_init_async_context (agent);
 
   /* Create the async worker queues.  */
@@ -891,7 +872,7 @@ kvx_init_agent (int n, int version)
       KVX_DEBUG ("Initializing asnyc queue %d\n", i);
       struct kvx_async_worker_params *params =
 	GOMP_PLUGIN_malloc (sizeof (struct kvx_async_worker_params));
-      params->queue = mppa_offload_get_sysqueue (acc, i);
+      params->agent = agent;
       params->cluster_id = i;
       if (pthread_create (&agent->async_context->async_ths[i],
 			  NULL, kvx_async_queue_worker, params))
@@ -903,10 +884,9 @@ kvx_init_agent (int n, int version)
 }
 
 
-/*
- * \param kernel:
- * \param queue:
- */
+/* @brief: Initialize a kernel's fields. 
+   \param kernel: The kernel to initialize.
+   \param queue: The sysqueue to init the kernel on.  */
 static bool
 kvx_init_kernel (struct kernel_info *kernel, mppa_offload_sysqueue_t * queue)
 {
@@ -1108,8 +1088,8 @@ GOMP_OFFLOAD_load_image (int target_id, unsigned version,
 
   for (uint32_t i = 0; i < nb_offloaded_variables; i++)
     {
-      struct block_node *block = malloc (sizeof *block);
-      block->buffer = malloc (sizeof (*block->buffer));
+      struct block_node *block = GOMP_PLUGIN_malloc (sizeof *block);
+      block->buffer = GOMP_PLUGIN_malloc_cleared (sizeof (*block->buffer));
       struct mppa_gomp_buffer *var_buf = block->buffer;
 
 
@@ -1175,9 +1155,7 @@ GOMP_OFFLOAD_unload_image (int n, unsigned version, const void *target_data)
 /* Deinitialize all information and status associated with agent number N.  We
    do not attempt any synchronization, assuming the user and libgomp will not
    attempt deinitialization of a agent that is in any way being used at the
-   same time.  Return TRUE on success.  */
-//FIXME iterating over the agent list in kvx_context after fini_device yields
-//undefined behavior
+   same time. Return TRUE on success.  */
 bool
 GOMP_OFFLOAD_fini_device (int n)
 {
@@ -1202,18 +1180,7 @@ GOMP_OFFLOAD_fini_device (int n)
 
   if (agent->async_context && agent->async_context->initialized_p)
     {
-      struct goacc_asyncnode *to_free =
-	agent->async_context->async_queue->front;
-      while (to_free)
-	{
-	  struct goacc_asyncnode *temp = to_free->next;
-	  free (to_free->kernel);
-	  free (to_free);
-	  to_free = temp;
-	}
-
       struct async_ctx *a_ctx = agent->async_context;
-
       a_ctx->async_queue_stop = 1;
 
       for (int i = 0; i < NB_SYSTEM_QUEUE; i++)
@@ -1224,12 +1191,21 @@ GOMP_OFFLOAD_fini_device (int n)
 	    KVX_DEBUG ("Error joinining thread %d.\n", i);
 	}
 
+      struct goacc_asyncnode *to_free =
+	agent->async_context->async_queue->front;
+      while (to_free)
+	{
+	  struct goacc_asyncnode *temp = to_free->next;
+	  free (to_free->kernel);
+	  free (to_free);
+	  to_free = temp;
+	}
+
       pthread_mutex_destroy (agent->schedule_mutex);
       pthread_mutex_destroy (a_ctx->worker_wakeup_mutex);
       free (a_ctx->worker_wakeup_mutex);
       free (a_ctx->async_queue);
       free (a_ctx->worker_wakeup_cond);
-      free (a_ctx->queue_access_mutex);
       free (a_ctx);
     }
 
@@ -1246,8 +1222,8 @@ GOMP_OFFLOAD_fini_device (int n)
 }
 
 /* Return true if the KVX runtime can run function FN_PTR.
-  If the kernel is not initialized, try to initialize it,
-  the function can be run as long as the initialization succeeds.  */
+   If the kernel is not initialized, try to initialize it,
+   the function can be run as long as the initialization succeeds.  */
 bool
 GOMP_OFFLOAD_can_run (void *fn_ptr)
 {
@@ -1420,7 +1396,6 @@ GOMP_OFFLOAD_dev2host (int agent_n, void *dst, const void *src, size_t n)
 
 
 /* Copy data from host to agent (device).  */
-
 bool
 GOMP_OFFLOAD_host2dev (int agent_n, void *dst, const void *src, size_t n)
 {
