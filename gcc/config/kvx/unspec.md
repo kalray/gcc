@@ -84,6 +84,9 @@
         UNSPEC_QXO
         UNSPEC_QXE
         UNSPEC_OROE
+        UNSPEC_MM
+        UNSPEC_MMA
+        UNSPEC_MMS
 
         UNSPEC_INITX2A
         UNSPEC_INITX2B

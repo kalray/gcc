@@ -635,6 +635,34 @@
   [(set_attr "type" "mau_auxr")]
 )
 
+(define_insn "kvx_mm212w"
+  [(set (match_operand:V4SI 0 "register_operand" "=r")
+        (unspec:V4SI [(match_operand:V2SI 1 "register_operand" "r")
+                      (match_operand:V2SI 2 "register_operand" "r")] UNSPEC_MM))]
+  ""
+  "mm212w %0 = %1, %2"
+  [(set_attr "type" "mau")]
+)
+
+(define_insn "kvx_mma212w"
+  [(set (match_operand:V4SI 0 "register_operand" "=r")
+        (unspec:V4SI [(match_operand:V2SI 1 "register_operand" "r")
+                      (match_operand:V2SI 2 "register_operand" "r")
+		      (match_operand:V4SI 3 "register_operand" "0")] UNSPEC_MMA))]
+  ""
+  "mma212w %0 = %1, %2"
+  [(set_attr "type" "mau_auxr")]
+)
+
+(define_insn "kvx_mms212w"
+  [(set (match_operand:V4SI 0 "register_operand" "=r")
+        (unspec:V4SI [(match_operand:V2SI 1 "register_operand" "r")
+                      (match_operand:V2SI 2 "register_operand" "r")
+		      (match_operand:V4SI 3 "register_operand" "0")] UNSPEC_MMS))]
+  ""
+  "mms212w %0 = %1, %2"
+  [(set_attr "type" "mau_auxr")]
+)
 
 ;; SHL*
 
