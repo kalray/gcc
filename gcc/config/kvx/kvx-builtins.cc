@@ -1795,13 +1795,13 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (FSRECDP, "fsrecdp", V2DF, V2DF, SILENT); // Vector
   ADD_KVX_BUILTIN (FSRECDQ, "fsrecdq", V4DF, V4DF, SILENT); // Vector
 
-  ADD_KVX_BUILTIN (FSRSRW, "fsrsrw", FLOAT32, FLOAT32, SILENT); // Scalar
-  ADD_KVX_BUILTIN (FSRSRWP, "fsrsrwp", V2SF, V2SF, SILENT); // Vector
-  ADD_KVX_BUILTIN (FSRSRWQ, "fsrsrwq", V4SF, V4SF, SILENT); // Vector
-  ADD_KVX_BUILTIN (FSRSRWO, "fsrsrwo", V8SF, V8SF, SILENT); // Vector
-  ADD_KVX_BUILTIN (FSRSRD, "fsrsrd", FLOAT64, FLOAT64, SILENT); // Scalar
-  ADD_KVX_BUILTIN (FSRSRDP, "fsrsrdp", V2DF, V2DF, SILENT); // Vector
-  ADD_KVX_BUILTIN (FSRSRDQ, "fsrsrdq", V4DF, V4DF, SILENT); // Vector
+  ADD_KVX_BUILTIN (FSRSRW, "fsrsrw", FLOAT32, FLOAT32); // Scalar
+  ADD_KVX_BUILTIN (FSRSRWP, "fsrsrwp", V2SF, V2SF); // Vector
+  ADD_KVX_BUILTIN (FSRSRWQ, "fsrsrwq", V4SF, V4SF); // Vector
+  ADD_KVX_BUILTIN (FSRSRWO, "fsrsrwo", V8SF, V8SF); // Vector
+  ADD_KVX_BUILTIN (FSRSRD, "fsrsrd", FLOAT64, FLOAT64); // Scalar
+  ADD_KVX_BUILTIN (FSRSRDP, "fsrsrdp", V2DF, V2DF); // Vector
+  ADD_KVX_BUILTIN (FSRSRDQ, "fsrsrdq", V4DF, V4DF); // Vector
 
   ADD_KVX_BUILTIN (GET, "get", UINT64, INT32); // Control
   ADD_KVX_BUILTIN (WFXL, "wfxl", VOID, UINT8, UINT64); // Control
