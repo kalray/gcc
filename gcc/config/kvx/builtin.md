@@ -1458,7 +1458,7 @@
   [(set (match_operand:V4HI 0 "register_operand" "=r")
         (unspec:V4HI [(match_operand:V8QI 1 "register_operand" "r")] UNSPEC_ZXE))]
   ""
-  "andd.@ %0 = %1, 0x00FF00FF"
+  "andd %0 = %1, 0x00FF00FF.@"
   [(set_attr "type" "alu_tiny_x")
    (set_attr "length"        "8")]
 )
@@ -1467,7 +1467,7 @@
   [(set (match_operand:V8HI 0 "register_operand" "=r")
         (unspec:V8HI [(match_operand:V16QI 1 "register_operand" "r")] UNSPEC_ZXE))]
   ""
-  "andd.@ %x0 = %x1, 0x00FF00FF\n\tandd.@ %y0 = %y1, 0x00FF00FF"
+  "andd %x0 = %x1, 0x00FF00FF.@\n\tandd %y0 = %y1, 0x00FF00FF.@"
   [(set_attr "type" "alu_tiny_x2_x")
    (set_attr "length"          "16")]
 )
@@ -1477,8 +1477,8 @@
         (unspec:V16HI [(match_operand:V32QI 1 "register_operand" "r")] UNSPEC_ZXE))]
   ""
   {
-    return "andd.@ %x0 = %x1, 0x00FF00FF\n\tandd.@ %y0 = %y1, 0x00FF00FF\n\t"
-           "andd.@ %z0 = %z1, 0x00FF00FF\n\tandd.@ %t0 = %t1, 0x00FF00FF";
+    return "andd %x0 = %x1, 0x00FF00FF.@\n\tandd %y0 = %y1, 0x00FF00FF.@\n\t"
+           "andd %z0 = %z1, 0x00FF00FF.@\n\tandd %t0 = %t1, 0x00FF00FF.@";
   }
   [(set_attr "type" "alu_tiny_x4_x")
    (set_attr "length"          "32")]
@@ -1501,7 +1501,7 @@
   [(set (match_operand:V2SI 0 "register_operand" "=r")
         (unspec:V2SI [(match_operand:V4HI 1 "register_operand" "r")] UNSPEC_ZXE))]
   ""
-  "andd.@ %0 = %1, 0x0000FFFF"
+  "andd %0 = %1, 0x0000FFFF.@"
   [(set_attr "type" "alu_tiny_x")
    (set_attr "length"        "8")]
 )
@@ -1510,7 +1510,7 @@
   [(set (match_operand:V4SI 0 "register_operand" "=r")
         (unspec:V4SI [(match_operand:V8HI 1 "register_operand" "r")] UNSPEC_ZXE))]
   ""
-  "andd.@ %x0 = %x1, 0x0000FFFF\n\tandd.@ %y0 = %y1, 0x0000FFFF"
+  "andd %x0 = %x1, 0x0000FFFF.@\n\tandd %y0 = %y1, 0x0000FFFF.@"
   [(set_attr "type" "alu_tiny_x2_x")
    (set_attr "length"          "16")]
 )
@@ -1520,8 +1520,8 @@
         (unspec:V8SI [(match_operand:V16HI 1 "register_operand" "r")] UNSPEC_ZXE))]
   ""
   {
-    return "andd.@ %x0 = %x1, 0x0000FFFF\n\tandd.@ %y0 = %y1, 0x0000FFFF\n\t"
-           "andd.@ %z0 = %z1, 0x0000FFFF\n\tandd.@ %t0 = %t1, 0x0000FFFF";
+    return "andd %x0 = %x1, 0x0000FFFF.@\n\tandd %y0 = %y1, 0x0000FFFF.@\n\t"
+           "andd %z0 = %z1, 0x0000FFFF.@\n\tandd %t0 = %t1, 0x0000FFFF.@";
   }
   [(set_attr "type" "alu_tiny_x4_x")
    (set_attr "length"          "32")]
@@ -1801,7 +1801,7 @@
   [(set (match_operand:V4HI 0 "register_operand" "=r")
         (unspec:V4HI [(match_operand:V8QI 1 "register_operand" "r")] UNSPEC_QXO))]
   ""
-  "andd.@ %0 = %1, 0xFF00FF00"
+  "andd %0 = %1, 0xFF00FF00.@"
   [(set_attr "type" "alu_tiny_x")
    (set_attr "length"        "8")]
 )
@@ -1810,7 +1810,7 @@
   [(set (match_operand:V8HI 0 "register_operand" "=r")
         (unspec:V8HI [(match_operand:V16QI 1 "register_operand" "r")] UNSPEC_QXO))]
   ""
-  "andd.@ %x0 = %x1, 0xFF00FF00\n\tandd.@ %y0 = %y1, 0xFF00FF00"
+  "andd %x0 = %x1, 0xFF00FF00.@\n\tandd %y0 = %y1, 0xFF00FF00.@"
   [(set_attr "type" "alu_tiny_x2_x")
    (set_attr "length"          "16")]
 )
@@ -1820,8 +1820,8 @@
         (unspec:V16HI [(match_operand:V32QI 1 "register_operand" "r")] UNSPEC_QXO))]
   ""
   {
-    return "andd.@ %x0 = %x1, 0xFF00FF00\n\tandd.@ %y0 = %y1, 0xFF00FF00\n\t"
-           "andd.@ %z0 = %z1, 0xFF00FF00\n\tandd.@ %t0 = %t1, 0xFF00FF00";
+    return "andd %x0 = %x1, 0xFF00FF00.@\n\tandd %y0 = %y1, 0xFF00FF00.@\n\t"
+           "andd %z0 = %z1, 0xFF00FF00.@\n\tandd %t0 = %t1, 0xFF00FF00.@";
   }
   [(set_attr "type" "alu_tiny_x4_x")
    (set_attr "length"          "32")]
@@ -1844,7 +1844,7 @@
   [(set (match_operand:V2SI 0 "register_operand" "=r")
         (unspec:V2SI [(match_operand:V4HI 1 "register_operand" "r")] UNSPEC_QXO))]
   ""
-  "andd.@ %0 = %1, 0xFFFF0000"
+  "andd %0 = %1, 0xFFFF0000.@"
   [(set_attr "type" "alu_tiny_x")
    (set_attr "length"        "8")]
 )
@@ -1853,7 +1853,7 @@
   [(set (match_operand:V4SI 0 "register_operand" "=r")
         (unspec:V4SI [(match_operand:V8HI 1 "register_operand" "r")] UNSPEC_QXO))]
   ""
-  "andd.@ %x0 = %x1, 0xFFFF0000\n\tandd.@ %y0 = %y1, 0xFFFF0000"
+  "andd %x0 = %x1, 0xFFFF0000.@\n\tandd %y0 = %y1, 0xFFFF0000.@"
   [(set_attr "type" "alu_tiny_x2_x")
    (set_attr "length"          "16")]
 )
@@ -1863,8 +1863,8 @@
         (unspec:V8SI [(match_operand:V16HI 1 "register_operand" "r")] UNSPEC_QXO))]
   ""
   {
-    return "andd.@ %x0 = %x1, 0xFFFF0000\n\tandd.@ %y0 = %y1, 0xFFFF0000\n\t"
-           "andd.@ %z0 = %z1, 0xFFFF0000\n\tandd.@ %t0 = %t1, 0xFFFF0000";
+    return "andd %x0 = %x1, 0xFFFF0000.@\n\tandd %y0 = %y1, 0xFFFF0000.@\n\t"
+           "andd %z0 = %z1, 0xFFFF0000.@\n\tandd %t0 = %t1, 0xFFFF0000.@";
   }
   [(set_attr "type" "alu_tiny_x4_x")
    (set_attr "length"          "32")]
@@ -2705,7 +2705,7 @@
         (unspec:ALL64 [(match_operand:FITGPR 1 "register_operand" "r")
                        (match_operand:DI 2 "register_operand" "r")] UNSPEC_SBMM8DS))]
   ""
-  "sbmm8.@ %0 = %1, %2"
+  "sbmm8 %0 = %1, %2.@"
   [(set_attr "type" "alu_thin_x")
    (set_attr "length"        "8")]
 )
