@@ -71,6 +71,9 @@
 
 #define OFFLOAD_ALLOC_MODE MPPA_OFFLOAD_ALLOC_LOCALMEM_0
 
+// #define MPPA_OFFLOAD_DEFAULT_QUEUE_TYPE MMIO
+#define MPPA_OFFLOAD_DEFAULT_QUEUE_TYPE RPMSG
+
 static mppa_offload_host_acc_config_t mppa_offload_host_acc_cfg = {
   .board_id = 0,
   .cluster_id = MPPA_OFFLOAD_CC_ID,
@@ -777,7 +780,8 @@ kvx_init_agent (int n, int version)
      the ISS simulator. */
   const char *rproc_sim_str = getenv ("MPPA_RPROC_PLATFORM_MODE");
   const bool sim_enabled = rproc_sim_str && !strcmp (rproc_sim_str, "sim");
-  char **fw_name = &(mppa_offload_cfg_data.accelerator_configs->firmware_name);
+  char **fw_name =
+    &(mppa_offload_cfg_data.accelerator_configs->firmware_name);
 
   mppa_offload_cfg_data.images =
     GOMP_PLUGIN_malloc (sizeof *(mppa_offload_cfg_data.images));
@@ -810,10 +814,22 @@ kvx_init_agent (int n, int version)
   KVX_DEBUG ("firmware: %s\n", *fw_name);
 
   char *queue_type = getenv ("MPPA_OFFLOAD_QUEUE_TYPE");
-  if (queue_type && !strcmp (queue_type, "MMIO"))
-    agent->queue_type = MMIO;
+  /* Parse offload queue type, use defaults if not found.  */
+  if (queue_type)
+    {
+      if (!strcmp (queue_type, "RPMSG"))
+	agent->queue_type = RPMSG;
+      else if (!strcmp (queue_type, "MMIO"))
+	agent->queue_type = MMIO;
+      else
+	KVX_DEBUG ("Unrecognized queue type %s\n", queue_type);
+    }
   else
-    agent->queue_type = RPMSG;
+    {
+      KVX_DEBUG ("Could not resolve offload queue type, using defaults.\n");
+      agent->queue_type = MPPA_OFFLOAD_DEFAULT_QUEUE_TYPE;
+    }
+
   /* Init cluster schedule control variables.  */
   /* Round robin counter.  */
   agent->rr_counter = 0;
@@ -926,9 +942,9 @@ parse_target_attributes (struct kernel_info **kernel)
 
   while (*input)
     {
-      intptr_t id = (intptr_t) *input++, val;
+      intptr_t id = (intptr_t) * input++, val;
       if (id & GOMP_TARGET_ARG_SUBSEQUENT_PARAM)
-	val = (intptr_t) *input++;
+	val = (intptr_t) * input++;
       else
 	val = id >> GOMP_TARGET_ARG_VALUE_SHIFT;
       if ((id & GOMP_TARGET_ARG_DEVICE_MASK) != GOMP_TARGET_ARG_DEVICE_ALL)
@@ -951,6 +967,7 @@ parse_target_attributes (struct kernel_info **kernel)
     }
   return true;
 }
+
 /* {{{ Generic Plugin API  */
 
 /* Return the name of the accelerator, which is "kvx".  */
@@ -1099,9 +1116,8 @@ GOMP_OFFLOAD_load_image (int target_id, unsigned version,
 	KVX_DEBUG ("mppa offload query symbol failed\n");
       /* function_ptr now contain the function pointer to be used to next calls/runs */
       /* to be saved somewhere for reuse */
-      KVX_DEBUG ("pulled and saved var '%s' (0x%lx) from image "
-		 "(%lx - %lx).\n", image_desc->global_variables[i].name,
-		 var_buf->vaddr,
+      KVX_DEBUG ("pulled and saved var '%s' (0x%lx) from image (%lx - %lx).\n",
+		 image_desc->global_variables[i].name, var_buf->vaddr,
 		 var_buf->vaddr + image_desc->global_variables[i].size,
 		 var_buf->vaddr);
       pair->start = var_buf->vaddr;
@@ -1196,16 +1212,17 @@ GOMP_OFFLOAD_fini_device (int n)
       struct async_ctx *a_ctx = agent->async_context;
 
       a_ctx->async_queue_stop = 1;
-      pthread_cond_broadcast (a_ctx->worker_wakeup_cond);
 
       for (int i = 0; i < NB_SYSTEM_QUEUE; i++)
 	{
-	  //TODO check retval
+	  pthread_cond_broadcast (a_ctx->worker_wakeup_cond);
 	  void *thread_return;
 	  if (pthread_join (a_ctx->async_ths[i], &thread_return) != 0)
 	    KVX_DEBUG ("Error joinining thread %d.\n", i);
 	}
 
+      pthread_mutex_destroy (agent->schedule_mutex);
+      pthread_mutex_destroy (a_ctx->worker_wakeup_mutex);
       free (a_ctx->worker_wakeup_mutex);
       free (a_ctx->async_queue);
       free (a_ctx->worker_wakeup_cond);
@@ -1434,9 +1451,8 @@ GOMP_OFFLOAD_host2dev (int agent_n, void *dst, const void *src, size_t n)
 
   if (offset + n > buf->size)
     {
-      KVX_DEBUG
-	("out of bound access of size %lu at offset %d into a buffer of size %d.\n",
-	 n, offset, buf->size);
+      KVX_DEBUG ("out of bound access of size %lu at offset %d "
+		 "into a buffer of size %d.\n", n, offset, buf->size);
       return false;
     }
 
@@ -1493,7 +1509,10 @@ GOMP_OFFLOAD_async_run (int agent_n, void *tgt_fn, void *tgt_vars,
 			void **args, void *async_data)
 {
   KVX_DEBUG ("async run\n");
-  struct kernel_info *kernel = tgt_fn;
+  /* We must allocate kernel_info since multiple different threads may access
+     the same kernel with different data.  */
+  struct kernel_info *kernel = GOMP_PLUGIN_malloc (sizeof (struct kernel_info));
+  memcpy (kernel, tgt_fn, sizeof (*kernel));
   kernel->vars = tgt_vars;
   kernel->args = args;
   kernel->async_data = async_data;
