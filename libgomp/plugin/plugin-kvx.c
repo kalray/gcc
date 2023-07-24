@@ -216,6 +216,7 @@ struct agent_info
   enum queue_type queue_type;
   /* MMIO queue pointers, which store tasks.  */
   mppa_offload_mmio_queue_t *mmio_queues;
+  pthread_mutex_t mmio_locks[NB_SYSTEM_QUEUE];
   /* agent number.  */
   int id;
   /* Lock for cluster scheduling. Multiple threads may request a schedule at 
@@ -547,6 +548,7 @@ kvx_kernel_exec (int agent_n, void *fn_ptr)
     }
   else if (agent->queue_type == MMIO)
     {
+      pthread_mutex_lock (&agent->mmio_locks[queue_num]);
       if (mppa_offload_mmio_buffer_exec (&agent->mmio_queues[queue_num], 1,
 					 cmd_buffer_host->vaddr, num_teams,
 					 thread_limit, true, true, NULL))
@@ -556,6 +558,7 @@ kvx_kernel_exec (int agent_n, void *fn_ptr)
 	}
       else
 	KVX_DEBUG ("[mmio] mppa_offload_exec success\n");
+      pthread_mutex_unlock (&agent->mmio_locks[queue_num]);
     }
   else
     KVX_DEBUG ("couldn't offload kernel, undefined queue type.\n");
