@@ -278,15 +278,15 @@ process_asm (FILE * in, FILE * out, FILE * cfile)
   fputs (".omp.offload.device_init:\n\t"
 	 "addd $r12 = $r12, -32\n\t"
 	 "get $r16 = $ra\n\t"
-	 "pcrel $r0 = @gotaddr()\n\t;;\n\t"
+	 "pcrel $r1 = @gotaddr()\n\t;;\n\t"
+	 "lbz $r0 = 0[$r0]\n\t;;\n\t"
 	 "sd 24[$r12] = $r16\n\t;;\n\t"
-	 "ld $r0 = @got(omp_offload_init)[$r0]\n\t;;\n\t"
-	 "icall $r0\n\t;;\n\t"
+	 "ld $r1 = @got(omp_offload_init)[$r1]\n\t;;\n\t"
+	 "icall $r1\n\t;;\n\t"
 	 "ld $r16 = 24[$r12]\n\t"
 	 "addd $r12 = $r12, 32\n\t;;\n\t"
 	 "set $ra = $r16\n\t;;\n\t"
 	 "ret\n\t;;\n", out);
-
 
   char buf[1000];
   int keep_in_asm = true;
