@@ -1,4 +1,4 @@
-/* Plugin for KVX MPPA execution.
+  /* Plugin for KVX MPPA execution.
 
    Copyright (C) 2022 Free Software Foundation, Inc.
 
@@ -67,8 +67,8 @@
 
 #define MPPA_GOMP_DEFAULT_BUFFER_ALIGN (64)
 
-// #define OFFLOAD_ALLOC_MODE MPPA_OFFLOAD_ALLOC_DDR
-#define OFFLOAD_ALLOC_MODE MPPA_OFFLOAD_ALLOC_LOCALMEM_0
+#define OFFLOAD_ALLOC_MODE MPPA_OFFLOAD_ALLOC_DDR
+// #define OFFLOAD_ALLOC_MODE MPPA_OFFLOAD_ALLOC_LOCALMEM_0
 
 // #define MPPA_OFFLOAD_DEFAULT_QUEUE_TYPE MMIO
 #define MPPA_OFFLOAD_DEFAULT_QUEUE_TYPE RPMSG
@@ -176,7 +176,7 @@ struct async_ctx
   /* Init tracking.  */
   int initialized_p;
   /* Number of asynchronous threads. Max size is NB_SYSTEM_QUEUE.  */
-  pthread_t async_ths[NB_SYSTEM_QUEUE];
+  pthread_t *async_ths;
   /* Condition to wake workers when a new kernel is enqueued.  */
   pthread_cond_t *worker_wakeup_cond;
   /* Mutex that should be locked before waiting on worker_wakeup_cond.  */
@@ -198,6 +198,8 @@ struct agent_info
   struct async_ctx *async_context;
   /* Is the agent initialized?  */
   int initialized_p;
+  /* Is the agent finalized?  */
+  int finalized_p;
   /* Opaque handle to the loaded elf.  */
   uint64_t reloc_offset;
   struct block_node *blocks;
@@ -292,6 +294,11 @@ enum log_level
   TRACE
 } static log_level = WARN;
 
+/* Flag to decide whether the MPPA is treated as 5 separated devices. 
+ * Is disabled by default. Set in init environment variables.  */
+
+static bool mppa_multiple_devices;
+
 /* Print a message to stderr.  */
 
 #define DEBUG_PRINT(...) fprintf (stderr, __VA_ARGS__)
@@ -341,9 +348,11 @@ static void kvx_kernel_exec (int agent_n, void *fn_ptr);
 static void kvx_enqueue_async_kernel (int agent_n, void *fn_ptr);
 static void *kvx_async_queue_worker (void *q);
 static bool init_kvx_context (void);
+static void kvx_init_async_worker (struct agent_info *agent,
+				   int cluster_id, int queue_id);
 static bool kvx_init_async_context (struct agent_info *agent);
 static struct agent_info *get_agent_info (int n);
-static bool kvx_init_agent (int n, int version);
+static bool kvx_init_agent (int n, int version, bool mppa_initialized);
 static bool kvx_init_kernel (struct kernel_info *kernel,
 			     mppa_offload_sysqueue_t * queue);
 static int kvx_get_isa_revision (void *elf_image);
@@ -359,6 +368,10 @@ static bool parse_target_attributes (struct kernel_info **kernel);
 static int
 kvx_schedule_cluster (int agent_n)
 {
+  // When using the MPPA clusters as devices each agent is tied to a cluster
+  if (mppa_multiple_devices)
+    return agent_n;
+
   struct agent_info *agent = get_agent_info (agent_n);
 
   if (!agent)
@@ -395,6 +408,14 @@ init_environment_variables (void)
       else if (!strcmp (env_log_level, "NONE"))
 	log_level = NONE;
     }
+
+  if (secure_getenv ("OMP_MPPA_MULTIPLE_DEVICES"))
+    {
+      mppa_multiple_devices = true;
+      KVX_LOG (INFO, "multiple devices mode\n");
+    }
+  else
+    KVX_LOG (INFO, "single device mode\n");
 }
 
 /* @brief: Pop a kernel from goacc_asyncqueue into kernel. */
@@ -547,9 +568,10 @@ kvx_kernel_exec (int agent_n, void *fn_ptr)
 	   cmd_buffer->virt_func_ptr, cmd_buffer->virt_arg_ptr);
 
   struct mppa_gomp_buffer *cmd_buffer_host = NULL;
-  kvx_find_block (agent_n,
-		  GOMP_OFFLOAD_alloc (agent->id, sizeof (*cmd_buffer)),
+
+  kvx_find_block (agent_n, GOMP_OFFLOAD_alloc (agent->id, sizeof (*cmd_buffer)),
 		  &cmd_buffer_host, NULL, false);
+
   GOMP_OFFLOAD_host2dev (agent->id, (void *) cmd_buffer_host->vaddr,
 			 cmd_buffer, sizeof (*cmd_buffer));
 
@@ -576,6 +598,8 @@ kvx_kernel_exec (int agent_n, void *fn_ptr)
     }
   else if (agent->queue_type == MMIO)
     {
+      if (mppa_multiple_devices)
+	queue_num = 0;
       pthread_mutex_lock (&agent->mmio_locks[queue_num]);
       if (mppa_offload_mmio_buffer_exec (&agent->mmio_queues[queue_num], 1,
 					 cmd_buffer_host->vaddr, num_teams,
@@ -647,7 +671,7 @@ static void *
 kvx_async_queue_worker (void *args)
 {
   struct kvx_async_worker_params *worker_args = args;
-  const int MYCLUSTER = worker_args->cluster_id;
+  const int mycluster = worker_args->cluster_id;
 
   struct agent_info *agent = worker_args->agent;
   struct async_ctx *a_ctx = agent->async_context;
@@ -661,7 +685,6 @@ kvx_async_queue_worker (void *args)
 			 a_ctx->worker_wakeup_mutex);
       pthread_mutex_unlock (a_ctx->worker_wakeup_mutex);
 
-
       if (a_ctx->async_queue_stop)
 	pthread_exit (NULL);
 
@@ -674,7 +697,7 @@ kvx_async_queue_worker (void *args)
 	  continue;
 	}
 
-      kernel->cluster_id = MYCLUSTER;
+      kernel->cluster_id = mycluster;
 
       struct agent_info *kernel_agent = kernel->agent;
       kvx_kernel_exec (kernel_agent->id, kernel);
@@ -698,7 +721,10 @@ init_kvx_context (void)
   if (!(it = mppa_rproc_iter_alloc ()))
     GOMP_PLUGIN_fatal ("Could not alloc rproc iterator.");
 
-  kvx_context.agent_count = mppa_rproc_count_get (it);
+  if (!mppa_multiple_devices)
+    kvx_context.agent_count = mppa_rproc_count_get (it);
+  else
+    kvx_context.agent_count = mppa_rproc_count_get (it) * NB_SYSTEM_QUEUE;
   KVX_LOG (INFO, "Found %d offloading devices.\n", kvx_context.agent_count);
 
   //FIXME free kvx_context at program end; causes memory leaks
@@ -719,11 +745,10 @@ init_kvx_context (void)
 static bool
 kvx_init_async_context (struct agent_info *agent)
 {
-
   if (agent->async_context && agent->async_context->initialized_p)
     return true;
 
-  KVX_LOG (INFO, "%d\n", agent->id);
+  KVX_LOG (INFO, "agent id %d\n", agent->id);
   /* initialize the async context.  */
   agent->async_context =
     GOMP_PLUGIN_malloc_cleared (sizeof *agent->async_context);
@@ -745,6 +770,12 @@ kvx_init_async_context (struct agent_info *agent)
 
   pthread_cond_init (async_context->worker_wakeup_cond, NULL);
   pthread_mutex_init (async_context->worker_wakeup_mutex, NULL);
+
+  if (!mppa_multiple_devices)
+    async_context->async_ths =
+      GOMP_PLUGIN_malloc (NB_SYSTEM_QUEUE * sizeof (pthread_t));
+  else
+    async_context->async_ths = GOMP_PLUGIN_malloc (sizeof (pthread_t));
 
   async_context->initialized_p = 1;
   return true;
@@ -776,61 +807,79 @@ get_agent_info (int n)
   return &kvx_context.agents[n];
 }
 
+/* Initialize asynchronous worker for an agent  */
+static void
+kvx_init_async_worker (struct agent_info *agent, int cluster_id, int queue_id)
+{
+  KVX_LOG (TRACE, "Initializing asnyc queue %d\n", queue_id);
+  struct kvx_async_worker_params *params =
+    GOMP_PLUGIN_malloc (sizeof (struct kvx_async_worker_params));
+  params->agent = agent;
+  params->cluster_id = cluster_id;
+  if (pthread_create (&agent->async_context->async_ths[queue_id],
+		      NULL, kvx_async_queue_worker, params))
+    KVX_LOG (ERROR, "failed to create async queue %d\n", queue_id);
+}
+
 /* Initialize agent (device) number N so that it can be used for computation.
    Return TRUE on success.  */
 static bool
-kvx_init_agent (int n, int version)
+kvx_init_agent (int n, int version, bool mppa_initialized)
 {
   struct agent_info *agent = &kvx_context.agents[n];
 
   if (agent->initialized_p)
     return true;
 
-  char *hw_firmware_path = "kalray/opencl/%s%s";
-
-  /* The default firmware used by OpenMP Offload, see
-     /lib/firmware/kalray/opencl/ for the full list.  */
-  char *default_fw = "ocl_fw_l2_d_1m.elf";
-
-  KVX_LOG (TRACE, "start\n");
-
-  /* If MPPA_RPROC_PLATFORM_MODE == sim, this means that we are offloading to
-     the ISS simulator. */
-  const char *rproc_sim_str = getenv ("MPPA_RPROC_PLATFORM_MODE");
-  const bool sim_enabled = rproc_sim_str && !strcmp (rproc_sim_str, "sim");
-  char **fw_name =
-    &(mppa_offload_cfg_data.accelerator_configs->firmware_name);
-
-  mppa_offload_cfg_data.images =
-    GOMP_PLUGIN_malloc (sizeof *(mppa_offload_cfg_data.images));
-
-  char *fw = getenv ("OMP_MPPA_FIRMWARE_NAME");
-  if (!fw)
-    fw = default_fw;
-
-  *fw_name = GOMP_PLUGIN_malloc (BUF_MAX * sizeof (**fw_name));
-
-  /* If the simulator is not enabled use the hardware firmwares.  */
-  if (!sim_enabled)
+  /* Only one agent must initialize the firmware */
+  if (!mppa_initialized)
     {
-      if (snprintf (*fw_name, BUF_MAX, hw_firmware_path,
-		    version == 2 ? "kv3-2/" : "", fw) >= BUF_MAX)
-	GOMP_PLUGIN_fatal ("Path to the driver too long. (>= 512)");
-    }
-  /* Otherwise, lookup the firmware in the kENV of the user.  */
-  else
-    {
-      char *toolchain = getenv ("KALRAY_TOOLCHAIN_DIR");
-      if (!toolchain)
-	KVX_LOG (WARN, "KALRAY_TOOLCHAIN_DIR not set");
+      char *hw_firmware_path = "kalray/opencl/%s%s";
 
-      if (snprintf
-	  (*fw_name, BUF_MAX, "%s/share/pocl/linux_pcie/%s%s", toolchain,
-	   version == 2 ? "kv3-2/" : "", fw) >= BUF_MAX)
-	KVX_LOG (WARN, "Path to the driver too long. (>= 512)");
-    }
-  KVX_LOG (INFO, "firmware: %s\n", *fw_name);
+      /* The default firmware used by OpenMP Offload, see
+         /lib/firmware/kalray/opencl/ for the full list.  */
+      char *default_fw = "ocl_fw_l2_d_1m.elf";
 
+      KVX_LOG (TRACE, "start\n");
+
+      /* If MPPA_RPROC_PLATFORM_MODE == sim, 
+       * we are offloading to the simulator. */
+      const char *rproc_sim_str = getenv ("MPPA_RPROC_PLATFORM_MODE");
+      const bool sim_enabled = rproc_sim_str
+	&& !strcmp (rproc_sim_str, "sim");
+      char **fw_name =
+	&(mppa_offload_cfg_data.accelerator_configs->firmware_name);
+
+      mppa_offload_cfg_data.images =
+	GOMP_PLUGIN_malloc (sizeof *(mppa_offload_cfg_data.images));
+
+      char *fw = getenv ("OMP_MPPA_FIRMWARE_NAME");
+      if (!fw)
+	fw = default_fw;
+
+      *fw_name = GOMP_PLUGIN_malloc (BUF_MAX * sizeof (**fw_name));
+
+      /* If the simulator is not enabled use the hardware firmwares.  */
+      if (!sim_enabled)
+	{
+	  if (snprintf (*fw_name, BUF_MAX, hw_firmware_path,
+			version == 2 ? "kv3-2/" : "", fw) >= BUF_MAX)
+	    GOMP_PLUGIN_fatal ("Path to the driver too long. (>= 512)");
+	}
+      /* Otherwise, lookup the firmware in the kENV of the user.  */
+      else
+	{
+	  char *toolchain = getenv ("KALRAY_TOOLCHAIN_DIR");
+	  if (!toolchain)
+	    KVX_LOG (WARN, "KALRAY_TOOLCHAIN_DIR not set");
+
+	  if (snprintf
+	      (*fw_name, BUF_MAX, "%s/share/pocl/linux_pcie/%s%s", toolchain,
+	       version == 2 ? "kv3-2/" : "", fw) >= BUF_MAX)
+	    KVX_LOG (WARN, "Path to the driver too long. (>= 512)");
+	}
+      KVX_LOG (INFO, "firmware: %s\n", *fw_name);
+    }
   char *queue_type = getenv ("MPPA_OFFLOAD_QUEUE_TYPE");
   /* Parse offload queue type, use defaults if not found.  */
   if (queue_type)
@@ -854,16 +903,36 @@ kvx_init_agent (int n, int version)
   /* Controls the access to scheduling variables.  */
   agent->schedule_mutex = GOMP_PLUGIN_malloc (sizeof (pthread_mutex_t));
   pthread_mutex_init (agent->schedule_mutex, NULL);
-
-  if (mppa_offload_create (&agent->ctx, &mppa_offload_cfg_data))
+  if (!mppa_initialized
+      && mppa_offload_create (&agent->ctx, &mppa_offload_cfg_data))
     KVX_LOG (ERROR, "mppa offload create failed\n");
   else if (agent->queue_type == MMIO)
     {
-      agent->mmio_queues =
-	calloc (NB_SYSTEM_QUEUE, sizeof (*agent->mmio_queues));
+      if (!mppa_multiple_devices)
+	agent->mmio_queues =
+	  calloc (NB_SYSTEM_QUEUE, sizeof (*agent->mmio_queues));
+      else
+	agent->mmio_queues = calloc (1, sizeof (*agent->mmio_queues));
       if (!agent->mmio_queues)
 	{
 	  KVX_LOG (ERROR, "mmio alloc failed\n");
+	}
+      else if (mppa_multiple_devices)
+	{
+	  KVX_LOG (INFO, "mmio alloc success\n");
+	  mppa_offload_accelerator_t *acc =
+	    mppa_offload_get_accelerator (&agent->ctx, 0);
+	  mppa_offload_sysqueue_t *queue =
+	    mppa_offload_get_sysqueue (acc, n % NB_SYSTEM_QUEUE);
+	  assert (queue);
+	  enum mppa_offload_alloc_e mode = OFFLOAD_ALLOC_MODE;
+	  if (OFFLOAD_ALLOC_MODE == MPPA_OFFLOAD_ALLOC_LOCALMEM_0)
+	    mode = mode + n % NB_SYSTEM_QUEUE;
+	  if (mppa_offload_create_mmio_queue
+	      (queue, 1, mode, &agent->mmio_queues[0]) != 0)
+	    GOMP_PLUGIN_fatal ("mmio create failed\n");
+	  else
+	    KVX_LOG (INFO, "mmio create success\n");
 	}
       else
 	{
@@ -896,19 +965,18 @@ kvx_init_agent (int n, int version)
 
   kvx_init_async_context (agent);
 
-  /* Create the async worker queues.  */
-  int nb_workers = NB_SYSTEM_QUEUE;
-  for (int i = 0; i < nb_workers; ++i)
+  /* In multiple devices mode each agent will create only one worker, that is
+   * tied to a cluster.  */
+  if (!mppa_multiple_devices)
     {
-      KVX_LOG (TRACE, "Initializing asnyc queue %d\n", i);
-      struct kvx_async_worker_params *params =
-	GOMP_PLUGIN_malloc (sizeof (struct kvx_async_worker_params));
-      params->agent = agent;
-      params->cluster_id = i;
-      if (pthread_create (&agent->async_context->async_ths[i],
-			  NULL, kvx_async_queue_worker, params))
-	GOMP_PLUGIN_fatal ("failed to create async queue %d\n", i);
+      int nb_workers = NB_SYSTEM_QUEUE;
+      for (int i = 0; i < nb_workers; ++i)
+	{
+	  kvx_init_async_worker (agent, i, i);
+	}
     }
+  else
+    kvx_init_async_worker (agent, n % NB_SYSTEM_QUEUE, 0);
 
   agent->initialized_p = 1;
   KVX_LOG (TRACE, "end\n");
@@ -953,7 +1021,7 @@ parse_target_attributes (struct kernel_info **kernel)
 
   /* Read target arguments (nb of teams, thread_limit) from ARGS.  */
   if (!input)
-    GOMP_PLUGIN_fatal ("No target arguments provided");
+    return false;
 
   while (*input)
     {
@@ -1063,8 +1131,29 @@ GOMP_OFFLOAD_load_image (int target_id, unsigned version,
   int proc_version = kvx_get_isa_revision (image_desc->kvx_image->image);
   KVX_LOG (INFO, "Proc ver: %d\n", proc_version);
 
-  kvx_init_agent (target_id, proc_version);
-  struct agent_info *agent = get_agent_info (target_id);
+  struct agent_info *agent = &kvx_context.agents[target_id];
+
+  /* In multiple devices mode only one agent initializes the MPPA and the rest
+   * of them have to copy the ctx and reloc_offset. This is required so the elf
+   * image is only loaded once.  */
+  bool mppa_initialized = false;
+  if (mppa_multiple_devices)
+    {
+      int mppa_id = target_id / NB_SYSTEM_QUEUE;
+      for (int i = mppa_id * NB_SYSTEM_QUEUE;
+	   i < (mppa_id + 1) * NB_SYSTEM_QUEUE; i++)
+	if (i != target_id && kvx_context.agents[i].initialized_p)
+	  {
+	    mppa_initialized = true;
+	    /* Copy reloc_offset from an initialized agent */
+	    agent->reloc_offset = kvx_context.agents[i].reloc_offset;
+	    /* Copy ctx from an initialized agent */
+	    agent->ctx = kvx_context.agents[i].ctx;
+	    break;
+	  }
+    }
+
+  kvx_init_agent (target_id, proc_version, mppa_initialized);
 
   struct addr_pair *pair;
   mppa_offload_accelerator_t *acc = NULL;
@@ -1086,15 +1175,18 @@ GOMP_OFFLOAD_load_image (int target_id, unsigned version,
   pair = GOMP_PLUGIN_malloc (nb_offloaded_objects * sizeof (struct addr_pair));
   *target_table = pair;
 
-  kvx_find_block (target_id, GOMP_OFFLOAD_alloc (target_id, elf_size), &ptr,
-		  NULL, false);
-  if (mppa_offload_acc_load (acc, elf_ptr, elf_size, 0, ptr->vaddr,
-			     ptr->paddr, &agent->reloc_offset) != 0)
-    KVX_LOG (WARN, "mppa offload load failed\n");
-  KVX_LOG (INFO, "reloc_offset: %lx\n", agent->reloc_offset);
+  if (!mppa_initialized)
+    {
+      kvx_find_block (target_id, GOMP_OFFLOAD_alloc (target_id, elf_size),
+		      &ptr, NULL, false);
+      if (mppa_offload_acc_load
+	  (acc, elf_ptr, elf_size, 0, ptr->vaddr, ptr->paddr,
+	   &agent->reloc_offset) != 0)
+	KVX_LOG (WARN, "mppa offload load failed\n");
+      KVX_LOG (INFO, "reloc_offset: %lx\n", agent->reloc_offset);
 
-  GOMP_OFFLOAD_free (0, (void *) ptr->vaddr);
-
+      GOMP_OFFLOAD_free (target_id, (void *) ptr->vaddr);
+    }
   /* Extract symbols from the image to offload.  */
   for (uint32_t i = 0; i < nb_offloaded_functions; i++)
     {
@@ -1147,18 +1239,35 @@ GOMP_OFFLOAD_load_image (int target_id, unsigned version,
       agent->blocks = block;
     }
 
-  /* Special kernel that must run before everything else. */
-  struct kernel_info init_kernel = {
-    .name = ".omp.offload.device_init",
-    .vars = 0,
-    .args = 0,
-    .initialized_p = false,
-    .initialization_failed_p = false,
-    .agent = agent,
-  };
+  static bool has_run = false;
+  if (!has_run)
+    {
+      has_run = true;
 
-  GOMP_OFFLOAD_can_run (&init_kernel);
-  GOMP_OFFLOAD_run (target_id, &init_kernel, NULL, NULL);
+      /* Special kernel that must run before everything else. */
+      struct kernel_info init_kernel = {
+	.name = ".omp.offload.device_init",
+	.vars = 0,
+	.args = 0,
+	.initialized_p = false,
+	.initialization_failed_p = false,
+	.agent = agent,
+      };
+
+      /* The MPPA needs to know which device mode is used (single or multiple)
+	 in order to exhibit the expected behavior. Thus we pass
+	 mppa_multiple_devices to the init kernel.  */
+
+      int *kernel_vars = (int *) GOMP_OFFLOAD_alloc (target_id, sizeof (int));
+
+      if (!GOMP_OFFLOAD_host2dev (target_id, (void *) kernel_vars,
+				  (void *) &mppa_multiple_devices,
+				  sizeof (int)))
+	KVX_LOG (ERROR, "couldn't host2dev mppa_multiple_devices\n");
+
+      GOMP_OFFLOAD_can_run (&init_kernel);
+      GOMP_OFFLOAD_run (target_id, &init_kernel, (void *) kernel_vars, NULL);
+    }
 
   KVX_LOG (TRACE, "load_image: end\n");
   return nb_offloaded_objects;
@@ -1198,10 +1307,26 @@ GOMP_OFFLOAD_fini_device (int n)
     return 1;
 
   KVX_LOG (TRACE, "fini_device\n");
+  /* In multiple devices mode only one agent has to free 
+   * the mppa_offload data.  */
+  bool mppa_finalized = false;
+  if (mppa_multiple_devices)
+    {
+      int mppa_id = n / NB_SYSTEM_QUEUE;
+      for (int i = mppa_id * NB_SYSTEM_QUEUE;
+	   i < (mppa_id + 1) * NB_SYSTEM_QUEUE; i++)
+	if (i != n && kvx_context.agents[i].finalized_p)
+	  {
+	    mppa_finalized = true;
+	    break;
+	  }
+    }
 
-  free (mppa_offload_cfg_data.accelerator_configs->firmware_name);
-  free (mppa_offload_cfg_data.images);
-
+  if (!mppa_finalized)
+    {
+      free (mppa_offload_cfg_data.accelerator_configs->firmware_name);
+      free (mppa_offload_cfg_data.images);
+    }
   struct block_node *cur = agent->blocks;
   while (cur)
     {
@@ -1224,6 +1349,9 @@ GOMP_OFFLOAD_fini_device (int n)
 	    KVX_LOG (TRACE, "Error joinining thread %d.\n", i);
           if (thread_return != NULL)
             KVX_LOG (WARN, "async worker %d exited abnormally\n", i);
+	  /* In multiple devices mode only wait for one worker */
+	  if (mppa_multiple_devices)
+	    break;
 	}
 
       struct goacc_asyncnode *to_free =
@@ -1239,6 +1367,7 @@ GOMP_OFFLOAD_fini_device (int n)
       pthread_mutex_destroy (agent->schedule_mutex);
       pthread_mutex_destroy (a_ctx->worker_wakeup_mutex);
       free (agent->schedule_mutex);
+      free (a_ctx->async_ths);
       free (a_ctx->worker_wakeup_mutex);
       free (a_ctx->async_queue);
       free (a_ctx->worker_wakeup_cond);
@@ -1249,11 +1378,12 @@ GOMP_OFFLOAD_fini_device (int n)
   if (agent->queue_type == MMIO)
     free (agent->mmio_queues);
 
-  if (mppa_offload_destroy (&agent->ctx) != 0)
+  if (!mppa_finalized && mppa_offload_destroy (&agent->ctx) != 0)
     KVX_LOG (TRACE, "mppa offload destroy failed\n");
 
   KVX_LOG (TRACE, "mppa offload destroy success\n");
   agent->initialized_p = 0;
+  agent->finalized_p = 1;
   return true;
 }
 

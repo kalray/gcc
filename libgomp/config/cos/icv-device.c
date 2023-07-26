@@ -27,8 +27,10 @@
    expected to replace.  */
 
 #include "libgomp.h"
+#include <stdio.h>
 
 static int is_offloading_device = 0;
+static int mppa_multi_device_p = 0;
 
 void
 omp_set_default_device (int device_num)
@@ -65,9 +67,10 @@ omp_get_num_devices (void)
 ialias (omp_get_num_devices)
 
 void
-omp_offload_init (void)
+omp_offload_init (int multi_device)
 {
   is_offloading_device = 1;
+  mppa_multi_device_p = multi_device == 1 ? 1 : 0;
 }
 
 /* Should be 1 on host, 0 on device.  */
@@ -82,9 +85,18 @@ ialias (omp_is_initial_device)
 int
 omp_get_device_num (void)
 {
-  /* By specification, this is equivalent to omp_get_initial_device
-     on the host.  */
-  return ialias_call (omp_get_initial_device) ();
+  if (mppa_multi_device_p)
+    {
+      /* Get the PCR SFR which holds processor config info.  */
+      int pcr = __builtin_kvx_get (2);
+      pcr &= 0xFFFF;
+      return pcr >> 8;
+      /* TODO @multiboard feat offset cluster ID by the number of MPPAs */
+    }
+  else
+    {
+      return omp_get_num_devices ();
+    }
 }
 
 ialias (omp_get_device_num)
