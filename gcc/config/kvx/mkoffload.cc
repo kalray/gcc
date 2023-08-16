@@ -92,6 +92,9 @@ static bool kvx_mkoffload_debug;
 
 /* }}}  */
 
+static bool fpic = false;
+static bool fPIC = false;
+
 const char tool_name[] = "kvx-mkoffload";
 
 /* Files to unlink.  */
@@ -477,6 +480,10 @@ compile_native (const char *infile, const char *outfile, const char *compiler)
     obstack_ptr_grow (&argv_obstack, "-save-temps");
   if (verbose)
     obstack_ptr_grow (&argv_obstack, "-v");
+  if (fpic)
+    obstack_ptr_grow (&argv_obstack, "-fpic");
+  if (fPIC)
+    obstack_ptr_grow (&argv_obstack, "-fPIC");
   switch (offload_abi)
     {
     case OFFLOAD_ABI_LP64:
@@ -600,6 +607,10 @@ main (int argc, char **argv)
 	fopenacc = true;
       else if (strcmp (argv[i], "-save-temps") == 0)
 	save_temps = true;
+      else if (strcmp (argv[i], "-fpic") == 0)
+	fpic = true;
+      else if (strcmp (argv[i], "-fPIC") == 0)
+	fPIC = true;
       else if (strcmp (argv[i], "-v") == 0)
 	verbose = true;
     }
