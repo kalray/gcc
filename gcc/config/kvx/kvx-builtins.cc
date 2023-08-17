@@ -1087,6 +1087,16 @@ kvx_init_builtins (void)
   layout_type (OI);
   lang_hooks.types.register_builtin_type (OI, "__oi");
 
+  /* Support for _Float16.  */
+  tree kvx_float16_type_node = make_node (REAL_TYPE);
+  TYPE_PRECISION (kvx_float16_type_node) = 16;
+  SET_TYPE_MODE (kvx_float16_type_node, HFmode);
+  layout_type (kvx_float16_type_node);
+
+  if (!maybe_get_identifier ("_Float16"))
+    lang_hooks.types.register_builtin_type (kvx_float16_type_node,
+					    "_Float16");
+
   tree X256 = build_vector_type (OI, 1);
   tree X512 = build_vector_type (OI, 2);
   tree X1024 = build_vector_type (OI, 4);
