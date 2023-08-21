@@ -67,13 +67,16 @@
 
 #define MPPA_GOMP_DEFAULT_BUFFER_ALIGN (64)
 
-#define OFFLOAD_ALLOC_MODE MPPA_OFFLOAD_ALLOC_DDR
-// #define OFFLOAD_ALLOC_MODE MPPA_OFFLOAD_ALLOC_LOCALMEM_0
+// #define OFFLOAD_ALLOC_MODE MPPA_OFFLOAD_ALLOC_DDR
+#define OFFLOAD_ALLOC_MODE MPPA_OFFLOAD_ALLOC_LOCALMEM_0
 
 // #define MPPA_OFFLOAD_DEFAULT_QUEUE_TYPE MMIO
 #define MPPA_OFFLOAD_DEFAULT_QUEUE_TYPE RPMSG
 
 #define MPPA_MAX_ASYNC_KERNELS 2048
+
+#define MPPA_CV1_SMEM_SIZE 4000000
+#define MPPA_CV2_SMEM_SIZE 8000000
 
 static mppa_offload_host_acc_config_t mppa_offload_host_acc_cfg = {
   .board_id = 0,
@@ -196,6 +199,7 @@ struct async_ctx
 };
 
 /* An agent is an offloading device.  */
+//TODO extract architecture specific info (smem size, etc) to arch struct
 struct agent_info
 {
   /* Opaque structure containing the state of the agent.  */
@@ -224,6 +228,8 @@ struct agent_info
   /* Round robin counter for scheduling. Its access must be protected by
      locking schedule_mutex. */
   int rr_counter;
+  /* Size (in bytes) of a cluster's shared memory.  */
+  size_t smem_size;
 };
 
 struct kvx_context_info
@@ -851,6 +857,16 @@ kvx_init_agent (int n, int version, bool mppa_initialized)
   if (agent->initialized_p)
     return true;
 
+  if (version == 2)
+    agent->smem_size = MPPA_CV2_SMEM_SIZE;
+  else if (version == 1)
+    agent->smem_size = MPPA_CV1_SMEM_SIZE;
+  else
+    {
+      KVX_LOG (ERROR, "invalid version '%d'", version);
+      return false;
+    }
+
   /* Only one agent must initialize the firmware */
   if (!mppa_initialized)
     {
@@ -1178,7 +1194,8 @@ GOMP_OFFLOAD_load_image (int target_id, unsigned version,
 	  }
     }
 
-  kvx_init_agent (target_id, proc_version, mppa_initialized);
+  if (!kvx_init_agent (target_id, proc_version, mppa_initialized))
+    GOMP_PLUGIN_fatal ("failed to initialize agent");
 
   struct addr_pair *pair;
   mppa_offload_accelerator_t *acc = NULL;
@@ -1477,11 +1494,22 @@ GOMP_OFFLOAD_alloc (int n, size_t size)
   if (!(queue = mppa_offload_get_sysqueue (acc, queue_num)))
     KVX_LOG (TRACE, "Failed to get system queue %d", 0);
 
-  if (mppa_offload_alloc (queue, size, MPPA_GOMP_DEFAULT_BUFFER_ALIGN,
-			  OFFLOAD_ALLOC_MODE, &buffer->vaddr,
-			  &buffer->paddr) != 0)
+  int alloc_mode;
+
+  /* Use default alloc mode if possible. Use DDR allocation if the
+     requested size overwhelms SMEM.  */
+  if (OFFLOAD_ALLOC_MODE != MPPA_OFFLOAD_ALLOC_DDR && size >= agent->smem_size)
     {
-      KVX_LOG (TRACE, "mppa_offload_alloc failed\n");
+      alloc_mode = MPPA_OFFLOAD_ALLOC_DDR;
+      KVX_LOG (WARN, "too big for SMEM, allocating on DDR\n");
+    }
+  else
+    alloc_mode = OFFLOAD_ALLOC_MODE;
+
+  if (mppa_offload_alloc (queue, size, MPPA_GOMP_DEFAULT_BUFFER_ALIGN,
+			  alloc_mode, &buffer->vaddr, &buffer->paddr) != 0)
+    {
+      KVX_LOG (WARN, "mppa_offload_alloc of size %ld failed\n", size);
       return NULL;
     }
 
