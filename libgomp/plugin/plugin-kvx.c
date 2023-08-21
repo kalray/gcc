@@ -73,6 +73,8 @@
 // #define MPPA_OFFLOAD_DEFAULT_QUEUE_TYPE MMIO
 #define MPPA_OFFLOAD_DEFAULT_QUEUE_TYPE RPMSG
 
+#define MPPA_MAX_ASYNC_KERNELS 2048
+
 static mppa_offload_host_acc_config_t mppa_offload_host_acc_cfg = {
   .board_id = 0,
   .cluster_id = MPPA_OFFLOAD_CC_ID,
@@ -136,6 +138,10 @@ struct goacc_asyncqueue
 {
   struct goacc_asyncnode *_Atomic front;
   struct goacc_asyncnode *_Atomic rear;
+  /* Condition to allow enqueuing if n_kernels <= MAX_ASYNC_KERNELS.  */
+  pthread_cond_t *enqueue_cond;
+  /* Mutex that should be locked before waiting on enqueue_cond.  */
+  pthread_mutex_t *enqueue_mutex;
 };
 
 struct goacc_asyncnode
@@ -456,6 +462,8 @@ kvx_async_queue_pop (struct agent_info *agent, struct kernel_info **kernel)
 	      atomic_fetch_sub (&a_ctx->n_kernels, 1);
 	      free (head);
 	      *kernel = content;
+	      if (atomic_load (&a_ctx->n_kernels) <= MPPA_MAX_ASYNC_KERNELS)
+		pthread_cond_broadcast (queue->enqueue_cond);
 	      KVX_LOG (TRACE, "end\n");
 	      return;
 	    }
@@ -642,6 +650,9 @@ kvx_enqueue_async_kernel (int agent_n, void *fn_ptr)
     GOMP_PLUGIN_malloc_cleared (sizeof (*node));
   node->kernel = kernel;
 
+  while (atomic_load (&a_ctx->n_kernels) >= MPPA_MAX_ASYNC_KERNELS)
+    pthread_cond_wait (queue->enqueue_cond, queue->enqueue_mutex);
+
   while (1)
     {
       struct goacc_asyncnode *_Atomic tail = queue->rear;
@@ -762,11 +773,19 @@ kvx_init_async_context (struct agent_info *agent)
     GOMP_PLUGIN_malloc_cleared (sizeof (pthread_mutex_t));
   async_context->async_queue_stop = 0;
 
+  async_context->async_queue->enqueue_cond =
+    GOMP_PLUGIN_malloc_cleared (sizeof (pthread_cond_t));
+  async_context->async_queue->enqueue_mutex =
+    GOMP_PLUGIN_malloc_cleared (sizeof (pthread_mutex_t));
+
   struct goacc_asyncnode *dummy = GOMP_PLUGIN_malloc_cleared (sizeof (*dummy));
 
   async_context->async_queue->front = dummy;
   async_context->async_queue->rear = dummy;
   async_context->n_kernels = 0;
+
+  pthread_cond_init (async_context->async_queue->enqueue_cond, NULL);
+  pthread_mutex_init (async_context->async_queue->enqueue_mutex, NULL);
 
   pthread_cond_init (async_context->worker_wakeup_cond, NULL);
   pthread_mutex_init (async_context->worker_wakeup_mutex, NULL);
@@ -1366,11 +1385,14 @@ GOMP_OFFLOAD_fini_device (int n)
 
       pthread_mutex_destroy (agent->schedule_mutex);
       pthread_mutex_destroy (a_ctx->worker_wakeup_mutex);
+      pthread_mutex_destroy (a_ctx->async_queue->enqueue_mutex);
       free (agent->schedule_mutex);
       free (a_ctx->async_ths);
       free (a_ctx->worker_wakeup_mutex);
       free (a_ctx->async_queue);
       free (a_ctx->worker_wakeup_cond);
+      free (a_ctx->async_queue->enqueue_cond);
+      free (a_ctx->async_queue->enqueue_mutex);
       free (a_ctx);
     }
 
