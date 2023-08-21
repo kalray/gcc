@@ -209,6 +209,7 @@ struct agent_info
   /* Opaque handle to the loaded elf.  */
   uint64_t reloc_offset;
   struct block_node *blocks;
+  pthread_mutex_t *blocks_mutex;
   /* Offloading queue type (either MMIO or RPROC over sysqueues).  */
   enum queue_type queue_type;
   /* MMIO queue pointers, which store tasks.  */
@@ -900,6 +901,11 @@ kvx_init_agent (int n, int version, bool mppa_initialized)
       KVX_LOG (INFO, "firmware: %s\n", *fw_name);
     }
   char *queue_type = getenv ("MPPA_OFFLOAD_QUEUE_TYPE");
+
+  /* Controls the access to the block list.  */
+  agent->blocks_mutex = GOMP_PLUGIN_malloc (sizeof (pthread_mutex_t));
+  pthread_mutex_init (agent->blocks_mutex, NULL);
+
   /* Parse offload queue type, use defaults if not found.  */
   if (queue_type)
     {
@@ -1253,9 +1259,11 @@ GOMP_OFFLOAD_load_image (int target_id, unsigned version,
       var_buf->paddr = var_buf->vaddr;
       var_buf->size = image_desc->global_variables[i].size;
 
+      pthread_mutex_lock (agent->blocks_mutex);
       block->base_addr = var_buf->vaddr;
       block->nxt = agent->blocks;
       agent->blocks = block;
+      pthread_mutex_unlock (agent->blocks_mutex);
     }
 
   static bool has_run = false;
@@ -1384,9 +1392,11 @@ GOMP_OFFLOAD_fini_device (int n)
 	}
 
       pthread_mutex_destroy (agent->schedule_mutex);
+      pthread_mutex_destroy (agent->blocks_mutex);
       pthread_mutex_destroy (a_ctx->worker_wakeup_mutex);
       pthread_mutex_destroy (a_ctx->async_queue->enqueue_mutex);
       free (agent->schedule_mutex);
+      free (agent->blocks_mutex);
       free (a_ctx->async_ths);
       free (a_ctx->worker_wakeup_mutex);
       free (a_ctx->async_queue);
@@ -1483,11 +1493,13 @@ GOMP_OFFLOAD_alloc (int n, size_t size)
   KVX_LOG (TRACE, "alloc: end\n");
 
   struct block_node *block = malloc (sizeof *block);
+  pthread_mutex_lock (agent->blocks_mutex);
   block->base_addr = buffer->vaddr;
   block->buffer = buffer;
   block->nxt = agent->blocks;
 
   agent->blocks = block;
+  pthread_mutex_unlock (agent->blocks_mutex);
 
   return (void *) block->base_addr;
 }
