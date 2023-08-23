@@ -8097,6 +8097,162 @@ kvx_loop_unroll_adjust (unsigned nunroll, struct loop *loop)
   return nunroll;
 }
 
+/* Return the UID of the insn that follows the specified label.  */
+static int
+get_dest_uid (rtx_insn *label, int max_uid)
+{
+  rtx_insn *dest = next_real_insn (label);
+
+  if (!dest)
+    /* This can happen for an undefined label.  */
+    return 0;
+  int dest_uid = INSN_UID (dest);
+  /* If this is a newly created branch redirection blocking instruction,
+     we cannot index the branch_uid or insn_addresses arrays with its
+     uid.  But then, we won't need to, because the actual destination is
+     the following branch.  */
+  while (dest_uid >= max_uid)
+    {
+      dest = NEXT_INSN (dest);
+      dest_uid = INSN_UID (dest);
+    }
+  if (JUMP_P (dest) && GET_CODE (PATTERN (dest)) == RETURN)
+    return 0;
+  return dest_uid;
+}
+
+/* The KVX instruction set only accepts 17-bit pcrel immediates in conditional
+   branches, and loopdo; and 27-bit pcrel immediates in calls and goto. It can
+   be a problem when the assembly file produced by a TU is gigantic.
+
+   To overcome this problem we detect far jumps and try to rewrite them.
+   However, we do not attempt at rewriting loopdo. The body of a hardware loop
+   should fit in the i-cache, and if it spans over a region bigger than 17-bit,
+   we have other problems to worry about.  */
+static void
+kvx_analyze_branches ()
+{
+  rtx_insn *insn;
+  rtx_insn *first = get_insns ();
+  int max_uid = get_max_uid ();
+
+  shorten_branches (first);
+
+  for (insn = first; insn; insn = NEXT_INSN (insn))
+    if (!INSN_P (insn))
+      continue;
+    else if (insn->deleted ())
+      {
+	/* Shorten_branches would split this instruction again,
+	   so transform it into a note.  */
+	SET_INSN_DELETED (insn);
+      }
+    else if (JUMP_P (insn))
+      {
+	rtx src = PATTERN (insn);
+	int max_jump_length = 0;
+	if (GET_CODE (src) == PARALLEL)
+	  continue;
+	src = SET_SRC (src);
+	rtx olabel_ref = NULL;
+	rtx_insn *olabel_loc = NULL;
+
+	/* This is a conditional branch.  */
+	if (GET_CODE (src) == IF_THEN_ELSE)
+	  {
+	    olabel_ref = (safe_as_a < rtx_insn * >(XEXP (src, 1)));
+	    /* Skip indirect jumps.  */
+	    if (GET_CODE (olabel_ref) != LABEL_REF)
+	      continue;
+	    olabel_loc = label_ref_label (olabel_ref);
+	    max_jump_length = 17;
+	  }
+	/* This is a goto.  */
+	else
+	  {
+	    olabel_ref = src;
+	    /* Skip indirect jumps.  */
+	    if (GET_CODE (olabel_ref) != LABEL_REF)
+	      continue;
+	    olabel_loc = label_ref_label (olabel_ref);
+	    max_jump_length = 27;
+	  }
+
+	int src_addr = INSN_ADDRESSES (INSN_UID (insn));
+	int dest_uid = get_dest_uid (olabel_loc, max_uid);
+	int dst_addr = INSN_ADDRESSES (dest_uid);
+	int length = abs (src_addr - dst_addr);
+
+	if (length >= (2 << max_jump_length))
+	  {
+
+	    if (max_jump_length == 17)
+	      {
+		/* cb.cond $reg0? L0           cb.!cond $reg? L1
+		   ...                becomes  make $reg1 = L0
+		   ...                         igoto $reg1
+		   ...                         L1:
+		   ...                         ...  */
+
+		rtx_code_label *skip_label = gen_label_rtx ();
+		invert_jump (as_a < rtx_jump_insn * >(insn), skip_label, 0);
+		rtx_insn *cur = insn;
+		rtx reg = gen_rtx_REG (DImode, 16);
+		cur = emit_insn_after (gen_rtx_SET (reg, olabel_ref), cur);
+		cur = emit_insn_after (gen_indirect_jump (reg), cur);
+		cur = emit_label_after (skip_label, cur);
+		LABEL_NUSES (olabel_loc)++;
+		LABEL_NUSES (skip_label)++;
+	      }
+	    else if (max_jump_length == 27)
+	      {
+		/* goto L0 becomes make $reg1 = L0; igoto $reg1  */
+		rtx reg = gen_rtx_REG (DImode, 16);
+		rtx_insn *cur = insn;
+		cur = emit_insn_after (gen_indirect_jump (reg), cur);
+		delete_insn (insn);
+		LABEL_NUSES (olabel_loc)++;
+	      }
+	    else
+	      gcc_unreachable ();
+
+	  }
+
+	if (dump_file)
+	  fprintf (dump_file, "%s: jump_length: %d%s\n",
+		   max_jump_length == 17 ? "cb" : "goto",
+		   length,
+		   length >=
+		   (2 << max_jump_length) ? " (out of range)" : " ");
+      }
+    else if (CALL_P (insn))
+      {
+	rtx src = PATTERN (insn);
+	int max_jump_length = 27;
+	if (GET_CODE (src) == PARALLEL)
+	  continue;
+	src = SET_SRC (src);
+	rtx olabel_ref = src;
+	rtx_insn *olabel_loc = label_ref_label (olabel_ref);
+
+	int src_addr = INSN_ADDRESSES (INSN_UID (insn));
+	int dest_uid = get_dest_uid (olabel_loc, max_uid);
+	int dst_addr = INSN_ADDRESSES (dest_uid);
+	int length = abs (src_addr - dst_addr);
+
+	if (length >= (2 << max_jump_length))
+	  {
+	    /* call L0 becomes make $reg1 = L0; icall $reg1  */
+	    rtx reg = gen_rtx_REG (DImode, 16);
+	    rtx_insn *cur = insn;
+	    cur = emit_insn_after (gen_indirect_jump (reg), cur);
+	    delete_insn (insn);
+	    LABEL_NUSES (olabel_loc)++;
+	  }
+      }
+}
+
+
 /* Implements TARGET_MACHINE_DEPENDENT_REORG.  */
 static void
 kvx_machine_dependent_reorg (void)
@@ -8106,6 +8262,9 @@ kvx_machine_dependent_reorg (void)
   /* Doloop optimization. */
   if (optimize)
     reorg_loops (true, &kvx_doloop_hooks);
+
+  if (!optimize)
+    kvx_analyze_branches ();
 
   df_analyze ();
 
@@ -8133,6 +8292,7 @@ kvx_machine_dependent_reorg (void)
       timevar_pop (TV_VAR_TRACKING);
       free_bb_for_insn ();
     }
+
 
   df_finish_pass (false);
 }
