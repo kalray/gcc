@@ -35,7 +35,43 @@ dg-init
 
 # Main loop.
 dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/*.\[cCS\]]] \
-	"" $DEFAULT_CFLAGS
+ 	"" $DEFAULT_CFLAGS
+
+proc test-shorten-branch { } {
+  set test_name "shorten_banches"
+  set outfile [open "$test_name.c" w+]
+
+  puts $outfile "\
+/* { dg-do assemble } */
+/* { dg-options \"-O0 -fstack-limit-register=sr\" } */
+#define N 10
+int main ()
+\{
+  int sum = 0;
+  int a\[N\];"
+
+
+  for {set i 0} {$i < 150000} {incr i} {
+    set idx {$i % 10}
+    puts $outfile "  a\[$i\] = $i;"
+  }
+
+  puts $outfile "\
+   for (int i = 0; i < N; ++i)
+     sum += a\[i\];
+
+   return sum;
+ \}"
+   close $outfile
+   dg-runtest "$test_name.c" "" ""
+   file delete {*}[glob $test_name.*]
+}
+
+# This tests takes something around 20 seconds to compile because it needs to
+# generate a gigantic assembly file.
+if [istarget kvx*-cos*] then {
+  test-shorten-branch
+}
 
 # All done.
 dg-finish
