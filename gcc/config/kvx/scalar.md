@@ -4824,3 +4824,23 @@
         (neg:DF (subreg:DF (match_dup 1) 8)))]
   ""
 )
+
+(define_expand "fast_muldc3"
+  [(set (match_operand:DC 0 "register_operand" "=r")
+        (mult:DC (match_operand:DC 1 "register_operand" "r")
+                 (match_operand:DC 2 "register_operand" "r")))]
+  ""
+  {
+    rtx a_r = simplify_gen_subreg (DFmode, operands[1], DCmode, 0);
+    rtx a_i = simplify_gen_subreg (DFmode, operands[1], DCmode, 8);
+    rtx b_r = simplify_gen_subreg (DFmode, operands[2], DCmode, 0);
+    rtx b_i = simplify_gen_subreg (DFmode, operands[2], DCmode, 8);
+    rtx res_r = simplify_gen_subreg (DFmode, operands[0], DCmode, 0);
+    rtx res_i = simplify_gen_subreg (DFmode, operands[0], DCmode, 8);
+    emit_insn (gen_muldf3 (res_r, a_r, b_r));
+    emit_insn (gen_muldf3 (res_i, a_r, b_i));
+    emit_insn (gen_fnmadf4 (res_r, a_i, b_i, res_r));
+    emit_insn (gen_fmadf4 (res_i, a_i, b_r, res_i));
+    DONE;
+  }
+)

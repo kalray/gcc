@@ -1138,25 +1138,36 @@ expand_complex_libcall (gimple_stmt_iterator *gsi, tree type, tree ar, tree ai,
 
 static void
 expand_complex_multiplication_components (gimple_seq *stmts, location_t loc,
-					  tree type, tree ar, tree ai,
-					  tree br, tree bi,
-					  tree *rr, tree *ri)
+					  tree type, tree ac, tree ar,
+					  tree ai, tree bc, tree br, tree bi,
+					  tree *rr, tree *ri,
+					  bool fast_mult)
 {
-  tree t1, t2, t3, t4;
+  tree inner_type = TREE_TYPE (type);
+  if (!fast_mult)
+    {
+      tree t1, t2, t3, t4;
 
-  t1 = gimple_build (stmts, loc, MULT_EXPR, type, ar, br);
-  t2 = gimple_build (stmts, loc, MULT_EXPR, type, ai, bi);
-  t3 = gimple_build (stmts, loc, MULT_EXPR, type, ar, bi);
+      t1 = gimple_build (stmts, loc, MULT_EXPR, inner_type, ar, br);
+      t2 = gimple_build (stmts, loc, MULT_EXPR, inner_type, ai, bi);
+      t3 = gimple_build (stmts, loc, MULT_EXPR, inner_type, ar, bi);
 
-  /* Avoid expanding redundant multiplication for the common
-     case of squaring a complex number.  */
-  if (ar == br && ai == bi)
-    t4 = t3;
+      /* Avoid expanding redundant multiplication for the common
+	 case of squaring a complex number.  */
+      if (ar == br && ai == bi)
+	t4 = t3;
+      else
+	t4 = gimple_build (stmts, loc, MULT_EXPR, inner_type, ai, br);
+
+      *rr = gimple_build (stmts, loc, MINUS_EXPR, inner_type, t1, t2);
+      *ri = gimple_build (stmts, loc, PLUS_EXPR, inner_type, t3, t4);
+    }
   else
-    t4 = gimple_build (stmts, loc, MULT_EXPR, type, ai, br);
-
-  *rr = gimple_build (stmts, loc, MINUS_EXPR, type, t1, t2);
-  *ri = gimple_build (stmts, loc, PLUS_EXPR, type, t3, t4);
+    {
+      tree rc = gimple_build (stmts, loc, CFN_FAST_MULT, type, ac, bc);
+      *rr = gimple_build (stmts, loc, REALPART_EXPR, inner_type, rc);
+      *ri = gimple_build (stmts, loc, IMAGPART_EXPR, inner_type, rc);
+    }
 }
 
 /* Expand complex multiplication to scalars:
@@ -1165,13 +1176,18 @@ expand_complex_multiplication_components (gimple_seq *stmts, location_t loc,
 
 static void
 expand_complex_multiplication (gimple_stmt_iterator *gsi, tree type,
-			       tree ar, tree ai, tree br, tree bi,
+			       tree ac, tree ar, tree ai,
+			       tree bc, tree br, tree bi,
 			       complex_lattice_t al, complex_lattice_t bl)
 {
   tree rr, ri;
   tree inner_type = TREE_TYPE (type);
   location_t loc = gimple_location (gsi_stmt (*gsi));
   gimple_seq stmts = NULL;
+  bool fast_mult = direct_internal_fn_supported_p (IFN_FAST_MULT, type,
+						   bb_optimization_type
+						   (gimple_bb
+						    (gsi_stmt (*gsi))));
 
   if (al < bl)
     {
@@ -1232,9 +1248,10 @@ expand_complex_multiplication (gimple_stmt_iterator *gsi, tree type,
 	    {
 	      /* If we are not worrying about NaNs expand to
 		 (ar*br - ai*bi) + i(ar*bi + br*ai) directly.  */
-	      expand_complex_multiplication_components (&stmts, loc, inner_type,
-							ar, ai, br, bi,
-							&rr, &ri);
+	      expand_complex_multiplication_components (&stmts, loc, type,
+							ac, ar, ai, bc, br,
+							bi, &rr, &ri,
+							fast_mult);
 	      break;
 	    }
 
@@ -1245,8 +1262,9 @@ expand_complex_multiplication (gimple_stmt_iterator *gsi, tree type,
 
 	  tree tmpr, tmpi;
 	  expand_complex_multiplication_components (&stmts, loc,
-						    inner_type, ar, ai,
-						    br, bi, &tmpr, &tmpi);
+						    type, ac, ar, ai,
+						    bc, br, bi, &tmpr, &tmpi,
+						    fast_mult);
 	  gsi_insert_seq_before (gsi, stmts, GSI_SAME_STMT);
 	  stmts = NULL;
 
@@ -1297,10 +1315,11 @@ expand_complex_multiplication (gimple_stmt_iterator *gsi, tree type,
 	}
       else
 	/* If we are not worrying about NaNs expand to
-	  (ar*br - ai*bi) + i(ar*bi + br*ai) directly.  */
+	   (ar*br - ai*bi) + i(ar*bi + br*ai) directly.  */
 	expand_complex_multiplication_components (&stmts, loc,
-						  inner_type, ar, ai,
-						  br, bi, &rr, &ri);
+						  type, ac, ar, ai,
+						  bc, br, bi, &rr, &ri,
+						  fast_mult);
       break;
 
     default:
@@ -2096,7 +2115,8 @@ expand_complex_operations_1 (gimple_stmt_iterator *gsi)
       break;
 
     case MULT_EXPR:
-      expand_complex_multiplication (gsi, type, ar, ai, br, bi, al, bl);
+      expand_complex_multiplication (gsi, type, ac, ar, ai, bc, br, bi, al,
+				     bl);
       break;
 
     case TRUNC_DIV_EXPR:
