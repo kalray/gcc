@@ -3444,61 +3444,8 @@ pass_forwprop::execute (function *fun)
 		       != TARGET_MEM_REF)
 		   && !stmt_can_throw_internal (cfun, stmt))
 	    {
-	      /* Rewrite loads used only in real/imagpart extractions to
-	         component-wise loads.  */
-	      use_operand_p use_p;
-	      imm_use_iterator iter;
-	      bool rewrite = true;
-	      FOR_EACH_IMM_USE_FAST (use_p, iter, lhs)
-		{
-		  gimple *use_stmt = USE_STMT (use_p);
-		  if (is_gimple_debug (use_stmt))
-		    continue;
-		  if (!is_gimple_assign (use_stmt)
-		      || (gimple_assign_rhs_code (use_stmt) != REALPART_EXPR
-			  && gimple_assign_rhs_code (use_stmt) != IMAGPART_EXPR)
-		      || TREE_OPERAND (gimple_assign_rhs1 (use_stmt), 0) != lhs)
-		    {
-		      rewrite = false;
-		      break;
-		    }
-		}
-	      if (rewrite)
-		{
-		  gimple *use_stmt;
-		  FOR_EACH_IMM_USE_STMT (use_stmt, iter, lhs)
-		    {
-		      if (is_gimple_debug (use_stmt))
-			{
-			  if (gimple_debug_bind_p (use_stmt))
-			    {
-			      gimple_debug_bind_reset_value (use_stmt);
-			      update_stmt (use_stmt);
-			    }
-			  continue;
-			}
-
-		      tree new_rhs = build1 (gimple_assign_rhs_code (use_stmt),
-					     TREE_TYPE (TREE_TYPE (rhs)),
-					     unshare_expr (rhs));
-		      gimple *new_stmt
-			= gimple_build_assign (gimple_assign_lhs (use_stmt),
-					       new_rhs);
-
-		      location_t loc = gimple_location (use_stmt);
-		      gimple_set_location (new_stmt, loc);
-		      gimple_stmt_iterator gsi2 = gsi_for_stmt (use_stmt);
-		      unlink_stmt_vdef (use_stmt);
-		      gsi_remove (&gsi2, true);
-
-		      gsi_insert_before (&gsi, new_stmt, GSI_SAME_STMT);
-		    }
-
-		  release_defs (stmt);
-		  gsi_remove (&gsi, true);
-		}
-	      else
-		gsi_next (&gsi);
+	      /* Special case removed due to better complex processing.  */
+	      gsi_next (&gsi);
 	    }
 	  else if (TREE_CODE (TREE_TYPE (lhs)) == VECTOR_TYPE
 		   && (TYPE_MODE (TREE_TYPE (lhs)) == BLKmode
@@ -3514,45 +3461,7 @@ pass_forwprop::execute (function *fun)
 
 	  else if (code == COMPLEX_EXPR)
 	    {
-	      /* Rewrite stores of a single-use complex build expression
-	         to component-wise stores.  */
-	      /*use_operand_p use_p;
-	      gimple *use_stmt;
-	      if (single_imm_use (lhs, &use_p, &use_stmt)
-		  && gimple_store_p (use_stmt)
-		  && !gimple_has_volatile_ops (use_stmt)
-		  && is_gimple_assign (use_stmt)
-		  && (TREE_CODE (gimple_assign_lhs (use_stmt))
-		      != TARGET_MEM_REF))
-		{
-		  tree use_lhs = gimple_assign_lhs (use_stmt);
-		  if (auto_var_p (use_lhs))
-		    DECL_NOT_GIMPLE_REG_P (use_lhs) = 1;
-		  tree new_lhs = build1 (REALPART_EXPR,
-					 TREE_TYPE (TREE_TYPE (use_lhs)),
-					 unshare_expr (use_lhs));
-		  gimple *new_stmt = gimple_build_assign (new_lhs, rhs);
-		  location_t loc = gimple_location (use_stmt);
-		  gimple_set_location (new_stmt, loc);
-		  gimple_set_vuse (new_stmt, gimple_vuse (use_stmt));
-		  gimple_set_vdef (new_stmt, make_ssa_name (gimple_vop (cfun)));
-		  SSA_NAME_DEF_STMT (gimple_vdef (new_stmt)) = new_stmt;
-		  gimple_set_vuse (use_stmt, gimple_vdef (new_stmt));
-		  gimple_stmt_iterator gsi2 = gsi_for_stmt (use_stmt);
-		  gsi_insert_before (&gsi2, new_stmt, GSI_SAME_STMT);
-
-		  new_lhs = build1 (IMAGPART_EXPR,
-				    TREE_TYPE (TREE_TYPE (use_lhs)),
-				    unshare_expr (use_lhs));
-		  gimple_assign_set_lhs (use_stmt, new_lhs);
-		  gimple_assign_set_rhs1 (use_stmt, gimple_assign_rhs2 (stmt));
-		  update_stmt (use_stmt);
-
-		  release_defs (stmt);
-		  gsi_remove (&gsi, true);
-		}
-	      else
-		gsi_next (&gsi);*/
+	      /* Special case removed due to better complex processing.  */
 	      gsi_next (&gsi);
 	    }
 	  else if (code == CONSTRUCTOR
