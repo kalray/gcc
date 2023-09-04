@@ -966,6 +966,8 @@
   (V2SI    "DI")
   (V2SF    "DF")
   (V16QI   "V8HI")
+  (V32QI   "V16HI")
+  (V64QI   "V32HI")
   (V8HI    "V4SI")
   (V8HF    "V4SF")
   (V4SI    "V2DI")
@@ -987,6 +989,8 @@
   (V2SI    "di")
   (V2SF    "df")
   (V16QI   "v8hi")
+  (V32QI   "v16hi")
+  (V64QI   "v32hi")
   (V8HI    "v4si")
   (V8HF    "v4sf")
   (V4SI    "v2di")
@@ -1006,6 +1010,8 @@
   (V2SI    "wd")
   (V2SF    "wd")
   (V16QI   "bho")
+  (V32QI   "bhx")
+  (V64QI   "bhv")
   (V8HI    "hwq")
   (V8HF    "hwq")
   (V4SI    "wdp")
@@ -1526,6 +1532,14 @@
   V8QI
   V16QI
   V32QI
+])
+
+;; Iterator for the VXQI and V64QI modes.
+(define_mode_iterator VYQI [
+  V8QI
+  V16QI
+  V32QI
+  V64QI
 ])
 
 ;; Iterator for the non-byte integer vector modes.
