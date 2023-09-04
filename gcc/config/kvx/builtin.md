@@ -2249,10 +2249,149 @@
    (set_attr "length"      "4")]
 )
 
+(define_insn "kvx_select64s"
+  [(set (match_operand:V64 0 "register_operand" "=r")
+        (unspec:V64 [(match_operand:V64 1 "register_operand" "r")
+                     (match_operand:V64 2 "register_operand" "0")
+                     (match_operand:DI 3 "register_operand" "r")
+                     (match_operand 4 "" "")] UNSPEC_SELECT))]
+  ""
+  "cmoved%4 %3? %0 = %1"
+  [(set_attr "type" "alu_thin")
+   (set_attr "length"      "4")]
+)
+
+(define_insn "kvx_select128s"
+  [(set (match_operand:V128 0 "register_operand" "=r")
+        (unspec:V128 [(match_operand:V128 1 "register_operand" "r")
+                      (match_operand:V128 2 "register_operand" "0")
+                      (match_operand:DI 3 "register_operand" "r")
+                      (match_operand 4 "" "")] UNSPEC_SELECT))]
+  ""
+  "cmoved%4 %3? %x0 = %x1\n\tcmoved%4 %3? %y0 = %y1"
+  [(set_attr "type" "alu_thin_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_expand "kvx_select256s"
+  [(set (match_operand:V256 0 "register_operand" "")
+        (unspec:V256 [(match_operand:V256 1 "register_operand" "")
+                      (match_operand:V256 2 "register_operand" "")
+                      (match_operand:DI 3 "register_operand" "")
+                      (match_operand 4 "" "")] UNSPEC_SELECT))]
+  ""
+  ""
+)
+
+(define_insn_and_split "kvx_select256s_1"
+  [(set (match_operand:V256 0 "register_operand" "=r")
+        (unspec:V256 [(match_operand:V256 1 "register_operand" "r")
+                      (match_operand:V256 2 "register_operand" "0")
+                      (match_operand:DI 3 "register_operand" "r")
+                      (match_operand 4 "" "")] UNSPEC_SELECT))]
+  "KV3_1"
+  "#"
+  "KV3_1 && reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 0)
+                        (subreg:<HALF> (match_dup 2) 0)
+                        (match_dup 3)
+                        (match_dup 4)] UNSPEC_SELECT))
+   (set (subreg:<HALF> (match_dup 0) 16)
+        (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 16)
+                        (subreg:<HALF> (match_dup 2) 16)
+                        (match_dup 3)
+                        (match_dup 4)] UNSPEC_SELECT))]
+  ""
+  [(set_attr "type" "alu_lite_x2")]
+)
+
+(define_insn "kvx_select256s_2"
+  [(set (match_operand:V256 0 "register_operand" "=r")
+        (unspec:V256 [(match_operand:V256 1 "register_operand" "r")
+                      (match_operand:V256 2 "register_operand" "0")
+                      (match_operand:DI 3 "register_operand" "r")
+                      (match_operand 4 "" "")] UNSPEC_SELECT))]
+  "KV3_2"
+  {
+    return "cmoved%4 %3? %x0 = %x1\n\tcmoved%4 %3? %y0 = %y1\n\t"
+           "cmoved%4 %3? %z0 = %z1\n\tcmoved%4 %3? %t0 = %t1";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_expand "kvx_select512s"
+  [(set (match_operand:V512 0 "register_operand" "")
+        (unspec:V512 [(match_operand:V512 1 "register_operand" "")
+                      (match_operand:V512 2 "register_operand" "")
+                      (match_operand:DI 3 "register_operand" "")
+                      (match_operand 4 "" "")] UNSPEC_SELECT))]
+  ""
+  ""
+)
+
+(define_insn_and_split "kvx_select512s_1"
+  [(set (match_operand:V512 0 "register_operand" "=&r")
+        (unspec:V512 [(match_operand:V512 1 "register_operand" "r")
+                      (match_operand:V512 2 "register_operand" "0")
+                      (match_operand:DI 3 "register_operand" "r")
+                      (match_operand 4 "" "")] UNSPEC_SELECT))]
+  "KV3_1"
+  "#"
+  "KV3_1 && reload_completed"
+  [(set (subreg:<QUART> (match_dup 0) 0)
+        (unspec:<QUART> [(subreg:<QUART> (match_dup 1) 0)
+                         (subreg:<QUART> (match_dup 2) 0)
+                         (match_dup 3)
+                         (match_dup 4)] UNSPEC_SELECT))
+   (set (subreg:<QUART> (match_dup 0) 16)
+        (unspec:<QUART> [(subreg:<QUART> (match_dup 1) 16)
+                         (subreg:<QUART> (match_dup 2) 16)
+                         (match_dup 3)
+                         (match_dup 4)] UNSPEC_SELECT))
+   (set (subreg:<QUART> (match_dup 0) 32)
+        (unspec:<QUART> [(subreg:<QUART> (match_dup 1) 32)
+                         (subreg:<QUART> (match_dup 2) 32)
+                         (match_dup 3)
+                         (match_dup 4)] UNSPEC_SELECT))
+   (set (subreg:<QUART> (match_dup 0) 48)
+        (unspec:<QUART> [(subreg:<QUART> (match_dup 1) 48)
+                         (subreg:<QUART> (match_dup 2) 48)
+                         (match_dup 3)
+                         (match_dup 4)] UNSPEC_SELECT))]
+  ""
+)
+
+(define_insn_and_split "kvx_select512s_2"
+  [(set (match_operand:V512 0 "register_operand" "=&r")
+        (unspec:V512 [(match_operand:V512 1 "register_operand" "r")
+                      (match_operand:V512 2 "register_operand" "0")
+                      (match_operand:DI 3 "register_operand" "r")
+                      (match_operand 4 "" "")] UNSPEC_SELECT))]
+  "KV3_2"
+  "#"
+  "KV3_2 && reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 0)
+                        (subreg:<HALF> (match_dup 2) 0)
+                        (match_dup 3)
+                        (match_dup 4)] UNSPEC_SELECT))
+   (set (subreg:<HALF> (match_dup 0) 32)
+        (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 32)
+                        (subreg:<HALF> (match_dup 2) 32)
+                        (match_dup 3)
+                        (match_dup 4)] UNSPEC_SELECT))]
+  ""
+)
+
+
+;; SELECT*
+
 (define_expand "kvx_select<suffix>"
-  [(match_operand:VXQI 0 "register_operand" "")
-   (match_operand:VXQI 1 "register_operand" "")
-   (match_operand:VXQI 2 "register_operand" "")
+  [(match_operand:VYQI 0 "register_operand" "")
+   (match_operand:VYQI 1 "register_operand" "")
+   (match_operand:VYQI 2 "register_operand" "")
    (match_operand:<MASK> 3 "register_operand" "")
    (match_operand 4 "" "")]
   ""
@@ -2332,6 +2471,27 @@
   [(set_attr "type" "alu_tiny_x4")
    (set_attr "length"        "16")]
 )
+(define_insn_and_split "*kvx_selectbt_2"
+  [(set (match_operand:V64QI 0 "register_operand" "=&r")
+        (unspec:V64QI [(match_operand:V64QI 1 "register_operand" "r")
+                       (match_operand:V64QI 2 "register_operand" "0")
+                       (match_operand:V64QI 3 "register_operand" "r")
+                       (match_operand 4 "" "")] UNSPEC_SELECT))]
+  "KV3_2"
+  "#"
+  "KV3_2 && reload_completed"
+  [(set (subreg:V32QI (match_dup 0) 0)
+        (unspec:V32QI [(subreg:V32QI (match_dup 1) 0)
+                        (subreg:V32QI (match_dup 2) 0)
+                        (subreg:V32QI (match_dup 3) 0)
+                        (match_dup 4)] UNSPEC_SELECT))
+   (set (subreg:V32QI (match_dup 0) 32)
+        (unspec:V32QI [(subreg:V32QI (match_dup 1) 32)
+                        (subreg:V32QI (match_dup 2) 32)
+                        (subreg:V32QI (match_dup 3) 32)
+                        (match_dup 4)] UNSPEC_SELECT))]
+  ""
+)
 
 (define_insn "kvx_select<suffix>"
   [(set (match_operand:S64I 0 "register_operand" "=r")
@@ -2402,6 +2562,70 @@
   }
   [(set_attr "type" "alu_tiny_x4")
    (set_attr "length"        "16")]
+)
+
+(define_expand "kvx_select<suffix>"
+  [(set (match_operand:V512J 0 "register_operand" "")
+        (unspec:V512J [(match_operand:V512J 1 "register_operand" "")
+                       (match_operand:V512J 2 "register_operand" "")
+                       (match_operand:V512J 3 "register_operand" "")
+                       (match_operand 4 "" "")] UNSPEC_SELECT))]
+  ""
+  ""
+)
+
+(define_insn_and_split "kvx_select<suffix>_1"
+  [(set (match_operand:V512J 0 "register_operand" "=&r")
+        (unspec:V512J [(match_operand:V512J 1 "register_operand" "r")
+                       (match_operand:V512J 2 "register_operand" "0")
+                       (match_operand:V512J 3 "register_operand" "r")
+                       (match_operand 4 "" "")] UNSPEC_SELECT))]
+  "KV3_1"
+  "#"
+  "KV3_1 && reload_completed"
+  [(set (subreg:<QUART> (match_dup 0) 0)
+        (unspec:<QUART> [(subreg:<QUART> (match_dup 1) 0)
+                         (subreg:<QUART> (match_dup 2) 0)
+                         (subreg:<QUART> (match_dup 3) 0)
+                         (match_dup 4)] UNSPEC_SELECT))
+   (set (subreg:<QUART> (match_dup 0) 16)
+        (unspec:<QUART> [(subreg:<QUART> (match_dup 1) 16)
+                         (subreg:<QUART> (match_dup 2) 16)
+                         (subreg:<QUART> (match_dup 3) 16)
+                         (match_dup 4)] UNSPEC_SELECT))
+   (set (subreg:<QUART> (match_dup 0) 32)
+        (unspec:<QUART> [(subreg:<QUART> (match_dup 1) 32)
+                         (subreg:<QUART> (match_dup 2) 32)
+                         (subreg:<QUART> (match_dup 3) 32)
+                         (match_dup 4)] UNSPEC_SELECT))
+   (set (subreg:<QUART> (match_dup 0) 48)
+        (unspec:<QUART> [(subreg:<QUART> (match_dup 1) 48)
+                         (subreg:<QUART> (match_dup 2) 48)
+                         (subreg:<QUART> (match_dup 3) 48)
+                         (match_dup 4)] UNSPEC_SELECT))]
+  ""
+)
+
+(define_insn_and_split "kvx_select<suffix>_2"
+  [(set (match_operand:V512J 0 "register_operand" "=&r")
+        (unspec:V512J [(match_operand:V512J 1 "register_operand" "r")
+                       (match_operand:V512J 2 "register_operand" "0")
+                       (match_operand:V512J 3 "register_operand" "r")
+                       (match_operand 4 "" "")] UNSPEC_SELECT))]
+  "KV3_2"
+  "#"
+  "KV3_2 && reload_completed"
+  [(set (subreg:<HALF> (match_dup 0) 0)
+        (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 0)
+                        (subreg:<HALF> (match_dup 2) 0)
+                        (subreg:<HALF> (match_dup 3) 0)
+                        (match_dup 4)] UNSPEC_SELECT))
+   (set (subreg:<HALF> (match_dup 0) 32)
+        (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 32)
+                        (subreg:<HALF> (match_dup 2) 32)
+                        (subreg:<HALF> (match_dup 3) 32)
+                        (match_dup 4)] UNSPEC_SELECT))]
+  ""
 )
 
 
