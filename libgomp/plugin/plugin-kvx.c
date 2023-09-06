@@ -162,8 +162,10 @@ struct mppa_gomp_buffer
   uint64_t vaddr;
   /* Its corresponding physical address for use by DMA accesses.  */
   uint64_t paddr;
-  /* Its size.  */
-  int size;
+  /* The size of the allocated memory on the MPPA.  */
+  size_t size;
+  /* Where it was allocated on the MPPA.  */
+  int alloc_mode;
 };
 
 /* A block which has been allocated on the agent and whose address is known to
@@ -370,6 +372,7 @@ static bool kvx_init_kernel (struct kernel_info *kernel,
 			     mppa_offload_sysqueue_t * queue);
 static int kvx_get_isa_revision (void *elf_image);
 static bool parse_target_attributes (struct kernel_info **kernel);
+static struct mppa_gomp_buffer* kvx_alloc (int n, size_t size, int alloc_mode);
 
 /* }}}  */
 
@@ -550,10 +553,7 @@ kvx_kernel_exec (int agent_n, void *fn_ptr)
 
   int vars_offset = 0;
   if (!kernel->vars)
-    {
-      kvx_find_block (agent_n, GOMP_OFFLOAD_alloc (agent->id, 32),
-		      &arg_buffer, NULL, false);
-    }
+    arg_buffer = kvx_alloc (agent->id, 32, alloc);
   else
     {
       if (!kvx_find_block (agent_n, kernel->vars, &arg_buffer, &vars_offset,
@@ -584,8 +584,8 @@ kvx_kernel_exec (int agent_n, void *fn_ptr)
 
   struct mppa_gomp_buffer *cmd_buffer_host = NULL;
 
-  kvx_find_block (agent_n, GOMP_OFFLOAD_alloc (agent->id, sizeof (*cmd_buffer)),
-		  &cmd_buffer_host, NULL, false);
+  cmd_buffer_host = kvx_alloc (agent->id, sizeof (*cmd_buffer),
+			       arg_buffer->alloc_mode);
 
   GOMP_OFFLOAD_host2dev (agent->id, (void *) cmd_buffer_host->vaddr,
 			 cmd_buffer, sizeof (*cmd_buffer));
@@ -1219,8 +1219,8 @@ GOMP_OFFLOAD_load_image (int target_id, unsigned version,
 
   if (!mppa_initialized)
     {
-      kvx_find_block (target_id, GOMP_OFFLOAD_alloc (target_id, elf_size),
-		      &ptr, NULL, false);
+      ptr = kvx_alloc (target_id, elf_size, MPPA_OFFLOAD_ALLOC_DDR);
+
       if (mppa_offload_acc_load
 	  (acc, elf_ptr, elf_size, 0, ptr->vaddr, ptr->paddr,
 	   &agent->reloc_offset) != 0)
@@ -1302,15 +1302,21 @@ GOMP_OFFLOAD_load_image (int target_id, unsigned version,
 	 in order to exhibit the expected behavior. Thus we pass
 	 mppa_multiple_devices to the init kernel.  */
 
-      int *kernel_vars = (int *) GOMP_OFFLOAD_alloc (target_id, sizeof (int));
+      struct mppa_gomp_buffer *vars_buffer = kvx_alloc (target_id, sizeof (int),
+							MPPA_OFFLOAD_ALLOC_DDR);
 
-      if (!GOMP_OFFLOAD_host2dev (target_id, (void *) kernel_vars,
+      if (!vars_buffer)
+	KVX_LOG (ERROR, "couldn't alloc init kernel vars\n");
+
+      if (!GOMP_OFFLOAD_host2dev (target_id, (void *) vars_buffer->vaddr,
 				  (void *) &mppa_multiple_devices,
 				  sizeof (int)))
 	KVX_LOG (ERROR, "couldn't host2dev mppa_multiple_devices\n");
 
       GOMP_OFFLOAD_can_run (&init_kernel);
-      GOMP_OFFLOAD_run (target_id, &init_kernel, (void *) kernel_vars, NULL);
+      GOMP_OFFLOAD_run (target_id, &init_kernel, (void *) vars_buffer->vaddr,
+			NULL);
+      GOMP_OFFLOAD_free (target_id, (void *) vars_buffer->vaddr);
     }
 
   KVX_LOG (TRACE, "load_image: end\n");
@@ -1403,7 +1409,6 @@ GOMP_OFFLOAD_fini_device (int n)
       while (to_free)
 	{
 	  struct goacc_asyncnode *temp = to_free->next;
-	  free (to_free->kernel);
 	  free (to_free);
 	  to_free = temp;
 	}
@@ -1473,9 +1478,8 @@ GOMP_OFFLOAD_can_run (void *fn_ptr)
   return true;
 }
 
-/* Allocate memory on agent N.  */
-void *
-GOMP_OFFLOAD_alloc (int n, size_t size)
+static struct mppa_gomp_buffer *
+kvx_alloc (int n, size_t size, int alloc_mode)
 {
   KVX_LOG (TRACE, "alloc: start\n");
   struct mppa_gomp_buffer *buffer = NULL;
@@ -1490,24 +1494,29 @@ GOMP_OFFLOAD_alloc (int n, size_t size)
   if (!(buffer = GOMP_PLUGIN_malloc (sizeof (*buffer))))
     KVX_LOG (TRACE, "Failed allocate buffer\n");
 
-  int queue_num = kvx_schedule_cluster (n);
+  if (alloc_mode != MPPA_OFFLOAD_ALLOC_DDR && size >= agent->smem_size)
+    {
+      KVX_LOG (WARN, "requested size is biggger than SMEM, forcing allocation "
+		     "to DDR. \n");
+      buffer->alloc_mode = MPPA_OFFLOAD_ALLOC_DDR;
+    }
+  else
+    buffer->alloc_mode = alloc_mode;
+
+  buffer->size = size;
+
+  int queue_num;
+  if (buffer->alloc_mode != MPPA_OFFLOAD_ALLOC_DDR)
+    queue_num = buffer->alloc_mode - MPPA_OFFLOAD_ALLOC_LOCALMEM_0;
+  else
+    queue_num = kvx_schedule_cluster (n);
+
   if (!(queue = mppa_offload_get_sysqueue (acc, queue_num)))
     KVX_LOG (TRACE, "Failed to get system queue %d", 0);
 
-  int alloc_mode;
-
-  /* Use default alloc mode if possible. Use DDR allocation if the
-     requested size overwhelms SMEM.  */
-  if (OFFLOAD_ALLOC_MODE != MPPA_OFFLOAD_ALLOC_DDR && size >= agent->smem_size)
-    {
-      alloc_mode = MPPA_OFFLOAD_ALLOC_DDR;
-      KVX_LOG (WARN, "too big for SMEM, allocating on DDR\n");
-    }
-  else
-    alloc_mode = OFFLOAD_ALLOC_MODE;
-
   if (mppa_offload_alloc (queue, size, MPPA_GOMP_DEFAULT_BUFFER_ALIGN,
-			  alloc_mode, &buffer->vaddr, &buffer->paddr) != 0)
+			  buffer->alloc_mode, &buffer->vaddr, &buffer->paddr)
+      != 0)
     {
       KVX_LOG (WARN, "mppa_offload_alloc of size %ld failed\n", size);
       return NULL;
@@ -1517,7 +1526,7 @@ GOMP_OFFLOAD_alloc (int n, size_t size)
 
   KVX_LOG (TRACE, "mppa_offload_alloc success: buffer (%p) = "
 	     "(virt: 0x%lx, phys: 0x%lx), size: %lu\n",
-	     buffer, buffer->vaddr, buffer->paddr, size);
+	     buffer, buffer->vaddr, buffer->paddr, buffer->size);
   KVX_LOG (TRACE, "alloc: end\n");
 
   struct block_node *block = malloc (sizeof *block);
@@ -1529,7 +1538,16 @@ GOMP_OFFLOAD_alloc (int n, size_t size)
   agent->blocks = block;
   pthread_mutex_unlock (agent->blocks_mutex);
 
-  return (void *) block->base_addr;
+  return buffer;
+}
+
+/* Allocate memory on agent N.  */
+void *
+GOMP_OFFLOAD_alloc (int n, size_t size)
+{
+  int alloc = MPPA_OFFLOAD_ALLOC_LOCALMEM_0 + kvx_schedule_cluster (n);
+  struct mppa_gomp_buffer *buf = kvx_alloc (n, size, alloc);
+  return (void *) buf->vaddr;
 }
 
 /* Free memory from agent N.  */
@@ -1562,7 +1580,7 @@ GOMP_OFFLOAD_free (int agent_n, void *ptr)
   if (!(queue = mppa_offload_get_sysqueue (acc, queue_num)))
     KVX_LOG (TRACE, "Failed to get system queue %d", queue_num);
 
-  if (mppa_offload_free (queue, OFFLOAD_ALLOC_MODE, buf->vaddr) != 0)
+  if (mppa_offload_free (queue, buf->alloc_mode, buf->vaddr) != 0)
     {
       KVX_LOG (TRACE, "mppa offload free failed\n");
       return false;
@@ -1657,7 +1675,7 @@ GOMP_OFFLOAD_host2dev (int agent_n, void *dst, const void *src, size_t n)
   if (offset + n > buf->size)
     {
       KVX_LOG (TRACE, "out of bound access of size %lu at offset %d "
-		 "into a buffer of size %d.\n", n, offset, buf->size);
+		      "into a buffer of size %lu.\n", n, offset, buf->size);
       return false;
     }
 
