@@ -546,6 +546,27 @@ kvx_kernel_exec (int agent_n, void *fn_ptr)
   /* get this from kernel */
   uint64_t function_ptr = (uintptr_t) kernel->object;
 
+  /* If the caller is an asynchronous worker, kernel->cluster_id is a valid
+     cluster ID and we should use it. Otherwise, schedule a cluster.  */
+  int cluster_id = 0;
+
+  if (kernel->cluster_id == -1)
+    cluster_id = kvx_schedule_cluster (agent_n);
+  else
+    cluster_id = kernel->cluster_id;
+
+  /* If the default allocation mode is DDR, send everything to DDR. If not, and
+     allocate in the chosen cluster's SMEM.  */
+  /* WARN: The allocation mode may be modified by the allocation method
+     (such as when the requested size is too big for SMEM). To reaccess the
+     same memory space, always use the buffer's alloc_mode field which is set
+     after allocation.  */
+  int alloc = -1;
+  if (OFFLOAD_ALLOC_MODE == MPPA_OFFLOAD_ALLOC_DDR)
+    alloc = MPPA_OFFLOAD_ALLOC_DDR;
+  else
+    alloc = MPPA_OFFLOAD_ALLOC_LOCALMEM_0 + cluster_id;
+
   /* When a kernel does not have arguments VARS is NULL, this is a problem since
      mppa_offload_exec expects a valid pointer to the argument list.  Thus, we
      allocate a dummy buffer.  */
@@ -592,10 +613,7 @@ kvx_kernel_exec (int agent_n, void *fn_ptr)
 
   free (cmd_buffer);
 
-  int queue_num = kernel->cluster_id;
-
-  if (kernel->cluster_id == -1)
-    queue_num = kvx_schedule_cluster (agent_n);
+  int queue_num = cluster_id;
 
   if (agent->queue_type == RPMSG)
     {
@@ -630,12 +648,10 @@ kvx_kernel_exec (int agent_n, void *fn_ptr)
   else
     GOMP_PLUGIN_fatal ("couldn't offload kernel, undefined queue type.");
 
-  if (!kernel->vars && agent->queue_type == RPMSG)
-    {
-      if (mppa_offload_free (queue, MPPA_OFFLOAD_ALLOC_DDR, arg_buffer->vaddr)
-	  != 0)
-	KVX_LOG (WARN, "mppa_offload_free: failed.");
-    }
+  if (!kernel->vars)
+    GOMP_OFFLOAD_free (agent_n, (void *) arg_buffer->vaddr);
+
+  GOMP_OFFLOAD_free (agent_n, (void *) cmd_buffer_host->vaddr);
 
   KVX_LOG (TRACE, "end\n");
 }
@@ -1576,7 +1592,14 @@ GOMP_OFFLOAD_free (int agent_n, void *ptr)
 
   if (!(acc = mppa_offload_get_accelerator (&agent->ctx, 0)))
     KVX_LOG (TRACE, "Failed to get accelerator.\n");
-  int queue_num = kvx_schedule_cluster (agent_n);
+
+  int queue_num;
+
+  if (buf->alloc_mode != MPPA_OFFLOAD_ALLOC_DDR)
+    queue_num = buf->alloc_mode - MPPA_OFFLOAD_ALLOC_LOCALMEM_0;
+  else
+    queue_num = kvx_schedule_cluster (agent_n);
+
   if (!(queue = mppa_offload_get_sysqueue (acc, queue_num)))
     KVX_LOG (TRACE, "Failed to get system queue %d", queue_num);
 
