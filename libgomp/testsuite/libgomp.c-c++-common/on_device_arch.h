@@ -13,6 +13,7 @@ device_arch_gcn (void)
   return GOMP_DEVICE_GCN;
 }
 
+#pragma omp declare variant (device_arch_kvx) match(construct={target},device={arch(kvx)})
 #pragma omp declare variant (device_arch_nvptx) match(construct={target},device={arch(nvptx)})
 #pragma omp declare variant (device_arch_gcn) match(construct={target},device={arch(gcn)})
 /* static */ int
@@ -29,6 +30,12 @@ on_device_arch (int d)
   d_cur = device_arch ();
 
   return d_cur == d;
+}
+
+int
+on_device_arch_kvx ()
+{
+  return on_device_arch (GOMP_DEVICE_KALRAY_KVX);
 }
 
 int

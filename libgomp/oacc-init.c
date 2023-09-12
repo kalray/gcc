@@ -108,6 +108,8 @@ get_openacc_name (const char *name)
     return "radeon";
   else if (strcmp (name, "nvptx") == 0)
     return "nvidia";
+  else if (strcmp (name, "kvx") == 0)
+    return "kalray";
   else
     return name;
 }
@@ -121,6 +123,7 @@ name_of_acc_device_t (enum acc_device_t type)
     case acc_device_default: return "default";
     case acc_device_host: return "host";
     case acc_device_not_host: return "not_host";
+    case acc_device_kalray: return "kalray";
     case acc_device_nvidia: return "nvidia";
     case acc_device_radeon: return "radeon";
     default: unknown_device_type_error (type);

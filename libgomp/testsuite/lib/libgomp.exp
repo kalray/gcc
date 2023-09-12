@@ -332,6 +332,9 @@ if ![info exists ::env(GCC_RUNTEST_PARALLELIZE_DIR)] {
 # not supported, and 'host' for offload target 'disable'.
 proc offload_target_to_openacc_device_type { offload_target } {
     switch -glob $offload_target {
+	kvx* {
+		return "kvx"
+	}
 	amdgcn* {
 	    return "radeon"
 	}
@@ -424,6 +427,42 @@ proc check_effective_target_offload_device_shared_as { } {
 	}
     } ]
 }
+
+# ===
+# Return 1 if using kvx offload device.
+proc check_effective_target_offload_device_kvx { } {
+    return [check_runtime_nocache offload_device_nvptx {
+      #include <omp.h>
+      #include "testsuite/libgomp.c-c++-common/on_device_arch.h"
+      int main ()
+	{
+	  return !on_device_arch_kvx ();
+	}
+    } ]
+}
+
+# Return 1 if at least a kvx GPU is accessible.
+
+proc check_effective_target_openacc_kalray_accel_present { } {
+    return [check_runtime openacc_kalray_accel_present {
+	#include <openacc.h>
+	int main () {
+	return !(acc_get_num_devices (acc_device_kalray) > 0);
+	}
+    } "" ]
+}
+
+# Return 1 if at least one kvx GPU is accessible, and the OpenACC 'kvx'
+# device type is selected.
+
+proc check_effective_target_openacc_kvx_accel_selected { } {
+    if { ![check_effective_target_openacc_kvx_accel_present] } {
+	return 0;
+    }
+    global openacc_device_type
+    return [string match "kvx" $openacc_device_type]
+}
+# ===
 
 # Return 1 if using nvptx offload device.
 proc check_effective_target_offload_device_nvptx { } {

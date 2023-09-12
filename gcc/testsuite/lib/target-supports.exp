@@ -11315,6 +11315,7 @@ proc scan-ltrans-tree-dump-dem-not_required_options {} {
 
 proc check_effective_target_pie_copyreloc { } {
     global tool
+    global rootme
     global GCC_UNDER_TEST
 
     if { !([istarget i?86-*-*] || [istarget x86_64-*-*]) } {
@@ -11322,7 +11323,7 @@ proc check_effective_target_pie_copyreloc { } {
     }
 
     # Need auto-host.h to check linker support.
-    if { ![file exists ../../auto-host.h ] } {
+    if { ![file exists $rootme/auto-host.h ] } {
 	return 0
     }
 
@@ -11335,7 +11336,7 @@ proc check_effective_target_pie_copyreloc { } {
 	set obj pie[pid].o
 
 	set f [open $src "w"]
-	puts $f "#include \"../../auto-host.h\""
+	puts $f "#include \"$rootme/auto-host.h\""
 	puts $f "#if HAVE_LD_PIE_COPYRELOC == 0"
 	puts $f "# error Linker does not support PIE with copy reloc."
 	puts $f "#endif"
@@ -11362,6 +11363,7 @@ proc check_effective_target_pie_copyreloc { } {
 
 proc check_effective_target_got32x_reloc { } {
     global tool
+    global rootme
     global GCC_UNDER_TEST
 
     if { !([istarget i?86-*-*] || [istarget x86_64-*-*]) } {
@@ -11369,7 +11371,7 @@ proc check_effective_target_got32x_reloc { } {
     }
 
     # Need auto-host.h to check linker support.
-    if { ![file exists ../../auto-host.h ] } {
+    if { ![file exists $rootme/auto-host.h ] } {
 	return 0
     }
 
@@ -11381,7 +11383,7 @@ proc check_effective_target_got32x_reloc { } {
 	set obj got32x[pid].o
 
 	set f [open $src "w"]
-	puts $f "#include \"../../auto-host.h\""
+	puts $f "#include \"$rootme/auto-host.h\""
 	puts $f "#if HAVE_AS_IX86_GOT32X == 0"
 	puts $f "# error Assembler does not support R_386_GOT32X."
 	puts $f "#endif"
@@ -11410,6 +11412,7 @@ proc check_effective_target_got32x_reloc { } {
 
 proc check_effective_target_tls_get_addr_via_got { } {
     global tool
+    global rootme
     global GCC_UNDER_TEST
 
     if { !([istarget i?86-*-*] || [istarget x86_64-*-*]) } {
@@ -11417,7 +11420,7 @@ proc check_effective_target_tls_get_addr_via_got { } {
     }
 
     # Need auto-host.h to check linker support.
-    if { ![file exists ../../auto-host.h ] } {
+    if { ![file exists $rootme/auto-host.h ] } {
 	return 0
     }
 
@@ -11429,7 +11432,7 @@ proc check_effective_target_tls_get_addr_via_got { } {
 	set obj tls_get_addr_via_got[pid].o
 
 	set f [open $src "w"]
-	puts $f "#include \"../../auto-host.h\""
+	puts $f "#include \"$rootme/auto-host.h\""
 	puts $f "#if HAVE_AS_IX86_TLS_GET_ADDR_GOT == 0"
 	puts $f "# error Assembler/linker do not support calling ___tls_get_addr via GOT."
 	puts $f "#endif"
@@ -11494,6 +11497,14 @@ proc check_effective_target_offload_gcn { } {
     return [check_no_compiler_messages offload_gcn assembly {
 	int main () {return 0;}
     } "-foffload=amdgcn-amdhsa" ]
+}
+
+# Return 1 if the compiler has been configured with kvx offloading.
+
+proc check_effective_target_offload_kvx { } {
+    return [check_no_compiler_messages offload_kvx assembly {
+	int main () {return 0;}
+    } "-foffload=kvx-cos" ]
 }
 
 # Return 1 if the target support -fprofile-update=atomic
@@ -12211,10 +12222,11 @@ proc check_effective_target_no_fsanitize_address {} {
 
 proc check_effective_target_R_flag_in_section { } {
     global tool
+    global rootme
     global GCC_UNDER_TEST
 
     # Need auto-host.h to check linker support.
-    if { ![file exists ../../auto-host.h ] } {
+    if { ![file exists $rootme/auto-host.h ] } {
 	return 0
     }
 
@@ -12224,7 +12236,7 @@ proc check_effective_target_R_flag_in_section { } {
 	set obj pie[pid].o
 
 	set f [open $src "w"]
-	puts $f "#include \"../../auto-host.h\""
+	puts $f "#include \"$rootme/auto-host.h\""
 	puts $f "#if HAVE_GAS_SHF_GNU_RETAIN == 0 || HAVE_INITFINI_ARRAY_SUPPORT == 0"
 	puts $f "# error Assembler does not support 'R' flag in .section directive."
 	puts $f "#endif"
@@ -12251,10 +12263,11 @@ proc check_effective_target_R_flag_in_section { } {
 
 proc check_effective_target_o_flag_in_section { } {
     global tool
+    global rootme
     global GCC_UNDER_TEST
 
     # Need auto-host.h to check linker support.
-    if { ![file exists ../../auto-host.h ] } {
+    if { ![file exists $rootme/auto-host.h ] } {
 	return 0
     }
 
@@ -12264,7 +12277,7 @@ proc check_effective_target_o_flag_in_section { } {
 	set obj pie[pid].o
 
 	set f [open $src "w"]
-	puts $f "#include \"../../auto-host.h\""
+	puts $f "#include \"$rootme/auto-host.h\""
 	puts $f "#if HAVE_GAS_SECTION_LINK_ORDER == 0"
 	puts $f "# error Assembler does not support 'o' flag in .section directive."
 	puts $f "#endif"
