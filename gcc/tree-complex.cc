@@ -46,6 +46,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "memmodel.h"
 #include "optabs-tree.h"
 #include "internal-fn.h"
+#include "gimple-pretty-print.h"
 
 
 /* For each complex ssa name, a lattice value.  We're interested in finding
@@ -2134,6 +2135,12 @@ expand_complex_operations_1 (gimple_stmt_iterator *gsi)
       gimple_seq stmts = NULL;
       location_t loc = gimple_location (gsi_stmt (*gsi));
 
+      if (dump_file && (dump_flags & TDF_DETAILS))
+	{
+	  fprintf (dump_file, "  Native: ");
+	  print_gimple_stmt (dump_file, stmt, 0, TDF_SLIM);
+	}
+
       ab = extract_component (gsi, ac, BOTH_P, true);
       ab_vect = convert_complex_to_vector (&stmts, loc, vectype, ab);
       if (ac == bc)
@@ -2225,6 +2232,12 @@ expand_complex_operations_1 (gimple_stmt_iterator *gsi)
     }
   else
     br = bi = NULL_TREE;
+
+  if (dump_file && (dump_flags & TDF_DETAILS))
+    {
+      fprintf (dump_file, "  Split: ");
+      print_gimple_stmt (dump_file, stmt, 0, TDF_SLIM);
+    }
 
   switch (code)
     {
@@ -2318,8 +2331,12 @@ tree_lower_complex (void)
       if (!bb)
 	continue;
       update_phi_components (bb);
+      if (dump_file && (dump_flags & TDF_DETAILS))
+	fprintf (dump_file, "\nStart analysis of complex operations: \n");
       for (gsi = gsi_start_bb (bb); !gsi_end_p (gsi); gsi_next (&gsi))
 	expand_complex_operations_1 (&gsi);
+      if (dump_file && (dump_flags & TDF_DETAILS))
+	fprintf (dump_file, "End analysis of complex operations\n\n");
     }
 
   free (rpo);
