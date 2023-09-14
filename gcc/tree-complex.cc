@@ -46,6 +46,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "memmodel.h"
 #include "optabs-tree.h"
 #include "internal-fn.h"
+#include "gimple-pretty-print.h"
 
 
 /* For each complex ssa name, a lattice value.  We're interested in finding
@@ -1160,6 +1161,9 @@ expand_complex_multiplication_components (gimple_seq *stmts, location_t loc,
       tree rc = gimple_build (stmts, loc, CFN_FAST_MULT, type, ac, bc);
       *rr = gimple_build (stmts, loc, REALPART_EXPR, inner_type, rc);
       *ri = gimple_build (stmts, loc, IMAGPART_EXPR, inner_type, rc);
+
+      if (dump_file && (dump_flags & TDF_DETAILS))
+	fprintf (dump_file, "    -> But optimized using a fast pattern\n");
     }
 }
 
@@ -2011,6 +2015,12 @@ expand_complex_operations_1 (gimple_stmt_iterator *gsi)
       gimple_seq stmts = NULL;
       location_t loc = gimple_location (gsi_stmt (*gsi));
 
+      if (dump_file && (dump_flags & TDF_DETAILS))
+	{
+	  fprintf (dump_file, "  Native: ");
+	  print_gimple_stmt (dump_file, stmt, 0, TDF_SLIM);
+	}
+
       ab = extract_component (gsi, ac, BOTH_P, true);
       if (ac == bc)
 	bb = ab;
@@ -2100,6 +2110,12 @@ expand_complex_operations_1 (gimple_stmt_iterator *gsi)
   else
     br = bi = NULL_TREE;
 
+  if (dump_file && (dump_flags & TDF_DETAILS))
+    {
+      fprintf (dump_file, "  Split: ");
+      print_gimple_stmt (dump_file, stmt, 0, TDF_SLIM);
+    }
+
   switch (code)
     {
     case PLUS_EXPR:
@@ -2176,8 +2192,12 @@ tree_lower_complex (void)
       if (!bb)
 	continue;
       update_phi_components (bb);
+      if (dump_file && (dump_flags & TDF_DETAILS))
+	fprintf (dump_file, "\nStart analysis of complex operations: \n");
       for (gsi = gsi_start_bb (bb); !gsi_end_p (gsi); gsi_next (&gsi))
 	expand_complex_operations_1 (&gsi);
+      if (dump_file && (dump_flags & TDF_DETAILS))
+	fprintf (dump_file, "End analysis of complex operations\n\n");
     }
 
   free (rpo);
