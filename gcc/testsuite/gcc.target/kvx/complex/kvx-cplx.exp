@@ -25,11 +25,26 @@ if { ![istarget kvx-*-*] } then {
   return
 }
 
+# GCC testsuite that uses the `dg.exp' driver.
+
+# Load support procs.
+load_lib gcc-dg.exp
+
+# Initialize `dg'.
+dg-init
+
+# Main loop.
+dg-runtest [lsort [glob -nocomplain $srcdir/gcc.target/kvx/complex/complex*.c \
+				    $srcdir/gcc.target/kvx/complex/vect_complex*.c]] "" ""
+
+# All done.
+dg-finish
+
 torture-init
 set-torture-options $C_TORTURE_OPTIONS
 set additional_flags "-W -Wall"
 
-foreach src [lsort [glob -nocomplain $srcdir/gcc.target/kvx/cplx/*.c]] {
+foreach src [lsort [glob -nocomplain $srcdir/gcc.target/kvx/complex/torture*.c]] {
     if {[runtest_file_p $runtests $src]} {
 	print $src
 	c-torture-execute $src
