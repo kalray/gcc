@@ -8151,7 +8151,7 @@ kvx_analyze_branches ()
       {
 	rtx src = PATTERN (insn);
 	int max_jump_length = 0;
-	if (GET_CODE (src) == PARALLEL)
+	if (GET_CODE (src) != SET)
 	  continue;
 	src = SET_SRC (src);
 	rtx olabel_ref = NULL;
