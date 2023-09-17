@@ -79,6 +79,69 @@
 
 ;; 256-bit Extension Moves
 
+(define_insn "kvx_xmovefo"
+  [(set (match_operand:V256 0 "register_operand" "=r")
+        (unspec:V256 [(match_operand:X256 1 "register_operand" "x")]
+                     UNSPEC_XMOVEF))]
+   "KV3_1 || KV3_2"
+   "xmovefo %0 = %1"
+   [(set_attr "type" "bcu_tiny_auxw_crrp")]
+)
+
+(define_insn "kvx_xmovefq"
+  [(set (match_operand:V2DI 0 "register_operand" "=r")
+        (unspec:V2DI [(match_operand:X256 1 "register_operand" "x")
+                      (match_operand 2 "" "")]
+                     UNSPEC_XMOVEF))]
+   "KV3_2"
+   "xmovefq %0 = %1%2"
+   [(set_attr "type" "bcu_tiny_auxw_crrp")]
+)
+
+(define_insn "kvx_xmovefd"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+        (unspec:DI [(match_operand:X256 1 "register_operand" "x")
+                    (match_operand 2 "" "")]
+                     UNSPEC_XMOVEF))]
+   "KV3_2"
+   "xmovefd %0 = %1%2"
+   [(set_attr "type" "bcu_tiny_auxw_crrp")]
+)
+
+(define_insn "kvx_xmoveto"
+  [(set (match_operand:X256 0 "register_operand" "=x")
+        (unspec:X256 [(match_operand:V256 1 "register_operand" "r")]
+                     UNSPEC_XMOVET))]
+  "KV3_1 || KV3_2"
+  "xmovetq %0.lo = %x1, %y1\n\txmovetq %0.hi = %z1, %t1"
+  [(set_attr "type" "alu_thin_x2_crwl_crwh")
+   (set_attr "length" "8")]
+)
+
+(define_insn "kvx_xmovetq"
+  [(set (match_operand:X256 0 "register_operand" "=x")
+        (unspec:X256 [(match_operand:X256 1 "register_operand" "0")
+                      (match_operand:V2DI 2 "register_operand" "r")
+                      (match_operand 3 "" "")]
+                     UNSPEC_XMOVET))]
+  "KV3_1 || KV3_2"
+  "xmovetq %0%3 = %x2, %y2"
+  [(set_attr "type" "alu_tiny_crwl_crwh")
+   (set_attr "length" "4")]
+)
+
+(define_insn "kvx_xmovetd"
+  [(set (match_operand:X256 0 "register_operand" "=x")
+        (unspec:X256 [(match_operand:X256 1 "register_operand" "0")
+                      (match_operand:DI 2 "register_operand" "r")
+                      (match_operand 3 "" "")]
+                     UNSPEC_XMOVET))]
+  "KV3_2"
+  "xmovetd %0%3 = %2"
+  [(set_attr "type" "alu_tiny_crwl_crwh")
+   (set_attr "length" "4")]
+)
+
 (define_expand "mov<mode>"
   [(set (match_operand:X256 0 "nonimmediate_operand" "")
         (match_operand:X256 1 "general_operand" ""))]
@@ -2306,20 +2369,48 @@
 
 ;; XSWAP256
 
-(define_expand "kvx_xswap256"
+(define_expand "kvx_xswapo256"
   [(match_operand:V256 0 "register_operand" "")
    (match_operand:X256 1 "memory_operand" "")
    (match_operand:V256 2 "register_operand" "")]
   ""
   {
     rtx swapped = force_reg (<X256:MODE>mode, operands[1]);
-    emit_insn (gen_kvx_xswap256v4di_ (operands[0], swapped, operands[2]));
+    emit_insn (gen_kvx_xswapo256v4di_ (operands[0], swapped, operands[2]));
     emit_move_insn (operands[1], swapped);
     DONE;
   }
 )
 
-(define_insn "kvx_xswap256<ALL256:mode>_"
+(define_expand "kvx_xswapq256"
+  [(match_operand:V2DI 0 "register_operand" "")
+   (match_operand:X256 1 "memory_operand" "")
+   (match_operand:V2DI 2 "register_operand" "")
+   (match_operand 3 "" "")]
+  ""
+  {
+    rtx swapped = force_reg (<X256:MODE>mode, operands[1]);
+    emit_insn (gen_kvx_xswapq256v2di_ (operands[0], swapped, operands[2], operands[3]));
+    emit_move_insn (operands[1], swapped);
+    DONE;
+  }
+)
+
+(define_expand "kvx_xswapd256"
+  [(match_operand:DI 0 "register_operand" "")
+   (match_operand:X256 1 "memory_operand" "")
+   (match_operand:DI 2 "register_operand" "")
+   (match_operand 3 "" "")]
+  ""
+  {
+    rtx swapped = force_reg (<X256:MODE>mode, operands[1]);
+    emit_insn (gen_kvx_xswapd256di_ (operands[0], swapped, operands[2], operands[3]));
+    emit_move_insn (operands[1], swapped);
+    DONE;
+  }
+)
+
+(define_insn "kvx_xswapo256<ALL256:mode>_"
   [(set (match_operand:ALL256 0 "register_operand" "=r")
         (unspec:ALL256 [(match_operand:X256 1 "register_operand" "+x")] UNSPEC_XSWAP256))
    (set (match_dup 1)
@@ -2330,3 +2421,26 @@
    (set_attr "length" "12")]
 )
 
+(define_insn "kvx_xswapq256<ALL128:mode>_"
+  [(set (match_operand:ALL128 0 "register_operand" "=r")
+        (unspec:ALL128 [(match_operand:X256 1 "register_operand" "+x")] UNSPEC_XSWAP256))
+   (set (match_dup 1)
+        (unspec:X256 [(match_operand:ALL128 2 "register_operand" "0")
+                      (match_operand 3 "" "")] UNSPEC_XSWAP256))]
+  "KV3_2"
+  "xmovefq %0 = %1%3\n\txmovetq %1%3 = %x2, %y2"
+  [(set_attr "type" "all")
+   (set_attr "length" "8")]
+)
+
+(define_insn "kvx_xswapd256<ALL64:mode>_"
+  [(set (match_operand:ALL64 0 "register_operand" "=r")
+        (unspec:ALL64 [(match_operand:X256 1 "register_operand" "+x")] UNSPEC_XSWAP256))
+   (set (match_dup 1)
+        (unspec:X256 [(match_operand:ALL64 2 "register_operand" "0")
+                      (match_operand 3 "" "")] UNSPEC_XSWAP256))]
+  "KV3_2"
+  "xmovefd %0 = %1%3\n\txmovetd %1%3 = %0"
+  [(set_attr "type" "all")
+   (set_attr "length" "8")]
+)
