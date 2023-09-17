@@ -74,6 +74,8 @@ softfp_func_list := \
   $(foreach t,$(softfp_truncations),trunc$(t)2) \
   $(softfp_extras)
 
+softfp_func_list := $(filter-out $(softfp_func_exclude),$(softfp_func_list))
+
 ifeq ($(softfp_exclude_libgcc2),y)
 # This list is taken from mklibgcc.in and doesn't presently allow for
 # 64-bit targets where si should become di and di should become ti.

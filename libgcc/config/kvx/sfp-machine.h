@@ -1,7 +1,11 @@
-#define _FP_W_TYPE_SIZE 32
-#define _FP_W_TYPE unsigned int
-#define _FP_WS_TYPE signed int
-#define _FP_I_TYPE int
+#define _FP_W_TYPE_SIZE 64
+#define _FP_W_TYPE unsigned long long
+#define _FP_WS_TYPE signed long long
+#define _FP_I_TYPE long long
+
+typedef int TItype __attribute__ ((mode (TI)));
+typedef unsigned int UTItype __attribute__ ((mode (TI)));
+#define TI_BITS (__CHAR_BIT__ * (int)sizeof(TItype))
 
 /* The type of the result of a floating point comparison.  This must
    match `__libgcc_cmp_return__' in GCC for the target.  */
@@ -11,13 +15,15 @@ typedef int __gcc_CMPtype __attribute__ ((mode (__libgcc_cmp_return__)));
 #define _FP_MUL_MEAT_S(R, X, Y)                                                \
   _FP_MUL_MEAT_1_wide (_FP_WFRACBITS_S, R, X, Y, umul_ppmm)
 #define _FP_MUL_MEAT_D(R, X, Y)                                                \
-  _FP_MUL_MEAT_2_wide (_FP_WFRACBITS_D, R, X, Y, umul_ppmm)
+  _FP_MUL_MEAT_1_wide (_FP_WFRACBITS_D, R, X, Y, umul_ppmm)
 
 #define _FP_DIV_MEAT_S(R, X, Y) _FP_DIV_MEAT_1_loop (S, R, X, Y)
 #define _FP_DIV_MEAT_D(R, X, Y) _FP_DIV_MEAT_2_udiv (D, R, X, Y)
 
 #define _FP_NANFRAC_S _FP_QNANBIT_S
 #define _FP_NANFRAC_D _FP_QNANBIT_D, 0
+#define _FP_NANFRAC_H ((_FP_QNANBIT_H << 1) - 1)
+#define _FP_NANSIGN_H 1
 #define _FP_NANSIGN_S 1
 #define _FP_NANSIGN_D 1
 

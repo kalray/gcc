@@ -1,14 +1,21 @@
 HOST_LIBGCC2_CFLAGS += -ffunction-sections -fdata-sections
 
-softfp-func-exclude := divsf3 divdf3
+softfp_func_exclude := divsf3 divdf3
 softfp_file_list := \
   $(filter-out $(addsuffix .c, \
                            $(addprefix $(srcdir)/soft-fp/, \
                                        $(softfp-func-exclude))), \
                $(softfp_file_list))
 
+softfp_float_modes := sf df
+softfp_int_modes := si di ti
+softfp_extensions := sfdf
+softfp_truncations := dfsf
+softfp_extras := fixhfti fixunshfti floattihf floatuntihf
+softfp_exclude_libgcc2 := n
+
 kvx-libgcc-funcs := \
-  $(softfp-func-exclude) \
+  $(softfp_func_exclude) \
   divmoddi divmodsi \
   divmodvxdi divmodvxsi divmodvxhi divmodvxqi \
   divv2df3 divv2sf3 divv4df3 divv4sf3 divv8sf3
