@@ -8290,7 +8290,6 @@ kvx_machine_dependent_reorg (void)
       timevar_push (TV_VAR_TRACKING);
       variable_tracking_main ();
       timevar_pop (TV_VAR_TRACKING);
-      free_bb_for_insn ();
     }
 
 
