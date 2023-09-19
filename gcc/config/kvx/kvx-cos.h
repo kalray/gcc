@@ -28,14 +28,14 @@
     "%{pthread:%<pthread}"
 
 #undef CC1_SPEC
-#define CC1_SPEC "%{!shared:%{pg:-fno-omit-frame-pointer}}"
+#define CC1_SPEC "%{!shared:%{pg|p:-fno-omit-frame-pointer}}"
 
 #undef CC1PLUS_SPEC
 #define CC1PLUS_SPEC CC1_SPEC
 
 #undef STARTFILE_SPEC
 #define STARTFILE_SPEC                                                         \
-  "%{shared:crtcxa_s%O%s;:crtcxa%O%s} %{!shared:%{pg:gcrt0%O%s}}"
+  "%{shared:crtcxa_s%O%s;:crtcxa%O%s} %{!shared:%{pg|p:gcrt0%O%s}}"
 
 #undef ENDFILE_SPEC
 #define ENDFILE_SPEC ""
