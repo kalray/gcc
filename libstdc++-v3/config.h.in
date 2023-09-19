@@ -1387,3 +1387,7 @@
 # define HAVE_TANL 1
 # define tanl _tanl
 #endif
+
+#if defined (__clang__) && ! defined (__FLT_EVAL_METHOD__)
+#define __FLT_EVAL_METHOD__ 0
+#endif
