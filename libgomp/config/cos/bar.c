@@ -44,6 +44,7 @@ gomp_barrier_init (gomp_barrier_t *bar, unsigned count)
   bar->arrived = 0;
   bar->generation = 0;
   bar->cancellable = false;
+  bar->toggle_reent = false;
   __builtin_kvx_fence ();
 }
 
@@ -73,6 +74,8 @@ gomp_barrier_reinit (gomp_barrier_t *bar, unsigned count)
 void
 gomp_barrier_wait_end (gomp_barrier_t *bar, gomp_barrier_state_t state)
 {
+  const bool toggle_reent = __atomic_load_n(&bar->toggle_reent,
+    __ATOMIC_RELAXED);
   unsigned int n;
 
   if (state & BAR_WAS_LAST)
@@ -85,6 +88,7 @@ gomp_barrier_wait_end (gomp_barrier_t *bar, gomp_barrier_state_t state)
 	  while (--n != 0);
 	  gomp_sem_wait (&bar->sem2);
 	}
+      __atomic_store_n(&bar->toggle_reent, !toggle_reent, __ATOMIC_RELAXED);
       gomp_mutex_unlock (&bar->mutex1);
     }
   else
@@ -102,6 +106,10 @@ gomp_barrier_wait_end (gomp_barrier_t *bar, gomp_barrier_state_t state)
 
       if (n == 0)
 	gomp_sem_post (&bar->sem2);
+      while (__atomic_load_n(&bar->toggle_reent, __ATOMIC_RELAXED) == toggle_reent) {
+	/* yield if more than one thread per core, else idle */
+	mppa_cos_synchronization_wait(NULL);
+      }
     }
 }
 
@@ -114,6 +122,8 @@ gomp_barrier_wait (gomp_barrier_t *barrier)
 void
 gomp_team_barrier_wait_end (gomp_barrier_t *bar, gomp_barrier_state_t state)
 {
+  const bool toggle_reent = __atomic_load_n(&bar->toggle_reent,
+    __ATOMIC_RELAXED);
   unsigned int n;
 
   state &= ~BAR_CANCELLED;
@@ -129,6 +139,8 @@ gomp_team_barrier_wait_end (gomp_barrier_t *bar, gomp_barrier_state_t state)
 	  gomp_barrier_handle_tasks (state);
 	  if (n > 0)
 	    gomp_sem_wait (&bar->sem2);
+	  __atomic_store_n(&bar->toggle_reent,
+	    !toggle_reent, __ATOMIC_RELAXED);
 	  gomp_mutex_unlock (&bar->mutex1);
 	  return;
 	}
@@ -141,6 +153,8 @@ gomp_team_barrier_wait_end (gomp_barrier_t *bar, gomp_barrier_state_t state)
 	  while (--n != 0);
 	  gomp_sem_wait (&bar->sem2);
 	}
+      __atomic_store_n(&bar->toggle_reent,
+        !toggle_reent, __ATOMIC_RELAXED);
       gomp_mutex_unlock (&bar->mutex1);
     }
   else
@@ -169,6 +183,12 @@ gomp_team_barrier_wait_end (gomp_barrier_t *bar, gomp_barrier_state_t state)
 
       if (n == 0)
 	gomp_sem_post (&bar->sem2);
+
+      while (__atomic_load_n(&bar->toggle_reent,
+        __ATOMIC_RELAXED) == toggle_reent) {
+	/* yield if more than one thread per core, else idle */
+	mppa_cos_synchronization_wait(NULL);
+      }
     }
 }
 
@@ -176,6 +196,8 @@ bool
 gomp_team_barrier_wait_cancel_end (gomp_barrier_t *bar,
 				   gomp_barrier_state_t state)
 {
+  const bool toggle_reent = __atomic_load_n(&bar->toggle_reent,
+    __ATOMIC_RELAXED);
   unsigned int n;
 
   if (state & BAR_WAS_LAST)
@@ -191,6 +213,8 @@ gomp_team_barrier_wait_cancel_end (gomp_barrier_t *bar,
 	  gomp_barrier_handle_tasks (state);
 	  if (n > 0)
 	    gomp_sem_wait (&bar->sem2);
+	  __atomic_store_n(&bar->toggle_reent,
+	    !toggle_reent, __ATOMIC_RELAXED);
 	  gomp_mutex_unlock (&bar->mutex1);
 	  return false;
 	}
@@ -203,6 +227,8 @@ gomp_team_barrier_wait_cancel_end (gomp_barrier_t *bar,
 	  while (--n != 0);
 	  gomp_sem_wait (&bar->sem2);
 	}
+      __atomic_store_n(&bar->toggle_reent,
+        !toggle_reent, __ATOMIC_RELAXED);
       gomp_mutex_unlock (&bar->mutex1);
     }
   else

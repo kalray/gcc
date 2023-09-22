@@ -46,6 +46,7 @@ typedef struct
   unsigned arrived;
   unsigned generation;
   bool cancellable;
+  bool toggle_reent;
 } gomp_barrier_t;
 
 typedef unsigned int gomp_barrier_state_t;
