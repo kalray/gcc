@@ -35,9 +35,6 @@ void
 gomp_barrier_init (gomp_barrier_t *bar, unsigned count)
 {
   gomp_mutex_init (&bar->mutex1);
-#ifndef HAVE_SYNC_BUILTINS
-  gomp_mutex_init (&bar->mutex2);
-#endif
   gomp_sem_init (&bar->sem1, 0);
   gomp_sem_init (&bar->sem2, 0);
   bar->total = count;
@@ -56,9 +53,6 @@ gomp_barrier_destroy (gomp_barrier_t *bar)
   gomp_mutex_unlock (&bar->mutex1);
 
   gomp_mutex_destroy (&bar->mutex1);
-#ifndef HAVE_SYNC_BUILTINS
-  gomp_mutex_destroy (&bar->mutex2);
-#endif
   gomp_sem_destroy (&bar->sem1);
   gomp_sem_destroy (&bar->sem2);
 }
@@ -83,9 +77,7 @@ gomp_barrier_wait_end (gomp_barrier_t *bar, gomp_barrier_state_t state)
       n = --bar->arrived;
       if (n > 0)
 	{
-	  do
-	    gomp_sem_post (&bar->sem1);
-	  while (--n != 0);
+	  gomp_sem_post_n (&bar->sem1, n);
 	  gomp_sem_wait (&bar->sem2);
 	}
       __atomic_store_n(&bar->toggle_reent, !toggle_reent, __ATOMIC_RELAXED);
@@ -96,13 +88,7 @@ gomp_barrier_wait_end (gomp_barrier_t *bar, gomp_barrier_state_t state)
       gomp_mutex_unlock (&bar->mutex1);
       gomp_sem_wait (&bar->sem1);
 
-#ifdef HAVE_SYNC_BUILTINS
       n = __sync_add_and_fetch (&bar->arrived, -1);
-#else
-      gomp_mutex_lock (&bar->mutex2);
-      n = --bar->arrived;
-      gomp_mutex_unlock (&bar->mutex2);
-#endif
 
       if (n == 0)
 	gomp_sem_post (&bar->sem2);
@@ -148,9 +134,7 @@ gomp_team_barrier_wait_end (gomp_barrier_t *bar, gomp_barrier_state_t state)
       bar->generation = state + BAR_INCR - BAR_WAS_LAST;
       if (n > 0)
 	{
-	  do
-	    gomp_sem_post (&bar->sem1);
-	  while (--n != 0);
+	  gomp_sem_post_n (&bar->sem1, n);
 	  gomp_sem_wait (&bar->sem2);
 	}
       __atomic_store_n(&bar->toggle_reent,
@@ -173,13 +157,7 @@ gomp_team_barrier_wait_end (gomp_barrier_t *bar, gomp_barrier_state_t state)
 	}
       while (gen != state + BAR_INCR);
 
-#ifdef HAVE_SYNC_BUILTINS
       n = __sync_add_and_fetch (&bar->arrived, -1);
-#else
-      gomp_mutex_lock (&bar->mutex2);
-      n = --bar->arrived;
-      gomp_mutex_unlock (&bar->mutex2);
-#endif
 
       if (n == 0)
 	gomp_sem_post (&bar->sem2);
@@ -222,9 +200,7 @@ gomp_team_barrier_wait_cancel_end (gomp_barrier_t *bar,
       bar->generation = state + BAR_INCR - BAR_WAS_LAST;
       if (n > 0)
 	{
-	  do
-	    gomp_sem_post (&bar->sem1);
-	  while (--n != 0);
+	  gomp_sem_post_n (&bar->sem1, n);
 	  gomp_sem_wait (&bar->sem2);
 	}
       __atomic_store_n(&bar->toggle_reent,
@@ -257,13 +233,7 @@ gomp_team_barrier_wait_cancel_end (gomp_barrier_t *bar,
 	}
       while (gen != state + BAR_INCR);
 
-#ifdef HAVE_SYNC_BUILTINS
       n = __sync_add_and_fetch (&bar->arrived, -1);
-#else
-      gomp_mutex_lock (&bar->mutex2);
-      n = --bar->arrived;
-      gomp_mutex_unlock (&bar->mutex2);
-#endif
 
       if (n == 0)
 	gomp_sem_post (&bar->sem2);
@@ -284,14 +254,15 @@ gomp_team_barrier_wake (gomp_barrier_t *bar, int count)
 {
   if (count == 0)
     count = bar->total - 1;
-  while (count-- > 0)
-    gomp_sem_post (&bar->sem1);
+  if (count)
+    gomp_sem_post_n (&bar->sem1, count);
 }
 
 bool
 gomp_team_barrier_wait_cancel (gomp_barrier_t *bar)
 {
   gomp_barrier_state_t state = gomp_barrier_wait_cancel_start (bar);
+
   return gomp_team_barrier_wait_cancel_end (bar, state);
 }
 
@@ -315,9 +286,7 @@ gomp_team_barrier_cancel (struct gomp_team *team)
       int n = team->barrier.arrived;
       if (n > 0)
 	{
-	  do
-	    gomp_sem_post (&team->barrier.sem1);
-	  while (--n != 0);
+	  gomp_sem_post_n (&team->barrier.sem1, n);
 	  gomp_sem_wait (&team->barrier.sem2);
 	}
       team->barrier.cancellable = false;

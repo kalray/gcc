@@ -37,9 +37,6 @@
 typedef struct
 {
   gomp_mutex_t mutex1;
-#ifndef HAVE_SYNC_BUILTINS
-  gomp_mutex_t mutex2;
-#endif
   gomp_sem_t sem1;
   gomp_sem_t sem2;
   unsigned total;
