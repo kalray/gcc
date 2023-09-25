@@ -132,17 +132,23 @@ gomp_sem_wait (gomp_sem_t *sem)
 }
 
 static inline void
-gomp_sem_post (gomp_sem_t *sem)
+gomp_sem_post_n (gomp_sem_t *sem, int n)
 {
   mppa_cos_wfence (); /* consistency before post */
 #if (__SIZEOF_PTRDIFF_T__ == 8)
-  MPPA_COS_AFADDD ((void *) sem, 1);
+  MPPA_COS_AFADDD ((void *) sem, n);
 #else
-  MPPA_COS_AFADDW ((void *) sem, 1);
+  MPPA_COS_AFADDW ((void *) sem, n);
 #endif
   mppa_cos_wfence (); /* consistency before doorbell */
   mppa_cos_doorbell_all ();
   MPPA_COS_DINVAL ();
+}
+
+static inline void
+gomp_sem_post (gomp_sem_t *sem)
+{
+  gomp_sem_post_n(sem, 1);
 }
 
 static inline void
