@@ -431,6 +431,11 @@
   V4HF V2SF
 ])
 
+;; Iterator for the scalar modes that fit in a GPR.
+(define_mode_iterator SCALAR [
+  QI HI HF SI SF DI DF HC SC CQI CHI CSI
+])
+
 ;; Iterator for the modes that fit in a GPR.
 (define_mode_iterator FITGPR [
   QI HI HF SI SF DI DF HC SC CQI CHI CSI
