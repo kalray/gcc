@@ -3658,6 +3658,20 @@
   }
 )
 
+(define_expand "xorsignhf3"
+  [(match_operand:HF 0 "register_operand")
+   (match_operand:HF 1 "register_operand")
+   (match_operand:HF 2 "register_operand")]
+  ""
+  {
+    rtx mask = GEN_INT (0x8000);
+    rtx sign2 = gen_reg_rtx (HFmode);
+    emit_insn (gen_rtx_SET (sign2, gen_rtx_UNSPEC (HFmode, gen_rtvec (2, operands[2], mask), UNSPEC_ANDD)));
+    emit_insn (gen_rtx_SET (operands[0], gen_rtx_UNSPEC (HFmode, gen_rtvec (2, operands[1], sign2), UNSPEC_XORD)));
+    DONE;
+  }
+)
+
 (define_expand "floatsihf2"
   [(set (match_operand:HF 0 "register_operand" "")
         (float:HF (match_operand:SI 1 "register_operand" "")))]
@@ -3924,6 +3938,20 @@
     rtx sign2 = gen_reg_rtx (DImode);
     emit_insn (gen_kvx_getsignw (sign2, operands[2]));
     emit_insn (gen_kvx_setsignw (operands[0], operands[1], sign2));
+    DONE;
+  }
+)
+
+(define_expand "xorsignsf3"
+  [(match_operand:SF 0 "register_operand")
+   (match_operand:SF 1 "register_operand")
+   (match_operand:SF 2 "register_operand")]
+  ""
+  {
+    rtx mask = GEN_INT (0x80000000);
+    rtx sign2 = gen_reg_rtx (SFmode);
+    emit_insn (gen_rtx_SET (sign2, gen_rtx_UNSPEC (SFmode, gen_rtvec (2, operands[2], mask), UNSPEC_ANDD)));
+    emit_insn (gen_rtx_SET (operands[0], gen_rtx_UNSPEC (SFmode, gen_rtvec (2, operands[1], sign2), UNSPEC_XORD)));
     DONE;
   }
 )
@@ -4212,6 +4240,20 @@
     rtx sign2 = gen_reg_rtx (DImode);
     emit_insn (gen_kvx_getsignd (sign2, operands[2]));
     emit_insn (gen_kvx_setsignd (operands[0], operands[1], sign2));
+    DONE;
+  }
+)
+
+(define_expand "xorsigndf3"
+  [(match_operand:DF 0 "register_operand")
+   (match_operand:DF 1 "register_operand")
+   (match_operand:DF 2 "register_operand")]
+  ""
+  {
+    rtx mask = GEN_INT (0x8000000000000000);
+    rtx sign2 = gen_reg_rtx (DFmode);
+    emit_insn (gen_rtx_SET (sign2, gen_rtx_UNSPEC (DFmode, gen_rtvec (2, operands[2], mask), UNSPEC_ANDD)));
+    emit_insn (gen_rtx_SET (operands[0], gen_rtx_UNSPEC (DFmode, gen_rtvec (2, operands[1], sign2), UNSPEC_XORD)));
     DONE;
   }
 )

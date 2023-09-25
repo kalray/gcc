@@ -1042,7 +1042,7 @@
   [(set (subreg:DI (match_dup 0) 0)
         (unspec:DI [(match_dup 1) (const_int 32)] UNSPEC_SLLD))
    (set (subreg:DI (match_dup 0) 8)
-        (unspec:DI [(match_dup 2) (match_dup 1)] UNSPEC_ANDD))]
+        (unspec:DI [(match_dup 1) (match_dup 2)] UNSPEC_ANDD))]
   ""
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]

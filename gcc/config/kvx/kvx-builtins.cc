@@ -402,6 +402,18 @@ enum kvx_builtin
   KVX_BUILTIN_COPYSIGNDP,
   KVX_BUILTIN_COPYSIGNDQ,
 
+  KVX_BUILTIN_XORSIGNH,
+  KVX_BUILTIN_XORSIGNHQ,
+  KVX_BUILTIN_XORSIGNHO,
+  KVX_BUILTIN_XORSIGNHX,
+  KVX_BUILTIN_XORSIGNW,
+  KVX_BUILTIN_XORSIGNWP,
+  KVX_BUILTIN_XORSIGNWQ,
+  KVX_BUILTIN_XORSIGNWO,
+  KVX_BUILTIN_XORSIGND,
+  KVX_BUILTIN_XORSIGNDP,
+  KVX_BUILTIN_XORSIGNDQ,
+
   KVX_BUILTIN_FMINH,
   KVX_BUILTIN_FMINHQ,
   KVX_BUILTIN_FMINHO,
@@ -1549,6 +1561,18 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (COPYSIGND, "copysignd", FLOAT64, FLOAT64, FLOAT64); // Scalar
   ADD_KVX_BUILTIN (COPYSIGNDP, "copysigndp", V2DF, V2DF, V2DF); // Vector
   ADD_KVX_BUILTIN (COPYSIGNDQ, "copysigndq", V4DF, V4DF, V4DF); // Vector
+
+  ADD_KVX_BUILTIN (XORSIGNH, "xorsignh", FLOAT16, FLOAT16, FLOAT16); // Scalar
+  ADD_KVX_BUILTIN (XORSIGNHQ, "xorsignhq", V4HF, V4HF, V4HF); // Vector
+  ADD_KVX_BUILTIN (XORSIGNHO, "xorsignho", V8HF, V8HF, V8HF); // Vector
+  ADD_KVX_BUILTIN (XORSIGNHX, "xorsignhx", V16HF, V16HF, V16HF); // Vector
+  ADD_KVX_BUILTIN (XORSIGNW, "xorsignw", FLOAT32, FLOAT32, FLOAT32); // Scalar
+  ADD_KVX_BUILTIN (XORSIGNWP, "xorsignwp", V2SF, V2SF, V2SF); // Vector
+  ADD_KVX_BUILTIN (XORSIGNWQ, "xorsignwq", V4SF, V4SF, V4SF); // Vector
+  ADD_KVX_BUILTIN (XORSIGNWO, "xorsignwo", V8SF, V8SF, V8SF); // Vector
+  ADD_KVX_BUILTIN (XORSIGND, "xorsignd", FLOAT64, FLOAT64, FLOAT64); // Scalar
+  ADD_KVX_BUILTIN (XORSIGNDP, "xorsigndp", V2DF, V2DF, V2DF); // Vector
+  ADD_KVX_BUILTIN (XORSIGNDQ, "xorsigndq", V4DF, V4DF, V4DF); // Vector
 
   ADD_KVX_BUILTIN (FMINH, "fminh", FLOAT16, FLOAT16, FLOAT16); // Scalar
   ADD_KVX_BUILTIN (FMINHQ, "fminhq", V4HF, V4HF, V4HF); // Vector
@@ -3770,6 +3794,18 @@ KVX_EXPAND_BUILTIN_3_STANDARD (copysignd, copysigndf3, DFmode, DFmode)
 KVX_EXPAND_BUILTIN_3_STANDARD (copysigndp, copysignv2df3, V2DFmode, V2DFmode)
 KVX_EXPAND_BUILTIN_3_STANDARD (copysigndq, copysignv4df3, V4DFmode, V4DFmode)
 
+KVX_EXPAND_BUILTIN_3_STANDARD (xorsignh, xorsignhf3, HFmode, HFmode)
+KVX_EXPAND_BUILTIN_3_STANDARD (xorsignhq, xorsignv4hf3, V4HFmode, V4HFmode)
+KVX_EXPAND_BUILTIN_3_STANDARD (xorsignho, xorsignv8hf3, V8HFmode, V8HFmode)
+KVX_EXPAND_BUILTIN_3_STANDARD (xorsignhx, xorsignv16hf3, V16HFmode, V16HFmode)
+KVX_EXPAND_BUILTIN_3_STANDARD (xorsignw, xorsignsf3, SFmode, SFmode)
+KVX_EXPAND_BUILTIN_3_STANDARD (xorsignwp, xorsignv2sf3, V2SFmode, V2SFmode)
+KVX_EXPAND_BUILTIN_3_STANDARD (xorsignwq, xorsignv4sf3, V4SFmode, V4SFmode)
+KVX_EXPAND_BUILTIN_3_STANDARD (xorsignwo, xorsignv8sf3, V8SFmode, V8SFmode)
+KVX_EXPAND_BUILTIN_3_STANDARD (xorsignd, xorsigndf3, DFmode, DFmode)
+KVX_EXPAND_BUILTIN_3_STANDARD (xorsigndp, xorsignv2df3, V2DFmode, V2DFmode)
+KVX_EXPAND_BUILTIN_3_STANDARD (xorsigndq, xorsignv4df3, V4DFmode, V4DFmode)
+
 KVX_EXPAND_BUILTIN_3_STANDARD (fminh, fminhf3, HFmode, HFmode)
 KVX_EXPAND_BUILTIN_3_STANDARD (fminhq, fminv4hf3, V4HFmode, V4HFmode)
 KVX_EXPAND_BUILTIN_3_STANDARD (fminho, fminv8hf3, V8HFmode, V8HFmode)
@@ -5262,6 +5298,18 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_COPYSIGND: return kvx_expand_builtin_copysignd (target, exp);
     case KVX_BUILTIN_COPYSIGNDP: return kvx_expand_builtin_copysigndp (target, exp);
     case KVX_BUILTIN_COPYSIGNDQ: return kvx_expand_builtin_copysigndq (target, exp);
+
+    case KVX_BUILTIN_XORSIGNH: return kvx_expand_builtin_xorsignh (target, exp);
+    case KVX_BUILTIN_XORSIGNHQ: return kvx_expand_builtin_xorsignhq (target, exp);
+    case KVX_BUILTIN_XORSIGNHO: return kvx_expand_builtin_xorsignho (target, exp);
+    case KVX_BUILTIN_XORSIGNHX: return kvx_expand_builtin_xorsignhx (target, exp);
+    case KVX_BUILTIN_XORSIGNW: return kvx_expand_builtin_xorsignw (target, exp);
+    case KVX_BUILTIN_XORSIGNWP: return kvx_expand_builtin_xorsignwp (target, exp);
+    case KVX_BUILTIN_XORSIGNWQ: return kvx_expand_builtin_xorsignwq (target, exp);
+    case KVX_BUILTIN_XORSIGNWO: return kvx_expand_builtin_xorsignwo (target, exp);
+    case KVX_BUILTIN_XORSIGND: return kvx_expand_builtin_xorsignd (target, exp);
+    case KVX_BUILTIN_XORSIGNDP: return kvx_expand_builtin_xorsigndp (target, exp);
+    case KVX_BUILTIN_XORSIGNDQ: return kvx_expand_builtin_xorsigndq (target, exp);
 
     case KVX_BUILTIN_FMINH: return kvx_expand_builtin_fminh (target, exp);
     case KVX_BUILTIN_FMINHQ: return kvx_expand_builtin_fminhq (target, exp);

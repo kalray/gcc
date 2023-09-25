@@ -544,7 +544,7 @@
 
 (define_insn "*addd"
   [(set (match_operand:ALL64 0 "register_operand" "=r")
-        (unspec:ALL64 [(match_operand:ALL64 1 "register_operand" "r")
+        (unspec:ALL64 [(match_operand:SIMD64 1 "register_operand" "r")
                        (match_operand:DI 2 "register_operand" "r")] UNSPEC_ADDD))]
   ""
   "addd %0 = %1, %2"
@@ -575,12 +575,23 @@
 )
 
 (define_insn "*andd"
-  [(set (match_operand:ALL64 0 "register_operand" "=r")
-        (unspec:ALL64 [(match_operand:ALL64 1 "register_operand" "r")
-                       (match_operand:FITGPR 2 "register_operand" "r")] UNSPEC_ANDD))]
+  [(set (match_operand:FITGPR 0 "register_operand" "=r,r,r,r")
+        (unspec:FITGPR [(match_operand:SCALAR 1 "register_operand" "r,r,r,r")
+                        (match_operand:WI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")] UNSPEC_ANDD))]
   ""
   "andd %0 = %1, %2"
-  [(set_attr "type" "alu_tiny")]
+  [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
+   (set_attr "length" "4,4,8,12")]
+)
+
+(define_insn "*andd"
+  [(set (match_operand:ALL64 0 "register_operand" "=r,r,r,r")
+        (unspec:ALL64 [(match_operand:SIMD64 1 "register_operand" "r,r,r,r")
+                       (match_operand:WI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")] UNSPEC_ANDD))]
+  ""
+  "andd %0 = %1, %2"
+  [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
+   (set_attr "length" "4,4,8,12")]
 )
 
 (define_insn "*anddp"
@@ -606,13 +617,77 @@
    (set_attr "length"        "16")]
 )
 
-(define_insn "*xord"
+(define_insn "*andd"
   [(set (match_operand:ALL64 0 "register_operand" "=r")
         (unspec:ALL64 [(match_operand:ALL64 1 "register_operand" "r")
-                       (match_operand:FITGPR 2 "register_operand" "r")] UNSPEC_XORD))]
+                       (match_operand:ALL64 2 "register_operand" "r")] UNSPEC_ANDD))]
+  ""
+  "andd %0 = %1, %2"
+  [(set_attr "type" "alu_tiny")]
+)
+
+(define_insn "*anddp"
+  [(set (match_operand:ALL128 0 "register_operand" "=r")
+        (unspec:ALL128 [(match_operand:ALL128 1 "register_operand" "r")
+                        (match_operand:ALL128 2 "register_operand" "r")] UNSPEC_ANDD))]
+  ""
+  "andd %x0 = %x1, %x2\n\tandd %y0 = %y1, %y2"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "*anddq"
+  [(set (match_operand:ALL256 0 "register_operand" "=r")
+        (unspec:ALL256 [(match_operand:ALL256 1 "register_operand" "r")
+                        (match_operand:ALL256 2 "register_operand" "r")] UNSPEC_ANDD))]
+  ""
+  {
+    return "andd %x0 = %x1, %x2\n\tandd %y0 = %y1, %y2\n\t"
+           "andd %z0 = %z1, %z2\n\tandd %t0 = %t1, %t2";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_insn "*xord"
+  [(set (match_operand:FITGPR 0 "register_operand" "=r,r,r,r")
+        (unspec:FITGPR [(match_operand:FITGPR 1 "register_operand" "r,r,r,r")
+                        (match_operand:SCALAR 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")] UNSPEC_XORD))]
   ""
   "xord %0 = %1, %2"
   [(set_attr "type" "alu_tiny")]
+)
+
+(define_insn "*xord"
+  [(set (match_operand:FITGPR 0 "register_operand" "=r")
+        (unspec:FITGPR [(match_operand:FITGPR 1 "register_operand" "r")
+                        (match_operand:SIMD64 2 "register_operand" "r")] UNSPEC_XORD))]
+  ""
+  "xord %0 = %1, %2"
+  [(set_attr "type" "alu_tiny")]
+)
+
+(define_insn "*xordp"
+  [(set (match_operand:ALL128 0 "register_operand" "=r")
+        (unspec:ALL128 [(match_operand:ALL128 1 "register_operand" "r")
+                        (match_operand:ALL128 2 "register_operand" "r")] UNSPEC_XORD))]
+  ""
+  "xord %x0 = %x1, %x2\n\txord %y0 = %y1, %y2"
+  [(set_attr "type" "alu_tiny_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "*xordq"
+  [(set (match_operand:ALL256 0 "register_operand" "=r")
+        (unspec:ALL256 [(match_operand:ALL256 1 "register_operand" "r")
+                        (match_operand:ALL256 2 "register_operand" "r")] UNSPEC_XORD))]
+  ""
+  {
+    return "xord %x0 = %x1, %x2\n\txord %y0 = %y1, %y2\n\t"
+           "xord %z0 = %z1, %z2\n\txord %t0 = %t1, %t2";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
 )
 
 (define_insn "*slld"
@@ -6468,6 +6543,21 @@
   }
 )
 
+(define_expand "xorsign<mode>3"
+  [(match_operand:S64F 0 "register_operand")
+   (match_operand:S64F 1 "register_operand")
+   (match_operand:S64F 2 "register_operand")]
+  ""
+  {
+    rtx maskv4hf = GEN_INT (0x8000800080008000);
+    rtx maskv2sf = GEN_INT (0x8000000080000000);
+    rtx sign2 = gen_reg_rtx (<MODE>mode);
+    emit_insn (gen_rtx_SET (sign2, gen_rtx_UNSPEC (<MODE>mode, gen_rtvec (2, operands[2], mask<mode>), UNSPEC_ANDD)));
+    emit_insn (gen_rtx_SET (operands[0], gen_rtx_UNSPEC (<MODE>mode, gen_rtvec (2, operands[1], sign2), UNSPEC_XORD)));
+    DONE;
+  }
+)
+
 
 ;; V4HF
 
@@ -7135,6 +7225,24 @@
             ? gen_rtx_CONST_STRING (VOIDmode, ".dltz")
             : gen_rtx_CONST_STRING (VOIDmode, ".ltz");
     emit_insn (gen_kvx_selectf<suffix> (operands[0], fneg1, fabs1, sign2, ltz));
+    DONE;
+  }
+)
+
+(define_expand "xorsign<mode>3"
+  [(match_operand:V128F 0 "register_operand")
+   (match_operand:V128F 1 "register_operand")
+   (match_operand:V128F 2 "register_operand")]
+  ""
+  {
+    rtx maskv8hf = GEN_INT (0x8000800080008000);
+    rtx maskv4sf = GEN_INT (0x8000000080000000);
+    rtx maskv2df = GEN_INT (0x8000000000000000);
+    rtx mask = gen_reg_rtx (DImode);
+    emit_move_insn (mask, mask<mode>);
+    rtx sign2 = gen_reg_rtx (<MODE>mode);
+    emit_insn (gen_rtx_SET (sign2, gen_rtx_UNSPEC (<MODE>mode, gen_rtvec (2, operands[2], mask), UNSPEC_ANDD)));
+    emit_insn (gen_rtx_SET (operands[0], gen_rtx_UNSPEC (<MODE>mode, gen_rtvec (2, operands[1], sign2), UNSPEC_XORD)));
     DONE;
   }
 )
@@ -8000,6 +8108,24 @@
         rtx opnd2 = simplify_gen_subreg (<HALF>mode, operands[2], <MODE>mode, i*16);
         emit_insn (gen_copysign<half>3 (opnd0, opnd1, opnd2));
       }
+    DONE;
+  }
+)
+
+(define_expand "xorsign<mode>3"
+  [(match_operand:V256F 0 "register_operand")
+   (match_operand:V256F 1 "register_operand")
+   (match_operand:V256F 2 "register_operand")]
+  ""
+  {
+    rtx maskv16hf = GEN_INT (0x8000800080008000);
+    rtx maskv8sf = GEN_INT (0x8000000080000000);
+    rtx maskv4df = GEN_INT (0x8000000000000000);
+    rtx mask = gen_reg_rtx (DImode);
+    emit_move_insn (mask, mask<mode>);
+    rtx sign2 = gen_reg_rtx (<MODE>mode);
+    emit_insn (gen_rtx_SET (sign2, gen_rtx_UNSPEC (<MODE>mode, gen_rtvec (2, operands[2], mask), UNSPEC_ANDD)));
+    emit_insn (gen_rtx_SET (operands[0], gen_rtx_UNSPEC (<MODE>mode, gen_rtvec (2, operands[1], sign2), UNSPEC_XORD)));
     DONE;
   }
 )
