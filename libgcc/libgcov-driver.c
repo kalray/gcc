@@ -459,7 +459,7 @@ write_topn_counters (const struct gcov_ctr_info *ci_ptr,
 #endif
 
       /* Malloc fallback.  */
-      if (list_sizes == NULL)
+      if (list_sizes == NULL || list_sizes == (void*)-1)
 	list_sizes =
 	  (unsigned *)(*allocate_fn) (list_size_length * sizeof (unsigned),
 				      arg);
