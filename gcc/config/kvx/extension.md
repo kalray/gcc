@@ -183,7 +183,7 @@
         gcc_unreachable ();
       }
   }
-  [(set_attr "type" "bcu_crrp_crwl_crwh,lsu_load_uncached,lsu_load_uncached_x,lsu_load_uncached_y,lsu_crrp_store,lsu_crrp_store_x,lsu_crrp_store_y,bcu_tiny_auxw_crrp,alu_lite_x2_crwl_crwh,lsu_auxr_auxw")
+  [(set_attr "type" "bcu_crrp_crwl_crwh,lsu_uncached_load,lsu_uncached_load_x,lsu_uncached_load_y,lsu_crrp_store,lsu_crrp_store_x,lsu_crrp_store_y,bcu_tiny_auxw_crrp,alu_lite_x2_crwl_crwh,lsu_auxr_auxw")
    (set_attr "length"                "4,                4,                  8,                 12,             4,               8,              12,                 4,                    8,            4")]
 )
 
@@ -210,7 +210,7 @@
         gcc_unreachable ();
       }
   }
-  [(set_attr "type" "bcu_crrp_crwl_crwh,lsu_load,lsu_load_x,lsu_load_y,lsu_load_uncached,lsu_load_uncached_x,lsu_load_uncached_y,lsu_crrp_store,lsu_crrp_store_x,lsu_crrp_store_y,bcu_tiny_auxw_crrp,alu_thin_x2_crwl_crwh,lsu_auxr_auxw")
+  [(set_attr "type" "bcu_crrp_crwl_crwh,lsu_load,lsu_load_x,lsu_load_y,lsu_uncached_load,lsu_uncached_load_x,lsu_uncached_load_y,lsu_crrp_store,lsu_crrp_store_x,lsu_crrp_store_y,bcu_tiny_auxw_crrp,alu_thin_x2_crwl_crwh,lsu_auxr_auxw")
    (set_attr "length"                "4,       4,         8,        12,                4,                  8,                 12,             4,               8,              12,                 4,                    8,            4")]
 )
 
@@ -1064,9 +1064,9 @@
   ""
   "xlo%2%X1 %0 = %1"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_load_uncached") (const_string "lsu_load"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_load_uncached_x") (const_string "lsu_load_x"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_load_uncached_y") (const_string "lsu_load_y"))])
+    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_uncached_load") (const_string "lsu_load"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_uncached_load_x") (const_string "lsu_load_x"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_uncached_load_y") (const_string "lsu_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -1119,9 +1119,9 @@
   ""
   "xlo%3%X2 %0 = %2"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_load_uncached") (const_string "lsu_load"))
-     (if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_load_uncached_x") (const_string "lsu_load_x"))
-     (if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_load_uncached_y") (const_string "lsu_load_y"))])
+    [(if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_uncached_load") (const_string "lsu_load"))
+     (if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_uncached_load_x") (const_string "lsu_load_x"))
+     (if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_uncached_load_y") (const_string "lsu_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -1134,9 +1134,9 @@
   ""
   "xlo%4%X2 %3? %0 = %O2"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_load_uncached") (const_string "lsu_load"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_load_uncached_x") (const_string "lsu_load_x"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_load_uncached_y") (const_string "lsu_load_y"))])
+    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_uncached_load") (const_string "lsu_load"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_uncached_load_x") (const_string "lsu_load_x"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_uncached_load_y") (const_string "lsu_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -1431,9 +1431,9 @@
   ""
   "xlo%4%X2 %3? %0 = %O2"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_load_uncached") (const_string "lsu_load"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_load_uncached_x") (const_string "lsu_load_x"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_load_uncached_y") (const_string "lsu_load_y"))])
+    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_uncached_load") (const_string "lsu_load"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_uncached_load_x") (const_string "lsu_load_x"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_uncached_load_y") (const_string "lsu_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -1445,9 +1445,9 @@
   ""
   "xlo%3%X1 %2? %0 = %O1"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_load_uncached") (const_string "lsu_load"))
-     (if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_load_uncached_x") (const_string "lsu_load_x"))
-     (if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_load_uncached_y") (const_string "lsu_load_y"))])
+    [(if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_uncached_load") (const_string "lsu_load"))
+     (if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_uncached_load_x") (const_string "lsu_load_x"))
+     (if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_uncached_load_y") (const_string "lsu_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 

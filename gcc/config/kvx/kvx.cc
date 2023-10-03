@@ -4750,9 +4750,10 @@ kvx_stored_value_bypass_p (rtx_insn *prod_insn, rtx_insn *cons_insn)
     return 0;
 
   rtx produced = SET_DEST (prod_set);
+  // MEM store source is the stored value.
   rtx consumed = SET_SRC (cons_set);
 
-  // Only bypass on the stored value.
+  // Depends on renaming constraint so only works in SCHED2.
   return reg_overlap_mentioned_p (produced, consumed);
 }
 
@@ -4768,6 +4769,7 @@ kvx_accumulator_bypass_p (rtx_insn *prod_insn, rtx_insn *cons_insn)
     return 0;
 
   rtx produced = SET_DEST (prod_set);
+  // KVX ternary insns use the same register for acccumulator and result.
   rtx consumed = SET_DEST (cons_set);
 
   // Depends on renaming constraint so only works in SCHED2.
@@ -5201,16 +5203,16 @@ kvx_sched_resources_add (struct kvx_sched_resources *resources, rtx_insn *insn)
 	  else
 	    gcc_unreachable ();
 	}
-      else if (type >= TYPE_LSU && type < TYPE_MAU)
+      else if (type >= TYPE_LSU && type < TYPE_ALU_MUL2)
 	{
 	  resources->lsu_count++;
 	  if (type >= TYPE_LSU_AUXR_STORE && type < TYPE_LSU_CRRP_STORE)
 	    resources->auxr_count++;
 	}
-      else if (type >= TYPE_MAU && type < TYPE_BCU)
+      else if (type >= TYPE_ALU_MUL2 && type < TYPE_BCU)
 	{
 	  resources->mau_count++;
-	  if (type >= TYPE_MAU_AUXR)
+	  if (type >= TYPE_ALU_MAC2)
 	    resources->auxr_count++;
 	}
       else if (type >= TYPE_BCU && type < TYPE_TCA)
@@ -6055,7 +6057,7 @@ kvx_sched2_fix_insn_issue (rtx_insn *insn, rtx *opvec, int noperands)
       int cycle = kvx_sched2.insn_cycle[uid] + scoreboard.delay;
       enum attr_type type = get_attr_type (insn);
       // Keep TYPE tests in sync with the order of the types.md file.
-      if (type >= TYPE_MAU_AUXR && type <= TYPE_MAU_AUXR_FP16
+      if (type >= TYPE_ALU_MAC2 && type <= TYPE_FPU_FMA4
 	  && noperands > 3 && REG_P (opvec[3]))
 	{
 	  int regno = REGNO (opvec[3]);
@@ -6085,7 +6087,7 @@ kvx_sched2_fix_insn_issue (rtx_insn *insn, rtx *opvec, int noperands)
 		}
 	    }
 	}
-      if (type >= TYPE_MAU && type < TYPE_BCU && noperands > 0
+      if (type >= TYPE_ALU_MUL2 && type < TYPE_BCU && noperands > 0
 	  && REG_P (opvec[0]))
 	{
 	  int regno = REGNO (opvec[0]);
@@ -6721,25 +6723,25 @@ kvx_insn_cost (rtx_insn *insn, bool speed)
       int penalty = (type == TYPE_ALU_FULL_SFU) * (15 - 1);
       cost += kvx_type_full_cost (1, penalty, speed);
     }
-  else if (type >= TYPE_LSU && type < TYPE_MAU)
+  else if (type >= TYPE_LSU && type < TYPE_ALU_MUL2)
     {
       int penalty = 0;
       if (type >= TYPE_LSU_LOAD && type <= TYPE_LSU_AUXW_LOAD_Y)
 	penalty = (3 - 1);
-      if ((type >= TYPE_LSU_AUXW_LOAD_UNCACHED
-	   && type <= TYPE_LSU_LOAD_UNCACHED_Y)
+      if ((type >= TYPE_LSU_AUXW_UNCACHED_LOAD
+	   && type <= TYPE_LSU_UNCACHED_LOAD_Y)
 	  || (type >= TYPE_LSU_AUXW_ATOMIC
 	      && type <= TYPE_LSU_AUXR_AUXW_ATOMIC_Y))
 	penalty = (24 - 1);
       cost += kvx_type_lsu_cost (1, penalty, speed);
     }
-  else if (type >= TYPE_MAU && type < TYPE_BCU)
+  else if (type >= TYPE_ALU_MUL2 && type < TYPE_BCU)
     {
       int penalty = (2 - 1);
-      if (type == TYPE_MAU_FPU || type == TYPE_MAU_AUXR_FPU)
-	penalty = (4 - 1);
-      else if (type == TYPE_MAU_FP16 || type == TYPE_MAU_AUXR_FP16)
+      if (type == TYPE_FPU_MUL3 || type == TYPE_FPU_FMA3)
 	penalty = (3 - 1);
+      if (type == TYPE_FPU_MUL4 || type == TYPE_FPU_FMA4)
+	penalty = (4 - 1);
       cost += kvx_type_mau_cost (1, penalty, speed);
     }
   else if (type >= TYPE_BCU && type < TYPE_TCA)

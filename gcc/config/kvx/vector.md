@@ -29,7 +29,7 @@
         gcc_unreachable ();
       }
   }
-  [(set_attr "type" "alu_tiny,lsu_auxw_load,lsu_auxw_load_x,lsu_auxw_load_y,lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y,lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y,alu_tiny,alu_tiny_x,alu_tiny_y")
+  [(set_attr "type" "alu_tiny,lsu_auxw_load,lsu_auxw_load_x,lsu_auxw_load_y,lsu_auxw_uncached_load,lsu_auxw_uncached_load_x,lsu_auxw_uncached_load_y,lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y,alu_tiny,alu_tiny_x,alu_tiny_y")
    (set_attr "length" "     4,            4,              8,             12,                     4,                       8,                      12,             4,               8,              12,       4,         8,        12")]
 )
 
@@ -97,7 +97,7 @@
         gcc_unreachable ();
       }
   }
-  [(set_attr "type" "alu_tiny_x2,lsu_auxw_load,lsu_auxw_load_x,lsu_auxw_load_y,lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y,lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
+  [(set_attr "type" "alu_tiny_x2,lsu_auxw_load,lsu_auxw_load_x,lsu_auxw_load_y,lsu_auxw_uncached_load,lsu_auxw_uncached_load_x,lsu_auxw_uncached_load_y,lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
    (set_attr "length"         "8,             4,             8,             12,                     4,                       8,                      12,             4,               8,              12")]
 )
 
@@ -178,7 +178,7 @@
         gcc_unreachable ();
       }
   }
-  [(set_attr "type" "alu_tiny_x4,lsu_auxw_load,lsu_auxw_load_x,lsu_auxw_load_y,lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y,lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
+  [(set_attr "type" "alu_tiny_x4,lsu_auxw_load,lsu_auxw_load_x,lsu_auxw_load_y,lsu_auxw_uncached_load,lsu_auxw_uncached_load_x,lsu_auxw_uncached_load_y,lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
    (set_attr "length"        "16,            4,              8,             12,                     4,                       8,                      12,             4,               8,              12")]
 )
 
@@ -1874,7 +1874,7 @@
                    (match_operand:S64I 2 "register_operand" "r")))]
   ""
   "mul<suffix> %0 = %1, %2"
-  [(set_attr "type" "mau")]
+  [(set_attr "type" "alu_mul2")]
 )
 
 (define_expand "div<mode>3"
@@ -1980,7 +1980,7 @@
                    (match_operand:S64I 3 "register_operand" "0")))]
   ""
   "madd<suffix> %0 = %1, %2"
-  [(set_attr "type" "mau_auxr")]
+  [(set_attr "type" "alu_mac2")]
 )
 
 (define_insn "msub<mode><mode>4"
@@ -1990,7 +1990,7 @@
                                (match_operand:S64I 2 "register_operand" "r"))))]
   ""
   "msbf<suffix> %0 = %1, %2"
-  [(set_attr "type" "mau_auxr")]
+  [(set_attr "type" "alu_mac2")]
 )
 
 (define_insn "ashl<mode>3"
@@ -2520,7 +2520,7 @@
                    (sign_extend:V4SI (match_operand:V4HI 2 "register_operand" "r"))))]
   ""
   "mulhwq %0 = %1, %2"
-  [(set_attr "type" "mau")]
+  [(set_attr "type" "alu_mul2")]
 )
 
 (define_insn "*umulv4hiv4si3"
@@ -2529,7 +2529,7 @@
                    (zero_extend:V4SI (match_operand:V4HI 2 "register_operand" "r"))))]
   ""
   "muluhwq %0 = %1, %2"
-  [(set_attr "type" "mau")]
+  [(set_attr "type" "alu_mul2")]
 )
 
 (define_insn "maddv4hiv4si4"
@@ -2539,7 +2539,7 @@
                    (match_operand:V4SI 3 "register_operand" "0")))]
   ""
   "maddhwq %0 = %1, %2"
-  [(set_attr "type" "mau_auxr")]
+  [(set_attr "type" "alu_mac2")]
 )
 
 (define_insn "umaddv4hiv4si4"
@@ -2549,7 +2549,7 @@
                    (match_operand:V4SI 3 "register_operand" "0")))]
   ""
   "madduhwq %0 = %1, %2"
-  [(set_attr "type" "mau_auxr")]
+  [(set_attr "type" "alu_mac2")]
 )
 
 (define_insn "msubv4hiv4si4"
@@ -2559,7 +2559,7 @@
                                                  (match_operand:V4HI 2 "register_operand" "r")))))]
   ""
   "msbfhwq %0 = %1, %2"
-  [(set_attr "type" "mau_auxr")]
+  [(set_attr "type" "alu_mac2")]
 )
 
 (define_insn "umsubv4hiv4si4"
@@ -2569,7 +2569,7 @@
                                                  (match_operand:V4HI 2 "register_operand" "r")))))]
   ""
   "msbfuhwq %0 = %1, %2"
-  [(set_attr "type" "mau_auxr")]
+  [(set_attr "type" "alu_mac2")]
 )
 
 
@@ -2599,7 +2599,7 @@
                    (sign_extend:V2DI (match_operand:V2SI 2 "register_operand" "r"))))]
   ""
   "mulwdp %0 = %1, %2"
-  [(set_attr "type" "mau")]
+  [(set_attr "type" "alu_mul2")]
 )
 
 (define_insn "*umulv2siv2di3"
@@ -2608,7 +2608,7 @@
                    (zero_extend:V2DI (match_operand:V2SI 2 "register_operand" "r"))))]
   ""
   "muluwdp %0 = %1, %2"
-  [(set_attr "type" "mau")]
+  [(set_attr "type" "alu_mul2")]
 )
 
 
@@ -2808,7 +2808,7 @@
         (mult:<HALF> (subreg:<HALF> (match_dup 1) 8)
                      (subreg:<HALF> (match_dup 2) 8)))]
   ""
-  [(set_attr "type" "mau_auxr")]
+  [(set_attr "type" "alu_mac2")]
 )
 
 (define_insn_and_split "*mul<mode>3_s1"
@@ -2825,7 +2825,7 @@
         (mult:<HALF> (match_dup 1)
                      (subreg:<HALF> (match_dup 2) 8)))]
   ""
-  [(set_attr "type" "mau_auxr")]
+  [(set_attr "type" "alu_mac2")]
 )
 
 (define_insn_and_split "*mul<mode>3_s2"
@@ -2842,7 +2842,7 @@
         (mult:<HALF> (subreg:<HALF> (match_dup 1) 8)
                      (match_dup 2)))]
   ""
-  [(set_attr "type" "mau_auxr")]
+  [(set_attr "type" "alu_mac2")]
 )
 
 (define_insn_and_split "rotl<mode>3"
@@ -3512,7 +3512,7 @@
                                   (subreg:<HALF> (match_dup 2) 8))
                      (subreg:<HALF> (match_dup 3) 8)))]
   ""
-  [(set_attr "type" "mau_auxr")
+  [(set_attr "type" "alu_mac2")
    (set_attr "length"      "8")]
 )
 
@@ -3533,7 +3533,7 @@
                       (mult:<HALF> (subreg:<HALF> (match_dup 1) 8)
                                    (subreg:<HALF> (match_dup 2) 8))))]
   ""
-  [(set_attr "type" "mau_auxr")
+  [(set_attr "type" "alu_mac2")
    (set_attr "length"      "8")]
 )
 
@@ -3941,7 +3941,7 @@
   "mulwq %0 = %1, %2"
   [(set (attr "type")
         (if_then_else (match_test "KV3_1")
-                      (const_string "mau_auxr") (const_string "mau")))]
+                      (const_string "alu_mac2") (const_string "alu_mul2")))]
 )
 
 (define_insn "maddv4siv4si4_2"
@@ -3951,7 +3951,7 @@
                    (match_operand:V4SI 3 "register_operand" "0")))]
   "KV3_2"
   "maddwq %0 = %1, %2"
-  [(set_attr "type" "mau_auxr")]
+  [(set_attr "type" "alu_mac2")]
 )
 
 (define_insn "msubv4siv4si4_2"
@@ -3961,7 +3961,7 @@
                                (match_operand:V4SI 2 "register_operand" "r"))))]
   "KV3_2"
   "msbfwq %0 = %1, %2"
-  [(set_attr "type" "mau_auxr")]
+  [(set_attr "type" "alu_mac2")]
 )
 
 (define_insn "rotlv4si3"
@@ -4511,7 +4511,7 @@
         (mult:<CHUNK> (subreg:<CHUNK> (match_dup 1) 24)
                       (subreg:<CHUNK> (match_dup 2) 24)))]
   ""
-  [(set_attr "type" "mau_auxr")]
+  [(set_attr "type" "alu_mac2")]
 )
 
 (define_insn_and_split "*mul<mode>3_s1"
@@ -4534,7 +4534,7 @@
         (mult:<CHUNK> (match_dup 1)
                       (subreg:<CHUNK> (match_dup 2) 24)))]
   ""
-  [(set_attr "type" "mau_auxr")]
+  [(set_attr "type" "alu_mac2")]
 )
 
 (define_insn_and_split "*mul<mode>3_s2"
@@ -4557,7 +4557,7 @@
         (mult:<CHUNK> (subreg:<CHUNK> (match_dup 1) 24)
                       (match_dup 2)))]
   ""
-  [(set_attr "type" "mau_auxr")]
+  [(set_attr "type" "alu_mac2")]
 )
 
 
@@ -5689,7 +5689,7 @@
                                     (subreg:<CHUNK> (match_dup 2) 24))
                       (subreg:<CHUNK> (match_dup 3) 24)))]
   ""
-  [(set_attr "type" "mau_auxr")]
+  [(set_attr "type" "alu_mac2")]
 )
 
 (define_insn_and_split "msub<mode><mode>4"
@@ -5717,7 +5717,7 @@
                        (mult:<CHUNK> (subreg:<CHUNK> (match_dup 1) 24)
                                      (subreg:<CHUNK> (match_dup 2) 24))))]
   ""
-  [(set_attr "type" "mau_auxr")
+  [(set_attr "type" "alu_mac2")
    (set_attr "length"      "8")]
 )
 
@@ -6255,7 +6255,7 @@
         (mult:V4SI (subreg:V4SI (match_dup 1) 16)
                    (subreg:V4SI (match_dup 2) 16)))]
   ""
-  [(set_attr "type" "mau_auxr")]
+  [(set_attr "type" "alu_mac2")]
 )
 
 (define_insn_and_split "maddv8siv8si4_2"
@@ -6275,7 +6275,7 @@
                               (subreg:V4SI (match_dup 2) 16))
                    (subreg:V4SI (match_dup 3) 16)))]
   ""
-  [(set_attr "type" "mau_auxr")]
+  [(set_attr "type" "alu_mac2")]
 )
 
 (define_insn_and_split "msubv8siv8si4_2"
@@ -6295,7 +6295,7 @@
                     (mult:V4SI (subreg:V4SI (match_dup 1) 16)
                                (subreg:V4SI (match_dup 2) 16))))]
   ""
-  [(set_attr "type" "mau_auxr")
+  [(set_attr "type" "alu_mac2")
    (set_attr "length"      "8")]
 )
 
@@ -6446,7 +6446,7 @@
   ""
   "fadd<suffix> %0 = %1, %2"
   [(set (attr "type")
-     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "mau_fp16") (const_string "mau_fpu")))]
+     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "fpu_mul3") (const_string "fpu_mul4")))]
 )
 
 (define_insn "sub<mode>3"
@@ -6456,7 +6456,7 @@
   ""
   "fsbf<suffix> %0 = %2, %1"
   [(set (attr "type")
-     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "mau_fp16") (const_string "mau_fpu")))]
+     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "fpu_mul3") (const_string "fpu_mul4")))]
 )
 
 (define_insn "mul<mode>3"
@@ -6466,7 +6466,7 @@
   ""
   "fmul<suffix> %0 = %1, %2"
   [(set (attr "type")
-     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "mau_fp16") (const_string "mau_fpu")))]
+     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "fpu_mul3") (const_string "fpu_mul4")))]
 )
 
 (define_insn "fma<mode>4"
@@ -6477,7 +6477,7 @@
   ""
   "ffma<suffix> %0 = %1, %2"
   [(set (attr "type")
-     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "mau_auxr_fp16") (const_string "mau_auxr_fpu")))]
+     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "fpu_fma3") (const_string "fpu_fma4")))]
 )
 
 (define_insn "fnma<mode>4"
@@ -6488,7 +6488,7 @@
   ""
   "ffms<suffix> %0 = %1, %2"
   [(set (attr "type")
-     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "mau_auxr_fp16") (const_string "mau_auxr_fpu")))]
+     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "fpu_fma3") (const_string "fpu_fma4")))]
 )
 
 (define_insn "fmin<mode>3"
@@ -6656,7 +6656,7 @@
                     (match_operand 3 "" "")] UNSPEC_FDOT2))]
   ""
   "fdot2w%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn "kvx_fdot2wd"
@@ -6666,7 +6666,7 @@
                     (match_operand 3 "" "")] UNSPEC_FDOT2))]
   ""
   "fdot2wd%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn "kvx_fdot2wdp"
@@ -6678,7 +6678,7 @@
   "fdot2wdp%3 %0 = %1, %2"
   [(set (attr "type")
         (if_then_else (match_test "KV3_1")
-                      (const_string "mau_auxr_fpu") (const_string "mau_fpu")))]
+                      (const_string "fpu_fma4") (const_string "fpu_mul4")))]
 )
 
 (define_insn "kvx_fdot2wzp"
@@ -6690,7 +6690,7 @@
   "fdot2wzp%3 %0 = %1, %2"
   [(set (attr "type")
         (if_then_else (match_test "KV3_1")
-                      (const_string "mau_auxr_fpu") (const_string "mau_fpu")))]
+                      (const_string "fpu_fma4") (const_string "fpu_mul4")))]
 )
 
 (define_insn "floatv2siv2sf2"
@@ -6698,7 +6698,7 @@
         (float:V2SF (match_operand:V2SI 1 "register_operand" "r")))]
   ""
   "floatwp.rn %0 = %1, 0"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn "floatunsv2siv2sf2"
@@ -6706,7 +6706,7 @@
         (unsigned_float:V2SF (match_operand:V2SI 1 "register_operand" "r")))]
   ""
   "floatuwp.rn %0 = %1, 0"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn "fix_truncv2sfv2si2"
@@ -6714,7 +6714,7 @@
         (fix:V2SI (match_operand:V2SF 1 "register_operand" "r")))]
   ""
   "fixedwp.rz %0 = %1, 0"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn "fixuns_truncv2sfv2si2"
@@ -6722,7 +6722,7 @@
         (unsigned_fix:V2SI (match_operand:V2SF 1 "register_operand" "r")))]
   ""
   "fixeduwp.rz %0 = %1, 0"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn "truncv2dfv2sf2"
@@ -7051,7 +7051,7 @@
   "KV3_2"
   "ffma<suffix> %0 = %1, %2"
   [(set (attr "type")
-     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "mau_auxr_fp16") (const_string "mau_auxr_fpu")))]
+     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "fpu_fma3") (const_string "fpu_fma4")))]
 )
 
 (define_expand "fnma<mode>4"
@@ -7096,7 +7096,7 @@
   "KV3_2"
   "ffms<suffix> %0 = %1, %2"
   [(set (attr "type")
-     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "mau_auxr_fp16") (const_string "mau_auxr_fpu")))]
+     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "fpu_fma3") (const_string "fpu_fma4")))]
 )
 
 (define_insn_and_split "trunc<wide><mode>2"
@@ -7341,7 +7341,7 @@
                    (match_operand:V8HF 2 "register_operand" "r")))]
   "KV3_2"
   "faddho %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fp16")]
+  [(set_attr "type" "fpu_fma3")]
 )
 
 (define_expand "subv8hf3"
@@ -7380,7 +7380,7 @@
                     (match_operand:V8HF 2 "register_operand" "r")))]
   "KV3_2"
   "fsbfho %0 = %2, %1"
-  [(set_attr "type" "mau_fp16")]
+  [(set_attr "type" "fpu_mul3")]
 )
 
 (define_expand "mulv8hf3"
@@ -7419,7 +7419,7 @@
                    (match_operand:V8HF 2 "register_operand" "r")))]
   "KV3_2"
   "fmulho %0 = %1, %2"
-  [(set_attr "type" "mau_fp16")]
+  [(set_attr "type" "fpu_mul3")]
 )
 
 ;;(define_insn "truncv8sfv8hf2"
@@ -7538,7 +7538,7 @@
   "faddwq %0 = %1, %2"
   [(set (attr "type")
         (if_then_else (match_test "KV3_1")
-                      (const_string "mau_auxr_fpu") (const_string "mau_fpu")))]
+                      (const_string "fpu_fma4") (const_string "fpu_mul4")))]
 )
 
 (define_insn "subv4sf3"
@@ -7549,7 +7549,7 @@
   "fsbfwq %0 = %2, %1"
   [(set (attr "type")
         (if_then_else (match_test "KV3_1")
-                      (const_string "mau_auxr_fpu") (const_string "mau_fpu")))]
+                      (const_string "fpu_fma4") (const_string "fpu_mul4")))]
 )
 
 (define_insn "mulv4sf3"
@@ -7560,7 +7560,7 @@
   "fmulwq %0 = %1, %2"
   [(set (attr "type")
         (if_then_else (match_test "KV3_1")
-                      (const_string "mau_auxr_fpu") (const_string "mau_fpu")))]
+                      (const_string "fpu_fma4") (const_string "fpu_mul4")))]
 )
 
 (define_expand "floatv4hiv4sf2"
@@ -7750,7 +7750,7 @@
   "fadddp %0 = %1, %2"
   [(set (attr "type")
         (if_then_else (match_test "KV3_1")
-                      (const_string "mau_auxr_fpu") (const_string "mau_fpu")))]
+                      (const_string "fpu_fma4") (const_string "fpu_mul4")))]
 )
 
 (define_insn "subv2df3"
@@ -7761,7 +7761,7 @@
   "fsbfdp %0 = %2, %1"
   [(set (attr "type")
         (if_then_else (match_test "KV3_1")
-                      (const_string "mau_auxr_fpu") (const_string "mau_fpu")))]
+                      (const_string "fpu_fma4") (const_string "fpu_mul4")))]
 )
 
 (define_insn_and_split "mulv2df3"
@@ -7778,7 +7778,7 @@
         (mult:DF (subreg:DF (match_dup 1) 8)
                  (subreg:DF (match_dup 2) 8)))]
   ""
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_insn_and_split "fmav2df4"
@@ -7798,7 +7798,7 @@
                  (subreg:DF (match_dup 2) 8)
                  (subreg:DF (match_dup 3) 8)))]
   ""
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_insn_and_split "fnmav2df4"
@@ -7818,9 +7818,8 @@
                  (subreg:DF (match_dup 2) 8)
                  (subreg:DF (match_dup 3) 8)))]
   ""
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
-
 
 ;; S256F (V16HF V8SF)
 
@@ -8347,7 +8346,7 @@
         (plus:V4SF (subreg:V4SF (match_dup 1) 16)
                    (subreg:V4SF (match_dup 2) 16)))]
   ""
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_insn_and_split "subv8sf3"
@@ -8364,7 +8363,7 @@
         (minus:V4SF (subreg:V4SF (match_dup 1) 16)
                     (subreg:V4SF (match_dup 2) 16)))]
   ""
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_insn_and_split "mulv8sf3"
@@ -8381,7 +8380,7 @@
         (mult:V4SF (subreg:V4SF (match_dup 1) 16)
                    (subreg:V4SF (match_dup 2) 16)))]
   ""
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_expand "floatv8hiv8sf2"
@@ -8609,7 +8608,7 @@
         (plus:V2DF (subreg:V2DF (match_dup 1) 16)
                    (subreg:V2DF (match_dup 2) 16)))]
   ""
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_insn_and_split "subv4df3"
@@ -8626,7 +8625,7 @@
         (minus:V2DF (subreg:V2DF (match_dup 1) 16)
                     (subreg:V2DF (match_dup 2) 16)))]
   ""
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_insn_and_split "mulv4df3"
@@ -8649,7 +8648,7 @@
         (mult:DF (subreg:DF (match_dup 1) 24)
                  (subreg:DF (match_dup 2) 24)))]
   ""
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_insn_and_split "fmav4df4"
@@ -8677,7 +8676,7 @@
                  (subreg:DF (match_dup 2) 24)
                  (subreg:DF (match_dup 3) 24)))]
   ""
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_insn_and_split "fnmav4df4"
@@ -8705,7 +8704,7 @@
                  (subreg:DF (match_dup 2) 24)
                  (subreg:DF (match_dup 3) 24)))]
   ""
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 

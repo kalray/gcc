@@ -335,7 +335,7 @@
                      (sign_extend:<WIDE> (match_operand:S64I 2 "register_operand" "r"))))]
   ""
   "mul<widenx> %0 = %1, %2"
-  [(set_attr "type" "mau")]
+  [(set_attr "type" "alu_mul2")]
 )
 
 (define_insn "kvx_mulu<widenx>"
@@ -344,7 +344,7 @@
                      (zero_extend:<WIDE> (match_operand:S64I 2 "register_operand" "r"))))]
   ""
   "mulu<widenx> %0 = %1, %2"
-  [(set_attr "type" "mau")]
+  [(set_attr "type" "alu_mul2")]
 )
 
 (define_insn "kvx_mulsu<widenx>"
@@ -353,7 +353,7 @@
                      (zero_extend:<WIDE> (match_operand:S64I 2 "register_operand" "r"))))]
   ""
   "mulsu<widenx> %0 = %1, %2"
-  [(set_attr "type" "mau")]
+  [(set_attr "type" "alu_mul2")]
 )
 
 (define_insn_and_split "kvx_mul<widenx>"
@@ -370,7 +370,7 @@
         (mult:<HWIDE> (sign_extend:<HWIDE> (subreg:<HALF> (match_dup 1) 8))
                       (sign_extend:<HWIDE> (subreg:<HALF> (match_dup 2) 8))))]
   ""
-  [(set_attr "type" "mau")]
+  [(set_attr "type" "alu_mul2")]
 )
 
 (define_insn_and_split "kvx_mulu<widenx>"
@@ -387,7 +387,7 @@
         (mult:<HWIDE> (zero_extend:<HWIDE> (subreg:<HALF> (match_dup 1) 8))
                       (zero_extend:<HWIDE> (subreg:<HALF> (match_dup 2) 8))))]
   ""
-  [(set_attr "type" "mau")]
+  [(set_attr "type" "alu_mul2")]
 )
 
 (define_insn_and_split "kvx_mulsu<widenx>"
@@ -404,7 +404,7 @@
         (mult:<HWIDE> (sign_extend:<HWIDE> (subreg:<HALF> (match_dup 1) 8))
                       (zero_extend:<HWIDE> (subreg:<HALF> (match_dup 2) 8))))]
   ""
-  [(set_attr "type" "mau")]
+  [(set_attr "type" "alu_mul2")]
 )
 
 
@@ -438,7 +438,7 @@
                      (match_operand:<WIDE> 3 "register_operand" "0")))]
   ""
   "madd<widenx> %0 = %1, %2"
-  [(set_attr "type" "mau_auxr")]
+  [(set_attr "type" "alu_mac2")]
 )
 
 (define_insn "kvx_maddu<widenx>"
@@ -448,7 +448,7 @@
                      (match_operand:<WIDE> 3 "register_operand" "0")))]
   ""
   "maddu<widenx> %0 = %1, %2"
-  [(set_attr "type" "mau_auxr")]
+  [(set_attr "type" "alu_mac2")]
 )
 
 (define_insn "kvx_maddsu<widenx>"
@@ -458,7 +458,7 @@
                      (match_operand:<WIDE> 3 "register_operand" "0")))]
   ""
   "maddsu<widenx> %0 = %1, %2"
-  [(set_attr "type" "mau_auxr")]
+  [(set_attr "type" "alu_mac2")]
 )
 
 (define_insn_and_split "kvx_madd<widenx>"
@@ -478,7 +478,7 @@
                                     (sign_extend:<HWIDE> (subreg:<HALF> (match_dup 2) 8)))
                       (subreg:<HWIDE> (match_dup 3) 16)))]
   ""
-  [(set_attr "type" "mau_auxr")]
+  [(set_attr "type" "alu_mac2")]
 )
 
 (define_insn_and_split "kvx_maddu<widenx>"
@@ -498,7 +498,7 @@
                                     (zero_extend:<HWIDE> (subreg:<HALF> (match_dup 2) 8)))
                       (subreg:<HWIDE> (match_dup 3) 16)))]
   ""
-  [(set_attr "type" "mau_auxr")]
+  [(set_attr "type" "alu_mac2")]
 )
 
 (define_insn_and_split "kvx_maddsu<widenx>"
@@ -518,7 +518,7 @@
                                     (zero_extend:<HWIDE> (subreg:<HALF> (match_dup 2) 8)))
                       (subreg:<HWIDE> (match_dup 3) 16)))]
   ""
-  [(set_attr "type" "mau_auxr")]
+  [(set_attr "type" "alu_mac2")]
 )
 
 
@@ -552,7 +552,7 @@
                                    (sign_extend:<WIDE> (match_operand:S64I 2 "register_operand" "r")))))]
   ""
   "msbf<widenx> %0 = %1, %2"
-  [(set_attr "type" "mau_auxr")]
+  [(set_attr "type" "alu_mac2")]
 )
 
 (define_insn "kvx_msbfu<widenx>"
@@ -562,7 +562,7 @@
                                    (zero_extend:<WIDE> (match_operand:S64I 2 "register_operand" "r")))))]
   ""
   "msbfu<widenx> %0 = %1, %2"
-  [(set_attr "type" "mau_auxr")]
+  [(set_attr "type" "alu_mac2")]
 )
 
 (define_insn "kvx_msbfsu<widenx>"
@@ -572,7 +572,7 @@
                                    (zero_extend:<WIDE> (match_operand:S64I 2 "register_operand" "r")))))]
   ""
   "msbfsu<widenx> %0 = %1, %2"
-  [(set_attr "type" "mau_auxr")]
+  [(set_attr "type" "alu_mac2")]
 )
 
 (define_insn_and_split "kvx_msbf<widenx>"
@@ -592,7 +592,7 @@
                        (mult:<HWIDE> (sign_extend:<HWIDE> (subreg:<HALF> (match_dup 1) 8))
                                      (sign_extend:<HWIDE> (subreg:<HALF> (match_dup 2) 8)))))]
   ""
-  [(set_attr "type" "mau_auxr")]
+  [(set_attr "type" "alu_mac2")]
 )
 
 (define_insn_and_split "kvx_msbfu<widenx>"
@@ -612,7 +612,7 @@
                        (mult:<HWIDE> (zero_extend:<HWIDE> (subreg:<HALF> (match_dup 1) 8))
                                      (zero_extend:<HWIDE> (subreg:<HALF> (match_dup 2) 8)))))]
   ""
-  [(set_attr "type" "mau_auxr")]
+  [(set_attr "type" "alu_mac2")]
 )
 
 (define_insn_and_split "kvx_msbfsu<widenx>"
@@ -632,7 +632,7 @@
                        (mult:<HWIDE> (sign_extend:<HWIDE> (subreg:<HALF> (match_dup 1) 8))
                                      (zero_extend:<HWIDE> (subreg:<HALF> (match_dup 2) 8)))))]
   ""
-  [(set_attr "type" "mau_auxr")]
+  [(set_attr "type" "alu_mac2")]
 )
 
 (define_insn "kvx_mm212w"
@@ -641,7 +641,7 @@
                       (match_operand:V2SI 2 "register_operand" "r")] UNSPEC_MM))]
   ""
   "mm212w %0 = %1, %2"
-  [(set_attr "type" "mau")]
+  [(set_attr "type" "alu_mul2")]
 )
 
 (define_insn "kvx_mma212w"
@@ -651,7 +651,7 @@
 		      (match_operand:V4SI 3 "register_operand" "0")] UNSPEC_MMA))]
   ""
   "mma212w %0 = %1, %2"
-  [(set_attr "type" "mau_auxr")]
+  [(set_attr "type" "alu_mac2")]
 )
 
 (define_insn "kvx_mms212w"
@@ -661,7 +661,7 @@
 		      (match_operand:V4SI 3 "register_operand" "0")] UNSPEC_MMS))]
   ""
   "mms212w %0 = %1, %2"
-  [(set_attr "type" "mau_auxr")]
+  [(set_attr "type" "alu_mac2")]
 )
 
 ;; SHL*
@@ -3480,7 +3480,7 @@
                       (match_operand 3 "" "")] UNSPEC_FADD))]
   ""
   "faddwc%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn "kvx_faddwcp"
@@ -3490,7 +3490,7 @@
                       (match_operand 3 "" "")] UNSPEC_FADD))]
   ""
   "faddwcp%3 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_insn "kvx_fadddc"
@@ -3500,7 +3500,7 @@
                       (match_operand 3 "" "")] UNSPEC_FADD))]
   ""
   "fadddc%3 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_insn_and_split "kvx_fadddcp"
@@ -3520,7 +3520,7 @@
                       (subreg:V2DF (match_dup 2) 16)
                       (match_dup 3)] UNSPEC_FADD))]
   ""
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_insn_and_split "kvx_fadddcq"
@@ -3548,7 +3548,7 @@
                       (subreg:V2DF (match_dup 2) 48)
                       (match_dup 3)] UNSPEC_FADD))]
   ""
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_insn_and_split "kvx_faddwcq"
@@ -3568,7 +3568,7 @@
                       (subreg:V4SF (match_dup 2) 16)
                       (match_dup 3)] UNSPEC_FADD))]
   ""
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 ;; FADD*
@@ -3580,7 +3580,7 @@
                     (match_operand 3 "" "")] UNSPEC_FADD))]
   ""
   "faddhq%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fp16")]
+  [(set_attr "type" "fpu_mul3")]
 )
 
 (define_insn "kvx_faddw"
@@ -3590,7 +3590,7 @@
                     (match_operand 3 "" "")] UNSPEC_FADD))]
   ""
   "faddw%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn "kvx_faddd"
@@ -3600,7 +3600,7 @@
                     (match_operand 3 "" "")] UNSPEC_FADD))]
   ""
   "faddd%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn "kvx_fadd<suffix>"
@@ -3611,7 +3611,7 @@
   ""
   "fadd<suffix>%3 %0 = %1, %2"
   [(set (attr "type")
-     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "mau_fp16") (const_string "mau_fpu")))]
+     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "fpu_mul3") (const_string "fpu_mul4")))]
 )
 
 (define_expand "kvx_faddho"
@@ -3649,7 +3649,7 @@
                       (match_operand 3 "" "")] UNSPEC_FADD))]
   "KV3_2"
   "faddho%3 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fp16")]
+  [(set_attr "type" "fpu_fma3")]
 )
 
 (define_insn "kvx_faddwq"
@@ -3661,7 +3661,7 @@
   "faddwq%3 %0 = %1, %2"
   [(set (attr "type")
         (if_then_else (match_test "KV3_1")
-                      (const_string "mau_auxr_fpu") (const_string "mau_fpu")))]
+                      (const_string "fpu_fma4") (const_string "fpu_mul4")))]
 )
 
 (define_insn "kvx_fadddp"
@@ -3673,7 +3673,7 @@
   "fadddp%3 %0 = %1, %2"
   [(set (attr "type")
         (if_then_else (match_test "KV3_1")
-                      (const_string "mau_auxr_fpu") (const_string "mau_fpu")))]
+                      (const_string "fpu_fma4") (const_string "fpu_mul4")))]
 )
 
 (define_insn "kvx_faddhx"
@@ -3744,7 +3744,7 @@
                       (subreg:V4SF (match_dup 2) 16)
                       (match_dup 3)] UNSPEC_FADD))]
   ""
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_insn_and_split "kvx_fadddq"
@@ -3764,7 +3764,7 @@
                       (subreg:V2DF (match_dup 2) 16)
                       (match_dup 3)] UNSPEC_FADD))]
   ""
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 ;; FSBF*C
@@ -3776,7 +3776,7 @@
                       (match_operand 3 "" "")] UNSPEC_FSBF))]
   ""
   "fsbfwc%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn "kvx_fsbfwcp"
@@ -3786,7 +3786,7 @@
                       (match_operand 3 "" "")] UNSPEC_FSBF))]
   ""
   "fsbfwcp%3 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_insn "kvx_fsbfdc"
@@ -3796,7 +3796,7 @@
                       (match_operand 3 "" "")] UNSPEC_FSBF))]
   ""
   "fsbfdc%3 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_insn_and_split "kvx_fsbfdcp"
@@ -3816,7 +3816,7 @@
                       (subreg:V2DF (match_dup 2) 16)
                       (match_dup 3)] UNSPEC_FSBF))]
   ""
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_insn_and_split "kvx_fsbfdcq"
@@ -3844,7 +3844,7 @@
                       (subreg:V2DF (match_dup 2) 48)
                       (match_dup 3)] UNSPEC_FSBF))]
   ""
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_insn_and_split "kvx_fsbfwcq"
@@ -3864,7 +3864,7 @@
                       (subreg:V4SF (match_dup 2) 16)
                       (match_dup 3)] UNSPEC_FSBF))]
   ""
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 ;; FSBF*
@@ -3876,7 +3876,7 @@
                     (match_operand 3 "" "")] UNSPEC_FSBF))]
   ""
   "fsbfhq%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fp16")]
+  [(set_attr "type" "fpu_mul3")]
 )
 
 (define_insn "kvx_fsbfw"
@@ -3886,7 +3886,7 @@
                     (match_operand 3 "" "")] UNSPEC_FSBF))]
   ""
   "fsbfw%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn "kvx_fsbfd"
@@ -3896,7 +3896,7 @@
                     (match_operand 3 "" "")] UNSPEC_FSBF))]
   ""
   "fsbfd%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn "kvx_fsbf<suffix>"
@@ -3907,7 +3907,7 @@
   ""
   "fsbf<suffix>%3 %0 = %1, %2"
   [(set (attr "type")
-     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "mau_fp16") (const_string "mau_fpu")))]
+     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "fpu_mul3") (const_string "fpu_mul4")))]
 )
 
 (define_expand "kvx_fsbfho"
@@ -3945,7 +3945,7 @@
                       (match_operand 3 "" "")] UNSPEC_FSBF))]
   "KV3_2"
   "fsbfho%3 %0 = %2, %1"
-  [(set_attr "type" "mau_fp16")]
+  [(set_attr "type" "fpu_mul3")]
 )
 
 (define_insn "kvx_fsbfwq"
@@ -3957,7 +3957,7 @@
   "fsbfwq%3 %0 = %1, %2"
   [(set (attr "type")
         (if_then_else (match_test "KV3_1")
-                      (const_string "mau_auxr_fpu") (const_string "mau_fpu")))]
+                      (const_string "fpu_fma4") (const_string "fpu_mul4")))]
 )
 
 (define_insn "kvx_fsbfdp"
@@ -3969,7 +3969,7 @@
   "fsbfdp%3 %0 = %1, %2"
   [(set (attr "type")
         (if_then_else (match_test "KV3_1")
-                      (const_string "mau_auxr_fpu") (const_string "mau_fpu")))]
+                      (const_string "fpu_fma4") (const_string "fpu_mul4")))]
 )
 
 (define_insn "kvx_fsbfhx"
@@ -4040,7 +4040,7 @@
                       (subreg:V4SF (match_dup 2) 16)
                       (match_dup 3)] UNSPEC_FSBF))]
   ""
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_insn_and_split "kvx_fsbfdq"
@@ -4060,7 +4060,7 @@
                       (subreg:V2DF (match_dup 2) 16)
                       (match_dup 3)] UNSPEC_FSBF))]
   ""
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 ;; FMUL*
@@ -4072,7 +4072,7 @@
                     (match_operand 3 "" "")] UNSPEC_FMUL))]
   ""
   "fmulhq%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fp16")]
+  [(set_attr "type" "fpu_mul3")]
 )
 
 (define_insn "kvx_fmulw"
@@ -4082,7 +4082,7 @@
                     (match_operand 3 "" "")] UNSPEC_FMUL))]
   ""
   "fmulw%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn "kvx_fmuld"
@@ -4092,7 +4092,7 @@
                     (match_operand 3 "" "")] UNSPEC_FMUL))]
   ""
   "fmuld%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn "kvx_fmul<suffix>"
@@ -4103,7 +4103,7 @@
   ""
   "fmul<suffix>%3 %0 = %1, %2"
   [(set (attr "type")
-     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "mau_fp16") (const_string "mau_fpu")))]
+     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "fpu_mul3") (const_string "fpu_mul4")))]
 )
 
 (define_expand "kvx_fmulho"
@@ -4141,7 +4141,7 @@
                       (match_operand 3 "" "")] UNSPEC_FMUL))]
   "KV3_2"
   "fmulho%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fp16")]
+  [(set_attr "type" "fpu_mul3")]
 )
 
 (define_insn "kvx_fmulwq"
@@ -4153,7 +4153,7 @@
   "fmulwq%3 %0 = %1, %2"
   [(set (attr "type")
         (if_then_else (match_test "KV3_1")
-                      (const_string "mau_auxr_fpu") (const_string "mau_fpu")))]
+                      (const_string "fpu_fma4") (const_string "fpu_mul4")))]
 )
 
 (define_insn_and_split "kvx_fmuldp"
@@ -4173,7 +4173,7 @@
                     (subreg:DF (match_dup 2) 8)
                     (match_dup 3)] UNSPEC_FMUL))]
   ""
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_insn"kvx_fmulhx"
@@ -4244,7 +4244,7 @@
                       (subreg:V4SF (match_dup 2) 16)
                       (match_dup 3)] UNSPEC_FMUL))]
   ""
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_insn_and_split "kvx_fmuldq"
@@ -4272,7 +4272,7 @@
                     (subreg:DF (match_dup 2) 24)
                     (match_dup 3)] UNSPEC_FMUL))]
   ""
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 
@@ -4285,7 +4285,7 @@
                       (match_operand 3 "" "")] UNSPEC_FMULC))]
   ""
   "fmulwc%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_expand "kvx_fmulwcp"
@@ -4323,7 +4323,7 @@
                       (match_operand 3 "" "")] UNSPEC_FMULC))]
   "KV3_2"
   "fmulwcp%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_expand "kvx_fmuldc"
@@ -4423,7 +4423,7 @@
                     (match_operand 3 "" "")] UNSPEC_FMULX))]
   ""
   "fmulhw%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fp16")]
+  [(set_attr "type" "fpu_mul3")]
 )
 
 (define_insn "kvx_fmulxwd"
@@ -4433,7 +4433,7 @@
                     (match_operand 3 "" "")] UNSPEC_FMULX))]
   ""
   "fmulwd%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn "kvx_fmulx<widenx>"
@@ -4444,7 +4444,7 @@
   ""
   "fmul<widenx>%3 %0 = %1, %2"
   [(set (attr "type")
-     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "mau_fp16") (const_string "mau_fpu")))]
+     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "fpu_mul3") (const_string "fpu_mul4")))]
 )
 
 (define_insn_and_split "kvx_fmulx<widenx>"
@@ -4717,7 +4717,7 @@
                     (match_operand 4 "" "")] UNSPEC_FFMA))]
   ""
   "ffmahq%4 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fp16")]
+  [(set_attr "type" "fpu_fma3")]
 )
 
 (define_insn "kvx_ffmaw"
@@ -4728,7 +4728,7 @@
                     (match_operand 4 "" "")] UNSPEC_FFMA))]
   ""
   "ffmaw%4 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_insn "kvx_ffmad"
@@ -4739,7 +4739,7 @@
                     (match_operand 4 "" "")] UNSPEC_FFMA))]
   ""
   "ffmad%4 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_insn "kvx_ffma<suffix>"
@@ -4751,7 +4751,7 @@
   ""
   "ffma<suffix>%4 %0 = %1, %2"
   [(set (attr "type")
-     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "mau_auxr_fp16") (const_string "mau_auxr_fpu")))]
+     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "fpu_fma3") (const_string "fpu_fma4")))]
 )
 
 (define_expand "kvx_ffma<suffix>"
@@ -4795,7 +4795,7 @@
   "KV3_2"
   "ffma<suffix>%4 %0 = %1, %2"
   [(set (attr "type")
-     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "mau_auxr_fp16") (const_string "mau_auxr_fpu")))]
+     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "fpu_fma3") (const_string "fpu_fma4")))]
 )
 
 (define_insn_and_split "kvx_ffmadp"
@@ -4818,7 +4818,7 @@
                     (subreg:DF (match_dup 3) 8)
                     (match_dup 4)] UNSPEC_FFMA))]
   ""
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_insn "kvx_ffma<suffix>"
@@ -4911,7 +4911,7 @@
                     (subreg:DF (match_dup 3) 24)
                     (match_dup 4)] UNSPEC_FFMA))]
   ""
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 
@@ -4943,7 +4943,7 @@
                       (match_operand 4 "" "")] UNSPEC_FFMAC))]
   "KV3_2"
   "ffmawc%4 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_expand "kvx_ffmawcp"
@@ -4979,7 +4979,7 @@
                       (match_operand 4 "" "")] UNSPEC_FFMAC))]
   "KV3_2"
   "ffmawcp%4 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_expand "kvx_ffmadc"
@@ -5042,7 +5042,7 @@
                       (subreg:V4SF (match_dup 3) 16)
                       (match_dup 4)] UNSPEC_FFMAC))]
   ""
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_expand "kvx_ffmadcp"
@@ -5086,7 +5086,7 @@
                     (match_operand 4 "" "")] UNSPEC_FFMAX))]
   ""
   "ffmahw%4 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fp16")]
+  [(set_attr "type" "fpu_fma3")]
 )
 
 (define_insn "kvx_ffmaxwd"
@@ -5097,7 +5097,7 @@
                     (match_operand 4 "" "")] UNSPEC_FFMAX))]
   ""
   "ffmawd%4 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_insn "kvx_ffmax<widenx>"
@@ -5109,7 +5109,7 @@
   ""
   "ffma<widenx>%4 %0 = %1, %2"
   [(set (attr "type")
-     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "mau_auxr_fp16") (const_string "mau_auxr_fpu")))]
+     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "fpu_fma3") (const_string "fpu_fma4")))]
 )
 
 (define_insn_and_split "kvx_ffmax<widenx>"
@@ -5145,7 +5145,7 @@
                     (match_operand 4 "" "")] UNSPEC_FFMS))]
   ""
   "ffmshq%4 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fp16")]
+  [(set_attr "type" "fpu_fma3")]
 )
 
 (define_insn "kvx_ffmsw"
@@ -5156,7 +5156,7 @@
                     (match_operand 4 "" "")] UNSPEC_FFMS))]
   ""
   "ffmsw%4 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_insn "kvx_ffmsd"
@@ -5167,7 +5167,7 @@
                     (match_operand 4 "" "")] UNSPEC_FFMS))]
   ""
   "ffmsd%4 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_insn "kvx_ffms<suffix>"
@@ -5179,7 +5179,7 @@
   ""
   "ffms<suffix>%4 %0 = %1, %2"
   [(set (attr "type")
-     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "mau_auxr_fp16") (const_string "mau_auxr_fpu")))]
+     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "fpu_fma3") (const_string "fpu_fma4")))]
 )
 
 (define_expand "kvx_ffms<suffix>"
@@ -5223,7 +5223,7 @@
   "KV3_2"
   "ffms<suffix>%4 %0 = %1, %2"
   [(set (attr "type")
-     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "mau_auxr_fp16") (const_string "mau_auxr_fpu")))]
+     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "fpu_fma3") (const_string "fpu_fma4")))]
 )
 
 (define_insn_and_split "kvx_ffmsdp"
@@ -5246,7 +5246,7 @@
                     (subreg:DF (match_dup 3) 8)
                     (match_dup 4)] UNSPEC_FFMS))]
   ""
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_insn "kvx_ffms<suffix>"
@@ -5339,7 +5339,7 @@
                     (subreg:DF (match_dup 3) 24)
                     (match_dup 4)] UNSPEC_FFMS))]
   ""
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 
@@ -5371,7 +5371,7 @@
                       (match_operand 4 "" "")] UNSPEC_FFMSC))]
   "KV3_2"
   "ffmswc%4 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_expand "kvx_ffmswcp"
@@ -5407,7 +5407,7 @@
                       (match_operand 4 "" "")] UNSPEC_FFMSC))]
   "KV3_2"
   "ffmswcp%4 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_expand "kvx_ffmsdc"
@@ -5470,7 +5470,7 @@
                       (subreg:V4SF (match_dup 3) 16)
                       (match_dup 4)] UNSPEC_FFMSC))]
   ""
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_expand "kvx_ffmsdcp"
@@ -5514,7 +5514,7 @@
                     (match_operand 4 "" "")] UNSPEC_FFMSX))]
   ""
   "ffmshw%4 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fp16")]
+  [(set_attr "type" "fpu_fma3")]
 )
 
 (define_insn "kvx_ffmsxwd"
@@ -5525,7 +5525,7 @@
                     (match_operand 4 "" "")] UNSPEC_FFMSX))]
   ""
   "ffmswd%4 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_insn "kvx_ffmsx<widenx>"
@@ -5537,7 +5537,7 @@
   ""
   "ffms<widenx>%4 %0 = %1, %2"
   [(set (attr "type")
-     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "mau_auxr_fp16") (const_string "mau_auxr_fpu")))]
+     (if_then_else (match_operand 1 "float16_inner_mode") (const_string "fpu_fma3") (const_string "fpu_fma4")))]
 )
 
 (define_insn_and_split "kvx_ffmsx<widenx>"
@@ -5572,7 +5572,7 @@
                       (match_operand 3 "" "")] UNSPEC_FMM))]
   ""
   "fmm212w%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_expand "kvx_fmm222w"
@@ -5630,7 +5630,7 @@
                       (match_operand 3 "" "")] UNSPEC_FMM))]
   "KV3_2"
   "fmm222w%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 
@@ -5644,7 +5644,7 @@
                       (match_operand 4 "" "")] UNSPEC_FMMA))]
   ""
   "fmma212w%4 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_expand "kvx_fmma222w"
@@ -5704,7 +5704,7 @@
                       (match_operand 4 "" "")] UNSPEC_FMMA))]
   "KV3_2"
   "fmma222w%4 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 
@@ -5718,7 +5718,7 @@
                       (match_operand 4 "" "")] UNSPEC_FMMS))]
   ""
   "fmms212w%4 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_expand "kvx_fmms222w"
@@ -5778,7 +5778,7 @@
                       (match_operand 4 "" "")] UNSPEC_FMMS))]
   "KV3_2"
   "fmms222w%4 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 
@@ -5806,7 +5806,7 @@
                     (match_operand 3 "" "")] UNSPEC_FFDMA))]
   "KV3_2"
   "ffdmaw%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_expand "kvx_ffdmawp"
@@ -5837,7 +5837,7 @@
                       (match_operand 3 "" "")] UNSPEC_FFDMA))]
   "KV3_2"
   "ffdmawp%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_expand "kvx_ffdmawq"
@@ -5875,7 +5875,7 @@
                       (match_operand 3 "" "")] UNSPEC_FFDMA))]
   "KV3_2"
   "ffdmawq%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 
@@ -5905,7 +5905,7 @@
                     (match_operand 3 "" "")] UNSPEC_FFDMS))]
   "KV3_2"
   "ffdmsw%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_expand "kvx_ffdmswp"
@@ -5936,7 +5936,7 @@
                       (match_operand 3 "" "")] UNSPEC_FFDMS))]
   "KV3_2"
   "ffdmswp%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_expand "kvx_ffdmswq"
@@ -5974,7 +5974,7 @@
                       (match_operand 3 "" "")] UNSPEC_FFDMS))]
   "KV3_2"
   "ffdmswq%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 
@@ -6006,7 +6006,7 @@
                     (match_operand 4 "" "")] UNSPEC_FFDMDA))]
   "KV3_2"
   "ffdmdaw%4 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_expand "kvx_ffdmdawp"
@@ -6039,7 +6039,7 @@
                       (match_operand 4 "" "")] UNSPEC_FFDMDA))]
   "KV3_2"
   "ffdmdawp%4 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_expand "kvx_ffdmdawq"
@@ -6083,7 +6083,7 @@
                       (match_operand 4 "" "")] UNSPEC_FFDMDA))]
   "KV3_2"
   "ffdmdawq%4 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 
@@ -6117,7 +6117,7 @@
                     (match_operand 4 "" "")] UNSPEC_FFDMSA))]
   "KV3_2"
   "ffdmsaw%4 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_expand "kvx_ffdmsawp"
@@ -6150,7 +6150,7 @@
                       (match_operand 4 "" "")] UNSPEC_FFDMSA))]
   "KV3_2"
   "ffdmsawp%4 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_expand "kvx_ffdmsawq"
@@ -6194,7 +6194,7 @@
                       (match_operand 4 "" "")] UNSPEC_FFDMSA))]
   "KV3_2"
   "ffdmsawq%4 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 
@@ -6226,7 +6226,7 @@
                     (match_operand 4 "" "")] UNSPEC_FFDMDS))]
   "KV3_2"
   "ffdmdsw%4 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_expand "kvx_ffdmdswp"
@@ -6259,7 +6259,7 @@
                       (match_operand 4 "" "")] UNSPEC_FFDMDS))]
   "KV3_2"
   "ffdmdswp%4 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_expand "kvx_ffdmdswq"
@@ -6303,7 +6303,7 @@
                       (match_operand 4 "" "")] UNSPEC_FFDMDS))]
   "KV3_2"
   "ffdmdswq%4 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 
@@ -6337,7 +6337,7 @@
                     (match_operand 4 "" "")] UNSPEC_FFDMAS))]
   "KV3_2"
   "ffdmasw%4 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_expand "kvx_ffdmaswp"
@@ -6370,7 +6370,7 @@
                       (match_operand 4 "" "")] UNSPEC_FFDMAS))]
   "KV3_2"
   "ffdmaswp%4 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 (define_expand "kvx_ffdmaswq"
@@ -6414,7 +6414,7 @@
                       (match_operand 4 "" "")] UNSPEC_FFDMAS))]
   "KV3_2"
   "ffdmaswq%4 %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
+  [(set_attr "type" "fpu_fma4")]
 )
 
 
@@ -6427,7 +6427,7 @@
                     (match_operand 3 "" "")] UNSPEC_FLOAT))]
   ""
   "floatw%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn "kvx_floatd"
@@ -6437,7 +6437,7 @@
                     (match_operand 3 "" "")] UNSPEC_FLOAT))]
   ""
   "floatd%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn "kvx_floatwp"
@@ -6447,7 +6447,7 @@
                       (match_operand 3 "" "")] UNSPEC_FLOAT))]
   ""
   "floatwp%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn_and_split "kvx_floatwq"
@@ -6467,7 +6467,7 @@
                       (match_dup 2)
                       (match_dup 3)] UNSPEC_FLOAT))]
   ""
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn_and_split "kvx_floatdp"
@@ -6487,7 +6487,7 @@
                     (match_dup 2)
                     (match_dup 3)] UNSPEC_FLOAT))]
   ""
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn_and_split "kvx_floatwo"
@@ -6515,7 +6515,7 @@
                       (match_dup 2)
                       (match_dup 3)] UNSPEC_FLOAT))]
   ""
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn_and_split "kvx_floatdq"
@@ -6543,7 +6543,7 @@
                     (match_dup 2)
                     (match_dup 3)] UNSPEC_FLOAT))]
   ""
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 
@@ -6556,7 +6556,7 @@
                     (match_operand 3 "" "")] UNSPEC_FLOATU))]
   ""
   "floatuw%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn "kvx_floatud"
@@ -6566,7 +6566,7 @@
                     (match_operand 3 "" "")] UNSPEC_FLOATU))]
   ""
   "floatud%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn "kvx_floatuwp"
@@ -6576,7 +6576,7 @@
                       (match_operand 3 "" "")] UNSPEC_FLOATU))]
   ""
   "floatuwp%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn_and_split "kvx_floatuwq"
@@ -6596,7 +6596,7 @@
                       (match_dup 2)
                       (match_dup 3)] UNSPEC_FLOATU))]
   ""
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn_and_split "kvx_floatudp"
@@ -6616,7 +6616,7 @@
                     (match_dup 2)
                     (match_operand 3 "" "")] UNSPEC_FLOATU))]
   ""
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn_and_split "kvx_floatuwo"
@@ -6644,7 +6644,7 @@
                       (match_dup 2)
                       (match_dup 3)] UNSPEC_FLOATU))]
   ""
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn_and_split "kvx_floatudq"
@@ -6672,7 +6672,7 @@
                     (match_dup 2)
                     (match_operand 3 "" "")] UNSPEC_FLOATU))]
   ""
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 
@@ -6685,7 +6685,7 @@
                     (match_operand 3 "" "")] UNSPEC_FIXED))]
   ""
   "fixedw%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 ;; zero-extend version of kvx_fixedw
 (define_insn "*kvx_fixedw_zext"
@@ -6695,7 +6695,7 @@
                                     (match_operand 3 "" "")] UNSPEC_FIXED)))]
   ""
   "fixedw%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn "kvx_fixedd"
@@ -6705,7 +6705,7 @@
                     (match_operand 3 "" "")] UNSPEC_FIXED))]
   ""
   "fixedd%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn "kvx_fixedwp"
@@ -6715,7 +6715,7 @@
                       (match_operand 3 "" "")] UNSPEC_FIXED))]
   ""
   "fixedwp%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn_and_split "kvx_fixedwq"
@@ -6735,7 +6735,7 @@
                       (match_dup 2)
                       (match_dup 3)] UNSPEC_FIXED))]
   ""
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn_and_split "kvx_fixeddp"
@@ -6755,7 +6755,7 @@
                     (match_dup 2)
                     (match_dup 3)] UNSPEC_FIXED))]
   ""
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn_and_split "kvx_fixedwo"
@@ -6783,7 +6783,7 @@
                       (match_dup 2)
                       (match_dup 3)] UNSPEC_FIXED))]
   ""
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn_and_split "kvx_fixeddq"
@@ -6811,7 +6811,7 @@
                     (match_dup 2)
                     (match_dup 3)] UNSPEC_FIXED))]
   ""
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 
@@ -6824,7 +6824,7 @@
                     (match_operand 3 "" "")] UNSPEC_FIXEDU))]
   ""
   "fixeduw%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 ;; zero-extend version of kvx_fixeduw
 (define_insn "*kvx_fixeduw_zext"
@@ -6834,7 +6834,7 @@
                                     (match_operand 3 "" "")] UNSPEC_FIXEDU)))]
   ""
   "fixeduw%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn "kvx_fixedud"
@@ -6844,7 +6844,7 @@
                     (match_operand 3 "" "")] UNSPEC_FIXEDU))]
   ""
   "fixedud%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn "kvx_fixeduwp"
@@ -6854,7 +6854,7 @@
                       (match_operand 3 "" "")] UNSPEC_FIXEDU))]
   ""
   "fixeduwp%3 %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn_and_split "kvx_fixeduwq"
@@ -6874,7 +6874,7 @@
                       (match_dup 2)
                       (match_dup 3)] UNSPEC_FIXEDU))]
   ""
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn_and_split "kvx_fixedudp"
@@ -6894,7 +6894,7 @@
                     (match_dup 2)
                     (match_dup 3)] UNSPEC_FIXEDU))]
   ""
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn_and_split "kvx_fixeduwo"
@@ -6922,7 +6922,7 @@
                       (match_dup 2)
                       (match_dup 3)] UNSPEC_FIXEDU))]
   ""
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 (define_insn_and_split "kvx_fixedudq"
@@ -6950,7 +6950,7 @@
                     (match_dup 2)
                     (match_dup 3)] UNSPEC_FIXEDU))]
   ""
-  [(set_attr "type" "mau_fpu")]
+  [(set_attr "type" "fpu_mul4")]
 )
 
 
@@ -7641,9 +7641,9 @@
   ""
   "ld%2%X1 %0 = %1"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_y") (const_string "lsu_auxw_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -7654,9 +7654,9 @@
   ""
   "ld%2%X1 %0 = %1"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_y") (const_string "lsu_auxw_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -7667,9 +7667,9 @@
   ""
   "lq%2%X1 %0 = %1"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_y") (const_string "lsu_auxw_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -7683,9 +7683,9 @@
   ""
   "ld%2%X1 %0 = %1"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_y") (const_string "lsu_auxw_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -7696,9 +7696,9 @@
   ""
   "lq%2%X1 %0 = %1"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_y") (const_string "lsu_auxw_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -7709,9 +7709,9 @@
   ""
   "lo%2%X1 %0 = %1"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_y") (const_string "lsu_auxw_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -7725,7 +7725,7 @@
    (use (match_dup 1))]
   ""
   "lbz%2%X1 %0 = %1"
-  [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
+  [(set_attr "type" "lsu_auxw_uncached_load,lsu_auxw_uncached_load_x,lsu_auxw_uncached_load_y")
    (set_attr "length"                    "4,                       8,                      12")]
 )
 
@@ -7736,7 +7736,7 @@
    (use (match_dup 1))]
   ""
   "lbs%2%X1 %0 = %1"
-  [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
+  [(set_attr "type" "lsu_auxw_uncached_load,lsu_auxw_uncached_load_x,lsu_auxw_uncached_load_y")
    (set_attr "length"                    "4,                       8,                      12")]
 )
 
@@ -7747,7 +7747,7 @@
    (use (match_dup 1))]
   ""
   "lhz%2%X1 %0 = %1"
-  [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
+  [(set_attr "type" "lsu_auxw_uncached_load,lsu_auxw_uncached_load_x,lsu_auxw_uncached_load_y")
    (set_attr "length"                    "4,                       8,                      12")]
 )
 
@@ -7758,7 +7758,7 @@
    (use (match_dup 1))]
   ""
   "lhs%2%X1 %0 = %1"
-  [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
+  [(set_attr "type" "lsu_auxw_uncached_load,lsu_auxw_uncached_load_x,lsu_auxw_uncached_load_y")
    (set_attr "length"                    "4,                       8,                      12")]
 )
 
@@ -7769,7 +7769,7 @@
    (use (match_dup 1))]
   ""
   "lwz%2%X1 %0 = %1"
-  [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
+  [(set_attr "type" "lsu_auxw_uncached_load,lsu_auxw_uncached_load_x,lsu_auxw_uncached_load_y")
    (set_attr "length"                    "4,                       8,                      12")]
 )
 
@@ -7780,7 +7780,7 @@
    (use (match_dup 1))]
   ""
   "lws%2%X1 %0 = %1"
-  [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
+  [(set_attr "type" "lsu_auxw_uncached_load,lsu_auxw_uncached_load_x,lsu_auxw_uncached_load_y")
    (set_attr "length"                    "4,                       8,                      12")]
 )
 
@@ -7791,7 +7791,7 @@
    (use (match_dup 1))]
   ""
   "lhz%2%X1 %0 = %1"
-  [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
+  [(set_attr "type" "lsu_auxw_uncached_load,lsu_auxw_uncached_load_x,lsu_auxw_uncached_load_y")
    (set_attr "length"                    "4,                       8,                      12")]
 )
 
@@ -7802,7 +7802,7 @@
    (use (match_dup 1))]
   ""
   "lwz%2%X1 %0 = %1"
-  [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
+  [(set_attr "type" "lsu_auxw_uncached_load,lsu_auxw_uncached_load_x,lsu_auxw_uncached_load_y")
    (set_attr "length"                    "4,                       8,                      12")]
 )
 
@@ -7816,9 +7816,9 @@
   ""
   "lbz%2%X1 %0 = %1"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_y") (const_string "lsu_auxw_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -7829,9 +7829,9 @@
   ""
   "lhz%2%X1 %0 = %1"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_y") (const_string "lsu_auxw_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -7842,9 +7842,9 @@
   ""
   "lwz%2%X1 %0 = %1"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_y") (const_string "lsu_auxw_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -7855,9 +7855,9 @@
   ""
   "ld%2%X1 %0 = %1"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_y") (const_string "lsu_auxw_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -7868,9 +7868,9 @@
   ""
   "lq%2%X1 %0 = %1"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_y") (const_string "lsu_auxw_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -7881,9 +7881,9 @@
   ""
   "lhz%2%X1 %0 = %1"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_y") (const_string "lsu_auxw_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -7894,9 +7894,9 @@
   ""
   "lwz%2%X1 %0 = %1"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_y") (const_string "lsu_auxw_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -7907,9 +7907,9 @@
   ""
   "ld%2%X1 %0 = %1"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_y") (const_string "lsu_auxw_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -7920,9 +7920,9 @@
   ""
   "ld%2%X1 %0 = %1"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_y") (const_string "lsu_auxw_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -7933,9 +7933,9 @@
   ""
   "lq%2%X1 %0 = %1"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_y") (const_string "lsu_auxw_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -7946,9 +7946,9 @@
   ""
   "lo%2%X1 %0 = %1"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "lsu_auxw_uncached_load_y") (const_string "lsu_auxw_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -7980,9 +7980,9 @@
   ""
   "lbz%4%X2 %3? %0 = %O2"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_uncached_load") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_uncached_load_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_uncached_load_y") (const_string "lsu_auxw_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -7995,9 +7995,9 @@
   ""
   "lhz%4%X2 %3? %0 = %O2"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_uncached_load") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_uncached_load_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_uncached_load_y") (const_string "lsu_auxw_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -8010,9 +8010,9 @@
   ""
   "lwz%4%X2 %3? %0 = %O2"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_uncached_load") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_uncached_load_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_uncached_load_y") (const_string "lsu_auxw_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -8025,9 +8025,9 @@
   ""
   "ld%4%X2 %3? %0 = %O2"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_uncached_load") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_uncached_load_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_uncached_load_y") (const_string "lsu_auxw_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -8040,9 +8040,9 @@
   ""
   "lq%4%X2 %3? %0 = %O2"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_uncached_load") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_uncached_load_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_uncached_load_y") (const_string "lsu_auxw_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -8055,9 +8055,9 @@
   ""
   "lhz%4%X2 %3? %0 = %O2"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_uncached_load") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_uncached_load_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_uncached_load_y") (const_string "lsu_auxw_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -8070,9 +8070,9 @@
   ""
   "lwz%4%X2 %3? %0 = %O2"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_uncached_load") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_uncached_load_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_uncached_load_y") (const_string "lsu_auxw_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -8085,9 +8085,9 @@
   ""
   "ld%4%X2 %3? %0 = %O2"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_uncached_load") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_uncached_load_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_uncached_load_y") (const_string "lsu_auxw_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -8129,9 +8129,9 @@
   ""
   "ld%4%X2 %3? %0 = %O2"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_uncached_load") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_uncached_load_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_uncached_load_y") (const_string "lsu_auxw_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -8173,9 +8173,9 @@
   ""
   "lq%4%X2 %3? %0 = %O2"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_uncached_load") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_uncached_load_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_uncached_load_y") (const_string "lsu_auxw_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -8204,9 +8204,9 @@
   ""
   "lo%4%X2 %3? %0 = %O2"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_uncached_load") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_uncached_load_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "lsu_auxw_uncached_load_y") (const_string "lsu_auxw_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -8218,9 +8218,9 @@
   ""
   "lo%3%X1 %2? %0 = %O1"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_auxw_load_uncached") (const_string "lsu_auxw_load"))
-     (if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_auxw_load_uncached_x") (const_string "lsu_auxw_load_x"))
-     (if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_auxw_load_uncached_y") (const_string "lsu_auxw_load_y"))])
+    [(if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_auxw_uncached_load") (const_string "lsu_auxw_load"))
+     (if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_auxw_uncached_load_x") (const_string "lsu_auxw_load_x"))
+     (if_then_else (match_operand 3 "uncached_modifier") (const_string "lsu_auxw_uncached_load_y") (const_string "lsu_auxw_load_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
