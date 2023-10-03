@@ -146,7 +146,7 @@
           (mem:DI (plus:P (match_dup 2) (match_operand 9 "const_int_operand" "I10,B37,i"))))])]
   "(XVECLEN (operands[0], 0) == 4)"
   "lo.u %o1 = %3[%2]"
-  [(set_attr "type" "lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y")
+  [(set_attr "type" "lsu_auxw_uncached_load, lsu_auxw_uncached_load_x, lsu_auxw_uncached_load_y")
    (set_attr "length" "4,8,12")])
 
 (define_insn "*lq_multiple_cached"
@@ -170,7 +170,7 @@
           (mem:DI (plus:P (match_dup 2) (match_operand 5 "const_int_operand" "I10,B37,i"))))])]
   "(XVECLEN (operands[0], 0) == 2)"
   "lq.u %q1 = %3[%2]"
-  [(set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")
+  [(set_attr "type" "lsu_auxw_uncached_load,lsu_auxw_uncached_load_x,lsu_auxw_uncached_load_y")
    (set_attr "length" "4,8,12")])
 
 (define_insn "*sq_multiple"
@@ -253,7 +253,7 @@
       gcc_unreachable ();
     }
 }
-[(set_attr "type"    "alu_tiny, alu_tiny, alu_tiny_x, alu_tiny_y, lsu_auxr_store, lsu_auxr_store_x, lsu_auxr_store_y, lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_y, lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y, bcu_get, all,  alu_full_x, alu_tiny<symlen1>")
+[(set_attr "type"    "alu_tiny, alu_tiny, alu_tiny_x, alu_tiny_y, lsu_auxr_store, lsu_auxr_store_x, lsu_auxr_store_y, lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_y, lsu_auxw_uncached_load, lsu_auxw_uncached_load_x, lsu_auxw_uncached_load_y, bcu_get, all,  alu_full_x, alu_tiny<symlen1>")
  (set_attr "length"  "4,        4,        8,          12,         4,              8,                12,               4,             8,               12,              4,                      8,                        12,                       4,       4,    8,          <symlen2>")
  (set (attr "disabled")
       (cond [(and (eq_attr "alternative" "16")
@@ -634,7 +634,7 @@
    ""
    "lbz.u%X1 %0 = %1"
 [(set_attr "length" "4,8,12")
- (set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")]
+ (set_attr "type" "lsu_auxw_uncached_load,lsu_auxw_uncached_load_x,lsu_auxw_uncached_load_y")]
 )
 
 (define_insn "kvx_lbsu"
@@ -645,7 +645,7 @@
    ""
    "lbs.u%X1 %0 = %1"
 [(set_attr "length" "4,8,12")
- (set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")]
+ (set_attr "type" "lsu_auxw_uncached_load,lsu_auxw_uncached_load_x,lsu_auxw_uncached_load_y")]
 )
 
 (define_insn "kvx_lhzu"
@@ -656,7 +656,7 @@
    ""
    "lhz.u%X1 %0 = %1"
 [(set_attr "length" "4, 8, 12")
- (set_attr "type" "lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y")]
+ (set_attr "type" "lsu_auxw_uncached_load, lsu_auxw_uncached_load_x, lsu_auxw_uncached_load_y")]
 )
 
 (define_insn "kvx_lhsu"
@@ -667,7 +667,7 @@
    ""
    "lhs.u%X1 %0 = %1"
 [(set_attr "length" "4, 8, 12")
- (set_attr "type" "lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y")]
+ (set_attr "type" "lsu_auxw_uncached_load, lsu_auxw_uncached_load_x, lsu_auxw_uncached_load_y")]
 )
 
 (define_insn "kvx_lwzu"
@@ -678,7 +678,7 @@
    ""
    "lwz.u%X1 %0 = %1"
 [(set_attr "length" "4,8,12")
- (set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")]
+ (set_attr "type" "lsu_auxw_uncached_load,lsu_auxw_uncached_load_x,lsu_auxw_uncached_load_y")]
 )
 
 (define_insn "kvx_lwsu"
@@ -689,7 +689,7 @@
    ""
    "lws.u%X1 %0 = %1"
 [(set_attr "length" "4,8,12")
- (set_attr "type" "lsu_auxw_load_uncached,lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")]
+ (set_attr "type" "lsu_auxw_uncached_load,lsu_auxw_uncached_load_x,lsu_auxw_uncached_load_y")]
 )
 
 (define_insn "kvx_ldu"
@@ -700,7 +700,7 @@
    ""
    "ld.u%X1 %0 = %1"
 [(set_attr "length" "4, 8, 12")
- (set_attr "type" "lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y")]
+ (set_attr "type" "lsu_auxw_uncached_load, lsu_auxw_uncached_load_x, lsu_auxw_uncached_load_y")]
 )
 
 (define_insn "kvx_lqu"
@@ -711,7 +711,7 @@
    ""
    "lq.u%X1 %0 = %1"
 [(set_attr "length" "4, 8, 12")
- (set_attr "type"   "lsu_auxw_load_uncached, lsu_auxw_load_uncached_x,lsu_auxw_load_uncached_y")]
+ (set_attr "type"   "lsu_auxw_uncached_load, lsu_auxw_uncached_load_x,lsu_auxw_uncached_load_y")]
 )
 
 ;; FIXME AUTO: add size info for 'reg[reg]' addressing (currently falling back to lsu.x)
@@ -721,7 +721,7 @@
    ""
    "l<SHORT:lsusize><ANY_EXTEND:lsux>%V1 %0 = %1"
 [(set_attr "length" "            4,               8,              12,                      4,                        8,                       12")
- (set_attr "type"   "lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_y, lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y")]
+ (set_attr "type"   "lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_y, lsu_auxw_uncached_load, lsu_auxw_uncached_load_x, lsu_auxw_uncached_load_y")]
 )
 
 ;; FIXME AUTO: add size info for 'reg[reg]' addressing (currently falling back to lsu.x)
@@ -742,7 +742,7 @@
      gcc_unreachable ();
    }
 }
-  [(set_attr "type"   "alu_lite, lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_y, lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y")
+  [(set_attr "type"   "alu_lite, lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_y, lsu_auxw_uncached_load, lsu_auxw_uncached_load_x, lsu_auxw_uncached_load_y")
    (set_attr "length" "       4,             4,               8,              12,                      4,                        8,                       12")])
 
 (define_insn "zero_extend<mode>di2"
@@ -762,7 +762,7 @@
        gcc_unreachable ();
    }
 }
-  [(set_attr "type"   "alu_lite, lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_y, lsu_auxw_load_uncached, lsu_auxw_load_uncached_x, lsu_auxw_load_uncached_y")
+  [(set_attr "type"   "alu_lite, lsu_auxw_load, lsu_auxw_load_x, lsu_auxw_load_y, lsu_auxw_uncached_load, lsu_auxw_uncached_load_x, lsu_auxw_uncached_load_y")
    (set_attr "length" "       4,             4,               8,              12,                      4,                        8,                       12")])
 
 (define_insn "*icall_<mode>"

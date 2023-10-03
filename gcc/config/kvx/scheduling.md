@@ -111,8 +111,8 @@
 (define_reservation "kv3_mau_x_r" "kv3_mau_u + kv3_issue_x2_r")
 (define_reservation "kv3_mau_y_r" "kv3_mau_u + kv3_issue_x3_r")
 (define_reservation "kv3_mau_auxr_r" "kv3_mau_u + kv3_auxr_u + kv3_issue_r")
-(define_reservation "kv3_mau_auxr_x_r" "kv3_mau_u + kv3_auxr_u + kv3_issue_x2_r")
-(define_reservation "kv3_mau_auxr_y_r" "kv3_mau_u + kv3_auxr_u + kv3_issue_x3_r")
+(define_reservation "kv3_mau_mul2_auxr_x_r" "kv3_mau_u + kv3_auxr_u + kv3_issue_x2_r")
+(define_reservation "kv3_mau_mul2_auxr_y_r" "kv3_mau_u + kv3_auxr_u + kv3_issue_x3_r")
 ;;
 (define_reservation "kv3_bcu_r" "kv3_bcu_u + kv3_issue_r")
 (define_reservation "kv3_bcu_tiny_tiny_mau_r" "kv3_bcu_u + kv3_tiny_x2_r + kv3_mau_u + kv3_issue_r")
@@ -178,12 +178,12 @@
 (define_insn_reservation "kv3_lsu_auxw_load" 3 (eq_attr "type" "lsu_auxw_load") "kv3_lsu_auxw_r")
 (define_insn_reservation "kv3_lsu_auxw_load_x" 3 (eq_attr "type" "lsu_auxw_load_x") "kv3_lsu_auxw_x_r")
 (define_insn_reservation "kv3_lsu_auxw_load_y" 3 (eq_attr "type" "lsu_auxw_load_y") "kv3_lsu_auxw_y_r")
-(define_insn_reservation "kv3_lsu_auxw_load_uncached" 24 (eq_attr "type" "lsu_auxw_load_uncached") "kv3_lsu_auxw_r")
-(define_insn_reservation "kv3_lsu_auxw_load_uncached_x" 24 (eq_attr "type" "lsu_auxw_load_uncached_x") "kv3_lsu_auxw_x_r")
-(define_insn_reservation "kv3_lsu_auxw_load_uncached_y" 24 (eq_attr "type" "lsu_auxw_load_uncached_y") "kv3_lsu_auxw_y_r")
-(define_insn_reservation "kv3_lsu_load_uncached" 24 (eq_attr "type" "lsu_load_uncached") "kv3_lsu_r")
-(define_insn_reservation "kv3_lsu_load_uncached_x" 24 (eq_attr "type" "lsu_load_uncached_x") "kv3_lsu_x_r")
-(define_insn_reservation "kv3_lsu_load_uncached_y" 24 (eq_attr "type" "lsu_load_uncached_y") "kv3_lsu_y_r")
+(define_insn_reservation "kv3_lsu_auxw_uncached_load" 24 (eq_attr "type" "lsu_auxw_uncached_load") "kv3_lsu_auxw_r")
+(define_insn_reservation "kv3_lsu_auxw_uncached_load_x" 24 (eq_attr "type" "lsu_auxw_uncached_load_x") "kv3_lsu_auxw_x_r")
+(define_insn_reservation "kv3_lsu_auxw_uncached_load_y" 24 (eq_attr "type" "lsu_auxw_uncached_load_y") "kv3_lsu_auxw_y_r")
+(define_insn_reservation "kv3_lsu_uncached_load" 24 (eq_attr "type" "lsu_uncached_load") "kv3_lsu_r")
+(define_insn_reservation "kv3_lsu_uncached_load_x" 24 (eq_attr "type" "lsu_uncached_load_x") "kv3_lsu_x_r")
+(define_insn_reservation "kv3_lsu_uncached_load_y" 24 (eq_attr "type" "lsu_uncached_load_y") "kv3_lsu_y_r")
 (define_insn_reservation "kv3_lsu_auxr_store" 1 (eq_attr "type" "lsu_auxr_store") "kv3_lsu_auxr_r")
 (define_insn_reservation "kv3_lsu_auxr_store_x" 1 (eq_attr "type" "lsu_auxr_store_x") "kv3_lsu_auxr_x_r")
 (define_insn_reservation "kv3_lsu_auxr_store_y" 1 (eq_attr "type" "lsu_auxr_store_y") "kv3_lsu_auxr_y_r")
@@ -198,16 +198,20 @@
 (define_insn_reservation "kv3_lsu_auxr_auxw_atomic_y" 24 (eq_attr "type" "lsu_auxr_auxw_atomic_y") "kv3_lsu_auxr_auxw_y_r")
 (define_insn_reservation "kv3_lsu_auxr_auxw" 3 (eq_attr "type" "lsu_auxr_auxw") "kv3_lsu_auxr_auxw_r")
 ;;
-(define_insn_reservation "kv3_mau" 2 (eq_attr "type" "mau") "kv3_mau_r, nothing")
-(define_insn_reservation "kv3_mau_x" 2 (eq_attr "type" "mau_x") "kv3_mau_x_r")
-(define_insn_reservation "kv3_mau_y" 2 (eq_attr "type" "mau_y") "kv3_mau_y_r")
-(define_insn_reservation "kv3_mau_auxr" 2 (eq_attr "type" "mau_auxr") "kv3_mau_auxr_r")
-(define_insn_reservation "kv3_mau_auxr_x" 2 (eq_attr "type" "mau_auxr_x") "kv3_mau_auxr_x_r")
-(define_insn_reservation "kv3_mau_auxr_y" 2 (eq_attr "type" "mau_auxr_y") "kv3_mau_auxr_y_r")
-(define_insn_reservation "kv3_mau_fpu" 4 (eq_attr "type" "mau_fpu") "kv3_mau_r")
-(define_insn_reservation "kv3_mau_fp16" 3 (eq_attr "type" "mau_fp16") "kv3_mau_r")
-(define_insn_reservation "kv3_mau_auxr_fpu" 4 (eq_attr "type" "mau_auxr_fpu") "kv3_auxr_u + kv3_mau_u + kv3_issue_r")
-(define_insn_reservation "kv3_mau_auxr_fp16" 3 (eq_attr "type" "mau_auxr_fp16") "kv3_auxr_u + kv3_mau_u + kv3_issue_r")
+(define_insn_reservation "kv3_mau_mul2" 2 (and (eq_attr "type" "alu_mul2") (match_test "KV3")) "kv3_mau_r")
+(define_insn_reservation "kv3_mau_mul2_x" 2 (and (eq_attr "type" "alu_mul2_x") (match_test "KV3")) "kv3_mau_x_r")
+(define_insn_reservation "kv3_mau_mul2_y" 2 (and (eq_attr "type" "alu_mul2_y") (match_test "KV3")) "kv3_mau_y_r")
+(define_insn_reservation "kv3_mau_mul2_auxr" 2 (and (eq_attr "type" "alu_mac2") (match_test "KV3")) "kv3_mau_auxr_r")
+(define_insn_reservation "kv3_mau_mul2_auxr_x" 2 (and (eq_attr "type" "alu_mac2_x") (match_test "KV3")) "kv3_mau_mul2_auxr_x_r")
+(define_insn_reservation "kv3_mau_mul2_auxr_y" 2 (and (eq_attr "type" "alu_mac2_y") (match_test "KV3")) "kv3_mau_mul2_auxr_y_r")
+(define_insn_reservation "kv3_mau_mul3" 3 (eq_attr "type" "fpu_mul3") "kv3_mau_r")
+(define_insn_reservation "kv3_mau_mul3_auxr" 3 (eq_attr "type" "fpu_fma3") "kv3_auxr_u + kv3_mau_u + kv3_issue_r")
+(define_insn_reservation "kv3_mau_mul4" 4 (eq_attr "type" "fpu_mul4") "kv3_mau_r")
+(define_insn_reservation "kv3_mau_mul4_auxr" 4 (eq_attr "type" "fpu_fma4") "kv3_auxr_u + kv3_mau_u + kv3_issue_r")
+(define_insn_reservation "kv4_alu_mul2" 2 (and (eq_attr "type" "alu_mul2") (match_test "KV4")) "kv3_alu_lite_r")
+(define_insn_reservation "kv4_alu_mul2_x" 2 (and (eq_attr "type" "alu_mul2_x") (match_test "KV4")) "kv3_alu_lite_x_r")
+(define_insn_reservation "kv4_alu_mul2_auxr" 2 (and (eq_attr "type" "alu_mac2") (match_test "KV4")) "kv3_alu_lite_r")
+(define_insn_reservation "kv4_alu_mul2_auxr_x" 2 (and (eq_attr "type" "alu_mac2_x") (match_test "KV4")) "kv3_alu_lite_x_r")
 ;;
 (define_insn_reservation "kv3_bcu" 1 (eq_attr "type" "bcu") "kv3_bcu_r")
 (define_insn_reservation "kv3_bcu_get" 1 (eq_attr "type" "bcu_get") "kv3_bcu_tiny_tiny_mau_r")
@@ -220,31 +224,43 @@
 
 ;; The BCU reads GPRs one cycle earlier than arithmetic instructions.
 (define_bypass 2 "kv3_alu_full*,kv3_alu_lite*,kv3_alu_thin*,kv3_alu_tiny*"
-                 "kv3_bcu,kv3_bcu_get,kv3_bcu_tiny_auxw_crrp,kv3_bcu_crrp_crwl_crwh")
-(define_bypass 3 "kv3_mau,kv3_mau_x,kv3_mau_auxr"
-                 "kv3_bcu,kv3_bcu_get,kv3_bcu_tiny_auxw_crrp,kv3_bcu_crrp_crwl_crwh")
-(define_bypass 5 "kv3_mau_fpu,kv3_mau_auxr_fpu"
-                 "kv3_bcu,kv3_bcu_get,kv3_bcu_tiny_auxw_crrp,kv3_bcu_crrp_crwl_crwh")
-(define_bypass 4 "kv3_mau_fp16,kv3_mau_auxr_fp16"
-                 "kv3_bcu,kv3_bcu_get,kv3_bcu_tiny_auxw_crrp,kv3_bcu_crrp_crwl_crwh")
-(define_bypass 4 "kv3_lsu_auxw_load,kv3_lsu_auxw_load_x"
-                 "kv3_bcu,kv3_bcu_get,kv3_bcu_tiny_auxw_crrp,kv3_bcu_crrp_crwl_crwh")
+                 "kv3_bcu*")
+(define_bypass 3 "kv3_mau_mul2*"
+                 "kv3_bcu*")
+(define_bypass 4 "kv3_lsu_auxw_load*"
+                 "kv3_bcu*")
+(define_bypass 4 "kv3_mau_mul3*"
+                 "kv3_bcu*")
+(define_bypass 5 "kv3_mau_mul4*"
+                 "kv3_bcu*")
 ;; The stores read their input one cycle later than arithmetic instructions.
-(define_bypass 3 "kv3_mau_fpu,kv3_mau_auxr_fpu"
-                 "kv3_lsu_auxr_store,kv3_lsu_auxr_store_x,kv3_lsu_auxr_store_y"
+(define_bypass 1 "kv3_mau_mul2*"
+                 "kv3_lsu_auxr_store*"
                  "kvx_stored_value_bypass_p")
-(define_bypass 2 "kv3_mau_fp16,kv3_mau_auxr_fp16"
-                 "kv3_lsu_auxr_store,kv3_lsu_auxr_store_x,kv3_lsu_auxr_store_y"
+(define_bypass 2 "kv3_mau_mul3*"
+                 "kv3_lsu_auxr_store*"
                  "kvx_stored_value_bypass_p")
-(define_bypass 1 "kv3_mau,kv3_mau_x,kv3_mau_auxr"
-                 "kv3_lsu_auxr_store,kv3_lsu_auxr_store_x,kv3_lsu_auxr_store_y"
+(define_bypass 3 "kv3_mau_mul4*"
+                 "kv3_lsu_auxr_store*"
                  "kvx_stored_value_bypass_p")
-(define_bypass 2 "kv3_lsu_auxw_load,kv3_lsu_auxw_load_x"
-                 "kv3_lsu_auxr_store,kv3_lsu_auxr_store_x,kv3_lsu_auxr_store_y"
+(define_bypass 2 "kv3_lsu_auxw_load*"
+                 "kv3_lsu_auxr_store*"
+                 "kvx_stored_value_bypass_p")
+(define_bypass 1 "kv4_alu_mul2*"
+                 "kv3_lsu_auxr_store*"
                  "kvx_stored_value_bypass_p")
 ;; The auxr port shared by MAU and LSU have a bypass to the accumulator in a MAC operation.
-(define_bypass 1 "kv3_mau,kv3_mau_x"
-                 "kv3_mau_auxr"
+(define_bypass 1 "kv3_mau_mul2*"
+                 "kv3_mau_mul2_auxr*"
+                 "kvx_accumulator_bypass_p")
+(define_bypass 2 "kv3_lsu_auxw_load*"
+                 "kv3_mau_mul2_auxr*"
+                 "kvx_accumulator_bypass_p")
+(define_bypass 1 "kv4_alu_mul2*"
+                 "kv4_alu_mul2_auxr*"
+                 "kvx_accumulator_bypass_p")
+(define_bypass 2 "kv3_lsu_auxw_load*"
+                 "kv4_alu_mul2_auxr*"
                  "kvx_accumulator_bypass_p")
 ;; The coprocessor has a bypass between the BILAU accumulations.
 (define_bypass 1 "kv3_tca_int"
