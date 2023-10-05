@@ -1209,9 +1209,9 @@ emit_status::ensure_regno_capacity ()
   while (reg_rtx_no >= new_size)
     new_size *= 2;
 
-  char *tmp = XRESIZEVEC (char, regno_pointer_align, new_size);
+  short *tmp = XRESIZEVEC (short, regno_pointer_align, new_size);
   memset (tmp + old_size, 0, new_size - old_size);
-  regno_pointer_align = (unsigned char *) tmp;
+  regno_pointer_align = (unsigned short *) tmp;
 
   rtx *new1 = GGC_RESIZEVEC (rtx, regno_reg_rtx, new_size);
   memset (new1 + old_size, 0, (new_size - old_size) * sizeof (rtx));
@@ -5790,7 +5790,7 @@ init_emit (void)
   crtl->emit.regno_pointer_align_length = LAST_VIRTUAL_REGISTER + 101;
 
   crtl->emit.regno_pointer_align
-    = XCNEWVEC (unsigned char, crtl->emit.regno_pointer_align_length);
+    = XCNEWVEC (unsigned short, crtl->emit.regno_pointer_align_length);
 
   regno_reg_rtx
     = ggc_cleared_vec_alloc<rtx> (crtl->emit.regno_pointer_align_length);

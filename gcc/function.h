@@ -72,7 +72,7 @@ struct GTY(()) emit_status {
   /* Indexed by pseudo register number, if nonzero gives the known alignment
      for that pseudo (if REG_POINTER is set in x_regno_reg_rtx).
      Allocated in parallel with x_regno_reg_rtx.  */
-  unsigned char * GTY((skip)) regno_pointer_align;
+  unsigned short * GTY((skip)) regno_pointer_align;
 };
 
 
