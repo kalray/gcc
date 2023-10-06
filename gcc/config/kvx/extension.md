@@ -68,7 +68,7 @@
 (define_split
   [(set (match_operand:XBUFF 0 "register_operand" "")
         (match_operand:XBUFF 1 "const_zero_operand" ""))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   [(use (const_int 0))]
   {
     emit_insn (gen_kvx_xzero256 (gen_rtx_SUBREG (<CHUNK>mode, operands[0], 0), CONST0_RTX (<CHUNK>mode)));
@@ -83,7 +83,7 @@
   [(set (match_operand:V256 0 "register_operand" "=r")
         (unspec:V256 [(match_operand:X256 1 "register_operand" "x")]
                      UNSPEC_XMOVEF))]
-   "KV3_1 || KV3_2"
+   "KV3_1 || (KV3_2||KV4)"
    "xmovefo %0 = %1"
    [(set_attr "type" "bcu_tiny_auxw_crrp")]
 )
@@ -93,7 +93,7 @@
         (unspec:V2DI [(match_operand:X256 1 "register_operand" "x")
                       (match_operand 2 "" "")]
                      UNSPEC_XMOVEF))]
-   "KV3_2"
+   "(KV3_2||KV4)"
    "xmovefq %0 = %1%2"
    [(set_attr "type" "bcu_tiny_auxw_crrp")]
 )
@@ -103,7 +103,7 @@
         (unspec:DI [(match_operand:X256 1 "register_operand" "x")
                     (match_operand 2 "" "")]
                      UNSPEC_XMOVEF))]
-   "KV3_2"
+   "(KV3_2||KV4)"
    "xmovefd %0 = %1%2"
    [(set_attr "type" "bcu_tiny_auxw_crrp")]
 )
@@ -112,7 +112,7 @@
   [(set (match_operand:X256 0 "register_operand" "=x")
         (unspec:X256 [(match_operand:V256 1 "register_operand" "r")]
                      UNSPEC_XMOVET))]
-  "KV3_1 || KV3_2"
+  "KV3_1 || (KV3_2||KV4)"
   "xmovetq %0.lo = %x1, %y1\n\txmovetq %0.hi = %z1, %t1"
   [(set_attr "type" "alu_thin_x2_crwl_crwh")
    (set_attr "length" "8")]
@@ -124,7 +124,7 @@
                       (match_operand:V2DI 2 "register_operand" "r")
                       (match_operand 3 "" "")]
                      UNSPEC_XMOVET))]
-  "KV3_1 || KV3_2"
+  "KV3_1 || (KV3_2||KV4)"
   "xmovetq %0%3 = %x2, %y2"
   [(set_attr "type" "alu_tiny_crwl_crwh")
    (set_attr "length" "4")]
@@ -136,7 +136,7 @@
                       (match_operand:DI 2 "register_operand" "r")
                       (match_operand 3 "" "")]
                      UNSPEC_XMOVET))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xmovetd %0%3 = %2"
   [(set_attr "type" "alu_tiny_crwl_crwh")
    (set_attr "length" "4")]
@@ -190,7 +190,7 @@
 (define_insn "*mov<mode>"
   [(set (match_operand:X256 0 "nonimmediate_operand" "=x, x, x, x, x, x, x,a,b,m,r,x,r")
         (match_operand:X256 1 "nonimmediate_operand"  "x,Ca,Cb,Cm,Za,Zb,Zm,x,x,x,x,r,r"))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     switch (which_alternative)
       {
@@ -273,7 +273,7 @@
 (define_split
   [(set (match_operand:X512 0 "extension_register_operand" "")
         (match_operand:X512 1 "extension_register_operand" ""))]
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (match_dup 0)
         (unspec:X512 [(match_dup 1) (const_string "")] UNSPEC_XCOPY))]
   ""
@@ -325,7 +325,7 @@
 (define_split
   [(set (match_operand:X1024 0 "extension_register_operand" "")
         (match_operand:X1024 1 "extension_register_operand" ""))]
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (match_dup 0)
         (unspec:X1024 [(match_dup 1) (const_string "")] UNSPEC_XCOPY))]
   ""
@@ -385,7 +385,7 @@
 (define_split
   [(set (match_operand:X2048 0 "extension_register_operand" "")
         (match_operand:X2048 1 "extension_register_operand" ""))]
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (subreg:<CHUNK4> (match_dup 0) 0)
         (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 1) 0) (const_string "")] UNSPEC_XCOPY))
    (set (subreg:<CHUNK4> (match_dup 0) 128)
@@ -463,7 +463,7 @@
 (define_split
   [(set (match_operand:X4096 0 "extension_register_operand" "")
         (match_operand:X4096 1 "extension_register_operand" ""))]
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (subreg:<CHUNK4> (match_dup 0) 0)
         (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 1) 0) (const_string "")] UNSPEC_XCOPY))
    (set (subreg:<CHUNK4> (match_dup 0) 128)
@@ -577,7 +577,7 @@
 (define_split
   [(set (match_operand:X8192 0 "extension_register_operand" "")
         (match_operand:X8192 1 "extension_register_operand" ""))]
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (subreg:<CHUNK4> (match_dup 0) 0)
         (unspec:<CHUNK4> [(subreg:<CHUNK4> (match_dup 1) 0) (const_string "")] UNSPEC_XCOPY))
    (set (subreg:<CHUNK4> (match_dup 0) 128)
@@ -636,7 +636,7 @@
   [(set (match_operand:X1024 0 "register_operand" "")
         (vec_concat:X1024 (match_operand:<HALF> 1 "register_operand" "")
                           (match_operand:<HALF> 2 "register_operand" "")))]
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (subreg:<CHUNK2> (match_dup 0) 64)
         (subreg:<CHUNK2> (match_dup 2) 0))]
   ""
@@ -670,7 +670,7 @@
   [(set (match_operand:X2048 0 "register_operand" "")
         (vec_concat:X2048 (match_operand:<HALF> 1 "register_operand" "")
                           (match_operand:<HALF> 2 "register_operand" "")))]
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (subreg:<CHUNK4> (match_dup 0) 128)
         (subreg:<CHUNK4> (match_dup 2) 0))]
   ""
@@ -712,7 +712,7 @@
   [(set (match_operand:X4096 0 "register_operand" "")
         (vec_concat:X4096 (match_operand:<HALF> 1 "register_operand" "")
                           (match_operand:<HALF> 2 "register_operand" "")))]
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (subreg:<CHUNK4> (match_dup 0) 256)
         (subreg:<CHUNK4> (match_dup 2) 0))
    (set (subreg:<CHUNK4> (match_dup 0) 384)
@@ -772,7 +772,7 @@
   [(set (match_operand:X8192 0 "register_operand" "")
         (vec_concat:X8192 (match_operand:<HALF> 1 "register_operand" "")
                           (match_operand:<HALF> 2 "register_operand" "")))]
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (subreg:<CHUNK4> (match_dup 0) 512)
         (subreg:<CHUNK4> (match_dup 2) 0))
    (set (subreg:<CHUNK4> (match_dup 0) 640)
@@ -816,7 +816,7 @@
 (define_split
   [(set (match_operand:<HALF> 0 "register_operand" "")
         (subreg:<HALF> (match_operand:X1024 1 "register_operand" "") 0))]
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (subreg:<CHUNK2> (match_dup 0) 0) (subreg:<CHUNK2> (match_dup 1) 0))]
   ""
 )
@@ -842,7 +842,7 @@
 (define_split
   [(set (match_operand:<HALF> 0 "register_operand" "")
         (subreg:<HALF> (match_operand:X2048 1 "register_operand" "") 0))]
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (subreg:<CHUNK4> (match_dup 0) 0) (subreg:<CHUNK4> (match_dup 1) 0))]
   ""
 )
@@ -872,7 +872,7 @@
 (define_split
   [(set (match_operand:<HALF> 0 "register_operand" "")
         (subreg:<HALF> (match_operand:X4096 1 "register_operand" "") 0))]
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (subreg:<CHUNK4> (match_dup 0) 0) (subreg:<CHUNK4> (match_dup 1) 0))
    (set (subreg:<CHUNK4> (match_dup 0) 128) (subreg:<CHUNK4> (match_dup 1) 128))]
   ""
@@ -911,7 +911,7 @@
 (define_split
   [(set (match_operand:<HALF> 0 "register_operand" "")
         (subreg:<HALF> (match_operand:X8192 1 "register_operand" "") 0))]
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (subreg:<CHUNK4> (match_dup 0) 0) (subreg:<CHUNK4> (match_dup 1) 0))
    (set (subreg:<CHUNK4> (match_dup 0) 128) (subreg:<CHUNK4> (match_dup 1) 128))
    (set (subreg:<CHUNK4> (match_dup 0) 256) (subreg:<CHUNK4> (match_dup 1) 256))
@@ -951,7 +951,7 @@
 (define_split
   [(set (match_operand:<HALF> 0 "register_operand" "")
         (subreg:<HALF> (match_operand:X1024 1 "register_operand" "") 64))]
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (subreg:<CHUNK2> (match_dup 0) 0) (subreg:<CHUNK2> (match_dup 1) 64))]
   ""
 )
@@ -977,7 +977,7 @@
 (define_split
   [(set (match_operand:<HALF> 0 "register_operand" "")
         (subreg:<HALF> (match_operand:X2048 1 "register_operand" "") 128))]
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (subreg:<CHUNK4> (match_dup 0) 0) (subreg:<CHUNK4> (match_dup 1) 128))]
   ""
 )
@@ -1007,7 +1007,7 @@
 (define_split
   [(set (match_operand:<HALF> 0 "register_operand" "")
         (subreg:<HALF> (match_operand:X4096 1 "register_operand" "") 256))]
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (subreg:<CHUNK4> (match_dup 0) 0) (subreg:<CHUNK4> (match_dup 1) 256))
    (set (subreg:<CHUNK4> (match_dup 0) 128) (subreg:<CHUNK4> (match_dup 1) 384))]
   ""
@@ -1046,7 +1046,7 @@
 (define_split
   [(set (match_operand:<HALF> 0 "register_operand" "")
         (subreg:<HALF> (match_operand:X8192 1 "register_operand" "") 512))]
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (subreg:<CHUNK> (match_dup 0) 0) (subreg:<CHUNK> (match_dup 1) 512))
    (set (subreg:<CHUNK> (match_dup 0) 128) (subreg:<CHUNK> (match_dup 1) 640))
    (set (subreg:<CHUNK> (match_dup 0) 256) (subreg:<CHUNK> (match_dup 1) 768))
@@ -1188,7 +1188,7 @@
 (define_split
   [(set (match_operand:X1024 0 "register_operand" "")
         (unspec:X1024 [(match_operand:DI 1 "register_operand" "")] UNSPEC_XSPLATD))]
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (subreg:<CHUNK> (match_dup 0) 0)
         (unspec:<CHUNK> [(match_dup 1)] UNSPEC_XSPLATD))
    (set (subreg:<CHUNK> (match_dup 0) 32)
@@ -1218,7 +1218,7 @@
 (define_split
   [(set (match_operand:X2048 0 "register_operand" "")
         (unspec:X2048 [(match_operand:DI 1 "register_operand" "")] UNSPEC_XSPLATD))]
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (subreg:<CHUNK> (match_dup 0) 0)
         (unspec:<CHUNK> [(match_dup 1)] UNSPEC_XSPLATD))
    (set (subreg:<CHUNK> (match_dup 0) 32)
@@ -1254,7 +1254,7 @@
 (define_split
   [(set (match_operand:X4096 0 "register_operand" "")
         (unspec:X4096 [(match_operand:DI 1 "register_operand" "")] UNSPEC_XSPLATD))]
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (subreg:<CHUNK> (match_dup 0) 0)
         (unspec:<CHUNK> [(match_dup 1)] UNSPEC_XSPLATD))
    (set (subreg:<CHUNK> (match_dup 0) 32)
@@ -1302,7 +1302,7 @@
 (define_split
   [(set (match_operand:X8192 0 "register_operand" "")
         (unspec:X8192 [(match_operand:DI 1 "register_operand" "")] UNSPEC_XSPLATD))]
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (subreg:<CHUNK> (match_dup 0) 0)
         (unspec:<CHUNK> [(match_dup 1)] UNSPEC_XSPLATD))
    (set (subreg:<CHUNK> (match_dup 0) 32)
@@ -1339,7 +1339,7 @@
 (define_split
   [(set (match_operand:X512 0 "register_operand" "")
         (unspec:X512 [(match_operand:<CHUNK> 1 "register_operand" "")] UNSPEC_XSPLATO))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   [(set (match_dup 0)
         (unspec:X512 [(match_dup 1) (const_string "")] UNSPEC_XSPLATO))]
   ""
@@ -1348,7 +1348,7 @@
 (define_split
   [(set (match_operand:X1024 0 "register_operand" "")
         (unspec:X1024 [(match_operand:<CHUNK> 1 "register_operand" "")] UNSPEC_XSPLATO))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   [(set (match_dup 0)
         (unspec:X1024 [(match_dup 1) (const_string "")] UNSPEC_XSPLATO))]
   ""
@@ -1357,7 +1357,7 @@
 (define_split
   [(set (match_operand:X2048 0 "register_operand" "")
         (unspec:X2048 [(match_operand:<CHUNK> 1 "register_operand" "")] UNSPEC_XSPLATO))]
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (subreg:<CHUNK4> (match_dup 0) 0)
         (unspec:<CHUNK4> [(match_dup 1) (const_string "")] UNSPEC_XSPLATO))
    (set (subreg:<CHUNK4> (match_dup 0) 128)
@@ -1368,7 +1368,7 @@
 (define_split
   [(set (match_operand:X4096 0 "register_operand" "")
         (unspec:X4096 [(match_operand:<CHUNK> 1 "register_operand" "")] UNSPEC_XSPLATO))]
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (subreg:<CHUNK4> (match_dup 0) 0)
         (unspec:<CHUNK4> [(match_dup 1) (const_string "")] UNSPEC_XSPLATO))
    (set (subreg:<CHUNK4> (match_dup 0) 128)
@@ -1383,7 +1383,7 @@
 (define_split
   [(set (match_operand:X8192 0 "register_operand" "")
         (unspec:X8192 [(match_operand:<CHUNK> 1 "register_operand" "")] UNSPEC_XSPLATO))]
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (subreg:<CHUNK4> (match_dup 0) 0)
         (unspec:<CHUNK4> [(match_dup 1) (const_string "")] UNSPEC_XSPLATO))
    (set (subreg:<CHUNK4> (match_dup 0) 128)
@@ -1659,7 +1659,7 @@
                        (match_operand:OI 2 "memsimple_operand" "c,d,e")
                        (match_operand:DI 3 "register_operand" "r,r,r")
                        (match_operand 4 "" "")] UNSPEC_XPRELOAD))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xlo%4%X2 %b0, %3 = %O2"
   [(set_attr "type" "lsu,lsu_x,lsu_y")
    (set_attr "length" "4,   8,   12")]
@@ -1671,7 +1671,7 @@
                        (match_operand:AI 2 "memsimple_operand" "c,d,e")
                        (match_operand:DI 3 "register_operand" "r,r,r")
                        (match_operand 4 "" "")] UNSPEC_XPRELOAD))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xlo%4.<AI:lsusize>%X2 %b0, %3 = %O2"
   [(set_attr "type" "lsu,lsu_x,lsu_y")
    (set_attr "length" "4,   8,   12")]
@@ -1684,7 +1684,7 @@
   [(set (match_operand:<CHUNK> 0 "register_operand" "=x")
         (unspec:<CHUNK> [(match_operand:XBUFF 1 "register_operand" "x")
                          (match_operand:DI 2 "register_operand" "r")] UNSPEC_XALIGN256))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xaligno %0 = %b1, %2"
   [(set_attr "type" "bcu_crrp_crwl_crwh")]
 )
@@ -1693,7 +1693,7 @@
   [(set (match_operand:V256 0 "register_operand" "=r")
         (unspec:V256 [(match_operand:XBUFF 1 "register_operand" "x")
                       (match_operand:DI 2 "register_operand" "r")] UNSPEC_XACCESS256))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xaccesso %0 = %b1, %2"
   [(set_attr "type" "bcu_tiny_auxw_crrp")]
 )
@@ -1732,7 +1732,7 @@
         (unspec:X256 [(match_operand:X256 1 "register_operand" "x")
                       (match_operand:DI 2 "register_operand" "r")
                       (match_operand 3 "" "")] UNSPEC_XFSCALEWO))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xfscalewo%3 %0 = %1, %2"
   [(set_attr "type" "bcu_crrp_crwl_crwh")]
 )
@@ -1762,7 +1762,7 @@
         else
           gcc_unreachable ();
       }
-    if (KV3_2)
+    if ((KV3_2||KV4))
       {
         if (!*xstr)
           emit_insn (gen_kvx_xmma484bw_2 (operands[0], operands[1], operands[2], operands[3]));
@@ -1824,7 +1824,7 @@
         (unspec:X512 [(match_operand:X256 1 "register_operand" "x")
                       (match_operand:X256 2 "register_operand" "x")
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMMA484BW))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xmma484bw %0 = %1, %2"
   [(set_attr "type" "tca_int")]
 )
@@ -1834,7 +1834,7 @@
         (unspec:X512 [(match_operand:X256 1 "register_operand" "x")
                       (match_operand:X256 2 "register_operand" "x")
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMMAU484BW))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xmmau484bw %0 = %1, %2"
   [(set_attr "type" "tca_int")]
 )
@@ -1844,7 +1844,7 @@
         (unspec:X512 [(match_operand:X256 1 "register_operand" "x")
                       (match_operand:X256 2 "register_operand" "x")
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMMASU484BW))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xmmasu484bw %0 = %1, %2"
   [(set_attr "type" "tca_int")]
 )
@@ -1854,7 +1854,7 @@
         (unspec:X512 [(match_operand:X256 1 "register_operand" "x")
                       (match_operand:X256 2 "register_operand" "x")
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMMAUS484BW))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xmmaus484bw %0 = %1, %2"
   [(set_attr "type" "tca_int")]
 )
@@ -1868,7 +1868,7 @@
    (match_operand:X512 2 "register_operand" "")
    (match_operand:X512 3 "register_operand" "")
    (match_operand 4 "" "")]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     const char *xstr = XSTR (operands[4], 0);
     if (!*xstr)
@@ -1890,7 +1890,7 @@
         (unspec:X512 [(match_operand:X512 1 "register_operand" "x")
                       (match_operand:X512 2 "register_operand" "x")
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMMA4164BW))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xmma4164bw %0 = %1, %2"
   [(set_attr "type" "tca_int")]
 )
@@ -1900,7 +1900,7 @@
         (unspec:X512 [(match_operand:X512 1 "register_operand" "x")
                       (match_operand:X512 2 "register_operand" "x")
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMMAU4164BW))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xmmau4164bw %0 = %1, %2"
   [(set_attr "type" "tca_int")]
 )
@@ -1910,7 +1910,7 @@
         (unspec:X512 [(match_operand:X512 1 "register_operand" "x")
                       (match_operand:X512 2 "register_operand" "x")
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMMASU4164BW))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xmmasu4164bw %0 = %1, %2"
   [(set_attr "type" "tca_int")]
 )
@@ -1920,7 +1920,7 @@
         (unspec:X512 [(match_operand:X512 1 "register_operand" "x")
                       (match_operand:X512 2 "register_operand" "x")
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMMAUS4164BW))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xmmaus4164bw %0 = %1, %2"
   [(set_attr "type" "tca_int")]
 )
@@ -1934,7 +1934,7 @@
    (match_operand:X256 2 "register_operand" "")
    (match_operand:X512 3 "register_operand" "")
    (match_operand 4 "" "")]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     const char *xstr = XSTR (operands[4], 0);
     if (!*xstr)
@@ -1954,7 +1954,7 @@
         (unspec:X512 [(match_operand:X256 1 "register_operand" "x")
                       (match_operand:X256 2 "register_operand" "x")
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMADD44BW0))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xmadd44bw0 %0 = %1, %2"
   [(set_attr "type" "tca_int")]
 )
@@ -1964,7 +1964,7 @@
         (unspec:X512 [(match_operand:X256 1 "register_operand" "x")
                       (match_operand:X256 2 "register_operand" "x")
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMADDU44BW0))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xmaddu44bw0 %0 = %1, %2"
   [(set_attr "type" "tca_int")]
 )
@@ -1974,7 +1974,7 @@
         (unspec:X512 [(match_operand:X256 1 "register_operand" "x")
                       (match_operand:X256 2 "register_operand" "x")
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMADDSU44BW0))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xmaddsu44bw0 %0 = %1, %2"
   [(set_attr "type" "tca_int")]
 )
@@ -2005,7 +2005,7 @@
         (unspec:X512 [(match_operand:X256 1 "register_operand" "x")
                       (match_operand:X256 2 "register_operand" "x")
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMADD44BW1))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xmadd44bw1 %0 = %1, %2"
   [(set_attr "type" "tca_int")]
 )
@@ -2015,7 +2015,7 @@
         (unspec:X512 [(match_operand:X256 1 "register_operand" "x")
                       (match_operand:X256 2 "register_operand" "x")
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMADDU44BW1))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xmaddu44bw1 %0 = %1, %2"
   [(set_attr "type" "tca_int")]
 )
@@ -2025,7 +2025,7 @@
         (unspec:X512 [(match_operand:X256 1 "register_operand" "x")
                       (match_operand:X256 2 "register_operand" "x")
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMADDSU44BW1))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xmaddsu44bw1 %0 = %1, %2"
   [(set_attr "type" "tca_int")]
 )
@@ -2039,7 +2039,7 @@
                       (match_operand:X256 2 "register_operand" "x")
                       (match_operand:X256 3 "register_operand" "0")
                       (match_operand 4 "" "")] UNSPEC_XMADDIFWO))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xmaddifwo%4 %0 = %1, %2"
   [(set_attr "type" "tca_int")]
 )
@@ -2050,7 +2050,7 @@
                       (match_operand:X256 2 "register_operand" "x")
                       (match_operand:X256 3 "register_operand" "0")
                       (match_operand 4 "" "")] UNSPEC_XMSBFIFWO))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xmsbfifwo%4 %0 = %1, %2"
   [(set_attr "type" "tca_int")]
 )
@@ -2061,7 +2061,7 @@
                       (match_operand:X256 2 "register_operand" "x")
                       (match_operand:X512 3 "register_operand" "0")
                       (match_operand 4 "" "")] UNSPEC_XFFMA44HW))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xffma44hw%4 %0 = %1, %2"
   [(set_attr "type" "tca_float")]
 )
@@ -2112,7 +2112,7 @@
                       (match_operand:X512 2 "register_operand" "x")
                       (match_operand:X512 3 "register_operand" "0")
                       (match_operand 4 "" "")] UNSPEC_XFMMA484HW))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xfmma484hw%4 %0 = %1, %2"
   [(set_attr "type" "tca_float")])
 
@@ -2138,7 +2138,7 @@
         emit_insn (gen_kvx_xfmma444hw (tmp, lo256_1, lo256_2, operands[3], operands[4]));
         emit_insn (gen_kvx_xfmma444hw (operands[0], hi256_1, hi256_2, tmp, operands[4]));
       }
-    if (KV3_2)
+    if ((KV3_2||KV4))
       emit_insn (gen_kvx_xfmma484hw_2 (operands[0], operands[1], operands[2], operands[3], operands[4])) ;
     DONE;
   })
@@ -2150,7 +2150,7 @@
   [(set (match_operand:X256 0 "register_operand" "=x")
         (unspec:X256 [(match_operand:X512 1 "register_operand" "x")
                       (match_operand 2 "" "")] UNSPEC_XFNARROW44WH))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xfnarrow44wh%2 %0 = %1"
   [(set_attr "type" "tca_float")]
 )
@@ -2160,7 +2160,7 @@
         (unspec:X256 [(match_operand:X256 1 "register_operand" "x")
                       (match_operand:X256 2 "register_operand" "x")
                       (match_operand:X256 3 "register_operand" "0")] UNSPEC_XCLAMPWO))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xclampwo %0 = %1, %2"
   [(set_attr "type" "tca_int")]
 )
@@ -2171,7 +2171,7 @@
 (define_insn "kvx_xtrunc48wb"
   [(set (match_operand:X256 0 "register_operand" "=x")
         (unspec:X256 [(match_operand:X1024 1 "register_operand" "x")] UNSPEC_XTRUNC48WB))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xtrunc48wb %0 = %1"
   [(set_attr "type" "tca_int")]
 )
@@ -2179,7 +2179,7 @@
 (define_insn "kvx_xsx48bw"
   [(set (match_operand:X1024 0 "register_operand" "=x")
         (unspec:X1024 [(match_operand:X256 1 "register_operand" "x")] UNSPEC_XSX48BW))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xsx48bw %0 = %1"
   [(set_attr "type" "tca_int")]
 )
@@ -2187,7 +2187,7 @@
 (define_insn "kvx_xzx48bw"
   [(set (match_operand:X1024 0 "register_operand" "=x")
         (unspec:X1024 [(match_operand:X256 1 "register_operand" "x")] UNSPEC_XZX48BW))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xzx48bw %0 = %1"
   [(set_attr "type" "tca_int")]
 )
@@ -2198,7 +2198,7 @@
 (define_insn "kvx_xsendo"
   [(unspec_volatile [(match_operand:X256 0 "register_operand" "x")
                      (match_operand 1 "" "")] UNSPEC_XSENDO)]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xsendo%1 %0"
   [(set_attr "type" "alu_tiny_crrp")]
 )
@@ -2206,7 +2206,7 @@
 (define_insn "kvx_xrecvo"
   [(set (match_operand:X256 0 "register_operand" "=x")
         (unspec_volatile:X256 [(match_operand 1 "" "")] UNSPEC_XRECVO))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xrecvo%1 %0"
   [(set_attr "type" "alu_tiny_crwl_crwh")]
 )
@@ -2215,7 +2215,7 @@
   [(set (match_operand:X256 0 "register_operand" "=x")
         (unspec_volatile:X256 [(match_operand:X256 1 "register_operand" "x")
                                (match_operand 2 "" "")] UNSPEC_XSENDRECVO))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xsendrecvo%2 %0, %1"
   [(set_attr "type" "alu_tiny_crrp_crwl_crwh")]
 )
@@ -2280,7 +2280,7 @@
   [(set (match_operand:X256 0 "register_operand" "=x")
         (and:X256 (match_operand:X256 1 "register_operand" "x")
                   (match_operand:X256 2 "register_operand" "x")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xando %0 = %1, %2"
   [(set_attr "type" "tca_int")]
 )
@@ -2289,7 +2289,7 @@
   [(set (match_operand:X256 0 "register_operand" "=x")
         (ior:X256 (not:X256 (match_operand:X256 1 "register_operand" "x"))
                   (not:X256 (match_operand:X256 2 "register_operand" "x"))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xnando %0 = %1, %2"
   [(set_attr "type" "tca_int")]
 )
@@ -2298,7 +2298,7 @@
   [(set (match_operand:X256 0 "register_operand" "=x")
         (and:X256 (not:X256 (match_operand:X256 1 "register_operand" "x"))
                   (match_operand:X256 2 "register_operand" "x")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xandno %0 = %1, %2"
   [(set_attr "type" "tca_int")]
 )
@@ -2307,7 +2307,7 @@
   [(set (match_operand:X256 0 "register_operand" "=x")
         (ior:X256 (match_operand:X256 1 "register_operand" "x")
                   (match_operand:X256 2 "register_operand" "x")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xoro %0 = %1, %2"
   [(set_attr "type" "tca_int")]
 )
@@ -2316,7 +2316,7 @@
   [(set (match_operand:X256 0 "register_operand" "=x")
         (and:X256 (not:X256 (match_operand:X256 1 "register_operand" "x"))
                   (not:X256 (match_operand:X256 2 "register_operand" "x"))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xnoro %0 = %1, %2"
   [(set_attr "type" "tca_int")]
 )
@@ -2325,7 +2325,7 @@
   [(set (match_operand:X256 0 "register_operand" "=x")
         (ior:X256 (not:X256 (match_operand:X256 1 "register_operand" "x"))
                   (match_operand:X256 2 "register_operand" "x")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xorno %0 = %1, %2"
   [(set_attr "type" "tca_int")]
 )
@@ -2334,7 +2334,7 @@
   [(set (match_operand:X256 0 "register_operand" "=x")
         (xor:X256 (match_operand:X256 1 "register_operand" "x")
                   (match_operand:X256 2 "register_operand" "x")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xxoro %0 = %1, %2"
   [(set_attr "type" "tca_int")]
 )
@@ -2343,7 +2343,7 @@
   [(set (match_operand:X256 0 "register_operand" "=x")
         (not:X256 (xor:X256 (match_operand:X256 1 "register_operand" "x")
                             (match_operand:X256 2 "register_operand" "x"))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xnxoro %0 = %1, %2"
   [(set_attr "type" "tca_int")]
 )
@@ -2427,7 +2427,7 @@
    (set (match_dup 1)
         (unspec:X256 [(match_operand:ALL128 2 "register_operand" "0")
                       (match_operand 3 "" "")] UNSPEC_XSWAP256))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xmovefq %0 = %1%3\n\txmovetq %1%3 = %x2, %y2"
   [(set_attr "type" "all")
    (set_attr "length" "8")]
@@ -2439,7 +2439,7 @@
    (set (match_dup 1)
         (unspec:X256 [(match_operand:ALL64 2 "register_operand" "0")
                       (match_operand 3 "" "")] UNSPEC_XSWAP256))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "xmovefd %0 = %1%3\n\txmovetd %1%3 = %0"
   [(set_attr "type" "all")
    (set_attr "length" "8")]

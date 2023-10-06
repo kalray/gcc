@@ -3721,7 +3721,7 @@ KVX_EXPAND_BUILTIN_3_STANDARD (xcat1024, kvx_xcat1024, X1024mode, X512mode)
 KVX_EXPAND_BUILTIN_3_STANDARD (xcat2048, kvx_xcat2048, X2048mode, X1024mode)
 KVX_EXPAND_BUILTIN_3_STANDARD (xcat4096, kvx_xcat4096, X4096mode, X2048mode)
 #undef KVX_N_ONLY
-#define KVX_N_ONLY (KV3_2 ? 0 : 2)
+#define KVX_N_ONLY ((KV3_2||KV4) ? 0 : 2)
 KVX_EXPAND_BUILTIN_3_STANDARD (xcat8192, kvx_xcat8192, X8192mode, X4096mode)
 #undef KVX_N_ONLY
 #define KVX_N_ONLY 0
@@ -4100,7 +4100,7 @@ KVX_EXPAND_BUILTIN_2_STANDARD (fsrsrdp, kvx_fsrsrdp, V2DFmode, V2DFmode)
 KVX_EXPAND_BUILTIN_2_STANDARD (fsrsrdq, kvx_fsrsrdq, V4DFmode, V4DFmode)
 
 #undef KVX_N_ONLY
-#define KVX_N_ONLY (KV3_2 ? 0 : 2)
+#define KVX_N_ONLY ((KV3_2||KV4) ? 0 : 2)
 KVX_EXPAND_BUILTIN_3_STANDARD (stsuhq, kvx_stsuhq, V4HImode, V4HImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (stsuho, kvx_stsuho, V8HImode, V8HImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (stsuhx, kvx_stsuhx, V16HImode, V16HImode)
@@ -4762,7 +4762,7 @@ kvx_expand_builtin_xmoveto256 (rtx target, tree args)
 }
 
 #undef KVX_N_ONLY
-#define KVX_N_ONLY (KV3_2 ? 0 : 2)
+#define KVX_N_ONLY ((KV3_2||KV4) ? 0 : 2)
 static rtx
 kvx_expand_builtin_xmovefq256 (rtx target, tree args)
 {
@@ -4889,7 +4889,7 @@ kvx_expand_builtin_xswapo256 (rtx target, tree args)
 }
 
 #undef KVX_N_ONLY
-#define KVX_N_ONLY (KV3_2 ? 0 : 2)
+#define KVX_N_ONLY ((KV3_2||KV4) ? 0 : 2)
 static rtx
 kvx_expand_builtin_xswapq256 (rtx target, tree args)
 {

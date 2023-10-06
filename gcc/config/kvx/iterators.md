@@ -162,20 +162,20 @@
   ashiftrt
 ])
 
-;; Binary shift left and right code iterator for the KV3_2 VXQI TINY patterns.
+;; Binary shift left and right code iterator for the (KV3_2||KV4) VXQI TINY patterns.
 (define_code_iterator BINSHLRT [
   ashift
   lshiftrt
   ashiftrt
 ])
 
-;; Binary shift left and right code iterator for the KV3_2 VXQI LITE patterns.
+;; Binary shift left and right code iterator for the (KV3_2||KV4) VXQI LITE patterns.
 (define_code_iterator BINSHLRL [
   ss_ashift
   us_ashift
 ])
 
-;; Rotate left and right code iterator for the KV3_2 VXQI patterns.
+;; Rotate left and right code iterator for the (KV3_2||KV4) VXQI patterns.
 (define_code_iterator ROTATE [
   rotate
   rotatert
@@ -390,7 +390,7 @@
 
 ;; Iterator for Atomic Integer modes supported by Compare And Swap
 ;; Disable TI for now because it is not supported by QEMU.
-;; (define_mode_iterator ACSI [QI HI SI DI (TI "KV3_2")])
+;; (define_mode_iterator ACSI [QI HI SI DI (TI "(KV3_2||KV4)")])
 (define_mode_iterator ACSI [QI HI SI DI])
 
 ;; Iterator for atomic binary operations
@@ -1232,7 +1232,7 @@
 
 ;; Iterator for the non-byte small element 64-bit vector modes.
 (define_mode_iterator S64B [
-  (V8QI "KV3_2") V4HI V2SI
+  (V8QI "(KV3_2||KV4)") V4HI V2SI
   V4HF V2SF
 ])
 
@@ -1248,7 +1248,7 @@
 
 ;; Iterator same as S64I on kv3-1 and same as S64L on kv3-2.
 (define_mode_iterator S64K [
-  (V8QI "KV3_2") V4HI V2SI
+  (V8QI "(KV3_2||KV4)") V4HI V2SI
 ])
 
 ;; Iterator for all the small element 64-bit vector integer modes.
@@ -1273,7 +1273,7 @@
 
 ;; Iterator same as S128I on kv3-1 and same as S128L on kv3-2.
 (define_mode_iterator S128K [
-  (V16QI "KV3_2") V8HI V4SI
+  (V16QI "(KV3_2||KV4)") V8HI V4SI
 ])
 
 ;; Iterator for all the small element 128-bit vector integer modes.
@@ -1282,7 +1282,7 @@
 ])
 
 (define_mode_iterator V128B [
-  (V16QI "KV3_2")
+  (V16QI "(KV3_2||KV4)")
   V8HI V8HF
   V4SI V4SF
   V2DI V2DF
@@ -1310,7 +1310,7 @@
 
 ;; Iterator same as V128J on kv3-1 and same as V128L on kv3-2.
 (define_mode_iterator V128K [
-  (V16QI "KV3_2") V8HI V4SI V2DI
+  (V16QI "(KV3_2||KV4)") V8HI V4SI V2DI
 ])
 
 ;; Iterator for all the 128-bit vector integer modes.
@@ -1335,7 +1335,7 @@
 
 ;; Iterator same as S256I on kv3-1 and same as S256L on kv3-2.
 (define_mode_iterator S256K [
-  (V32QI "KV3_2") V16HI V8SI
+  (V32QI "(KV3_2||KV4)") V16HI V8SI
 ])
 
 ;; Iterator for all the small element 256-bit vector integer modes.
@@ -1344,7 +1344,7 @@
 ])
 
 (define_mode_iterator V256B [
-  (V32QI "KV3_2")
+  (V32QI "(KV3_2||KV4)")
   V16HI V16HF
   V8SI V8SF
   V4DI V4DF
@@ -1372,7 +1372,7 @@
 
 ;; Iterator same as V256J on kv3-1 and same as V256L on kv3-2.
 (define_mode_iterator V256K [
-  (V32QI "KV3_2") V16HI V8SI V4DI
+  (V32QI "(KV3_2||KV4)") V16HI V8SI V4DI
 ])
 
 ;; Iterator for all the 256-bit vector integer modes.
@@ -1386,7 +1386,7 @@
 ])
 
 (define_mode_iterator V512B [
-  (V64QI "KV3_2")
+  (V64QI "(KV3_2||KV4)")
   V32HI V32HF
   V16SI V16SF
   V8DI V8DF
@@ -1409,7 +1409,7 @@
 
 ;; Iterator same as V512J on kv3-1 and same as V512L on kv3-2.
 (define_mode_iterator V512K [
-  (V64QI "KV3_2") V32HI V16SI V8DI
+  (V64QI "(KV3_2||KV4)") V32HI V16SI V8DI
 ])
 
 ;; Iterator for all the 512-bit vector integer modes.

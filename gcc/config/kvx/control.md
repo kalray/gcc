@@ -280,7 +280,7 @@
         (match_operator:V2DI 1 "comparison_operator"
          [(match_operand:V2DI 2 "register_operand" "r,r")
           (match_operand:V2DI 3 "reg_zero_mone_operand" "r,S01")]))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "compnd.%1 %x0 = %x2, %x3\n\tcompnd.%1 %y0 = %y2, %y3"
   [(set_attr "type" "alu_tiny_x2, alu_tiny_x2_x")
    (set_attr "length"         "8,            16")]
@@ -307,7 +307,7 @@
         (match_operator:V2DI 1 "comparison_operator"
          [(vec_duplicate:V2DI (match_operand:DI 2 "nonmemory_operand" "r,r"))
           (match_operand:V2DI 3 "reg_zero_mone_operand" "r,S01")]))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "compnd.%1 %x0 = %2, %x3\n\tcompnd.%1 %y0 = %2, %y3"
   [(set_attr "type" "alu_tiny_x2,alu_tiny_x2_x")
    (set_attr "length"         "8,           16")]
@@ -334,7 +334,7 @@
         (match_operator:V2DI 1 "comparison_operator"
          [(match_operand:V2DI 2 "register_operand" "r")
           (vec_duplicate:V2DI (match_operand:DI 3 "nonmemory_operand" "r"))]))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "compnd.%1 %x0 = %x2, %3\n\tcompnd.%1 %y0 = %y2, %3"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
@@ -403,7 +403,7 @@
         (match_operator:V4DI 1 "comparison_operator"
          [(match_operand:V4DI 2 "register_operand" "r,r")
           (match_operand:V4DI 3 "reg_zero_mone_operand" "r,S01")]))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "compnd.%1 %x0 = %x2, %x3\n\tcompnd.%1 %y0 = %y2, %y3\n\t"
            "compnd.%1 %z0 = %z2, %z3\n\tcompnd.%1 %t0 = %t2, %t3";
@@ -433,7 +433,7 @@
         (match_operator:V4DI 1 "comparison_operator"
          [(vec_duplicate:V4DI (match_operand:DI 2 "nonmemory_operand" "r,r"))
           (match_operand:V4DI 3 "reg_zero_mone_operand" "r,S01")]))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "compnd.%1 %x0 = %2, %x3\n\tcompnd.%1 %y0 = %2, %y3\n\t"
            "compnd.%1 %z0 = %2, %z3\n\tcompnd.%1 %t0 = %2, %t3";
@@ -463,7 +463,7 @@
         (match_operator:V4DI 1 "comparison_operator"
          [(match_operand:V4DI 2 "register_operand" "r")
           (vec_duplicate:V4DI (match_operand:DI 3 "nonmemory_operand" "r"))]))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "compnd.%1 %x0 = %x2, %3\n\tcompnd.%1 %y0 = %y2, %3\n\t"
            "compnd.%1 %z0 = %z2, %3\n\tcompnd.%1 %t0 = %t2, %3";
@@ -605,7 +605,7 @@
         (neg:V4DI (match_operator:V4DI 1 "float_comparison_operator"
                    [(match_operand:V4DF 2 "register_operand" "r")
                      (match_operand:V4DF 3 "register_operand" "r")])))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "fcompd.%F1 %x0 = %x2, %x3\n\tfcompd.%F1 %y0 = %y2, %y3\n\t"
            "fcompd.%F1 %z0 = %z2, %z3\n\tfcompd.%F1 %t0 = %t2, %t3";
@@ -619,7 +619,7 @@
         (neg:V4DI (match_operator:V4DI 1 "float_comparison_operator"
                    [(vec_duplicate:V4DF (match_operand:DI 2 "nonmemory_operand" "r"))
                     (match_operand:V4DF 3 "register_operand" "r")])))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "fcompd.%F1 %x0 = %2, %x3\n\tfcompd.%F1 %y0 = %2, %y3\n\t"
            "fcompd.%F1 %z0 = %2, %z3\n\tfcompd.%F1 %t0 = %2, %t3";
@@ -633,7 +633,7 @@
         (neg:V4DI (match_operator:V4DI 1 "float_comparison_operator"
                    [(match_operand:V4DF 2 "register_operand" "r")
                     (vec_duplicate:V4DF (match_operand:DI 3 "nonmemory_operand" "r"))])))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "fcompd.%F1 %x0 = %x2, %3\n\tfcompd.%F1 %y0 = %y2, %3\n\t"
            "fcompd.%F1 %z0 = %z2, %3\n\tfcompd.%F1 %t0 = %t2, %3";
@@ -709,7 +709,7 @@
         (match_operator:V2DI 1 "float_comparison_operator"
          [(match_operand:V2DF 2 "register_operand" "r")
           (match_operand:V2DF 3 "register_operand" "r")]))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "fcompnd.%F1 %x0 = %x2, %x3\n\tfcompnd.%F1 %y0 = %y2, %y3"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
@@ -736,7 +736,7 @@
         (match_operator:V2DI 1 "float_comparison_operator"
          [(vec_duplicate:V2DF (match_operand:DF 2 "nonmemory_operand" "r"))
           (match_operand:V2DF 3 "register_operand" "r")]))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "fcompnd.%F1 %x0 = %2, %x3\n\tfcompnd.%F1 %y0 = %2, %y3"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
@@ -763,7 +763,7 @@
         (match_operator:V2DI 1 "float_comparison_operator"
          [(match_operand:V2DF 2 "register_operand" "r")
           (vec_duplicate:V2DF (match_operand:DF 3 "nonmemory_operand" "r"))]))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "fcompnd.%F1 %x0 = %x2, %3\n\tfcompnd.%F1 %y0 = %y2, %3"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
@@ -794,7 +794,7 @@
         (match_operator:<MASK> 1 "float_comparison_operator"
          [(match_operand:S256F 2 "register_operand" "r")
           (match_operand:S256F 3 "register_operand" "r")]))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "fcompn<chunkx>.%F1 %x0 = %x2, %x3\n\tfcompn<chunkx>.%F1 %y0 = %y2, %y3\n\t"
            "fcompn<chunkx>.%F1 %z0 = %z2, %z3\n\tfcompn<chunkx>.%F1 %t0 = %t2, %t3";
@@ -828,7 +828,7 @@
         (match_operator:<MASK> 1 "float_comparison_operator"
          [(vec_duplicate:S256F (match_operand:<CHUNK> 2 "register_operand" "r"))
           (match_operand:S256F 3 "register_operand" "r")]))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "fcompn<chunkx>.%F1 %x0 = %2, %x3\n\tfcompn<chunkx>.%F1 %y0 = %2, %y3\n\t"
            "fcompn<chunkx>.%F1 %z0 = %2, %z3\n\tfcompn<chunkx>.%F1 %t0 = %2, %t3";
@@ -862,7 +862,7 @@
         (match_operator:<MASK> 1 "float_comparison_operator"
          [(match_operand:S256F 2 "register_operand" "r")
           (vec_duplicate:S256F (match_operand:<CHUNK> 3 "register_operand" "r"))]))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "fcompn<chunkx>.%F1 %x0 = %x2, %3\n\tfcompn<chunkx>.%F1 %y0 = %y2, %3\n\t"
            "fcompn<chunkx>.%F1 %z0 = %z2, %3\n\tfcompn<chunkx>.%F1 %t0 = %t2, %3";
@@ -896,7 +896,7 @@
         (match_operator:V4DI 1 "float_comparison_operator"
          [(match_operand:V4DF 2 "register_operand" "r")
           (match_operand:V4DF 3 "register_operand" "r")]))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "fcompnd.%F1 %x0 = %x2, %x3\n\tfcompnd.%F1 %y0 = %y2, %y3\n\t"
            "fcompnd.%F1 %z0 = %z2, %z3\n\tfcompnd.%F1 %t0 = %t2, %t3";
@@ -930,7 +930,7 @@
         (match_operator:V4DI 1 "comparison_operator"
          [(vec_duplicate:V4DF (match_operand:DF 2 "nonmemory_operand" "r"))
           (match_operand:V4DF 3 "register_operand" "r")]))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "fcompnd.%F1 %x0 = %2, %x3\n\tfcompnd.%F1 %y0 = %2, %y3\n\t"
            "fcompnd.%F1 %z0 = %2, %z3\n\tfcompnd.%F1 %t0 = %2, %t3";
@@ -964,7 +964,7 @@
         (match_operator:V4DI 1 "comparison_operator"
          [(match_operand:V4DF 2 "register_operand" "r")
           (vec_duplicate:V4DF (match_operand:DF 3 "nonmemory_operand" "r"))]))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "fcompnd.%F1 %x0 = %x2, %3\n\tfcompnd.%F1 %y0 = %y2, %3\n\t"
            "fcompnd.%F1 %z0 = %z2, %3\n\tfcompnd.%F1 %t0 = %t2, %3";
@@ -1138,7 +1138,7 @@
                                                  (const_int 0)])
                              (match_operand:ALL256 1 "register_operand" "r")
                              (match_operand:ALL256 4 "register_operand" "0")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "cmoved.<SIDI:suffix>%2z %3? %x0 = %x1\n\tcmoved.<SIDI:suffix>%2z %3? %y0 = %y1\n\t"
            "cmoved.<SIDI:suffix>%2z %3? %z0 = %z1\n\tcmoved.<SIDI:suffix>%2z %3? %t0 = %t1";
@@ -1180,7 +1180,7 @@
                                    (const_int 0))
                              (match_operand:ALL256 1 "register_operand" "r")
                              (match_operand:ALL256 3 "register_operand" "0")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "cmoved.<EQNE:evenodd> %2? %x0 = %x1\n\tcmoved.<EQNE:evenodd> %2? %y0 = %y1\n\t"
            "cmoved.<EQNE:evenodd> %2? %z0 = %z1\n\tcmoved.<EQNE:evenodd> %2? %t0 = %t1";
@@ -1420,7 +1420,7 @@
                                              (match_operand:<MASK> 5 "const_zero_operand" "")])
                             (match_operand:V256B 1 "register_operand" "r")
                             (match_operand:V256B 4 "register_operand" "0")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     if (GET_MODE_SIZE (GET_MODE_INNER (<MODE>mode)) == UNITS_PER_WORD)
       return "cmoved.d%2z %x3? %x0 = %x1\n\tcmoved.d%2z %y3? %y0 = %y1\n\t"
@@ -1467,7 +1467,7 @@
                                 (match_operand:<MASK> 6 "const_zero_operand" ""))
                             (match_operand:V256B 1 "register_operand" "r")
                             (match_operand:V256B 4 "register_operand" "0")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     if (GET_MODE_SIZE (GET_MODE_INNER (<MODE>mode)) == UNITS_PER_WORD)
       return "cmoved.d%2z %x3? %x0 = %x1\n\tcmoved.d%2z %y3? %y0 = %y1\n\t"
@@ -1520,7 +1520,7 @@
                                 (match_operand:<MASK> 7 "const_zero_operand" ""))
                             (match_operand:V256B 1 "register_operand" "r")
                             (match_operand:V256B 4 "register_operand" "0")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     if (GET_MODE_SIZE (GET_MODE_INNER (<MODE>mode)) == UNITS_PER_WORD)
       return "cmoved.d%R2z %x3? %x0 = %x1\n\tcmoved.d%R2z %y3? %y0 = %y1\n\t"

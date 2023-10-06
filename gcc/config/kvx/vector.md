@@ -892,7 +892,7 @@
 (define_insn "*<prefix>v8qi2_2"
   [(set (match_operand:V8QI 0 "register_operand" "=r")
         (UNARITH:V8QI (match_operand:V8QI 1 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "<stem>bo %0 = %1"
   [(set_attr "type" "alu_tiny_x")
    (set_attr "length"        "8")]
@@ -900,7 +900,7 @@
 (define_insn "*<prefix>v16qi2_2"
   [(set (match_operand:V16QI 0 "register_operand" "=r")
         (UNARITH:V16QI (match_operand:V16QI 1 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "<stem>bo %x0 = %x1\n\t<stem>bo %y0 = %y1"
   [(set_attr "type" "alu_tiny_x2_x")
    (set_attr "length"          "16")]
@@ -908,7 +908,7 @@
 (define_insn "*<prefix>v32qi2_2"
   [(set (match_operand:V32QI 0 "register_operand" "=r")
         (UNARITH:V32QI (match_operand:V32QI 1 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "<stem>bo %x0 = %x1\n\t<stem>bo %y0 = %y1\n\t"
            "<stem>bo %z0 = %z1\n\t<stem>bo %t0 = %t1";
@@ -953,7 +953,7 @@
   [(set (match_operand:V8QI 0 "register_operand" "=r")
         (BINARITHC:V8QI (match_operand:V8QI 1 "register_operand" "r")
                         (match_operand:V8QI 2 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "<stem>bo %0 = %1, %2"
   [(set_attr "type" "alu_tiny")]
 )
@@ -961,7 +961,7 @@
   [(set (match_operand:V16QI 0 "register_operand" "=r")
         (BINARITHC:V16QI (match_operand:V16QI 1 "register_operand" "r")
                          (match_operand:V16QI 2 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "<stem>bo %x0 = %x1, %x2\n\t<stem>bo %y0 = %y1, %y2"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
@@ -970,7 +970,7 @@
   [(set (match_operand:V16QI 0 "register_operand" "=r")
         (BINARITHC:V16QI (vec_duplicate:V16QI (match_operand:V8QI 1 "nonmemory_operand" "r"))
                          (match_operand:V16QI 2 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "<stem>bo %x0 = %1, %x2\n\t<stem>bo %y0 = %1, %y2"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
@@ -979,7 +979,7 @@
   [(set (match_operand:V16QI 0 "register_operand" "=r")
         (BINARITHC:V16QI (match_operand:V16QI 1 "register_operand" "r")
                          (vec_duplicate:V16QI (match_operand:V8QI 2 "nonmemory_operand" "r"))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "<stem>bo %x0 = %x1, %2\n\t<stem>bo %y0 = %y1, %2"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
@@ -988,7 +988,7 @@
   [(set (match_operand:V32QI 0 "register_operand" "=r")
         (BINARITHC:V32QI (match_operand:V32QI 1 "register_operand" "r")
                          (match_operand:V32QI 2 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "<stem>bo %x0 = %x1, %x2\n\t<stem>bo %y0 = %y1, %y2\n\t"
            "<stem>bo %z0 = %z1, %z2\n\t<stem>bo %t0 = %t1, %t2";
@@ -1000,7 +1000,7 @@
   [(set (match_operand:V32QI 0 "register_operand" "=r")
         (BINARITHC:V32QI (vec_duplicate:V32QI (match_operand:V8QI 1 "nonmemory_operand" "r"))
                          (match_operand:V32QI 2 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "<stem>bo %x0 = %1, %x2\n\t<stem>bo %y0 = %1, %y2\n\t"
            "<stem>bo %z0 = %1, %z2\n\t<stem>bo %t0 = %1, %t2";
@@ -1012,7 +1012,7 @@
   [(set (match_operand:V32QI 0 "register_operand" "=r")
         (BINARITHC:V32QI (match_operand:V32QI 1 "register_operand" "r")
                          (vec_duplicate:V32QI (match_operand:V8QI 2 "nonmemory_operand" "r"))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "<stem>bo %x0 = %x1, %2\n\t<stem>bo %y0 = %y1, %2\n\t"
            "<stem>bo %z0 = %z1, %2\n\t<stem>bo %t0 = %t1, %2";
@@ -1024,7 +1024,7 @@
   [(set (match_operand:V8QI 0 "register_operand" "=r")
         (BINMINUS:V8QI (match_operand:V8QI 1 "register_operand" "r")
                        (match_operand:V8QI 2 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "<stem>bo %0 = %2, %1"
   [(set_attr "type" "alu_tiny")]
 )
@@ -1032,7 +1032,7 @@
   [(set (match_operand:V16QI 0 "register_operand" "=r")
         (BINMINUS:V16QI (match_operand:V16QI 1 "register_operand" "r")
                         (match_operand:V16QI 2 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "<stem>bo %x0 = %x2, %x1\n\t<stem>bo %y0 = %y2, %y1"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
@@ -1041,7 +1041,7 @@
   [(set (match_operand:V16QI 0 "register_operand" "=r")
         (BINMINUS:V16QI (vec_duplicate:V16QI (match_operand:V8QI 1 "nonmemory_operand" "r"))
                         (match_operand:V16QI 2 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "<stem>bo %x0 = %x2, %1\n\t<stem>bo %y0 = %y2, %1"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
@@ -1050,7 +1050,7 @@
   [(set (match_operand:V16QI 0 "register_operand" "=r")
         (BINMINUS:V16QI (match_operand:V16QI 1 "register_operand" "r")
                         (vec_duplicate:V16QI (match_operand:V8QI 2 "nonmemory_operand" "r"))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "<stem>bo %x0 = %2, %x1\n\t<stem>bo %y0 = %2, %y1"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
@@ -1059,7 +1059,7 @@
   [(set (match_operand:V32QI 0 "register_operand" "=r")
         (BINMINUS:V32QI (match_operand:V32QI 1 "register_operand" "r")
                         (match_operand:V32QI 2 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "<stem>bo %x0 = %x2, %x1\n\t<stem>bo %y0 = %y2, %y1\n\t"
            "<stem>bo %z0 = %z2, %z1\n\t<stem>bo %t0 = %t2, %t1";
@@ -1071,7 +1071,7 @@
   [(set (match_operand:V32QI 0 "register_operand" "=r")
         (BINMINUS:V32QI (vec_duplicate:V32QI (match_operand:V8QI 1 "nonmemory_operand" "r"))
                         (match_operand:V32QI 2 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "<stem>bo %x0 = %x2, %1\n\t<stem>bo %y0 = %y2, %1\n\t"
            "<stem>bo %z0 = %z2, %1\n\t<stem>bo %t0 = %t2, %1";
@@ -1083,7 +1083,7 @@
   [(set (match_operand:V32QI 0 "register_operand" "=r")
         (BINMINUS:V32QI (match_operand:V32QI 1 "register_operand" "r")
                         (vec_duplicate:V32QI (match_operand:V8QI 2 "nonmemory_operand" "r"))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "<stem>bo %x0 = %2, %x1\n\t<stem>bo %y0 = %2, %y1\n\t"
            "<stem>bo %z0 = %2, %z1\n\t<stem>bo %t0 = %2, %t1";
@@ -1164,7 +1164,7 @@
           }
         emit_insn (gen_kvx_oroe<suffix> (operands[0], op0o, op0e));
       }
-    else if (KV3_2)
+    else if ((KV3_2||KV4))
       {
         rtx dest = emit_library_call_value (gen_rtx_SYMBOL_REF (Pmode, "__<prefix><mode>3"),
                                             operands[0], LCT_CONST, <MODE>mode,
@@ -1200,7 +1200,7 @@
         emit_insn (gen_kvx_zxo<hwidenx> (op0e, opte));
         emit_insn (gen_kvx_oroe<suffix> (operands[0], op0o, op0e));
       }
-    else if (KV3_2)
+    else if ((KV3_2||KV4))
       {
         rtx dest = emit_library_call_value (gen_rtx_SYMBOL_REF (Pmode, "__<prefix><mode>3"),
                                             operands[0], LCT_CONST, <MODE>mode,
@@ -1315,7 +1315,7 @@
   [(set (match_operand:V8QI 0 "register_operand" "=r")
         (unspec:V8QI [(match_operand:V8QI 1 "register_operand" "r")
                       (match_operand:V8QI 2 "register_operand" "r")] UNSPEC_AVGI))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "<avgm>bo %0 = %1, %2"
   [(set_attr "type" "alu_tiny")]
 )
@@ -1323,7 +1323,7 @@
   [(set (match_operand:V16QI 0 "register_operand" "=r")
         (unspec:V16QI [(match_operand:V16QI 1 "register_operand" "r")
                        (match_operand:V16QI 2 "register_operand" "r")] UNSPEC_AVGI))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "<avgm>bo %x0 = %x1, %x2\n\t<avgm>bo %y0 = %y1, %y2"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
@@ -1332,7 +1332,7 @@
   [(set (match_operand:V32QI 0 "register_operand" "=r")
         (unspec:V32QI [(match_operand:V32QI 1 "register_operand" "r")
                        (match_operand:V32QI 2 "register_operand" "r")] UNSPEC_AVGI))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "<avgm>bo %x0 = %x1, %x2\n\t<avgm>bo %y0 = %y1, %y2\n\t"
            "<avgm>bo %z0 = %z1, %z2\n\t<avgm>bo %t0 = %t1, %t2";
@@ -1381,7 +1381,7 @@
   [(set (match_operand:V8QI 0 "register_operand" "=r")
         (BINSHLRT:V8QI (match_operand:V8QI 1 "register_operand" "r")
                        (match_operand:SI 2 "reg_shift_operand" "rU06")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "<stem>bos %0 = %1, %2"
   [(set_attr "type" "alu_tiny")]
 )
@@ -1389,7 +1389,7 @@
   [(set (match_operand:V16QI 0 "register_operand" "=r")
         (BINSHLRT:V16QI (match_operand:V16QI 1 "register_operand" "r")
                         (match_operand:SI 2 "reg_shift_operand" "rU06")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "<stem>bos %x0 = %x1, %2\n\t<stem>bos %y0 = %y1, %2"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length" "8")]
@@ -1398,7 +1398,7 @@
   [(set (match_operand:V32QI 0 "register_operand" "=r")
         (BINSHLRT:V32QI (match_operand:V32QI 1 "register_operand" "r")
                         (match_operand:SI 2 "reg_shift_operand" "rU06")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "<stem>bos %x0 = %x1, %2\n\t<stem>bos %y0 = %y1, %2\n\t"
            "<stem>bos %z0 = %z1, %2\n\t<stem>bos %t0 = %t1, %2";
@@ -1411,7 +1411,7 @@
   [(set (match_operand:V8QI 0 "register_operand" "=r")
         (BINSHLRL:V8QI (match_operand:V8QI 1 "register_operand" "r")
                        (match_operand:SI 2 "reg_shift_operand" "rU06")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "<stem>bos %0 = %1, %2"
   [(set_attr "type" "alu_lite")]
 )
@@ -1419,7 +1419,7 @@
   [(set (match_operand:V16QI 0 "register_operand" "=r")
         (BINSHLRL:V16QI (match_operand:V16QI 1 "register_operand" "r")
                         (match_operand:SI 2 "reg_shift_operand" "rU06")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "<stem>bos %x0 = %x1, %2\n\t<stem>bos %y0 = %y1, %2"
   [(set_attr "type" "alu_lite_x2")
    (set_attr "length" "8")]
@@ -1428,9 +1428,9 @@
   [(set (match_operand:V32QI 0 "register_operand" "=&r,r")
         (BINSHLRL:V32QI (match_operand:V32QI 1 "register_operand" "r,r")
                         (match_operand:SI 2 "reg_shift_operand" "r,U06")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "#"
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (subreg:V16QI (match_dup 0) 0)
         (BINSHLRL:V16QI (subreg:V16QI (match_dup 1) 0)
                         (match_dup 2)))
@@ -1521,7 +1521,7 @@
   [(set (match_operand:V8QI 0 "register_operand" "=r")
         (unspec:V8QI [(match_operand:V8QI 1 "register_operand" "r")
                       (match_operand:SI 2 "reg_shift_operand" "rU06")] UNSPEC_SRS))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "srsbos %0 = %1, %2"
   [(set_attr "type" "alu_lite")]
 )
@@ -1529,7 +1529,7 @@
   [(set (match_operand:V16QI 0 "register_operand" "=r")
         (unspec:V16QI [(match_operand:V16QI 1 "register_operand" "r")
                        (match_operand:SI 2 "reg_shift_operand" "rU06")] UNSPEC_SRS))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "srsbos %x0 = %x1, %2\n\tsrsbos %y0 = %y1, %2"
   [(set_attr "type" "alu_lite_x2")
    (set_attr "length" "8")]
@@ -1538,9 +1538,9 @@
   [(set (match_operand:V32QI 0 "register_operand" "=&r,r")
         (unspec:V32QI [(match_operand:V32QI 1 "register_operand" "r,r")
                        (match_operand:SI 2 "reg_shift_operand" "r,U06")] UNSPEC_SRS))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "#"
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (subreg:V16QI (match_dup 0) 0)
         (unspec:V16QI [(subreg:V16QI (match_dup 1) 0)
                        (match_dup 2)] UNSPEC_SRS))
@@ -1685,7 +1685,7 @@
   {
     if (KV3_1)
       emit_insn (gen_usadd<mode>3_1 (operands[0], operands[1], operands[2]));
-    else if (KV3_2)
+    else if ((KV3_2||KV4))
       emit_insn (gen_usadd<mode>3_2 (operands[0], operands[1], operands[2]));
     else
       gcc_unreachable ();
@@ -1721,7 +1721,7 @@
   [(set (match_operand:S64I 0 "register_operand" "=r")
         (us_plus:S64I (match_operand:S64I 1 "register_operand" "r")
                       (match_operand:S64I 2 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "addus<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_tiny")]
 )
@@ -1792,7 +1792,7 @@
   {
     if (KV3_1)
       emit_insn (gen_ussub<mode>3_1 (operands[0], operands[1], operands[2]));
-    else if (KV3_2)
+    else if ((KV3_2||KV4))
       emit_insn (gen_ussub<mode>3_2 (operands[0], operands[1], operands[2]));
     else
       gcc_unreachable ();
@@ -1823,7 +1823,7 @@
   [(set (match_operand:S64I 0 "register_operand" "=r")
         (us_minus:S64I (match_operand:S64I 1 "register_operand" "r")
                        (match_operand:S64I 2 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "sbfus<suffix> %0 = %2, %1"
   [(set_attr "type" "alu_tiny")]
 )
@@ -2019,7 +2019,7 @@
   {
     if (KV3_1)
       emit_insn (gen_usashl<mode>3_1 (operands[0], operands[1], operands[2]));
-    else if (KV3_2)
+    else if ((KV3_2||KV4))
       emit_insn (gen_usashl<mode>3_2 (operands[0], operands[1], operands[2]));
     else
       gcc_unreachable ();
@@ -2059,7 +2059,7 @@
   [(set (match_operand:S64I 0 "register_operand" "=r")
         (us_ashift:S64I (match_operand:S64I 1 "register_operand" "r")
                         (match_operand:SI 2 "reg_shift_operand" "rU06")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "slus<suffix>s %0 = %1, %2"
   [(set_attr "type" "alu_lite")]
 )
@@ -2177,7 +2177,7 @@
 (define_insn "ssabs<mode>2_2"
   [(set (match_operand:S64I 0 "register_operand" "=r")
         (ss_abs:S64I (match_operand:S64I 1 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "abss<suffix> %0 = %1"
   [(set_attr "type" "alu_tiny")]
 )
@@ -2305,7 +2305,7 @@
   {
     if (KV3_1)
       emit_insn (gen_abd<mode>3_1 (operands[0], operands[1], operands[2]));
-    else if (KV3_2)
+    else if ((KV3_2||KV4))
       emit_insn (gen_abd<mode>3_2 (operands[0], operands[1], operands[2]));
     else
       gcc_unreachable ();
@@ -2341,7 +2341,7 @@
   {
     if (KV3_1)
       emit_insn (gen_abds<mode>3_1 (operands[0], operands[1], operands[2]));
-    else if (KV3_2)
+    else if ((KV3_2||KV4))
       emit_insn (gen_abds<mode>3_2 (operands[0], operands[1], operands[2]));
     else
       gcc_unreachable ();
@@ -2378,7 +2378,7 @@
         (ss_minus:S64L (smax:S64L (match_operand:S64L 1 "register_operand" "r")
                                   (match_operand:S64L 2 "register_s32_operand" "r"))
                        (smin:S64L (match_dup 1) (match_dup 2))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "abds<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_tiny")]
 )
@@ -2391,7 +2391,7 @@
   {
     if (KV3_1)
       emit_insn (gen_abdu<mode>3_1 (operands[0], operands[1], operands[2]));
-    else if (KV3_2)
+    else if ((KV3_2||KV4))
       emit_insn (gen_abdu<mode>3_2 (operands[0], operands[1], operands[2]));
     else
       gcc_unreachable ();
@@ -2428,7 +2428,7 @@
         (minus:S64L (umax:S64L (match_operand:S64L 1 "register_operand" "r")
                                (match_operand:S64L 2 "register_s32_operand" "r"))
                     (umin:S64L (match_dup 1) (match_dup 2))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "abdu<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_tiny")]
 )
@@ -2611,7 +2611,6 @@
   [(set_attr "type" "alu_mul2")]
 )
 
-
 ;; S128I (V8HI V4SI)
 
 (define_insn "ashl<mode>3"
@@ -2642,7 +2641,7 @@
   {
     if (KV3_1)
       emit_insn (gen_usashl<mode>3_1 (operands[0], operands[1], operands[2]));
-    else if (KV3_2)
+    else if ((KV3_2||KV4))
       emit_insn (gen_usashl<mode>3_2 (operands[0], operands[1], operands[2]));
     else
       gcc_unreachable ();
@@ -2682,7 +2681,7 @@
   [(set (match_operand:S128I 0 "register_operand" "=r")
         (us_ashift:S128I (match_operand:S128I 1 "register_operand" "r")
                          (match_operand:SI 2 "reg_shift_operand" "rU06")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "slus<chunkxs> %x0 = %x1, %2\n\tslus<chunkxs> %y0 = %y1, %2"
   [(set_attr "type" "alu_lite_x2")
    (set_attr "length" "8")]
@@ -2964,7 +2963,7 @@
   {
     if (KV3_1)
       emit_insn (gen_usadd<mode>3_1 (operands[0], operands[1], operands[2]));
-    else if (KV3_2)
+    else if ((KV3_2||KV4))
       emit_insn (gen_usadd<mode>3_2 (operands[0], operands[1], operands[2]));
     else
       gcc_unreachable ();
@@ -3038,7 +3037,7 @@
   [(set (match_operand:V128J 0 "register_operand" "=r")
         (us_plus:V128J (match_operand:V128J 1 "register_operand" "r")
                        (match_operand:V128J 2 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "addus<chunkx> %x0 = %x1, %x2\n\taddus<chunkx> %y0 = %y1, %y2"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
@@ -3048,7 +3047,7 @@
   [(set (match_operand:V128J 0 "register_operand" "=r")
         (us_plus:V128J (vec_duplicate:V128J (match_operand:<CHUNK> 1 "nonmemory_operand" "r"))
                        (match_operand:V128J 2 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "addus<chunkx> %x0 = %1, %x2\n\taddus<chunkx> %y0 = %1, %y2"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
@@ -3058,7 +3057,7 @@
   [(set (match_operand:V128J 0 "register_operand" "=r")
         (us_plus:V128J (match_operand:V128J 1 "register_operand" "r")
                        (vec_duplicate:V128J (match_operand:<CHUNK> 2 "nonmemory_operand" "r"))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "addus<chunkx> %x0 = %x1, %2\n\taddus<chunkx> %y0 = %y1, %2"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
@@ -3176,7 +3175,7 @@
   {
     if (KV3_1)
       emit_insn (gen_ussub<mode>3_1 (operands[0], operands[1], operands[2]));
-    else if (KV3_2)
+    else if ((KV3_2||KV4))
       emit_insn (gen_ussub<mode>3_2 (operands[0], operands[1], operands[2]));
     else
       gcc_unreachable ();
@@ -3245,7 +3244,7 @@
   [(set (match_operand:V128J 0 "register_operand" "=r")
         (us_minus:V128J (match_operand:V128J 1 "register_operand" "r")
                         (match_operand:V128J 2 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "sbfus<chunkx> %x0 = %x2, %x1\n\tsbfus<chunkx> %y0 = %y2, %y1"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
@@ -3255,7 +3254,7 @@
   [(set (match_operand:V128J 0 "register_operand" "=r")
         (us_minus:V128J (vec_duplicate:V128J (match_operand:<CHUNK> 1 "nonmemory_operand" "r"))
                         (match_operand:V128J 2 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "sbfus<chunkx> %x0 = %x2, %1\n\tsbfus<chunkx> %y0 = %y2, %1"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
@@ -3265,7 +3264,7 @@
   [(set (match_operand:V128J 0 "register_operand" "=r")
         (us_minus:V128J (match_operand:V128J 1 "register_operand" "r")
                         (vec_duplicate:V128J (match_operand:<CHUNK> 2 "nonmemory_operand" "r"))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "sbfus<chunkx> %x0 = %2, %x1\n\tsbfus<chunkx> %y0 = %2, %y1"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
@@ -3590,7 +3589,7 @@
 (define_insn "ssabs<mode>2_2"
   [(set (match_operand:V128J 0 "register_operand" "=r")
         (ss_abs:V128J (match_operand:V128J 1 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "abss<chunkx> %x0 = %x1\n\tabss<chunkx> %y0 = %y1"
   [(set_attr "type" "alu_tiny_x2_x")
    (set_attr "length"          "16")]
@@ -3732,7 +3731,7 @@
   {
     if (KV3_1)
       emit_insn (gen_abd<mode>3_1 (operands[0], operands[1], operands[2]));
-    else if (KV3_2)
+    else if ((KV3_2||KV4))
       emit_insn (gen_abd<mode>3_2 (operands[0], operands[1], operands[2]));
     else
       gcc_unreachable ();
@@ -3792,7 +3791,7 @@
   {
     if (KV3_1)
       emit_insn (gen_abds<mode>3_1 (operands[0], operands[1], operands[2]));
-    else if (KV3_2)
+    else if ((KV3_2||KV4))
       emit_insn (gen_abds<mode>3_2 (operands[0], operands[1], operands[2]));
     else
       gcc_unreachable ();
@@ -3829,7 +3828,7 @@
         (ss_minus:V128L (smax:V128L (match_operand:V128L 1 "register_operand" "r")
                                     (match_operand:V128L 2 "register_operand" "r"))
                         (smin:V128L (match_dup 1) (match_dup 2))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "abds<chunkx> %x0 = %x1, %x2\n\tabds<chunkx> %y0 = %y1, %y2"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
@@ -3840,7 +3839,7 @@
         (ss_minus:V128L (smax:V128L (vec_duplicate:V128L (match_operand:<CHUNK> 1 "nonmemory_operand" "r"))
                                     (match_operand:V128L 2 "register_operand" "r"))
                         (smin:V128L (vec_duplicate:V128L (match_dup 1)) (match_dup 2))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "abds<chunkx> %x0 = %1, %x2\n\tabds<chunkx> %y0 = %1, %y2"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
@@ -3851,7 +3850,7 @@
         (ss_minus:V128L (smax:V128L (match_operand:V128L 1 "register_operand" "r")
                                     (vec_duplicate:V128L (match_operand:<CHUNK> 2 "nonmemory_operand" "r")))
                         (smin:V128L (match_dup 1) (vec_duplicate:V128L (match_dup 2)))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "abds<chunkx> %x0 = %x1, %2\n\tabds<chunkx> %y0 = %y1, %2"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
@@ -3865,7 +3864,7 @@
   {
     if (KV3_1)
       emit_insn (gen_abdu<mode>3_1 (operands[0], operands[1], operands[2]));
-    else if (KV3_2)
+    else if ((KV3_2||KV4))
       emit_insn (gen_abdu<mode>3_2 (operands[0], operands[1], operands[2]));
     else
       gcc_unreachable ();
@@ -3902,7 +3901,7 @@
         (minus:V128L (umax:V128L (match_operand:V128L 1 "register_operand" "r")
                                  (match_operand:V128L 2 "register_operand" "r"))
                      (umin:V128L (match_dup 1) (match_dup 2))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "abdu<chunkx> %x0 = %x1, %x2\n\tabdu<chunkx> %y0 = %y1, %y2"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
@@ -3913,7 +3912,7 @@
         (minus:V128L (umax:V128L (vec_duplicate:V128L (match_operand:<CHUNK> 1 "nonmemory_operand" "r"))
                                  (match_operand:V128L 2 "register_operand" "r"))
                      (umin:V128L (vec_duplicate:V128L (match_dup 1)) (match_dup 2))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "abdu<chunkx> %x0 = %1, %x2\n\tabdu<chunkx> %y0 = %1, %y2"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
@@ -3924,7 +3923,7 @@
         (minus:V128L (umax:V128L (match_operand:V128L 1 "register_operand" "r")
                                  (vec_duplicate:V128L (match_operand:<CHUNK> 2 "nonmemory_operand" "r")))
                      (umin:V128L (match_dup 1) (vec_duplicate:V128L (match_dup 2)))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "abdu<chunkx> %x0 = %x1, %2\n\tabdu<chunkx> %y0 = %y1, %2"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
@@ -3949,7 +3948,7 @@
         (plus:V4SI (mult:V4SI (match_operand:V4SI 1 "register_operand" "r")
                               (match_operand:V4SI 2 "register_operand" "r"))
                    (match_operand:V4SI 3 "register_operand" "0")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "maddwq %0 = %1, %2"
   [(set_attr "type" "alu_mac2")]
 )
@@ -3959,7 +3958,7 @@
         (minus:V4SI (match_operand:V4SI 3 "register_operand" "0")
                     (mult:V4SI (match_operand:V4SI 1 "register_operand" "r")
                                (match_operand:V4SI 2 "register_operand" "r"))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "msbfwq %0 = %1, %2"
   [(set_attr "type" "alu_mac2")]
 )
@@ -4015,7 +4014,7 @@
   {
     if (KV3_1)
       emit_insn (gen_usashlv2di3_1 (operands[0], operands[1], operands[2]));
-    else if (KV3_2)
+    else if ((KV3_2||KV4))
       emit_insn (gen_usashlv2di3_2 (operands[0], operands[1], operands[2]));
     else
       gcc_unreachable ();
@@ -4055,7 +4054,7 @@
   [(set (match_operand:V2DI 0 "register_operand" "=r")
         (us_ashift:V2DI (match_operand:V2DI 1 "register_operand" "r")
                         (match_operand:SI 2 "reg_shift_operand" "rU06")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "slusd %x0 = %x1, %2\n\tslusd %y0 = %y1, %2"
   [(set_attr "type" "alu_lite_x2")
    (set_attr "length" "8")]
@@ -4123,7 +4122,7 @@
   [(set (match_operand:S256I 0 "register_operand" "=r")
         (ashift:S256I (match_operand:S256I 1 "register_operand" "r")
                       (match_operand:SI 2 "reg_shift_operand" "rU06")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "sll<chunkxs> %x0 = %x1, %2\n\tsll<chunkxs> %y0 = %y1, %2\n\t"
            "sll<chunkxs> %z0 = %z1, %2\n\tsll<chunkxs> %t0 = %t1, %2";
@@ -4157,7 +4156,7 @@
   {
     if (KV3_1)
       emit_insn (gen_usashl<mode>3_1 (operands[0], operands[1], operands[2]));
-    else if (KV3_2)
+    else if ((KV3_2||KV4))
       emit_insn (gen_usashl<mode>3_2 (operands[0], operands[1], operands[2]));
     else
       gcc_unreachable ();
@@ -4197,9 +4196,9 @@
   [(set (match_operand:S256I 0 "register_operand" "=&r,r")
         (us_ashift:S256I (match_operand:S256I 1 "register_operand" "r,r")
                          (match_operand:SI 2 "reg_shift_operand" "r,U06")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "#"
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (subreg:<HALF> (match_dup 0) 0)
         (us_ashift:<HALF> (subreg:<HALF> (match_dup 1) 0)
                           (match_dup 2)))
@@ -4239,7 +4238,7 @@
   [(set (match_operand:S256I 0 "register_operand" "=r")
         (ashiftrt:S256I (match_operand:S256I 1 "register_operand" "r")
                         (match_operand:SI 2 "reg_shift_operand" "rU06")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "sra<chunkxs> %x0 = %x1, %2\n\tsra<chunkxs> %y0 = %y1, %2\n\t"
            "sra<chunkxs> %z0 = %z1, %2\n\tsra<chunkxs> %t0 = %t1, %2";
@@ -4277,7 +4276,7 @@
   [(set (match_operand:S256I 0 "register_operand" "=r")
         (lshiftrt:S256I (match_operand:S256I 1 "register_operand" "r")
                         (match_operand:SI 2 "reg_shift_operand" "rU06")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "srl<chunkxs> %x0 = %x1, %2\n\tsrl<chunkxs> %y0 = %y1, %2\n\t"
            "srl<chunkxs> %z0 = %z1, %2\n\tsrl<chunkxs> %t0 = %t1, %2";
@@ -4332,7 +4331,7 @@
   [(set (match_operand:S256I 0 "register_operand" "=r")
         (unspec:S256I [(match_operand:S256I 1 "register_operand" "r")
                        (match_operand:S256I 2 "register_operand" "r")] UNSPEC_AVG))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "avg<chunkx> %x0 = %x1, %x2\n\tavg<chunkx> %y0 = %y1, %y2\n\t"
            "avg<chunkx> %z0 = %z1, %z2\n\tavg<chunkx> %t0 = %t1, %t2";
@@ -4370,7 +4369,7 @@
   [(set (match_operand:S256I 0 "register_operand" "=r")
         (unspec:S256I [(match_operand:S256I 1 "register_operand" "r")
                        (match_operand:S256I 2 "register_operand" "r")] UNSPEC_AVGR))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "avgr<chunkx> %x0 = %x1, %x2\n\tavgr<chunkx> %y0 = %y1, %y2\n\t"
            "avgr<chunkx> %z0 = %z1, %z2\n\tavgr<chunkx> %t0 = %t1, %t2";
@@ -4408,7 +4407,7 @@
   [(set (match_operand:S256I 0 "register_operand" "=r")
         (unspec:S256I [(match_operand:S256I 1 "register_operand" "r")
                        (match_operand:S256I 2 "register_operand" "r")] UNSPEC_AVGU))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "avgu<chunkx> %x0 = %x1, %x2\n\tavgu<chunkx> %y0 = %y1, %y2\n\t"
            "avgu<chunkx> %z0 = %z1, %z2\n\tavgu<chunkx> %t0 = %t1, %t2";
@@ -4446,7 +4445,7 @@
   [(set (match_operand:S256I 0 "register_operand" "=r")
         (unspec:S256I [(match_operand:S256I 1 "register_operand" "r")
                        (match_operand:S256I 2 "register_operand" "r")] UNSPEC_AVGRU))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "avgru<chunkx> %x0 = %x1, %x2\n\tavgru<chunkx> %y0 = %y1, %y2\n\t"
            "avgru<chunkx> %z0 = %z1, %z2\n\tavgru<chunkx> %t0 = %t1, %t2";
@@ -4631,7 +4630,7 @@
   [(set (match_operand:V256J 0 "register_operand" "=r")
         (ss_plus:V256J (match_operand:V256J 1 "register_operand" "r")
                        (match_operand:V256J 2 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "adds<chunkx> %x0 = %x1, %x2\n\tadds<chunkx> %y0 = %y1, %y2\n\t"
            "adds<chunkx> %z0 = %z1, %z2\n\tadds<chunkx> %t0 = %t1, %t2";
@@ -4661,7 +4660,7 @@
   [(set (match_operand:V256J 0 "register_operand" "=r")
         (plus:V256J (vec_duplicate:V256J (match_operand:<CHUNK> 1 "nonmemory_operand" "r"))
                     (match_operand:V256J 2 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "adds<chunkx> %x0 = %1, %x2\n\tadds<chunkx> %y0 = %1, %y2\n\t"
            "adds<chunkx> %z0 = %1, %z2\n\tadds<chunkx> %t0 = %1, %t2";
@@ -4691,7 +4690,7 @@
   [(set (match_operand:V256J 0 "register_operand" "=r")
         (plus:V256J (match_operand:V256J 1 "register_operand" "r")
                     (vec_duplicate:V256J (match_operand:<CHUNK> 2 "nonmemory_operand" "r"))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "adds<chunkx> %x0 = %x1, %2\n\tadds<chunkx> %y0 = %y1, %2\n\t"
            "adds<chunkx> %z0 = %z1, %2\n\tadds<chunkx> %t0 = %t1, %2";
@@ -4708,7 +4707,7 @@
   {
     if (KV3_1)
       emit_insn (gen_usadd<mode>3_1 (operands[0], operands[1], operands[2]));
-    else if (KV3_2)
+    else if ((KV3_2||KV4))
       emit_insn (gen_usadd<mode>3_2 (operands[0], operands[1], operands[2]));
     else
       gcc_unreachable ();
@@ -4744,7 +4743,7 @@
   [(set (match_operand:V256J 0 "register_operand" "=r")
         (us_plus:V256J (match_operand:V256J 1 "register_operand" "r")
                        (match_operand:V256J 2 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "addus<chunkx> %x0 = %x1, %x2\n\taddus<chunkx> %y0 = %y1, %y2\n\t"
            "addus<chunkx> %z0 = %z1, %z2\n\taddus<chunkx> %t0 = %t1, %t2";
@@ -4776,7 +4775,7 @@
   [(set (match_operand:V256J 0 "register_operand" "=r")
         (us_plus:V256J (vec_duplicate:V256J (match_operand:<CHUNK> 1 "nonmemory_operand" "r"))
                        (match_operand:V256J 2 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "addus<chunkx> %x0 = %1, %x2\n\taddus<chunkx> %y0 = %1, %y2\n\t"
            "addus<chunkx> %z0 = %1, %z2\n\taddus<chunkx> %t0 = %1, %t2";
@@ -4808,7 +4807,7 @@
   [(set (match_operand:V256J 0 "register_operand" "=r")
         (us_plus:V256J (match_operand:V256J 1 "register_operand" "r")
                        (vec_duplicate:V256J (match_operand:<CHUNK> 2 "nonmemory_operand" "r"))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "addus<chunkx> %x0 = %x1, %2\n\taddus<chunkx> %y0 = %y1, %2\n\t"
            "addus<chunkx> %z0 = %z1, %2\n\taddus<chunkx> %t0 = %t1, %2";
@@ -4842,7 +4841,7 @@
         (plus:V256K (ashift:V256K (match_operand:V256K 1 "register_operand" "r")
                                   (const_int 1))
                     (match_operand:V256K 2 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "addx2<chunkx> %x0 = %x1, %x2\n\taddx2<chunkx> %y0 = %y1, %y2\n\t"
            "addx2<chunkx> %z0 = %z1, %z2\n\taddx2<chunkx> %t0 = %t1, %t2";
@@ -4876,7 +4875,7 @@
         (plus:V256K (ashift:V256K (match_operand:V256K 1 "register_operand" "r")
                                   (const_int 2))
                     (match_operand:V256K 2 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "addx4<chunkx> %x0 = %x1, %x2\n\taddx4<chunkx> %y0 = %y1, %y2\n\t"
            "addx4<chunkx> %z0 = %z1, %z2\n\taddx4<chunkx> %t0 = %t1, %t2";
@@ -4910,7 +4909,7 @@
         (plus:V256K (ashift:V256K (match_operand:V256K 1 "register_operand" "r")
                                   (const_int 3))
                     (match_operand:V256K 2 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "addx8<chunkx> %x0 = %x1, %x2\n\taddx8<chunkx> %y0 = %y1, %y2\n\t"
            "addx8<chunkx> %z0 = %z1, %z2\n\taddx8<chunkx> %t0 = %t1, %t2";
@@ -4944,7 +4943,7 @@
         (plus:V256K (ashift:V256K (match_operand:V256K 1 "register_operand" "r")
                                   (const_int 4))
                     (match_operand:V256K 2 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "addx16<chunkx> %x0 = %x1, %x2\n\taddx16<chunkx> %y0 = %y1, %y2\n\t"
            "addx16<chunkx> %z0 = %z1, %z2\n\taddx16<chunkx> %t0 = %t1, %t2";
@@ -5021,7 +5020,7 @@
   [(set (match_operand:V256J 0 "register_operand" "=r")
         (ss_minus:V256J (match_operand:V256J 1 "register_operand" "r")
                         (match_operand:V256J 2 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "sbfs<chunkx> %x0 = %x2, %x1\n\tsbfs<chunkx> %y0 = %y2, %y1\n\t"
            "sbfs<chunkx> %z0 = %z2, %z1\n\tsbfs<chunkx> %t0 = %t2, %t1";
@@ -5051,7 +5050,7 @@
   [(set (match_operand:V256J 0 "register_operand" "=r")
         (minus:V256J (vec_duplicate:V256J (match_operand:<CHUNK> 1 "nonmemory_operand" "r"))
                      (match_operand:V256J 2 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "sbfs<chunkx> %x0 = %x2, %1\n\tsbfs<chunkx> %y0 = %y2, %1\n\t"
            "sbfs<chunkx> %z0 = %z2, %1\n\tsbfs<chunkx> %t0 = %t2, %1";
@@ -5081,7 +5080,7 @@
   [(set (match_operand:V256J 0 "register_operand" "=r")
         (minus:V256J (match_operand:V256J 1 "register_operand" "r")
                      (vec_duplicate:V256J (match_operand:<CHUNK> 2 "nonmemory_operand" "r"))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "sbfs<chunkx> %x0 = %2, %x1\n\tsbfs<chunkx> %y0 = %2, %y1\n\t"
            "sbfs<chunkx> %z0 = %2, %z1\n\tsbfs<chunkx> %t0 = %2, %t1";
@@ -5098,7 +5097,7 @@
   {
     if (KV3_1)
       emit_insn (gen_ussub<mode>3_1 (operands[0], operands[1], operands[2]));
-    else if (KV3_2)
+    else if ((KV3_2||KV4))
       emit_insn (gen_ussub<mode>3_2 (operands[0], operands[1], operands[2]));
     else
       gcc_unreachable ();
@@ -5129,7 +5128,7 @@
   [(set (match_operand:V256J 0 "register_operand" "=r")
         (us_minus:V256J (match_operand:V256J 1 "register_operand" "r")
                         (match_operand:V256J 2 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "sbfus<chunkx> %x0 = %x2, %x1\n\tsbfus<chunkx> %y0 = %y2, %y1\n\t"
            "sbfus<chunkx> %z0 = %z2, %z1\n\tsbfus<chunkx> %t0 = %t2, %t1";
@@ -5161,7 +5160,7 @@
   [(set (match_operand:V256J 0 "register_operand" "=r")
         (us_minus:V256J (vec_duplicate:V256J (match_operand:<CHUNK> 1 "nonmemory_operand" "r"))
                         (match_operand:V256J 2 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "sbfus<chunkx> %x0 = %x2, %1\n\tsbfus<chunkx> %y0 = %y2, %1\n\t"
            "sbfus<chunkx> %z0 = %z2, %1\n\tsbfus<chunkx> %t0 = %t2, %1";
@@ -5193,7 +5192,7 @@
   [(set (match_operand:V256J 0 "register_operand" "=r")
         (us_minus:V256J (match_operand:V256J 1 "register_operand" "r")
                         (vec_duplicate:V256J (match_operand:<CHUNK> 2 "nonmemory_operand" "r"))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "sbfus<chunkx> %x0 = %2, %x1\n\tsbfus<chunkx> %y0 = %2, %y1\n\t"
            "sbfus<chunkx> %z0 = %2, %z1\n\tsbfus<chunkx> %t0 = %2, %t1";
@@ -5227,7 +5226,7 @@
         (minus:V256K (match_operand:V256K 1 "register_operand" "r")
                      (ashift:V256K (match_operand:V256K 2 "register_operand" "r")
                                    (const_int 1))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "sbfx2<chunkx> %x0 = %x2, %x1\n\tsbfx2<chunkx> %y0 = %y2, %y1\n\t"
            "sbfx2<chunkx> %z0 = %z2, %z1\n\tsbfx2<chunkx> %t0 = %t2, %t1";
@@ -5261,7 +5260,7 @@
         (minus:V256K (match_operand:V256K 1 "register_operand" "r")
                      (ashift:V256K (match_operand:V256K 2 "register_operand" "r")
                                    (const_int 2))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "sbfx4<chunkx> %x0 = %x2, %x1\n\tsbfx4<chunkx> %y0 = %y2, %y1\n\t"
            "sbfx4<chunkx> %z0 = %z2, %z1\n\tsbfx4<chunkx> %t0 = %t2, %t1";
@@ -5295,7 +5294,7 @@
         (minus:V256K (match_operand:V256K 1 "register_operand" "r")
                      (ashift:V256K (match_operand:V256K 2 "register_operand" "r")
                                    (const_int 3))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "sbfx8<chunkx> %x0 = %x2, %x1\n\tsbfx8<chunkx> %y0 = %y2, %y1\n\t"
            "sbfx8<chunkx> %z0 = %z2, %z1\n\tsbfx8<chunkx> %t0 = %t2, %t1";
@@ -5329,7 +5328,7 @@
         (minus:V256K (match_operand:V256K 1 "register_operand" "r")
                      (ashift:V256K (match_operand:V256K 2 "register_operand" "r")
                                    (const_int 4))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "sbfx16<chunkx> %x0 = %x2, %x1\n\tsbfx16<chunkx> %y0 = %y2, %y1\n\t"
            "sbfx16<chunkx> %z0 = %z2, %z1\n\tsbfx16<chunkx> %t0 = %t2, %t1";
@@ -5808,7 +5807,7 @@
 (define_insn "ssneg<mode>2_2"
   [(set (match_operand:V256J 0 "register_operand" "=r")
         (ss_neg:V256J (match_operand:V256J 1 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "negs<chunkx> %x0 = %x1\n\tnegs<chunkx> %y0 = %y1\n\t"
            "negs<chunkx> %z0 = %z1\n\tnegs<chunkx> %t0 = %t1";
@@ -5841,7 +5840,7 @@
 (define_insn "abs<mode>2_2"
   [(set (match_operand:V256J 0 "register_operand" "=r")
         (abs:V256J (match_operand:V256J 1 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "abs<chunkx> %x0 = %x1\n\tabs<chunkx> %y0 = %y1\n\t"
            "abs<chunkx> %z0 = %z1\n\tabs<chunkx> %t0 = %t1";
@@ -5873,7 +5872,7 @@
 (define_insn "ssabs<mode>2_2"
   [(set (match_operand:V256J 0 "register_operand" "=r")
         (ss_abs:V256J (match_operand:V256J 1 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "abss<chunkx> %x0 = %x1\n\tabss<chunkx> %y0 = %y1\n\t"
            "abss<chunkx> %z0 = %z1\n\tabss<chunkx> %t0 = %t1";
@@ -5958,7 +5957,7 @@
   {
     if (KV3_1)
       emit_insn (gen_abd<mode>3_1 (operands[0], operands[1], operands[2]));
-    else if (KV3_2)
+    else if ((KV3_2||KV4))
       emit_insn (gen_abd<mode>3_2 (operands[0], operands[1], operands[2]));
     else
       gcc_unreachable ();
@@ -5993,7 +5992,7 @@
         (minus:V256L (smax:V256L (match_operand:V256L 1 "register_operand" "r")
                                  (match_operand:V256L 2 "register_operand" "r"))
                      (smin:V256L (match_dup 1) (match_dup 2))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "abd<chunkx> %x0 = %x1, %x2\n\tabd<chunkx> %y0 = %y1, %y2\n\t"
            "abd<chunkx> %z0 = %z1, %z2\n\tabd<chunkx> %t0 = %t1, %t2";
@@ -6029,7 +6028,7 @@
         (minus:V256L (smax:V256L (vec_duplicate:V256L (match_operand:<CHUNK> 1 "nonmemory_operand" "r"))
                                  (match_operand:V256L 2 "register_operand" "r"))
                      (smin:V256L (vec_duplicate:V256L (match_dup 1)) (match_dup 2))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "abd<chunkx> %x0 = %1, %x2\n\tabd<chunkx> %y0 = %1, %y2\n\t"
            "abd<chunkx> %z0 = %1, %z2\n\tabd<chunkx> %t0 = %1, %t2";
@@ -6065,7 +6064,7 @@
         (minus:V256L (smax:V256L (match_operand:V256L 1 "register_operand" "r")
                                  (vec_duplicate:V256L (match_operand:<CHUNK> 2 "nonmemory_operand" "r")))
                      (smin:V256L (match_dup 1) (vec_duplicate:V256L (match_dup 2)))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "abd<chunkx> %x0 = %x1, %2\n\tabd<chunkx> %y0 = %y1, %2\n\t"
            "abd<chunkx> %z0 = %z1, %2\n\tabd<chunkx> %t0 = %t1, %2";
@@ -6082,7 +6081,7 @@
   {
     if (KV3_1)
       emit_insn (gen_abds<mode>3_1 (operands[0], operands[1], operands[2]));
-    else if (KV3_2)
+    else if ((KV3_2||KV4))
       emit_insn (gen_abds<mode>3_2 (operands[0], operands[1], operands[2]));
     else
       gcc_unreachable ();
@@ -6119,7 +6118,7 @@
         (ss_minus:V256L (smax:V256L (match_operand:V256L 1 "register_operand" "r")
                                     (match_operand:V256L 2 "register_operand" "r"))
                         (smin:V256L (match_dup 1) (match_dup 2))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "abds<chunkx> %x0 = %x1, %x2\n\tabds<chunkx> %y0 = %y1, %y2\n\t"
            "abds<chunkx> %z0 = %z1, %z2\n\tabds<chunkx> %t0 = %t1, %t2";
@@ -6133,7 +6132,7 @@
         (ss_minus:V256L (smax:V256L (vec_duplicate:V256L (match_operand:<CHUNK> 1 "nonmemory_operand" "r"))
                                     (match_operand:V256L 2 "register_operand" "r"))
                         (smin:V256L (vec_duplicate:V256L (match_dup 1)) (match_dup 2))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "abds<chunkx> %x0 = %1, %x2\n\tabds<chunkx> %y0 = %1, %y2\n\t"
            "abds<chunkx> %z0 = %1, %z2\n\tabds<chunkx> %t0 = %1, %t2";
@@ -6147,7 +6146,7 @@
         (ss_minus:V256L (smax:V256L (match_operand:V256L 1 "register_operand" "r")
                                     (vec_duplicate:V256L (match_operand:<CHUNK> 2 "nonmemory_operand" "r")))
                         (smin:V256L (match_dup 1) (vec_duplicate:V256L (match_dup 2)))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "abds<chunkx> %x0 = %x1, %2\n\tabds<chunkx> %y0 = %y1, %2\n\t"
            "abds<chunkx> %z0 = %z1, %2\n\tabds<chunkx> %t0 = %t1, %2";
@@ -6164,7 +6163,7 @@
   {
     if (KV3_1)
       emit_insn (gen_abdu<mode>3_1 (operands[0], operands[1], operands[2]));
-    else if (KV3_2)
+    else if ((KV3_2||KV4))
       emit_insn (gen_abdu<mode>3_2 (operands[0], operands[1], operands[2]));
     else
       gcc_unreachable ();
@@ -6201,7 +6200,7 @@
         (minus:V256L (umax:V256L (match_operand:V256L 1 "register_operand" "r")
                                  (match_operand:V256L 2 "register_operand" "r"))
                      (umin:V256L (match_dup 1) (match_dup 2))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "abdu<chunkx> %x0 = %x1, %x2\n\tabdu<chunkx> %y0 = %y1, %y2\n\t"
            "abdu<chunkx> %z0 = %z1, %z2\n\tabdu<chunkx> %t0 = %t1, %t2";
@@ -6215,7 +6214,7 @@
         (minus:V256L (umax:V256L (vec_duplicate:V256L (match_operand:<CHUNK> 1 "nonmemory_operand" "r"))
                                  (match_operand:V256L 2 "register_operand" "r"))
                      (umin:V256L (vec_duplicate:V256L (match_dup 1)) (match_dup 2))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "abdu<chunkx> %x0 = %1, %x2\n\tabdu<chunkx> %y0 = %1, %y2\n\t"
            "abdu<chunkx> %z0 = %1, %z2\n\tabdu<chunkx> %t0 = %1, %t2";
@@ -6229,7 +6228,7 @@
         (minus:V256L (umax:V256L (match_operand:V256L 1 "register_operand" "r")
                                  (vec_duplicate:V256L (match_operand:<CHUNK> 2 "nonmemory_operand" "r")))
                      (umin:V256L (match_dup 1) (vec_duplicate:V256L (match_dup 2)))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   {
     return "abdu<chunkx> %x0 = %x1, %2\n\tabdu<chunkx> %y0 = %y1, %2\n\t"
            "abdu<chunkx> %z0 = %z1, %2\n\tabdu<chunkx> %t0 = %t1, %2";
@@ -6263,9 +6262,9 @@
         (plus:V8SI (mult:V8SI (match_operand:V8SI 1 "register_operand" "r")
                               (match_operand:V8SI 2 "register_operand" "r"))
                    (match_operand:V8SI 3 "register_operand" "0")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "#"
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (subreg:V4SI (match_dup 0) 0)
         (plus:V4SI (mult:V4SI (subreg:V4SI (match_dup 1) 0)
                               (subreg:V4SI (match_dup 2) 0))
@@ -6283,9 +6282,9 @@
         (minus:V8SI (match_operand:V8SI 3 "register_operand" "0")
                     (mult:V8SI (match_operand:V8SI 1 "register_operand" "r")
                                (match_operand:V8SI 2 "register_operand" "r"))))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "#"
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (subreg:V4SI (match_dup 0) 0)
         (minus:V4SI (subreg:V4SI (match_dup 3) 0)
                     (mult:V4SI (subreg:V4SI (match_dup 1) 0)
@@ -6340,7 +6339,7 @@
   {
     if (KV3_1)
       emit_insn (gen_usashlv4di3_1 (operands[0], operands[1], operands[2]));
-    else if (KV3_2)
+    else if ((KV3_2||KV4))
       emit_insn (gen_usashlv4di3_2 (operands[0], operands[1], operands[2]));
     else
       gcc_unreachable ();
@@ -6380,9 +6379,9 @@
   [(set (match_operand:V4DI 0 "register_operand" "=&r,r")
         (us_ashift:V4DI (match_operand:V4DI 1 "register_operand" "r,r")
                         (match_operand:SI 2 "reg_shift_operand" "r,U06")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "#"
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (subreg:V2DI (match_dup 0) 0)
         (us_ashift:V2DI (subreg:V2DI (match_dup 1) 0)
                         (match_dup 2)))
@@ -7018,7 +7017,7 @@
   {
     if (KV3_1)
       emit_insn (gen_fma<mode>4_1 (operands[0], operands[1], operands[2], operands[3]));
-    if (KV3_2)
+    if ((KV3_2||KV4))
       emit_insn (gen_fma<mode>4_2 (operands[0], operands[1], operands[2], operands[3]));
     DONE;
   }
@@ -7048,7 +7047,7 @@
         (fma:S128F (match_operand:S128F 1 "register_operand" "r")
                    (match_operand:S128F 2 "register_operand" "r")
                    (match_operand:S128F 3 "register_operand" "0")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "ffma<suffix> %0 = %1, %2"
   [(set (attr "type")
      (if_then_else (match_operand 1 "float16_inner_mode") (const_string "fpu_fma3") (const_string "fpu_fma4")))]
@@ -7063,7 +7062,7 @@
   {
     if (KV3_1)
       emit_insn (gen_fnma<mode>4_1 (operands[0], operands[1], operands[2], operands[3]));
-    if (KV3_2)
+    if ((KV3_2||KV4))
       emit_insn (gen_fnma<mode>4_2 (operands[0], operands[1], operands[2], operands[3]));
     DONE;
   }
@@ -7093,7 +7092,7 @@
         (fma:S128F (neg:S128F (match_operand:S128F 1 "register_operand" "r"))
                    (match_operand:S128F 2 "register_operand" "r")
                    (match_operand:S128F 3 "register_operand" "0")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "ffms<suffix> %0 = %1, %2"
   [(set (attr "type")
      (if_then_else (match_operand 1 "float16_inner_mode") (const_string "fpu_fma3") (const_string "fpu_fma4")))]
@@ -7313,7 +7312,7 @@
   {
     if (KV3_1)
       emit_insn (gen_addv8hf3_1 (operands[0], operands[1], operands[2]));
-    if (KV3_2)
+    if ((KV3_2||KV4))
       emit_insn (gen_addv8hf3_2 (operands[0], operands[1], operands[2]));
     DONE;
   }
@@ -7339,7 +7338,7 @@
   [(set (match_operand:V8HF 0 "register_operand" "=r")
         (plus:V8HF (match_operand:V8HF 1 "register_operand" "r")
                    (match_operand:V8HF 2 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "faddho %0 = %1, %2"
   [(set_attr "type" "fpu_fma3")]
 )
@@ -7352,7 +7351,7 @@
   {
     if (KV3_1)
       emit_insn (gen_subv8hf3_1 (operands[0], operands[1], operands[2]));
-    if (KV3_2)
+    if ((KV3_2||KV4))
       emit_insn (gen_subv8hf3_2 (operands[0], operands[1], operands[2]));
     DONE;
   }
@@ -7378,7 +7377,7 @@
   [(set (match_operand:V8HF 0 "register_operand" "=r")
         (minus:V8HF (match_operand:V8HF 1 "register_operand" "r")
                     (match_operand:V8HF 2 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "fsbfho %0 = %2, %1"
   [(set_attr "type" "fpu_mul3")]
 )
@@ -7391,7 +7390,7 @@
   {
     if (KV3_1)
       emit_insn (gen_mulv8hf3_1 (operands[0], operands[1], operands[2]));
-    if (KV3_2)
+    if ((KV3_2||KV4))
       emit_insn (gen_mulv8hf3_2 (operands[0], operands[1], operands[2]));
     DONE;
   }
@@ -7417,7 +7416,7 @@
   [(set (match_operand:V8HF 0 "register_operand" "=r")
         (mult:V8HF (match_operand:V8HF 1 "register_operand" "r")
                    (match_operand:V8HF 2 "register_operand" "r")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "fmulho %0 = %1, %2"
   [(set_attr "type" "fpu_mul3")]
 )
@@ -7862,7 +7861,7 @@
         (fma:S256F (match_operand:S256F 1 "register_operand" "")
                    (match_operand:S256F 2 "register_operand" "")
                    (match_operand:S256F 3 "register_operand" "")))]
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (subreg:<HALF> (match_dup 0) 0)
         (fma:<HALF> (subreg:<HALF> (match_dup 1) 0)
                     (subreg:<HALF> (match_dup 2) 0)
@@ -7913,7 +7912,7 @@
         (fma:S256F (neg:S256F (match_operand:S256F 1 "register_operand" ""))
                    (match_operand:S256F 2 "register_operand" "")
                    (match_operand:S256F 3 "register_operand" "")))]
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (subreg:<HALF> (match_dup 0) 0)
         (fma:<HALF> (neg:<HALF> (subreg:<HALF> (match_dup 1) 0))
                     (subreg:<HALF> (match_dup 2) 0)
@@ -8235,7 +8234,7 @@
   [(set (match_operand:V16HF 0 "register_operand" "")
         (plus:V16HF (match_operand:V16HF 1 "register_operand" "")
                    (match_operand:V16HF 2 "register_operand" "")))]
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (subreg:V8HF (match_dup 0) 0)
         (plus:V8HF (subreg:V8HF (match_dup 1) 0)
                    (subreg:V8HF (match_dup 2) 0)))
@@ -8277,7 +8276,7 @@
   [(set (match_operand:V16HF 0 "register_operand" "")
         (minus:V16HF (match_operand:V16HF 1 "register_operand" "")
                     (match_operand:V16HF 2 "register_operand" "")))]
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (subreg:V8HF (match_dup 0) 0)
         (minus:V8HF (subreg:V8HF (match_dup 1) 0)
                     (subreg:V8HF (match_dup 2) 0)))
@@ -8319,7 +8318,7 @@
   [(set (match_operand:V16HF 0 "register_operand" "")
         (mult:V16HF (match_operand:V16HF 1 "register_operand" "")
                    (match_operand:V16HF 2 "register_operand" "")))]
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (subreg:V8HF (match_dup 0) 0)
         (mult:V8HF (subreg:V8HF (match_dup 1) 0)
                    (subreg:V8HF (match_dup 2) 0)))
@@ -8734,7 +8733,7 @@
   [(set (match_operand:V4HI 0 "register_operand" "=r")
         (unspec:V4HI [(match_operand:V8QI 1 "register_operand" "r")]
                        UNSPEC_ZXMBHQ))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "zxmbhq %0 = %1"
   [(set_attr "type" "alu_tiny")
    (set_attr "length" "4")]
@@ -8762,7 +8761,7 @@
   [(set (match_operand:V4HI 0 "register_operand" "=r")
         (unspec:V4HI [(match_operand:V8QI 1 "register_operand" "r")]
                        UNSPEC_ZXLBHQ))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "zxlbhq %0 = %1"
   [(set_attr "type" "alu_tiny")
    (set_attr "length" "4")]
@@ -8810,7 +8809,7 @@
   [(set (match_operand:V2SI 0 "register_operand" "=r")
         (unspec:V2SI [(match_operand:V4HI 1 "register_operand" "r")]
                        UNSPEC_ZXMHWP))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "zxmhwp %0 = %1"
   [(set_attr "type" "alu_tiny")
    (set_attr "length" "4")]
@@ -8838,7 +8837,7 @@
   [(set (match_operand:V2SI 0 "register_operand" "=r")
         (unspec:V2SI [(match_operand:V4HI 1 "register_operand" "r")]
                        UNSPEC_ZXLHWP))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "zxlhwp %0 = %1"
   [(set_attr "type" "alu_tiny")
    (set_attr "length" "4")]

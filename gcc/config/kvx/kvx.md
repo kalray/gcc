@@ -1,6 +1,6 @@
 (define_attr "length" "" (const_int 4))
 
-(define_attr "arch" "kv3_1,kv3_2" (const (symbol_ref "kvx_arch_schedule")))
+(define_attr "arch" "kv3_1,kv3_2,kv4_1" (const (symbol_ref "kvx_arch_schedule")))
 
 ;; Unspec numbers
 (include "unspec.md")
@@ -552,7 +552,7 @@
   {
     if (KV3_1)
       emit_insn (gen_kvx_dzerol_1 (operands[0]));
-    if (KV3_2)
+    if ((KV3_2||KV4))
       {
         rtx addr0 = gen_reg_rtx (Pmode);
         emit_insn (gen_rtx_SET (addr0, operands[0]));
