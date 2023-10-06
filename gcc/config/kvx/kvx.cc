@@ -4670,7 +4670,7 @@ kvx_expand_compare_and_swap (rtx ret_, rtx before_, rtx mem_, rtx expected_,
   rtx mem = NULL_RTX;
 
   gcc_assert ((mode == QImode || mode == HImode || mode == SImode
-	       || mode == DImode || (KV3_2 && mode == TImode)));
+	       || mode == DImode || ((KV3_2||KV4) && mode == TImode)));
 
   switch (mode)
     {
@@ -5553,7 +5553,7 @@ kvx_sched_resources_full_bundles (struct kvx_sched_resources *resources)
 {
   if (KV3_1)
     resources->lite_count += resources->thin_count;
-  if (KV3_2)
+  if ((KV3_2||KV4))
     resources->tiny_count += resources->thin_count;
 
   unsigned issue_rate = kvx_sched_issue_rate ();
@@ -8883,6 +8883,8 @@ kvx_option_override (void)
   kvx_arch_schedule = ARCH_KV3_1;
   if (KV3_2)
     kvx_arch_schedule = ARCH_KV3_2;
+  if (KV4_1)
+    kvx_arch_schedule = ARCH_KV4_1;
 
 #ifndef __OPTIMIZE__
   const char *KVX_COST_FACTOR = getenv ("KVX_COST_FACTOR");

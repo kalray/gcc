@@ -193,7 +193,7 @@
      (unspec_volatile:SIDI [(match_operand:SIDI 1 "mematomic_operand" "c,d,e")
                             (match_operand 2 "" "")] UNSPEC_ALOAD))
    (use (match_dup 1))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "al<lsusize>%2%X1 %0 = %O1"
   [(set_attr "type" "lsu_auxw_atomic,lsu_auxw_atomic_x,lsu_auxw_atomic_y")
    (set_attr "length"             "4,                8,               12")]
@@ -205,7 +205,7 @@
         (unspec_volatile:SIDI [(match_operand:SIDI 0 "register_operand" "r,r,r")
                                (match_operand 2 "" "")] UNSPEC_ASTORE))
    (clobber (match_dup 1))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "as<lsusize>%2%X1 %O1 = %0"
   [(set_attr "type" "lsu_auxr_store,lsu_auxr_store_x,lsu_auxr_store_y")
    (set_attr "length"            "4,               8,              12")]
@@ -235,7 +235,7 @@
   [(set (match_operand:SIDI 0 "register_operand" "=r,r,r")
         (unspec_volatile:SIDI [(match_operand:SIDI 1 "mematomic_operand" "c,d,e")
                                (match_operand 2 "" "")] UNSPEC_ALCLR))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "alclr<lsusize>%2%X1 %0 = %O1"
   [(set_attr "type" "lsu_auxw_atomic,lsu_auxw_atomic_x,lsu_auxw_atomic_y")
    (set_attr "length"             "4,                8,               12")]
@@ -275,7 +275,7 @@
    (set (match_dup 1)
         (plus:SIDI (match_dup 1)
                    (match_operand:SIDI 2 "nonmemory_operand" "0,0,0")))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "aladd<lsusize>%3%X1 %O1 = %0"
   [(set_attr "type" "lsu_auxr_auxw_atomic,lsu_auxr_auxw_atomic_x,lsu_auxr_auxw_atomic_y")
    (set_attr "length"                  "4,                     8,                    12")]
@@ -283,7 +283,7 @@
 
 ;; Atomic Compare and Swap
 
-(define_mode_iterator ACSWAP_IN [SI DI (TI "KV3_2")])
+(define_mode_iterator ACSWAP_IN [SI DI (TI "(KV3_2||KV4)")])
 (define_mode_attr ACSWAP_EX [(SI "TI") (DI "TI") (TI "OI")])
 (define_mode_attr ACSWAP_RET [(SI "SI") (DI "DI") (TI "TI")])
 (define_mode_attr acswap_reg [(SI "x") (DI "x") (TI "q")])
@@ -322,7 +322,7 @@
    (set (match_dup 1)
         (unspec:ACSWAP_IN [(match_dup 1) (match_dup 0)] UNSPEC_ACSWAP))
    (use (match_operand:SI 3 "nonmemory_operand" ""))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "acswap<lsusize>%2%X1 %<acswap_reg>0, %O1 = %0"
   [(set_attr "type" "lsu_auxr_auxw_atomic,lsu_auxr_auxw_atomic_x,lsu_auxr_auxw_atomic_y")
    (set_attr "length"                  "4,                     8,                    12")]
