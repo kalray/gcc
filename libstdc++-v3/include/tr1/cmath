@@ -153,9 +153,15 @@ namespace tr1
 
   // Using declarations to bring names from libc's <math.h> into std::tr1.
 
+#  if __has_attribute(using_if_exists)
+#    define _LIBCPP_USING_IF_EXISTS __attribute__((using_if_exists))
+#  else
+#    define _LIBCPP_USING_IF_EXISTS
+#  endif
+
   // types
-  using ::double_t;
-  using ::float_t;
+  using ::float_t _LIBCPP_USING_IF_EXISTS;
+  using ::double_t _LIBCPP_USING_IF_EXISTS;
 
   // functions
   using ::acosh;
