@@ -1738,7 +1738,7 @@
         (xor:SI (match_operand:SI 1 "register_operand" "r,r,r")
                 (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i")))]
   ""
-  "xorw %0 = %1, %2"
+  "eorw %0 = %1, %2"
   [(set_attr "type"   "alu_tiny,alu_tiny_w,alu_tiny_x")
    (set_attr "length" "4,       4,         8")]
 )
@@ -1748,7 +1748,7 @@
         (zero_extend:DI (xor:SI (match_operand:SI 1 "register_operand" "r,r,r")
                                 (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i"))))]
   ""
-  "xorw %0 = %1, %2"
+  "eorw %0 = %1, %2"
   [(set_attr "type"   "alu_tiny,alu_tiny_w,alu_tiny_x")
    (set_attr "length" "4,       4,         8")]
 )
@@ -1758,7 +1758,7 @@
         (not:SI (xor:SI (match_operand:SI 1 "register_operand" "r,r,r")
                         (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i"))))]
   ""
-  "nxorw %0 = %1, %2"
+  "neorw %0 = %1, %2"
   [(set_attr "type"   "alu_tiny,alu_tiny_w,alu_tiny_x")
    (set_attr "length" "4,       4,         8")]
 )
@@ -1768,7 +1768,7 @@
         (zero_extend:DI (not:SI (xor:SI (match_operand:SI 1 "register_operand" "r,r,r")
                                         (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i")))))]
   ""
-  "nxorw %0 = %1, %2"
+  "neorw %0 = %1, %2"
   [(set_attr "type"   "alu_tiny,alu_tiny_w,alu_tiny_x")
    (set_attr "length" "4,       4,         8")]
 )
@@ -3076,7 +3076,7 @@
         (xor:DI (match_operand:DI 1 "register_operand" "r,r,r,r")
                 (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")))]
   ""
-  "xord %0 = %1, %2"
+  "eord %0 = %1, %2"
   [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
    (set_attr "length" "4,4,8,12")]
 )
@@ -3086,7 +3086,7 @@
         (not:DI (xor:DI (match_operand:DI 1 "register_operand" "r,r,r,r")
                         (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i"))))]
   ""
-  "nxord %0 = %1, %2"
+  "neord %0 = %1, %2"
   [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
    (set_attr "length" "4,4,8,12")]
 )
