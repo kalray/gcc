@@ -654,7 +654,7 @@
         (unspec:FITGPR [(match_operand:FITGPR 1 "register_operand" "r,r,r,r")
                         (match_operand:SCALAR 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")] UNSPEC_XORD))]
   ""
-  "xord %0 = %1, %2"
+  "eord %0 = %1, %2"
   [(set_attr "type" "alu_tiny")]
 )
 
@@ -663,7 +663,7 @@
         (unspec:FITGPR [(match_operand:FITGPR 1 "register_operand" "r")
                         (match_operand:SIMD64 2 "register_operand" "r")] UNSPEC_XORD))]
   ""
-  "xord %0 = %1, %2"
+  "eord %0 = %1, %2"
   [(set_attr "type" "alu_tiny")]
 )
 
@@ -672,7 +672,7 @@
         (unspec:ALL128 [(match_operand:ALL128 1 "register_operand" "r")
                         (match_operand:ALL128 2 "register_operand" "r")] UNSPEC_XORD))]
   ""
-  "xord %x0 = %x1, %x2\n\txord %y0 = %y1, %y2"
+  "eord %x0 = %x1, %x2\n\teord %y0 = %y1, %y2"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
 )
@@ -683,8 +683,8 @@
                         (match_operand:ALL256 2 "register_operand" "r")] UNSPEC_XORD))]
   ""
   {
-    return "xord %x0 = %x1, %x2\n\txord %y0 = %y1, %y2\n\t"
-           "xord %z0 = %z1, %z2\n\txord %t0 = %t1, %t2";
+    return "eord %x0 = %x1, %x2\n\teord %y0 = %y1, %y2\n\t"
+           "eord %z0 = %z1, %z2\n\teord %t0 = %t1, %t2";
   }
   [(set_attr "type" "alu_tiny_x4")
    (set_attr "length"        "16")]
@@ -2276,7 +2276,7 @@
         (xor:S64L (match_operand:S64L 1 "register_operand" "r")
                   (match_operand:S64L 2 "register_operand" "r")))]
   ""
-  "xord %0 = %1, %2"
+  "eord %0 = %1, %2"
   [(set_attr "type" "alu_tiny")]
 )
 
@@ -2285,7 +2285,7 @@
         (not:S64L (xor:S64L (match_operand:S64L 1 "register_operand" "r")
                             (match_operand:S64L 2 "register_operand" "r"))))]
   ""
-  "nxord %0 = %1, %2"
+  "neord %0 = %1, %2"
   [(set_attr "type" "alu_tiny")]
 )
 
@@ -3699,7 +3699,7 @@
         (xor:V128L (match_operand:V128L 1 "register_operand" "r")
                    (match_operand:V128L 2 "register_operand" "r")))]
   ""
-  "xord %x0 = %x1, %x2\n\txord %y0 = %y1, %y2"
+  "eord %x0 = %x1, %x2\n\teord %y0 = %y1, %y2"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
 )
@@ -3709,7 +3709,7 @@
         (not:V128L (xor:V128L (match_operand:V128L 1 "register_operand" "r")
                               (match_operand:V128L 2 "register_operand" "r"))))]
   ""
-  "nxord %x0 = %x1, %x2\n\tnxord %y0 = %y1, %y2"
+  "neord %x0 = %x1, %x2\n\tneord %y0 = %y1, %y2"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
 )
@@ -5680,8 +5680,8 @@
                    (match_operand:V256L 2 "register_operand" "r")))]
   ""
   {
-    return "xord %x0 = %x1, %x2\n\txord %y0 = %y1, %y2\n\t"
-           "xord %z0 = %z1, %z2\n\txord %t0 = %t1, %t2";
+    return "eord %x0 = %x1, %x2\n\teord %y0 = %y1, %y2\n\t"
+           "eord %z0 = %z1, %z2\n\teord %t0 = %t1, %t2";
   }
   [(set_attr "type" "alu_tiny_x4")
    (set_attr "length"        "16")]
@@ -5693,8 +5693,8 @@
                               (match_operand:V256L 2 "register_operand" "r"))))]
   ""
   {
-    return "nxord %x0 = %x1, %x2\n\tnxord %y0 = %y1, %y2\n\t"
-           "nxord %z0 = %z1, %z2\n\tnxord %t0 = %t1, %t2";
+    return "neord %x0 = %x1, %x2\n\tneord %y0 = %y1, %y2\n\t"
+           "neord %z0 = %z1, %z2\n\tneord %t0 = %t1, %t2";
   }
   [(set_attr "type" "alu_tiny_x4")
    (set_attr "length"        "16")]

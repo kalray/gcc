@@ -29,7 +29,7 @@
   {
     if (KV3_1)
       return "#";
-    return "xxoro %0 = %0, %0";
+    return "xeoro %0 = %0, %0";
   }
   [(set_attr "type" "tca_int")]
 )
@@ -2274,7 +2274,7 @@
 )
 
 
-;; XANDO, XNANDO, XANDNO, XIORO, XNIORO, XIORNO, XXORO, XNXORO, XSBMM8DQ, XSBMMT8DQ
+;; XANDO, XNANDO, XANDNO, XIORO, XNIORO, XIORNO, XEORO, XNEORO, XSBMM8DQ, XSBMMT8DQ
 
 (define_insn "kvx_xando"
   [(set (match_operand:X256 0 "register_operand" "=x")
@@ -2330,21 +2330,21 @@
   [(set_attr "type" "tca_int")]
 )
 
-(define_insn "kvx_xxoro"
+(define_insn "kvx_xeoro"
   [(set (match_operand:X256 0 "register_operand" "=x")
         (xor:X256 (match_operand:X256 1 "register_operand" "x")
                   (match_operand:X256 2 "register_operand" "x")))]
   "(KV3_2||KV4)"
-  "xxoro %0 = %1, %2"
+  "xeoro %0 = %1, %2"
   [(set_attr "type" "tca_int")]
 )
 
-(define_insn "kvx_xnxoro"
+(define_insn "kvx_xneoro"
   [(set (match_operand:X256 0 "register_operand" "=x")
         (not:X256 (xor:X256 (match_operand:X256 1 "register_operand" "x")
                             (match_operand:X256 2 "register_operand" "x"))))]
   "(KV3_2||KV4)"
-  "xnxoro %0 = %1, %2"
+  "xneoro %0 = %1, %2"
   [(set_attr "type" "tca_int")]
 )
 

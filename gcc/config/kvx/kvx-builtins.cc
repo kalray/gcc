@@ -974,8 +974,8 @@ enum kvx_builtin
   KVX_BUILTIN_XIORO,
   KVX_BUILTIN_XNIORO,
   KVX_BUILTIN_XIORNO,
-  KVX_BUILTIN_XXORO,
-  KVX_BUILTIN_XNXORO,
+  KVX_BUILTIN_XEORO,
+  KVX_BUILTIN_XNEORO,
   KVX_BUILTIN_XSBMM8DQ,
   KVX_BUILTIN_XSBMMT8DQ,
   KVX_BUILTIN_XCLAMPWO,
@@ -2139,8 +2139,8 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (XIORO, "xioro", X256, X256, X256); // Extension kv3-2
   ADD_KVX_BUILTIN (XNIORO, "xnioro", X256, X256, X256); // Extension kv3-2
   ADD_KVX_BUILTIN (XIORNO, "xiorno", X256, X256, X256); // Extension kv3-2
-  ADD_KVX_BUILTIN (XXORO, "xxoro", X256, X256, X256); // Extension kv3-2
-  ADD_KVX_BUILTIN (XNXORO, "xnxoro", X256, X256, X256); // Extension kv3-2
+  ADD_KVX_BUILTIN (XEORO, "xeoro", X256, X256, X256); // Extension kv3-2
+  ADD_KVX_BUILTIN (XNEORO, "xneoro", X256, X256, X256); // Extension kv3-2
   ADD_KVX_BUILTIN (XSBMM8DQ, "xsbmm8dq", X256, X256, X256); // Extension kv3-2
   ADD_KVX_BUILTIN (XSBMMT8DQ, "xsbmmt8dq", X256, X256, X256); // Extension kv3-2
   ADD_KVX_BUILTIN (XCLAMPWO, "xclampwo", X256, X256, X256, X256); // Extension kv3-2
@@ -4870,8 +4870,8 @@ KVX_EXPAND_BUILTIN_3_STANDARD (xandno, kvx_xandno, X256mode, X256mode)
 KVX_EXPAND_BUILTIN_3_STANDARD (xioro, kvx_xioro, X256mode, X256mode)
 KVX_EXPAND_BUILTIN_3_STANDARD (xnioro, kvx_xnioro, X256mode, X256mode)
 KVX_EXPAND_BUILTIN_3_STANDARD (xiorno, kvx_xiorno, X256mode, X256mode)
-KVX_EXPAND_BUILTIN_3_STANDARD (xxoro, kvx_xxoro, X256mode, X256mode)
-KVX_EXPAND_BUILTIN_3_STANDARD (xnxoro, kvx_xnxoro, X256mode, X256mode)
+KVX_EXPAND_BUILTIN_3_STANDARD (xeoro, kvx_xeoro, X256mode, X256mode)
+KVX_EXPAND_BUILTIN_3_STANDARD (xneoro, kvx_xneoro, X256mode, X256mode)
 KVX_EXPAND_BUILTIN_3_STANDARD (xsbmm8dq, kvx_xsbmm8dq, X256mode, X256mode)
 KVX_EXPAND_BUILTIN_3_STANDARD (xsbmmt8dq, kvx_xsbmmt8dq, X256mode, X256mode)
 
@@ -5896,8 +5896,8 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_XIORO: return kvx_expand_builtin_xioro (target, exp);
     case KVX_BUILTIN_XNIORO: return kvx_expand_builtin_xnioro (target, exp);
     case KVX_BUILTIN_XIORNO: return kvx_expand_builtin_xiorno (target, exp);
-    case KVX_BUILTIN_XXORO: return kvx_expand_builtin_xxoro (target, exp);
-    case KVX_BUILTIN_XNXORO: return kvx_expand_builtin_xnxoro (target, exp);
+    case KVX_BUILTIN_XEORO: return kvx_expand_builtin_xeoro (target, exp);
+    case KVX_BUILTIN_XNEORO: return kvx_expand_builtin_xneoro (target, exp);
     case KVX_BUILTIN_XSBMM8DQ: return kvx_expand_builtin_xsbmm8dq (target, exp);
     case KVX_BUILTIN_XSBMMT8DQ: return kvx_expand_builtin_xsbmmt8dq (target, exp);
 
