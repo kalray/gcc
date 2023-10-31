@@ -68,12 +68,14 @@ extern char *_KVX_NO_DIVMOD0_TRAP __attribute__ ((weak));
 uint64_t __udivdi3 (uint64_t a, uint64_t b);
 uint64_t __umoddi3 (uint64_t a, uint64_t b);
 uint64_t __udivmoddi4 (uint64_t a, uint64_t b, uint64_t *c);
+int64_t __divmoddi4 (int64_t a, int64_t b, int64_t *c);
 int64_t __divdi3 (int64_t a, int64_t b);
 int64_t __moddi3 (int64_t a, int64_t b);
 
 uint32_t __udivsi3 (uint32_t a, uint32_t b);
 uint32_t __umodsi3 (uint32_t a, uint32_t b);
 uint32_t __udivmodsi4 (uint32_t a, uint32_t b, uint32_t *c);
+int32_t __divmodsi4 (int32_t a, int32_t b, int32_t *c);
 int32_t __divsi3 (int32_t a, int32_t b);
 int32_t __modsi3 (int32_t a, int32_t b);
 
