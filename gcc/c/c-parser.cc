@@ -6812,6 +6812,11 @@ c_parser_condition (c_parser *parser)
   cond = c_parser_expression_conv (parser).value;
   cond = c_objc_common_truthvalue_conversion (loc, cond);
   cond = c_fully_fold (cond, false, NULL);
+  if (TREE_CODE (TREE_TYPE (cond)) == VECTOR_TYPE)
+    {
+      error_at (loc, "used vector type where scalar is required");
+      return error_mark_node;
+    }
   if (warn_sequence_point)
     verify_sequence_points (cond);
   return cond;
