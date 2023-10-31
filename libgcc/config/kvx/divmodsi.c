@@ -107,8 +107,20 @@ uint32_t
 __udivmodsi4 (uint32_t a, uint32_t b, uint32_t *c)
 {
   uint32x2_t divmod = uint32_divmod (a, b);
-  *c = (uint32_t)divmod[1];
+  if (c)
+    *c = (uint32_t)divmod[1];
   return (uint32_t)divmod[0];
+}
+
+int32_t
+__divmodsi4 (int32_t a, int32_t b, int32_t *c)
+{
+  uint32_t absa = __builtin_kvx_absw (a, "");
+  uint32_t absb = __builtin_kvx_absw (b, "");
+  uint32x2_t divmod = uint32_divmod (absa, absb);
+  if (c)
+    *c  = (- 2 * (a < 0) + 1) * divmod[1];
+  return (a ^ b) < 0 ? -divmod[0] : divmod[0];
 }
 
 int32_t

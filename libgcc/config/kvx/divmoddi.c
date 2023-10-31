@@ -158,8 +158,20 @@ uint64_t
 __udivmoddi4 (uint64_t a, uint64_t b, uint64_t *c)
 {
   uint64x2_t divmod = uint64_divmod (a, b);
-  *c = divmod[1];
+  if (c)
+    *c = divmod[1];
   return divmod[0];
+}
+
+int64_t
+__divmoddi4 (int64_t a, int64_t b, int64_t *c)
+{
+  uint64_t absa = __builtin_kvx_absd (a, "");
+  uint64_t absb = __builtin_kvx_absd (b, "");
+  uint64x2_t divmod = uint64_divmod (absa, absb);
+  if (c)
+    *c  = (- 2 * (a < 0) + 1) * divmod[1];
+  return (a ^ b) < 0 ? -divmod[0] : divmod[0];
 }
 
 int64_t
