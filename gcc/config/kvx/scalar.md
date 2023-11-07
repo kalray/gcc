@@ -1268,8 +1268,8 @@
     else
       {
         operands[2] = force_reg (SImode, operands[2]);
-        rtx s = gen_rtx_CONST_STRING (VOIDmode, ".s");
-        rtx rns = gen_rtx_CONST_STRING (VOIDmode, ".rn.s");
+        rtx s = gen_rtx_CONST_STRING (VOIDmode, KV3 ? ".s" : "");
+        rtx rns = gen_rtx_CONST_STRING (VOIDmode, KV3 ? ".rn.s" : ".rn");
     // double double1 = 1.0;
         rtx double1 = copy_to_mode_reg (DFmode, const_double_from_real_value (dconst1, DFmode));
     // float floatb = (float)b;
@@ -1351,8 +1351,8 @@
     else
       {
         operands[2] = force_reg (SImode, operands[2]);
-        rtx s = gen_rtx_CONST_STRING (VOIDmode, ".s");
-        rtx rns = gen_rtx_CONST_STRING (VOIDmode, ".rn.s");
+        rtx s = gen_rtx_CONST_STRING (VOIDmode, KV3 ? ".s" : "");
+        rtx rns = gen_rtx_CONST_STRING (VOIDmode, KV3 ? ".rn.s" : ".rn");
     // double double1 = 1.0;
         rtx double1 = copy_to_mode_reg (DFmode, const_double_from_real_value (dconst1, DFmode));
     // float floatb = (float)b;
@@ -2549,8 +2549,8 @@
     else
       {
         operands[2] = force_reg (DImode, operands[2]);
-        rtx s = gen_rtx_CONST_STRING (VOIDmode, ".s");
-        rtx rns = gen_rtx_CONST_STRING (VOIDmode, ".rn.s");
+        rtx s = gen_rtx_CONST_STRING (VOIDmode, KV3 ? ".s" : "");
+        rtx rns = gen_rtx_CONST_STRING (VOIDmode, KV3 ? ".rn.s" : ".rn");
         rtx dnez = gen_rtx_CONST_STRING (VOIDmode, ".dnez");
         rtx deqz = gen_rtx_CONST_STRING (VOIDmode, ".deqz");
     // double double1 = 1.0;
@@ -2673,8 +2673,8 @@
     else
       {
         operands[2] = force_reg (DImode, operands[2]);
-        rtx s = gen_rtx_CONST_STRING (VOIDmode, ".s");
-        rtx rns = gen_rtx_CONST_STRING (VOIDmode, ".rn.s");
+        rtx s = gen_rtx_CONST_STRING (VOIDmode, KV3 ? ".s" : "");
+        rtx rns = gen_rtx_CONST_STRING (VOIDmode, KV3 ? ".rn.s" : ".rn");
         rtx dnez = gen_rtx_CONST_STRING (VOIDmode, ".dnez");
         rtx deqz = gen_rtx_CONST_STRING (VOIDmode, ".deqz");
     // double double1 = 1.0;
@@ -3754,7 +3754,7 @@
   [(set (match_operand:SF 0 "register_operand" "=r")
         (mult:SF (float_extend:SF (match_operand:HF 1 "register_operand" "r"))
                  (float_extend:SF (match_operand:HF 2 "register_operand" "r"))))]
-  ""
+  "KV3"
   "fmulhw %0 = %1, %2"
   [(set_attr "type" "mult_fp3")]
 )
@@ -3794,7 +3794,7 @@
         (fma:SF  (float_extend:SF (match_operand:HF 1 "register_operand" "r"))
                  (float_extend:SF (match_operand:HF 2 "register_operand" "r"))
                  (match_operand:SF 3 "register_operand" "0")))]
-  ""
+  "KV3"
   "ffmahw %0 = %1, %2"
   [(set_attr "type" "madd_fp3")]
 )
@@ -3814,7 +3814,7 @@
         (fma:SF (float_extend:SF (neg:HF (match_operand:HF 1 "register_operand" "r")))
                 (float_extend:SF (match_operand:HF 2 "register_operand" "r"))
                 (match_operand:SF 3 "register_operand" "0")))]
-  ""
+  "KV3"
   "ffmshw %0 = %1, %2"
   [(set_attr "type" "madd_fp3")]
 )
@@ -3824,7 +3824,7 @@
         (fma:SF (float_extend:SF (match_operand:HF 1 "register_operand" "r"))
                 (float_extend:SF (neg:HF (match_operand:HF 2 "register_operand" "r")))
                 (match_operand:SF 3 "register_operand" "0")))]
-  ""
+  "KV3"
   "ffmshw %0 = %1, %2"
   [(set_attr "type" "madd_fp3")]
 )
@@ -4013,7 +4013,7 @@
   [(set (match_operand:DF 0 "register_operand" "=r")
         (mult:DF (float_extend:DF (match_operand:SF 1 "register_operand" "r"))
                  (float_extend:DF (match_operand:SF 2 "register_operand" "r"))))]
-  ""
+  "KV3"
   "fmulwd %0 = %1, %2"
   [(set_attr "type" "mult_fp4")]
 )
@@ -4078,7 +4078,7 @@
         (fma:DF  (float_extend:DF (match_operand:SF 1 "register_operand" "r"))
                  (float_extend:DF (match_operand:SF 2 "register_operand" "r"))
                  (match_operand:DF 3 "register_operand" "0")))]
-  ""
+  "KV3"
   "ffmawd %0 = %1, %2"
   [(set_attr "type" "madd_fp4")]
 )
@@ -4098,7 +4098,7 @@
         (fma:DF (float_extend:DF (neg:SF (match_operand:SF 1 "register_operand" "r")))
                 (float_extend:DF (match_operand:SF 2 "register_operand" "r"))
                 (match_operand:DF 3 "register_operand" "0")))]
-  ""
+  "KV3"
   "ffmswd %0 = %1, %2"
   [(set_attr "type" "madd_fp4")]
 )
@@ -4108,7 +4108,7 @@
         (fma:DF (float_extend:DF (match_operand:SF 1 "register_operand" "r"))
                 (float_extend:DF (neg:SF (match_operand:SF 2 "register_operand" "r")))
                 (match_operand:DF 3 "register_operand" "0")))]
-  ""
+  "KV3"
   "ffmswd %0 = %1, %2"
   [(set_attr "type" "madd_fp4")]
 )
@@ -4195,7 +4195,11 @@
   [(set (match_operand:SF 0 "register_operand" "=r")
         (float:SF (match_operand:SI 1 "register_operand" "r")))]
   ""
-  "floatw.rn %0 = %1, 0"
+  {
+    if (KV3)
+      return "floatw.rn %0 = %1, 0";
+    return "floatw.rn %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 
@@ -4203,7 +4207,11 @@
   [(set (match_operand:SF 0 "register_operand" "=r")
         (unsigned_float:SF (match_operand:SI 1 "register_operand" "r")))]
   ""
-  "floatuw.rn %0 = %1, 0"
+  {
+    if (KV3)
+      return "floatuw.rn %0 = %1, 0";
+    return "floatuw.rn %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 
@@ -4257,7 +4265,11 @@
   [(set (match_operand:SI 0 "register_operand" "=r")
         (fix:SI (match_operand:SF 1 "register_operand" "r")))]
   ""
-  "fixedw.rz %0 = %1, 0"
+  {
+    if (KV3)
+      return "fixedw.rz %0 = %1, 0";
+    return "fixedw.rz %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 ;; zero-extend version of fix_truncsfsi2
@@ -4265,7 +4277,11 @@
   [(set (match_operand:DI 0 "register_operand" "=r")
         (zero_extend:DI (fix:SI (match_operand:SF 1 "register_operand" "r"))))]
   ""
-  "fixedw.rz %0 = %1, 0"
+  {
+    if (KV3)
+      return "fixedw.rz %0 = %1, 0";
+    return "fixedw.rz %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 
@@ -4273,7 +4289,11 @@
   [(set (match_operand:SI 0 "register_operand" "=r")
         (unsigned_fix:SI (match_operand:SF 1 "register_operand" "r")))]
   ""
-  "fixeduw.rz %0 = %1, 0"
+  {
+    if (KV3)
+      return "fixeduw.rz %0 = %1, 0";
+    return "fixeduw.rz %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 ;; zero-extend version of fixuns_truncsfsi2
@@ -4281,7 +4301,11 @@
   [(set (match_operand:DI 0 "register_operand" "=r")
         (zero_extend:DI (unsigned_fix:SI (match_operand:SF 1 "register_operand" "r"))))]
   ""
-  "fixeduw.rz %0 = %1, 0"
+  {
+    if (KV3)
+      return "fixeduw.rz %0 = %1, 0";
+    return "fixeduw.rz %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 
@@ -4497,7 +4521,11 @@
   [(set (match_operand:DF 0 "register_operand" "=r")
         (float:DF (match_operand:DI 1 "register_operand" "r")))]
   ""
-  "floatd.rn %0 = %1, 0"
+  {
+    if (KV3)
+      return "floatd.rn %0 = %1, 0";
+    return "floatd.rn %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 
@@ -4505,7 +4533,11 @@
   [(set (match_operand:DF 0 "register_operand" "=r")
         (unsigned_float:DF (match_operand:DI 1 "register_operand" "r")))]
   ""
-  "floatud.rn %0 = %1, 0"
+  {
+    if (KV3)
+      return "floatud.rn %0 = %1, 0";
+    return "floatud.rn %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 
@@ -4513,7 +4545,11 @@
   [(set (match_operand:DI 0 "register_operand" "=r")
         (fix:DI (match_operand:DF 1 "register_operand" "r")))]
   ""
-  "fixedd.rz %0 = %1, 0"
+  {
+    if (KV3)
+      return "fixedd.rz %0 = %1, 0";
+    return "fixedd.rz %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 
@@ -4521,7 +4557,11 @@
   [(set (match_operand:DI 0 "register_operand" "=r")
         (unsigned_fix:DI (match_operand:DF 1 "register_operand" "r")))]
   ""
-  "fixedud.rz %0 = %1, 0"
+  {
+    if (KV3)
+      return "fixedud.rz %0 = %1, 0";
+    return "fixedud.rz %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 
@@ -4578,7 +4618,7 @@
         (plus:SC (match_operand:SC 1 "register_operand" "r")
                  (match_operand:SC 2 "register_operand" "r")))]
   ""
-  "faddwc %0 = %1, %2"
+  "faddwp %0 = %1, %2"
   [(set_attr "type" "mult_fp4")]
 )
 
@@ -4587,7 +4627,7 @@
         (minus:SC (match_operand:SC 1 "register_operand" "r")
                   (match_operand:SC 2 "register_operand" "r")))]
   ""
-  "fsbfwc %0 = %2, %1"
+  "fsbfwp %0 = %2, %1"
   [(set_attr "type" "mult_fp4")]
 )
 
@@ -4605,7 +4645,7 @@
                  (match_operand:SC 2 "register_operand" "r")))]
   ""
   "fmulwc %0 = %1, %2"
-  [(set_attr "type" "mult_fp4")]
+  [(set_attr "type" "dotp_fp4")]
 )
 
 (define_insn "fmasc4"
@@ -4615,7 +4655,7 @@
                 (match_operand:SC 3 "register_operand" "0")))]
   "(KV3_2||KV4)"
   "ffmawc %0 = %1, %2"
-  [(set_attr "type" "madd_fp4")]
+  [(set_attr "type" "dmda_fp4")]
 )
 
 (define_insn "fnmasc4"
@@ -4625,14 +4665,14 @@
                 (match_operand:SC 3 "register_operand" "0")))]
   "(KV3_2||KV4)"
   "ffmswc %0 = %1, %2"
-  [(set_attr "type" "madd_fp4")]
+  [(set_attr "type" "dmda_fp4")]
 )
 
 (define_insn "addconjsc3"
   [(set (match_operand:SC 0 "register_operand" "=r")
         (plus:SC (conj:SC (match_operand:SC 1 "register_operand" "r"))
                  (match_operand:SC 2 "register_operand" "r")))]
-  ""
+  "KV3"
   "faddwc.c %0 = %1, %2"
   [(set_attr "type" "mult_fp4")]
 )
@@ -4641,7 +4681,7 @@
   [(set (match_operand:SC 0 "register_operand" "=r")
         (minus:SC (match_operand:SC 1 "register_operand" "r")
                   (conj:SC (match_operand:SC 2 "register_operand" "r"))))]
-  ""
+  "KV3"
   "fsbfwc.c %0 = %2, %1"
   [(set_attr "type" "mult_fp4")]
 )
@@ -4650,9 +4690,9 @@
   [(set (match_operand:SC 0 "register_operand" "=r")
         (mult:SC (conj:SC (match_operand:SC 1 "register_operand" "r"))
                  (match_operand:SC 2 "register_operand" "r")))]
-  ""
+  "KV3"
   "fmulwc.c %0 = %1, %2"
-  [(set_attr "type" "mult_fp4")]
+  [(set_attr "type" "dotp_fp4")]
 )
 
 (define_insn "fmaconjsc4"
@@ -4660,9 +4700,9 @@
         (fma:SC (conj:SC (match_operand:SC 1 "register_operand" "r"))
                 (match_operand:SC 2 "register_operand" "r")
                 (match_operand:SC 3 "register_operand" "0")))]
-  "(KV3_2||KV4)"
+  "KV3_2"
   "ffmawc.c %0 = %1, %2"
-  [(set_attr "type" "madd_fp4")]
+  [(set_attr "type" "dmda_fp4")]
 )
 
 (define_insn "fnmaconjsc4"
@@ -4670,9 +4710,9 @@
         (fma:SC (neg:SC (match_operand:SC 1 "register_operand" "r"))
                 (conj:SC (match_operand:SC 2 "register_operand" "r"))
                 (match_operand:SC 3 "register_operand" "0")))]
-  "(KV3_2||KV4)"
+  "KV3_2"
   "ffmswc.c %0 = %2, %1"
-  [(set_attr "type" "madd_fp4")]
+  [(set_attr "type" "dmda_fp4")]
 )
 
 (define_insn "conjsc2"
@@ -4709,38 +4749,61 @@
   }
 )
 
+
 ;; Patterns for cadd90sc3 and cadd270sc3 are not implemented because KVX cannot
 ;; accelerate these operations
 
 ;; DC
 
-(define_insn "adddc3"
+(define_insn_and_split "adddc3"
   [(set (match_operand:DC 0 "register_operand" "=r")
         (plus:DC (match_operand:DC 1 "register_operand" "r")
                  (match_operand:DC 2 "register_operand" "r")))]
   ""
   "fadddc %0 = %1, %2"
+  "KV4 && reload_completed"
+  [(set (subreg:DF (match_dup 0) 0)
+        (plus:DF (subreg:DF (match_dup 1) 0)
+                 (subreg:DF (match_dup 2) 0)))
+   (set (subreg:DF (match_dup 0) 8)
+        (plus:DF (subreg:DF (match_dup 1) 8)
+                 (subreg:DF (match_dup 2) 8)))]
+  ""
   [(set (attr "type")
    (if_then_else (match_test "KV3_1")
                  (const_string "madd_fp4") (const_string "mult_fp4")))]
 )
 
-(define_insn "subdc3"
+(define_insn_and_split "subdc3"
   [(set (match_operand:DC 0 "register_operand" "=r")
         (minus:DC (match_operand:DC 1 "register_operand" "r")
                   (match_operand:DC 2 "register_operand" "r")))]
   ""
   "fsbfdc %0 = %2, %1"
+  "KV4 && reload_completed"
+  [(set (subreg:DF (match_dup 0) 0)
+        (minus:DF (subreg:DF (match_dup 1) 0)
+                  (subreg:DF (match_dup 2) 0)))
+   (set (subreg:DF (match_dup 0) 8)
+        (minus:DF (subreg:DF (match_dup 1) 8)
+                  (subreg:DF (match_dup 2) 8)))]
+  ""
   [(set (attr "type")
    (if_then_else (match_test "KV3_1")
                  (const_string "madd_fp4") (const_string "mult_fp4")))]
 )
 
-(define_insn "negdc2"
+(define_insn_and_split "negdc2"
   [(set (match_operand:DC 0 "register_operand" "=r")
         (neg:DC (match_operand:DC 1 "register_operand" "r")))]
   ""
   "fnegd %x0 = %x1\n\tfnegd %y0 = %y1"
+  "KV4 && reload_completed"
+  [(set (subreg:DF (match_dup 0) 0)
+        (neg:DF (subreg:DF (match_dup 1) 0)))
+   (set (subreg:DF (match_dup 0) 8)
+        (neg:DF (subreg:DF (match_dup 1) 8)))]
+  ""
   [(set_attr "type" "alu_thin_x2")
    (set_attr "length" "8")]
 )
@@ -4749,7 +4812,7 @@
   [(set (match_operand:DC 0 "register_operand" "=r")
         (plus:DC (conj:DC (match_operand:DC 1 "register_operand" "r"))
                  (match_operand:DC 2 "register_operand" "r")))]
-  ""
+  "KV3"
   "fadddc.c %0 = %1, %2"
   [(set (attr "type")
    (if_then_else (match_test "KV3_1")
@@ -4760,7 +4823,7 @@
   [(set (match_operand:DC 0 "register_operand" "=r")
         (minus:DC (match_operand:DC 1 "register_operand" "r")
                   (conj:DC (match_operand:DC 2 "register_operand" "r"))))]
-  ""
+  "KV3"
   "fsbfdc.c %0 = %2, %1"
   [(set (attr "type")
    (if_then_else (match_test "KV3_1")

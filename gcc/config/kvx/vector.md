@@ -2611,6 +2611,7 @@
   [(set_attr "type" "mult_int")]
 )
 
+
 ;; 64-bit complex
 
 ;; V64CI
@@ -2726,6 +2727,7 @@
       operands[2] = gen_reg_rtx (V2CHImode);
   }
 )
+
 
 ;; 128-bit complex
 
@@ -2882,6 +2884,7 @@
                   (subreg:CSI (match_dup 2) 8)))]
   ""
 )
+
 
 ;; S128I (V8HI V4SI)
 
@@ -4215,23 +4218,63 @@
                       (const_string "madd_int") (const_string "mult_int")))]
 )
 
-(define_insn "maddv4siv4si4_2"
+(define_insn_and_split "*maddv4siv4si4"
   [(set (match_operand:V4SI 0 "register_operand" "=r")
         (plus:V4SI (mult:V4SI (match_operand:V4SI 1 "register_operand" "r")
                               (match_operand:V4SI 2 "register_operand" "r"))
                    (match_operand:V4SI 3 "register_operand" "0")))]
   "(KV3_2||KV4)"
   "maddwq %0 = %1, %2"
+  "KV4 && reload_completed"
+  [(set (subreg:V2SI (match_dup 0) 0)
+        (plus:V2SI (mult:V2SI (subreg:V2SI (match_dup 1) 0)
+                              (subreg:V2SI (match_dup 2) 0))
+                   (subreg:V2SI (match_dup 3) 0)))
+   (set (subreg:V2SI (match_dup 0) 8)
+        (plus:V2SI (mult:V2SI (subreg:V2SI (match_dup 1) 8)
+                              (subreg:V2SI (match_dup 2) 8))
+                   (subreg:V2SI (match_dup 3) 8)))]
+  ""
   [(set_attr "type" "madd_int")]
 )
 
-(define_insn "msubv4siv4si4_2"
+(define_insn "*maddv2siv2si4"
+  [(set (match_operand:V2SI 0 "register_operand" "=r")
+        (plus:V2SI (mult:V2SI (match_operand:V2SI 1 "register_operand" "r")
+                              (match_operand:V2SI 2 "register_operand" "r"))
+                   (match_operand:V2SI 3 "register_operand" "0")))]
+  "KV4"
+  "maddwp %0 = %1, %2"
+  [(set_attr "type" "madd_int")]
+)
+
+(define_insn_and_split "*msubv4siv4si4"
   [(set (match_operand:V4SI 0 "register_operand" "=r")
         (minus:V4SI (match_operand:V4SI 3 "register_operand" "0")
                     (mult:V4SI (match_operand:V4SI 1 "register_operand" "r")
                                (match_operand:V4SI 2 "register_operand" "r"))))]
   "(KV3_2||KV4)"
   "msbfwq %0 = %1, %2"
+  "KV4 && reload_completed"
+  [(set (subreg:V2SI (match_dup 0) 0)
+        (minus:V2SI (subreg:V2SI (match_dup 3) 0)
+                    (mult:V2SI (subreg:V2SI (match_dup 1) 0)
+                               (subreg:V2SI (match_dup 2) 0))))
+   (set (subreg:V2SI (match_dup 0) 8)
+        (minus:V2SI (subreg:V2SI (match_dup 3) 8)
+                    (mult:V2SI (subreg:V2SI (match_dup 1) 8)
+                               (subreg:V2SI (match_dup 2) 8))))]
+  ""
+  [(set_attr "type" "madd_int")]
+)
+
+(define_insn "*msubv4siv4si4"
+  [(set (match_operand:V2SI 0 "register_operand" "=r")
+        (minus:V2SI (match_operand:V2SI 3 "register_operand" "0")
+                    (mult:V2SI (match_operand:V2SI 1 "register_operand" "r")
+                               (match_operand:V2SI 2 "register_operand" "r"))))]
+  "KV4"
+  "msbfwp %0 = %1, %2"
   [(set_attr "type" "madd_int")]
 )
 
@@ -6529,14 +6572,22 @@
   [(set_attr "type" "madd_int")]
 )
 
-(define_insn_and_split "maddv8siv8si4_2"
+(define_insn "maddv8siv8si4_2"
   [(set (match_operand:V8SI 0 "register_operand" "=r")
         (plus:V8SI (mult:V8SI (match_operand:V8SI 1 "register_operand" "r")
                               (match_operand:V8SI 2 "register_operand" "r"))
                    (match_operand:V8SI 3 "register_operand" "0")))]
   "(KV3_2||KV4)"
   "#"
-  "(KV3_2||KV4) && reload_completed"
+  [(set_attr "type" "madd_int")]
+)
+
+(define_split
+  [(set (match_operand:V8SI 0 "register_operand" "")
+        (plus:V8SI (mult:V8SI (match_operand:V8SI 1 "register_operand" "")
+                              (match_operand:V8SI 2 "register_operand" ""))
+                   (match_operand:V8SI 3 "register_operand" "")))]
+  "KV3_2 && reload_completed"
   [(set (subreg:V4SI (match_dup 0) 0)
         (plus:V4SI (mult:V4SI (subreg:V4SI (match_dup 1) 0)
                               (subreg:V4SI (match_dup 2) 0))
@@ -6546,17 +6597,49 @@
                               (subreg:V4SI (match_dup 2) 16))
                    (subreg:V4SI (match_dup 3) 16)))]
   ""
-  [(set_attr "type" "madd_int")]
 )
 
-(define_insn_and_split "msubv8siv8si4_2"
+(define_split
+  [(set (match_operand:V8SI 0 "register_operand" "")
+        (plus:V8SI (mult:V8SI (match_operand:V8SI 1 "register_operand" "")
+                              (match_operand:V8SI 2 "register_operand" ""))
+                   (match_operand:V8SI 3 "register_operand" "")))]
+  "KV4 && reload_completed"
+  [(set (subreg:V2SI (match_dup 0) 0)
+        (plus:V2SI (mult:V2SI (subreg:V2SI (match_dup 1) 0)
+                              (subreg:V2SI (match_dup 2) 0))
+                   (subreg:V2SI (match_dup 3) 0)))
+   (set (subreg:V2SI (match_dup 0) 8)
+        (plus:V2SI (mult:V2SI (subreg:V2SI (match_dup 1) 8)
+                              (subreg:V2SI (match_dup 2) 8))
+                   (subreg:V2SI (match_dup 3) 8)))
+   (set (subreg:V2SI (match_dup 0) 16)
+        (plus:V2SI (mult:V2SI (subreg:V2SI (match_dup 1) 16)
+                              (subreg:V2SI (match_dup 2) 16))
+                   (subreg:V2SI (match_dup 3) 16)))
+   (set (subreg:V2SI (match_dup 0) 24)
+        (plus:V2SI (mult:V2SI (subreg:V2SI (match_dup 1) 24)
+                              (subreg:V2SI (match_dup 2) 24))
+                   (subreg:V2SI (match_dup 3) 24)))]
+  ""
+)
+
+(define_insn "msubv8siv8si4_2"
   [(set (match_operand:V8SI 0 "register_operand" "=r")
         (minus:V8SI (match_operand:V8SI 3 "register_operand" "0")
                     (mult:V8SI (match_operand:V8SI 1 "register_operand" "r")
                                (match_operand:V8SI 2 "register_operand" "r"))))]
   "(KV3_2||KV4)"
   "#"
-  "(KV3_2||KV4) && reload_completed"
+  [(set_attr "type" "madd_int")]
+)
+
+(define_split
+  [(set (match_operand:V8SI 0 "register_operand" "")
+        (minus:V8SI (match_operand:V8SI 3 "register_operand" "")
+                    (mult:V8SI (match_operand:V8SI 1 "register_operand" "")
+                               (match_operand:V8SI 2 "register_operand" ""))))]
+  "KV3_2 && reload_completed"
   [(set (subreg:V4SI (match_dup 0) 0)
         (minus:V4SI (subreg:V4SI (match_dup 3) 0)
                     (mult:V4SI (subreg:V4SI (match_dup 1) 0)
@@ -6566,8 +6649,31 @@
                     (mult:V4SI (subreg:V4SI (match_dup 1) 16)
                                (subreg:V4SI (match_dup 2) 16))))]
   ""
-  [(set_attr "type" "madd_int")
-   (set_attr "length"      "8")]
+)
+
+(define_split
+  [(set (match_operand:V8SI 0 "register_operand" "")
+        (minus:V8SI (match_operand:V8SI 3 "register_operand" "")
+                    (mult:V8SI (match_operand:V8SI 1 "register_operand" "")
+                               (match_operand:V8SI 2 "register_operand" ""))))]
+  "KV4 && reload_completed"
+  [(set (subreg:V2SI (match_dup 0) 0)
+        (minus:V2SI (subreg:V2SI (match_dup 3) 0)
+                    (mult:V2SI (subreg:V2SI (match_dup 1) 0)
+                               (subreg:V2SI (match_dup 2) 0))))
+   (set (subreg:V2SI (match_dup 0) 8)
+        (minus:V2SI (subreg:V2SI (match_dup 3) 8)
+                    (mult:V2SI (subreg:V2SI (match_dup 1) 8)
+                               (subreg:V2SI (match_dup 2) 8))))
+   (set (subreg:V2SI (match_dup 0) 16)
+        (minus:V2SI (subreg:V2SI (match_dup 3) 16)
+                    (mult:V2SI (subreg:V2SI (match_dup 1) 16)
+                               (subreg:V2SI (match_dup 2) 16))))
+   (set (subreg:V2SI (match_dup 0) 24)
+        (minus:V2SI (subreg:V2SI (match_dup 3) 24)
+                    (mult:V2SI (subreg:V2SI (match_dup 1) 24)
+                               (subreg:V2SI (match_dup 2) 24))))]
+  ""
 )
 
 
@@ -6925,7 +7031,7 @@
         (unspec:SF [(match_operand:V2SF 1 "register_operand" "r")
                     (match_operand:V2SF 2 "register_operand" "r")
                     (match_operand 3 "" "")] UNSPEC_FDOT2))]
-  ""
+  "KV3"
   "fdot2w%3 %0 = %1, %2"
   [(set_attr "type" "mult_fp4")]
 )
@@ -6935,7 +7041,7 @@
         (unspec:DF [(match_operand:V2SF 1 "register_operand" "r")
                     (match_operand:V2SF 2 "register_operand" "r")
                     (match_operand 3 "" "")] UNSPEC_FDOT2))]
-  ""
+  "KV3"
   "fdot2wd%3 %0 = %1, %2"
   [(set_attr "type" "mult_fp4")]
 )
@@ -6945,7 +7051,7 @@
         (unspec:V2DF [(match_operand:V4SF 1 "register_operand" "r")
                       (match_operand:V4SF 2 "register_operand" "r")
                       (match_operand 3 "" "")] UNSPEC_FDOT2))]
-  ""
+  "KV3"
   "fdot2wdp%3 %0 = %1, %2"
   [(set (attr "type")
         (if_then_else (match_test "KV3_1")
@@ -6957,7 +7063,7 @@
         (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
                       (match_operand:V4SF 2 "register_operand" "r")
                       (match_operand 3 "" "")] UNSPEC_FDOT2))]
-  ""
+  "KV3"
   "fdot2wzp%3 %0 = %1, %2"
   [(set (attr "type")
         (if_then_else (match_test "KV3_1")
@@ -6968,7 +7074,11 @@
   [(set (match_operand:V2SF 0 "register_operand" "=r")
         (float:V2SF (match_operand:V2SI 1 "register_operand" "r")))]
   ""
-  "floatwp.rn %0 = %1, 0"
+  {
+    if (KV3)
+      return "floatwp.rn %0 = %1, 0";
+    return "floatwp.rn %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 
@@ -6976,7 +7086,11 @@
   [(set (match_operand:V2SF 0 "register_operand" "=r")
         (unsigned_float:V2SF (match_operand:V2SI 1 "register_operand" "r")))]
   ""
-  "floatuwp.rn %0 = %1, 0"
+  {
+    if (KV3)
+      return "floatuwp.rn %0 = %1, 0";
+    return "floatuwp.rn %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 
@@ -6984,7 +7098,11 @@
   [(set (match_operand:V2SI 0 "register_operand" "=r")
         (fix:V2SI (match_operand:V2SF 1 "register_operand" "r")))]
   ""
-  "fixedwp.rz %0 = %1, 0"
+  {
+    if (KV3)
+      return "fixedwp.rz %0 = %1, 0";
+    return "fixedwp.rz %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 
@@ -6992,7 +7110,11 @@
   [(set (match_operand:V2SI 0 "register_operand" "=r")
         (unsigned_fix:V2SI (match_operand:V2SF 1 "register_operand" "r")))]
   ""
-  "fixeduwp.rz %0 = %1, 0"
+  {
+    if (KV3)
+      return "fixeduwp.rz %0 = %1, 0";
+    return "fixeduwp.rz %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 
@@ -7280,29 +7402,14 @@
 
 ;; S128F (V8HF V4SF)
 
-(define_expand "fma<mode>4"
-  [(set (match_operand:S128F 0 "register_operand" "")
-        (fma:S128F (match_operand:S128F 1 "register_operand" "")
-                   (match_operand:S128F 2 "register_operand" "")
-                   (match_operand:S128F 3 "register_operand" "")))]
-  ""
-  {
-    if (KV3_1)
-      emit_insn (gen_fma<mode>4_1 (operands[0], operands[1], operands[2], operands[3]));
-    if ((KV3_2||KV4))
-      emit_insn (gen_fma<mode>4_2 (operands[0], operands[1], operands[2], operands[3]));
-    DONE;
-  }
-)
-
-(define_insn_and_split "fma<mode>4_1"
+(define_insn_and_split "fma<mode>4"
   [(set (match_operand:S128F 0 "register_operand" "=r")
         (fma:S128F (match_operand:S128F 1 "register_operand" "r")
                    (match_operand:S128F 2 "register_operand" "r")
                    (match_operand:S128F 3 "register_operand" "0")))]
-  "KV3_1"
-  "#"
-  "KV3_1 && reload_completed"
+  ""
+  "ffma<suffix> %0 = %1, %2"
+  "(KV3_1||KV4) && reload_completed"
   [(set (subreg:<CHUNK> (match_dup 0) 0)
         (fma:<CHUNK> (subreg:<CHUNK> (match_dup 1) 0)
                      (subreg:<CHUNK> (match_dup 2) 0)
@@ -7312,42 +7419,18 @@
                      (subreg:<CHUNK> (match_dup 2) 8)
                      (subreg:<CHUNK> (match_dup 3) 8)))]
   ""
-)
-
-(define_insn "fma<mode>4_2"
-  [(set (match_operand:S128F 0 "register_operand" "=r")
-        (fma:S128F (match_operand:S128F 1 "register_operand" "r")
-                   (match_operand:S128F 2 "register_operand" "r")
-                   (match_operand:S128F 3 "register_operand" "0")))]
-  "(KV3_2||KV4)"
-  "ffma<suffix> %0 = %1, %2"
   [(set (attr "type")
      (if_then_else (match_operand 1 "float16_inner_mode") (const_string "madd_fp3") (const_string "madd_fp4")))]
 )
 
-(define_expand "fnma<mode>4"
-  [(set (match_operand:S128F 0 "register_operand" "")
-        (fma:S128F (neg:S128F (match_operand:S128F 1 "register_operand" ""))
-                   (match_operand:S128F 2 "register_operand" "")
-                   (match_operand:S128F 3 "register_operand" "")))]
-  ""
-  {
-    if (KV3_1)
-      emit_insn (gen_fnma<mode>4_1 (operands[0], operands[1], operands[2], operands[3]));
-    if ((KV3_2||KV4))
-      emit_insn (gen_fnma<mode>4_2 (operands[0], operands[1], operands[2], operands[3]));
-    DONE;
-  }
-)
-
-(define_insn_and_split "fnma<mode>4_1"
+(define_insn_and_split "fnma<mode>4"
   [(set (match_operand:S128F 0 "register_operand" "=r")
         (fma:S128F (neg:S128F (match_operand:S128F 1 "register_operand" "r"))
                    (match_operand:S128F 2 "register_operand" "r")
                    (match_operand:S128F 3 "register_operand" "0")))]
-  "KV3_1"
-  "#"
-  "KV3_1 && reload_completed"
+  ""
+  "ffms<suffix> %0 = %1, %2"
+  "(KV3_1||KV4) && reload_completed"
   [(set (subreg:<CHUNK> (match_dup 0) 0)
         (fma:<CHUNK> (neg:<CHUNK> (subreg:<CHUNK> (match_dup 1) 0))
                      (subreg:<CHUNK> (match_dup 2) 0)
@@ -7357,15 +7440,6 @@
                      (subreg:<CHUNK> (match_dup 2) 8)
                      (subreg:<CHUNK> (match_dup 3) 8)))]
   ""
-)
-
-(define_insn "fnma<mode>4_2"
-  [(set (match_operand:S128F 0 "register_operand" "=r")
-        (fma:S128F (neg:S128F (match_operand:S128F 1 "register_operand" "r"))
-                   (match_operand:S128F 2 "register_operand" "r")
-                   (match_operand:S128F 3 "register_operand" "0")))]
-  "(KV3_2||KV4)"
-  "ffms<suffix> %0 = %1, %2"
   [(set (attr "type")
      (if_then_else (match_operand 1 "float16_inner_mode") (const_string "madd_fp3") (const_string "madd_fp4")))]
 )
@@ -7576,27 +7650,13 @@
 
 ;; V8HF
 
-(define_expand "addv8hf3"
-  [(set (match_operand:V8HF 0 "register_operand" "")
-        (plus:V8HF (match_operand:V8HF 1 "register_operand" "")
-                   (match_operand:V8HF 2 "register_operand" "")))]
-  ""
-  {
-    if (KV3_1)
-      emit_insn (gen_addv8hf3_1 (operands[0], operands[1], operands[2]));
-    if ((KV3_2||KV4))
-      emit_insn (gen_addv8hf3_2 (operands[0], operands[1], operands[2]));
-    DONE;
-  }
-)
-
-(define_insn_and_split "addv8hf3_1"
+(define_insn_and_split "addv8hf3"
   [(set (match_operand:V8HF 0 "register_operand" "=r")
         (plus:V8HF (match_operand:V8HF 1 "register_operand" "r")
                    (match_operand:V8HF 2 "register_operand" "r")))]
-  "KV3_1"
-  "#"
-  "KV3_1 && reload_completed"
+  ""
+  "faddho %0 = %1, %2"
+  "(KV3_1||KV4) && reload_completed"
   [(set (subreg:V4HF (match_dup 0) 0)
         (plus:V4HF (subreg:V4HF (match_dup 1) 0)
                    (subreg:V4HF (match_dup 2) 0)))
@@ -7604,38 +7664,16 @@
         (plus:V4HF (subreg:V4HF (match_dup 1) 8)
                    (subreg:V4HF (match_dup 2) 8)))]
   ""
-)
-
-(define_insn "addv8hf3_2"
-  [(set (match_operand:V8HF 0 "register_operand" "=r")
-        (plus:V8HF (match_operand:V8HF 1 "register_operand" "r")
-                   (match_operand:V8HF 2 "register_operand" "r")))]
-  "(KV3_2||KV4)"
-  "faddho %0 = %1, %2"
   [(set_attr "type" "madd_fp3")]
 )
 
-(define_expand "subv8hf3"
-  [(set (match_operand:V8HF 0 "register_operand" "")
-        (minus:V8HF (match_operand:V8HF 1 "register_operand" "")
-                    (match_operand:V8HF 2 "register_operand" "")))]
-  ""
-  {
-    if (KV3_1)
-      emit_insn (gen_subv8hf3_1 (operands[0], operands[1], operands[2]));
-    if ((KV3_2||KV4))
-      emit_insn (gen_subv8hf3_2 (operands[0], operands[1], operands[2]));
-    DONE;
-  }
-)
-
-(define_insn_and_split "subv8hf3_1"
+(define_insn_and_split "subv8hf3"
   [(set (match_operand:V8HF 0 "register_operand" "=r")
         (minus:V8HF (match_operand:V8HF 1 "register_operand" "r")
                     (match_operand:V8HF 2 "register_operand" "r")))]
-  "KV3_1"
-  "#"
-  "KV3_1 && reload_completed"
+  ""
+  "fsbfho %0 = %2, %1"
+  "(KV3_1||KV4) && reload_completed"
   [(set (subreg:V4HF (match_dup 0) 0)
         (minus:V4HF (subreg:V4HF (match_dup 1) 0)
                     (subreg:V4HF (match_dup 2) 0)))
@@ -7643,38 +7681,16 @@
         (minus:V4HF (subreg:V4HF (match_dup 1) 8)
                     (subreg:V4HF (match_dup 2) 8)))]
   ""
-)
-
-(define_insn "subv8hf3_2"
-  [(set (match_operand:V8HF 0 "register_operand" "=r")
-        (minus:V8HF (match_operand:V8HF 1 "register_operand" "r")
-                    (match_operand:V8HF 2 "register_operand" "r")))]
-  "(KV3_2||KV4)"
-  "fsbfho %0 = %2, %1"
   [(set_attr "type" "mult_fp3")]
 )
 
-(define_expand "mulv8hf3"
-  [(set (match_operand:V8HF 0 "register_operand" "")
-        (mult:V8HF (match_operand:V8HF 1 "register_operand" "")
-                   (match_operand:V8HF 2 "register_operand" "")))]
-  ""
-  {
-    if (KV3_1)
-      emit_insn (gen_mulv8hf3_1 (operands[0], operands[1], operands[2]));
-    if ((KV3_2||KV4))
-      emit_insn (gen_mulv8hf3_2 (operands[0], operands[1], operands[2]));
-    DONE;
-  }
-)
-
-(define_insn_and_split "mulv8hf3_1"
+(define_insn_and_split "mulv8hf3"
   [(set (match_operand:V8HF 0 "register_operand" "=r")
         (mult:V8HF (match_operand:V8HF 1 "register_operand" "r")
                    (match_operand:V8HF 2 "register_operand" "r")))]
-  "KV3_1"
-  "#"
-  "KV3_1 && reload_completed"
+  ""
+  "fmulho %0 = %1, %2"
+  "(KV3_1||KV4) && reload_completed"
   [(set (subreg:V4HF (match_dup 0) 0)
         (mult:V4HF (subreg:V4HF (match_dup 1) 0)
                    (subreg:V4HF (match_dup 2) 0)))
@@ -7682,14 +7698,6 @@
         (mult:V4HF (subreg:V4HF (match_dup 1) 8)
                    (subreg:V4HF (match_dup 2) 8)))]
   ""
-)
-
-(define_insn "mulv8hf3_2"
-  [(set (match_operand:V8HF 0 "register_operand" "=r")
-        (mult:V8HF (match_operand:V8HF 1 "register_operand" "r")
-                   (match_operand:V8HF 2 "register_operand" "r")))]
-  "(KV3_2||KV4)"
-  "fmulho %0 = %1, %2"
   [(set_attr "type" "mult_fp3")]
 )
 
@@ -7801,34 +7809,58 @@
   }
 )
 
-(define_insn "addv4sf3"
+(define_insn_and_split "addv4sf3"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (plus:V4SF (match_operand:V4SF 1 "register_operand" "r")
                    (match_operand:V4SF 2 "register_operand" "r")))]
   ""
   "faddwq %0 = %1, %2"
+  "KV4 && reload_completed"
+  [(set (subreg:V2SF (match_dup 0) 0)
+        (plus:V2SF (subreg:V2SF (match_dup 1) 0)
+                   (subreg:V2SF (match_dup 2) 0)))
+   (set (subreg:V2SF (match_dup 0) 8)
+        (plus:V2SF (subreg:V2SF (match_dup 1) 8)
+                   (subreg:V2SF (match_dup 2) 8)))]
+  ""
   [(set (attr "type")
         (if_then_else (match_test "KV3_1")
                       (const_string "madd_fp4") (const_string "mult_fp4")))]
 )
 
-(define_insn "subv4sf3"
+(define_insn_and_split "subv4sf3"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (minus:V4SF (match_operand:V4SF 1 "register_operand" "r")
                     (match_operand:V4SF 2 "register_operand" "r")))]
   ""
   "fsbfwq %0 = %2, %1"
+  "KV4 && reload_completed"
+  [(set (subreg:V2SF (match_dup 0) 0)
+        (minus:V2SF (subreg:V2SF (match_dup 1) 0)
+                    (subreg:V2SF (match_dup 2) 0)))
+   (set (subreg:V2SF (match_dup 0) 8)
+        (minus:V2SF (subreg:V2SF (match_dup 1) 8)
+                    (subreg:V2SF (match_dup 2) 8)))]
+  ""
   [(set (attr "type")
         (if_then_else (match_test "KV3_1")
                       (const_string "madd_fp4") (const_string "mult_fp4")))]
 )
 
-(define_insn "mulv4sf3"
+(define_insn_and_split "mulv4sf3"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (mult:V4SF (match_operand:V4SF 1 "register_operand" "r")
                    (match_operand:V4SF 2 "register_operand" "r")))]
   ""
   "fmulwq %0 = %1, %2"
+  "KV4 && reload_completed"
+  [(set (subreg:V2SF (match_dup 0) 0)
+        (mult:V2SF (subreg:V2SF (match_dup 1) 0)
+                   (subreg:V2SF (match_dup 2) 0)))
+   (set (subreg:V2SF (match_dup 0) 8)
+        (mult:V2SF (subreg:V2SF (match_dup 1) 8)
+                   (subreg:V2SF (match_dup 2) 8)))]
+  ""
   [(set (attr "type")
         (if_then_else (match_test "KV3_1")
                       (const_string "madd_fp4") (const_string "mult_fp4")))]
@@ -8013,23 +8045,39 @@
 
 ;; V2DF
 
-(define_insn "addv2df3"
+(define_insn_and_split "addv2df3"
   [(set (match_operand:V2DF 0 "register_operand" "=r")
         (plus:V2DF (match_operand:V2DF 1 "register_operand" "r")
                    (match_operand:V2DF 2 "register_operand" "r")))]
   ""
   "fadddp %0 = %1, %2"
+  "KV4 && reload_completed"
+  [(set (subreg:DF (match_dup 0) 0)
+        (plus:DF (subreg:DF (match_dup 1) 0)
+                 (subreg:DF (match_dup 2) 0)))
+   (set (subreg:DF (match_dup 0) 8)
+        (plus:DF (subreg:DF (match_dup 1) 8)
+                 (subreg:DF (match_dup 2) 8)))]
+  ""
   [(set (attr "type")
         (if_then_else (match_test "KV3_1")
                       (const_string "madd_fp4") (const_string "mult_fp4")))]
 )
 
-(define_insn "subv2df3"
+(define_insn_and_split "subv2df3"
   [(set (match_operand:V2DF 0 "register_operand" "=r")
         (minus:V2DF (match_operand:V2DF 1 "register_operand" "r")
                     (match_operand:V2DF 2 "register_operand" "r")))]
   ""
   "fsbfdp %0 = %2, %1"
+  "KV4 && reload_completed"
+  [(set (subreg:DF (match_dup 0) 0)
+        (minus:DF (subreg:DF (match_dup 1) 0)
+                  (subreg:DF (match_dup 2) 0)))
+   (set (subreg:DF (match_dup 0) 8)
+        (minus:DF (subreg:DF (match_dup 1) 8)
+                  (subreg:DF (match_dup 2) 8)))]
+  ""
   [(set (attr "type")
         (if_then_else (match_test "KV3_1")
                       (const_string "madd_fp4") (const_string "mult_fp4")))]
@@ -8092,13 +8140,14 @@
   [(set_attr "type" "madd_fp4")]
 )
 
+
 ;; V2SC
 
 (define_insn "addv2sc3"
   [(set (match_operand:V2SC 0 "register_operand" "=r")
         (plus:V2SC (match_operand:V2SC 1 "register_operand" "r")
                    (match_operand:V2SC 2 "register_operand" "r")))]
-  ""
+  "KV3"
   "faddwcp %0 = %1, %2"
   [(set (attr "type")
         (if_then_else (match_test "KV3_1")
@@ -8109,7 +8158,7 @@
   [(set (match_operand:V2SC 0 "register_operand" "=r")
         (minus:V2SC (match_operand:V2SC 1 "register_operand" "r")
                     (match_operand:V2SC 2 "register_operand" "r")))]
-  ""
+  "KV3"
   "fsbfwcp %0 = %2, %1"
   [(set (attr "type")
         (if_then_else (match_test "KV3_1")
@@ -8119,35 +8168,19 @@
 (define_insn "negv2sc2"
   [(set (match_operand:V2SC 0 "register_operand" "=r")
         (neg:V2SC (match_operand:V2SC 1 "register_operand" "r")))]
-  ""
+  "KV3"
   "fnegwp %x0 = %x1\n\tfnegwp %y0 = %y1"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length" "8")]
 )
 
-(define_expand "mulv2sc3"
+(define_insn_and_split "mulv2sc3"
   [(set (match_operand:V2SC 0 "register_operand" "=r")
         (mult:V2SC (match_operand:V2SC 1 "register_operand" "r")
                    (match_operand:V2SC 2 "register_operand" "r")))]
   ""
-  {
-    if (KV3_1)
-      emit_insn (gen_mulv2sc3_1 (operands[0], operands[1], operands[2]));
-    else if ((KV3_2||KV4))
-      emit_insn (gen_mulv2sc3_2 (operands[0], operands[1], operands[2]));
-    else
-      gcc_unreachable ();
-    DONE;
-  }
-)
-
-(define_insn_and_split "mulv2sc3_1"
-  [(set (match_operand:V2SC 0 "register_operand" "=r")
-        (mult:V2SC (match_operand:V2SC 1 "register_operand" "r")
-                   (match_operand:V2SC 2 "register_operand" "r")))]
-  "KV3_1"
-  "#"
-  "KV3_1 && reload_completed"
+  "fmulwcp %0 = %1, %2"
+  "(KV3_1||KV4) && reload_completed"
   [(set (subreg:SC (match_dup 0) 0)
         (mult:SC (subreg:SC (match_dup 1) 0)
                  (subreg:SC (match_dup 2) 0)))
@@ -8155,15 +8188,7 @@
         (mult:SC (subreg:SC (match_dup 1) 8)
                  (subreg:SC (match_dup 2) 8)))]
   ""
-)
-
-(define_insn "mulv2sc3_2"
-  [(set (match_operand:V2SC 0 "register_operand" "=r")
-        (mult:V2SC (match_operand:V2SC 1 "register_operand" "r")
-                 (match_operand:V2SC 2 "register_operand" "r")))]
-  "(KV3_2||KV4)"
-  "fmulwcp %0 = %1, %2"
-  [(set_attr "type" "mult_int")]
+  [(set_attr "type" "dmda_fp4")]
 )
 
 (define_insn "fmav2sc4"
@@ -8171,9 +8196,9 @@
         (fma:V2SC (match_operand:V2SC 1 "register_operand" "r")
                   (match_operand:V2SC 2 "register_operand" "r")
                   (match_operand:V2SC 3 "register_operand" "0")))]
-  "(KV3_2||KV4)"
+  "KV3_2"
   "ffmawcp %0 = %1, %2"
-  [(set_attr "type" "madd_fp4")]
+  [(set_attr "type" "dmda_fp4")]
 )
 
 (define_insn "fnmav2sc4"
@@ -8181,16 +8206,16 @@
         (fma:V2SC (neg:V2SC (match_operand:V2SC 1 "register_operand" "r"))
                   (match_operand:V2SC 2 "register_operand" "r")
                   (match_operand:V2SC 3 "register_operand" "0")))]
-  "(KV3_2||KV4)"
+  "KV3_2"
   "ffmswcp %0 = %1, %2"
-  [(set_attr "type" "madd_fp4")]
+  [(set_attr "type" "dmda_fp4")]
 )
 
 (define_insn "addconjv2sc3"
   [(set (match_operand:V2SC 0 "register_operand" "=r")
         (plus:V2SC (conj:V2SC (match_operand:V2SC 1 "register_operand" "r"))
                    (match_operand:V2SC 2 "register_operand" "r")))]
-  ""
+  "KV3"
   "faddwcp.c %0 = %1, %2"
   [(set (attr "type")
         (if_then_else (match_test "KV3_1")
@@ -8201,7 +8226,7 @@
   [(set (match_operand:V2SC 0 "register_operand" "=r")
         (minus:V2SC (match_operand:V2SC 1 "register_operand" "r")
                     (conj:V2SC (match_operand:V2SC 2 "register_operand" "r"))))]
-  ""
+  "KV3"
   "fsbfwcp.c %0 = %2, %1"
   [(set (attr "type")
         (if_then_else (match_test "KV3_1")
@@ -8244,9 +8269,9 @@
   [(set (match_operand:V2SC 0 "register_operand" "=r")
         (mult:V2SC (conj:V2SC (match_operand:V2SC 1 "register_operand" "r"))
                    (match_operand:V2SC 2 "register_operand" "r")))]
-  "(KV3_2||KV4)"
+  "KV3_2"
   "fmulwcp.c %0 = %1, %2"
-  [(set_attr "type" "mult_fp4")]
+  [(set_attr "type" "dmda_fp4")]
 )
 
 (define_insn "fmaconjv2sc4"
@@ -8254,9 +8279,9 @@
         (fma:V2SC (conj:V2SC (match_operand:V2SC 1 "register_operand" "r"))
                   (match_operand:V2SC 2 "register_operand" "r")
                   (match_operand:V2SC 3 "register_operand" "0")))]
-  "(KV3_2||KV4)"
+  "KV3_2"
   "ffmawcp.c %0 = %1, %2"
-  [(set_attr "type" "madd_fp4")]
+  [(set_attr "type" "dmda_fp4")]
 )
 
 (define_insn "fnmaconjv2sc4"
@@ -8264,9 +8289,9 @@
         (fma:V2SC (neg:V2SC (conj:V2SC (match_operand:V2SC 1 "register_operand" "r")))
                   (match_operand:V2SC 2 "register_operand" "r")
                   (match_operand:V2SC 3 "register_operand" "0")))]
-  "(KV3_2||KV4)"
+  "KV3_2"
   "ffmswcp.c %0 = %1, %2"
-  [(set_attr "type" "madd_fp4")]
+  [(set_attr "type" "dmda_fp4")]
 )
 
 (define_insn "conjv2sc2"
@@ -8277,6 +8302,7 @@
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length" "8")]
 )
+
 
 ;; S256F (V16HF V8SF)
 
@@ -8294,7 +8320,7 @@
         (fma:S256F (match_operand:S256F 1 "register_operand" "")
                    (match_operand:S256F 2 "register_operand" "")
                    (match_operand:S256F 3 "register_operand" "")))]
-  "KV3_1 && reload_completed"
+  "(KV3_1||KV4) && reload_completed"
   [(set (subreg:<CHUNK> (match_dup 0) 0)
         (fma:<CHUNK> (subreg:<CHUNK> (match_dup 1) 0)
                      (subreg:<CHUNK> (match_dup 2) 0)
@@ -8319,7 +8345,7 @@
         (fma:S256F (match_operand:S256F 1 "register_operand" "")
                    (match_operand:S256F 2 "register_operand" "")
                    (match_operand:S256F 3 "register_operand" "")))]
-  "(KV3_2||KV4) && reload_completed"
+  "KV3_2 && reload_completed"
   [(set (subreg:<HALF> (match_dup 0) 0)
         (fma:<HALF> (subreg:<HALF> (match_dup 1) 0)
                     (subreg:<HALF> (match_dup 2) 0)
@@ -8345,7 +8371,7 @@
         (fma:S256F (neg:S256F (match_operand:S256F 1 "register_operand" ""))
                    (match_operand:S256F 2 "register_operand" "")
                    (match_operand:S256F 3 "register_operand" "")))]
-  "KV3_1 && reload_completed"
+  "(KV3_1||KV4) && reload_completed"
   [(set (subreg:<CHUNK> (match_dup 0) 0)
         (fma:<CHUNK> (neg:<CHUNK> (subreg:<CHUNK> (match_dup 1) 0))
                      (subreg:<CHUNK> (match_dup 2) 0)
@@ -8370,7 +8396,7 @@
         (fma:S256F (neg:S256F (match_operand:S256F 1 "register_operand" ""))
                    (match_operand:S256F 2 "register_operand" "")
                    (match_operand:S256F 3 "register_operand" "")))]
-  "(KV3_2||KV4) && reload_completed"
+  "KV3_2 && reload_completed"
   [(set (subreg:<HALF> (match_dup 0) 0)
         (fma:<HALF> (neg:<HALF> (subreg:<HALF> (match_dup 1) 0))
                     (subreg:<HALF> (match_dup 2) 0)
@@ -8672,7 +8698,7 @@
   [(set (match_operand:V16HF 0 "register_operand" "")
         (plus:V16HF (match_operand:V16HF 1 "register_operand" "")
                    (match_operand:V16HF 2 "register_operand" "")))]
-  "KV3_1 && reload_completed"
+  "(KV3_1||KV4) && reload_completed"
   [(set (subreg:V4HF (match_dup 0) 0)
         (plus:V4HF (subreg:V4HF (match_dup 1) 0)
                    (subreg:V4HF (match_dup 2) 0)))
@@ -8692,7 +8718,7 @@
   [(set (match_operand:V16HF 0 "register_operand" "")
         (plus:V16HF (match_operand:V16HF 1 "register_operand" "")
                    (match_operand:V16HF 2 "register_operand" "")))]
-  "(KV3_2||KV4) && reload_completed"
+  "KV3_2 && reload_completed"
   [(set (subreg:V8HF (match_dup 0) 0)
         (plus:V8HF (subreg:V8HF (match_dup 1) 0)
                    (subreg:V8HF (match_dup 2) 0)))
@@ -8714,7 +8740,7 @@
   [(set (match_operand:V16HF 0 "register_operand" "")
         (minus:V16HF (match_operand:V16HF 1 "register_operand" "")
                     (match_operand:V16HF 2 "register_operand" "")))]
-  "KV3_1 && reload_completed"
+  "(KV3_1||KV4) && reload_completed"
   [(set (subreg:V4HF (match_dup 0) 0)
         (minus:V4HF (subreg:V4HF (match_dup 1) 0)
                     (subreg:V4HF (match_dup 2) 0)))
@@ -8734,7 +8760,7 @@
   [(set (match_operand:V16HF 0 "register_operand" "")
         (minus:V16HF (match_operand:V16HF 1 "register_operand" "")
                     (match_operand:V16HF 2 "register_operand" "")))]
-  "(KV3_2||KV4) && reload_completed"
+  "KV3_2 && reload_completed"
   [(set (subreg:V8HF (match_dup 0) 0)
         (minus:V8HF (subreg:V8HF (match_dup 1) 0)
                     (subreg:V8HF (match_dup 2) 0)))
@@ -8756,7 +8782,7 @@
   [(set (match_operand:V16HF 0 "register_operand" "")
         (mult:V16HF (match_operand:V16HF 1 "register_operand" "")
                    (match_operand:V16HF 2 "register_operand" "")))]
-  "KV3_1 && reload_completed"
+  "(KV3_1||KV4) && reload_completed"
   [(set (subreg:V4HF (match_dup 0) 0)
         (mult:V4HF (subreg:V4HF (match_dup 1) 0)
                    (subreg:V4HF (match_dup 2) 0)))
@@ -8776,7 +8802,7 @@
   [(set (match_operand:V16HF 0 "register_operand" "")
         (mult:V16HF (match_operand:V16HF 1 "register_operand" "")
                    (match_operand:V16HF 2 "register_operand" "")))]
-  "(KV3_2||KV4) && reload_completed"
+  "KV3_2 && reload_completed"
   [(set (subreg:V8HF (match_dup 0) 0)
         (mult:V8HF (subreg:V8HF (match_dup 1) 0)
                    (subreg:V8HF (match_dup 2) 0)))
@@ -8789,13 +8815,20 @@
 
 ;; V8SF
 
-(define_insn_and_split "addv8sf3"
+(define_insn "addv8sf3"
   [(set (match_operand:V8SF 0 "register_operand" "=r")
         (plus:V8SF (match_operand:V8SF 1 "register_operand" "r")
                    (match_operand:V8SF 2 "register_operand" "r")))]
   ""
   "#"
-  "reload_completed"
+  [(set_attr "type" "madd_fp4")]
+)
+
+(define_split
+  [(set (match_operand:V8SF 0 "register_operand" "")
+        (plus:V8SF (match_operand:V8SF 1 "register_operand" "")
+                   (match_operand:V8SF 2 "register_operand" "")))]
+  "KV3 && reload_completed"
   [(set (subreg:V4SF (match_dup 0) 0)
         (plus:V4SF (subreg:V4SF (match_dup 1) 0)
                    (subreg:V4SF (match_dup 2) 0)))
@@ -8803,16 +8836,42 @@
         (plus:V4SF (subreg:V4SF (match_dup 1) 16)
                    (subreg:V4SF (match_dup 2) 16)))]
   ""
-  [(set_attr "type" "madd_fp4")]
 )
 
-(define_insn_and_split "subv8sf3"
+(define_split
+  [(set (match_operand:V8SF 0 "register_operand" "")
+        (plus:V8SF (match_operand:V8SF 1 "register_operand" "")
+                   (match_operand:V8SF 2 "register_operand" "")))]
+  "KV4 && reload_completed"
+  [(set (subreg:V2SF (match_dup 0) 0)
+        (plus:V2SF (subreg:V2SF (match_dup 1) 0)
+                   (subreg:V2SF (match_dup 2) 0)))
+   (set (subreg:V2SF (match_dup 0) 8)
+        (plus:V2SF (subreg:V2SF (match_dup 1) 8)
+                   (subreg:V2SF (match_dup 2) 8)))
+   (set (subreg:V2SF (match_dup 0) 16)
+        (plus:V2SF (subreg:V2SF (match_dup 1) 16)
+                   (subreg:V2SF (match_dup 2) 16)))
+   (set (subreg:V2SF (match_dup 0) 24)
+        (plus:V2SF (subreg:V2SF (match_dup 1) 24)
+                   (subreg:V2SF (match_dup 2) 24)))]
+  ""
+)
+
+(define_insn "subv8sf3"
   [(set (match_operand:V8SF 0 "register_operand" "=r")
         (minus:V8SF (match_operand:V8SF 1 "register_operand" "r")
                     (match_operand:V8SF 2 "register_operand" "r")))]
   ""
   "#"
-  "reload_completed"
+  [(set_attr "type" "madd_fp4")]
+)
+
+(define_split
+  [(set (match_operand:V8SF 0 "register_operand" "")
+        (minus:V8SF (match_operand:V8SF 1 "register_operand" "")
+                    (match_operand:V8SF 2 "register_operand" "")))]
+  "KV3 && reload_completed"
   [(set (subreg:V4SF (match_dup 0) 0)
         (minus:V4SF (subreg:V4SF (match_dup 1) 0)
                     (subreg:V4SF (match_dup 2) 0)))
@@ -8820,16 +8879,42 @@
         (minus:V4SF (subreg:V4SF (match_dup 1) 16)
                     (subreg:V4SF (match_dup 2) 16)))]
   ""
-  [(set_attr "type" "madd_fp4")]
 )
 
-(define_insn_and_split "mulv8sf3"
+(define_split
+  [(set (match_operand:V8SF 0 "register_operand" "")
+        (minus:V8SF (match_operand:V8SF 1 "register_operand" "")
+                    (match_operand:V8SF 2 "register_operand" "")))]
+  "KV4 && reload_completed"
+  [(set (subreg:V2SF (match_dup 0) 0)
+        (minus:V2SF (subreg:V2SF (match_dup 1) 0)
+                    (subreg:V2SF (match_dup 2) 0)))
+   (set (subreg:V2SF (match_dup 0) 8)
+        (minus:V2SF (subreg:V2SF (match_dup 1) 8)
+                    (subreg:V2SF (match_dup 2) 8)))
+   (set (subreg:V2SF (match_dup 0) 16)
+        (minus:V2SF (subreg:V2SF (match_dup 1) 16)
+                    (subreg:V2SF (match_dup 2) 16)))
+   (set (subreg:V2SF (match_dup 0) 24)
+        (minus:V2SF (subreg:V2SF (match_dup 1) 24)
+                    (subreg:V2SF (match_dup 2) 24)))]
+  ""
+)
+
+(define_insn "mulv8sf3"
   [(set (match_operand:V8SF 0 "register_operand" "=r")
         (mult:V8SF (match_operand:V8SF 1 "register_operand" "r")
                    (match_operand:V8SF 2 "register_operand" "r")))]
   ""
   "#"
-  "reload_completed"
+  [(set_attr "type" "madd_fp4")]
+)
+
+(define_split
+  [(set (match_operand:V8SF 0 "register_operand" "")
+        (mult:V8SF (match_operand:V8SF 1 "register_operand" "")
+                   (match_operand:V8SF 2 "register_operand" "")))]
+  "KV3 && reload_completed"
   [(set (subreg:V4SF (match_dup 0) 0)
         (mult:V4SF (subreg:V4SF (match_dup 1) 0)
                    (subreg:V4SF (match_dup 2) 0)))
@@ -8837,7 +8922,26 @@
         (mult:V4SF (subreg:V4SF (match_dup 1) 16)
                    (subreg:V4SF (match_dup 2) 16)))]
   ""
-  [(set_attr "type" "madd_fp4")]
+)
+
+(define_split
+  [(set (match_operand:V8SF 0 "register_operand" "")
+        (mult:V8SF (match_operand:V8SF 1 "register_operand" "")
+                   (match_operand:V8SF 2 "register_operand" "")))]
+  "KV4 && reload_completed"
+  [(set (subreg:V2SF (match_dup 0) 0)
+        (mult:V2SF (subreg:V2SF (match_dup 1) 0)
+                   (subreg:V2SF (match_dup 2) 0)))
+   (set (subreg:V2SF (match_dup 0) 8)
+        (mult:V2SF (subreg:V2SF (match_dup 1) 8)
+                   (subreg:V2SF (match_dup 2) 8)))
+   (set (subreg:V2SF (match_dup 0) 16)
+        (mult:V2SF (subreg:V2SF (match_dup 1) 16)
+                   (subreg:V2SF (match_dup 2) 16)))
+   (set (subreg:V2SF (match_dup 0) 24)
+        (mult:V2SF (subreg:V2SF (match_dup 1) 24)
+                   (subreg:V2SF (match_dup 2) 24)))]
+  ""
 )
 
 (define_expand "floatv8hiv8sf2"
@@ -9051,13 +9155,20 @@
 
 ;; V4DF
 
-(define_insn_and_split "addv4df3"
+(define_insn "addv4df3"
   [(set (match_operand:V4DF 0 "register_operand" "=r")
         (plus:V4DF (match_operand:V4DF 1 "register_operand" "r")
                    (match_operand:V4DF 2 "register_operand" "r")))]
   ""
   "#"
-  "reload_completed"
+  [(set_attr "type" "madd_fp4")]
+)
+
+(define_split
+  [(set (match_operand:V4DF 0 "register_operand" "")
+        (plus:V4DF (match_operand:V4DF 1 "register_operand" "")
+                   (match_operand:V4DF 2 "register_operand" "")))]
+  "KV3 && reload_completed"
   [(set (subreg:V2DF (match_dup 0) 0)
         (plus:V2DF (subreg:V2DF (match_dup 1) 0)
                    (subreg:V2DF (match_dup 2) 0)))
@@ -9065,16 +9176,42 @@
         (plus:V2DF (subreg:V2DF (match_dup 1) 16)
                    (subreg:V2DF (match_dup 2) 16)))]
   ""
-  [(set_attr "type" "madd_fp4")]
 )
 
-(define_insn_and_split "subv4df3"
+(define_split
+  [(set (match_operand:V4DF 0 "register_operand" "")
+        (plus:V4DF (match_operand:V4DF 1 "register_operand" "")
+                   (match_operand:V4DF 2 "register_operand" "")))]
+  "KV4 && reload_completed"
+  [(set (subreg:DF (match_dup 0) 0)
+        (plus:DF (subreg:DF (match_dup 1) 0)
+                 (subreg:DF (match_dup 2) 0)))
+   (set (subreg:DF (match_dup 0) 8)
+        (plus:DF (subreg:DF (match_dup 1) 8)
+                 (subreg:DF (match_dup 2) 8)))
+   (set (subreg:DF (match_dup 0) 16)
+        (plus:DF (subreg:DF (match_dup 1) 16)
+                 (subreg:DF (match_dup 2) 16)))
+   (set (subreg:DF (match_dup 0) 24)
+        (plus:DF (subreg:DF (match_dup 1) 24)
+                 (subreg:DF (match_dup 2) 24)))]
+  ""
+)
+
+(define_insn "subv4df3"
   [(set (match_operand:V4DF 0 "register_operand" "=r")
         (minus:V4DF (match_operand:V4DF 1 "register_operand" "r")
                     (match_operand:V4DF 2 "register_operand" "r")))]
   ""
   "#"
-  "reload_completed"
+  [(set_attr "type" "madd_fp4")]
+)
+
+(define_split
+  [(set (match_operand:V4DF 0 "register_operand" "")
+        (minus:V4DF (match_operand:V4DF 1 "register_operand" "")
+                    (match_operand:V4DF 2 "register_operand" "")))]
+  "KV3 && reload_completed"
   [(set (subreg:V2DF (match_dup 0) 0)
         (minus:V2DF (subreg:V2DF (match_dup 1) 0)
                     (subreg:V2DF (match_dup 2) 0)))
@@ -9082,7 +9219,26 @@
         (minus:V2DF (subreg:V2DF (match_dup 1) 16)
                     (subreg:V2DF (match_dup 2) 16)))]
   ""
-  [(set_attr "type" "madd_fp4")]
+)
+
+(define_split
+  [(set (match_operand:V4DF 0 "register_operand" "")
+        (minus:V4DF (match_operand:V4DF 1 "register_operand" "")
+                    (match_operand:V4DF 2 "register_operand" "")))]
+  "KV4 && reload_completed"
+  [(set (subreg:DF (match_dup 0) 0)
+        (minus:DF (subreg:DF (match_dup 1) 0)
+                  (subreg:DF (match_dup 2) 0)))
+   (set (subreg:DF (match_dup 0) 8)
+        (minus:DF (subreg:DF (match_dup 1) 8)
+                  (subreg:DF (match_dup 2) 8)))
+   (set (subreg:DF (match_dup 0) 16)
+        (minus:DF (subreg:DF (match_dup 1) 16)
+                  (subreg:DF (match_dup 2) 16)))
+   (set (subreg:DF (match_dup 0) 24)
+        (minus:DF (subreg:DF (match_dup 1) 24)
+                  (subreg:DF (match_dup 2) 24)))]
+  ""
 )
 
 (define_insn_and_split "mulv4df3"

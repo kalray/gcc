@@ -2436,10 +2436,16 @@ build_floatings_arg (tree arg, const char *name)
     "", ".rn", ".ru", ".rd", ".rz",
     ".s", ".rn.s", ".ru.s", ".rd.s", ".rz.s",
   };
-  for (int i = 0; i < (int) (sizeof (table) / sizeof (*table)); i++)
+  unsigned n = sizeof (table) / sizeof (*table), m = n / 2;
+  for (int i = 0; i < (int) n; i++)
     {
       if (!strcmp (modifier, table[i]))
-	return gen_rtx_CONST_STRING (VOIDmode, table[i]);
+	{
+	  if (KV3)
+	    return gen_rtx_CONST_STRING (VOIDmode, table[i]);
+	  else
+	    return gen_rtx_CONST_STRING (VOIDmode, table[i % m]);
+	}
     }
   error ("%<__builtin_kvx_%s%> modifier %<%s%> not recognized", name, modifier);
   return 0;
@@ -2451,14 +2457,20 @@ build_conjugate_arg (tree arg, const char *name)
   const char *modifier = kvx_tree_string_constant (arg, name);
   static const char *table[] = {
     "", ".rn", ".ru", ".rd", ".rz",
-    ".s", ".rn.s", ".ru.s", ".rd.s", ".rz.s",
     ".c", ".c.rn", ".c.ru", ".c.rd", ".c.rz",
+    ".s", ".rn.s", ".ru.s", ".rd.s", ".rz.s",
     ".c.s", ".c.rn.s", ".c.ru.s", ".c.rd.s", ".c.rz.s",
   };
-  for (int i = 0; i < (int) (sizeof (table) / sizeof (*table)); i++)
+  unsigned n = sizeof (table) / sizeof (*table), m = n / 2;
+  for (int i = 0; i < (int) n; i++)
     {
       if (!strcmp (modifier, table[i]))
-	return gen_rtx_CONST_STRING (VOIDmode, table[i]);
+	{
+	  if (KV3)
+	    return gen_rtx_CONST_STRING (VOIDmode, table[i]);
+	  else
+	    return gen_rtx_CONST_STRING (VOIDmode, table[i % m]);
+	}
     }
   error ("%<__builtin_kvx_%s%> modifier %<%s%> not recognized", name, modifier);
   return 0;
@@ -2473,38 +2485,50 @@ build_transpose_arg (tree arg, const char *name)
     modifier += 3;
   static const char *table[] = {
     "", ".rn", ".ru", ".rd", ".rz",
-    ".s", ".rn.s", ".ru.s", ".rd.s", ".rz.s",
     ".tn", ".tn.rn", ".tn.ru", ".tn.rd", ".tn.rz",
-    ".tn.s", ".tn.rn.s", ".tn.ru.s", ".tn.rd.s", ".tn.rz.s",
     ".nt", ".nt.rn", ".nt.ru", ".nt.rd", ".nt.rz",
-    ".nt.s", ".nt.rn.s", ".nt.ru.s", ".nt.rd.s", ".nt.rz.s",
     ".tt", ".tt.rn", ".tt.ru", ".tt.rd", ".tt.rz",
+    ".s", ".rn.s", ".ru.s", ".rd.s", ".rz.s",
+    ".tn.s", ".tn.rn.s", ".tn.ru.s", ".tn.rd.s", ".tn.rz.s",
+    ".nt.s", ".nt.rn.s", ".nt.ru.s", ".nt.rd.s", ".nt.rz.s",
     ".tt.s", ".tt.rn.s", ".tt.ru.s", ".tt.rd.s", ".tt.rz.s",
   };
-  for (int i = 0; i < (int) (sizeof (table) / sizeof (*table)); i++)
+  unsigned n = sizeof (table) / sizeof (*table), m = n / 2;
+  for (int i = 0; i < (int) n; i++)
     {
       if (!strcmp (modifier, table[i]))
-	return gen_rtx_CONST_STRING (VOIDmode, table[i]);
+	{
+	  if (KV3)
+	    return gen_rtx_CONST_STRING (VOIDmode, table[i]);
+	  else
+	    return gen_rtx_CONST_STRING (VOIDmode, table[i % m]);
+	}
     }
   error ("%<__builtin_kvx_%s%> modifier %<%s%> not recognized", name, modifier);
   return 0;
 }
 
-static rtx
-build_silent_arg (tree arg, const char *name)
-{
-  const char *modifier = kvx_tree_string_constant (arg, name);
-  static const char *table[] = {
-    "", ".s",
-  };
-  for (int i = 0; i < (int) (sizeof (table) / sizeof (*table)); i++)
-    {
-      if (!strcmp (modifier, table[i]))
-	return gen_rtx_CONST_STRING (VOIDmode, table[i]);
-    }
-  error ("%<__builtin_kvx_%s%> modifier %<%s%> not recognized", name, modifier);
-  return 0;
-}
+  static rtx
+  build_silent_arg (tree arg, const char *name)
+  {
+    const char *modifier = kvx_tree_string_constant (arg, name);
+    static const char *table[] = {
+      "", ".s",
+    };
+    unsigned n = sizeof (table) / sizeof (*table), m = n / 2;
+    for (int i = 0; i < (int) n; i++)
+      {
+	if (!strcmp (modifier, table[i]))
+	  {
+	    if (KV3)
+	      return gen_rtx_CONST_STRING (VOIDmode, table[i]);
+	    else
+	      return gen_rtx_CONST_STRING (VOIDmode, table[i % m]);
+	  }
+      }
+    error ("%<__builtin_kvx_%s%> modifier %<%s%> not recognized", name, modifier);
+    return 0;
+  }
 
 static rtx
 build_variant_arg (tree arg, const char *name)
