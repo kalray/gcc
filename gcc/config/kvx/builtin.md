@@ -7918,7 +7918,7 @@
   [(set (match_operand:SI 0 "register_operand" "=r")
         (unspec:SI [(match_operand:DI 1 "register_operand" "r")] UNSPEC_READY))]
   ""
-  "ord %0 = %1, %1"
+  "iord %0 = %1, %1"
   [(set_attr "type" "alu_tiny_use")
    (set_attr "length"          "4")]
 )
@@ -7928,7 +7928,7 @@
         (unspec:SI [(match_operand:DI 1 "register_operand" "r")
                     (match_operand:DI 2 "register_operand" "r")] UNSPEC_READY))]
   ""
-  "ord %0 = %1, %2"
+  "iord %0 = %1, %2"
   [(set_attr "type" "alu_tiny_use")
    (set_attr "length"          "4")]
 )
@@ -7939,7 +7939,7 @@
                     (match_operand:DI 2 "register_operand" "r")
                     (match_operand:DI 3 "register_operand" "r")] UNSPEC_READY))]
   ""
-  "ord %0 = %1, %2\n\tord %0 = %3, %3"
+  "iord %0 = %1, %2\n\tiord %0 = %3, %3"
   [(set_attr "type" "alu_tiny_use_x2")
    (set_attr "length"             "8")]
 )
@@ -7951,7 +7951,7 @@
                     (match_operand:DI 3 "register_operand" "r")
                     (match_operand:DI 4 "register_operand" "r")] UNSPEC_READY))]
   ""
-  "ord %0 = %1, %2\n\tord %0 = %3, %4"
+  "iord %0 = %1, %2\n\tiord %0 = %3, %4"
   [(set_attr "type" "alu_tiny_use_x2")
    (set_attr "length"             "8")]
 )

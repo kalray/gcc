@@ -956,7 +956,7 @@
                            (match_operand:SIDI 2 "register_s32_operand" "r,B32"))
                  (const_int 0)))]
   ""
-  "lor<suffix> %0 = %1, %2"
+  "lior<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_lite,alu_lite_x")
    (set_attr "length" "     4,         8")]
 )
@@ -967,7 +967,7 @@
                            (match_operand:SIDI 2 "register_s32_operand" "r,B32"))
                  (const_int 0)))]
   ""
-  "lnor<suffix> %0 = %1, %2"
+  "lnior<suffix> %0 = %1, %2"
   [(set_attr "type" "alu_lite,alu_lite_x")
    (set_attr "length" "     4,         8")]
 )
@@ -1678,7 +1678,7 @@
         (ior:SI (match_operand:SI 1 "register_operand" "r,r,r")
                 (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i")))]
   ""
-  "orw %0 = %1, %2"
+  "iorw %0 = %1, %2"
   [(set_attr "type"   "alu_tiny,alu_tiny_w,alu_tiny_x")
    (set_attr "length" "4,       4,         8")]
 )
@@ -1688,7 +1688,7 @@
         (zero_extend:DI (ior:SI (match_operand:SI 1 "register_operand" "r,r,r")
                                 (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i"))))]
   ""
-  "orw %0 = %1, %2"
+  "iorw %0 = %1, %2"
   [(set_attr "type"   "alu_tiny,alu_tiny_w,alu_tiny_x")
    (set_attr "length" "4,       4,         8")]
 )
@@ -1698,7 +1698,7 @@
         (and:SI (not:SI (match_operand:SI 1 "register_operand" "r,r,r"))
                 (not:SI (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i"))))]
   ""
-  "norw %0 = %1, %2"
+  "niorw %0 = %1, %2"
   [(set_attr "type"   "alu_tiny,alu_tiny_w,alu_tiny_x")
    (set_attr "length" "4,       4,         8")]
 )
@@ -1708,7 +1708,7 @@
         (zero_extend:DI (and:SI (not:SI (match_operand:SI 1 "register_operand" "r,r,r"))
                                 (not:SI (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i")))))]
   ""
-  "norw %0 = %1, %2"
+  "niorw %0 = %1, %2"
   [(set_attr "type"   "alu_tiny,alu_tiny_w,alu_tiny_x")
    (set_attr "length" "4,       4,         8")]
 )
@@ -1718,7 +1718,7 @@
         (ior:SI (not:SI (match_operand:SI 1 "register_operand" "r,r,r"))
                 (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i")))]
   ""
-  "ornw %0 = %1, %2"
+  "iornw %0 = %1, %2"
   [(set_attr "type"   "alu_tiny,alu_tiny_w,alu_tiny_x")
    (set_attr "length" "4,       4,         8")]
 )
@@ -1728,7 +1728,7 @@
         (zero_extend:DI (ior:SI (not:SI (match_operand:SI 1 "register_operand" "r,r,r"))
                                 (match_operand:SI 2 "kvx_r_s10_s37_s64_operand" "r,I10,i"))))]
   ""
-  "ornw %0 = %1, %2"
+  "iornw %0 = %1, %2"
   [(set_attr "type"   "alu_tiny,alu_tiny_w,alu_tiny_x")
    (set_attr "length" "4,       4,         8")]
 )
@@ -3046,7 +3046,7 @@
         (ior:DI (match_operand:DI 1 "register_operand" "r,r,r,r")
                 (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")))]
   ""
-  "ord %0 = %1, %2"
+  "iord %0 = %1, %2"
   [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
    (set_attr "length" "4,4,8,12")]
 )
@@ -3056,7 +3056,7 @@
         (and:DI (not:DI (match_operand:DI 1 "register_operand" "r,r,r,r"))
                 (not:DI (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i"))))]
   ""
-  "nord %0 = %1, %2"
+  "niord %0 = %1, %2"
   [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
    (set_attr "length" "4,4,8,12")]
 )
@@ -3066,7 +3066,7 @@
         (ior:DI (not:DI (match_operand:DI 1 "register_operand" "r,r,r,r"))
                 (match_operand:DI 2 "kvx_r_s10_s37_s64_operand" "r,I10,B37,i")))]
   ""
-  "ornd %0 = %1, %2"
+  "iornd %0 = %1, %2"
   [(set_attr "type" "alu_tiny,alu_tiny,alu_tiny_x,alu_tiny_y")
    (set_attr "length" "4,4,8,12")]
 )
