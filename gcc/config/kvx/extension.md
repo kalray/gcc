@@ -2308,7 +2308,7 @@
         (ior:X256 (match_operand:X256 1 "register_operand" "x")
                   (match_operand:X256 2 "register_operand" "x")))]
   "(KV3_2||KV4)"
-  "xoro %0 = %1, %2"
+  "xioro %0 = %1, %2"
   [(set_attr "type" "tca_int")]
 )
 
@@ -2317,7 +2317,7 @@
         (and:X256 (not:X256 (match_operand:X256 1 "register_operand" "x"))
                   (not:X256 (match_operand:X256 2 "register_operand" "x"))))]
   "(KV3_2||KV4)"
-  "xnoro %0 = %1, %2"
+  "xnioro %0 = %1, %2"
   [(set_attr "type" "tca_int")]
 )
 
@@ -2326,7 +2326,7 @@
         (ior:X256 (not:X256 (match_operand:X256 1 "register_operand" "x"))
                   (match_operand:X256 2 "register_operand" "x")))]
   "(KV3_2||KV4)"
-  "xorno %0 = %1, %2"
+  "xiorno %0 = %1, %2"
   [(set_attr "type" "tca_int")]
 )
 

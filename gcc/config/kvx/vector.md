@@ -761,7 +761,7 @@
         (unspec:V8QI [(match_operand:V4HI 1 "register_operand" "r")
                       (match_operand:V4HI 2 "register_operand" "r")] UNSPEC_OROE))]
   ""
-  "ord %0 = %1, %2"
+  "iord %0 = %1, %2"
   [(set_attr "type" "alu_tiny")]
 )
 
@@ -770,7 +770,7 @@
         (unspec:V16QI [(match_operand:V8HI 1 "register_operand" "r")
                        (match_operand:V8HI 2 "register_operand" "r")] UNSPEC_OROE))]
   ""
-  "ord %x0 = %x1, %x2\n\tord %y0 = %y1, %y2"
+  "iord %x0 = %x1, %x2\n\tiord %y0 = %y1, %y2"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
 )
@@ -781,8 +781,8 @@
                        (match_operand:V16HI 2 "register_operand" "r")] UNSPEC_OROE))]
   ""
   {
-    return "ord %x0 = %x1, %x2\n\tord %y0 = %y1, %y2\n\t"
-           "ord %z0 = %z1, %z2\n\tord %t0 = %t1, %t2";
+    return "iord %x0 = %x1, %x2\n\tiord %y0 = %y1, %y2\n\t"
+           "iord %z0 = %z1, %z2\n\tiord %t0 = %t1, %t2";
   }
   [(set_attr "type" "alu_tiny_x4")
    (set_attr "length"        "16")]
@@ -2249,7 +2249,7 @@
         (ior:S64L (match_operand:S64L 1 "register_operand" "r")
                   (match_operand:S64L 2 "register_operand" "r")))]
   ""
-  "ord %0 = %1, %2"
+  "iord %0 = %1, %2"
   [(set_attr "type" "alu_tiny")]
 )
 
@@ -2258,7 +2258,7 @@
         (and:S64L (not:S64L (match_operand:S64L 1 "register_operand" "r"))
                   (not:S64L (match_operand:S64L 2 "register_operand" "r"))))]
   ""
-  "nord %0 = %1, %2"
+  "niord %0 = %1, %2"
   [(set_attr "type" "alu_tiny")]
 )
 
@@ -2267,7 +2267,7 @@
         (ior:S64L (not:S64L (match_operand:S64L 1 "register_operand" "r"))
                   (match_operand:S64L 2 "register_operand" "r")))]
   ""
-  "ornd %0 = %1, %2"
+  "iornd %0 = %1, %2"
   [(set_attr "type" "alu_tiny")]
 )
 
@@ -3669,7 +3669,7 @@
         (ior:V128L (match_operand:V128L 1 "register_operand" "r")
                    (match_operand:V128L 2 "register_operand" "r")))]
   ""
-  "ord %x0 = %x1, %x2\n\tord %y0 = %y1, %y2"
+  "iord %x0 = %x1, %x2\n\tiord %y0 = %y1, %y2"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
 )
@@ -3679,7 +3679,7 @@
         (and:V128L (not:V128L (match_operand:V128L 1 "register_operand" "r"))
                    (not:V128L (match_operand:V128L 2 "register_operand" "r"))))]
   ""
-  "nord %x0 = %x1, %x2\n\tnord %y0 = %y1, %y2"
+  "niord %x0 = %x1, %x2\n\tniord %y0 = %y1, %y2"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
 )
@@ -3689,7 +3689,7 @@
         (ior:V128L (not:V128L (match_operand:V128L 1 "register_operand" "r"))
                    (match_operand:V128L 2 "register_operand" "r")))]
   ""
-  "ornd %x0 = %x1, %x2\n\tornd %y0 = %y1, %y2"
+  "iornd %x0 = %x1, %x2\n\tiornd %y0 = %y1, %y2"
   [(set_attr "type" "alu_tiny_x2")
    (set_attr "length"         "8")]
 )
@@ -5641,8 +5641,8 @@
                    (match_operand:V256L 2 "register_operand" "r")))]
   ""
   {
-    return "ord %x0 = %x1, %x2\n\tord %y0 = %y1, %y2\n\t"
-           "ord %z0 = %z1, %z2\n\tord %t0 = %t1, %t2";
+    return "iord %x0 = %x1, %x2\n\tiord %y0 = %y1, %y2\n\t"
+           "iord %z0 = %z1, %z2\n\tiord %t0 = %t1, %t2";
   }
   [(set_attr "type" "alu_tiny_x4")
    (set_attr "length"        "16")]
@@ -5654,8 +5654,8 @@
                    (not:V256L (match_operand:V256L 2 "register_operand" "r"))))]
   ""
   {
-    return "nord %x0 = %x1, %x2\n\tnord %y0 = %y1, %y2\n\t"
-           "nord %z0 = %z1, %z2\n\tnord %t0 = %t1, %t2";
+    return "niord %x0 = %x1, %x2\n\tniord %y0 = %y1, %y2\n\t"
+           "niord %z0 = %z1, %z2\n\tniord %t0 = %t1, %t2";
   }
   [(set_attr "type" "alu_tiny_x4")
    (set_attr "length"        "16")]
@@ -5667,8 +5667,8 @@
                    (match_operand:V256L 2 "register_operand" "r")))]
   ""
   {
-    return "ornd %x0 = %x1, %x2\n\tornd %y0 = %y1, %y2\n\t"
-           "ornd %z0 = %z1, %z2\n\tornd %t0 = %t1, %t2";
+    return "iornd %x0 = %x1, %x2\n\tiornd %y0 = %y1, %y2\n\t"
+           "iornd %z0 = %z1, %z2\n\tiornd %t0 = %t1, %t2";
   }
   [(set_attr "type" "alu_tiny_x4")
    (set_attr "length"        "16")]
