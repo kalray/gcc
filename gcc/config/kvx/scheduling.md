@@ -161,8 +161,8 @@
 (define_reservation "kv4_lsu_memw_r" "(kv4_lsu0_r | kv4_lsu1_r) + kvx_tiny_r + kvx_memw_u + kvx_issue_r")
 (define_reservation "kv4_lsu_memw_x_r" "(kv4_lsu0_r | kv4_lsu1_r) + kvx_tiny_r + kvx_memw_u + kvx_issue_x2_r")
 (define_reservation "kv4_lsu_memw_y_r" "(kv4_lsu0_r | kv4_lsu1_r) + kvx_tiny_r + kvx_memw_u + kvx_issue_x3_r")
-(define_reservation "kv4_mau_r" "(kv4_mau0_r | kv4_mau1_r)+kvx_tca_u + kvx_issue_r")
-(define_reservation "kv4_mau_auxr_r" "(kv4_mau0_r | kv4_mau1_r)+kvx_tca_u + kvx_auxr_u + kvx_issue_r")
+;;(define_reservation "kv4_mau_r" "(kv4_mau0_r | kv4_mau1_r)+kvx_tca_u + kvx_issue_r")
+;;(define_reservation "kv4_mau_auxr_r" "(kv4_mau0_r | kv4_mau1_r)+kvx_tca_u + kvx_auxr_u + kvx_issue_r")
 (define_reservation "kv4_mau_auxw_r" "(kv4_mau0_r | kv4_mau1_r)+kvx_tca_u + kvx_auxw_u + kvx_issue_r")
 (define_reservation "kv4_mau_tca_r" "(kv4_mau0_r | kv4_mau1_r) + kvx_tca_u + kvx_issue_r")
 (define_reservation "kv4_nop_r" "kvx_issue_r")
@@ -243,12 +243,14 @@
 (define_insn_reservation "kv3_mult_int_y" 2 (and (eq_attr "type" "mult_int_y") (match_test "KV3")) "kv3_mau_y_r")
 (define_insn_reservation "kv3_mult_fp3" 3 (and (eq_attr "type" "mult_fp3") (match_test "KV3")) "kv3_mau_r")
 (define_insn_reservation "kv3_mult_fp4" 4 (and (eq_attr "type" "mult_fp4") (match_test "KV3")) "kv3_mau_r")
+(define_insn_reservation "kv3_dotp_fp4" 4 (and (eq_attr "type" "dotp_fp4") (match_test "KV3")) "kv3_mau_r")
 (define_insn_reservation "kv3_conv_fp4" 4 (and (eq_attr "type" "conv_fp4") (match_test "KV3")) "kv3_mau_r")
 (define_insn_reservation "kv3_madd_int" 2 (and (eq_attr "type" "madd_int") (match_test "KV3")) "kv3_mau_auxr_r")
 (define_insn_reservation "kv3_madd_int_x" 2 (and (eq_attr "type" "madd_int_x") (match_test "KV3")) "kv3_mau_auxr_x_r")
 (define_insn_reservation "kv3_madd_int_y" 2 (and (eq_attr "type" "madd_int_y") (match_test "KV3")) "kv3_mau_auxr_y_r")
 (define_insn_reservation "kv3_madd_fp3" 3 (and (eq_attr "type" "madd_fp3") (match_test "KV3")) "kvx_auxr_u + kv3_mau0_r + kvx_issue_r")
 (define_insn_reservation "kv3_madd_fp4" 4 (and (eq_attr "type" "madd_fp4") (match_test "KV3")) "kvx_auxr_u + kv3_mau0_r + kvx_issue_r")
+(define_insn_reservation "kv3_dmda_fp4" 4 (and (eq_attr "type" "dmda_fp4") (match_test "KV3")) "kvx_auxr_u + kv3_mau0_r + kvx_issue_r")
 (define_insn_reservation "kv3_bcu" 1 (and (eq_attr "type" "bcu") (match_test "KV3")) "kv3_bcu_r")
 (define_insn_reservation "kv3_bcu_get" 1 (and (eq_attr "type" "bcu_get") (match_test "KV3")) "kv3_bcu_tiny_tiny_mau_r")
 (define_insn_reservation "kv3_movef_copro" 3 (and (eq_attr "type" "movef_copro") (match_test "KV3")) "kv3_bcu_tiny_auxw_crrp_r")
@@ -332,14 +334,16 @@
 (define_insn_reservation "kv4_mult_int" 2 (and (eq_attr "type" "mult_int") (match_test "KV4")) "kv4_alu_lite_r")
 (define_insn_reservation "kv4_mult_int_x" 2 (and (eq_attr "type" "mult_int_x") (match_test "KV4")) "kv4_alu_lite_x_r")
 ;;
-(define_insn_reservation "kv4_mult_fp3" 3 (and (eq_attr "type" "mult_fp3") (match_test "KV4")) "kv4_mau_r")
-(define_insn_reservation "kv4_mult_fp4" 4 (and (eq_attr "type" "mult_fp4") (match_test "KV4")) "kv4_mau_r")
-(define_insn_reservation "kv4_conv_fp4" 4 (and (eq_attr "type" "conv_fp4") (match_test "KV4")) "kv4_mau_r")
+(define_insn_reservation "kv4_mult_fp3" 3 (and (eq_attr "type" "mult_fp3") (match_test "KV4")) "kv4_alu_lite_r")
+(define_insn_reservation "kv4_mult_fp4" 4 (and (eq_attr "type" "mult_fp4") (match_test "KV4")) "kv4_alu_lite_r")
+(define_insn_reservation "kv4_dotp_fp4" 4 (and (eq_attr "type" "dotp_fp4") (match_test "KV4")) "kv4_alu_full_r")
+(define_insn_reservation "kv4_conv_fp4" 4 (and (eq_attr "type" "conv_fp4") (match_test "KV4")) "kv4_alu_lite_r")
 (define_insn_reservation "kv4_madd_int" 2 (and (eq_attr "type" "madd_int") (match_test "KV4")) "kv4_alu_lite_r")
 (define_insn_reservation "kv4_madd_int_x" 2 (and (eq_attr "type" "madd_int_x") (match_test "KV4")) "kv4_alu_lite_x_r")
 (define_insn_reservation "kv4_madd_int_y" 2 (and (eq_attr "type" "madd_int_y") (match_test "KV4")) "kv4_alu_lite_y_r")
-(define_insn_reservation "kv4_madd_fp3" 3 (and (eq_attr "type" "madd_fp3") (match_test "KV4")) "kv4_mau_auxr_r")
-(define_insn_reservation "kv4_madd_fp4" 4 (and (eq_attr "type" "madd_fp4") (match_test "KV4")) "kv4_mau_auxr_r")
+(define_insn_reservation "kv4_madd_fp3" 3 (and (eq_attr "type" "madd_fp3") (match_test "KV4")) "kv4_alu_lite_r")
+(define_insn_reservation "kv4_madd_fp4" 4 (and (eq_attr "type" "madd_fp4") (match_test "KV4")) "kv4_alu_lite_r")
+(define_insn_reservation "kv4_dmda_fp4" 4 (and (eq_attr "type" "dmda_fp4") (match_test "KV4")) "kv4_alu_full_r")
 (define_insn_reservation "kv4_bcu" 1 (and (eq_attr "type" "bcu") (match_test "KV4")) "kv4_bcu_r")
 (define_insn_reservation "kv4_bcu_get" 1 (and (eq_attr "type" "bcu_get") (match_test "KV4")) "kv4_bcu_r")
 (define_insn_reservation "kv4_movef_copro" 3 (and (eq_attr "type" "movef_copro") (match_test "KV4")) "kv4_mau_auxw_r")
@@ -363,28 +367,28 @@
 (define_bypass 4 "kv3_mult_fp3*,kv3_madd_fp3*"
                  "kv3_bcu*"
                  "kvx_branch_tested_bypass_p")
-(define_bypass 5 "kv3_mult_fp4*,kv3_madd_fp4*"
+(define_bypass 5 "kv3_mult_fp4*,kv3_dotp_fp4*,kv3_conv_fp4*,kv3_madd_fp4*,kv3_dmda_fp4*"
                  "kv3_bcu*"
                  "kvx_branch_tested_bypass_p")
 ;; The stores read their input one cycle later than other execution units.
-(define_bypass 1 "kv3_mult_int*,kv3_madd_int*,kv4_mult_int*,kv4_madd_int*"
-                 "kv3_store_core*,kv4_store_core*"
+(define_bypass 1 "kv*_mult_int*,kv*_madd_int*"
+                 "kv*_store_core*"
                  "kvx_stored_value_bypass_p")
-(define_bypass 2 "kv3_mult_fp3*,kv3_madd_fp3*,kv4_mult_fp3*,kv4_madd_fp3*"
-                 "kv3_store_core*,kv4_store_core*"
+(define_bypass 2 "kv*_mult_fp3*,kv*_madd_fp3**"
+                 "kv*_store_core*"
                  "kvx_stored_value_bypass_p")
-(define_bypass 3 "kv3_mult_fp4*,kv3_madd_fp4*,kv4_mult_fp4*,kv4_madd_fp4*"
-                 "kv3_store_core*,kv4_store_core*"
+(define_bypass 3 "kv*_mult_fp4*,kv*_dotp_fp4*,kv*_conv_fp4*,kv*_madd_fp4*,kv*_dmda_fp4*"
+                 "kv*_store_core*"
                  "kvx_stored_value_bypass_p")
-(define_bypass 2 "kv3_load_core*,kv4_load_core*"
-                 "kv3_store_core*,kv4_store_core*"
+(define_bypass 2 "kv*_load_core*"
+                 "kv*_store_core*"
                  "kvx_stored_value_bypass_p")
 ;; The integer MAC accumulator reads its input cycle later than other execution units..
-(define_bypass 1 "kv3_mult_int*,kv3_madd_int*,kv4_mult_int*,kv4_madd_int*"
-                 "kv3_madd_int*,kv4_madd_int*"
+(define_bypass 1 "kv*_mult_int*,kv*_madd_int*"
+                 "kv*_madd_int*"
                  "kvx_accumulator_bypass_p")
-(define_bypass 2 "kv3_load_core*,kv4_load_core*"
-                 "kv3_madd_int*,kv4_madd_int*"
+(define_bypass 2 "kv*_load_core*"
+                 "kv*_madd_int*"
                  "kvx_accumulator_bypass_p")
 ;; The KV3 coprocessor has a bypass between the BILAU accumulations.
 (define_bypass 1 "kv3_tca_int"

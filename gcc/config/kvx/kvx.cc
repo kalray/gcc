@@ -6768,7 +6768,8 @@ kvx_insn_cost (rtx_insn *insn, bool speed)
       if (type == TYPE_MULT_FP3 || type == TYPE_MADD_FP3)
 	penalty = (3 - 1);
       if (type == TYPE_MULT_FP4 || type == TYPE_MADD_FP4
-	  || type == TYPE_CONV_FP4)
+	  || type == TYPE_CONV_FP4 || type == TYPE_DOTP_FP4
+	  || type == TYPE_DMDA_FP4)
 	penalty = (4 - 1);
       cost += kvx_type_mau_cost (1, penalty, speed);
     }

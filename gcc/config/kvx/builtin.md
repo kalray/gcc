@@ -3503,14 +3503,22 @@
   [(set_attr "type" "madd_fp4")]
 )
 
-(define_insn_and_split "kvx_fadddcp"
+(define_insn "kvx_fadddcp"
   [(set (match_operand:V4DF 0 "register_operand" "=r")
         (unspec:V4DF [(match_operand:V4DF 1 "register_operand" "r")
                       (match_operand:V4DF 2 "register_operand" "r")
                       (match_operand 3 "" "")] UNSPEC_FADD))]
   ""
   "#"
-  "reload_completed"
+  [(set_attr "type" "madd_fp4")]
+)
+
+(define_split
+  [(set (match_operand:V4DF 0 "register_operand" "")
+        (unspec:V4DF [(match_operand:V4DF 1 "register_operand" "")
+                      (match_operand:V4DF 2 "register_operand" "")
+                      (match_operand 3 "" "")] UNSPEC_FADD))]
+  "KV3 && reload_completed"
   [(set (subreg:V2DF (match_dup 0) 0)
         (unspec:V2DF [(subreg:V2DF (match_dup 1) 0)
                       (subreg:V2DF (match_dup 2) 0)
@@ -3520,7 +3528,31 @@
                       (subreg:V2DF (match_dup 2) 16)
                       (match_dup 3)] UNSPEC_FADD))]
   ""
-  [(set_attr "type" "madd_fp4")]
+)
+
+(define_split
+  [(set (match_operand:V4DF 0 "register_operand" "")
+        (unspec:V4DF [(match_operand:V4DF 1 "register_operand" "")
+                      (match_operand:V4DF 2 "register_operand" "")
+                      (match_operand 3 "" "")] UNSPEC_FADD))]
+  "KV4 && reload_completed"
+  [(set (subreg:DF (match_dup 0) 0)
+        (unspec:DF [(subreg:DF (match_dup 1) 0)
+                    (subreg:DF (match_dup 2) 0)
+                    (match_dup 3)] UNSPEC_FADD))
+   (set (subreg:DF (match_dup 0) 8)
+        (unspec:DF [(subreg:DF (match_dup 1) 8)
+                    (subreg:DF (match_dup 2) 8)
+                    (match_dup 3)] UNSPEC_FADD))
+   (set (subreg:DF (match_dup 0) 16)
+        (unspec:DF [(subreg:DF (match_dup 1) 16)
+                    (subreg:DF (match_dup 2) 16)
+                    (match_dup 3)] UNSPEC_FADD))
+   (set (subreg:DF (match_dup 0) 24)
+        (unspec:DF [(subreg:DF (match_dup 1) 24)
+                    (subreg:DF (match_dup 2) 24)
+                    (match_dup 3)] UNSPEC_FADD))]
+  ""
 )
 
 (define_insn_and_split "kvx_fadddcq"
@@ -3551,14 +3583,22 @@
   [(set_attr "type" "madd_fp4")]
 )
 
-(define_insn_and_split "kvx_faddwcq"
+(define_insn "kvx_faddwcq"
   [(set (match_operand:V8SF 0 "register_operand" "=r")
         (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "r")
                       (match_operand:V8SF 2 "register_operand" "r")
                       (match_operand 3 "" "")] UNSPEC_FADD))]
   ""
   "#"
-  "reload_completed"
+  [(set_attr "type" "madd_fp4")]
+)
+
+(define_split
+  [(set (match_operand:V8SF 0 "register_operand" "")
+        (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "")
+                      (match_operand:V8SF 2 "register_operand" "")
+                      (match_operand 3 "" "")] UNSPEC_FADD))]
+  "KV3 && reload_completed"
   [(set (subreg:V4SF (match_dup 0) 0)
         (unspec:V4SF [(subreg:V4SF (match_dup 1) 0)
                       (subreg:V4SF (match_dup 2) 0)
@@ -3568,7 +3608,31 @@
                       (subreg:V4SF (match_dup 2) 16)
                       (match_dup 3)] UNSPEC_FADD))]
   ""
-  [(set_attr "type" "madd_fp4")]
+)
+
+(define_split
+  [(set (match_operand:V8SF 0 "register_operand" "")
+        (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "")
+                      (match_operand:V8SF 2 "register_operand" "")
+                      (match_operand 3 "" "")] UNSPEC_FADD))]
+  "KV4 && reload_completed"
+  [(set (subreg:V2SF (match_dup 0) 0)
+        (unspec:V2SF [(subreg:V2SF (match_dup 1) 0)
+                      (subreg:V2SF (match_dup 2) 0)
+                      (match_dup 3)] UNSPEC_FADD))
+   (set (subreg:V2SF (match_dup 0) 8)
+        (unspec:V2SF [(subreg:V2SF (match_dup 1) 8)
+                      (subreg:V2SF (match_dup 2) 8)
+                      (match_dup 3)] UNSPEC_FADD))
+   (set (subreg:V2SF (match_dup 0) 16)
+        (unspec:V2SF [(subreg:V2SF (match_dup 1) 16)
+                      (subreg:V2SF (match_dup 2) 16)
+                      (match_dup 3)] UNSPEC_FADD))
+   (set (subreg:V2SF (match_dup 0) 24)
+        (unspec:V2SF [(subreg:V2SF (match_dup 1) 24)
+                      (subreg:V2SF (match_dup 2) 24)
+                      (match_dup 3)] UNSPEC_FADD))]
+  ""
 )
 
 ;; FADD*
@@ -3614,23 +3678,14 @@
      (if_then_else (match_operand 1 "float16_inner_mode") (const_string "mult_fp3") (const_string "mult_fp4")))]
 )
 
-(define_expand "kvx_faddho"
-  [(set (match_operand:V8HF 0 "register_operand" "")
-        (unspec:V8HF [(match_operand:V8HF 1 "register_operand" "")
-                      (match_operand:V8HF 2 "register_operand" "")
-                      (match_operand 3 "" "")] UNSPEC_FADD))]
-  ""
-  ""
-)
-
-(define_insn_and_split "kvx_faddho_1"
+(define_insn_and_split "kvx_faddho"
   [(set (match_operand:V8HF 0 "register_operand" "=r")
         (unspec:V8HF [(match_operand:V8HF 1 "register_operand" "r")
                       (match_operand:V8HF 2 "register_operand" "r")
                       (match_operand 3 "" "")] UNSPEC_FADD))]
-  "KV3_1"
-  "#"
-  "KV3_1 && reload_completed"
+  ""
+  "faddho%3 %0 = %1, %2"
+  "(KV3_1||KV4) && reload_completed"
   [(set (subreg:V4HF (match_dup 0) 0)
         (unspec:V4HF [(subreg:V4HF (match_dup 1) 0)
                       (subreg:V4HF (match_dup 2) 0)
@@ -3640,37 +3695,48 @@
                       (subreg:V4HF (match_dup 2) 8)
                       (match_dup 3)] UNSPEC_FADD))]
   ""
-)
-
-(define_insn "kvx_faddho_2"
-  [(set (match_operand:V8HF 0 "register_operand" "=r")
-        (unspec:V8HF [(match_operand:V8HF 1 "register_operand" "r")
-                      (match_operand:V8HF 2 "register_operand" "r")
-                      (match_operand 3 "" "")] UNSPEC_FADD))]
-  "(KV3_2||KV4)"
-  "faddho%3 %0 = %1, %2"
   [(set_attr "type" "madd_fp3")]
 )
 
-(define_insn "kvx_faddwq"
+(define_insn_and_split "kvx_faddwq"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
                       (match_operand:V4SF 2 "register_operand" "r")
                       (match_operand 3 "" "")] UNSPEC_FADD))]
   ""
   "faddwq%3 %0 = %1, %2"
+  "KV4 && reload_completed"
+  [(set (subreg:V2SF (match_dup 0) 0)
+        (unspec:V2SF [(subreg:V2SF (match_dup 1) 0)
+                      (subreg:V2SF (match_dup 2) 0)
+                      (match_dup 3)] UNSPEC_FADD))
+   (set (subreg:V2SF (match_dup 0) 8)
+        (unspec:V2SF [(subreg:V2SF (match_dup 1) 8)
+                      (subreg:V2SF (match_dup 2) 8)
+                      (match_dup 3)] UNSPEC_FADD))]
+  ""
   [(set (attr "type")
         (if_then_else (match_test "KV3_1")
                       (const_string "madd_fp4") (const_string "mult_fp4")))]
 )
 
-(define_insn "kvx_fadddp"
+(define_insn_and_split "kvx_fadddp"
   [(set (match_operand:V2DF 0 "register_operand" "=r")
         (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")
                       (match_operand:V2DF 2 "register_operand" "r")
                       (match_operand 3 "" "")] UNSPEC_FADD))]
   ""
   "fadddp%3 %0 = %1, %2"
+  "KV4 && reload_completed"
+  [(set (subreg:DF (match_dup 0) 0)
+        (unspec:DF [(subreg:DF (match_dup 1) 0)
+                    (subreg:DF (match_dup 2) 0)
+                    (match_dup 3)] UNSPEC_FADD))
+   (set (subreg:DF (match_dup 0) 8)
+        (unspec:DF [(subreg:DF (match_dup 1) 8)
+                    (subreg:DF (match_dup 2) 8)
+                    (match_dup 3)] UNSPEC_FADD))]
+  ""
   [(set (attr "type")
         (if_then_else (match_test "KV3_1")
                       (const_string "madd_fp4") (const_string "mult_fp4")))]
@@ -3683,6 +3749,7 @@
                       (match_operand 3 "" "")] UNSPEC_FADD))]
   ""
   "#"
+  [(set_attr "type" "madd_fp4")]
 )
 
 (define_split
@@ -3690,7 +3757,7 @@
         (unspec:V16HF [(match_operand:V16HF 1 "register_operand" "")
                       (match_operand:V16HF 2 "register_operand" "")
                       (match_operand 3 "" "")] UNSPEC_FADD))]
-  "KV3_1 && reload_completed"
+  "(KV3_1||KV4) && reload_completed"
   [(set (subreg:V4HF (match_dup 0) 0)
         (unspec:V4HF [(subreg:V4HF (match_dup 1) 0)
                       (subreg:V4HF (match_dup 2) 0)
@@ -3715,7 +3782,7 @@
         (unspec:V16HF [(match_operand:V16HF 1 "register_operand" "")
                       (match_operand:V16HF 2 "register_operand" "")
                       (match_operand 3 "" "")] UNSPEC_FADD))]
-  "(KV3_2||KV4) && reload_completed"
+  "KV3_2 && reload_completed"
   [(set (subreg:V8HF (match_dup 0) 0)
         (unspec:V8HF [(subreg:V8HF (match_dup 1) 0)
                       (subreg:V8HF (match_dup 2) 0)
@@ -3727,14 +3794,22 @@
   ""
 )
 
-(define_insn_and_split "kvx_faddwo"
+(define_insn "kvx_faddwo"
   [(set (match_operand:V8SF 0 "register_operand" "=r")
         (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "r")
                       (match_operand:V8SF 2 "register_operand" "r")
                       (match_operand 3 "" "")] UNSPEC_FADD))]
   ""
   "#"
-  "reload_completed"
+  [(set_attr "type" "madd_fp4")]
+)
+
+(define_split
+  [(set (match_operand:V8SF 0 "register_operand" "")
+        (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "")
+                      (match_operand:V8SF 2 "register_operand" "")
+                      (match_operand 3 "" "")] UNSPEC_FADD))]
+  "KV3 && reload_completed"
   [(set (subreg:V4SF (match_dup 0) 0)
         (unspec:V4SF [(subreg:V4SF (match_dup 1) 0)
                       (subreg:V4SF (match_dup 2) 0)
@@ -3744,17 +3819,49 @@
                       (subreg:V4SF (match_dup 2) 16)
                       (match_dup 3)] UNSPEC_FADD))]
   ""
-  [(set_attr "type" "madd_fp4")]
 )
 
-(define_insn_and_split "kvx_fadddq"
+(define_split
+  [(set (match_operand:V8SF 0 "register_operand" "")
+        (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "")
+                      (match_operand:V8SF 2 "register_operand" "")
+                      (match_operand 3 "" "")] UNSPEC_FADD))]
+  "KV4 && reload_completed"
+  [(set (subreg:V2SF (match_dup 0) 0)
+        (unspec:V2SF [(subreg:V2SF (match_dup 1) 0)
+                      (subreg:V2SF (match_dup 2) 0)
+                      (match_dup 3)] UNSPEC_FADD))
+   (set (subreg:V2SF (match_dup 0) 8)
+        (unspec:V2SF [(subreg:V2SF (match_dup 1) 8)
+                      (subreg:V2SF (match_dup 2) 8)
+                      (match_dup 3)] UNSPEC_FADD))
+   (set (subreg:V2SF (match_dup 0) 16)
+        (unspec:V2SF [(subreg:V2SF (match_dup 1) 16)
+                      (subreg:V2SF (match_dup 2) 16)
+                      (match_dup 3)] UNSPEC_FADD))
+   (set (subreg:V2SF (match_dup 0) 24)
+        (unspec:V2SF [(subreg:V2SF (match_dup 1) 24)
+                      (subreg:V2SF (match_dup 2) 24)
+                      (match_dup 3)] UNSPEC_FADD))]
+  ""
+)
+
+(define_insn "kvx_fadddq"
   [(set (match_operand:V4DF 0 "register_operand" "=r")
         (unspec:V4DF [(match_operand:V4DF 1 "register_operand" "r")
                       (match_operand:V4DF 2 "register_operand" "r")
                       (match_operand 3 "" "")] UNSPEC_FADD))]
   ""
   "#"
-  "reload_completed"
+  [(set_attr "type" "madd_fp4")]
+)
+
+(define_split
+  [(set (match_operand:V4DF 0 "register_operand" "")
+        (unspec:V4DF [(match_operand:V4DF 1 "register_operand" "")
+                      (match_operand:V4DF 2 "register_operand" "")
+                      (match_operand 3 "" "")] UNSPEC_FADD))]
+  "KV3 && reload_completed"
   [(set (subreg:V2DF (match_dup 0) 0)
         (unspec:V2DF [(subreg:V2DF (match_dup 1) 0)
                       (subreg:V2DF (match_dup 2) 0)
@@ -3764,7 +3871,31 @@
                       (subreg:V2DF (match_dup 2) 16)
                       (match_dup 3)] UNSPEC_FADD))]
   ""
-  [(set_attr "type" "madd_fp4")]
+)
+
+(define_split
+  [(set (match_operand:V4DF 0 "register_operand" "")
+        (unspec:V4DF [(match_operand:V4DF 1 "register_operand" "")
+                      (match_operand:V4DF 2 "register_operand" "")
+                      (match_operand 3 "" "")] UNSPEC_FADD))]
+  "KV4 && reload_completed"
+  [(set (subreg:DF (match_dup 0) 0)
+        (unspec:DF [(subreg:DF (match_dup 1) 0)
+                    (subreg:DF (match_dup 2) 0)
+                    (match_dup 3)] UNSPEC_FADD))
+   (set (subreg:DF (match_dup 0) 8)
+        (unspec:DF [(subreg:DF (match_dup 1) 8)
+                    (subreg:DF (match_dup 2) 8)
+                    (match_dup 3)] UNSPEC_FADD))
+   (set (subreg:DF (match_dup 0) 16)
+        (unspec:DF [(subreg:DF (match_dup 1) 16)
+                    (subreg:DF (match_dup 2) 16)
+                    (match_dup 3)] UNSPEC_FADD))
+   (set (subreg:DF (match_dup 0) 24)
+        (unspec:DF [(subreg:DF (match_dup 1) 24)
+                    (subreg:DF (match_dup 2) 24)
+                    (match_dup 3)] UNSPEC_FADD))]
+  ""
 )
 
 ;; FSBF*C
@@ -3799,14 +3930,22 @@
   [(set_attr "type" "madd_fp4")]
 )
 
-(define_insn_and_split "kvx_fsbfdcp"
+(define_insn "kvx_fsbfdcp"
   [(set (match_operand:V4DF 0 "register_operand" "=r")
         (unspec:V4DF [(match_operand:V4DF 1 "register_operand" "r")
                       (match_operand:V4DF 2 "register_operand" "r")
                       (match_operand 3 "" "")] UNSPEC_FSBF))]
   ""
   "#"
-  "reload_completed"
+  [(set_attr "type" "madd_fp4")]
+)
+
+(define_split
+  [(set (match_operand:V4DF 0 "register_operand" "")
+        (unspec:V4DF [(match_operand:V4DF 1 "register_operand" "")
+                      (match_operand:V4DF 2 "register_operand" "")
+                      (match_operand 3 "" "")] UNSPEC_FSBF))]
+  "KV3 && reload_completed"
   [(set (subreg:V2DF (match_dup 0) 0)
         (unspec:V2DF [(subreg:V2DF (match_dup 1) 0)
                       (subreg:V2DF (match_dup 2) 0)
@@ -3816,7 +3955,31 @@
                       (subreg:V2DF (match_dup 2) 16)
                       (match_dup 3)] UNSPEC_FSBF))]
   ""
-  [(set_attr "type" "madd_fp4")]
+)
+
+(define_split
+  [(set (match_operand:V4DF 0 "register_operand" "")
+        (unspec:V4DF [(match_operand:V4DF 1 "register_operand" "")
+                      (match_operand:V4DF 2 "register_operand" "")
+                      (match_operand 3 "" "")] UNSPEC_FSBF))]
+  "KV4 && reload_completed"
+  [(set (subreg:DF (match_dup 0) 0)
+        (unspec:DF [(subreg:DF (match_dup 1) 0)
+                    (subreg:DF (match_dup 2) 0)
+                    (match_dup 3)] UNSPEC_FSBF))
+   (set (subreg:DF (match_dup 0) 8)
+        (unspec:DF [(subreg:DF (match_dup 1) 8)
+                    (subreg:DF (match_dup 2) 8)
+                    (match_dup 3)] UNSPEC_FSBF))
+   (set (subreg:DF (match_dup 0) 16)
+        (unspec:DF [(subreg:DF (match_dup 1) 16)
+                    (subreg:DF (match_dup 2) 16)
+                    (match_dup 3)] UNSPEC_FSBF))
+   (set (subreg:DF (match_dup 0) 24)
+        (unspec:DF [(subreg:DF (match_dup 1) 24)
+                    (subreg:DF (match_dup 2) 24)
+                    (match_dup 3)] UNSPEC_FSBF))]
+  ""
 )
 
 (define_insn_and_split "kvx_fsbfdcq"
@@ -3847,14 +4010,22 @@
   [(set_attr "type" "madd_fp4")]
 )
 
-(define_insn_and_split "kvx_fsbfwcq"
+(define_insn "kvx_fsbfwcq"
   [(set (match_operand:V8SF 0 "register_operand" "=r")
         (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "r")
                       (match_operand:V8SF 2 "register_operand" "r")
                       (match_operand 3 "" "")] UNSPEC_FSBF))]
   ""
   "#"
-  "reload_completed"
+  [(set_attr "type" "madd_fp4")]
+)
+
+(define_split
+  [(set (match_operand:V8SF 0 "register_operand" "")
+        (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "")
+                      (match_operand:V8SF 2 "register_operand" "")
+                      (match_operand 3 "" "")] UNSPEC_FSBF))]
+  "KV3 && reload_completed"
   [(set (subreg:V4SF (match_dup 0) 0)
         (unspec:V4SF [(subreg:V4SF (match_dup 1) 0)
                       (subreg:V4SF (match_dup 2) 0)
@@ -3864,7 +4035,31 @@
                       (subreg:V4SF (match_dup 2) 16)
                       (match_dup 3)] UNSPEC_FSBF))]
   ""
-  [(set_attr "type" "madd_fp4")]
+)
+
+(define_split
+  [(set (match_operand:V8SF 0 "register_operand" "")
+        (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "")
+                      (match_operand:V8SF 2 "register_operand" "")
+                      (match_operand 3 "" "")] UNSPEC_FSBF))]
+  "KV4 && reload_completed"
+  [(set (subreg:V2SF (match_dup 0) 0)
+        (unspec:V2SF [(subreg:V2SF (match_dup 1) 0)
+                      (subreg:V2SF (match_dup 2) 0)
+                      (match_dup 3)] UNSPEC_FSBF))
+   (set (subreg:V2SF (match_dup 0) 8)
+        (unspec:V2SF [(subreg:V2SF (match_dup 1) 8)
+                      (subreg:V2SF (match_dup 2) 8)
+                      (match_dup 3)] UNSPEC_FSBF))
+   (set (subreg:V2SF (match_dup 0) 16)
+        (unspec:V2SF [(subreg:V2SF (match_dup 1) 16)
+                      (subreg:V2SF (match_dup 2) 16)
+                      (match_dup 3)] UNSPEC_FSBF))
+   (set (subreg:V2SF (match_dup 0) 24)
+        (unspec:V2SF [(subreg:V2SF (match_dup 1) 24)
+                      (subreg:V2SF (match_dup 2) 24)
+                      (match_dup 3)] UNSPEC_FSBF))]
+  ""
 )
 
 ;; FSBF*
@@ -3910,23 +4105,14 @@
      (if_then_else (match_operand 1 "float16_inner_mode") (const_string "mult_fp3") (const_string "mult_fp4")))]
 )
 
-(define_expand "kvx_fsbfho"
-  [(set (match_operand:V8HF 0 "register_operand" "")
-        (unspec:V8HF [(match_operand:V8HF 1 "register_operand" "")
-                      (match_operand:V8HF 2 "register_operand" "")
-                      (match_operand 3 "" "")] UNSPEC_FSBF))]
-  ""
-  ""
-)
-
-(define_insn_and_split "kvx_fsbfho_1"
+(define_insn_and_split "kvx_fsbfho"
   [(set (match_operand:V8HF 0 "register_operand" "=r")
         (unspec:V8HF [(match_operand:V8HF 1 "register_operand" "r")
                       (match_operand:V8HF 2 "register_operand" "r")
                       (match_operand 3 "" "")] UNSPEC_FSBF))]
-  "KV3_1"
-  "#"
-  "KV3_1 && reload_completed"
+  ""
+  "fsbfho%3 %0 = %2, %1"
+  "(KV3_1||KV4) && reload_completed"
   [(set (subreg:V4HF (match_dup 0) 0)
         (unspec:V4HF [(subreg:V4HF (match_dup 1) 0)
                       (subreg:V4HF (match_dup 2) 0)
@@ -3936,37 +4122,48 @@
                       (subreg:V4HF (match_dup 2) 8)
                       (match_dup 3)] UNSPEC_FSBF))]
   ""
-)
-
-(define_insn "kvx_fsbfho_2"
-  [(set (match_operand:V8HF 0 "register_operand" "=r")
-        (unspec:V8HF [(match_operand:V8HF 1 "register_operand" "r")
-                      (match_operand:V8HF 2 "register_operand" "r")
-                      (match_operand 3 "" "")] UNSPEC_FSBF))]
-  "(KV3_2||KV4)"
-  "fsbfho%3 %0 = %2, %1"
   [(set_attr "type" "mult_fp3")]
 )
 
-(define_insn "kvx_fsbfwq"
+(define_insn_and_split "kvx_fsbfwq"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
                       (match_operand:V4SF 2 "register_operand" "r")
                       (match_operand 3 "" "")] UNSPEC_FSBF))]
   ""
   "fsbfwq%3 %0 = %1, %2"
+  "KV4 && reload_completed"
+  [(set (subreg:V2SF (match_dup 0) 0)
+        (unspec:V2SF [(subreg:V2SF (match_dup 1) 0)
+                      (subreg:V2SF (match_dup 2) 0)
+                      (match_dup 3)] UNSPEC_FSBF))
+   (set (subreg:V2SF (match_dup 0) 8)
+        (unspec:V2SF [(subreg:V2SF (match_dup 1) 8)
+                      (subreg:V2SF (match_dup 2) 8)
+                      (match_dup 3)] UNSPEC_FSBF))]
+  ""
   [(set (attr "type")
         (if_then_else (match_test "KV3_1")
                       (const_string "madd_fp4") (const_string "mult_fp4")))]
 )
 
-(define_insn "kvx_fsbfdp"
+(define_insn_and_split "kvx_fsbfdp"
   [(set (match_operand:V2DF 0 "register_operand" "=r")
         (unspec:V2DF [(match_operand:V2DF 1 "register_operand" "r")
                       (match_operand:V2DF 2 "register_operand" "r")
                       (match_operand 3 "" "")] UNSPEC_FSBF))]
   ""
   "fsbfdp%3 %0 = %1, %2"
+  "KV4 && reload_completed"
+  [(set (subreg:DF (match_dup 0) 0)
+        (unspec:DF [(subreg:DF (match_dup 1) 0)
+                    (subreg:DF (match_dup 2) 0)
+                    (match_dup 3)] UNSPEC_FSBF))
+   (set (subreg:DF (match_dup 0) 8)
+        (unspec:DF [(subreg:DF (match_dup 1) 8)
+                    (subreg:DF (match_dup 2) 8)
+                    (match_dup 3)] UNSPEC_FSBF))]
+  ""
   [(set (attr "type")
         (if_then_else (match_test "KV3_1")
                       (const_string "madd_fp4") (const_string "mult_fp4")))]
@@ -3979,6 +4176,7 @@
                       (match_operand 3 "" "")] UNSPEC_FSBF))]
   ""
   "#"
+  [(set_attr "type" "madd_fp4")]
 )
 
 (define_split
@@ -3986,7 +4184,7 @@
         (unspec:V16HF [(match_operand:V16HF 1 "register_operand" "")
                       (match_operand:V16HF 2 "register_operand" "")
                       (match_operand 3 "" "")] UNSPEC_FSBF))]
-  "KV3_1 && reload_completed"
+  "(KV3_1||KV4) && reload_completed"
   [(set (subreg:V4HF (match_dup 0) 0)
         (unspec:V4HF [(subreg:V4HF (match_dup 1) 0)
                       (subreg:V4HF (match_dup 2) 0)
@@ -4011,7 +4209,7 @@
         (unspec:V16HF [(match_operand:V16HF 1 "register_operand" "")
                       (match_operand:V16HF 2 "register_operand" "")
                       (match_operand 3 "" "")] UNSPEC_FSBF))]
-  "(KV3_2||KV4) && reload_completed"
+  "KV3_2 && reload_completed"
   [(set (subreg:V8HF (match_dup 0) 0)
         (unspec:V8HF [(subreg:V8HF (match_dup 1) 0)
                       (subreg:V8HF (match_dup 2) 0)
@@ -4023,14 +4221,22 @@
   ""
 )
 
-(define_insn_and_split "kvx_fsbfwo"
+(define_insn "kvx_fsbfwo"
   [(set (match_operand:V8SF 0 "register_operand" "=r")
         (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "r")
                       (match_operand:V8SF 2 "register_operand" "r")
                       (match_operand 3 "" "")] UNSPEC_FSBF))]
   ""
   "#"
-  "reload_completed"
+  [(set_attr "type" "madd_fp4")]
+)
+
+(define_split
+  [(set (match_operand:V8SF 0 "register_operand" "")
+        (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "")
+                      (match_operand:V8SF 2 "register_operand" "")
+                      (match_operand 3 "" "")] UNSPEC_FSBF))]
+  "KV3 && reload_completed"
   [(set (subreg:V4SF (match_dup 0) 0)
         (unspec:V4SF [(subreg:V4SF (match_dup 1) 0)
                       (subreg:V4SF (match_dup 2) 0)
@@ -4040,17 +4246,49 @@
                       (subreg:V4SF (match_dup 2) 16)
                       (match_dup 3)] UNSPEC_FSBF))]
   ""
-  [(set_attr "type" "madd_fp4")]
 )
 
-(define_insn_and_split "kvx_fsbfdq"
+(define_split
+  [(set (match_operand:V8SF 0 "register_operand" "")
+        (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "")
+                      (match_operand:V8SF 2 "register_operand" "")
+                      (match_operand 3 "" "")] UNSPEC_FSBF))]
+  "KV4 && reload_completed"
+  [(set (subreg:V2SF (match_dup 0) 0)
+        (unspec:V2SF [(subreg:V2SF (match_dup 1) 0)
+                      (subreg:V2SF (match_dup 2) 0)
+                      (match_dup 3)] UNSPEC_FSBF))
+   (set (subreg:V2SF (match_dup 0) 8)
+        (unspec:V2SF [(subreg:V2SF (match_dup 1) 8)
+                      (subreg:V2SF (match_dup 2) 8)
+                      (match_dup 3)] UNSPEC_FSBF))
+   (set (subreg:V2SF (match_dup 0) 16)
+        (unspec:V2SF [(subreg:V2SF (match_dup 1) 16)
+                      (subreg:V2SF (match_dup 2) 16)
+                      (match_dup 3)] UNSPEC_FSBF))
+   (set (subreg:V2SF (match_dup 0) 24)
+        (unspec:V2SF [(subreg:V2SF (match_dup 1) 24)
+                      (subreg:V2SF (match_dup 2) 24)
+                      (match_dup 3)] UNSPEC_FSBF))]
+  ""
+)
+
+(define_insn "kvx_fsbfdq"
   [(set (match_operand:V4DF 0 "register_operand" "=r")
         (unspec:V4DF [(match_operand:V4DF 1 "register_operand" "r")
                       (match_operand:V4DF 2 "register_operand" "r")
                       (match_operand 3 "" "")] UNSPEC_FSBF))]
   ""
   "#"
-  "reload_completed"
+  [(set_attr "type" "madd_fp4")]
+)
+
+(define_split
+  [(set (match_operand:V4DF 0 "register_operand" "")
+        (unspec:V4DF [(match_operand:V4DF 1 "register_operand" "")
+                      (match_operand:V4DF 2 "register_operand" "")
+                      (match_operand 3 "" "")] UNSPEC_FSBF))]
+  "KV3 && reload_completed"
   [(set (subreg:V2DF (match_dup 0) 0)
         (unspec:V2DF [(subreg:V2DF (match_dup 1) 0)
                       (subreg:V2DF (match_dup 2) 0)
@@ -4060,7 +4298,31 @@
                       (subreg:V2DF (match_dup 2) 16)
                       (match_dup 3)] UNSPEC_FSBF))]
   ""
-  [(set_attr "type" "madd_fp4")]
+)
+
+(define_split
+  [(set (match_operand:V4DF 0 "register_operand" "")
+        (unspec:V4DF [(match_operand:V4DF 1 "register_operand" "")
+                      (match_operand:V4DF 2 "register_operand" "")
+                      (match_operand 3 "" "")] UNSPEC_FSBF))]
+  "KV4 && reload_completed"
+  [(set (subreg:DF (match_dup 0) 0)
+        (unspec:DF [(subreg:DF (match_dup 1) 0)
+                    (subreg:DF (match_dup 2) 0)
+                    (match_dup 3)] UNSPEC_FSBF))
+   (set (subreg:DF (match_dup 0) 8)
+        (unspec:DF [(subreg:DF (match_dup 1) 8)
+                    (subreg:DF (match_dup 2) 8)
+                    (match_dup 3)] UNSPEC_FSBF))
+   (set (subreg:DF (match_dup 0) 16)
+        (unspec:DF [(subreg:DF (match_dup 1) 16)
+                    (subreg:DF (match_dup 2) 16)
+                    (match_dup 3)] UNSPEC_FSBF))
+   (set (subreg:DF (match_dup 0) 24)
+        (unspec:DF [(subreg:DF (match_dup 1) 24)
+                    (subreg:DF (match_dup 2) 24)
+                    (match_dup 3)] UNSPEC_FSBF))]
+  ""
 )
 
 ;; FMUL*
@@ -4106,23 +4368,14 @@
      (if_then_else (match_operand 1 "float16_inner_mode") (const_string "mult_fp3") (const_string "mult_fp4")))]
 )
 
-(define_expand "kvx_fmulho"
-  [(set (match_operand:V8HF 0 "register_operand" "")
-        (unspec:V8HF [(match_operand:V8HF 1 "register_operand" "")
-                      (match_operand:V8HF 2 "register_operand" "")
-                      (match_operand 3 "" "")] UNSPEC_FMUL))]
-  ""
-  ""
-)
-
-(define_insn_and_split "kvx_fmulho_1"
+(define_insn_and_split "kvx_fmulho"
   [(set (match_operand:V8HF 0 "register_operand" "=r")
         (unspec:V8HF [(match_operand:V8HF 1 "register_operand" "r")
                       (match_operand:V8HF 2 "register_operand" "r")
                       (match_operand 3 "" "")] UNSPEC_FMUL))]
-  "KV3_1"
-  "#"
-  "KV3_1 && reload_completed"
+  ""
+  "fmulho%3 %0 = %1, %2"
+  "(KV3_1||KV4) && reload_completed"
   [(set (subreg:V4HF (match_dup 0) 0)
         (unspec:V4HF [(subreg:V4HF (match_dup 1) 0)
                       (subreg:V4HF (match_dup 2) 0)
@@ -4132,25 +4385,26 @@
                       (subreg:V4HF (match_dup 2) 8)
                       (match_dup 3)] UNSPEC_FMUL))]
   ""
-)
-
-(define_insn "kvx_fmulho_2"
-  [(set (match_operand:V8HF 0 "register_operand" "=r")
-        (unspec:V8HF [(match_operand:V8HF 1 "register_operand" "r")
-                      (match_operand:V8HF 2 "register_operand" "r")
-                      (match_operand 3 "" "")] UNSPEC_FMUL))]
-  "(KV3_2||KV4)"
-  "fmulho%3 %0 = %1, %2"
   [(set_attr "type" "mult_fp3")]
 )
 
-(define_insn "kvx_fmulwq"
+(define_insn_and_split "kvx_fmulwq"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
                       (match_operand:V4SF 2 "register_operand" "r")
                       (match_operand 3 "" "")] UNSPEC_FMUL))]
   ""
   "fmulwq%3 %0 = %1, %2"
+  "KV4 && reload_completed"
+  [(set (subreg:V2SF (match_dup 0) 0)
+        (unspec:V2SF [(subreg:V2SF (match_dup 1) 0)
+                      (subreg:V2SF (match_dup 2) 0)
+                      (match_dup 3)] UNSPEC_FMUL))
+   (set (subreg:V2SF (match_dup 0) 8)
+        (unspec:V2SF [(subreg:V2SF (match_dup 1) 8)
+                      (subreg:V2SF (match_dup 2) 8)
+                      (match_dup 3)] UNSPEC_FMUL))]
+  ""
   [(set (attr "type")
         (if_then_else (match_test "KV3_1")
                       (const_string "madd_fp4") (const_string "mult_fp4")))]
@@ -4183,6 +4437,7 @@
                       (match_operand 3 "" "")] UNSPEC_FMUL))]
   ""
   "#"
+  [(set_attr "type" "madd_fp4")]
 )
 
 (define_split
@@ -4190,7 +4445,7 @@
         (unspec:V16HF [(match_operand:V16HF 1 "register_operand" "")
                       (match_operand:V16HF 2 "register_operand" "")
                       (match_operand 3 "" "")] UNSPEC_FMUL))]
-  "KV3_1 && reload_completed"
+  "(KV3_1||KV4) && reload_completed"
   [(set (subreg:V4HF (match_dup 0) 0)
         (unspec:V4HF [(subreg:V4HF (match_dup 1) 0)
                       (subreg:V4HF (match_dup 2) 0)
@@ -4215,7 +4470,7 @@
         (unspec:V16HF [(match_operand:V16HF 1 "register_operand" "")
                       (match_operand:V16HF 2 "register_operand" "")
                       (match_operand 3 "" "")] UNSPEC_FMUL))]
-  "(KV3_2||KV4) && reload_completed"
+  "KV3_2 && reload_completed"
   [(set (subreg:V8HF (match_dup 0) 0)
         (unspec:V8HF [(subreg:V8HF (match_dup 1) 0)
                       (subreg:V8HF (match_dup 2) 0)
@@ -4227,14 +4482,22 @@
   ""
 )
 
-(define_insn_and_split "kvx_fmulwo"
+(define_insn "kvx_fmulwo"
   [(set (match_operand:V8SF 0 "register_operand" "=r")
         (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "r")
                       (match_operand:V8SF 2 "register_operand" "r")
                       (match_operand 3 "" "")] UNSPEC_FMUL))]
   ""
   "#"
-  "reload_completed"
+  [(set_attr "type" "madd_fp4")]
+)
+
+(define_split
+  [(set (match_operand:V8SF 0 "register_operand" "")
+        (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "")
+                      (match_operand:V8SF 2 "register_operand" "")
+                      (match_operand 3 "" "")] UNSPEC_FMUL))]
+  "KV3 && reload_completed"
   [(set (subreg:V4SF (match_dup 0) 0)
         (unspec:V4SF [(subreg:V4SF (match_dup 1) 0)
                       (subreg:V4SF (match_dup 2) 0)
@@ -4244,7 +4507,31 @@
                       (subreg:V4SF (match_dup 2) 16)
                       (match_dup 3)] UNSPEC_FMUL))]
   ""
-  [(set_attr "type" "madd_fp4")]
+)
+
+(define_split
+  [(set (match_operand:V8SF 0 "register_operand" "")
+        (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "")
+                      (match_operand:V8SF 2 "register_operand" "")
+                      (match_operand 3 "" "")] UNSPEC_FMUL))]
+  "KV4 && reload_completed"
+  [(set (subreg:V2SF (match_dup 0) 0)
+        (unspec:V2SF [(subreg:V2SF (match_dup 1) 0)
+                      (subreg:V2SF (match_dup 2) 0)
+                      (match_dup 3)] UNSPEC_FMUL))
+   (set (subreg:V2SF (match_dup 0) 8)
+        (unspec:V2SF [(subreg:V2SF (match_dup 1) 8)
+                      (subreg:V2SF (match_dup 2) 8)
+                      (match_dup 3)] UNSPEC_FMUL))
+   (set (subreg:V2SF (match_dup 0) 16)
+        (unspec:V2SF [(subreg:V2SF (match_dup 1) 16)
+                      (subreg:V2SF (match_dup 2) 16)
+                      (match_dup 3)] UNSPEC_FMUL))
+   (set (subreg:V2SF (match_dup 0) 24)
+        (unspec:V2SF [(subreg:V2SF (match_dup 1) 24)
+                      (subreg:V2SF (match_dup 2) 24)
+                      (match_dup 3)] UNSPEC_FMUL))]
+  ""
 )
 
 (define_insn_and_split "kvx_fmuldq"
@@ -4285,26 +4572,17 @@
                       (match_operand 3 "" "")] UNSPEC_FMULC))]
   ""
   "fmulwc%3 %0 = %1, %2"
-  [(set_attr "type" "mult_fp4")]
+  [(set_attr "type" "dotp_fp4")]
 )
 
-(define_expand "kvx_fmulwcp"
-  [(set (match_operand:V4SF 0 "register_operand" "")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "")
-                      (match_operand:V4SF 2 "register_operand" "")
-                      (match_operand 3 "" "")] UNSPEC_FMULC))]
-  ""
-  ""
-)
-
-(define_insn_and_split "kvx_fmulwcp_1"
+(define_insn_and_split "kvx_fmulwcp"
   [(set (match_operand:V4SF 0 "register_operand" "=r")
         (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
                       (match_operand:V4SF 2 "register_operand" "r")
                       (match_operand 3 "" "")] UNSPEC_FMULC))]
-  "KV3_1"
-  "#"
-  "KV3_1 && reload_completed"
+  ""
+  "fmulwcp%3 %0 = %1, %2"
+  "(KV3_1||KV4) && reload_completed"
   [(set (subreg:V2SF (match_dup 0) 0)
         (unspec:V2SF [(subreg:V2SF (match_dup 1) 0)
                       (subreg:V2SF (match_dup 2) 0)
@@ -4314,28 +4592,7 @@
                       (subreg:V2SF (match_dup 2) 8)
                       (match_dup 3)] UNSPEC_FMULC))]
   ""
-)
-
-(define_insn "kvx_fmulwcp_2"
-  [(set (match_operand:V4SF 0 "register_operand" "=r")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "r")
-                      (match_operand:V4SF 2 "register_operand" "r")
-                      (match_operand 3 "" "")] UNSPEC_FMULC))]
-  "(KV3_2||KV4)"
-  "fmulwcp%3 %0 = %1, %2"
-  [(set_attr "type" "mult_fp4")]
-)
-
-(define_expand "kvx_fmuldc"
-  [(set (match_operand:V2DF 0 "register_operand")
-        (unspec:V2DF [(match_operand:V2DF 1 "register_operand")
-                      (match_operand:V2DF 2 "register_operand")
-                      (match_operand 3 "" "")] UNSPEC_FMULC))]
-  ""
-  {
-    kvx_expand_builtin_fmuldc (operands, 1);
-    DONE;
-  }
+  [(set_attr "type" "dmda_fp4")]
 )
 
 (define_insn "kvx_fmulwcq"
@@ -4352,7 +4609,7 @@
         (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "")
                       (match_operand:V8SF 2 "register_operand" "")
                       (match_operand 3 "" "")] UNSPEC_FMULC))]
-  "KV3_1 && reload_completed"
+  "(KV3_1||KV4) && reload_completed"
   [(set (subreg:V2SF (match_dup 0) 0)
         (unspec:V2SF [(subreg:V2SF (match_dup 1) 0)
                       (subreg:V2SF (match_dup 2) 0)
@@ -4377,7 +4634,7 @@
         (unspec:V8SF [(match_operand:V8SF 1 "register_operand" "")
                       (match_operand:V8SF 2 "register_operand" "")
                       (match_operand 3 "" "")] UNSPEC_FMULC))]
-  "(KV3_2||KV4) && reload_completed"
+  "KV3_2 && reload_completed"
   [(set (subreg:V4SF (match_dup 0) 0)
         (unspec:V4SF [(subreg:V4SF (match_dup 1) 0)
                       (subreg:V4SF (match_dup 2) 0)
@@ -4387,6 +4644,18 @@
                       (subreg:V4SF (match_dup 2) 16)
                       (match_dup 3)] UNSPEC_FMULC))]
   ""
+)
+
+(define_expand "kvx_fmuldc"
+  [(set (match_operand:V2DF 0 "register_operand")
+        (unspec:V2DF [(match_operand:V2DF 1 "register_operand")
+                      (match_operand:V2DF 2 "register_operand")
+                      (match_operand 3 "" "")] UNSPEC_FMULC))]
+  ""
+  {
+    kvx_expand_builtin_fmuldc (operands, 1);
+    DONE;
+  }
 )
 
 (define_expand "kvx_fmuldcp"
@@ -4421,7 +4690,7 @@
         (unspec:SF [(match_operand:HF 1 "register_operand" "r")
                     (match_operand:HF 2 "register_operand" "r")
                     (match_operand 3 "" "")] UNSPEC_FMULX))]
-  ""
+  "KV3"
   "fmulhw%3 %0 = %1, %2"
   [(set_attr "type" "mult_fp3")]
 )
@@ -4431,7 +4700,7 @@
         (unspec:DF [(match_operand:SF 1 "register_operand" "r")
                     (match_operand:SF 2 "register_operand" "r")
                     (match_operand 3 "" "")] UNSPEC_FMULX))]
-  ""
+  "KV3"
   "fmulwd%3 %0 = %1, %2"
   [(set_attr "type" "mult_fp4")]
 )
@@ -4441,7 +4710,7 @@
         (unspec:<WIDE> [(match_operand:S64F 1 "register_operand" "r")
                         (match_operand:S64F 2 "register_operand" "r")
                         (match_operand 3 "" "")] UNSPEC_FMULX))]
-  ""
+  "KV3"
   "fmul<widenx>%3 %0 = %1, %2"
   [(set (attr "type")
      (if_then_else (match_operand 1 "float16_inner_mode") (const_string "mult_fp3") (const_string "mult_fp4")))]
@@ -4452,7 +4721,7 @@
         (unspec:<WIDE> [(match_operand:S128F 1 "register_operand" "r")
                         (match_operand:S128F 2 "register_operand" "r")
                         (match_operand 3 "" "")] UNSPEC_FMULX))]
-  ""
+  "KV3"
   "#"
   "reload_completed"
   [(set (subreg:<HWIDE> (match_dup 0) 0)
@@ -4770,9 +5039,9 @@
                        (match_operand:S128F 2 "register_operand" "r")
                        (match_operand:S128F 3 "register_operand" "0")
                        (match_operand 4 "" "")] UNSPEC_FFMA))]
-  "KV3_1"
+  "(KV3_1||KV4)"
   "#"
-  "KV3_1 && reload_completed"
+  "(KV3_1||KV4) && reload_completed"
   [(set (subreg:<CHUNK> (match_dup 0) 0)
         (unspec:<CHUNK> [(subreg:<CHUNK> (match_dup 1) 0)
                          (subreg:<CHUNK> (match_dup 2) 0)
@@ -4792,7 +5061,7 @@
                        (match_operand:S128F 2 "register_operand" "r")
                        (match_operand:S128F 3 "register_operand" "0")
                        (match_operand 4 "" "")] UNSPEC_FFMA))]
-  "(KV3_2||KV4)"
+  "KV3_2"
   "ffma<suffix>%4 %0 = %1, %2"
   [(set (attr "type")
      (if_then_else (match_operand 1 "float16_inner_mode") (const_string "madd_fp3") (const_string "madd_fp4")))]
@@ -4837,7 +5106,7 @@
                        (match_operand:S256F 2 "register_operand" "")
                        (match_operand:S256F 3 "register_operand" "")
                        (match_operand 4 "" "")] UNSPEC_FFMA))]
-  "KV3_1 && reload_completed"
+  "(KV3_1||KV4) && reload_completed"
   [(set (subreg:<CHUNK> (match_dup 0) 0)
         (unspec:<CHUNK> [(subreg:<CHUNK> (match_dup 1) 0)
                          (subreg:<CHUNK> (match_dup 2) 0)
@@ -4867,7 +5136,7 @@
                        (match_operand:S256F 2 "register_operand" "")
                        (match_operand:S256F 3 "register_operand" "")
                        (match_operand 4 "" "")] UNSPEC_FFMA))]
-  "(KV3_2||KV4) && reload_completed"
+  "KV3_2 && reload_completed"
   [(set (subreg:<HALF> (match_dup 0) 0)
         (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 0)
                         (subreg:<HALF> (match_dup 2) 0)
@@ -4943,7 +5212,7 @@
                       (match_operand 4 "" "")] UNSPEC_FFMAC))]
   "(KV3_2||KV4)"
   "ffmawc%4 %0 = %1, %2"
-  [(set_attr "type" "madd_fp4")]
+  [(set_attr "type" "dmda_fp4")]
 )
 
 (define_expand "kvx_ffmawcp"
@@ -4979,7 +5248,7 @@
                       (match_operand 4 "" "")] UNSPEC_FFMAC))]
   "(KV3_2||KV4)"
   "ffmawcp%4 %0 = %1, %2"
-  [(set_attr "type" "madd_fp4")]
+  [(set_attr "type" "dmda_fp4")]
 )
 
 (define_expand "kvx_ffmadc"
@@ -5042,7 +5311,7 @@
                       (subreg:V4SF (match_dup 3) 16)
                       (match_dup 4)] UNSPEC_FFMAC))]
   ""
-  [(set_attr "type" "madd_fp4")]
+  [(set_attr "type" "dmda_fp4")]
 )
 
 (define_expand "kvx_ffmadcp"
@@ -5198,9 +5467,9 @@
                        (match_operand:S128F 2 "register_operand" "r")
                        (match_operand:S128F 3 "register_operand" "0")
                        (match_operand 4 "" "")] UNSPEC_FFMS))]
-  "KV3_1"
+  "(KV3_1||KV4)"
   "#"
-  "KV3_1 && reload_completed"
+  "(KV3_1||KV4) && reload_completed"
   [(set (subreg:<CHUNK> (match_dup 0) 0)
         (unspec:<CHUNK> [(subreg:<CHUNK> (match_dup 1) 0)
                          (subreg:<CHUNK> (match_dup 2) 0)
@@ -5220,7 +5489,7 @@
                        (match_operand:S128F 2 "register_operand" "r")
                        (match_operand:S128F 3 "register_operand" "0")
                        (match_operand 4 "" "")] UNSPEC_FFMS))]
-  "(KV3_2||KV4)"
+  "KV3_2"
   "ffms<suffix>%4 %0 = %1, %2"
   [(set (attr "type")
      (if_then_else (match_operand 1 "float16_inner_mode") (const_string "madd_fp3") (const_string "madd_fp4")))]
@@ -5265,7 +5534,7 @@
                        (match_operand:S256F 2 "register_operand" "")
                        (match_operand:S256F 3 "register_operand" "")
                        (match_operand 4 "" "")] UNSPEC_FFMS))]
-  "KV3_1 && reload_completed"
+  "(KV3_1||KV4) && reload_completed"
   [(set (subreg:<CHUNK> (match_dup 0) 0)
         (unspec:<CHUNK> [(subreg:<CHUNK> (match_dup 1) 0)
                          (subreg:<CHUNK> (match_dup 2) 0)
@@ -5295,7 +5564,7 @@
                        (match_operand:S256F 2 "register_operand" "")
                        (match_operand:S256F 3 "register_operand" "")
                        (match_operand 4 "" "")] UNSPEC_FFMS))]
-  "(KV3_2||KV4) && reload_completed"
+  "KV3_2 && reload_completed"
   [(set (subreg:<HALF> (match_dup 0) 0)
         (unspec:<HALF> [(subreg:<HALF> (match_dup 1) 0)
                         (subreg:<HALF> (match_dup 2) 0)
@@ -5371,7 +5640,7 @@
                       (match_operand 4 "" "")] UNSPEC_FFMSC))]
   "(KV3_2||KV4)"
   "ffmswc%4 %0 = %1, %2"
-  [(set_attr "type" "madd_fp4")]
+  [(set_attr "type" "dmda_fp4")]
 )
 
 (define_expand "kvx_ffmswcp"
@@ -5407,7 +5676,7 @@
                       (match_operand 4 "" "")] UNSPEC_FFMSC))]
   "(KV3_2||KV4)"
   "ffmswcp%4 %0 = %1, %2"
-  [(set_attr "type" "madd_fp4")]
+  [(set_attr "type" "dmda_fp4")]
 )
 
 (define_expand "kvx_ffmsdc"
@@ -5470,7 +5739,7 @@
                       (subreg:V4SF (match_dup 3) 16)
                       (match_dup 4)] UNSPEC_FFMSC))]
   ""
-  [(set_attr "type" "madd_fp4")]
+  [(set_attr "type" "dmda_fp4")]
 )
 
 (define_expand "kvx_ffmsdcp"
@@ -6426,7 +6695,11 @@
                     (match_operand 2 "sixbits_unsigned_operand" "i")
                     (match_operand 3 "" "")] UNSPEC_FLOAT))]
   ""
-  "floatw%3 %0 = %1, %2"
+  {
+    if (KV3)
+      return "floatw%3 %0 = %1, %2";
+    return "floatw%3 %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 
@@ -6436,7 +6709,11 @@
                     (match_operand 2 "sixbits_unsigned_operand" "i")
                     (match_operand 3 "" "")] UNSPEC_FLOAT))]
   ""
-  "floatd%3 %0 = %1, %2"
+  {
+    if (KV3)
+      return "floatd%3 %0 = %1, %2";
+    return "floatd%3 %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 
@@ -6446,7 +6723,11 @@
                       (match_operand 2 "sixbits_unsigned_operand" "i")
                       (match_operand 3 "" "")] UNSPEC_FLOAT))]
   ""
-  "floatwp%3 %0 = %1, %2"
+  {
+    if (KV3)
+      return "floatwp%3 %0 = %1, %2";
+    return "floatwp%3 %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 
@@ -6555,7 +6836,11 @@
                     (match_operand 2 "sixbits_unsigned_operand" "i")
                     (match_operand 3 "" "")] UNSPEC_FLOATU))]
   ""
-  "floatuw%3 %0 = %1, %2"
+  {
+    if (KV3)
+      return "floatuw%3 %0 = %1, %2";
+    return "floatuw%3 %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 
@@ -6565,7 +6850,11 @@
                     (match_operand 2 "sixbits_unsigned_operand" "i")
                     (match_operand 3 "" "")] UNSPEC_FLOATU))]
   ""
-  "floatud%3 %0 = %1, %2"
+  {
+    if (KV3)
+      return "floatud%3 %0 = %1, %2";
+    return "floatud%3 %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 
@@ -6575,7 +6864,11 @@
                       (match_operand 2 "sixbits_unsigned_operand" "i")
                       (match_operand 3 "" "")] UNSPEC_FLOATU))]
   ""
-  "floatuwp%3 %0 = %1, %2"
+  {
+    if (KV3)
+      return "floatuwp%3 %0 = %1, %2";
+    return "floatuwp%3 %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 
@@ -6684,7 +6977,11 @@
                     (match_operand 2 "sixbits_unsigned_operand" "i")
                     (match_operand 3 "" "")] UNSPEC_FIXED))]
   ""
-  "fixedw%3 %0 = %1, %2"
+  {
+    if (KV3)
+      return "fixedw%3 %0 = %1, %2";
+    return "fixedw%3 %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 ;; zero-extend version of kvx_fixedw
@@ -6694,7 +6991,11 @@
                                     (match_operand 2 "sixbits_unsigned_operand" "i")
                                     (match_operand 3 "" "")] UNSPEC_FIXED)))]
   ""
-  "fixedw%3 %0 = %1, %2"
+  {
+    if (KV3)
+      return "fixedw%3 %0 = %1, %2";
+    return "fixedw%3 %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 
@@ -6704,7 +7005,11 @@
                     (match_operand 2 "sixbits_unsigned_operand" "i")
                     (match_operand 3 "" "")] UNSPEC_FIXED))]
   ""
-  "fixedd%3 %0 = %1, %2"
+  {
+    if (KV3)
+      return "fixedd%3 %0 = %1, %2";
+    return "fixedd%3 %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 
@@ -6714,7 +7019,11 @@
                       (match_operand 2 "sixbits_unsigned_operand" "i")
                       (match_operand 3 "" "")] UNSPEC_FIXED))]
   ""
-  "fixedwp%3 %0 = %1, %2"
+  {
+    if (KV3)
+      return "fixedwp%3 %0 = %1, %2";
+    return "fixedwp%3 %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 
@@ -6823,7 +7132,11 @@
                     (match_operand 2 "sixbits_unsigned_operand" "i")
                     (match_operand 3 "" "")] UNSPEC_FIXEDU))]
   ""
-  "fixeduw%3 %0 = %1, %2"
+  {
+    if (KV3)
+      return "fixeduw%3 %0 = %1, %2";
+    return "fixeduw%3 %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 ;; zero-extend version of kvx_fixeduw
@@ -6833,7 +7146,11 @@
                                     (match_operand 2 "sixbits_unsigned_operand" "i")
                                     (match_operand 3 "" "")] UNSPEC_FIXEDU)))]
   ""
-  "fixeduw%3 %0 = %1, %2"
+  {
+    if (KV3)
+      return "fixeduw%3 %0 = %1, %2";
+    return "fixeduw%3 %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 
@@ -6843,7 +7160,11 @@
                     (match_operand 2 "sixbits_unsigned_operand" "i")
                     (match_operand 3 "" "")] UNSPEC_FIXEDU))]
   ""
-  "fixedud%3 %0 = %1, %2"
+  {
+    if (KV3)
+      return "fixedud%3 %0 = %1, %2";
+    return "fixedud%3 %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 
@@ -6853,7 +7174,11 @@
                       (match_operand 2 "sixbits_unsigned_operand" "i")
                       (match_operand 3 "" "")] UNSPEC_FIXEDU))]
   ""
-  "fixeduwp%3 %0 = %1, %2"
+  {
+    if (KV3)
+      return "fixeduwp%3 %0 = %1, %2";
+    return "fixeduwp%3 %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 

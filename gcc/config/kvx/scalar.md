@@ -1268,8 +1268,8 @@
     else
       {
         operands[2] = force_reg (SImode, operands[2]);
-        rtx s = gen_rtx_CONST_STRING (VOIDmode, ".s");
-        rtx rns = gen_rtx_CONST_STRING (VOIDmode, ".rn.s");
+        rtx s = gen_rtx_CONST_STRING (VOIDmode, KV3 ? ".s" : "");
+        rtx rns = gen_rtx_CONST_STRING (VOIDmode, KV3 ? ".rn.s" : ".rn");
     // double double1 = 1.0;
         rtx double1 = copy_to_mode_reg (DFmode, const_double_from_real_value (dconst1, DFmode));
     // float floatb = (float)b;
@@ -1351,8 +1351,8 @@
     else
       {
         operands[2] = force_reg (SImode, operands[2]);
-        rtx s = gen_rtx_CONST_STRING (VOIDmode, ".s");
-        rtx rns = gen_rtx_CONST_STRING (VOIDmode, ".rn.s");
+        rtx s = gen_rtx_CONST_STRING (VOIDmode, KV3 ? ".s" : "");
+        rtx rns = gen_rtx_CONST_STRING (VOIDmode, KV3 ? ".rn.s" : ".rn");
     // double double1 = 1.0;
         rtx double1 = copy_to_mode_reg (DFmode, const_double_from_real_value (dconst1, DFmode));
     // float floatb = (float)b;
@@ -2549,8 +2549,8 @@
     else
       {
         operands[2] = force_reg (DImode, operands[2]);
-        rtx s = gen_rtx_CONST_STRING (VOIDmode, ".s");
-        rtx rns = gen_rtx_CONST_STRING (VOIDmode, ".rn.s");
+        rtx s = gen_rtx_CONST_STRING (VOIDmode, KV3 ? ".s" : "");
+        rtx rns = gen_rtx_CONST_STRING (VOIDmode, KV3 ? ".rn.s" : ".rn");
         rtx dnez = gen_rtx_CONST_STRING (VOIDmode, ".dnez");
         rtx deqz = gen_rtx_CONST_STRING (VOIDmode, ".deqz");
     // double double1 = 1.0;
@@ -2673,8 +2673,8 @@
     else
       {
         operands[2] = force_reg (DImode, operands[2]);
-        rtx s = gen_rtx_CONST_STRING (VOIDmode, ".s");
-        rtx rns = gen_rtx_CONST_STRING (VOIDmode, ".rn.s");
+        rtx s = gen_rtx_CONST_STRING (VOIDmode, KV3 ? ".s" : "");
+        rtx rns = gen_rtx_CONST_STRING (VOIDmode, KV3 ? ".rn.s" : ".rn");
         rtx dnez = gen_rtx_CONST_STRING (VOIDmode, ".dnez");
         rtx deqz = gen_rtx_CONST_STRING (VOIDmode, ".deqz");
     // double double1 = 1.0;
@@ -3550,7 +3550,7 @@
   [(set (match_operand:SF 0 "register_operand" "=r")
         (mult:SF (float_extend:SF (match_operand:HF 1 "register_operand" "r"))
                  (float_extend:SF (match_operand:HF 2 "register_operand" "r"))))]
-  ""
+  "KV3"
   "fmulhw %0 = %1, %2"
   [(set_attr "type" "mult_fp3")]
 )
@@ -3590,7 +3590,7 @@
         (fma:SF  (float_extend:SF (match_operand:HF 1 "register_operand" "r"))
                  (float_extend:SF (match_operand:HF 2 "register_operand" "r"))
                  (match_operand:SF 3 "register_operand" "0")))]
-  ""
+  "KV3"
   "ffmahw %0 = %1, %2"
   [(set_attr "type" "madd_fp3")]
 )
@@ -3610,7 +3610,7 @@
         (fma:SF (float_extend:SF (neg:HF (match_operand:HF 1 "register_operand" "r")))
                 (float_extend:SF (match_operand:HF 2 "register_operand" "r"))
                 (match_operand:SF 3 "register_operand" "0")))]
-  ""
+  "KV3"
   "ffmshw %0 = %1, %2"
   [(set_attr "type" "madd_fp3")]
 )
@@ -3620,7 +3620,7 @@
         (fma:SF (float_extend:SF (match_operand:HF 1 "register_operand" "r"))
                 (float_extend:SF (neg:HF (match_operand:HF 2 "register_operand" "r")))
                 (match_operand:SF 3 "register_operand" "0")))]
-  ""
+  "KV3"
   "ffmshw %0 = %1, %2"
   [(set_attr "type" "madd_fp3")]
 )
@@ -3809,7 +3809,7 @@
   [(set (match_operand:DF 0 "register_operand" "=r")
         (mult:DF (float_extend:DF (match_operand:SF 1 "register_operand" "r"))
                  (float_extend:DF (match_operand:SF 2 "register_operand" "r"))))]
-  ""
+  "KV3"
   "fmulwd %0 = %1, %2"
   [(set_attr "type" "mult_fp4")]
 )
@@ -3874,7 +3874,7 @@
         (fma:DF  (float_extend:DF (match_operand:SF 1 "register_operand" "r"))
                  (float_extend:DF (match_operand:SF 2 "register_operand" "r"))
                  (match_operand:DF 3 "register_operand" "0")))]
-  ""
+  "KV3"
   "ffmawd %0 = %1, %2"
   [(set_attr "type" "madd_fp4")]
 )
@@ -3894,7 +3894,7 @@
         (fma:DF (float_extend:DF (neg:SF (match_operand:SF 1 "register_operand" "r")))
                 (float_extend:DF (match_operand:SF 2 "register_operand" "r"))
                 (match_operand:DF 3 "register_operand" "0")))]
-  ""
+  "KV3"
   "ffmswd %0 = %1, %2"
   [(set_attr "type" "madd_fp4")]
 )
@@ -3904,7 +3904,7 @@
         (fma:DF (float_extend:DF (match_operand:SF 1 "register_operand" "r"))
                 (float_extend:DF (neg:SF (match_operand:SF 2 "register_operand" "r")))
                 (match_operand:DF 3 "register_operand" "0")))]
-  ""
+  "KV3"
   "ffmswd %0 = %1, %2"
   [(set_attr "type" "madd_fp4")]
 )
@@ -3991,7 +3991,11 @@
   [(set (match_operand:SF 0 "register_operand" "=r")
         (float:SF (match_operand:SI 1 "register_operand" "r")))]
   ""
-  "floatw.rn %0 = %1, 0"
+  {
+    if (KV3)
+      return "floatw.rn %0 = %1, 0";
+    return "floatw.rn %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 
@@ -3999,7 +4003,11 @@
   [(set (match_operand:SF 0 "register_operand" "=r")
         (unsigned_float:SF (match_operand:SI 1 "register_operand" "r")))]
   ""
-  "floatuw.rn %0 = %1, 0"
+  {
+    if (KV3)
+      return "floatuw.rn %0 = %1, 0";
+    return "floatuw.rn %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 
@@ -4053,7 +4061,11 @@
   [(set (match_operand:SI 0 "register_operand" "=r")
         (fix:SI (match_operand:SF 1 "register_operand" "r")))]
   ""
-  "fixedw.rz %0 = %1, 0"
+  {
+    if (KV3)
+      return "fixedw.rz %0 = %1, 0";
+    return "fixedw.rz %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 ;; zero-extend version of fix_truncsfsi2
@@ -4061,7 +4073,11 @@
   [(set (match_operand:DI 0 "register_operand" "=r")
         (zero_extend:DI (fix:SI (match_operand:SF 1 "register_operand" "r"))))]
   ""
-  "fixedw.rz %0 = %1, 0"
+  {
+    if (KV3)
+      return "fixedw.rz %0 = %1, 0";
+    return "fixedw.rz %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 
@@ -4069,7 +4085,11 @@
   [(set (match_operand:SI 0 "register_operand" "=r")
         (unsigned_fix:SI (match_operand:SF 1 "register_operand" "r")))]
   ""
-  "fixeduw.rz %0 = %1, 0"
+  {
+    if (KV3)
+      return "fixeduw.rz %0 = %1, 0";
+    return "fixeduw.rz %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 ;; zero-extend version of fixuns_truncsfsi2
@@ -4077,7 +4097,11 @@
   [(set (match_operand:DI 0 "register_operand" "=r")
         (zero_extend:DI (unsigned_fix:SI (match_operand:SF 1 "register_operand" "r"))))]
   ""
-  "fixeduw.rz %0 = %1, 0"
+  {
+    if (KV3)
+      return "fixeduw.rz %0 = %1, 0";
+    return "fixeduw.rz %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 
@@ -4292,7 +4316,11 @@
   [(set (match_operand:DF 0 "register_operand" "=r")
         (float:DF (match_operand:DI 1 "register_operand" "r")))]
   ""
-  "floatd.rn %0 = %1, 0"
+  {
+    if (KV3)
+      return "floatd.rn %0 = %1, 0";
+    return "floatd.rn %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 
@@ -4300,7 +4328,11 @@
   [(set (match_operand:DF 0 "register_operand" "=r")
         (unsigned_float:DF (match_operand:DI 1 "register_operand" "r")))]
   ""
-  "floatud.rn %0 = %1, 0"
+  {
+    if (KV3)
+      return "floatud.rn %0 = %1, 0";
+    return "floatud.rn %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 
@@ -4308,7 +4340,11 @@
   [(set (match_operand:DI 0 "register_operand" "=r")
         (fix:DI (match_operand:DF 1 "register_operand" "r")))]
   ""
-  "fixedd.rz %0 = %1, 0"
+  {
+    if (KV3)
+      return "fixedd.rz %0 = %1, 0";
+    return "fixedd.rz %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 
@@ -4316,7 +4352,11 @@
   [(set (match_operand:DI 0 "register_operand" "=r")
         (unsigned_fix:DI (match_operand:DF 1 "register_operand" "r")))]
   ""
-  "fixedud.rz %0 = %1, 0"
+  {
+    if (KV3)
+      return "fixedud.rz %0 = %1, 0";
+    return "fixedud.rz %0 = %1";
+  }
   [(set_attr "type" "conv_fp4")]
 )
 
