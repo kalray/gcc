@@ -1620,6 +1620,11 @@ vect_finish_stmt_generation (vec_info *vinfo,
 {
   gcc_assert (!stmt_info || gimple_code (stmt_info->stmt) != GIMPLE_LABEL);
 
+  if (stmt_info
+      && is_gimple_assign (stmt_info->stmt)
+      && gimple_assign_nontemporal_move_p (stmt_info->stmt))
+    gimple_assign_set_nontemporal_move (vec_stmt, true);
+
   if (!gsi_end_p (*gsi)
       && gimple_has_mem_ops (vec_stmt))
     {

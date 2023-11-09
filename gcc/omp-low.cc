@@ -123,6 +123,9 @@ struct omp_context
      elts.  */
   hash_map<tree, unsigned> *task_reduction_map;
 
+  /* A hash set for the tracking of non temporal address.  */
+  hash_set<tree> *nontemporal_set;
+
   /* And a hash map from the lastprivate(conditional:) variables to their
      corresponding tracking loop iteration variables.  */
   hash_map<tree, tree> *lastprivate_conditional_map;
@@ -996,6 +999,7 @@ new_omp_context (gimple *stmt, omp_context *outer_ctx)
     }
 
   ctx->cb.decl_map = new hash_map<tree, tree>;
+  ctx->nontemporal_set = new hash_set<tree>;
 
   return ctx;
 }
@@ -1074,6 +1078,7 @@ delete_omp_context (splay_tree_value value)
       delete ctx->task_reduction_map;
     }
 
+  delete ctx->nontemporal_set;
   delete ctx->lastprivate_conditional_map;
   delete ctx->allocate_map;
 
@@ -14411,7 +14416,28 @@ lower_omp_1 (gimple_stmt_iterator *gsi_p, omp_context *ctx)
 		  && (gimple_omp_target_kind (up->stmt)
 		      == GF_OMP_TARGET_KIND_DATA)))
 	    continue;
-	  else if (!up->lastprivate_conditional_map)
+	  else if (gimple_code (up->stmt) == GIMPLE_OMP_FOR)
+	    {
+	      /* Handle nontemporal clause by tracking nontemporal pointers.  */
+	      tree lhs = gimple_assign_lhs (stmt);
+	      tree rhs1 = gimple_assign_rhs1 (stmt);
+	      if ((TREE_CODE (rhs1) == MEM_REF
+		   && up->nontemporal_set->contains (TREE_OPERAND (rhs1, 0)))
+		  || (TREE_CODE (lhs) == MEM_REF
+		   && up->nontemporal_set->contains (TREE_OPERAND (lhs, 0))))
+		gimple_assign_set_nontemporal_move (stmt, true);
+	      else if (up->nontemporal_set->contains (rhs1))
+		up->nontemporal_set->add (lhs);
+	      else
+		{
+		  tree clauses = gimple_omp_for_clauses (up->stmt);
+		  for (; clauses ; clauses = OMP_CLAUSE_CHAIN (clauses))
+		    if (OMP_CLAUSE_CODE (clauses) == OMP_CLAUSE_NONTEMPORAL
+			&& OMP_CLAUSE_DECL (clauses) == rhs1)
+		      up->nontemporal_set->add (lhs);
+		}
+	    }
+	  if (!up->lastprivate_conditional_map)
 	    break;
 	  tree lhs = get_base_address (gimple_assign_lhs (stmt));
 	  if (TREE_CODE (lhs) == MEM_REF

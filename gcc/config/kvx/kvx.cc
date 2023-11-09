@@ -2009,10 +2009,11 @@ kvx_print_operand (FILE *file, rtx x, int code)
 
     case 'V': /* Print '.u' or '.us' or '.s' variant for memory load. */
       addr_space = MEM_ADDR_SPACE (x);
-      if (addr_space == KVX_ADDR_SPACE_BYPASS)
-	fprintf (file, ".u");
-      else if (addr_space == KVX_ADDR_SPACE_PRELOAD)
+      if ((addr_space == KVX_ADDR_SPACE_SPECULATE && MEM_NON_TEMPORAL_P (x))
+	  || addr_space == KVX_ADDR_SPACE_PRELOAD)
 	fprintf (file, ".us");
+      else if (addr_space == KVX_ADDR_SPACE_BYPASS || MEM_NON_TEMPORAL_P (x))
+	fprintf (file, ".u");
       else if (addr_space == KVX_ADDR_SPACE_SPECULATE)
 	fprintf (file, ".s");
       addr_mode = true;
@@ -5759,6 +5760,9 @@ kvx_is_uncached_mem_op_p (rtx x)
 
   /* __convert[_no_sync] addr space should not come here. */
   gcc_assert (MEM_ADDR_SPACE (x) < KVX_ADDR_SPACE_CONVERT);
+
+  if (MEM_NON_TEMPORAL_P (x))
+    return true;
 
 #if 1
   int addr_space = MEM_ADDR_SPACE (x);

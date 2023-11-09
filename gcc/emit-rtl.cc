@@ -361,6 +361,7 @@ mem_attrs_eq_p (const class mem_attrs *p, const class mem_attrs *q)
 	  && p->size_known_p == q->size_known_p
 	  && (!p->size_known_p || known_eq (p->size, q->size))
 	  && p->align == q->align
+	  && p->non_temporal_p == q->non_temporal_p
 	  && p->addrspace == q->addrspace
 	  && (p->expr == q->expr
 	      || (p->expr != NULL_TREE && q->expr != NULL_TREE
@@ -1812,7 +1813,8 @@ mem_attrs::mem_attrs ()
     align (0),
     addrspace (ADDR_SPACE_GENERIC),
     offset_known_p (false),
-    size_known_p (false)
+    size_known_p (false),
+    non_temporal_p (false)
 {}
 
 /* Returns 1 if both MEM_EXPR can be considered equal
@@ -2234,6 +2236,16 @@ clear_mem_size (rtx mem)
 {
   mem_attrs attrs (*get_mem_attrs (mem));
   attrs.size_known_p = false;
+  set_mem_attrs (mem, &attrs);
+}
+
+/* Set MEM accesses as non temporal.  */
+
+void
+set_mem_non_temporal (rtx mem)
+{
+  mem_attrs attrs (*get_mem_attrs (mem));
+  attrs.non_temporal_p = true;
   set_mem_attrs (mem, &attrs);
 }
 

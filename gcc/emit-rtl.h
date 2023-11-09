@@ -369,6 +369,9 @@ extern void set_mem_size (rtx, poly_int64);
 /* Clear the size recorded for MEM.  */
 extern void clear_mem_size (rtx);
 
+/* Set accesses as non temporal for MEM.  */
+extern void set_mem_non_temporal (rtx);
+
 /* Set the attributes for MEM appropriate for a spill slot.  */
 extern void set_mem_attrs_for_spill (rtx);
 extern tree get_spill_slot_decl (bool);
