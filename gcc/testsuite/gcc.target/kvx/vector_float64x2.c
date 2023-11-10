@@ -209,6 +209,7 @@ kvx_float64x2_nez(float64x2_t a)
 {
     return a != 0.0;
 }
+#ifndef __KV4__
 float64x2_t __attribute__ ((noinline))
 kvx_float64x2_faddcdc(float64x2_t a, float64x2_t b)
 {
@@ -249,6 +250,7 @@ kvx_float64x2_ffmcsdc(float64x2_t a, float64x2_t b, float64x2_t c)
 {
     return __builtin_kvx_ffmsdc(a, b, c, ".c.rn");
 }
+#endif//__KV4__
 float64x2_t __attribute__ ((noinline))
 kvx_float64x2_fconjdc(float64x2_t a)
 {
@@ -266,7 +268,7 @@ int64x2_t kvx_float64x2_fixeddp(float64x2_t a) {
 int64x2_t kvx_float64x2_fixedudp(float64x2_t a) {
     return __builtin_kvx_fixedudp(a, 23, ".rn.s");
 }
-
+#ifndef __KV4__
 float64x2_t __attribute__ ((noinline))
 kvx_float64x2_fcdivdp(float64x2_t a, float64x2_t b)
 {
@@ -277,6 +279,7 @@ kvx_float64x2_fsdivdp(float64x2_t a, float64x2_t b)
 {
     return __builtin_kvx_fsdivdp(a, b, ".s");
 }
+#endif//__KV4__
 float64x2_t __attribute ((noinline))
 kvx_float64x2_select(float64x2_t a, float64x2_t b, int64x2_t c)
 {

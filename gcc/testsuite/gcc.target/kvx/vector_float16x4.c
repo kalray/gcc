@@ -209,6 +209,7 @@ kvx_float16x4_nez(float16x4_t a)
 {
     return a != 0.0;
 }
+#ifndef __KV4__
 float32x4_t __attribute__ ((noinline))
 kvx_float16x4_fmulxhwq(float16x4_t a, float16x4_t b)
 {
@@ -224,6 +225,7 @@ kvx_float16x4_ffmsxhwq(float16x4_t a, float16x4_t b, float32x4_t c)
 {
     return __builtin_kvx_ffmsxhwq(a, b, c, ".rn");
 }
+#endif//__KV4__
 float32x4_t __attribute__ ((noinline))
 kvx_float16x4_fwidenhwq(float16x4_t a)
 {
