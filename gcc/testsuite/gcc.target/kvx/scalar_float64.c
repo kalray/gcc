@@ -256,7 +256,7 @@ int64_t kvx_float64_fixedd(float64_t a) {
 int64_t kvx_float64_fixedud(float64_t a) {
     return __builtin_kvx_fixedud(a, 23, ".rn.s");
 }
-
+#ifndef __KV4__
 float64_t __attribute__ ((noinline))
 kvx_float64_fcdivd(float64_t a, float64_t b)
 {
@@ -267,3 +267,5 @@ kvx_float64_fsdivd(float64_t a, float64_t b)
 {
     return __builtin_kvx_fsdivd(a, b, ".s");
 }
+#endif//__KV4__
+

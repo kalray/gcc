@@ -209,6 +209,7 @@ kvx_float16x8_nez(float16x8_t a)
 {
     return a != 0.0;
 }
+#ifndef __KV4__
 float32x8_t __attribute__ ((noinline))
 kvx_float16x8_fmulxhwo(float16x8_t a, float16x8_t b)
 {
@@ -224,6 +225,7 @@ kvx_float16x8_ffmsxhwo(float16x8_t a, float16x8_t b, float32x8_t c)
 {
     return __builtin_kvx_ffmsxhwo(a, b, c, ".rn");
 }
+#endif//__KV4__
 float32x8_t __attribute__ ((noinline))
 kvx_float16x8_fwidenhwo(float16x8_t a)
 {

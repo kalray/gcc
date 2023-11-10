@@ -209,6 +209,7 @@ kvx_float32x2_nez(float32x2_t a)
 {
     return a != 0.0;
 }
+#ifndef __KV4__
 float32x2_t __attribute__ ((noinline))
 kvx_float32x2_faddcwc(float32x2_t a, float32x2_t b)
 {
@@ -219,6 +220,7 @@ kvx_float32x2_fsbfcwc(float32x2_t a, float32x2_t b)
 {
     return __builtin_kvx_fsbfwc(a, b, ".c.rn");
 }
+#endif//__KV4__
 float32x2_t __attribute__ ((noinline))
 kvx_float32x2_fsbfwc(float32x2_t a, float32x2_t b)
 {
@@ -229,31 +231,37 @@ kvx_float32x2_fmulwc(float32x2_t a, float32x2_t b)
 {
     return __builtin_kvx_fmulwc(a, b, ".rn");
 }
+#ifndef __KV4__
 float32x2_t __attribute__ ((noinline))
 kvx_float32x2_fmulcwc(float32x2_t a, float32x2_t b)
 {
     return __builtin_kvx_fmulwc(a, b, ".c.rn");
 }
+#endif//__KV4__
 float32x2_t __attribute__ ((noinline))
 kvx_float32x2_ffmawc(float32x2_t a, float32x2_t b, float32x2_t c)
 {
     return __builtin_kvx_ffmawc(a, b, c, ".rn");
 }
+#ifndef __KV4__
 float32x2_t __attribute__ ((noinline))
 kvx_float32x2_ffmcawc(float32x2_t a, float32x2_t b, float32x2_t c)
 {
     return __builtin_kvx_ffmawc(a, b, c, ".c.rn");
 }
+#endif//__KV4__
 float32x2_t __attribute__ ((noinline))
 kvx_float32x2_ffmswc(float32x2_t a, float32x2_t b, float32x2_t c)
 {
     return __builtin_kvx_ffmswc(a, b, c, ".rn");
 }
+#ifndef __KV4__
 float32x2_t __attribute__ ((noinline))
 kvx_float32x2_ffmcswc(float32x2_t a, float32x2_t b, float32x2_t c)
 {
     return __builtin_kvx_ffmswc(a, b, c, ".c.rn");
 }
+#endif//__KV4__
 float32x2_t __attribute__ ((noinline))
 kvx_float32x2_fconjwc(float32x2_t a)
 {
@@ -282,6 +290,7 @@ kvx_float32x2_frsrwp(float32x2_t a)
 {
     return __builtin_kvx_frsrwp(a, ".rn");
 }
+#ifndef __KV4__
 float32x2_t __attribute__ ((noinline))
 kvx_float32x2_fcdivwp(float32x2_t a, float32x2_t b)
 {
@@ -307,6 +316,7 @@ kvx_float32x2_ffmsxwdp(float32x2_t a, float32x2_t b, float64x2_t c)
 {
     return __builtin_kvx_ffmsxwdp(a, b, c, ".rn");
 }
+#endif//__KV4__
 float64x2_t __attribute__ ((noinline))
 kvx_float32x2_fwidenwdp(float32x2_t a)
 {
@@ -317,6 +327,7 @@ kvx_float32x2_fnarrowdwp(float64x2_t a)
 {
     return __builtin_kvx_fnarrowdwp(a, ".rn.s");
 }
+#ifndef __KV4__
 float32_t __attribute__ ((noinline))
 kvx_float32x2_ffdmaw(float32x2_t a, float32x2_t b)
 {
@@ -347,6 +358,7 @@ kvx_float32x2_ffdmasw(float32x2_t a, float32x2_t b, float32_t c)
 {
     return __builtin_kvx_ffdmasw(a, b, c, ".rn");
 }
+#endif//__KV4__
 float32x2_t __attribute ((noinline))
 kvx_float32x2_load(float32x2_t *p)
 {

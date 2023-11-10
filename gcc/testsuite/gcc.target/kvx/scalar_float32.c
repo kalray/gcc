@@ -267,6 +267,7 @@ kvx_float32_frsrw(float32_t a)
 {
     return __builtin_kvx_frsrw(a, ".rn");
 }
+#ifndef __KV4__
 float32_t __attribute__ ((noinline))
 kvx_float32_fcdivw(float32_t a, float32_t b)
 {
@@ -277,3 +278,5 @@ kvx_float32_fsdivw(float32_t a, float32_t b)
 {
     return __builtin_kvx_fsdivw(a, b, ".s");
 }
+#endif//__KV4__
+
