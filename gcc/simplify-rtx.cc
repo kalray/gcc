@@ -3212,6 +3212,11 @@ simplify_context::simplify_binary_operation_1 (rtx_code code,
 	}
       break;
 
+    /* TODO Simplifications for complex mult and fma.  */
+    case CMULT:
+    case CFMA:
+      return 0;
+
     case MULT:
       if (trueop1 == constm1_rtx)
 	return simplify_gen_unary (NEG, mode, op0, mode);
@@ -4867,6 +4872,10 @@ simplify_const_binary_operation (enum rtx_code code, machine_mode mode,
 	step_ok_p = distributes_over_addition_p (code, 2);
       rtx_vector_builder builder;
       if (!builder.new_binary_operation (mode, op0, op1, step_ok_p))
+	return 0;
+
+      /* TODO Simplifications for complex mult and fma.  */
+      if (code == CMULT || code == CFMA)
 	return 0;
 
       unsigned int count = builder.encoded_nelts ();
@@ -6562,6 +6571,7 @@ simplify_context::simplify_ternary_operation (rtx_code code, machine_mode mode,
   switch (code)
     {
     case FMA:
+    case CFMA:
       /* Simplify negations around the multiplication.  */
       /* -a * -b + c  =>  a * b + c.  */
       if (GET_CODE (op0) == NEG)
@@ -6583,8 +6593,10 @@ simplify_context::simplify_ternary_operation (rtx_code code, machine_mode mode,
 	std::swap (op0, op1), any_change = true;
 
       if (any_change)
-	return gen_rtx_FMA (mode, op0, op1, op2);
+	return (code == FMA) ? gen_rtx_FMA (mode, op0, op1, op2)
+			     : gen_rtx_CFMA (mode, op0, op1, op2);
       return NULL_RTX;
+
 
     case SIGN_EXTRACT:
     case ZERO_EXTRACT:

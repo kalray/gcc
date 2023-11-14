@@ -1164,7 +1164,7 @@ expand_complex_multiplication_components (gimple_seq *stmts, location_t loc,
     }
   else
     {
-      tree rc = gimple_build (stmts, loc, CFN_FAST_MULT, type, ac, bc);
+      tree rc = gimple_build (stmts, loc, CFN_FAST_CMULT, type, ac, bc);
       *rr = gimple_build (stmts, loc, REALPART_EXPR, inner_type, rc);
       *ri = gimple_build (stmts, loc, IMAGPART_EXPR, inner_type, rc);
     }
@@ -1184,7 +1184,7 @@ expand_complex_multiplication (gimple_stmt_iterator *gsi, tree type,
   tree inner_type = TREE_TYPE (type);
   location_t loc = gimple_location (gsi_stmt (*gsi));
   gimple_seq stmts = NULL;
-  bool fast_mult = direct_internal_fn_supported_p (IFN_FAST_MULT, type,
+  bool fast_mult = direct_internal_fn_supported_p (IFN_FAST_CMULT, type,
 						   bb_optimization_type
 						   (gimple_bb
 						    (gsi_stmt (*gsi))));

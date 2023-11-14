@@ -7534,6 +7534,19 @@ DEFINE_INT_AND_FLOAT_ROUND_FN (RINT)
    (if (single_use (@3))
     (IFN_FNMS @0 @1 @2))))
 
+  (simplify
+   (IFN_COMPLEX_FMA @0 @1 (negate @2))
+   (IFN_COMPLEX_FMS @0 @1 @2))
+  (simplify
+   (IFN_COMPLEX_FMA (negate @0) @1 @2)
+   (IFN_COMPLEX_FNMA @0 @1 @2))
+  (simplify
+   (IFN_COMPLEX_FMA @0 (negate @1) @2)
+   (IFN_COMPLEX_FNMA @0 @1 @2))
+  (simplify
+   (IFN_COMPLEX_FNMA @0 (conj @1) @2)
+   (IFN_COMPLEX_FNMA (conj @1) @0 @2))
+
  (simplify
   (IFN_FMS:c (negate @0) @1 @2)
   (IFN_FNMS @0 @1 @2))

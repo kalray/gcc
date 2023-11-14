@@ -464,6 +464,7 @@ DEF_RTL_EXPR(NEG, "neg", "e", RTX_UNARY)
 DEF_RTL_EXPR(CONJ, "conj", "e", RTX_UNARY)
 
 DEF_RTL_EXPR(MULT, "mult", "ee", RTX_COMM_ARITH)
+DEF_RTL_EXPR(CMULT, "cmult", "ee", RTX_COMM_ARITH)
 
 /* Multiplication with signed saturation */
 DEF_RTL_EXPR(SS_MULT, "ss_mult", "ee", RTX_COMM_ARITH)
@@ -755,6 +756,7 @@ DEF_RTL_EXPR(US_TRUNCATE, "us_truncate", "e", RTX_UNARY)
 
 /* Floating point multiply/add combined instruction.  */
 DEF_RTL_EXPR(FMA, "fma", "eee", RTX_TERNARY)
+DEF_RTL_EXPR(CFMA, "cfma", "eee", RTX_TERNARY)
 
 /* Information about the variable and its location.  */
 DEF_RTL_EXPR(VAR_LOCATION, "var_location", "te", RTX_EXTRA)

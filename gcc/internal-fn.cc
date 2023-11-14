@@ -3989,6 +3989,8 @@ commutative_ternary_fn_p (internal_fn fn)
     case IFN_FMS:
     case IFN_FNMA:
     case IFN_FNMS:
+    case IFN_COMPLEX_FMA:
+    case IFN_COMPLEX_FMS:
       return true;
 
     default:

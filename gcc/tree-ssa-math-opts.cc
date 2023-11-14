@@ -2694,9 +2694,11 @@ convert_expand_mult_copysign (gimple *stmt, gimple_stmt_iterator *gsi)
 {
   tree treeop0, treeop1, lhs, type;
   location_t loc = gimple_location (stmt);
-  lhs = gimple_assign_lhs (stmt);
-  treeop0 = gimple_assign_rhs1 (stmt);
-  treeop1 = gimple_assign_rhs2 (stmt);
+  lhs = gimple_get_lhs (stmt);
+  treeop0 = is_gimple_call (stmt) ? gimple_call_arg (stmt, 0)
+				  : gimple_assign_rhs1 (stmt);
+  treeop1 = is_gimple_call (stmt) ? gimple_call_arg (stmt, 1)
+				  : gimple_assign_rhs2 (stmt);
   type = TREE_TYPE (lhs);
   machine_mode mode = TYPE_MODE (type);
 
@@ -2746,7 +2748,7 @@ convert_mult_to_widen (gimple *stmt, gimple_stmt_iterator *gsi)
   location_t loc = gimple_location (stmt);
   bool from_unsigned1, from_unsigned2;
 
-  lhs = gimple_assign_lhs (stmt);
+  lhs = gimple_get_lhs (stmt);
   type = TREE_TYPE (lhs);
   if (TREE_CODE (type) != INTEGER_TYPE)
     return false;
@@ -3067,7 +3069,7 @@ convert_plusminus_to_widen (gimple_stmt_iterator *gsi, gimple *stmt,
    multiplication, converted to FMAs, perform the transformation.  */
 
 static void
-convert_mult_to_fma_1 (tree mul_result, tree op1, tree op2)
+convert_mult_to_fma_1 (tree mul_result, tree op1, tree op2, bool cplx)
 {
   tree type = TREE_TYPE (mul_result);
   gimple *use_stmt;
@@ -3126,7 +3128,8 @@ convert_mult_to_fma_1 (tree mul_result, tree op1, tree op2)
 	fma_stmt = gimple_build_call_internal (IFN_COND_FMA, 5, cond, mulop1,
 					       op2, addop, else_value);
       else
-	fma_stmt = gimple_build_call_internal (IFN_FMA, 3, mulop1, op2, addop);
+	fma_stmt = gimple_build_call_internal (cplx ? IFN_COMPLEX_FMA : IFN_FMA,
+					       3, mulop1, op2, addop);
       gimple_set_lhs (fma_stmt, gimple_get_lhs (use_stmt));
       gimple_call_set_nothrow (fma_stmt, !stmt_can_throw_internal (cfun,
 								   use_stmt));
@@ -3244,7 +3247,9 @@ cancel_fma_deferring (fma_deferring_state *state)
 	fprintf (dump_file, "Generating deferred FMA\n");
 
       const fma_transformation_info &fti = state->m_candidates[i];
-      convert_mult_to_fma_1 (fti.mul_result, fti.op1, fti.op2);
+      bool cplx = is_gimple_call (fti.mul_stmt)
+		  && gimple_call_combined_fn (fti.mul_stmt) == CFN_COMPLEX_MUL;
+      convert_mult_to_fma_1 (fti.mul_result, fti.op1, fti.op2, cplx);
 
       gimple_stmt_iterator gsi = gsi_for_stmt (fti.mul_stmt);
       gsi_remove (&gsi, true);
@@ -3430,6 +3435,7 @@ convert_mult_to_fma (gimple *mul_stmt, tree op1, tree op2,
   gimple *use_stmt, *neguse_stmt;
   use_operand_p use_p;
   imm_use_iterator imm_iter;
+  bool cplx = is_gimple_call (mul_stmt);
 
   if (FLOAT_TYPE_P (type)
       && flag_fp_contract_mode == FP_CONTRACT_OFF)
@@ -3443,7 +3449,8 @@ convert_mult_to_fma (gimple *mul_stmt, tree op1, tree op2,
   /* If the target doesn't support it, don't generate it.  We assume that
      if fma isn't available then fms, fnma or fnms are not either.  */
   optimization_type opt_type = bb_optimization_type (gimple_bb (mul_stmt));
-  if (!direct_internal_fn_supported_p (IFN_FMA, type, opt_type))
+  if (!direct_internal_fn_supported_p (cplx ? IFN_COMPLEX_FMA : IFN_FMA,
+				       type, opt_type))
     return false;
 
   /* If the multiplication has zero uses, it is kept around probably because
@@ -3662,7 +3669,7 @@ convert_mult_to_fma (gimple *mul_stmt, tree op1, tree op2,
     {
       if (state->m_deferring_p)
 	cancel_fma_deferring (state);
-      convert_mult_to_fma_1 (mul_result, op1, op2);
+      convert_mult_to_fma_1 (mul_result, op1, op2, cplx);
       return true;
     }
 }
@@ -4085,7 +4092,7 @@ static bool
 match_arith_overflow (gimple_stmt_iterator *gsi, gimple *stmt,
 		      enum tree_code code, bool *cfg_changed)
 {
-  tree lhs = gimple_assign_lhs (stmt);
+  tree lhs = gimple_get_lhs (stmt);
   tree type = TREE_TYPE (lhs);
   use_operand_p use_p;
   imm_use_iterator iter;
@@ -5218,6 +5225,21 @@ math_opts_dom_walker::after_dom_children (basic_block bb)
 
 	    case CFN_LAST:
 	      cancel_fma_deferring (&fma_state);
+	      break;
+
+	    case CFN_COMPLEX_MUL:
+	      if (!convert_mult_to_widen (stmt, &gsi)
+		  && !convert_expand_mult_copysign (stmt, &gsi)
+		  && convert_mult_to_fma (stmt,
+					  gimple_call_arg (stmt, 0),
+					  gimple_call_arg (stmt, 1),
+					  &fma_state))
+		{
+		  gsi_remove (&gsi, true);
+		  release_defs (stmt);
+		  continue;
+		}
+	      match_arith_overflow (&gsi, stmt, code, m_cfg_changed_p);
 	      break;
 
 	    case CFN_COMPLEX_ROT90:
