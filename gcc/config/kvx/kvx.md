@@ -1118,6 +1118,8 @@
 
 (include "vector.md")
 
+(include "complex.md")
+
 (include "control.md")
 
 (include "builtin.md")

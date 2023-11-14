@@ -8,8 +8,8 @@
 #include "vect_complex_operations.h"
 
 /* KV3-1 */
-/* { dg-final { scan-tree-dump-times "vectorized 1 loops in function"  1 "vect"         { target { any-opts "-march=kv3-1" } } } } */
-/* { dg-final { scan-assembler-times "sq"                              1                { target { any-opts "-march=kv3-1" } } } } */
+/* { dg-final { scan-tree-dump-times "vectorized 1 loops in function"  4 "vect"         { target { any-opts "-march=kv3-1" } } } } */
+/* { dg-final { scan-assembler-times "sq"                              4                { target { any-opts "-march=kv3-1" } } } } */
 
 /* KV3-2 */
 /* { dg-final { scan-tree-dump-times "vectorized 1 loops in function"  7 "vect"         { target { any-opts "-march=kv3-2" } } } } */

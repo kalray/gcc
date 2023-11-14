@@ -776,6 +776,8 @@ extern void kvx_profile_hook (void);
 
 #define TARGET_SUPPORTS_WIDE_INT 1
 
+#define TARGET_SUPPORTS_COMPLEX_TO_VECTOR 1
+
 /* The __bypass, __preload and __speculate address spaces refers to the same
  * memory but direct load instructions to use a variant modifier.  */
 #define KVX_ADDR_SPACE_BYPASS 1

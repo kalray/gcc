@@ -7,9 +7,6 @@
   (SF "w")
   (HC "w")
   (DI "d")
-  (CQI "h")
-  (CHI "w")
-  (CSI "d")
   (DF "d")
   (SC "d")
   (TI "q")
@@ -44,9 +41,6 @@
   (SI "wz")
   (SF "wz")
   (HC "wz")
-  (CQI "hz")
-  (CHI "wz")
-  (CSI "d")
   (DI "d")
   (DF "d")
   (SC "d")
@@ -348,8 +342,8 @@
 
 ;; Scalar modes used by the mov pattern that fit in a register.
 ;; TI and OI and to be handled elsewhere.
-;; (define_mode_iterator ALLIF [QI HI HF SI SF DI DF HC SC CQI CHI CSI])
-(define_mode_iterator ALLIF [QI HI HF SI SF DI DF HC SC CQI CHI CSI])
+;; (define_mode_iterator ALLIF [QI HI HF SI SF DI DF])
+(define_mode_iterator ALLIF [QI HI HF SI SF DI DF])
 
 ;; Attribute for ALLIF copies (COPYW, COPYD, COPYQ, COPYO).
 (define_mode_attr copyx [
@@ -365,9 +359,6 @@
   (TI "q")
   (DC "q")
   (OI "o")
-  (CHI "w")
-  (CQI "w")
-  (CSI "d")
 ])
 
 (define_mode_iterator ALLP [SI DI])
@@ -383,11 +374,9 @@
 ;; for valid pointer modes: SI or DI. Anything else is an error.
 ;; Values 999 are used for modes where the alternative must always be disabled.
 (define_mode_attr symlen1 [
-  (SI "_x") (DI "_y") (QI "") (HI "") (HF "") (SF "") (DF "") (HC "") (SC "") (CQI "") (CHI "") (CSI "")
-])
+  (SI "_x") (DI "_y") (QI "") (HI "") (HF "") (SF "") (DF "")])
 (define_mode_attr symlen2 [
-  (SI "8") (DI "12") (QI "999") (HI "999") (HF "999") (SF "999") (DF "999") (HC "999") (SC "999") (CQI "999") (CHI "999") (CSI "999")
-])
+  (SI "8") (DI "12") (QI "999") (HI "999") (HF "999") (SF "999") (DF "999")])
 
 (define_attr "disabled" "yes,no" (const_string "no"))
 
@@ -433,30 +422,30 @@
 
 ;; Iterator for the scalar modes that fit in a GPR.
 (define_mode_iterator SCALAR [
-  QI HI HF SI SF DI DF HC SC CQI CHI CSI
+  QI HI HF SI SF DI DF
 ])
 
 ;; Iterator for the modes that fit in a GPR.
 (define_mode_iterator FITGPR [
-  QI HI HF SI SF DI DF HC SC CQI CHI CSI
-  V8QI V4HI V4HF V2SI V2SF V4CQI V2CHI
+  QI HI HF SI SF DI DF
+  V8QI V4HI V4HF V2SI V2SF
 ])
 
-;; Iterator for the scalar integer complex modes that fit in a GPR.
+;; Iterator for the complex modes seen as vectors that fit in a GPR.
 (define_mode_iterator CPLX_I [
-  (CQI "KV3_2") CHI CSI
+  (V2QI "KV3_2||KV4") V2HI
 ])
 
-;; Iterator for the scalar integer complex modes that fit in a GPR
+;; Iterator for the integer complex modes see as vector that fit in a GPR
 ;; and have a fused conjugate operations.
 (define_mode_iterator CPLX_C [
-  CHI CSI
+  V2HI V2SI
 ])
 
 ;; Iterator for all 64-bit modes.
 (define_mode_iterator ALL64 [
-  DI DF SC
-  V8QI V4HI V4HF V2SI V2SF V1DI V4CQI V2CHI
+  DI DF
+  V8QI V4HI V4HF V2SI V2SF V1DI
 ])
 
 ;; Iterator for the 8-bit x8 vector modes.
@@ -474,33 +463,25 @@
   V2SI V2SF
 ])
 
-;; Iterator for the 64-bit vector of real modes.
-(define_mode_iterator SIMD64 [
-  V8QI V4HI V4HF V2SI V2SF V1DI
+;; Iterator for the 16-bit vector modes.
+(define_mode_iterator SIMD16 [
+  V2QI
 ])
 
-;; Iterator for the 64-bit vector of real and complex modes.
-(define_mode_iterator SIMD64_CPLX [
+;; Iterator for the 32-bit vector modes.
+(define_mode_iterator SIMD32 [
+  V2HI
+])
+
+;; Iterator for the 64-bit vector modes.
+(define_mode_iterator SIMD64 [
   V8QI V4HI V4HF V2SI V2SF V1DI
-  V2CHI V4CQI
 ])
 
 ;; Iterator for all 128-bit real modes.
 (define_mode_iterator ALL128 [
   TI
   V16QI V8HI V8HF V4SI V2DI V4SF V2DF
-])
-
-;; Iterator for all 128-bit real and complex modes.
-(define_mode_iterator ALL128_CPLX [
-  TI
-  V16QI V8HI V8HF V4SI V2DI V4SF V2DF
-  DC V4CHI V8CQI V2SC V2CSI
-])
-
-;; Iterator for the 128-bit vector modes.
-(define_mode_iterator SIMD128_CPLX [
-  V4CHI V8CQI V2SC V2CSI
 ])
 
 ;; Iterator for the 128-bit vector modes.
@@ -552,7 +533,6 @@
   V16QI V8HI V4SI V2DI
   V32QI V16HI V8SI V4DI
   V64QI V32HI V16SI V8DI
-  CQI CHI CSI CDI SC DC
 ])
 
 ;; Iterator for all modes (integer, float, vector) for MOV*CC.
@@ -574,9 +554,8 @@
   (HF      "h")
   (SF      "w")
   (DF      "d")
-  (CQI     "bo")
-  (CHI     "hq")
-  (CSI     "wp")
+  (V2QI    "bo")
+  (V2HI    "hq")
   (V8QI    "bo")
   (V4HI    "hq")
   (V4HF    "hq")
@@ -604,20 +583,18 @@
   (V16SF   "wx")
   (V8DI    "do")
   (V8DF    "do")
-  (V4CQI   "bo")
-  (V2CHI   "hq")
 ])
 
 ;; Attribute to get the suffix of a complex instruction with conj.
 (define_mode_attr suffixc [
-  (CHI   "hcp.c")
-  (CSI   "wc.c")
+  (V2HI   "hcp.c")
+  (V2SI   "wc.c")
 ])
 
-;; Attribute to get the bit size of inner elements of complex modes.
+;; Attribute to get the bit size of inner elements.
 (define_mode_attr innersize [
-  (CHI    "16")
-  (CSI    "32")
+  (V2HI    "16")
+  (V2SI    "32")
 ])
 
 
@@ -881,8 +858,6 @@
   (V8OI    "V4OI")
   (V16OI   "V8OI")
   (V32OI   "V16OI")
-  (V4CHI   "V2CHI")
-  (V2CSI   "CSI")
 ])
 
 ;; Attribute to get the half mode of a vector mode.
@@ -909,8 +884,6 @@
   (V16SF   "v8sf")
   (V8DI    "v4di")
   (V8DF    "v4df")
-  (V4CHI   "v2chi")
-  (V2CSI   "csi")
 ])
 
 ;; Attribute to get the half mask MODE of a vector mode.
@@ -982,8 +955,8 @@
   (V16HF   "V8SF")
   (V8SI    "V4DI")
   (V8SF    "V4DF")
-  (CHI     "SI")
-  (CSI     "DI")
+  (V2HI     "SI")
+  (V2SI     "DI")
 ])
 
 ;; Attribute to get the half wide mode of a vector mode.
@@ -1260,9 +1233,6 @@
   (V16SF   "wp")
   (V8DI    "d")
   (V8DF    "d")
-  (V8CQI   "bo")
-  (V4CHI   "hq")
-  (V2CSI   "wp")
 ])
 
 ;; Attribute to get the suffix of a vector by scalar instruction.
@@ -1299,8 +1269,8 @@
 
 ;; Attribute to get the suffix of a vector by complex instruction with conj.
 (define_mode_attr chunkxc [
-  (V4CHI   "hcp.c")
-  (V2CSI   "wc.c")
+  (V8HI   "hcp.c")
+  (V4SI   "wc.c")
 ])
 
 ;; Iterator for the non-byte small element 64-bit vector modes.
@@ -1336,7 +1306,7 @@
 
 ;; Iterator for the 64-bit vector complex integer modes.
 (define_mode_iterator V64CI [
-  (V4CQI "KV3_2") V2CHI
+  (V8QI "KV3_2||KV4") V4HI
 ])
 
 ;; Iterator for the small element 128-bit vector FP modes.
@@ -1403,18 +1373,18 @@
 
 ;; Iterator for all the 128-bit vector complex integer modes.
 (define_mode_iterator V128CI [
-  (V8CQI "KV3_2") V4CHI V2CSI
+  (V16QI "KV3_2||KV4") V8HI V4SI
 ])
 
 ;; Iterator for all the 128-bit vector complex integer modes with conjugate.
 (define_mode_iterator V128CC [
-  (V4CHI "KV3_1") (V2CSI "KV3_1")
+  (V8HI "KV3_1") (V4SI "KV3_1")
 ])
 
 ;; Iterator for all the 128-bit vector complex integer modes supported both on 
 ;; KV3_1 and KV3_2.
 (define_mode_iterator V128CB [
-  V4CHI V2CSI
+  V8HI V4SI
 ])
 
 ;; Iterator for the small element 256-bit vector FP modes.

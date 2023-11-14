@@ -1468,7 +1468,7 @@ kvx_vector_mode_supported_p (enum machine_mode mode)
 
   // In core, support up to 64-byte vectors (8 registers).
   unsigned size = GET_MODE_SIZE (mode);
-  return (size >= UNITS_PER_WORD && size <= UNITS_PER_WORD * 8);
+  return (size <= UNITS_PER_WORD * 8);
 }
 
 static bool
@@ -1491,30 +1491,16 @@ kvx_vectorize_preferred_simd_mode (scalar_mode mode)
   return mode_for_vector (inner_mode, nunits).require ();
 }
 
-static machine_mode
-kvx_vectorize_preferred_simd_mode_complex (complex_mode mode)
-{
-  unsigned inner_size = GET_MODE_SIZE (mode);
-  unsigned nunits = (UNITS_PER_WORD * 2) / inner_size;
-  if (nunits <= 1)
-    return word_mode;
-  return mode_for_vector (mode, nunits).require ();
-}
-
 static rtx
 kvx_gen_rtx_complex (machine_mode mode, rtx real_part, rtx imag_part)
 {
   machine_mode imode = GET_MODE_INNER (mode);
 
-  if ((real_part == imag_part) && (real_part == CONST0_RTX (imode)))
-    {
-      if (CONST_DOUBLE_P (real_part))
-	return const_double_from_real_value (dconst0, mode);
-      else if (CONST_INT_P (real_part))
-	return GEN_INT (0);
-      else
-	gcc_unreachable ();
-    }
+  /* Still use concat for unitialized registers.  */
+  if (real_part && imag_part
+      && ((CONST_INT_P (real_part) && CONST_INT_P (imag_part))
+	  || (CONST_DOUBLE_P (real_part) && CONST_DOUBLE_P (imag_part))))
+    return gen_rtx_CONCAT (mode, real_part, imag_part);
 
   bool saved_generating_concat_p = generating_concat_p;
   generating_concat_p = false;
@@ -1544,7 +1530,7 @@ kvx_read_complex_part (rtx cplx, complex_part_t part)
   unsigned ibitsize;
 
   if (GET_CODE (cplx) == CONCAT)
-    return XEXP (cplx, part);
+    return (part == BOTH_P) ? cplx : XEXP (cplx, part);
 
   cmode = GET_MODE (cplx);
   imode = GET_MODE_INNER (cmode);
@@ -1562,11 +1548,6 @@ kvx_read_complex_part (rtx cplx, complex_part_t part)
   /* Cannot get a part of a VOIDmode element.  */
   if (cmode == E_VOIDmode)
     return cplx;
-
-  /* There is no zero const_tetra, so we cheat by using zero const_double and
-     catch the case here.  */
-  if ((cmode == E_DCmode) && (GET_CODE (cplx) == CONST_DOUBLE))
-    return CONST0_RTX (E_DFmode);
 
   /* Special case reads from complex constants that got spilled to memory.  */
   if (MEM_P (cplx) && GET_CODE (XEXP (cplx, 0)) == SYMBOL_REF)
@@ -1629,7 +1610,7 @@ kvx_read_complex_part (rtx cplx, complex_part_t part)
 void
 kvx_write_complex_part (rtx cplx, rtx val, complex_part_t part, bool undefined_p)
 {
-  machine_mode cmode;
+  machine_mode cmode, vmode;
   scalar_mode imode;
   unsigned ibitsize;
 
@@ -1637,47 +1618,31 @@ kvx_write_complex_part (rtx cplx, rtx val, complex_part_t part, bool undefined_p
   imode = GET_MODE_INNER (cmode);
   ibitsize = GET_MODE_BITSIZE (imode);
 
+  vmode = cmode;
+  if (!mode_for_vector (imode, 2).exists (&vmode) && (part == BOTH_P))
+    {
+      write_complex_part (cplx, read_complex_part (val, REAL_P), REAL_P, true);
+      write_complex_part (cplx, read_complex_part (val, IMAG_P), IMAG_P, false);
+      return;
+    }
+
   /* special case for constants */
   if (GET_CODE (val) == CONST_VECTOR)
     {
       if (part == BOTH_P)
 	{
-	  machine_mode temp_mode = E_BLKmode;;
-	  switch (cmode)
+	  if (vmode != E_BLKmode)
 	    {
-	    case E_CQImode:
-	      temp_mode = E_HImode;
-	      break;
-	    case E_CHImode:
-	      temp_mode = E_SImode;
-	      break;
-	    case E_CSImode:
-	      temp_mode = E_DImode;
-	      break;
-	    case E_SCmode:
-	      temp_mode = E_DFmode;
-	      break;
-	    case E_CDImode:
-	      temp_mode = E_TImode;
-	      break;
-	    case E_DCmode:
-	    default:
-	      break;
-	    }
-
-	  if (temp_mode != E_BLKmode)
-	    {
-	      rtx temp_reg = gen_reg_rtx (temp_mode);
-	      store_bit_field (temp_reg, GET_MODE_BITSIZE (temp_mode), 0, 0,
+	      rtx temp_reg = gen_reg_rtx (vmode);
+	      store_bit_field (temp_reg, GET_MODE_BITSIZE (vmode), 0, 0,
 			       0, GET_MODE (val), val, false, undefined_p);
 	      emit_move_insn (cplx,
-			      simplify_gen_subreg (cmode, temp_reg, temp_mode,
+			      simplify_gen_subreg (cmode, temp_reg, vmode,
 						   0));
 	    }
 	  else
 	    {
 	      /* write real part and imag part separately */
-	      gcc_assert (GET_CODE (val) == CONST_VECTOR);
 	      write_complex_part (cplx, const_vector_elt (val, 0), REAL_P, true);
 	      write_complex_part (cplx, const_vector_elt (val, 1), IMAG_P, false);
 	    }
@@ -1687,20 +1652,6 @@ kvx_write_complex_part (rtx cplx, rtx val, complex_part_t part, bool undefined_p
 			    const_vector_elt (val,
 					      ((part == REAL_P) ? 0 : 1)),
 			    part, true);
-      return;
-    }
-
-  if ((part == BOTH_P) && !MEM_P (cplx))
-    {
-      /* Real and imag parts can be passed in a CONCAT during the expand of a
-	 COMPLEX_EXPR.  */
-      if (GET_CODE (val) == CONCAT)
-	{
-	  emit_move_insn (simplify_gen_subreg (imode, cplx, cmode, 0), XEXP (val, 0));
-	  write_complex_part (cplx, XEXP (val, 1), IMAG_P, false);
-	}
-      else
-	emit_move_insn (cplx, val);
       return;
     }
 
@@ -1721,7 +1672,33 @@ kvx_write_complex_part (rtx cplx, rtx val, complex_part_t part, bool undefined_p
 	    }
 	}
       else
-	gcc_unreachable ();
+	{
+	  if (val != CONST0_RTX (cmode))
+	    gcc_unreachable ();
+
+	  write_complex_part (cplx, CONST0_RTX (imode), REAL_P, true);
+	  write_complex_part (cplx, CONST0_RTX (imode), IMAG_P, false);
+	  return;
+	}
+    }
+
+  if ((part == BOTH_P) && !MEM_P (cplx))
+    {
+      /* Real and imag parts can be passed in a CONCAT during the expand of a
+	 COMPLEX_EXPR.  */
+      if (GET_CODE (val) == CONCAT)
+	{
+	  emit_move_insn (simplify_gen_subreg (imode, cplx, cmode, 0),
+			  XEXP (val, 0));
+	  write_complex_part (cplx, XEXP (val, 1), IMAG_P, false);
+	}
+      else
+	{
+	  rtx vec_val = simplify_gen_subreg (vmode, val, GET_MODE (val), 0);
+	  rtx vec_cplx = simplify_gen_subreg (vmode, cplx, cmode, 0);
+	  emit_move_insn (vec_cplx, vec_val);
+	}
+      return;
     }
 
   if (GET_CODE (cplx) == CONCAT)
@@ -1742,12 +1719,16 @@ kvx_write_complex_part (rtx cplx, rtx val, complex_part_t part, bool undefined_p
 	  /* Real and imag parts can be passed in a CONCAT during the expand of a
 	     COMPLEX_EXPR.  */
 	  if (GET_CODE (val) == CONCAT)
-	  {
-	    write_complex_part (cplx, XEXP (val, 0), REAL_P);
-	    write_complex_part (cplx, XEXP (val, 1), IMAG_P);
-	  }
+	    {
+	      write_complex_part (cplx, XEXP (val, 0), REAL_P, true);
+	      write_complex_part (cplx, XEXP (val, 1), IMAG_P, false);
+	    }
 	  else
-	    emit_move_insn (adjust_address_nv (cplx, cmode, 0), val);
+	    {
+	      rtx vec_val = (MEM_P (val)) ? adjust_address_nv (val, vmode, 0)
+		: simplify_gen_subreg (vmode, val, GET_MODE (val), 0);
+	      emit_move_insn (adjust_address_nv (cplx, vmode, 0), vec_val);
+	    }
 	}
       else
 	emit_move_insn (adjust_address_nv (cplx, imode, (part == IMAG_P)
@@ -4432,6 +4413,9 @@ kvx_vectorize_vec_perm_const (machine_mode vmode, rtx target, rtx op0,
 {
   if (GET_MODE_SIZE (vmode) > 64)
     return false;
+
+  if (vmode == E_V2QImode || vmode == E_V2HImode)
+    return false; // TODO Allow vec perm for these modes.
 
   opt_machine_mode smode = related_int_vector_mode (vmode);
   rtx sel_rtx = vec_perm_indices_to_rtx (smode.else_void (), sel);
@@ -9455,9 +9439,6 @@ kvx_omp_device_kind_arch_isa (enum omp_device_kind_arch_isa trait,
 
 #undef TARGET_VECTORIZE_PREFERRED_SIMD_MODE
 #define TARGET_VECTORIZE_PREFERRED_SIMD_MODE kvx_vectorize_preferred_simd_mode
-
-#undef TARGET_VECTORIZE_PREFERRED_SIMD_MODE_COMPLEX
-#define TARGET_VECTORIZE_PREFERRED_SIMD_MODE_COMPLEX kvx_vectorize_preferred_simd_mode_complex
 
 #undef TARGET_GEN_RTX_COMPLEX
 #define TARGET_GEN_RTX_COMPLEX kvx_gen_rtx_complex

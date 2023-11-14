@@ -1,8 +1,8 @@
-;; 64-bit Vector Moves
+;; 16-bit Vector Moves
 
 (define_expand "mov<mode>"
-  [(set (match_operand:SIMD64_CPLX 0 "nonimmediate_operand" "")
-        (match_operand:SIMD64_CPLX 1 "general_operand" ""))]
+  [(set (match_operand:SIMD16 0 "nonimmediate_operand" "")
+        (match_operand:SIMD16 1 "general_operand" ""))]
   ""
   {
     if (MEM_P(operands[0]))
@@ -11,8 +11,78 @@
 )
 
 (define_insn "*mov<mode>"
-  [(set (match_operand:SIMD64_CPLX 0 "nonimmediate_operand" "=r, r, r, r, r, r, r,a,b,m,  r,  r,r")
-        (match_operand:SIMD64_CPLX 1 "general_operand"       "r,Ca,Cb,Cm,Za,Zb,Zm,r,r,r,S16,S43,i"))]
+  [(set (match_operand:SIMD16 0 "nonimmediate_operand" "=r, r, r, r, r, r, r,a,b,m,  r,  r,r")
+        (match_operand:SIMD16 1 "general_operand"       "r,Ca,Cb,Cm,Za,Zb,Zm,r,r,r,S16,S43,i"))]
+  "(!immediate_operand (operands[1], <MODE>mode) || !memory_operand (operands[0], <MODE>mode))"
+  {
+    switch (which_alternative)
+      {
+      case 0:
+        return "copyw %0 = %1";
+      case 1: case 2: case 3: case 4: case 5: case 6:
+        return "lhz%V1 %0 = %1";
+      case 7: case 8: case 9:
+        return "sh%X0 %0 = %1";
+      case 10: case 11: case 12:
+        return "make %0 = %1";
+      default:
+        gcc_unreachable ();
+      }
+  }
+  [(set_attr "type" "alu_tiny,load_core,load_core_x,load_core_y,load_core_uncached,load_core_uncached_x,load_core_uncached_y,store_core,store_core_x,store_core_y,alu_tiny,alu_tiny_x,alu_tiny_y")
+   (set_attr "length" "     4,            4,              8,             12,                     4,                       8,                      12,             4,               8,              12,       4,         8,        12")]
+)
+
+;; 32-bit Vector Moves
+
+(define_expand "mov<mode>"
+  [(set (match_operand:SIMD32 0 "nonimmediate_operand" "")
+        (match_operand:SIMD32 1 "general_operand" ""))]
+  ""
+  {
+    if (MEM_P(operands[0]))
+      operands[1] = force_reg (<MODE>mode, operands[1]);
+  }
+)
+
+(define_insn "*mov<mode>"
+  [(set (match_operand:SIMD32 0 "nonimmediate_operand" "=r, r, r, r, r, r, r,a,b,m,  r,  r,r")
+        (match_operand:SIMD32 1 "general_operand"       "r,Ca,Cb,Cm,Za,Zb,Zm,r,r,r,S16,S43,i"))]
+  "(!immediate_operand (operands[1], <MODE>mode) || !memory_operand (operands[0], <MODE>mode))"
+  {
+    switch (which_alternative)
+      {
+      case 0:
+        return "copyw %0 = %1";
+      case 1: case 2: case 3: case 4: case 5: case 6:
+        return "lwz%V1 %0 = %1";
+      case 7: case 8: case 9:
+        return "sw%X0 %0 = %1";
+      case 10: case 11: case 12:
+        return "make %0 = %1";
+      default:
+        gcc_unreachable ();
+      }
+  }
+  [(set_attr "type" "alu_tiny,load_core,load_core_x,load_core_y,load_core_uncached,load_core_uncached_x,load_core_uncached_y,store_core,store_core_x,store_core_y,alu_tiny,alu_tiny_x,alu_tiny_y")
+   (set_attr "length" "     4,            4,              8,             12,                     4,                       8,                      12,             4,               8,              12,       4,         8,        12")]
+)
+
+;; 64-bit Vector Moves
+
+(define_expand "mov<mode>"
+  [(set (match_operand:SIMD64 0 "nonimmediate_operand" "")
+        (match_operand:SIMD64 1 "general_operand" ""))]
+  ""
+  {
+    if (MEM_P(operands[0]))
+      operands[1] = force_reg (<MODE>mode, operands[1]);
+  }
+)
+
+(define_insn "*mov<mode>"
+  [(set (match_operand:SIMD64 0 "nonimmediate_operand" "=r, r, r, r, r, r, r,a,b,m,  r,  r,r")
+        (match_operand:SIMD64 1 "general_operand"       "r,Ca,Cb,Cm,Za,Zb,Zm,r,r,r,S16,S43,i"))]
   "(!immediate_operand (operands[1], <MODE>mode) || !memory_operand (operands[0], <MODE>mode))"
   {
     switch (which_alternative)
@@ -48,8 +118,8 @@
 ;; 128-bit Vector Moves
 
 (define_expand "mov<mode>"
-  [(set (match_operand:ALL128_CPLX 0 "nonimmediate_operand" "")
-        (match_operand:ALL128_CPLX 1 "general_operand" ""))]
+  [(set (match_operand:ALL128 0 "nonimmediate_operand" "")
+        (match_operand:ALL128 1 "general_operand" ""))]
   ""
   {
     bool misaligned_0 = kvx_hardreg_misaligned_p (operands[0], 2);
@@ -68,8 +138,8 @@
 )
 
 (define_insn_and_split "*copy<mode>"
-  [(set (match_operand:ALL128_CPLX 0 "register_operand" "=r")
-        (match_operand:ALL128_CPLX 1 "register_operand" "r"))]
+  [(set (match_operand:ALL128 0 "register_operand" "=r")
+        (match_operand:ALL128 1 "register_operand" "r"))]
   "kvx_hardreg_misaligned_p (operands[0], 2) || kvx_hardreg_misaligned_p (operands[1], 2)"
   "#"
   "&& reload_completed"
@@ -81,8 +151,8 @@
 )
 
 (define_insn "*mov<mode>"
-  [(set (match_operand:ALL128_CPLX 0 "nonimmediate_operand" "=r, r, r, r, r, r, r,a,b,m")
-        (match_operand:ALL128_CPLX 1 "nonimmediate_operand"  "r,Ca,Cb,Cm,Za,Zb,Zm,r,r,r"))]
+  [(set (match_operand:ALL128 0 "nonimmediate_operand" "=r, r, r, r, r, r, r,a,b,m")
+        (match_operand:ALL128 1 "nonimmediate_operand"  "r,Ca,Cb,Cm,Za,Zb,Zm,r,r,r"))]
   "!kvx_hardreg_misaligned_p (operands[0], 2) && !kvx_hardreg_misaligned_p (operands[1], 2)"
   {
     switch (which_alternative)
@@ -102,8 +172,8 @@
 )
 
 (define_split
-  [(set (match_operand:ALL128_CPLX 0 "register_operand" "")
-        (match_operand:ALL128_CPLX 1 "register_operand" ""))]
+  [(set (match_operand:ALL128 0 "register_operand" "")
+        (match_operand:ALL128 1 "register_operand" ""))]
   "reload_completed"
   [(use (const_int 0))]
   {
@@ -113,8 +183,8 @@
 )
 
 (define_insn_and_split "*make<mode>"
-  [(set (match_operand:ALL128_CPLX 0 "register_operand" "=r")
-        (match_operand:ALL128_CPLX 1 "immediate_operand" "i"))]
+  [(set (match_operand:ALL128 0 "register_operand" "=r")
+        (match_operand:ALL128 1 "immediate_operand" "i"))]
   ""
   "#"
   "reload_completed"
@@ -2609,278 +2679,6 @@
   ""
   "muluwdp %0 = %1, %2"
   [(set_attr "type" "mult_int")]
-)
-
-;; 64-bit complex
-
-;; V64CI
-
-(define_insn "add<mode>3"
-  [(set (match_operand:V64CI 0 "register_operand" "=r")
-        (plus:V64CI (match_operand:V64CI 1 "register_operand" "r")
-		      (match_operand:V64CI 2 "register_operand" "r")))]
-  ""
-  "add<suffix> %0 = %1, %2"
-  [(set_attr "type" "alu_tiny")]
-)
-
-(define_insn "sub<mode>3"
-  [(set (match_operand:V64CI 0 "register_operand" "=r")
-        (minus:V64CI (match_operand:V64CI 1 "register_operand" "r")
-		       (match_operand:V64CI 2 "register_operand" "r")))]
-  ""
-  "sbf<suffix> %0 = %2, %1"
-  [(set_attr "type" "alu_tiny")]
-)
-
-(define_insn "neg<mode>2"
-  [(set (match_operand:V64CI 0 "register_operand" "=r")
-        (neg:V64CI (match_operand:V64CI 1 "register_operand" "r")))]
-  ""
-  "neg<suffix> %0 = %1"
-  [(set_attr "type" "alu_tiny_x")
-   (set_attr "length" "8")]
-)
-
-;; V4CQI
-
-(define_expand "conjv4cqi2"
-  [(set (match_operand:V4CQI 0 "register_operand" "=r")
-        (conj:V4CQI (match_operand:V4CQI 1 "register_operand" "r")))]
-  "KV3_2"
-  {
-    rtx temp = gen_reg_rtx (V4CQImode);
-    rtx temp_di = simplify_gen_subreg (DImode, temp, V4CQImode, 0);
-    rtx op0_di = simplify_gen_subreg (DImode, operands[0], V4CQImode, 0);
-    rtx op1_di = simplify_gen_subreg (DImode, operands[1], V4CQImode, 0);
-    emit_insn (gen_negv4cqi2 (temp, operands[1]));
-    emit_insn (gen_kvx_sbmm8d (op0_di, op1_di, gen_rtx_CONST_INT (DImode, 0x0040001000040001)));
-    emit_insn (gen_kvx_sbmm8d (temp_di, temp_di, gen_rtx_CONST_INT (DImode, 0x8000200008000200)));
-    emit_insn (gen_iordi3 (op0_di, op0_di, temp_di));
-    DONE;
-  }
-)
-
-;; V2CHI
-
-(define_insn "addconjv2chi3"
-  [(set (match_operand:V2CHI 0 "register_operand" "=r")
-        (plus:V2CHI (conj:V2CHI (match_operand:V2CHI 1 "register_operand" "r"))
-                    (match_operand:V2CHI 2 "register_operand" "r")))]
-  "KV3_1"
-  "addhcp.c %0 = %1, %2"
-  [(set_attr "type" "alu_tiny")]
-)
-
-(define_insn "subconjv2chi3"
-  [(set (match_operand:V2CHI 0 "register_operand" "=r")
-        (minus:V2CHI (match_operand:V2CHI 1 "register_operand" "r")
-                     (conj:V2CHI (match_operand:V2CHI 2 "register_operand" "r"))))]
-  "KV3_1"
-  "sbfhcp.c %0 = %2, %1"
-  [(set_attr "type" "alu_tiny")]
-)
-
-(define_expand "conjv2chi2"
-  [(set (match_operand:V2CHI 0 "register_operand" "=r")
-        (conj:V2CHI (match_operand:V2CHI 1 "register_operand" "r")))]
-  ""
-  {
-    if (KV3_1)
-      emit_insn (gen_conjv2chi2_1 (operands[0], operands[1]));
-    else if (KV3_2)
-      emit_insn (gen_conjv2chi2_2 (operands[0], operands[1]));
-    else
-      gcc_unreachable ();
-    DONE;
-  }
-  [(set_attr "type" "alu_tiny_x")
-   (set_attr "length" "8")]
-)
-
-(define_insn "conjv2chi2_1"
-  [(set (match_operand:V2CHI 0 "register_operand" "=r")
-        (conj:V2CHI (match_operand:V2CHI 1 "register_operand" "r")))]
-  "KV3_1"
-  "addhcp.c %0 = %1, 0"
-  [(set_attr "type" "alu_tiny_x")
-   (set_attr "length" "8")]
-)
-
-(define_insn_and_split "conjv2chi2_2"
-  [(set (match_operand:V2CHI 0 "register_operand" "=r")
-        (conj:V2CHI (match_operand:V2CHI 1 "register_operand" "r")))
-   (clobber (match_scratch:V2CHI 2 "=&r"))]
-  "KV3_2"
-  "#"
-  "KV3_2 && reload_completed"
-  [(set (match_dup 2) (neg:V2CHI (match_dup 1)))
-   (set (subreg:DI (match_dup 0) 0) (unspec:DI [(subreg:DI (match_dup 1) 0)
-                                                (const_int 35253091566081)] UNSPEC_SBMM8D))
-   (set (subreg:DI (match_dup 2) 0) (unspec:DI [(subreg:DI (match_dup 2) 0)
-                                                (const_int -9205357638210813952)] UNSPEC_SBMM8D))
-   (set (subreg:DI (match_dup 0) 0) (ior:DI (subreg:DI (match_dup 0) 0)
-                                            (subreg:DI (match_dup 2) 0)))]
-  {
-    if (GET_CODE (operands[2]) == SCRATCH)
-      operands[2] = gen_reg_rtx (V2CHImode);
-  }
-)
-
-;; 128-bit complex
-
-;; V128CI
-
-(define_insn "add<mode>3"
-  [(set (match_operand:V128CI 0 "register_operand" "=r")
-        (plus:V128CI (match_operand:V128CI 1 "register_operand" "r")
-		       (match_operand:V128CI 2 "register_operand" "r")))]
-  ""
-  "add<chunkx> %x0 = %x1, %x2\n\tadd<chunkx> %y0 = %y1, %y2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "sub<mode>3"
-  [(set (match_operand:V128CI 0 "register_operand" "=r")
-        (minus:V128CI (match_operand:V128CI 1 "register_operand" "r")
-			(match_operand:V128CI 2 "register_operand" "r")))]
-  ""
-  "sbf<chunkx> %x0 = %x2, %x1\n\tsbf<chunkx> %y0 = %y2, %y1"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length"         "8")]
-)
-
-(define_insn "neg<mode>2"
-  [(set (match_operand:V128CI 0 "register_operand" "=r")
-        (neg:V128CI (match_operand:V128CI 1 "register_operand" "r")))]
-  ""
-  "neg<chunkx> %x0 = %x1\n\tneg<chunkx> %y0 = %y1"
-  [(set_attr "type" "alu_tiny_x2_x")
-   (set_attr "length" "16")]
-)
-
-;; V8CQI
-
-(define_expand "conjv8cqi2"
-  [(set (match_operand:V8CQI 0 "register_operand" "=r")
-        (conj:V8CQI (match_operand:V8CQI 1 "register_operand" "r")))]
-  "KV3_2"
-  {
-    emit_insn (gen_conjv4cqi2 (gen_lowpart (V4CQImode, operands[0]),
-                              gen_lowpart (V4CQImode, operands[1])));
-    emit_insn (gen_conjv4cqi2 (gen_highpart (V4CQImode, operands[0]),
-                              gen_highpart (V4CQImode, operands[1])));
-    DONE;
-  }
-)
-
-;; V128CC
-
-(define_insn "addconj<mode>3"
-  [(set (match_operand:V128CC 0 "register_operand" "=r")
-        (plus:V128CC (conj:V128CC (match_operand:V128CC 1 "register_operand" "r"))
-                     (match_operand:V128CC 2 "register_operand" "r")))]
-  ""
-  "add<chunkxc> %x0 = %x1, %x2\n\tadd<chunkxc> %y0 = %y1, %y2"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length" "8")]
-)
-
-(define_insn "subconj<mode>3"
-  [(set (match_operand:V128CC 0 "register_operand" "=r")
-        (minus:V128CC (match_operand:V128CC 1 "register_operand" "r")
-                      (conj:V128CC (match_operand:V128CC 2 "register_operand" "r"))))]
-  ""
-  "sbf<chunkxc> %x0 = %x2, %x1\n\tsbf<chunkxc> %y0 = %y2, %y1"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length" "8")]
-)
-
-(define_insn "conj<mode>2_1"
-  [(set (match_operand:V128CC 0 "register_operand" "=r")
-        (conj:V128CC (match_operand:V128CC 1 "register_operand" "r")))]
-  ""
-  "add<chunkxc> %x0 = %x1, 0\n\tadd<chunkxc> %y0 = %y1, 0"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length" "8")]
-)
-
-(define_expand "conj<mode>2"
-  [(set (match_operand:V128CB 0 "register_operand" "=r")
-        (conj:V128CB (match_operand:V128CB 1 "register_operand" "r")))]
-  ""
-  {
-    if (KV3_1)
-      emit_insn (gen_conj<mode>2_1 (operands[0], operands[1]));
-    else if (KV3_2)
-      {
-         emit_insn (gen_conj<half>2 (gen_lowpart (<HALF>mode, operands[0]),
-                                     gen_lowpart (<HALF>mode, operands[1])));
-         emit_insn (gen_conj<half>2 (gen_highpart (<HALF>mode, operands[0]),
-                                     gen_highpart (<HALF>mode, operands[1])));
-      }
-    else
-      gcc_unreachable ();
-    DONE;
-  }
-)
-
-;; V2CSI
-
-(define_expand "mulv2csi3"
-  [(set (match_operand:V2CSI 0 "register_operand" "=r")
-        (mult:V2CSI (match_operand:V2CSI 1 "register_operand" "r")
-                   (match_operand:V2CSI 2 "register_operand" "r")))]
-  ""
-  {
-    if (KV3_1)
-      emit_insn (gen_mulv2csi3_1 (operands[0], operands[1], operands[2]));
-    else if (KV3_2)
-      {
-        emit_insn (gen_mulcsi3 (gen_lowpart (CSImode, operands[0]),
-                                gen_lowpart (CSImode, operands[1]),
-                                gen_lowpart (CSImode, operands[2])));
-        emit_insn (gen_mulcsi3 (gen_highpart (CSImode, operands[0]),
-                                gen_highpart (CSImode, operands[1]),
-                                gen_highpart (CSImode, operands[2])));
-      }
-    else
-      gcc_unreachable ();
-    DONE;
-  }
-)
-
-(define_insn_and_split "mulv2csi3_1"
-  [(set (match_operand:V2CSI 0 "register_operand" "=r")
-        (mult:V2CSI (match_operand:V2CSI 1 "register_operand" "r")
-                    (match_operand:V2CSI 2 "register_operand" "r")))]
-  "KV3_1"
-  "#"
-  "KV3_1 && reload_completed"
-  [(set (subreg:CSI (match_dup 0) 0)
-        (mult:CSI (subreg:CSI (match_dup 1) 0)
-                  (subreg:CSI (match_dup 2) 0)))
-   (set (subreg:CSI (match_dup 0) 8)
-        (mult:CSI (subreg:CSI (match_dup 1) 8)
-                  (subreg:CSI (match_dup 2) 8)))]
-  ""
-)
-
-(define_insn_and_split "mulconjv2csi3"
-  [(set (match_operand:V2CSI 0 "register_operand" "=r")
-        (mult:V2CSI (conj:V2CSI (match_operand:V2CSI 1 "register_operand" "r"))
-                    (match_operand:V2CSI 2 "register_operand" "r")))]
-  "KV3_1"
-  "#"
-  "KV3_1 && reload_completed"
-  [(set (subreg:CSI (match_dup 0) 0)
-        (mult:CSI (conj:CSI (subreg:CSI (match_dup 1) 0))
-                  (subreg:CSI (match_dup 2) 0)))
-   (set (subreg:CSI (match_dup 0) 8)
-        (mult:CSI (conj:CSI (subreg:CSI (match_dup 1) 8))
-                  (subreg:CSI (match_dup 2) 8)))]
-  ""
 )
 
 ;; S128I (V8HI V4SI)
@@ -8135,192 +7933,6 @@
                  (subreg:DF (match_dup 3) 8)))]
   ""
   [(set_attr "type" "madd_fp4")]
-)
-
-;; V2SC
-
-(define_insn "addv2sc3"
-  [(set (match_operand:V2SC 0 "register_operand" "=r")
-        (plus:V2SC (match_operand:V2SC 1 "register_operand" "r")
-                   (match_operand:V2SC 2 "register_operand" "r")))]
-  ""
-  "faddwcp %0 = %1, %2"
-  [(set (attr "type")
-        (if_then_else (match_test "KV3_1")
-                      (const_string "mau_auxr_fpu") (const_string "mau_fpu")))]
-)
-
-(define_insn "subv2sc3"
-  [(set (match_operand:V2SC 0 "register_operand" "=r")
-        (minus:V2SC (match_operand:V2SC 1 "register_operand" "r")
-                    (match_operand:V2SC 2 "register_operand" "r")))]
-  ""
-  "fsbfwcp %0 = %2, %1"
-  [(set (attr "type")
-        (if_then_else (match_test "KV3_1")
-                      (const_string "mau_auxr_fpu") (const_string "mau_fpu")))]
-)
-
-(define_insn "negv2sc2"
-  [(set (match_operand:V2SC 0 "register_operand" "=r")
-        (neg:V2SC (match_operand:V2SC 1 "register_operand" "r")))]
-  ""
-  "fnegwp %x0 = %x1\n\tfnegwp %y0 = %y1"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length" "8")]
-)
-
-(define_expand "mulv2sc3"
-  [(set (match_operand:V2SC 0 "register_operand" "=r")
-        (mult:V2SC (match_operand:V2SC 1 "register_operand" "r")
-                   (match_operand:V2SC 2 "register_operand" "r")))]
-  ""
-  {
-    if (KV3_1)
-      emit_insn (gen_mulv2sc3_1 (operands[0], operands[1], operands[2]));
-    else if (KV3_2)
-      emit_insn (gen_mulv2sc3_2 (operands[0], operands[1], operands[2]));
-    else
-      gcc_unreachable ();
-    DONE;
-  }
-)
-
-(define_insn_and_split "mulv2sc3_1"
-  [(set (match_operand:V2SC 0 "register_operand" "=r")
-        (mult:V2SC (match_operand:V2SC 1 "register_operand" "r")
-                   (match_operand:V2SC 2 "register_operand" "r")))]
-  "KV3_1"
-  "#"
-  "KV3_1 && reload_completed"
-  [(set (subreg:SC (match_dup 0) 0)
-        (mult:SC (subreg:SC (match_dup 1) 0)
-                 (subreg:SC (match_dup 2) 0)))
-   (set (subreg:SC (match_dup 0) 8)
-        (mult:SC (subreg:SC (match_dup 1) 8)
-                 (subreg:SC (match_dup 2) 8)))]
-  ""
-)
-
-(define_insn "mulv2sc3_2"
-  [(set (match_operand:V2SC 0 "register_operand" "=r")
-        (mult:V2SC (match_operand:V2SC 1 "register_operand" "r")
-                 (match_operand:V2SC 2 "register_operand" "r")))]
-  "KV3_2"
-  "fmulwcp %0 = %1, %2"
-  [(set_attr "type" "mau")]
-)
-
-(define_insn "fmav2sc4"
-  [(set (match_operand:V2SC 0 "register_operand" "=r")
-        (fma:V2SC (match_operand:V2SC 1 "register_operand" "r")
-                  (match_operand:V2SC 2 "register_operand" "r")
-                  (match_operand:V2SC 3 "register_operand" "0")))]
-  "KV3_2"
-  "ffmawcp %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
-)
-
-(define_insn "fnmav2sc4"
-  [(set (match_operand:V2SC 0 "register_operand" "=r")
-        (fma:V2SC (neg:V2SC (match_operand:V2SC 1 "register_operand" "r"))
-                  (match_operand:V2SC 2 "register_operand" "r")
-                  (match_operand:V2SC 3 "register_operand" "0")))]
-  "KV3_2"
-  "ffmswcp %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
-)
-
-(define_insn "addconjv2sc3"
-  [(set (match_operand:V2SC 0 "register_operand" "=r")
-        (plus:V2SC (conj:V2SC (match_operand:V2SC 1 "register_operand" "r"))
-                   (match_operand:V2SC 2 "register_operand" "r")))]
-  ""
-  "faddwcp.c %0 = %1, %2"
-  [(set (attr "type")
-        (if_then_else (match_test "KV3_1")
-                      (const_string "mau_auxr_fpu") (const_string "mau_fpu")))]
-)
-
-(define_insn "subconjv2sc3"
-  [(set (match_operand:V2SC 0 "register_operand" "=r")
-        (minus:V2SC (match_operand:V2SC 1 "register_operand" "r")
-                    (conj:V2SC (match_operand:V2SC 2 "register_operand" "r"))))]
-  ""
-  "fsbfwcp.c %0 = %2, %1"
-  [(set (attr "type")
-        (if_then_else (match_test "KV3_1")
-                      (const_string "mau_auxr_fpu") (const_string "mau_fpu")))]
-)
-
-(define_expand "mulconjv2sc3"
-  [(set (match_operand:V2SC 0 "register_operand" "=r")
-        (mult:V2SC (conj:V2SC (match_operand:V2SC 1 "register_operand" "r"))
-                   (match_operand:V2SC 2 "register_operand" "r")))]
-  ""
-  {
-    if (KV3_1)
-      emit_insn (gen_mulconjv2sc3_1 (operands[0], operands[1], operands[2]));
-    else if (KV3_2)
-      emit_insn (gen_mulconjv2sc3_2 (operands[0], operands[1], operands[2]));
-    else
-      gcc_unreachable ();
-    DONE;
-  }
-)
-
-(define_insn_and_split "mulconjv2sc3_1"
-  [(set (match_operand:V2SC 0 "register_operand" "=r")
-        (mult:V2SC (conj:V2SC (match_operand:V2SC 1 "register_operand" "r"))
-                   (match_operand:V2SC 2 "register_operand" "r")))]
-  "KV3_1"
-  "#"
-  "KV3_1 && reload_completed"
-  [(set (subreg:SC (match_dup 0) 0)
-        (mult:SC (conj:SC (subreg:SC (match_dup 1) 0))
-                 (subreg:SC (match_dup 2) 0)))
-   (set (subreg:SC (match_dup 0) 8)
-        (mult:SC (conj:SC (subreg:SC (match_dup 1) 8))
-                 (subreg:SC (match_dup 2) 8)))]
-  ""
-)
-
-(define_insn "mulconjv2sc3_2"
-  [(set (match_operand:V2SC 0 "register_operand" "=r")
-        (mult:V2SC (conj:V2SC (match_operand:V2SC 1 "register_operand" "r"))
-                   (match_operand:V2SC 2 "register_operand" "r")))]
-  "KV3_2"
-  "fmulwcp.c %0 = %1, %2"
-  [(set_attr "type" "mau_fpu")]
-)
-
-(define_insn "fmaconjv2sc4"
-  [(set (match_operand:V2SC 0 "register_operand" "=r")
-        (fma:V2SC (conj:V2SC (match_operand:V2SC 1 "register_operand" "r"))
-                  (match_operand:V2SC 2 "register_operand" "r")
-                  (match_operand:V2SC 3 "register_operand" "0")))]
-  "KV3_2"
-  "ffmawcp.c %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
-)
-
-(define_insn "fnmaconjv2sc4"
-  [(set (match_operand:V2SC 0 "register_operand" "=r")
-        (fma:V2SC (neg:V2SC (conj:V2SC (match_operand:V2SC 1 "register_operand" "r")))
-                  (match_operand:V2SC 2 "register_operand" "r")
-                  (match_operand:V2SC 3 "register_operand" "0")))]
-  "KV3_2"
-  "ffmswcp.c %0 = %1, %2"
-  [(set_attr "type" "mau_auxr_fpu")]
-)
-
-(define_insn "conjv2sc2"
-  [(set (match_operand:V2SC 0 "register_operand" "=r")
-        (conj:V2SC (match_operand:V2SC 1 "register_operand" "r")))]
-  ""
-  "fnegd %x0 = %x1\n\tfnegd %y0 = %y1"
-  [(set_attr "type" "alu_tiny_x2")
-   (set_attr "length" "8")]
 )
 
 ;; S256F (V16HF V8SF)
