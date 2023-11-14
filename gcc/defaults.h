@@ -1461,4 +1461,11 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 typedef TARGET_UNIT target_unit;
 #endif
 
+/* Operations on complex types can be remapped to vector operations when
+   the target supports it.  However some targets may prefer to always handle
+   real and imag parts separately.  */
+#ifndef TARGET_SUPPORTS_COMPLEX_TO_VECTOR
+#define TARGET_SUPPORTS_COMPLEX_TO_VECTOR 0
+#endif
+
 #endif  /* ! GCC_DEFAULTS_H */

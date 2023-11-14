@@ -12372,6 +12372,14 @@ maintainer is familiar with.
 
 @end defmac
 
+@defmac TARGET_SUPPPORTS_COMPLEX_TO_VECTOR
+
+Operations on complex types can be remapped to vector operations when
+the target supports it.  However some targets may prefer to always handle
+real and imag parts separately.
+
+@end defmac
+
 @deftypefn {Target Hook} bool TARGET_HAVE_SPECULATION_SAFE_VALUE (bool @var{active})
 This hook is used to determine the level of target support for
  @code{__builtin_speculation_safe_value}.  If called with an argument

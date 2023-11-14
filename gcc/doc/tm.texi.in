@@ -7969,6 +7969,14 @@ maintainer is familiar with.
 
 @end defmac
 
+@defmac TARGET_SUPPPORTS_COMPLEX_TO_VECTOR
+
+Operations on complex types can be remapped to vector operations when
+the target supports it.  However some targets may prefer to always handle
+real and imag parts separately.
+
+@end defmac
+
 @hook TARGET_HAVE_SPECULATION_SAFE_VALUE
 
 @hook TARGET_SPECULATION_SAFE_VALUE

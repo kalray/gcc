@@ -230,7 +230,6 @@ along with GCC; see the file COPYING3.  If not see
       NEXT_PASS (pass_phiopt, false /* early_p */);
       NEXT_PASS (pass_tail_recursion);
       NEXT_PASS (pass_ch);
-      NEXT_PASS (pass_lower_complex);
       NEXT_PASS (pass_sra);
       /* The dom pass will also resolve all __builtin_constant_p calls
          that are still there to 0.  This has to be done after some
@@ -325,6 +324,7 @@ along with GCC; see the file COPYING3.  If not see
       PUSH_INSERT_PASSES_WITHIN (pass_tree_no_loop)
 	  NEXT_PASS (pass_slp_vectorize);
       POP_INSERT_PASSES ()
+      NEXT_PASS (pass_lower_complex);
       NEXT_PASS (pass_simduid_cleanup);
       NEXT_PASS (pass_lower_vector_ssa);
       NEXT_PASS (pass_lower_switch);

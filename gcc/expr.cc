@@ -3847,15 +3847,7 @@ emit_move_complex_parts (rtx x, rtx y)
       && REG_P (x) && !reg_overlap_mentioned_p (x, y))
     emit_clobber (x);
 
-  machine_mode mode = GET_MODE (x);
-  if (optab_handler (mov_optab, mode) != CODE_FOR_nothing)
-    write_complex_part (x, read_complex_part (y, BOTH_P), BOTH_P, true);
-  else
-    {
-      write_complex_part (x, read_complex_part (y, REAL_P), REAL_P, true);
-      write_complex_part (x, read_complex_part (y, IMAG_P), IMAG_P, false);
-    }
-
+  write_complex_part (x, read_complex_part (y, BOTH_P), BOTH_P, true);
   return get_last_insn ();
 }
 
@@ -3879,7 +3871,6 @@ emit_move_complex (machine_mode mode, rtx x, rtx y)
     try_int = false;
   else if (GET_MODE_CLASS (mode) == MODE_COMPLEX_FLOAT
       && optab_handler (mov_optab, GET_MODE_INNER (mode)) != CODE_FOR_nothing
-      && optab_handler (mov_optab, mode) != CODE_FOR_nothing
       && !(REG_P (x) && HARD_REGISTER_P (x))
       && !(REG_P (y) && HARD_REGISTER_P (y)))
     try_int = false;
