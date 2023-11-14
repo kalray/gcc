@@ -671,8 +671,11 @@ public:
      used.  */
   poly_uint64 versioning_threshold;
 
-  /* Unrolling factor  */
+  /* Unrolling factor.  */
   poly_uint64 vectorization_factor;
+
+  /* Original implicit unrolling factor of the input statements.  */
+  poly_uint64 original_vectorization_factor;
 
   /* If this loop is an epilogue loop whose main loop can be skipped,
      MAIN_LOOP_EDGE is the edge from the main loop to this loop's
@@ -894,6 +897,7 @@ public:
   (L)->epil_using_partial_vectors_p
 #define LOOP_VINFO_PARTIAL_LOAD_STORE_BIAS(L) (L)->partial_load_store_bias
 #define LOOP_VINFO_VECT_FACTOR(L)          (L)->vectorization_factor
+#define LOOP_VINFO_ORIG_VECT_FACTOR(L)     (L)->original_vectorization_factor
 #define LOOP_VINFO_MAX_VECT_FACTOR(L)      (L)->max_vectorization_factor
 #define LOOP_VINFO_MASKS(L)                (L)->masks
 #define LOOP_VINFO_LENS(L)                 (L)->lens

@@ -2052,6 +2052,7 @@ vect_gen_vector_loop_niters (loop_vec_info loop_vinfo, tree niters,
   tree ni_minus_gap, var;
   tree niters_vector, step_vector, type = TREE_TYPE (niters);
   poly_uint64 vf = LOOP_VINFO_VECT_FACTOR (loop_vinfo);
+  poly_uint64 orig_vf = LOOP_VINFO_ORIG_VECT_FACTOR (loop_vinfo);
   edge pe = loop_preheader_edge (LOOP_VINFO_LOOP (loop_vinfo));
   tree log_vf = NULL_TREE;
 
@@ -2076,15 +2077,24 @@ vect_gen_vector_loop_niters (loop_vec_info loop_vinfo, tree niters,
 
   /* To silence some unexpected warnings, simply initialize to 0. */
   unsigned HOST_WIDE_INT const_vf = 0;
-  if (vf.is_constant (&const_vf)
-      && !LOOP_VINFO_USING_PARTIAL_VECTORS_P (loop_vinfo))
+  unsigned HOST_WIDE_INT const_orig_vf = 0;
+  if (!orig_vf.is_constant (&const_orig_vf)
+      || !vf.is_constant (&const_vf))
+    gcc_unreachable ();
+
+  /* Divide the new vf by the original vf to obtain the gained vf.
+     Indeed, some scalar statement have an implicit vf bigger than 1,
+     like native complex operations.  */
+  unsigned HOST_WIDE_INT const_vf_gain = const_vf / const_orig_vf;
+
+  if (!LOOP_VINFO_USING_PARTIAL_VECTORS_P (loop_vinfo))
     {
       /* Create: niters >> log2(vf) */
       /* If it's known that niters == number of latch executions + 1 doesn't
 	 overflow, we can generate niters >> log2(vf); otherwise we generate
 	 (niters - vf) >> log2(vf) + 1 by using the fact that we know ratio
 	 will be at least one.  */
-      log_vf = build_int_cst (type, exact_log2 (const_vf));
+      log_vf = build_int_cst (type, exact_log2 (const_vf_gain));
       if (niters_no_overflow)
 	niters_vector = fold_build2 (RSHIFT_EXPR, type, ni_minus_gap, log_vf);
       else
@@ -2093,15 +2103,15 @@ vect_gen_vector_loop_niters (loop_vec_info loop_vinfo, tree niters,
 			 fold_build2 (RSHIFT_EXPR, type,
 				      fold_build2 (MINUS_EXPR, type,
 						   ni_minus_gap,
-						   build_int_cst (type, vf)),
-				      log_vf),
-			 build_int_cst (type, 1));
+						   build_int_cst (type, 
+								  const_vf_gain)),
+				      log_vf), build_int_cst (type, 1));
       step_vector = build_one_cst (type);
     }
   else
     {
       niters_vector = ni_minus_gap;
-      step_vector = build_int_cst (type, vf);
+      step_vector = build_int_cst (type, const_vf_gain);
     }
 
   if (!is_gimple_val (niters_vector))
@@ -2122,7 +2132,7 @@ vect_gen_vector_loop_niters (loop_vec_info loop_vinfo, tree niters,
 			      wi::one (TYPE_PRECISION (type)),
 			      wi::rshift (wi::max_value (TYPE_PRECISION (type),
 							 TYPE_SIGN (type)),
-					  exact_log2 (const_vf),
+					  exact_log2 (const_vf_gain),
 					  TYPE_SIGN (type)));
 	      set_range_info (niters_vector, vr);
 	    }
@@ -2134,8 +2144,8 @@ vect_gen_vector_loop_niters (loop_vec_info loop_vinfo, tree niters,
 			      wi::one (TYPE_PRECISION (type)),
 			      wi::rshift (wi::max_value (TYPE_PRECISION (type),
 							 TYPE_SIGN (type))
-					  - (const_vf - 1),
-					  exact_log2 (const_vf), TYPE_SIGN (type))
+					  - (const_vf_gain - 1),
+					  exact_log2 (const_vf_gain), TYPE_SIGN (type))
 			      + 1);
 	      set_range_info (niters_vector, vr);
 	    }
@@ -2159,9 +2169,10 @@ vect_gen_vector_loop_niters_mult_vf (loop_vec_info loop_vinfo,
 {
   /* We should be using a step_vector of VF if VF is variable.  */
   int vf = LOOP_VINFO_VECT_FACTOR (loop_vinfo).to_constant ();
+  int orig_vf = LOOP_VINFO_ORIG_VECT_FACTOR (loop_vinfo).to_constant ();
   class loop *loop = LOOP_VINFO_LOOP (loop_vinfo);
   tree type = TREE_TYPE (niters_vector);
-  tree log_vf = build_int_cst (type, exact_log2 (vf));
+  tree log_vf = build_int_cst (type, exact_log2 (vf / orig_vf));
   basic_block exit_bb = single_exit (loop)->dest;
 
   gcc_assert (niters_vector_mult_vf_ptr != NULL);

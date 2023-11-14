@@ -2116,6 +2116,24 @@ build_vector_from_val (tree vectype, tree sc)
     }
 }
 
+/* Build a vector of type VECTYPE where all the elements are interleaved
+   real and imag parts.  */
+tree
+build_vector_from_complex_val (tree vectype, tree realpart, tree imagpart)
+{
+  unsigned HOST_WIDE_INT i, nunits;
+  TYPE_VECTOR_SUBPARTS (vectype).is_constant (&nunits);
+
+  vec<constructor_elt, va_gc> *v;
+  vec_alloc (v, nunits);
+  for (i = 0; i < nunits / 2; ++i)
+    {
+      CONSTRUCTOR_APPEND_ELT (v, NULL_TREE, realpart);
+      CONSTRUCTOR_APPEND_ELT (v, NULL_TREE, imagpart);
+    }
+  return build_constructor (vectype, v);
+}
+
 /* If TYPE is not a vector type, just return SC, otherwise return
    build_vector_from_val (TYPE, SC).  */
 

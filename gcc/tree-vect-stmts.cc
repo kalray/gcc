@@ -1399,7 +1399,31 @@ vect_init_vector (vec_info *vinfo, stmt_vec_info stmt_info, tree val, tree type,
   tree new_temp;
 
   /* We abuse this function to push sth to a SSA name with initial 'val'.  */
-  if (! useless_type_conversion_p (type, TREE_TYPE (val)))
+  if (COMPLEX_MODE_P (TYPE_MODE (TREE_TYPE (val))))
+    {
+      if (CONSTANT_CLASS_P (val))
+	val =
+	  build_vector_from_complex_val (type, TREE_REALPART (val),
+					 TREE_IMAGPART (val));
+      else
+	{
+	  tree inner_type = TREE_TYPE (type);
+	  gimple_seq stmts = NULL;
+	  tree realpart = gimple_build (&stmts, REALPART_EXPR,
+					inner_type, val);
+	  tree imagpart = gimple_build (&stmts, IMAGPART_EXPR,
+					inner_type, val);
+	  val = build_vector_from_complex_val (type, realpart, imagpart);
+	  for (gimple_stmt_iterator gsi2 = gsi_start (stmts);
+	       !gsi_end_p (gsi2);)
+	    {
+	      init_stmt = gsi_stmt (gsi2);
+	      gsi_remove (&gsi2, false);
+	      vect_init_vector_1 (vinfo, stmt_info, init_stmt, gsi);
+	    }
+	}
+    }
+  else if (! useless_type_conversion_p (type, TREE_TYPE (val)))
     {
       gcc_assert (TREE_CODE (type) == VECTOR_TYPE);
       if (! types_compatible_p (TREE_TYPE (type), TREE_TYPE (val)))
@@ -6258,8 +6282,15 @@ vectorizable_operation (vec_info *vinfo,
                          "use not simple.\n");
       return false;
     }
+
   bool is_invariant = (dt[0] == vect_external_def
 		       || dt[0] == vect_constant_def);
+
+
+  /* Test */
+  if (COMPLEX_MODE_P (TYPE_MODE (vectype_out)))
+    vectype_out = vectype;
+
   /* If op0 is an external or constant def, infer the vector type
      from the scalar type.  */
   if (!vectype)
@@ -11247,6 +11278,14 @@ vect_analyze_stmt (vec_info *vinfo,
 				   " stmt has volatile operands: %G\n",
 				   stmt_info->stmt);
 
+  if (is_gimple_assign (stmt_info->stmt)
+      && node != NULL
+      && TREE_CODE (TREE_TYPE (gimple_get_lhs (stmt_info->stmt))) == COMPLEX_TYPE)
+    return opt_result::failure_at (stmt_info->stmt,
+				   "not vectorized:"
+				   " slp cannot handle complex types for now: %G\n",
+				   stmt_info->stmt);
+
   if (STMT_VINFO_IN_PATTERN_P (stmt_info)
       && node == NULL
       && (pattern_def_seq = STMT_VINFO_PATTERN_DEF_SEQ (stmt_info)))
@@ -11659,24 +11698,20 @@ get_related_vectype_for_scalar_type (machine_mode prevailing_mode,
 				     tree scalar_type, poly_uint64 nunits)
 {
   tree orig_scalar_type = scalar_type;
-  scalar_mode scal_mode;
-  complex_mode cplx_mode;
-  machine_mode inner_mode;
+  scalar_mode inner_mode;
   machine_mode simd_mode;
   tree vectype;
-  bool cplx = false;
 
-  if (is_complex_int_mode (TYPE_MODE (scalar_type), &cplx_mode)
-      || is_complex_float_mode (TYPE_MODE (scalar_type), &cplx_mode))
-    cplx = true;
+  if (TREE_CODE (scalar_type) == COMPLEX_TYPE)
+    return get_related_vectype_for_scalar_type (prevailing_mode,
+						TREE_TYPE (scalar_type),
+						nunits * 2);
 
-  if (!cplx && !is_int_mode (TYPE_MODE (scalar_type), &scal_mode)
-      && !is_float_mode (TYPE_MODE (scalar_type), &scal_mode))
+  if (!is_int_mode (TYPE_MODE (scalar_type), &inner_mode)
+      && !is_float_mode (TYPE_MODE (scalar_type), &inner_mode))
     return NULL_TREE;
 
-  unsigned int nbytes =
-    (cplx) ? GET_MODE_SIZE (cplx_mode) : GET_MODE_SIZE (scal_mode);
-  inner_mode = (cplx) ? machine_mode (cplx_mode) : machine_mode (scal_mode);
+  unsigned int nbytes = GET_MODE_SIZE (inner_mode);
 
   /* Interoperability between modes requires one to be a constant multiple
      of the other, so that the number of vectors required for each operation
@@ -11694,25 +11729,25 @@ get_related_vectype_for_scalar_type (machine_mode prevailing_mode,
      they support the proper result truncation/extension.
      We also make sure to build vector types with INTEGER_TYPE
      component type only.  */
-  if (!cplx && INTEGRAL_TYPE_P (scalar_type)
-      && (GET_MODE_BITSIZE (scal_mode) != TYPE_PRECISION (scalar_type)
+  if (INTEGRAL_TYPE_P (scalar_type)
+      && (GET_MODE_BITSIZE (inner_mode) != TYPE_PRECISION (scalar_type)
 	  || TREE_CODE (scalar_type) != INTEGER_TYPE))
     scalar_type =
-      build_nonstandard_integer_type (GET_MODE_BITSIZE (scal_mode),
+      build_nonstandard_integer_type (GET_MODE_BITSIZE (inner_mode),
 				      TYPE_UNSIGNED (scalar_type));
 
   /* We shouldn't end up building VECTOR_TYPEs of non-scalar components.
      When the component mode passes the above test simply use a type
      corresponding to that mode.  The theory is that any use that
      would cause problems with this will disable vectorization anyway.  */
-  else if (!cplx && !SCALAR_FLOAT_TYPE_P (scalar_type)
+  else if (!SCALAR_FLOAT_TYPE_P (scalar_type)
 	   && !INTEGRAL_TYPE_P (scalar_type))
-    scalar_type = lang_hooks.types.type_for_mode (scal_mode, 1);
+    scalar_type = lang_hooks.types.type_for_mode (inner_mode, 1);
 
   /* We can't build a vector type of elements with alignment bigger than
      their size.  */
   else if (nbytes < TYPE_ALIGN_UNIT (scalar_type))
-    scalar_type = lang_hooks.types.type_for_mode (inner_mode, 
+    scalar_type = lang_hooks.types.type_for_mode (inner_mode,
 						  TYPE_UNSIGNED (scalar_type));
 
   /* If we felt back to using the mode fail if there was
@@ -11725,10 +11760,7 @@ get_related_vectype_for_scalar_type (machine_mode prevailing_mode,
   if (prevailing_mode == VOIDmode)
     {
       gcc_assert (known_eq (nunits, 0U));
-
-      simd_mode = (cplx)
-	? targetm.vectorize.preferred_simd_mode_complex (cplx_mode)
-	: targetm.vectorize.preferred_simd_mode (scal_mode);
+      simd_mode = targetm.vectorize.preferred_simd_mode (inner_mode);
       if (SCALAR_INT_MODE_P (simd_mode))
 	{
 	  /* Traditional behavior is not to take the integer mode
@@ -11739,18 +11771,13 @@ get_related_vectype_for_scalar_type (machine_mode prevailing_mode,
 	     Note that nunits == 1 is allowed in order to support single
 	     element vector types.  */
 	  if (!multiple_p (GET_MODE_SIZE (simd_mode), nbytes, &nunits)
-	      || !((cplx)
-		   ? mode_for_vector (cplx_mode, nunits).exists (&simd_mode)
-		   : mode_for_vector (scal_mode, nunits).exists (&simd_mode)))
+	      || !mode_for_vector (inner_mode, nunits).exists (&simd_mode))
 	    return NULL_TREE;
 	}
     }
   else if (SCALAR_INT_MODE_P (prevailing_mode)
-	   || !((cplx) ? related_vector_mode (prevailing_mode,
-					      cplx_mode,
-					      nunits).exists (&simd_mode) :
-		related_vector_mode (prevailing_mode, scal_mode,
-				     nunits).exists (&simd_mode)))
+	   || !related_vector_mode (prevailing_mode,
+				    inner_mode, nunits).exists (&simd_mode))
     {
       /* Fall back to using mode_for_vector, mostly in the hope of being
 	 able to use an integer mode.  */
@@ -11758,8 +11785,7 @@ get_related_vectype_for_scalar_type (machine_mode prevailing_mode,
 	  && !multiple_p (GET_MODE_SIZE (prevailing_mode), nbytes, &nunits))
 	return NULL_TREE;
 
-      if (!((cplx) ? mode_for_vector (cplx_mode, nunits).exists (&simd_mode)
-	    : mode_for_vector (scal_mode, nunits).exists (&simd_mode)))
+      if (!mode_for_vector (inner_mode, nunits).exists (&simd_mode))
 	return NULL_TREE;
     }
 

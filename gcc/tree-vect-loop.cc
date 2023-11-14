@@ -159,6 +159,31 @@ static void vect_estimate_min_profitable_iters (loop_vec_info, int *, int *,
 static stmt_vec_info vect_is_simple_reduction (loop_vec_info, stmt_vec_info,
 					       bool *, bool *, bool);
 
+static opt_result
+vect_determine_original_vf_for_stmt (vec_info * vinfo,
+				     stmt_vec_info stmt_info,
+				     poly_uint64 * orig_vf)
+{
+  gimple *stmt = stmt_info->stmt;
+
+  if ((!STMT_VINFO_RELEVANT_P (stmt_info)
+       && !STMT_VINFO_LIVE_P (stmt_info))
+      || gimple_clobber_p (stmt))
+    return opt_result::success ();
+
+  tree stmt_vectype, nunits_vectype;
+  opt_result res = vect_get_vector_types_for_stmt (vinfo, stmt_info,
+						   &stmt_vectype,
+						   &nunits_vectype);
+  if (!res)
+    return res;
+
+  if (COMPLEX_MODE_P (TYPE_MODE (TREE_TYPE (gimple_get_lhs (stmt)))))
+    vect_update_max_nunits (orig_vf, 2);
+
+  return opt_result::success ();
+}
+
 /* Subroutine of vect_determine_vf_for_stmt that handles only one
    statement.  VECTYPE_MAYBE_SET_P is true if STMT_VINFO_VECTYPE
    may already be set for general statements (not just data refs).  */
@@ -285,6 +310,7 @@ vect_determine_vectorization_factor (loop_vec_info loop_vinfo)
   basic_block *bbs = LOOP_VINFO_BBS (loop_vinfo);
   unsigned nbbs = loop->num_nodes;
   poly_uint64 vectorization_factor = 1;
+  poly_uint64 original_vectorization_factor = 1;
   tree scalar_type = NULL_TREE;
   gphi *phi;
   tree vectype;
@@ -348,9 +374,13 @@ vect_determine_vectorization_factor (loop_vec_info loop_vinfo)
 	  if (is_gimple_debug (gsi_stmt (si)))
 	    continue;
 	  stmt_info = loop_vinfo->lookup_stmt (gsi_stmt (si));
-	  opt_result res
-	    = vect_determine_vf_for_stmt (loop_vinfo,
-					  stmt_info, &vectorization_factor);
+	  opt_result res = vect_determine_vf_for_stmt (loop_vinfo,
+						       stmt_info,
+						       &vectorization_factor);
+	  if (!res)
+	    return res;
+	  res = vect_determine_original_vf_for_stmt (loop_vinfo, stmt_info,
+					    &original_vectorization_factor);
 	  if (!res)
 	    return res;
         }
@@ -368,6 +398,7 @@ vect_determine_vectorization_factor (loop_vec_info loop_vinfo)
     return opt_result::failure_at (vect_location,
 				   "not vectorized: unsupported data-type\n");
   LOOP_VINFO_VECT_FACTOR (loop_vinfo) = vectorization_factor;
+  LOOP_VINFO_ORIG_VECT_FACTOR (loop_vinfo) = original_vectorization_factor;
   return opt_result::success ();
 }
 
@@ -10778,7 +10809,11 @@ vect_transform_loop (loop_vec_info loop_vinfo, gimple *loop_vectorized_call)
   tree step_vector = NULL_TREE;
   tree niters_vector_mult_vf = NULL_TREE;
   poly_uint64 vf = LOOP_VINFO_VECT_FACTOR (loop_vinfo);
+  poly_uint64 orig_vf = LOOP_VINFO_ORIG_VECT_FACTOR (loop_vinfo);
   unsigned int lowest_vf = constant_lower_bound (vf);
+  unsigned int lowest_orig_vf = constant_lower_bound (orig_vf);
+  unsigned int vf_gain = (lowest_vf > lowest_orig_vf)
+			 ? (lowest_vf / lowest_orig_vf) : 1;
   gimple *stmt;
   bool check_profitability = false;
   unsigned int th;
@@ -10864,7 +10899,7 @@ vect_transform_loop (loop_vec_info loop_vinfo, gimple *loop_vectorized_call)
 	{
 	  niters_vector
 	    = build_int_cst (TREE_TYPE (LOOP_VINFO_NITERS (loop_vinfo)),
-			     LOOP_VINFO_INT_NITERS (loop_vinfo) / lowest_vf);
+			     LOOP_VINFO_INT_NITERS (loop_vinfo) / vf_gain);
 	  step_vector = build_one_cst (TREE_TYPE (niters));
 	}
       else if (vect_use_loop_mask_for_alignment_p (loop_vinfo))

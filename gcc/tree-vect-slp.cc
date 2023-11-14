@@ -3273,6 +3273,13 @@ vect_build_slp_instance (vec_info *vinfo,
 	      gcc_assert ((const_nunits & (const_nunits - 1)) == 0);
 	      unsigned group1_size = i & ~(const_nunits - 1);
 
+	      /* TODO Take into account that some scalar stmt can have
+		 an implicit vectorization factor bigger than 1, like
+		 or native complex operations.  */
+	      if (TREE_CODE (TREE_TYPE (DR_REF (STMT_VINFO_DATA_REF (
+		  stmt_info_)))) == COMPLEX_TYPE)
+		return false;
+
 	      if (dump_enabled_p ())
 		dump_printf_loc (MSG_NOTE, vect_location,
 				 "Splitting SLP group at stmt %u\n", i);

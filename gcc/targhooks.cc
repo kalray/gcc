@@ -1531,15 +1531,6 @@ default_preferred_simd_mode (scalar_mode)
   return word_mode;
 }
 
-/* By default, only attempt to parallelize bitwise operations, and
-   possibly adds/subtracts using bit-twiddling.  */
-
-machine_mode
-default_preferred_simd_mode_complex (complex_mode)
-{
-  return word_mode;
-}
-
 /* By default, call gen_rtx_CONCAT.  */
 
 rtx
