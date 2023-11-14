@@ -264,6 +264,7 @@ along with GCC; see the file COPYING3.  If not see
       NEXT_PASS (pass_tsan);
       NEXT_PASS (pass_dse, true /* use DR analysis */);
       NEXT_PASS (pass_dce);
+      NEXT_PASS (pass_remap_complex);
       /* Pass group that runs when 1) enabled, 2) there are loops
 	 in the function.  Make sure to run pass_fix_loops before
 	 to discover/remove loops before running the gate function

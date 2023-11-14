@@ -418,6 +418,7 @@ extern gimple_opt_pass *make_pass_pre (gcc::context *ctxt);
 extern unsigned int tail_merge_optimize (bool);
 extern gimple_opt_pass *make_pass_profile (gcc::context *ctxt);
 extern gimple_opt_pass *make_pass_strip_predict_hints (gcc::context *ctxt);
+extern gimple_opt_pass *make_pass_remap_complex (gcc::context *ctxt);
 extern gimple_opt_pass *make_pass_lower_complex_O0 (gcc::context *ctxt);
 extern gimple_opt_pass *make_pass_lower_complex (gcc::context *ctxt);
 extern gimple_opt_pass *make_pass_lower_switch (gcc::context *ctxt);

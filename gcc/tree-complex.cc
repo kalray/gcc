@@ -2359,6 +2359,49 @@ tree_lower_complex (void)
   complex_lattice_values.release ();
   return todo;
 }
+
+
+/* Entry point for complex operation remap during optimization.  */
+
+static unsigned int
+tree_remap_complex (void)
+{
+  basic_block bb;
+
+  FOR_EACH_BB_FN (bb, cfun)
+    {
+      for (gimple_stmt_iterator gsi = gsi_start_bb (bb); !gsi_end_p (gsi);
+	   gsi_next (&gsi))
+	{
+	  gimple *stmt = gsi_stmt (gsi);
+
+	  if (!is_gimple_assign (stmt))
+	    continue;
+
+	  tree lhs = gimple_assign_lhs (stmt);
+	  if (TREE_CODE (TREE_TYPE (lhs)) != COMPLEX_TYPE
+	      || gimple_expr_code (stmt) != MULT_EXPR)
+	    continue;
+
+	  tree op0 = gimple_assign_rhs1 (stmt);
+	  tree op1 = gimple_assign_rhs2 (stmt);
+	  gcall *new_call = gimple_build_call_internal (IFN_COMPLEX_MUL, 2, op0, op1);
+	  gimple_set_lhs (new_call, lhs);
+
+	  if (dump_file && (dump_flags & TDF_DETAILS))
+	    {
+	      fprintf (dump_file, "Replacing ");
+	      print_gimple_stmt (dump_file, stmt, 0, TDF_SLIM);
+	      fprintf (dump_file, " by ");
+	      print_gimple_stmt (dump_file, new_call, 0, TDF_SLIM);
+	    }
+
+	  gsi_replace (&gsi, new_call, true);
+	}
+    }
+
+  return 0;
+}
 
 namespace {
 
@@ -2443,4 +2486,41 @@ gimple_opt_pass *
 make_pass_lower_complex_O0 (gcc::context *ctxt)
 {
   return new pass_lower_complex_O0 (ctxt);
+}
+
+
+namespace {
+
+const pass_data pass_data_remap_complex =
+{
+  GIMPLE_PASS, /* type */
+  "cplxremap", /* name */
+  OPTGROUP_NONE, /* optinfo_flags */
+  TV_NONE, /* tv_id */
+  PROP_ssa, /* properties_required */
+  0, /* properties_provided */
+  0, /* properties_destroyed */
+  0, /* todo_flags_start */
+  TODO_update_ssa, /* todo_flags_finish */
+};
+
+class pass_remap_complex : public gimple_opt_pass
+{
+public:
+  pass_remap_complex (gcc::context *ctxt)
+    : gimple_opt_pass (pass_data_remap_complex, ctxt)
+  {}
+
+  /* opt_pass methods: */
+  opt_pass * clone () { return new pass_remap_complex (m_ctxt); }
+  virtual unsigned int execute (function *) { return tree_remap_complex (); }
+
+}; // class pass_remap_complex
+
+} // anon namespace
+
+gimple_opt_pass *
+make_pass_remap_complex (gcc::context *ctxt)
+{
+  return new pass_remap_complex (ctxt);
 }
