@@ -1,4 +1,11 @@
 /* { dg-options "-O2 -fdump-tree-optimized -fgnu89-inline" } */
+
+#ifdef __KVX__
+#define N 10000
+#else
+#define N 1000000
+#endif
+
 int a;
 int b[100];
 void abort (void);
@@ -25,7 +32,7 @@ int
 main ()
 {
   int i;
-  for (i = 0; i < 1000000; i++)
+  for (i = 0; i < N; i++)
     {
       if (a)
         cold_function ();   /* Should not be inlined.  */
