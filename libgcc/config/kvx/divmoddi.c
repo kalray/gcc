@@ -170,7 +170,7 @@ __divmoddi4 (int64_t a, int64_t b, int64_t *c)
   uint64_t absb = __builtin_kvx_absd (b, "");
   uint64x2_t divmod = uint64_divmod (absa, absb);
   if (c)
-    *c  = (- 2 * (a < 0) + 1) * divmod[1];
+    *c  = (a < 0) ? -divmod[1] : divmod[1];
   return (a ^ b) < 0 ? -divmod[0] : divmod[0];
 }
 
