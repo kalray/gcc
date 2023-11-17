@@ -483,6 +483,7 @@ enum kvx_builtin
   KVX_BUILTIN_FADDD,
   KVX_BUILTIN_FADDDP,
   KVX_BUILTIN_FADDDQ,
+
   KVX_BUILTIN_FADDWC,
   KVX_BUILTIN_FADDWCP,
   KVX_BUILTIN_FADDWCQ,
@@ -501,6 +502,7 @@ enum kvx_builtin
   KVX_BUILTIN_FSBFD,
   KVX_BUILTIN_FSBFDP,
   KVX_BUILTIN_FSBFDQ,
+
   KVX_BUILTIN_FSBFWC,
   KVX_BUILTIN_FSBFWCP,
   KVX_BUILTIN_FSBFWCQ,
@@ -526,6 +528,7 @@ enum kvx_builtin
   KVX_BUILTIN_FMULXWD,
   KVX_BUILTIN_FMULXWDP,
   KVX_BUILTIN_FMULXWDQ,
+
   KVX_BUILTIN_FMULWC,
   KVX_BUILTIN_FMULWCP,
   KVX_BUILTIN_FMULWCQ,
@@ -559,6 +562,7 @@ enum kvx_builtin
   KVX_BUILTIN_FFMAXWD,
   KVX_BUILTIN_FFMAXWDP,
   KVX_BUILTIN_FFMAXWDQ,
+
   KVX_BUILTIN_FFMAWC,
   KVX_BUILTIN_FFMAWCP,
   KVX_BUILTIN_FFMAWCQ,
@@ -584,6 +588,7 @@ enum kvx_builtin
   KVX_BUILTIN_FFMSXWD,
   KVX_BUILTIN_FFMSXWDP,
   KVX_BUILTIN_FFMSXWDQ,
+
   KVX_BUILTIN_FFMSWC,
   KVX_BUILTIN_FFMSWCP,
   KVX_BUILTIN_FFMSWCQ,
@@ -1642,13 +1647,14 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (FADDWO, "faddwo", V8SF, V8SF, V8SF, FLOATINGS); // Vector
   ADD_KVX_BUILTIN (FADDD, "faddd", FLOAT64, FLOAT64, FLOAT64, FLOATINGS); // Scalar
   ADD_KVX_BUILTIN (FADDDP, "fadddp", V2DF, V2DF, V2DF, FLOATINGS); // Vector
-  ADD_KVX_BUILTIN (FADDDCP, "fadddcp", V4DF, V4DF, V4DF, FLOATINGS); // Vector
-  ADD_KVX_BUILTIN (FADDDCQ, "fadddcq", V8DF, V8DF, V8DF, FLOATINGS); // Vector
   ADD_KVX_BUILTIN (FADDDQ, "fadddq", V4DF, V4DF, V4DF, FLOATINGS); // Vector
+
   ADD_KVX_BUILTIN (FADDWC, "faddwc", V2SF, V2SF, V2SF, CONJUGATE); // Vector
   ADD_KVX_BUILTIN (FADDWCP, "faddwcp", V4SF, V4SF, V4SF, CONJUGATE); // Vector
   ADD_KVX_BUILTIN (FADDWCQ, "faddwcq", V8SF, V8SF, V8SF, CONJUGATE); // Vector
   ADD_KVX_BUILTIN (FADDDC, "fadddc", V2DF, V2DF, V2DF, CONJUGATE); // Vector
+  ADD_KVX_BUILTIN (FADDDCP, "fadddcp", V4DF, V4DF, V4DF, CONJUGATE); // Vector
+  ADD_KVX_BUILTIN (FADDDCQ, "fadddcq", V8DF, V8DF, V8DF, CONJUGATE); // Vector
 
   ADD_KVX_BUILTIN (FSBFH, "fsbfh", FLOAT16, FLOAT16, FLOAT16, FLOATINGS); // Scalar
   ADD_KVX_BUILTIN (FSBFHQ, "fsbfhq", V4HF, V4HF, V4HF, FLOATINGS); // Vector
@@ -1661,6 +1667,7 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (FSBFD, "fsbfd", FLOAT64, FLOAT64, FLOAT64, FLOATINGS); // Scalar
   ADD_KVX_BUILTIN (FSBFDP, "fsbfdp", V2DF, V2DF, V2DF, FLOATINGS); // Vector
   ADD_KVX_BUILTIN (FSBFDQ, "fsbfdq", V4DF, V4DF, V4DF, FLOATINGS); // Vector
+
   ADD_KVX_BUILTIN (FSBFWC, "fsbfwc", V2SF, V2SF, V2SF, CONJUGATE); // Vector
   ADD_KVX_BUILTIN (FSBFWCP, "fsbfwcp", V4SF, V4SF, V4SF, CONJUGATE); // Vector
   ADD_KVX_BUILTIN (FSBFWCQ, "fsbfwcq", V8SF, V8SF, V8SF, CONJUGATE); // Vector
@@ -1686,6 +1693,7 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (FMULXWD, "fmulxwd", FLOAT64, FLOAT32, FLOAT32, FLOATINGS); // Scalar
   ADD_KVX_BUILTIN (FMULXWDP, "fmulxwdp", V2DF, V2SF, V2SF, FLOATINGS); // Scalar
   ADD_KVX_BUILTIN (FMULXWDQ, "fmulxwdq", V4DF, V4SF, V4SF, FLOATINGS); // Scalar
+
   ADD_KVX_BUILTIN (FMULWC, "fmulwc", V2SF, V2SF, V2SF, CONJUGATE); // Vector
   ADD_KVX_BUILTIN (FMULWCP, "fmulwcp", V4SF, V4SF, V4SF, CONJUGATE); // Vector
   ADD_KVX_BUILTIN (FMULWCQ, "fmulwcq", V8SF, V8SF, V8SF, CONJUGATE); // Vector
@@ -1719,6 +1727,7 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (FFMAXWD, "ffmaxwd", FLOAT64, FLOAT32, FLOAT32, FLOAT64, FLOATINGS); // Scalar
   ADD_KVX_BUILTIN (FFMAXWDP, "ffmaxwdp", V2DF, V2SF, V2SF, V2DF, FLOATINGS); // Scalar
   ADD_KVX_BUILTIN (FFMAXWDQ, "ffmaxwdq", V4DF, V4SF, V4SF, V4DF, FLOATINGS); // Scalar
+
   ADD_KVX_BUILTIN (FFMAWC, "ffmawc", V2SF, V2SF, V2SF, V2SF, CONJUGATE); // Vector
   ADD_KVX_BUILTIN (FFMAWCP, "ffmawcp", V4SF, V4SF, V4SF, V4SF, CONJUGATE); // Vector
   ADD_KVX_BUILTIN (FFMAWCQ, "ffmawcq", V8SF, V8SF, V8SF, V8SF, CONJUGATE); // Vector
@@ -1744,6 +1753,7 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (FFMSXWD, "ffmsxwd", FLOAT64, FLOAT32, FLOAT32, FLOAT64, FLOATINGS); // Scalar
   ADD_KVX_BUILTIN (FFMSXWDP, "ffmsxwdp", V2DF, V2SF, V2SF, V2DF, FLOATINGS); // Vector
   ADD_KVX_BUILTIN (FFMSXWDQ, "ffmsxwdq", V4DF, V4SF, V4SF, V4DF, FLOATINGS); // Vector
+
   ADD_KVX_BUILTIN (FFMSWC, "ffmswc", V2SF, V2SF, V2SF, V2SF, CONJUGATE); // Vector
   ADD_KVX_BUILTIN (FFMSWCP, "ffmswcp", V4SF, V4SF, V4SF, V4SF, CONJUGATE); // Vector
   ADD_KVX_BUILTIN (FFMSWCQ, "ffmswcq", V8SF, V8SF, V8SF, V8SF, CONJUGATE); // Vector
@@ -1751,12 +1761,12 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (FFMSDCP, "ffmsdcp", V4DF, V4DF, V4DF, V4DF, CONJUGATE); // Vector
   ADD_KVX_BUILTIN (FFMSDCQ, "ffmsdcq", V8DF, V8DF, V8DF, V8DF, CONJUGATE); // Vector
 
-  ADD_KVX_BUILTIN (FMM212W, "fmm212w", V4SF, V2SF, V2SF, FLOATINGS); // Vector
-  ADD_KVX_BUILTIN (FMM222W, "fmm222w", V4SF, V4SF, V4SF, TRANSPOSE); // Vector
-  ADD_KVX_BUILTIN (FMMA212W, "fmma212w", V4SF, V2SF, V2SF, V4SF, FLOATINGS); // Vector
-  ADD_KVX_BUILTIN (FMMA222W, "fmma222w", V4SF, V4SF, V4SF, V4SF, TRANSPOSE); // Vector
-  ADD_KVX_BUILTIN (FMMS212W, "fmms212w", V4SF, V2SF, V2SF, V4SF, FLOATINGS); // Vector
-  ADD_KVX_BUILTIN (FMMS222W, "fmms222w", V4SF, V4SF, V4SF, V4SF, TRANSPOSE); // Vector
+  ADD_KVX_BUILTIN (FMM212W, "fmm212w", V4SF, V2SF, V2SF, FLOATINGS); // Vector kv3
+  ADD_KVX_BUILTIN (FMM222W, "fmm222w", V4SF, V4SF, V4SF, TRANSPOSE); // Vector kv3
+  ADD_KVX_BUILTIN (FMMA212W, "fmma212w", V4SF, V2SF, V2SF, V4SF, FLOATINGS); // Vector kv3
+  ADD_KVX_BUILTIN (FMMA222W, "fmma222w", V4SF, V4SF, V4SF, V4SF, TRANSPOSE); // Vector kv3
+  ADD_KVX_BUILTIN (FMMS212W, "fmms212w", V4SF, V2SF, V2SF, V4SF, FLOATINGS); // Vector kv3
+  ADD_KVX_BUILTIN (FMMS222W, "fmms222w", V4SF, V4SF, V4SF, V4SF, TRANSPOSE); // Vector kv3
 
   ADD_KVX_BUILTIN (FFDMAW, "ffdmaw", FLOAT32, V2SF, V2SF, FLOATINGS); // Vector
   ADD_KVX_BUILTIN (FFDMAWP, "ffdmawp", V2SF, V4SF, V4SF, FLOATINGS); // Vector
@@ -1835,21 +1845,21 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (FCONJDCP, "fconjdcp", V4DF, V4DF); // Vector
   ADD_KVX_BUILTIN (FCONJDCQ, "fconjdcq", V8DF, V8DF); // Vector
 
-  ADD_KVX_BUILTIN (FCDIVW, "fcdivw", FLOAT32, FLOAT32, FLOAT32, SILENT); // Scalar
-  ADD_KVX_BUILTIN (FCDIVWP, "fcdivwp", V2SF, V2SF, V2SF, SILENT); // Vector
-  ADD_KVX_BUILTIN (FCDIVWQ, "fcdivwq", V4SF, V4SF, V4SF, SILENT); // Vector
-  ADD_KVX_BUILTIN (FCDIVWO, "fcdivwo", V8SF, V8SF, V8SF, SILENT); // Vector
-  ADD_KVX_BUILTIN (FCDIVD, "fcdivd", FLOAT64, FLOAT64, FLOAT64, SILENT); // Scalar
-  ADD_KVX_BUILTIN (FCDIVDP, "fcdivdp", V2DF, V2DF, V2DF, SILENT); // Vector
-  ADD_KVX_BUILTIN (FCDIVDQ, "fcdivdq", V4DF, V4DF, V4DF, SILENT); // Vector
+  ADD_KVX_BUILTIN (FCDIVW, "fcdivw", FLOAT32, FLOAT32, FLOAT32, SILENT); // Scalar kv3
+  ADD_KVX_BUILTIN (FCDIVWP, "fcdivwp", V2SF, V2SF, V2SF, SILENT); // Vector kv3
+  ADD_KVX_BUILTIN (FCDIVWQ, "fcdivwq", V4SF, V4SF, V4SF, SILENT); // Vector kv3
+  ADD_KVX_BUILTIN (FCDIVWO, "fcdivwo", V8SF, V8SF, V8SF, SILENT); // Vector kv3
+  ADD_KVX_BUILTIN (FCDIVD, "fcdivd", FLOAT64, FLOAT64, FLOAT64, SILENT); // Scalar kv3
+  ADD_KVX_BUILTIN (FCDIVDP, "fcdivdp", V2DF, V2DF, V2DF, SILENT); // Vector kv3
+  ADD_KVX_BUILTIN (FCDIVDQ, "fcdivdq", V4DF, V4DF, V4DF, SILENT); // Vector kv3
 
-  ADD_KVX_BUILTIN (FSDIVW, "fsdivw", FLOAT32, FLOAT32, FLOAT32, SILENT); // Scalar
-  ADD_KVX_BUILTIN (FSDIVWP, "fsdivwp", V2SF, V2SF, V2SF, SILENT); // Vector
-  ADD_KVX_BUILTIN (FSDIVWQ, "fsdivwq", V4SF, V4SF, V4SF, SILENT); // Vector
-  ADD_KVX_BUILTIN (FSDIVWO, "fsdivwo", V8SF, V8SF, V8SF, SILENT); // Vector
-  ADD_KVX_BUILTIN (FSDIVD, "fsdivd", FLOAT64, FLOAT64, FLOAT64, SILENT); // Scalar
-  ADD_KVX_BUILTIN (FSDIVDP, "fsdivdp", V2DF, V2DF, V2DF, SILENT); // Vector
-  ADD_KVX_BUILTIN (FSDIVDQ, "fsdivdq", V4DF, V4DF, V4DF, SILENT); // Vector
+  ADD_KVX_BUILTIN (FSDIVW, "fsdivw", FLOAT32, FLOAT32, FLOAT32, SILENT); // Scalar kv3
+  ADD_KVX_BUILTIN (FSDIVWP, "fsdivwp", V2SF, V2SF, V2SF, SILENT); // Vector kv3
+  ADD_KVX_BUILTIN (FSDIVWQ, "fsdivwq", V4SF, V4SF, V4SF, SILENT); // Vector kv3
+  ADD_KVX_BUILTIN (FSDIVWO, "fsdivwo", V8SF, V8SF, V8SF, SILENT); // Vector kv3
+  ADD_KVX_BUILTIN (FSDIVD, "fsdivd", FLOAT64, FLOAT64, FLOAT64, SILENT); // Scalar kv3
+  ADD_KVX_BUILTIN (FSDIVDP, "fsdivdp", V2DF, V2DF, V2DF, SILENT); // Vector kv3
+  ADD_KVX_BUILTIN (FSDIVDQ, "fsdivdq", V4DF, V4DF, V4DF, SILENT); // Vector kv3
 
   ADD_KVX_BUILTIN (FSRECW, "fsrecw", FLOAT32, FLOAT32, SILENT); // Scalar
   ADD_KVX_BUILTIN (FSRECWP, "fsrecwp", V2SF, V2SF, SILENT); // Vector
@@ -2461,6 +2471,8 @@ build_conjugate_arg (tree arg, const char *name)
     ".s", ".rn.s", ".ru.s", ".rd.s", ".rz.s",
     ".c.s", ".c.rn.s", ".c.ru.s", ".c.rd.s", ".c.rz.s",
   };
+  if (KV4 && modifier[0] == '.' && modifier[1] == 'c')
+    error ("%<__builtin_kvx_%s%> '.c' modifiers not supported on the kv4-1", name);
   unsigned n = sizeof (table) / sizeof (*table), m = n / 2;
   for (int i = 0; i < (int) n; i++)
     {
@@ -2965,7 +2977,7 @@ unsigned long kvx_xundef_counter;
                                         tree args ATTRIBUTE_UNUSED)            \
   {                                                                            \
     if (KVX_N_ONLY)                                                            \
-      error ("%<__builtin_kvx_%s%> is only for the kv3-%d", #name, KVX_N_ONLY);\
+      error ("%<__builtin_kvx_%s%> is only for the %s", #name, KVX_N_ONLY);    \
     emit_insn (gen_##name2 ());                                                \
     return NULL_RTX;                                                           \
   }
@@ -2974,7 +2986,7 @@ unsigned long kvx_xundef_counter;
   static rtx kvx_expand_builtin_##name (rtx target ATTRIBUTE_UNUSED, tree args)\
   {                                                                            \
     if (KVX_N_ONLY)                                                            \
-      error ("%<__builtin_kvx_%s%> is only for the kv3-%d", #name, KVX_N_ONLY);\
+      error ("%<__builtin_kvx_%s%> is only for the %s", #name, KVX_N_ONLY);    \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     arg1 = force_reg (smode, arg1);                                            \
     emit_insn (gen_##name2 (arg1));                                            \
@@ -2985,7 +2997,7 @@ unsigned long kvx_xundef_counter;
   static rtx kvx_expand_builtin_##name (rtx target ATTRIBUTE_UNUSED, tree args)\
   {                                                                            \
     if (KVX_N_ONLY)                                                            \
-      error ("%<__builtin_kvx_%s%> is only for the kv3-%d", #name, KVX_N_ONLY);\
+      error ("%<__builtin_kvx_%s%> is only for the %s", #name, KVX_N_ONLY);    \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = build_xchannel_arg (CALL_EXPR_ARG (args, 1), #name);            \
     arg1 = force_reg (smode, arg1);                                            \
@@ -2997,7 +3009,7 @@ unsigned long kvx_xundef_counter;
   static rtx kvx_expand_builtin_##name (rtx target ATTRIBUTE_UNUSED, tree args)\
   {                                                                            \
     if (KVX_N_ONLY)                                                            \
-      error ("%<__builtin_kvx_%s%> is only for the kv3-%d", #name, KVX_N_ONLY);\
+      error ("%<__builtin_kvx_%s%> is only for the %s", #name, KVX_N_ONLY);    \
     rtx arg1 = build_xchannel_arg (CALL_EXPR_ARG (args, 0), #name);            \
     if (!target)                                                               \
       target = gen_reg_rtx (tmode);                                            \
@@ -3011,7 +3023,7 @@ unsigned long kvx_xundef_counter;
   static rtx kvx_expand_builtin_##name (rtx target ATTRIBUTE_UNUSED, tree args)\
   {                                                                            \
     if (KVX_N_ONLY)                                                            \
-      error ("%<__builtin_kvx_%s%> is only for the kv3-%d", #name, KVX_N_ONLY);\
+      error ("%<__builtin_kvx_%s%> is only for the %s", #name, KVX_N_ONLY);    \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
     arg1 = force_reg (smode, arg1);                                            \
@@ -3024,7 +3036,7 @@ unsigned long kvx_xundef_counter;
   static rtx kvx_expand_builtin_##name (rtx target ATTRIBUTE_UNUSED, tree args)\
   {                                                                            \
     if (KVX_N_ONLY)                                                            \
-      error ("%<__builtin_kvx_%s%> is only for the kv3-%d", #name, KVX_N_ONLY);\
+      error ("%<__builtin_kvx_%s%> is only for the %s", #name, KVX_N_ONLY);    \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
     rtx arg3 = build_cachelev_arg (CALL_EXPR_ARG (args, 2), #name);            \
@@ -3038,7 +3050,7 @@ unsigned long kvx_xundef_counter;
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
     if (KVX_N_ONLY)                                                            \
-      error ("%<__builtin_kvx_%s%> is only for the kv3-%d", #name, KVX_N_ONLY);\
+      error ("%<__builtin_kvx_%s%> is only for the %s", #name, KVX_N_ONLY);    \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     arg1 = force_reg (smode, arg1);                                            \
     if (!target)                                                               \
@@ -3053,7 +3065,7 @@ unsigned long kvx_xundef_counter;
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
     if (KVX_N_ONLY)                                                            \
-      error ("%<__builtin_kvx_%s%> is only for the kv3-%d", #name, KVX_N_ONLY);\
+      error ("%<__builtin_kvx_%s%> is only for the %s", #name, KVX_N_ONLY);    \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = build_##validate##_arg (CALL_EXPR_ARG (args, 1), #name);        \
     arg1 = force_reg (smode, arg1);                                            \
@@ -3091,7 +3103,7 @@ unsigned long kvx_xundef_counter;
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
     if (KVX_N_ONLY)                                                            \
-      error ("%<__builtin_kvx_%s%> is only for the kv3-%d", #name, KVX_N_ONLY);\
+      error ("%<__builtin_kvx_%s%> is only for the %s", #name, KVX_N_ONLY);    \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
     arg1 = force_reg (smode, arg1);                                            \
@@ -3108,7 +3120,7 @@ unsigned long kvx_xundef_counter;
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
     if (KVX_N_ONLY)                                                            \
-      error ("%<__builtin_kvx_%s%> is only for the kv3-%d", #name, KVX_N_ONLY);\
+      error ("%<__builtin_kvx_%s%> is only for the %s", #name, KVX_N_ONLY);    \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
     rtx arg3 = build_##validate##_arg (CALL_EXPR_ARG (args, 2), #name);        \
@@ -3158,7 +3170,7 @@ unsigned long kvx_xundef_counter;
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
     if (KVX_N_ONLY)                                                            \
-      error ("%<__builtin_kvx_%s%> is only for the kv3-%d", #name, KVX_N_ONLY);\
+      error ("%<__builtin_kvx_%s%> is only for the %s", #name, KVX_N_ONLY);    \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
     rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));                        \
@@ -3177,7 +3189,7 @@ unsigned long kvx_xundef_counter;
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
     if (KVX_N_ONLY)                                                            \
-      error ("%<__builtin_kvx_%s%> is only for the kv3-%d", #name, KVX_N_ONLY);\
+      error ("%<__builtin_kvx_%s%> is only for the %s", #name, KVX_N_ONLY);    \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
     rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));                        \
@@ -3207,7 +3219,7 @@ unsigned long kvx_xundef_counter;
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
     if (KVX_N_ONLY)                                                            \
-      error ("%<__builtin_kvx_%s%> is only for the kv3-%d", #name, KVX_N_ONLY);\
+      error ("%<__builtin_kvx_%s%> is only for the %s", #name, KVX_N_ONLY);    \
     int bits = __builtin_ctz (GET_MODE_NUNITS (tmode));                        \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
@@ -3233,7 +3245,7 @@ unsigned long kvx_xundef_counter;
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
     if (KVX_N_ONLY)                                                            \
-      error ("%<__builtin_kvx_%s%> is only for the kv3-%d", #name, KVX_N_ONLY);\
+      error ("%<__builtin_kvx_%s%> is only for the %s", #name, KVX_N_ONLY);    \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
     rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));                        \
@@ -3257,11 +3269,13 @@ unsigned long kvx_xundef_counter;
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
     if (KVX_N_ONLY)                                                            \
-      error ("%<__builtin_kvx_%s%> is only for the kv3-%d", #name, KVX_N_ONLY);\
+      error ("%<__builtin_kvx_%s%> is only for the %s", #name, KVX_N_ONLY);    \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
     rtx arg3 = build_floatings_arg (CALL_EXPR_ARG (args, 2), #name);           \
     arg2 = verify_const_uint_arg (arg2, 6, #name, "second");                   \
+    if (KV4 && INTVAL (arg2))                                                  \
+      error ("%<__builtin_kvx_%s%> expects zero scaling on the kv4-1", #name); \
     if (!target)                                                               \
       target = gen_reg_rtx (tmode);                                            \
     else                                                                       \
@@ -3275,7 +3289,7 @@ unsigned long kvx_xundef_counter;
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
     if (KVX_N_ONLY)                                                            \
-      error ("%<__builtin_kvx_%s%> is only for the kv3-%d", #name, KVX_N_ONLY);\
+      error ("%<__builtin_kvx_%s%> is only for the %s", #name, KVX_N_ONLY);    \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
     rtx arg3 = build_floatings_arg (CALL_EXPR_ARG (args, 2), #name);           \
@@ -3294,7 +3308,7 @@ unsigned long kvx_xundef_counter;
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
     if (KVX_N_ONLY)                                                            \
-      error ("%<__builtin_kvx_%s%> is only for the kv3-%d", #name, KVX_N_ONLY);\
+      error ("%<__builtin_kvx_%s%> is only for the %s", #name, KVX_N_ONLY);    \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
     rtx arg3 = expand_normal (CALL_EXPR_ARG (args, 2));                        \
@@ -3745,7 +3759,7 @@ KVX_EXPAND_BUILTIN_3_STANDARD (xcat1024, kvx_xcat1024, X1024mode, X512mode)
 KVX_EXPAND_BUILTIN_3_STANDARD (xcat2048, kvx_xcat2048, X2048mode, X1024mode)
 KVX_EXPAND_BUILTIN_3_STANDARD (xcat4096, kvx_xcat4096, X4096mode, X2048mode)
 #undef KVX_N_ONLY
-#define KVX_N_ONLY ((KV3_2||KV4) ? 0 : 2)
+#define KVX_N_ONLY ((KV3_2||KV4) ? 0 : "kv3-2 or kv4-1")
 KVX_EXPAND_BUILTIN_3_STANDARD (xcat8192, kvx_xcat8192, X8192mode, X4096mode)
 #undef KVX_N_ONLY
 #define KVX_N_ONLY 0
@@ -3899,6 +3913,7 @@ KVX_EXPAND_BUILTIN_3_FLOATINGS (faddwo, kvx_faddwo, V8SFmode, V8SFmode)
 KVX_EXPAND_BUILTIN_3_FLOATINGS (faddd, kvx_faddd, DFmode, DFmode)
 KVX_EXPAND_BUILTIN_3_FLOATINGS (fadddp, kvx_fadddp, V2DFmode, V2DFmode)
 KVX_EXPAND_BUILTIN_3_FLOATINGS (fadddq, kvx_fadddq, V4DFmode, V4DFmode)
+
 KVX_EXPAND_BUILTIN_3_CONJUGATE (faddwc, kvx_faddwc, V2SFmode, V2SFmode)
 KVX_EXPAND_BUILTIN_3_CONJUGATE (faddwcp, kvx_faddwcp, V4SFmode, V4SFmode)
 KVX_EXPAND_BUILTIN_3_CONJUGATE (faddwcq, kvx_faddwcq, V8SFmode, V8SFmode)
@@ -3917,6 +3932,7 @@ KVX_EXPAND_BUILTIN_3_FLOATINGS (fsbfwo, kvx_fsbfwo, V8SFmode, V8SFmode)
 KVX_EXPAND_BUILTIN_3_FLOATINGS (fsbfd, kvx_fsbfd, DFmode, DFmode)
 KVX_EXPAND_BUILTIN_3_FLOATINGS (fsbfdp, kvx_fsbfdp, V2DFmode, V2DFmode)
 KVX_EXPAND_BUILTIN_3_FLOATINGS (fsbfdq, kvx_fsbfdq, V4DFmode, V4DFmode)
+
 KVX_EXPAND_BUILTIN_3_CONJUGATE (fsbfwc, kvx_fsbfwc, V2SFmode, V2SFmode)
 KVX_EXPAND_BUILTIN_3_CONJUGATE (fsbfwcp, kvx_fsbfwcp, V4SFmode, V4SFmode)
 KVX_EXPAND_BUILTIN_3_CONJUGATE (fsbfwcq, kvx_fsbfwcq, V8SFmode, V8SFmode)
@@ -3936,12 +3952,17 @@ KVX_EXPAND_BUILTIN_3_FLOATINGS (fmuld, kvx_fmuld, DFmode, DFmode)
 KVX_EXPAND_BUILTIN_3_FLOATINGS (fmuldp, kvx_fmuldp, V2DFmode, V2DFmode)
 KVX_EXPAND_BUILTIN_3_FLOATINGS (fmuldq, kvx_fmuldq, V4DFmode, V4DFmode)
 
+#undef KVX_N_ONLY
+#define KVX_N_ONLY ((KV3_1||KV3_2) ? 0 : "kv3-1 or kv3-2")
 KVX_EXPAND_BUILTIN_3_FLOATINGS (fmulxhw, kvx_fmulxhw, SFmode, HFmode)
 KVX_EXPAND_BUILTIN_3_FLOATINGS (fmulxhwq, kvx_fmulxhwq, V4SFmode, V4HFmode)
 KVX_EXPAND_BUILTIN_3_FLOATINGS (fmulxhwo, kvx_fmulxhwo, V8SFmode, V8HFmode)
 KVX_EXPAND_BUILTIN_3_FLOATINGS (fmulxwd, kvx_fmulxwd, DFmode, SFmode)
 KVX_EXPAND_BUILTIN_3_FLOATINGS (fmulxwdp, kvx_fmulxwdp, V2DFmode, V2SFmode)
 KVX_EXPAND_BUILTIN_3_FLOATINGS (fmulxwdq, kvx_fmulxwdq, V4DFmode, V4SFmode)
+#undef KVX_N_ONLY
+#define KVX_N_ONLY 0
+
 KVX_EXPAND_BUILTIN_3_CONJUGATE (fmulwc, kvx_fmulwc, V2SFmode, V2SFmode)
 KVX_EXPAND_BUILTIN_3_CONJUGATE (fmulwcp, kvx_fmulwcp, V4SFmode, V4SFmode)
 KVX_EXPAND_BUILTIN_3_CONJUGATE (fmulwcq, kvx_fmulwcq, V8SFmode, V8SFmode)
@@ -3969,12 +3990,17 @@ KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmad, kvx_ffmad, DFmode, DFmode)
 KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmadp, kvx_ffmadp, V2DFmode, V2DFmode)
 KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmadq, kvx_ffmadq, V4DFmode, V4DFmode)
 
+#undef KVX_N_ONLY
+#define KVX_N_ONLY ((KV3_1||KV3_2) ? 0 : "kv3-1 or kv3-2")
 KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmaxhw, kvx_ffmaxhw, SFmode, HFmode)
 KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmaxhwq, kvx_ffmaxhwq, V4SFmode, V4HFmode)
 KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmaxhwo, kvx_ffmaxhwo, V8SFmode, V8HFmode)
 KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmaxwd, kvx_ffmaxwd, DFmode, SFmode)
 KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmaxwdp, kvx_ffmaxwdp, V2DFmode, V2SFmode)
 KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmaxwdq, kvx_ffmaxwdq, V4DFmode, V4SFmode)
+#undef KVX_N_ONLY
+#define KVX_N_ONLY 0
+
 KVX_EXPAND_BUILTIN_4_CONJUGATE (ffmawc, kvx_ffmawc, V2SFmode, V2SFmode)
 KVX_EXPAND_BUILTIN_4_CONJUGATE (ffmawcp, kvx_ffmawcp, V4SFmode, V4SFmode)
 KVX_EXPAND_BUILTIN_4_CONJUGATE (ffmawcq, kvx_ffmawcq, V8SFmode, V8SFmode)
@@ -4000,6 +4026,7 @@ KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmsxhwo, kvx_ffmsxhwo, V8SFmode, V8HFmode)
 KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmsxwd, kvx_ffmsxwd, DFmode, SFmode)
 KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmsxwdp, kvx_ffmsxwdp, V2DFmode, V2SFmode)
 KVX_EXPAND_BUILTIN_4_FLOATINGS (ffmsxwdq, kvx_ffmsxwdq, V4DFmode, V4SFmode)
+
 KVX_EXPAND_BUILTIN_4_CONJUGATE (ffmswc, kvx_ffmswc, V2SFmode, V2SFmode)
 KVX_EXPAND_BUILTIN_4_CONJUGATE (ffmswcp, kvx_ffmswcp, V4SFmode, V4SFmode)
 KVX_EXPAND_BUILTIN_4_CONJUGATE (ffmswcq, kvx_ffmswcq, V8SFmode, V8SFmode)
@@ -4091,6 +4118,8 @@ KVX_EXPAND_BUILTIN_2_STANDARD (fconjdc, kvx_fconjdc, V2DFmode, V2DFmode)
 KVX_EXPAND_BUILTIN_2_STANDARD (fconjdcp, kvx_fconjdcp, V4DFmode, V4DFmode)
 KVX_EXPAND_BUILTIN_2_STANDARD (fconjdcq, kvx_fconjdcq, V8DFmode, V8DFmode)
 
+#undef KVX_N_ONLY
+#define KVX_N_ONLY ((KV3_1||KV3_2) ? 0 : "kv3-1 or kv3-2")
 KVX_EXPAND_BUILTIN_3_SILENT (fcdivw, kvx_fcdivw, SFmode, SFmode)
 KVX_EXPAND_BUILTIN_3_SILENT (fcdivwp, kvx_fcdivwp, V2SFmode, V2SFmode)
 KVX_EXPAND_BUILTIN_3_SILENT (fcdivwq, kvx_fcdivwq, V4SFmode, V4SFmode)
@@ -4106,6 +4135,8 @@ KVX_EXPAND_BUILTIN_3_SILENT (fsdivwo, kvx_fsdivwo, V8SFmode, V8SFmode)
 KVX_EXPAND_BUILTIN_3_SILENT (fsdivd, kvx_fsdivd, DFmode, DFmode)
 KVX_EXPAND_BUILTIN_3_SILENT (fsdivdp, kvx_fsdivdp, V2DFmode, V2DFmode)
 KVX_EXPAND_BUILTIN_3_SILENT (fsdivdq, kvx_fsdivdq, V4DFmode, V4DFmode)
+#undef KVX_N_ONLY
+#define KVX_N_ONLY 0
 
 KVX_EXPAND_BUILTIN_2_SILENT (fsrecw, kvx_fsrecw, SFmode, SFmode)
 KVX_EXPAND_BUILTIN_2_SILENT (fsrecwp, kvx_fsrecwp, V2SFmode, V2SFmode)
@@ -4124,7 +4155,7 @@ KVX_EXPAND_BUILTIN_2_STANDARD (fsrsrdp, kvx_fsrsrdp, V2DFmode, V2DFmode)
 KVX_EXPAND_BUILTIN_2_STANDARD (fsrsrdq, kvx_fsrsrdq, V4DFmode, V4DFmode)
 
 #undef KVX_N_ONLY
-#define KVX_N_ONLY ((KV3_2||KV4) ? 0 : 2)
+#define KVX_N_ONLY ((KV3_2||KV4) ? 0 : "kv3-2 or kv4-1")
 KVX_EXPAND_BUILTIN_3_STANDARD (stsuhq, kvx_stsuhq, V4HImode, V4HImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (stsuho, kvx_stsuho, V8HImode, V8HImode)
 KVX_EXPAND_BUILTIN_3_STANDARD (stsuhx, kvx_stsuhx, V16HImode, V16HImode)
@@ -4154,7 +4185,7 @@ KVX_EXPAND_BUILTIN_3_STANDARD (sbmmt8do, kvx_sbmmt8do, V8DImode, V8DImode)
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
     if (KVX_N_ONLY)                                                            \
-      error ("%<__builtin_kvx_%s%> is only for the kv3-%d", #name, KVX_N_ONLY);\
+      error ("%<__builtin_kvx_%s%> is only for the %s", #name, KVX_N_ONLY);    \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     arg1 = gen_rtx_MEM (mmode, force_reg (Pmode, arg1));                       \
     if (!target)                                                               \
@@ -4237,7 +4268,7 @@ KVX_EXPAND_BUILTIN_1_VOID (dzerol, kvx_dzerol, Pmode)
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
     if (KVX_N_ONLY)                                                            \
-      error ("%<__builtin_kvx_%s%> is only for the kv3-%d", #name, KVX_N_ONLY);\
+      error ("%<__builtin_kvx_%s%> is only for the %s", #name, KVX_N_ONLY);    \
     int nargs = call_expr_nargs (args);                                        \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = nargs >= 2?                                                     \
@@ -4262,7 +4293,7 @@ KVX_EXPAND_BUILTIN_ALOAD (alclrd, kvx_alclrd, DImode, DImode)
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
     if (KVX_N_ONLY)                                                            \
-      error ("%<__builtin_kvx_%s%> is only for the kv3-%d", #name, KVX_N_ONLY);\
+      error ("%<__builtin_kvx_%s%> is only for the %s", #name, KVX_N_ONLY);    \
     int nargs = call_expr_nargs (args);                                        \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
@@ -4286,7 +4317,7 @@ KVX_EXPAND_BUILTIN_ALADD (aladdd, kvx_aladdd, DImode, DImode)
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
     if (KVX_N_ONLY)                                                            \
-      error ("%<__builtin_kvx_%s%> is only for the kv3-%d", #name, KVX_N_ONLY);\
+      error ("%<__builtin_kvx_%s%> is only for the %s", #name, KVX_N_ONLY);    \
     int nargs = call_expr_nargs (args);                                        \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
@@ -4321,7 +4352,7 @@ KVX_EXPAND_BUILTIN_ACSWAP (acswapd, kvx_acswapd, DImode, DImode)
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
     if (KVX_N_ONLY)                                                            \
-      error ("%<__builtin_kvx_%s%> is only for the kv3-%d", #name, KVX_N_ONLY);\
+      error ("%<__builtin_kvx_%s%> is only for the %s", #name, KVX_N_ONLY);    \
     int nargs = call_expr_nargs (args);                                        \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
@@ -4341,7 +4372,7 @@ KVX_EXPAND_BUILTIN_ASTORE (asd, kvx_asd, DImode, DImode)
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
     if (KVX_N_ONLY)                                                            \
-      error ("%<__builtin_kvx_%s%> is only for the kv3-%d", #name, KVX_N_ONLY);\
+      error ("%<__builtin_kvx_%s%> is only for the %s", #name, KVX_N_ONLY);    \
     int nargs = call_expr_nargs (args), volatile_p = 0;                        \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = build_variant_arg (CALL_EXPR_ARG (args, 1), #name);             \
@@ -4407,7 +4438,7 @@ KVX_EXPAND_BUILTIN_LOAD (xload1024, X1024mode, X1024mode)
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
     if (KVX_N_ONLY)                                                            \
-      error ("%<__builtin_kvx_%s%> is only for the kv3-%d", #name, KVX_N_ONLY);\
+      error ("%<__builtin_kvx_%s%> is only for the %s", #name, KVX_N_ONLY);    \
     int nargs = call_expr_nargs (args), volatile_p = 0, clear = 0;             \
     machine_mode cmode = GET_MODE_SIZE (mmode) > 64 ? TImode : DImode;         \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
@@ -4455,7 +4486,7 @@ KVX_EXPAND_BUILTIN_LOADC (xloadc1024, X1024mode, X1024mode)
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
     if (KVX_N_ONLY)                                                            \
-      error ("%<__builtin_kvx_%s%> is only for the kv3-%d", #name, KVX_N_ONLY);\
+      error ("%<__builtin_kvx_%s%> is only for the %s", #name, KVX_N_ONLY);    \
     int nargs = call_expr_nargs (args), volatile_p = 0;                        \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
@@ -4502,7 +4533,7 @@ KVX_EXPAND_BUILTIN_STORE (xstore1024, X1024mode, X1024mode)
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
     if (KVX_N_ONLY)                                                            \
-      error ("%<__builtin_kvx_%s%> is only for the kv3-%d", #name, KVX_N_ONLY);\
+      error ("%<__builtin_kvx_%s%> is only for the %s", #name, KVX_N_ONLY);    \
     int nargs = call_expr_nargs (args), volatile_p = 0;                        \
     machine_mode cmode = GET_MODE_SIZE (mmode) > 64 ? TImode : DImode;         \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
@@ -4602,7 +4633,7 @@ kvx_expand_builtin_xloadsc1024 (rtx target, tree args)
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
     if (KVX_N_ONLY)                                                            \
-      error ("%<__builtin_kvx_%s%> is only for the kv3-%d", #name, KVX_N_ONLY);\
+      error ("%<__builtin_kvx_%s%> is only for the %s", #name, KVX_N_ONLY);    \
     int nargs = call_expr_nargs (args), volatile_p = 0;                        \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
@@ -4666,7 +4697,7 @@ KVX_EXPAND_BUILTIN_XPRELOAD (xpreloadb8192, kvx_xpreloadb8192, X8192mode, QImode
   static rtx kvx_expand_builtin_##name (rtx target, tree args ATTRIBUTE_UNUSED)\
   {                                                                            \
     if (KVX_N_ONLY)                                                            \
-      error ("%<__builtin_kvx_%s%> is only for the kv3-%d", #name, KVX_N_ONLY);\
+      error ("%<__builtin_kvx_%s%> is only for the %s", #name, KVX_N_ONLY);    \
     if (!target)                                                               \
       target = gen_reg_rtx (tmode);                                            \
     else                                                                       \
@@ -4687,7 +4718,7 @@ KVX_EXPAND_BUILTIN_XUNDEF (xundef8192, kvx_xundef8192, X8192mode)
   static rtx kvx_expand_builtin_##name (rtx target, tree args ATTRIBUTE_UNUSED)\
   {                                                                            \
     if (KVX_N_ONLY)                                                            \
-      error ("%<__builtin_kvx_%s%> is only for the kv3-%d", #name, KVX_N_ONLY);\
+      error ("%<__builtin_kvx_%s%> is only for the %s", #name, KVX_N_ONLY);    \
     if (!target)                                                               \
       target = gen_reg_rtx (tmode);                                            \
     else                                                                       \
@@ -4707,7 +4738,7 @@ KVX_EXPAND_BUILTIN_XZERO (xzero8192, kvx_xzero8192, X8192mode)
   static rtx kvx_expand_builtin_##name (rtx target, tree args ATTRIBUTE_UNUSED)\
   {                                                                            \
     if (KVX_N_ONLY)                                                            \
-      error ("%<__builtin_kvx_%s%> is only for the kv3-%d", #name, KVX_N_ONLY);\
+      error ("%<__builtin_kvx_%s%> is only for the %s", #name, KVX_N_ONLY);    \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     arg1 = force_reg (DImode, arg1);                                           \
     if (!target)                                                               \
@@ -4729,7 +4760,7 @@ KVX_EXPAND_BUILTIN_XSPLATD (xsplatd8192, kvx_xsplatd8192, X8192mode)
   static rtx kvx_expand_builtin_##name (rtx target, tree args)                 \
   {                                                                            \
     if (KVX_N_ONLY)                                                            \
-      error ("%<__builtin_kvx_%s%> is only for the kv3-%d", #name, KVX_N_ONLY);\
+      error ("%<__builtin_kvx_%s%> is only for the %s", #name, KVX_N_ONLY);    \
     rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));                        \
     rtx arg2 = expand_normal (CALL_EXPR_ARG (args, 1));                        \
     arg1 = force_reg (bmode, arg1);                                            \
@@ -4786,7 +4817,7 @@ kvx_expand_builtin_xmoveto256 (rtx target, tree args)
 }
 
 #undef KVX_N_ONLY
-#define KVX_N_ONLY ((KV3_2||KV4) ? 0 : 2)
+#define KVX_N_ONLY ((KV3_2||KV4) ? 0 : "kv3-2 or kv4-1")
 static rtx
 kvx_expand_builtin_xmovefq256 (rtx target, tree args)
 {
@@ -4888,7 +4919,7 @@ KVX_EXPAND_BUILTIN_XRECVO (xrecvo, kvx_xrecvo, X256mode)
 KVX_EXPAND_BUILTIN_2_XCHANNELS (xsendrecvo, kvx_xsendrecvo, X256mode, X256mode)
 
 #undef KVX_N_ONLY
-#define KVX_N_ONLY (KV3_1 ? 0 : 1)
+#define KVX_N_ONLY ((KV3_1) ? 0 : "kv3-1")
 KVX_EXPAND_BUILTIN_4_FLOATINGS (xfmma444hw, kvx_xfmma444hw, X512mode, X256mode)
 #undef KVX_N_ONLY
 #define KVX_N_ONLY 0
@@ -4913,7 +4944,7 @@ kvx_expand_builtin_xswapo256 (rtx target, tree args)
 }
 
 #undef KVX_N_ONLY
-#define KVX_N_ONLY ((KV3_2||KV4) ? 0 : 2)
+#define KVX_N_ONLY ((KV3_2||KV4) ? 0 : "kv3-2 or kv4-1")
 static rtx
 kvx_expand_builtin_xswapq256 (rtx target, tree args)
 {
@@ -5447,6 +5478,7 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_FMULXWD: return kvx_expand_builtin_fmulxwd (target, exp);
     case KVX_BUILTIN_FMULXWDP: return kvx_expand_builtin_fmulxwdp (target, exp);
     case KVX_BUILTIN_FMULXWDQ: return kvx_expand_builtin_fmulxwdq (target, exp);
+
     case KVX_BUILTIN_FMULWC: return kvx_expand_builtin_fmulwc (target, exp);
     case KVX_BUILTIN_FMULWCP: return kvx_expand_builtin_fmulwcp (target, exp);
     case KVX_BUILTIN_FMULWCQ: return kvx_expand_builtin_fmulwcq (target, exp);
@@ -5499,12 +5531,17 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_FFMSDP: return kvx_expand_builtin_ffmsdp (target, exp);
     case KVX_BUILTIN_FFMSDQ: return kvx_expand_builtin_ffmsdq (target, exp);
 
+#undef KVX_N_ONLY
+#define KVX_N_ONLY ((KV3_1||KV3_2) ? 0 : "kv3-1 or kv3-2")
     case KVX_BUILTIN_FFMSXHW: return kvx_expand_builtin_ffmsxhw (target, exp);
     case KVX_BUILTIN_FFMSXHWQ: return kvx_expand_builtin_ffmsxhwq (target, exp);
     case KVX_BUILTIN_FFMSXHWO: return kvx_expand_builtin_ffmsxhwo (target, exp);
     case KVX_BUILTIN_FFMSXWD: return kvx_expand_builtin_ffmsxwd (target, exp);
     case KVX_BUILTIN_FFMSXWDP: return kvx_expand_builtin_ffmsxwdp (target, exp);
     case KVX_BUILTIN_FFMSXWDQ: return kvx_expand_builtin_ffmsxwdq (target, exp);
+#undef KVX_N_ONLY
+#define KVX_N_ONLY 0
+
     case KVX_BUILTIN_FFMSWC: return kvx_expand_builtin_ffmswc (target, exp);
     case KVX_BUILTIN_FFMSWCP: return kvx_expand_builtin_ffmswcp (target, exp);
     case KVX_BUILTIN_FFMSWCQ: return kvx_expand_builtin_ffmswcq (target, exp);

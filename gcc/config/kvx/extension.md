@@ -31,7 +31,7 @@
       return "#";
     return "xeoro %0 = %0, %0";
   }
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 (define_split
@@ -85,7 +85,7 @@
                      UNSPEC_XMOVEF))]
    "KV3_1 || (KV3_2||KV4)"
    "xmovefo %0 = %1"
-   [(set_attr "type" "movef_copro")]
+   [(set_attr "type" "movef_ext")]
 )
 
 (define_insn "kvx_xmovefq"
@@ -95,7 +95,7 @@
                      UNSPEC_XMOVEF))]
    "(KV3_2||KV4)"
    "xmovefq %0 = %1%2"
-   [(set_attr "type" "movef_copro")]
+   [(set_attr "type" "movef_ext")]
 )
 
 (define_insn "kvx_xmovefd"
@@ -105,7 +105,7 @@
                      UNSPEC_XMOVEF))]
    "(KV3_2||KV4)"
    "xmovefd %0 = %1%2"
-   [(set_attr "type" "movef_copro")]
+   [(set_attr "type" "movef_ext")]
 )
 
 (define_insn "kvx_xmoveto"
@@ -114,7 +114,7 @@
                      UNSPEC_XMOVET))]
   "KV3_1 || (KV3_2||KV4)"
   "xmovetq %0.lo = %x1, %y1\n\txmovetq %0.hi = %z1, %t1"
-  [(set_attr "type" "movet_copro")
+  [(set_attr "type" "movet_ext")
    (set_attr "length" "8")]
 )
 
@@ -183,7 +183,7 @@
         gcc_unreachable ();
       }
   }
-  [(set_attr "type" "copy_copro,load_copro_uncached,load_copro_uncached_x,load_copro_uncached_y,store_copro,store_copro_x,store_copro_y,movef_copro,movet_copro,copy_core")
+  [(set_attr "type" "copy_ext,load_ext_uncached,load_ext_uncached_x,load_ext_uncached_y,store_ext,store_ext_x,store_ext_y,movef_ext,movet_ext,copy_core")
    (set_attr "length"                "4,                4,                  8,                 12,             4,               8,              12,                 4,                    8,            4")]
 )
 
@@ -210,7 +210,7 @@
         gcc_unreachable ();
       }
   }
-  [(set_attr "type" "copy_copro,load_copro,load_copro_x,load_copro_y,load_copro_uncached,load_copro_uncached_x,load_copro_uncached_y,store_copro,store_copro_x,store_copro_y,movef_copro,movet_copro,copy_core")
+  [(set_attr "type" "copy_ext,load_ext,load_ext_x,load_ext_y,load_ext_uncached,load_ext_uncached_x,load_ext_uncached_y,store_ext,store_ext_x,store_ext_y,movef_ext,movet_ext,copy_core")
    (set_attr "length"                "4,       4,         8,        12,                4,                  8,                 12,             4,               8,              12,                 4,                    8,            4")]
 )
 
@@ -219,7 +219,7 @@
         (match_operand:ALL256 1 "register_operand" "x"))]
   ""
   "xmovefo %0 = %1"
-  [(set_attr "type" "movef_copro")
+  [(set_attr "type" "movef_ext")
    (set_attr "length" "4")]
 )
 
@@ -228,7 +228,7 @@
         (match_operand:ALL256 1 "register_operand" "r"))]
   ""
   "xmovetq %0.lo = %x1, %y1\n\txmovetq %0.hi = %z1, %t1"
-  [(set_attr "type" "movet_copro")
+  [(set_attr "type" "movet_ext")
    (set_attr "length" "8")]
 )
 
@@ -1064,9 +1064,9 @@
   ""
   "xlo%2%X1 %0 = %1"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "load_copro_uncached") (const_string "load_copro"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "load_copro_uncached_x") (const_string "load_copro_x"))
-     (if_then_else (match_operand 2 "uncached_modifier") (const_string "load_copro_uncached_y") (const_string "load_copro_y"))])
+    [(if_then_else (match_operand 2 "uncached_modifier") (const_string "load_ext_uncached") (const_string "load_ext"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "load_ext_uncached_x") (const_string "load_ext_x"))
+     (if_then_else (match_operand 2 "uncached_modifier") (const_string "load_ext_uncached_y") (const_string "load_ext_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -1119,9 +1119,9 @@
   ""
   "xlo%3%X2 %0 = %2"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 3 "uncached_modifier") (const_string "load_copro_uncached") (const_string "load_copro"))
-     (if_then_else (match_operand 3 "uncached_modifier") (const_string "load_copro_uncached_x") (const_string "load_copro_x"))
-     (if_then_else (match_operand 3 "uncached_modifier") (const_string "load_copro_uncached_y") (const_string "load_copro_y"))])
+    [(if_then_else (match_operand 3 "uncached_modifier") (const_string "load_ext_uncached") (const_string "load_ext"))
+     (if_then_else (match_operand 3 "uncached_modifier") (const_string "load_ext_uncached_x") (const_string "load_ext_x"))
+     (if_then_else (match_operand 3 "uncached_modifier") (const_string "load_ext_uncached_y") (const_string "load_ext_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -1134,9 +1134,9 @@
   ""
   "xlo%4%X2 %3? %0 = %O2"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "load_copro_uncached") (const_string "load_copro"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "load_copro_uncached_x") (const_string "load_copro_x"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "load_copro_uncached_y") (const_string "load_copro_y"))])
+    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "load_ext_uncached") (const_string "load_ext"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "load_ext_uncached_x") (const_string "load_ext_x"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "load_ext_uncached_y") (const_string "load_ext_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -1148,7 +1148,7 @@
         (unspec:X256 [(match_operand:DI 1 "register_operand" "r")] UNSPEC_XSPLATD))]
   ""
   "xmovetq %0.lo = %1, %1\n\txmovetq %0.hi = %1, %1";
-  [(set_attr "type" "movet_copro")
+  [(set_attr "type" "movet_ext")
    (set_attr "length"                   "8")]
 )
 
@@ -1431,9 +1431,9 @@
   ""
   "xlo%4%X2 %3? %0 = %O2"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "load_copro_uncached") (const_string "load_copro"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "load_copro_uncached_x") (const_string "load_copro_x"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "load_copro_uncached_y") (const_string "load_copro_y"))])
+    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "load_ext_uncached") (const_string "load_ext"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "load_ext_uncached_x") (const_string "load_ext_x"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "load_ext_uncached_y") (const_string "load_ext_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -1445,9 +1445,9 @@
   ""
   "xlo%3%X1 %2? %0 = %O1"
   [(set_attr_alternative "type"
-    [(if_then_else (match_operand 3 "uncached_modifier") (const_string "load_copro_uncached") (const_string "load_copro"))
-     (if_then_else (match_operand 3 "uncached_modifier") (const_string "load_copro_uncached_x") (const_string "load_copro_x"))
-     (if_then_else (match_operand 3 "uncached_modifier") (const_string "load_copro_uncached_y") (const_string "load_copro_y"))])
+    [(if_then_else (match_operand 3 "uncached_modifier") (const_string "load_ext_uncached") (const_string "load_ext"))
+     (if_then_else (match_operand 3 "uncached_modifier") (const_string "load_ext_uncached_x") (const_string "load_ext_x"))
+     (if_then_else (match_operand 3 "uncached_modifier") (const_string "load_ext_uncached_y") (const_string "load_ext_y"))])
    (set_attr "length" "4, 8, 12")]
 )
 
@@ -1532,7 +1532,7 @@
    (use (match_operand:SI 2 "nonmemory_operand" ""))]
   ""
   "xso%X1 %1 = %0"
-  [(set_attr "type" "store_copro,store_copro_x,store_copro_y")
+  [(set_attr "type" "store_ext,store_ext_x,store_ext_y")
    (set_attr "length"            "4,               8,              12")]
 )
 
@@ -1592,7 +1592,7 @@
    (clobber (match_dup 1))]
   ""
   "xso%3%X1 %2? %O1 = %0"
-  [(set_attr "type" "store_copro,store_copro_x,store_copro_y")
+  [(set_attr "type" "store_ext,store_ext_x,store_ext_y")
    (set_attr "length"            "4,               8,              12")]
 )
 
@@ -1686,7 +1686,7 @@
                          (match_operand:DI 2 "register_operand" "r")] UNSPEC_XALIGN256))]
   "(KV3_2||KV4)"
   "xaligno %0 = %b1, %2"
-  [(set_attr "type" "copy_copro")]
+  [(set_attr "type" "copy_ext")]
 )
 
 (define_insn "kvx_xaccesso<XBUFF:bitsize>"
@@ -1695,7 +1695,7 @@
                       (match_operand:DI 2 "register_operand" "r")] UNSPEC_XACCESS256))]
   "(KV3_2||KV4)"
   "xaccesso %0 = %b1, %2"
-  [(set_attr "type" "movef_copro")]
+  [(set_attr "type" "movef_ext")]
 )
 
 (define_expand "kvx_xaccessq<XBUFF:bitsize>"
@@ -1734,7 +1734,7 @@
                       (match_operand 3 "" "")] UNSPEC_XFSCALEWO))]
   "(KV3_2||KV4)"
   "xfscalewo%3 %0 = %1, %2"
-  [(set_attr "type" "copy_copro")]
+  [(set_attr "type" "copy_ext")]
 )
 
 
@@ -1786,7 +1786,7 @@
                       (match_operand:X512 3 "register_operand" "x")] UNSPEC_XMMA484BW))]
   "KV3_1"
   "xmma484bw %0 = %3, %1, %2"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 (define_insn "kvx_xmmau484bw_1"
@@ -1796,7 +1796,7 @@
                       (match_operand:X512 3 "register_operand" "x")] UNSPEC_XMMAU484BW))]
   "KV3_1"
   "xmma484ubw %0 = %3, %1, %2"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 (define_insn "kvx_xmmasu484bw_1"
@@ -1806,7 +1806,7 @@
                       (match_operand:X512 3 "register_operand" "x")] UNSPEC_XMMASU484BW))]
   "KV3_1"
   "xmma484subw %0 = %3, %1, %2"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 (define_insn "kvx_xmmaus484bw_1"
@@ -1816,7 +1816,7 @@
                       (match_operand:X512 3 "register_operand" "x")] UNSPEC_XMMAUS484BW))]
   "KV3_1"
   "xmma484usbw %0 = %3, %1, %2"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 (define_insn "kvx_xmma484bw_2"
@@ -1826,7 +1826,7 @@
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMMA484BW))]
   "(KV3_2||KV4)"
   "xmma484bw %0 = %1, %2"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 (define_insn "kvx_xmmau484bw_2"
@@ -1836,7 +1836,7 @@
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMMAU484BW))]
   "(KV3_2||KV4)"
   "xmmau484bw %0 = %1, %2"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 (define_insn "kvx_xmmasu484bw_2"
@@ -1846,7 +1846,7 @@
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMMASU484BW))]
   "(KV3_2||KV4)"
   "xmmasu484bw %0 = %1, %2"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 (define_insn "kvx_xmmaus484bw_2"
@@ -1856,7 +1856,7 @@
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMMAUS484BW))]
   "(KV3_2||KV4)"
   "xmmaus484bw %0 = %1, %2"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 
@@ -1892,7 +1892,7 @@
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMMA4164BW))]
   "(KV3_2||KV4)"
   "xmma4164bw %0 = %1, %2"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 (define_insn "kvx_xmmau4164bw_2"
@@ -1902,7 +1902,7 @@
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMMAU4164BW))]
   "(KV3_2||KV4)"
   "xmmau4164bw %0 = %1, %2"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 (define_insn "kvx_xmmasu4164bw_2"
@@ -1912,7 +1912,7 @@
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMMASU4164BW))]
   "(KV3_2||KV4)"
   "xmmasu4164bw %0 = %1, %2"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 (define_insn "kvx_xmmaus4164bw_2"
@@ -1922,7 +1922,7 @@
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMMAUS4164BW))]
   "(KV3_2||KV4)"
   "xmmaus4164bw %0 = %1, %2"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 
@@ -1956,7 +1956,7 @@
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMADD44BW0))]
   "(KV3_2||KV4)"
   "xmadd44bw0 %0 = %1, %2"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 (define_insn "kvx_xmaddu44bw0_2"
@@ -1966,7 +1966,7 @@
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMADDU44BW0))]
   "(KV3_2||KV4)"
   "xmaddu44bw0 %0 = %1, %2"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 (define_insn "kvx_xmaddsu44bw0_2"
@@ -1976,7 +1976,7 @@
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMADDSU44BW0))]
   "(KV3_2||KV4)"
   "xmaddsu44bw0 %0 = %1, %2"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 (define_expand "kvx_xmadd44bw1"
@@ -2007,7 +2007,7 @@
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMADD44BW1))]
   "(KV3_2||KV4)"
   "xmadd44bw1 %0 = %1, %2"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 (define_insn "kvx_xmaddu44bw1_2"
@@ -2017,7 +2017,7 @@
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMADDU44BW1))]
   "(KV3_2||KV4)"
   "xmaddu44bw1 %0 = %1, %2"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 (define_insn "kvx_xmaddsu44bw1_2"
@@ -2027,7 +2027,7 @@
                       (match_operand:X512 3 "register_operand" "0")] UNSPEC_XMADDSU44BW1))]
   "(KV3_2||KV4)"
   "xmaddsu44bw1 %0 = %1, %2"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 
@@ -2041,7 +2041,7 @@
                       (match_operand 4 "" "")] UNSPEC_XMADDIFWO))]
   "(KV3_2||KV4)"
   "xmaddifwo%4 %0 = %1, %2"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 (define_insn "kvx_xmsbfifwo"
@@ -2052,7 +2052,7 @@
                       (match_operand 4 "" "")] UNSPEC_XMSBFIFWO))]
   "(KV3_2||KV4)"
   "xmsbfifwo%4 %0 = %1, %2"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 (define_insn "kvx_xffma44hw"
@@ -2063,7 +2063,7 @@
                       (match_operand 4 "" "")] UNSPEC_XFFMA44HW))]
   "(KV3_2||KV4)"
   "xffma44hw%4 %0 = %1, %2"
-  [(set_attr "type" "tca_float")]
+  [(set_attr "type" "ext_float")]
 )
 
 
@@ -2076,7 +2076,7 @@
                       (match_operand:X512 3 "register_operand" "x")] UNSPEC_XFMMA242HW01))]
   "KV3_1"
   "fmma242hw0 %0.lo = %3, %1, %2\n\t;;\n\tfmma242hw1 %0.hi = %3, %1, %2"
-  [(set_attr "type" "tca_float")
+  [(set_attr "type" "ext_float")
    (set_attr "length" "12")])
 
 (define_insn "kvx_xfmma242hw23"
@@ -2086,7 +2086,7 @@
                       (match_operand:X512 3 "register_operand" "x")] UNSPEC_XFMMA242HW23))]
   "KV3_1"
   "fmma242hw2 %0.lo = %3, %1, %2\n\t;;\n\tfmma242hw3 %0.hi = %3, %1, %2"
-  [(set_attr "type" "tca_float")
+  [(set_attr "type" "ext_float")
    (set_attr "length" "12")])
 
 (define_insn_and_split "kvx_xfmma444hw"
@@ -2114,7 +2114,7 @@
                       (match_operand 4 "" "")] UNSPEC_XFMMA484HW))]
   "(KV3_2||KV4)"
   "xfmma484hw%4 %0 = %1, %2"
-  [(set_attr "type" "tca_float")])
+  [(set_attr "type" "ext_float")])
 
 (define_expand "kvx_xfmma484hw"
   [(match_operand:X512 0 "register_operand")
@@ -2152,7 +2152,7 @@
                       (match_operand 2 "" "")] UNSPEC_XFNARROW44WH))]
   "(KV3_2||KV4)"
   "xfnarrow44wh%2 %0 = %1"
-  [(set_attr "type" "tca_float")]
+  [(set_attr "type" "ext_float")]
 )
 
 (define_insn "kvx_xclampwo"
@@ -2162,7 +2162,7 @@
                       (match_operand:X256 3 "register_operand" "0")] UNSPEC_XCLAMPWO))]
   "(KV3_2||KV4)"
   "xclampwo %0 = %1, %2"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 
@@ -2173,7 +2173,7 @@
         (unspec:X256 [(match_operand:X1024 1 "register_operand" "x")] UNSPEC_XTRUNC48WB))]
   "(KV3_2||KV4)"
   "xtrunc48wb %0 = %1"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 (define_insn "kvx_xsx48bw"
@@ -2181,7 +2181,7 @@
         (unspec:X1024 [(match_operand:X256 1 "register_operand" "x")] UNSPEC_XSX48BW))]
   "(KV3_2||KV4)"
   "xsx48bw %0 = %1"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 (define_insn "kvx_xzx48bw"
@@ -2189,7 +2189,7 @@
         (unspec:X1024 [(match_operand:X256 1 "register_operand" "x")] UNSPEC_XZX48BW))]
   "(KV3_2||KV4)"
   "xzx48bw %0 = %1"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 
@@ -2229,7 +2229,7 @@
                       (match_operand 2 "" "")] UNSPEC_XSPLATO))]
   ""
   "xsplatox%2 %0 = %1"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 (define_insn "kvx_xsplatov"
@@ -2238,7 +2238,7 @@
                        (match_operand 2 "" "")] UNSPEC_XSPLATO))]
   ""
   "xsplatov%2 %0 = %1"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 
@@ -2250,7 +2250,7 @@
                       (match_operand 2 "" "")] UNSPEC_XCOPY))]
   ""
   "xcopyx%2 %0 = %1"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 (define_insn "kvx_xcopyv"
@@ -2259,7 +2259,7 @@
                        (match_operand 2 "" "")] UNSPEC_XCOPY))]
   ""
   "xcopyv%2 %0 = %1"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 
@@ -2270,7 +2270,7 @@
         (unspec:X1024 [(match_operand:X1024 1 "register_operand" "x")] UNSPEC_XMT44D))]
   ""
   "xmt44d %0 = %1"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 
@@ -2282,7 +2282,7 @@
                   (match_operand:X256 2 "register_operand" "x")))]
   "(KV3_2||KV4)"
   "xando %0 = %1, %2"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 (define_insn "kvx_xnando"
@@ -2291,7 +2291,7 @@
                   (not:X256 (match_operand:X256 2 "register_operand" "x"))))]
   "(KV3_2||KV4)"
   "xnando %0 = %1, %2"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 (define_insn "kvx_xandno"
@@ -2300,7 +2300,7 @@
                   (match_operand:X256 2 "register_operand" "x")))]
   "(KV3_2||KV4)"
   "xandno %0 = %1, %2"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 (define_insn "kvx_xioro"
@@ -2309,7 +2309,7 @@
                   (match_operand:X256 2 "register_operand" "x")))]
   "(KV3_2||KV4)"
   "xioro %0 = %1, %2"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 (define_insn "kvx_xnioro"
@@ -2318,7 +2318,7 @@
                   (not:X256 (match_operand:X256 2 "register_operand" "x"))))]
   "(KV3_2||KV4)"
   "xnioro %0 = %1, %2"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 (define_insn "kvx_xiorno"
@@ -2327,7 +2327,7 @@
                   (match_operand:X256 2 "register_operand" "x")))]
   "(KV3_2||KV4)"
   "xiorno %0 = %1, %2"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 (define_insn "kvx_xeoro"
@@ -2336,7 +2336,7 @@
                   (match_operand:X256 2 "register_operand" "x")))]
   "(KV3_2||KV4)"
   "xeoro %0 = %1, %2"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 (define_insn "kvx_xneoro"
@@ -2345,7 +2345,7 @@
                             (match_operand:X256 2 "register_operand" "x"))))]
   "(KV3_2||KV4)"
   "xneoro %0 = %1, %2"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 (define_insn "kvx_xsbmm8dq"
@@ -2354,7 +2354,7 @@
                       (match_operand:X256 2 "register_operand" "x")] UNSPEC_SBMM8D))]
   ""
   "xsbmm8dq %0 = %1, %2"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 (define_insn "kvx_xsbmmt8dq"
@@ -2363,7 +2363,7 @@
                       (match_operand:X256 2 "register_operand" "x")] UNSPEC_SBMMT8D))]
   ""
   "xsbmmt8dq %0 = %1, %2"
-  [(set_attr "type" "tca_int")]
+  [(set_attr "type" "ext_int")]
 )
 
 

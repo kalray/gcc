@@ -45,7 +45,15 @@ Dump calls to target-dependent cost functions
 
 fhwloop
 Target Mask(HWLOOP)
-Enable hwloop generation when optimizing (active by default)
+Enable hardware loop code generation when optimizing (active by default)
+
+fdual-bcu
+Target Mask(DUAL_BCU)
+Enable KV4 dual BCU code generation when optimizing (active by default)
+
+fdual-lsu
+Target Mask(DUAL_LSU)
+Enable KV4 dual LSU code generation when optimizing (active by default)
 
 fsched2-dates
 Target Mask(SCHED2_DATES)

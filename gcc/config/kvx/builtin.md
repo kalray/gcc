@@ -5353,7 +5353,7 @@
                     (match_operand:HF 2 "register_operand" "r")
                     (match_operand:SF 3 "register_operand" "0")
                     (match_operand 4 "" "")] UNSPEC_FFMAX))]
-  ""
+  "KV3"
   "ffmahw%4 %0 = %1, %2"
   [(set_attr "type" "madd_fp3")]
 )
@@ -5364,7 +5364,7 @@
                     (match_operand:SF 2 "register_operand" "r")
                     (match_operand:DF 3 "register_operand" "0")
                     (match_operand 4 "" "")] UNSPEC_FFMAX))]
-  ""
+  "KV3"
   "ffmawd%4 %0 = %1, %2"
   [(set_attr "type" "madd_fp4")]
 )
@@ -5375,7 +5375,7 @@
                         (match_operand:S64F 2 "register_operand" "r")
                         (match_operand:<WIDE> 3 "register_operand" "0")
                         (match_operand 4 "" "")] UNSPEC_FFMAX))]
-  ""
+  "KV3"
   "ffma<widenx>%4 %0 = %1, %2"
   [(set (attr "type")
      (if_then_else (match_operand 1 "float16_inner_mode") (const_string "madd_fp3") (const_string "madd_fp4")))]
@@ -5387,7 +5387,7 @@
                         (match_operand:S128F 2 "register_operand" "r")
                         (match_operand:<WIDE> 3 "register_operand" "0")
                         (match_operand 4 "" "")] UNSPEC_FFMAX))]
-  ""
+  "KV3"
   "#"
   "reload_completed"
   [(set (subreg:<HWIDE> (match_dup 0) 0)
@@ -5781,7 +5781,7 @@
                     (match_operand:HF 2 "register_operand" "r")
                     (match_operand:SF 3 "register_operand" "0")
                     (match_operand 4 "" "")] UNSPEC_FFMSX))]
-  ""
+  "KV3"
   "ffmshw%4 %0 = %1, %2"
   [(set_attr "type" "madd_fp3")]
 )
@@ -5792,7 +5792,7 @@
                     (match_operand:SF 2 "register_operand" "r")
                     (match_operand:DF 3 "register_operand" "0")
                     (match_operand 4 "" "")] UNSPEC_FFMSX))]
-  ""
+  "KV3"
   "ffmswd%4 %0 = %1, %2"
   [(set_attr "type" "madd_fp4")]
 )
@@ -5803,7 +5803,7 @@
                         (match_operand:S64F 2 "register_operand" "r")
                         (match_operand:<WIDE> 3 "register_operand" "0")
                         (match_operand 4 "" "")] UNSPEC_FFMSX))]
-  ""
+  "KV3"
   "ffms<widenx>%4 %0 = %1, %2"
   [(set (attr "type")
      (if_then_else (match_operand 1 "float16_inner_mode") (const_string "madd_fp3") (const_string "madd_fp4")))]
@@ -5815,7 +5815,7 @@
                         (match_operand:S128F 2 "register_operand" "r")
                         (match_operand:<WIDE> 3 "register_operand" "0")
                         (match_operand 4 "" "")] UNSPEC_FFMSX))]
-  ""
+  "KV3"
   "#"
   "reload_completed"
   [(set (subreg:<HWIDE> (match_dup 0) 0)
@@ -7445,7 +7445,7 @@
    (match_operand:SF 1 "register_operand" "")
    (match_operand:SF 2 "register_operand" "")
    (match_operand 3 "" "")]
- ""
+ "KV3"
  {
     rtx regpair = gen_reg_rtx (V4SFmode);
     emit_insn (gen_rtx_SET (gen_rtx_SUBREG (SFmode, regpair, 0), operands[1]));
@@ -7459,7 +7459,7 @@
   [(set (match_operand:SF 0 "register_operand" "=r")
         (unspec:SF [(match_operand:V4SF 1 "register_operand" "r")
                     (match_operand 2 "" "")] UNSPEC_FCDIV))]
-  ""
+  "KV3"
   "fcdivw%2 %0 = %1"
   [(set_attr "type" "alu_lite")]
 )
@@ -7469,7 +7469,7 @@
    (match_operand:DF 1 "register_operand" "")
    (match_operand:DF 2 "register_operand" "")
    (match_operand 3 "" "")]
- ""
+ "KV3"
  {
     rtx regpair = gen_reg_rtx (V2DFmode);
     emit_insn (gen_kvx_catfdp (regpair, operands[1], operands[2]));
@@ -7482,7 +7482,7 @@
   [(set (match_operand:DF 0 "register_operand" "=r")
         (unspec:DF [(match_operand:V2DF 1 "register_operand" "r")
                     (match_operand 2 "" "")] UNSPEC_FCDIV))]
-  ""
+  "KV3"
   "fcdivd%2 %0 = %1"
   [(set_attr "type" "alu_lite")
 ])
@@ -7495,7 +7495,7 @@
    (match_operand:SF 1 "register_operand" "")
    (match_operand:SF 2 "register_operand" "")
    (match_operand 3 "" "")]
- ""
+ "KV3"
  {
     rtx regpair = gen_reg_rtx (V4SFmode);
     emit_insn (gen_rtx_SET (gen_rtx_SUBREG (SFmode, regpair, 0), operands[1]));
@@ -7509,7 +7509,7 @@
   [(set (match_operand:SF 0 "register_operand" "=r")
         (unspec:SF [(match_operand:V4SF 1 "register_operand" "r")
                     (match_operand 2 "" "")] UNSPEC_FSDIV))]
-  ""
+  "KV3"
   "fsdivw%2 %0 = %1"
   [(set_attr "type" "alu_lite")]
 )
@@ -7519,7 +7519,7 @@
    (match_operand:DF 1 "register_operand" "")
    (match_operand:DF 2 "register_operand" "")
    (match_operand 3 "" "")]
- ""
+ "KV3"
  {
     rtx regpair = gen_reg_rtx (V2DFmode);
     emit_insn (gen_kvx_catfdp (regpair, operands[1], operands[2]));
@@ -7532,7 +7532,7 @@
   [(set (match_operand:DF 0 "register_operand" "=r")
         (unspec:DF [(match_operand:V2DF 1 "register_operand" "r")
                     (match_operand 2 "" "")] UNSPEC_FSDIV))]
-  ""
+  "KV3"
   "fsdivd%2 %0 = %1"
   [(set_attr "type" "alu_lite")]
 )
@@ -7542,7 +7542,7 @@
    (match_operand:V2SF 1 "register_operand" "")
    (match_operand:V2SF 2 "register_operand" "")
    (match_operand 3 "" "")]
-  ""
+  "KV3"
   {
     rtx regpair = gen_reg_rtx (V4SFmode);
     emit_insn (gen_kvx_catfwq (regpair, operands[1], operands[2]));
@@ -7555,7 +7555,7 @@
   [(set (match_operand:V2SF 0 "register_operand" "=r")
         (unspec:V2SF [(match_operand:V4SF 1 "register_operand" "r")
                       (match_operand 2 "" "")] UNSPEC_FSDIV))]
-  ""
+  "KV3"
   "fsdivwp%2 %0 = %1"
   [(set_attr "type" "alu_lite")]
 )
@@ -7565,7 +7565,7 @@
    (match_operand:V4SF 1 "register_operand" "")
    (match_operand:V4SF 2 "register_operand" "")
    (match_operand 3 "" "")]
-  ""
+  "KV3"
   {
     for (int i = 0; i < 2; i++)
       {
@@ -7583,7 +7583,7 @@
    (match_operand:V2DF 1 "register_operand" "")
    (match_operand:V2DF 2 "register_operand" "")
    (match_operand 3 "" "")]
-  ""
+  "KV3"
   {
     for (int i = 0; i < 2; i++)
       {
@@ -7601,7 +7601,7 @@
    (match_operand:V8SF 1 "register_operand" "")
    (match_operand:V8SF 2 "register_operand" "")
    (match_operand 3 "" "")]
-  ""
+  "KV3"
   {
     for (int i = 0; i < 4; i++)
       {
@@ -7619,7 +7619,7 @@
    (match_operand:V4DF 1 "register_operand" "")
    (match_operand:V4DF 2 "register_operand" "")
    (match_operand 3 "" "")]
-  ""
+  "KV3"
   {
     for (int i = 0; i < 4; i++)
       {
@@ -7640,7 +7640,7 @@
    (match_operand:V2SF 1 "register_operand" "")
    (match_operand:V2SF 2 "register_operand" "")
    (match_operand 3 "" "")]
-  ""
+  "KV3"
   {
     rtx regpair = gen_reg_rtx (V4SFmode);
     emit_insn (gen_kvx_catfwq (regpair, operands[1], operands[2]));
@@ -7653,7 +7653,7 @@
   [(set (match_operand:V2SF 0 "register_operand" "=r")
         (unspec:V2SF [(match_operand:V4SF 1 "register_operand" "r")
                       (match_operand 2 "" "")] UNSPEC_FCDIV))]
-  ""
+  "KV3"
   "fcdivwp%2 %0 = %1"
   [(set_attr "type" "alu_lite")]
 )
@@ -7663,7 +7663,7 @@
    (match_operand:V4SF 1 "register_operand" "")
    (match_operand:V4SF 2 "register_operand" "")
    (match_operand 3 "" "")]
-  ""
+  "KV3"
   {
     for (int i = 0; i < 2; i++)
       {
@@ -7681,7 +7681,7 @@
    (match_operand:V8SF 1 "register_operand" "")
    (match_operand:V8SF 2 "register_operand" "")
    (match_operand 3 "" "")]
-  ""
+  "KV3"
   {
     for (int i = 0; i < 4; i++)
       {
@@ -7699,7 +7699,7 @@
    (match_operand:V2DF 1 "register_operand" "")
    (match_operand:V2DF 2 "register_operand" "")
    (match_operand 3 "" "")]
-  ""
+  "KV3"
   {
     for (int i = 0; i < 2; i++)
       {
@@ -7717,7 +7717,7 @@
    (match_operand:V4DF 1 "register_operand" "")
    (match_operand:V4DF 2 "register_operand" "")
    (match_operand 3 "" "")]
-  ""
+  "KV3"
   {
     for (int i = 0; i < 4; i++)
       {

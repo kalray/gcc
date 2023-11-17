@@ -5179,7 +5179,7 @@ struct kvx_sched_resources {
   unsigned lsu_count;
   unsigned mau_count;
   unsigned bcu_count;
-  unsigned tca_count;
+  unsigned ext_count;
 };
 
 static void
@@ -5196,7 +5196,7 @@ kvx_sched_resources_add (struct kvx_sched_resources *resources, rtx_insn *insn)
 	  resources->tiny_count++, resources->thin_count++;
 	  resources->lite_count++, resources->full_count++;
 	  resources->lsu_count++, resources->mau_count++;
-	  resources->bcu_count++, resources->tca_count++;
+	  resources->bcu_count++, resources->ext_count++;
 	}
       else if (type == TYPE_NOP)
 	;
@@ -5224,7 +5224,7 @@ kvx_sched_resources_add (struct kvx_sched_resources *resources, rtx_insn *insn)
       else if (type >= TYPE_CACHE && type < TYPE_MULT_INT)
 	{
 	  resources->lsu_count++;
-	  if (type >= TYPE_STORE_CORE && type < TYPE_STORE_COPRO)
+	  if (type >= TYPE_STORE_CORE && type < TYPE_STORE_EXT)
 	    resources->auxr_count++;
 	}
       else if (type >= TYPE_MULT_INT && type < TYPE_BCU)
@@ -5233,14 +5233,14 @@ kvx_sched_resources_add (struct kvx_sched_resources *resources, rtx_insn *insn)
 	  if (type >= TYPE_MADD_INT)
 	    resources->auxr_count++;
 	}
-      else if (type >= TYPE_BCU && type < TYPE_TCA)
+      else if (type >= TYPE_BCU && type < TYPE_EXT)
 	{
 	  resources->bcu_count++;
 	  if (type == TYPE_BCU_XFER)
 	    resources->xfer_count++;
 	}
-      else if (type >= TYPE_TCA && type <= TYPE_TCA_FLOAT)
-	resources->tca_count++;
+      else if (type >= TYPE_EXT && type <= TYPE_EXT_FLOAT)
+	resources->ext_count++;
       else
 	gcc_unreachable ();
     }
@@ -5272,8 +5272,8 @@ kvx_sched_resources_full_bundles (struct kvx_sched_resources *resources)
     result = resources->mau_count;
   if (result < resources->bcu_count)
     result = resources->bcu_count;
-  if (result < resources->tca_count)
-    result = resources->tca_count;
+  if (result < resources->ext_count)
+    result = resources->ext_count;
 
   return result;
 }
@@ -6753,10 +6753,10 @@ kvx_insn_cost (rtx_insn *insn, bool speed)
   else if (type >= TYPE_CACHE && type < TYPE_MULT_INT)
     {
       int penalty = 0;
-      if (type >= TYPE_LOAD_CORE && type <= TYPE_LOAD_COPRO_Y)
+      if (type >= TYPE_LOAD_CORE && type <= TYPE_LOAD_EXT_Y)
 	penalty = (3 - 1);
       if ((type >= TYPE_LOAD_CORE_UNCACHED
-	   && type <= TYPE_LOAD_COPRO_UNCACHED_Y)
+	   && type <= TYPE_LOAD_EXT_UNCACHED_Y)
 	  || (type >= TYPE_ALOAD_CORE
 	      && type <= TYPE_ATOMIC_CORE_Y))
 	penalty = (24 - 1);
@@ -6773,11 +6773,11 @@ kvx_insn_cost (rtx_insn *insn, bool speed)
 	penalty = (4 - 1);
       cost += kvx_type_mau_cost (1, penalty, speed);
     }
-  else if (type >= TYPE_BCU && type < TYPE_TCA)
+  else if (type >= TYPE_BCU && type < TYPE_EXT)
     {
       cost += kvx_type_bcu_cost (1, 0, speed);
     }
-  else if (type >= TYPE_TCA && type <= TYPE_TCA_FLOAT)
+  else if (type >= TYPE_EXT && type <= TYPE_EXT_FLOAT)
     {
       cost += kvx_type_tca_cost (1, 3, speed);
     }
