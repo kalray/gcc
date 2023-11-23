@@ -1,5 +1,11 @@
 /* { dg-options "-O2 -fdump-tree-optimized -fdump-ipa-profile-optimized -fdump-ipa-afdo-optimized" } */
 
+#ifndef __KVX__
+#define N 10000000
+#else
+#define N 10000
+#endif
+
 static int a1 (void)
 {
     return 10;
@@ -28,7 +34,7 @@ main (void)
   int (*p) (void);
   int  i;
 
-  for (i = 0; i < 10000000; i ++)
+  for (i = 0; i < N; i ++)
     {
 	setp (&p, i);
 	p ();

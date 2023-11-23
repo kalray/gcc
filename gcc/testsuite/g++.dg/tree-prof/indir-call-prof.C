@@ -1,5 +1,11 @@
 /* { dg-options "-O2 -fdump-tree-optimized -fdump-ipa-profile-optimized -fdump-ipa-afdo-optimized" } */
 
+#ifndef __KVX__
+#define N 10000000
+#else
+#define N 10000
+#endif
+
 struct A {
   A () {}
 
@@ -21,12 +27,12 @@ main (void)
 {
   A a;
   B b;
-  
+
   A* p;
 
   int i;
 
-  for (i = 0; i < 10000000; i++)
+  for (i = 0; i < N; i++)
     {
       p = (A *)wrap ((void *)&a);
       p->AA ();
