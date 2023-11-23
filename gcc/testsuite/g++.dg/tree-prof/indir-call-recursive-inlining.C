@@ -1,5 +1,11 @@
 /* { dg-options "-O2 " } */
 
+#ifndef __KVX__
+#define N 10
+#else
+#define N 5
+#endif
+
 class Parent
 {
 public:
@@ -26,7 +32,7 @@ public:
   virtual void
   recurse (int t)
   {
-    if (t != 10)
+    if (t != N)
       for (int i = 0; i < 5; ++i)
         get_object()->recurse(t + 1);
   };
