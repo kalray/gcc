@@ -57,11 +57,10 @@
 static inline uint8x16_t
 uint8x8_divmod (uint8x8_t a, uint8x8_t b)
 {
-  uint16x8_t acc = __builtin_kvx_widenbho (a, ".z");
   uint16x8_t src = __builtin_kvx_widenbho (b, ".z") << (8 - 1);
   uint16x8_t wb = __builtin_kvx_widenbho (b, ".z");
-  if (__builtin_kvx_anybo (b, ".eqz"))
-    goto div0;
+  DIV_BY_ZERO_MAY_TRAP (__builtin_kvx_anybo, b);
+  uint16x8_t acc = __builtin_kvx_widenbho (a, ".z");
   // As `src == b << (8 -1)` adding src yields `src == b << 8`.
   src += src & (wb > acc);
 #pragma GCC unroll 8
@@ -72,12 +71,6 @@ uint8x8_divmod (uint8x8_t a, uint8x8_t b)
   uint8x8_t q = __builtin_kvx_narrowhbo (acc, "");
   uint8x8_t r = __builtin_kvx_narrowhbo (acc >> 8, "");
   return __builtin_kvx_cat128 (q, r);
-div0:
-#ifndef __linux__
-  if (&_KVX_NO_DIVMOD0_TRAP)
-    return 0 - (uint8x16_t){};
-#endif
-  __builtin_trap ();
 }
 
 uint8x8_t
@@ -127,11 +120,10 @@ __modv8qi3 (int8x8_t a, int8x8_t b)
 static inline uint8x32_t
 uint8x16_divmod (uint8x16_t a, uint8x16_t b)
 {
-  uint16x16_t acc = __builtin_kvx_widenbhx (a, ".z");
   uint16x16_t src = __builtin_kvx_widenbhx (b, ".z") << (8 - 1);
   uint16x16_t wb = __builtin_kvx_widenbhx (b, ".z");
-  if (__builtin_kvx_anybx (b, ".eqz"))
-    goto div0;
+  DIV_BY_ZERO_MAY_TRAP (__builtin_kvx_anybx, b);
+  uint16x16_t acc = __builtin_kvx_widenbhx (a, ".z");
   // As `src == b << (8 -1)` adding src yields `src == b << 8`.
   src += src & (wb > acc);
 #pragma GCC unroll 8
@@ -142,12 +134,6 @@ uint8x16_divmod (uint8x16_t a, uint8x16_t b)
   uint8x16_t q = __builtin_kvx_narrowhbx (acc, "");
   uint8x16_t r = __builtin_kvx_narrowhbx (acc >> 8, "");
   return __builtin_kvx_cat256 (q, r);
-div0:
-#ifndef __linux__
-  if (&_KVX_NO_DIVMOD0_TRAP)
-    return 0 - (uint8x32_t){};
-#endif
-  __builtin_trap ();
 }
 
 uint8x16_t
@@ -197,11 +183,10 @@ __modv16qi3 (int8x16_t a, int8x16_t b)
 static inline uint8x64_t
 uint8x32_divmod (uint8x32_t a, uint8x32_t b)
 {
-  uint16x32_t acc = __builtin_kvx_widenbhv (a, ".z");
   uint16x32_t src = __builtin_kvx_widenbhv (b, ".z") << (8 - 1);
   uint16x32_t wb = __builtin_kvx_widenbhv (b, ".z");
-  if (__builtin_kvx_anybv (b, ".eqz"))
-    goto div0;
+  DIV_BY_ZERO_MAY_TRAP (__builtin_kvx_anybv, b);
+  uint16x32_t acc = __builtin_kvx_widenbhv (a, ".z");
   // As `src == b << (8 -1)` adding src yields `src == b << 8`.
   src += src & (wb > acc);
 #pragma GCC unroll 8
@@ -212,12 +197,6 @@ uint8x32_divmod (uint8x32_t a, uint8x32_t b)
   uint8x32_t q = __builtin_kvx_narrowhbv (acc, "");
   uint8x32_t r = __builtin_kvx_narrowhbv (acc >> 8, "");
   return __builtin_kvx_cat512 (q, r);
-div0:
-#ifndef __linux__
-  if (&_KVX_NO_DIVMOD0_TRAP)
-    return 0 - (uint8x64_t){};
-#endif
-  __builtin_trap ();
 }
 
 uint8x32_t

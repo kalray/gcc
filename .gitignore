@@ -75,3 +75,5 @@ stamp-*
 /mpc*
 /gmp*
 /isl*
+kvx_*_build*
+a.out

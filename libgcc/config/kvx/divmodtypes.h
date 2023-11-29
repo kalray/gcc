@@ -1,6 +1,16 @@
 #ifndef _DIVMOD_TYPES_H
 #define _DIVMOD_TYPES_H
 
+#ifdef __linux__
+#define DIV_BY_ZERO_MAY_TRAP(any, b)                                                        \
+  if (__builtin_expect(any(b, ".eqz"), 0))                                     \
+        __builtin_trap ()
+#else
+#define DIV_BY_ZERO_MAY_TRAP(any, b)                                                        \
+  if (__builtin_expect(any(b, ".eqz") && (&_KVX_NO_DIVMOD0_TRAP == 0), 0))     \
+      __builtin_trap ()
+#endif
+
 #ifdef __kv3_2__
 typedef __INT8_TYPE__ int8_t;
 typedef __UINT8_TYPE__ uint8_t;
@@ -102,30 +112,35 @@ uint32x4_t __umodv4si3 (uint32x4_t a, uint32x4_t b);
 uint32x4_t __udivmodv4si4 (uint32x4_t a, uint32x4_t b, uint32x4_t *c);
 int32x4_t __divv4si3 (int32x4_t a, int32x4_t b);
 int32x4_t __modv4si3 (int32x4_t a, int32x4_t b);
+int32x4_t __divmodv4si4 (int32x4_t a, int32x4_t b, int32x4_t *c);
 
 uint32x8_t __udivv8si3 (uint32x8_t a, uint32x8_t b);
 uint32x8_t __umodv8si3 (uint32x8_t a, uint32x8_t b);
 uint32x8_t __udivmodv8si4 (uint32x8_t a, uint32x8_t b, uint32x8_t *c);
 int32x8_t __divv8si3 (int32x8_t a, int32x8_t b);
 int32x8_t __modv8si3 (int32x8_t a, int32x8_t b);
+int32x8_t __divmodv8si4 (int32x8_t a, int32x8_t b, int32x8_t *c);
 
 uint16x4_t __udivv4hi3 (uint16x4_t a, uint16x4_t b);
 uint16x4_t __umodv4hi3 (uint16x4_t a, uint16x4_t b);
 uint16x4_t __udivmodv4hi4 (uint16x4_t a, uint16x4_t b, uint16x4_t *c);
 int16x4_t __divv4hi3 (int16x4_t a, int16x4_t b);
 int16x4_t __modv4hi3 (int16x4_t a, int16x4_t b);
+int16x4_t __divmodv4hi4 (int16x4_t a, int16x4_t b, int16x4_t *c);
 
 uint16x8_t __udivv8hi3 (uint16x8_t a, uint16x8_t b);
 uint16x8_t __umodv8hi3 (uint16x8_t a, uint16x8_t b);
 uint16x8_t __udivmodv8hi4 (uint16x8_t a, uint16x8_t b, uint16x8_t *c);
 int16x8_t __divv8hi3 (int16x8_t a, int16x8_t b);
 int16x8_t __modv8hi3 (int16x8_t a, int16x8_t b);
+int16x8_t __divmodv8hi4 (int16x8_t a, int16x8_t b, int16x8_t * c);
 
 uint16x16_t __udivv16hi3 (uint16x16_t a, uint16x16_t b);
 uint16x16_t __umodv16hi3 (uint16x16_t a, uint16x16_t b);
 uint16x16_t __udivmodv16hi4 (uint16x16_t a, uint16x16_t b, uint16x16_t *c);
 int16x16_t __divv16hi3 (int16x16_t a, int16x16_t b);
 int16x16_t __modv16hi3 (int16x16_t a, int16x16_t b);
+int16x16_t __divmodv16hi4 (int16x16_t a, int16x16_t b, int16x16_t * c);
 
 #ifdef __kv3_2__
 uint8x8_t __udivv8qi3 (uint8x8_t a, uint8x8_t b);

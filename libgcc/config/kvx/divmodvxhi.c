@@ -56,11 +56,10 @@
 static inline uint16x8_t
 uint16x4_divmod (uint16x4_t a, uint16x4_t b)
 {
-  uint32x4_t acc = __builtin_kvx_widenhwq (a, ".z");
   uint32x4_t src = __builtin_kvx_widenhwq (b, ".z") << (16 - 1);
   uint32x4_t wb = __builtin_kvx_widenhwq (b, ".z");
-  if (__builtin_kvx_anyhq (b, ".eqz"))
-    goto div0;
+  DIV_BY_ZERO_MAY_TRAP (__builtin_kvx_anyhq, b);
+  uint32x4_t acc = __builtin_kvx_widenhwq (a, ".z");
   // As `src == b << (16 -1)` adding src yields `src == b << 16`.
   src += src & (wb > acc);
 #if __kv3_2__
@@ -80,12 +79,6 @@ uint16x4_divmod (uint16x4_t a, uint16x4_t b)
   uint16x4_t q = __builtin_kvx_narrowwhq (acc, "");
   uint16x4_t r = __builtin_kvx_narrowwhq (acc >> 16, "");
   return __builtin_kvx_cat128 (q, r);
-div0:
-#ifndef __linux__
-  if (&_KVX_NO_DIVMOD0_TRAP)
-    return 0 - (uint16x8_t){};
-#endif
-  __builtin_trap ();
 }
 
 uint16x4_t
@@ -108,6 +101,18 @@ __udivmodv4hi4 (uint16x4_t a, uint16x4_t b, uint16x4_t *c)
   uint16x8_t divmod = uint16x4_divmod (a, b);
   *c = __builtin_kvx_high64 (divmod);
   return __builtin_kvx_low64 (divmod);
+}
+
+int16x4_t
+__divmodv4hi4 (int16x4_t sa, int16x4_t sb, int16x4_t * c)
+{
+  uint16x4_t a = __builtin_kvx_abshq (sa, "");
+  uint16x4_t b = __builtin_kvx_abshq (sb, "");
+  uint16x8_t divmod = uint16x4_divmod (a, b);
+  int16x4_t q = __builtin_kvx_low64 (divmod);
+  q = (sa ^ sb) < 0 ? -q : q;
+  *c = sa - q * sb;
+  return q;
 }
 
 int16x4_t
@@ -135,11 +140,10 @@ __modv4hi3 (int16x4_t a, int16x4_t b)
 static inline uint16x16_t
 uint16x8_divmod (uint16x8_t a, uint16x8_t b)
 {
-  uint32x8_t acc = __builtin_kvx_widenhwo (a, ".z");
   uint32x8_t src = __builtin_kvx_widenhwo (b, ".z") << (16 - 1);
   uint32x8_t wb = __builtin_kvx_widenhwo (b, ".z");
-  if (__builtin_kvx_anyho (b, ".eqz"))
-    goto div0;
+  DIV_BY_ZERO_MAY_TRAP (__builtin_kvx_anyho, b);
+  uint32x8_t acc = __builtin_kvx_widenhwo (a, ".z");
   // As `src == b << (16 -1)` adding src yields `src == b << 16`.
   src += src & (wb > acc);
 #if __kv3_2__
@@ -159,12 +163,6 @@ uint16x8_divmod (uint16x8_t a, uint16x8_t b)
   uint16x8_t q = __builtin_kvx_narrowwho (acc, "");
   uint16x8_t r = __builtin_kvx_narrowwho (acc >> 16, "");
   return __builtin_kvx_cat256 (q, r);
-div0:
-#ifndef __linux__
-  if (&_KVX_NO_DIVMOD0_TRAP)
-    return 0 - (uint16x16_t){};
-#endif
-  __builtin_trap ();
 }
 
 uint16x8_t
@@ -187,6 +185,17 @@ __udivmodv8hi4 (uint16x8_t a, uint16x8_t b, uint16x8_t *c)
   uint16x16_t divmod = uint16x8_divmod (a, b);
   *c = __builtin_kvx_high128 (divmod);
   return __builtin_kvx_low128 (divmod);
+}
+
+int16x8_t
+__divmodv8hi4 (int16x8_t a, int16x8_t b, int16x8_t * c)
+{
+  uint16x16_t divmod = uint16x8_divmod (__builtin_kvx_absho (a, ""),
+					__builtin_kvx_absho (b, ""));
+  int16x8_t q = __builtin_kvx_low128 (divmod);
+  q = __builtin_kvx_selectho (-q, q, a ^ b, ".ltz");
+  *c = a - q * b;
+  return q;
 }
 
 int16x8_t
@@ -214,11 +223,10 @@ __modv8hi3 (int16x8_t a, int16x8_t b)
 static inline uint16x32_t
 uint16x16_divmod (uint16x16_t a, uint16x16_t b)
 {
-  uint32x16_t acc = __builtin_kvx_widenhwx (a, ".z");
   uint32x16_t src = __builtin_kvx_widenhwx (b, ".z") << (16 - 1);
   uint32x16_t wb = __builtin_kvx_widenhwx (b, ".z");
-  if (__builtin_kvx_anyhx (b, ".eqz"))
-    goto div0;
+  DIV_BY_ZERO_MAY_TRAP (__builtin_kvx_anyhx, b);
+  uint32x16_t acc = __builtin_kvx_widenhwx (a, ".z");
   // As `src == b << (16 -1)` adding src yields `src == b << 16`.
   src += src & (wb > acc);
 #if __kv3_2__
@@ -247,12 +255,6 @@ uint16x16_divmod (uint16x16_t a, uint16x16_t b)
   uint16x16_t q = __builtin_kvx_narrowwhx (acc, "");
   uint16x16_t r = __builtin_kvx_narrowwhx (acc >> 16, "");
   return __builtin_kvx_cat512 (q, r);
-div0:
-#ifndef __linux__
-  if (&_KVX_NO_DIVMOD0_TRAP)
-    return 0 - (uint16x32_t){};
-#endif
-  __builtin_trap ();
 }
 
 uint16x16_t
@@ -275,6 +277,14 @@ __udivmodv16hi4 (uint16x16_t a, uint16x16_t b, uint16x16_t *c)
   uint16x32_t divmod = uint16x16_divmod (a, b);
   *c = __builtin_kvx_high256 (divmod);
   return __builtin_kvx_low256 (divmod);
+}
+
+int16x16_t
+__divmodv16hi4 (int16x16_t a, int16x16_t b, int16x16_t * c)
+{
+  int16x16_t q = __divv16hi3 (a, b);
+  *c = a - b * q;
+  return q;
 }
 
 int16x16_t

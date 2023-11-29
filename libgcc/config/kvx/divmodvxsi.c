@@ -56,11 +56,10 @@
 static inline uint32x4_t
 uint32x2_divmod (uint32x2_t a, uint32x2_t b)
 {
-  uint64x2_t acc = __builtin_kvx_widenwdp (a, ".z");
   uint64x2_t src = __builtin_kvx_widenwdp (b, ".z") << (32 - 1);
   uint64x2_t wb = __builtin_kvx_widenwdp (b, ".z");
-  if (__builtin_kvx_anywp (b, ".eqz"))
-    goto div0;
+  DIV_BY_ZERO_MAY_TRAP (__builtin_kvx_anywp, b);
+  uint64x2_t acc = __builtin_kvx_widenwdp (a, ".z");
   // As `src == b << (32 -1)` adding src yields `src == b << 32`.
   src += src & (wb > acc);
   for (int i = 0; i < 32; i++)
@@ -70,12 +69,6 @@ uint32x2_divmod (uint32x2_t a, uint32x2_t b)
   uint32x2_t q = __builtin_kvx_narrowdwp (acc, "");
   uint32x2_t r = __builtin_kvx_narrowdwp (acc >> 32, "");
   return __builtin_kvx_cat128 (q, r);
-div0:
-#ifndef __linux__
-  if (&_KVX_NO_DIVMOD0_TRAP)
-    return 0 - (uint32x4_t){};
-#endif
-  __builtin_trap ();
 }
 
 uint32x2_t
@@ -125,11 +118,10 @@ __modv2si3 (int32x2_t a, int32x2_t b)
 static inline uint32x8_t
 uint32x4_divmod (uint32x4_t a, uint32x4_t b)
 {
-  uint64x4_t acc = __builtin_kvx_widenwdq (a, ".z");
   uint64x4_t src = __builtin_kvx_widenwdq (b, ".z") << (32 - 1);
   uint64x4_t wb = __builtin_kvx_widenwdq (b, ".z");
-  if (__builtin_kvx_anywq (b, ".eqz"))
-    goto div0;
+  DIV_BY_ZERO_MAY_TRAP (__builtin_kvx_anywq, b);
+  uint64x4_t acc = __builtin_kvx_widenwdq (a, ".z");
   // As `src == b << (32 -1)` adding src yields `src == b << 32`.
   src += src & (wb > acc);
   for (int i = 0; i < 32; i++)
@@ -139,12 +131,6 @@ uint32x4_divmod (uint32x4_t a, uint32x4_t b)
   uint32x4_t q = __builtin_kvx_narrowdwq (acc, "");
   uint32x4_t r = __builtin_kvx_narrowdwq (acc >> 32, "");
   return __builtin_kvx_cat256 (q, r);
-div0:
-#ifndef __linux__
-  if (&_KVX_NO_DIVMOD0_TRAP)
-    return 0 - (uint32x8_t){};
-#endif
-  __builtin_trap ();
 }
 
 uint32x4_t
@@ -167,6 +153,17 @@ __udivmodv4si4 (uint32x4_t a, uint32x4_t b, uint32x4_t *c)
   uint32x8_t divmod = uint32x4_divmod (a, b);
   *c = __builtin_kvx_high128 (divmod);
   return __builtin_kvx_low128 (divmod);
+}
+
+int32x4_t
+__divmodv4si4 (int32x4_t a, int32x4_t b, int32x4_t * c)
+{
+  uint32x8_t divmod = uint32x4_divmod (__builtin_kvx_abswq (a, ""),
+				       __builtin_kvx_abswq (b, ""));
+  int32x4_t q = __builtin_kvx_low128 (divmod);
+  q = __builtin_kvx_selectwq (-q, q, a ^ b, ".ltz");
+  *c = a - b * q;
+  return q;
 }
 
 int32x4_t
@@ -194,11 +191,10 @@ __modv4si3 (int32x4_t a, int32x4_t b)
 static inline uint32x16_t
 uint32x8_divmod (uint32x8_t a, uint32x8_t b)
 {
-  uint64x8_t acc = __builtin_kvx_widenwdo (a, ".z");
   uint64x8_t src = __builtin_kvx_widenwdo (b, ".z") << (32 - 1);
   uint64x8_t wb = __builtin_kvx_widenwdo (b, ".z");
-  if (__builtin_kvx_anywo (b, ".eqz"))
-    goto div0;
+  DIV_BY_ZERO_MAY_TRAP (__builtin_kvx_anywo, b);
+  uint64x8_t acc = __builtin_kvx_widenwdo (a, ".z");
   // As `src == b << (32 -1)` adding src yields `src == b << 32`.
   src += src & (wb > acc);
   for (int i = 0; i < 32; i++)
@@ -208,12 +204,6 @@ uint32x8_divmod (uint32x8_t a, uint32x8_t b)
   uint32x8_t q = __builtin_kvx_narrowdwo (acc, "");
   uint32x8_t r = __builtin_kvx_narrowdwo (acc >> 32, "");
   return __builtin_kvx_cat512 (q, r);
-div0:
-#ifndef __linux__
-  if (&_KVX_NO_DIVMOD0_TRAP)
-    return 0 - (uint32x16_t){};
-#endif
-  __builtin_trap ();
 }
 
 uint32x8_t
@@ -236,6 +226,17 @@ __udivmodv8si4 (uint32x8_t a, uint32x8_t b, uint32x8_t *c)
   uint32x16_t divmod = uint32x8_divmod (a, b);
   *c = __builtin_kvx_high256 (divmod);
   return __builtin_kvx_low256 (divmod);
+}
+
+int32x8_t
+__divmodv8si4 (int32x8_t a, int32x8_t b, int32x8_t * c)
+{
+  uint32x16_t divmod = uint32x8_divmod (__builtin_kvx_abswo (a, ""),
+					__builtin_kvx_abswo (b, ""));
+  int32x8_t q = __builtin_kvx_low256 (divmod);
+  q = __builtin_kvx_selectwo (-q, q, a ^ b, ".ltz");
+  *c = a - b * q;
+  return q;
 }
 
 int32x8_t
