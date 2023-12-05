@@ -258,6 +258,7 @@ kvx_float32x4_fconjwcp(float32x4_t a)
 {
     return __builtin_kvx_fconjwcp(a);
 }
+#ifndef __KV4__
 float32x4_t kvx_float32x4_floatwq(int32x4_t a) {
     return __builtin_kvx_floatwq(a, 20, ".rn.s");
 }
@@ -270,7 +271,7 @@ int32x4_t kvx_float32x4_fixedwq(float32x4_t a) {
 int32x4_t kvx_float32x4_fixeduwq(float32x4_t a) {
     return __builtin_kvx_fixeduwq(a, 23, ".rn.s");
 }
-
+#endif//__KV4__
 float32x4_t __attribute__ ((noinline))
 kvx_float32x4_frecwq(float32x4_t a)
 {

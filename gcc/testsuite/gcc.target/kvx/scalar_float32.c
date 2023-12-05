@@ -244,6 +244,7 @@ kvx_float32_storecv(char *p, float32_t b, long c)
 {
     __builtin_kvx_storecwf(b, p, c, ".dnez");
 }
+#ifndef __KV4__
 float32_t kvx_float32_floatw(int32_t a) {
     return __builtin_kvx_floatw(a, 20, ".rn.s");
 }
@@ -256,7 +257,7 @@ int32_t kvx_float32_fixedw(float32_t a) {
 int32_t kvx_float32_fixeduw(float32_t a) {
     return __builtin_kvx_fixeduw(a, 23, ".rn.s");
 }
-
+#endif//__KV4__
 float32_t __attribute__ ((noinline))
 kvx_float32_frecw(float32_t a)
 {
