@@ -5206,10 +5206,11 @@ kvx_sched_adjust_cost (rtx_insn *cons_insn, int dep_type, rtx_insn *prod_insn,
 		  rtx y = XVECEXP (op, 0, 0);
 		  if (SUBREG_P (y))
 		    y = SUBREG_REG (y);
-		  if (x == y
-		      && (unspec == UNSPEC_LOADC || unspec == UNSPEC_XLOADC
-			  || unspec == UNSPEC_XLOADS))
-		    cost = 1;
+		  if (x == y)
+		    if (unspec == UNSPEC_LOADC || unspec == UNSPEC_XLOADC
+			|| unspec == UNSPEC_XLOADS
+			|| (unspec >= UNSPEC_XLOADQ0 && unspec <= UNSPEC_XLOADCQ3))
+		      cost = 1;
 		}
 	    }
 	}
@@ -5223,7 +5224,8 @@ kvx_sched_adjust_cost (rtx_insn *cons_insn, int dep_type, rtx_insn *prod_insn,
 	// be bundled if the first is conditional and the second is any JUMP.
 	{
 	  if (KV4)
-	    cost = !(JUMP_P (prod_insn) && !simplejump_p (prod_insn) && JUMP_P (cons_insn));
+	    cost = !(JUMP_P (prod_insn)
+		     && !simplejump_p (prod_insn) && JUMP_P (cons_insn));
 	  else
 	    cost = 1;
 	}

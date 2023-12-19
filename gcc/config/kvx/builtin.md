@@ -8046,7 +8046,7 @@
 (define_insn "kvx_lbz"
  [(set (match_operand:DI 0 "register_operand" "=r,r,r")
        (unspec:DI [(match_operand:QI 1 "memory_operand" "a,b,m")
-                   (match_operand 2 "" "")] UNSPEC_LOADZ))
+                   (match_operand 2 "" "")] UNSPEC_LOADZX))
    (use (match_dup 1))]
   ""
   "lbz%2%X1 %0 = %1"
@@ -8057,7 +8057,7 @@
 (define_insn "kvx_lbs"
  [(set (match_operand:DI 0 "register_operand" "=r,r,r")
        (unspec:DI [(match_operand:QI 1 "memory_operand" "a,b,m")
-                   (match_operand 2 "" "")] UNSPEC_LOADS))
+                   (match_operand 2 "" "")] UNSPEC_LOADSX))
    (use (match_dup 1))]
   ""
   "lbs%2%X1 %0 = %1"
@@ -8068,7 +8068,7 @@
 (define_insn "kvx_lhz"
  [(set (match_operand:DI 0 "register_operand" "=r,r,r")
        (unspec:DI [(match_operand:HI 1 "memory_operand" "a,b,m")
-                   (match_operand 2 "" "")] UNSPEC_LOADZ))
+                   (match_operand 2 "" "")] UNSPEC_LOADZX))
    (use (match_dup 1))]
   ""
   "lhz%2%X1 %0 = %1"
@@ -8079,7 +8079,7 @@
 (define_insn "kvx_lhs"
  [(set (match_operand:DI 0 "register_operand" "=r,r,r")
        (unspec:DI [(match_operand:HI 1 "memory_operand" "a,b,m")
-                   (match_operand 2 "" "")] UNSPEC_LOADS))
+                   (match_operand 2 "" "")] UNSPEC_LOADSX))
    (use (match_dup 1))]
   ""
   "lhs%2%X1 %0 = %1"
@@ -8090,7 +8090,7 @@
 (define_insn "kvx_lwz"
  [(set (match_operand:DI 0 "register_operand" "=r,r,r")
        (unspec:DI [(match_operand:SI 1 "memory_operand" "a,b,m")
-                   (match_operand 2 "" "")] UNSPEC_LOADZ))
+                   (match_operand 2 "" "")] UNSPEC_LOADZX))
    (use (match_dup 1))]
   ""
   "lwz%2%X1 %0 = %1"
@@ -8101,7 +8101,7 @@
 (define_insn "kvx_lws"
  [(set (match_operand:DI 0 "register_operand" "=r,r,r")
        (unspec:DI [(match_operand:SI 1 "memory_operand" "a,b,m")
-                   (match_operand 2 "" "")] UNSPEC_LOADS))
+                   (match_operand 2 "" "")] UNSPEC_LOADSX))
    (use (match_dup 1))]
   ""
   "lws%2%X1 %0 = %1"
@@ -8112,7 +8112,7 @@
 (define_insn "kvx_lhf"
  [(set (match_operand:HF 0 "register_operand" "=r,r,r")
        (unspec:HF [(match_operand:HF 1 "memory_operand" "a,b,m")
-                   (match_operand 2 "" "")] UNSPEC_LOADZ))
+                   (match_operand 2 "" "")] UNSPEC_LOADZX))
    (use (match_dup 1))]
   ""
   "lhz%2%X1 %0 = %1"
@@ -8123,7 +8123,7 @@
 (define_insn "kvx_lwf"
  [(set (match_operand:SF 0 "register_operand" "=r,r,r")
        (unspec:SF [(match_operand:SF 1 "memory_operand" "a,b,m")
-                   (match_operand 2 "" "")] UNSPEC_LOADZ))
+                   (match_operand 2 "" "")] UNSPEC_LOADZX))
    (use (match_dup 1))]
   ""
   "lwz%2%X1 %0 = %1"
@@ -8137,7 +8137,7 @@
 (define_insn "kvx_loadbz"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r")
         (zero_extend:DI (unspec:QI [(match_operand:QI 1 "memory_operand" "a,b,m")
-                                    (match_operand 2 "" "")] UNSPEC_LOADZ)))]
+                                    (match_operand 2 "" "")] UNSPEC_LOADZX)))]
   ""
   "lbz%2%X1 %0 = %1"
   [(set_attr_alternative "type"
@@ -8150,7 +8150,7 @@
 (define_insn "kvx_loadhz"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r")
         (zero_extend:DI (unspec:HI [(match_operand:HI 1 "memory_operand" "a,b,m")
-                                    (match_operand 2 "" "")] UNSPEC_LOADZ)))]
+                                    (match_operand 2 "" "")] UNSPEC_LOADZX)))]
   ""
   "lhz%2%X1 %0 = %1"
   [(set_attr_alternative "type"
@@ -8163,7 +8163,7 @@
 (define_insn "kvx_loadwz"
   [(set (match_operand:DI 0 "register_operand" "=r,r,r")
         (zero_extend:DI (unspec:SI [(match_operand:SI 1 "memory_operand" "a,b,m")
-                                    (match_operand 2 "" "")] UNSPEC_LOADZ)))]
+                                    (match_operand 2 "" "")] UNSPEC_LOADZX)))]
   ""
   "lwz%2%X1 %0 = %1"
   [(set_attr_alternative "type"
@@ -8202,7 +8202,7 @@
 (define_insn "kvx_loadhf"
   [(set (match_operand:HF 0 "register_operand" "=r,r,r")
         (unspec:HF [(match_operand:HF 1 "memory_operand" "a,b,m")
-                    (match_operand 2 "" "")] UNSPEC_LOADZ))]
+                    (match_operand 2 "" "")] UNSPEC_LOADZX))]
   ""
   "lhz%2%X1 %0 = %1"
   [(set_attr_alternative "type"
@@ -8215,7 +8215,7 @@
 (define_insn "kvx_loadwf"
   [(set (match_operand:SF 0 "register_operand" "=r,r,r")
         (unspec:SF [(match_operand:SF 1 "memory_operand" "a,b,m")
-                    (match_operand 2 "" "")] UNSPEC_LOADZ))]
+                    (match_operand 2 "" "")] UNSPEC_LOADZX))]
   ""
   "lwz%2%X1 %0 = %1"
   [(set_attr_alternative "type"

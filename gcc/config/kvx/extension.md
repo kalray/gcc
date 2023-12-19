@@ -1,5 +1,4 @@
 ;; XUNDEF
-;;
 
 (define_insn_and_split "kvx_xundef256"
   [(set (match_operand:X256 0 "register_operand" "=x")
@@ -1114,8 +1113,8 @@
 (define_insn "kvx_xloads1024"
   [(set (match_operand:X1024 0 "register_operand" "=x,x,x")
         (unspec:X1024 [(match_operand:X1024 1 "register_operand" "0,0,0")
-                         (match_operand:<CHUNK> 2 "memsimple_operand" "c,d,e")
-                         (match_operand 3 "" "")] UNSPEC_XLOADS))]
+                       (match_operand:<CHUNK> 2 "memory_operand" "a,b,m")
+                       (match_operand 3 "" "")] UNSPEC_XLOADS))]
   ""
   "xlo%3%X2 %0 = %2"
   [(set_attr_alternative "type"
@@ -1128,9 +1127,9 @@
 (define_insn "kvx_xloadsc1024"
   [(set (match_operand:X1024 0 "register_operand" "=x,x,x")
         (unspec:X1024 [(match_operand:X1024 1 "register_operand" "0,0,0")
-                         (match_operand:<CHUNK> 2 "memsimple_operand" "c,d,e")
-                         (match_operand:DI 3 "register_operand" "r,r,r")
-                         (match_operand 4 "" "")] UNSPEC_XLOADS))]
+                       (match_operand:<CHUNK> 2 "memsimple_operand" "c,d,e")
+                       (match_operand:DI 3 "register_operand" "r,r,r")
+                       (match_operand 4 "" "")] UNSPEC_XLOADS))]
   ""
   "xlo%4%X2 %3? %0 = %O2"
   [(set_attr_alternative "type"
@@ -1138,6 +1137,220 @@
      (if_then_else (match_operand 4 "uncached_modifier") (const_string "load_ext_uncached_x") (const_string "load_ext_x"))
      (if_then_else (match_operand 4 "uncached_modifier") (const_string "load_ext_uncached_y") (const_string "load_ext_y"))])
    (set_attr "length" "4, 8, 12")]
+)
+
+
+;; XLOAD1024Q*, XLOADC1024Q*
+
+(define_insn "kvx_xload1024q0"
+  [(set (match_operand:X1024 0 "register_operand" "=x,x,x")
+        (unspec:X1024 [(match_operand:X1024 1 "register_operand" "0,0,0")
+                       (match_operand:<CHUNK> 2 "memory_operand" "a,b,m")
+                       (match_operand 3 "" "")] UNSPEC_XLOADQ0))]
+  ""
+  "xlo%3%X2.q0 %0 = %2"
+  [(set_attr_alternative "type"
+    [(if_then_else (match_operand 3 "uncached_modifier") (const_string "load_ext_uncached") (const_string "load_ext"))
+     (if_then_else (match_operand 3 "uncached_modifier") (const_string "load_ext_uncached_x") (const_string "load_ext_x"))
+     (if_then_else (match_operand 3 "uncached_modifier") (const_string "load_ext_uncached_y") (const_string "load_ext_y"))])
+   (set_attr "length" "4, 8, 12")]
+)
+
+(define_insn "kvx_xload1024q1"
+  [(set (match_operand:X1024 0 "register_operand" "=x,x,x")
+        (unspec:X1024 [(match_operand:X1024 1 "register_operand" "0,0,0")
+                       (match_operand:<CHUNK> 2 "memory_operand" "a,b,m")
+                       (match_operand 3 "" "")] UNSPEC_XLOADQ1))]
+  ""
+  "xlo%3%X2.q1 %0 = %2"
+  [(set_attr_alternative "type"
+    [(if_then_else (match_operand 3 "uncached_modifier") (const_string "load_ext_uncached") (const_string "load_ext"))
+     (if_then_else (match_operand 3 "uncached_modifier") (const_string "load_ext_uncached_x") (const_string "load_ext_x"))
+     (if_then_else (match_operand 3 "uncached_modifier") (const_string "load_ext_uncached_y") (const_string "load_ext_y"))])
+   (set_attr "length" "4, 8, 12")]
+)
+
+(define_insn "kvx_xload1024q2"
+  [(set (match_operand:X1024 0 "register_operand" "=x,x,x")
+        (unspec:X1024 [(match_operand:X1024 1 "register_operand" "0,0,0")
+                       (match_operand:<CHUNK> 2 "memory_operand" "a,b,m")
+                       (match_operand 3 "" "")] UNSPEC_XLOADQ2))]
+  ""
+  "xlo%3%X2.q2 %0 = %2"
+  [(set_attr_alternative "type"
+    [(if_then_else (match_operand 3 "uncached_modifier") (const_string "load_ext_uncached") (const_string "load_ext"))
+     (if_then_else (match_operand 3 "uncached_modifier") (const_string "load_ext_uncached_x") (const_string "load_ext_x"))
+     (if_then_else (match_operand 3 "uncached_modifier") (const_string "load_ext_uncached_y") (const_string "load_ext_y"))])
+   (set_attr "length" "4, 8, 12")]
+)
+
+(define_insn "kvx_xload1024q3"
+  [(set (match_operand:X1024 0 "register_operand" "=x,x,x")
+        (unspec:X1024 [(match_operand:X1024 1 "register_operand" "0,0,0")
+                       (match_operand:<CHUNK> 2 "memory_operand" "a,b,m")
+                       (match_operand 3 "" "")] UNSPEC_XLOADQ3))]
+  ""
+  "xlo%3%X2.q3 %0 = %2"
+  [(set_attr_alternative "type"
+    [(if_then_else (match_operand 3 "uncached_modifier") (const_string "load_ext_uncached") (const_string "load_ext"))
+     (if_then_else (match_operand 3 "uncached_modifier") (const_string "load_ext_uncached_x") (const_string "load_ext_x"))
+     (if_then_else (match_operand 3 "uncached_modifier") (const_string "load_ext_uncached_y") (const_string "load_ext_y"))])
+   (set_attr "length" "4, 8, 12")]
+)
+
+(define_insn "kvx_xloadc1024q0"
+  [(set (match_operand:X1024 0 "register_operand" "=x,x,x")
+        (unspec:X1024 [(match_operand:X1024 1 "register_operand" "0,0,0")
+                       (match_operand:<CHUNK> 2 "memsimple_operand" "c,d,e")
+                       (match_operand:DI 3 "register_operand" "r,r,r")
+                       (match_operand 4 "" "")] UNSPEC_XLOADCQ0))]
+  ""
+  "xlo%4%X2.q0 %3? %0 = %O2"
+  [(set_attr_alternative "type"
+    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "load_ext_uncached") (const_string "load_ext"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "load_ext_uncached_x") (const_string "load_ext_x"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "load_ext_uncached_y") (const_string "load_ext_y"))])
+   (set_attr "length" "4, 8, 12")]
+)
+
+(define_insn "kvx_xloadc1024q1"
+  [(set (match_operand:X1024 0 "register_operand" "=x,x,x")
+        (unspec:X1024 [(match_operand:X1024 1 "register_operand" "0,0,0")
+                       (match_operand:<CHUNK> 2 "memsimple_operand" "c,d,e")
+                       (match_operand:DI 3 "register_operand" "r,r,r")
+                       (match_operand 4 "" "")] UNSPEC_XLOADCQ1))]
+  ""
+  "xlo%4%X2.q1 %3? %0 = %O2"
+  [(set_attr_alternative "type"
+    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "load_ext_uncached") (const_string "load_ext"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "load_ext_uncached_x") (const_string "load_ext_x"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "load_ext_uncached_y") (const_string "load_ext_y"))])
+   (set_attr "length" "4, 8, 12")]
+)
+
+(define_insn "kvx_xloadc1024q2"
+  [(set (match_operand:X1024 0 "register_operand" "=x,x,x")
+        (unspec:X1024 [(match_operand:X1024 1 "register_operand" "0,0,0")
+                       (match_operand:<CHUNK> 2 "memsimple_operand" "c,d,e")
+                       (match_operand:DI 3 "register_operand" "r,r,r")
+                       (match_operand 4 "" "")] UNSPEC_XLOADCQ2))]
+  ""
+  "xlo%4%X2.q2 %3? %0 = %O2"
+  [(set_attr_alternative "type"
+    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "load_ext_uncached") (const_string "load_ext"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "load_ext_uncached_x") (const_string "load_ext_x"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "load_ext_uncached_y") (const_string "load_ext_y"))])
+   (set_attr "length" "4, 8, 12")]
+)
+
+(define_insn "kvx_xloadc1024q3"
+  [(set (match_operand:X1024 0 "register_operand" "=x,x,x")
+        (unspec:X1024 [(match_operand:X1024 1 "register_operand" "0,0,0")
+                       (match_operand:<CHUNK> 2 "memsimple_operand" "c,d,e")
+                       (match_operand:DI 3 "register_operand" "r,r,r")
+                       (match_operand 4 "" "")] UNSPEC_XLOADCQ3))]
+  ""
+  "xlo%4%X2.q3 %3? %0 = %O2"
+  [(set_attr_alternative "type"
+    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "load_ext_uncached") (const_string "load_ext"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "load_ext_uncached_x") (const_string "load_ext_x"))
+     (if_then_else (match_operand 4 "uncached_modifier") (const_string "load_ext_uncached_y") (const_string "load_ext_y"))])
+   (set_attr "length" "4, 8, 12")]
+)
+
+
+;; XSTORE1024Q*, XSTOREC1024Q*
+
+(define_insn "kvx_xstore1024q0"
+  [(set (match_operand:X256 1 "memory_operand"  "=a,b,m")
+        (unspec:X256 [(match_operand:X1024 0 "register_operand" "x,x,x")] UNSPEC_XSTOREQ0))
+   (use (match_operand:SI 2 "nonmemory_operand" ""))]
+  ""
+  "xso.q0%X1 %1 = %0"
+  [(set_attr "type" "store_ext,store_ext_x,store_ext_y")
+   (set_attr "length"       "4,          8,         12")]
+)
+
+(define_insn "kvx_xstore1024q1"
+  [(set (match_operand:X256 1 "memory_operand"  "=a,b,m")
+        (unspec:X256 [(match_operand:X1024 0 "register_operand" "x,x,x")] UNSPEC_XSTOREQ1))
+   (use (match_operand:SI 2 "nonmemory_operand" ""))]
+  ""
+  "xso.q1%X1 %1 = %0"
+  [(set_attr "type" "store_ext,store_ext_x,store_ext_y")
+   (set_attr "length"       "4,          8,         12")]
+)
+
+(define_insn "kvx_xstore1024q2"
+  [(set (match_operand:X256 1 "memory_operand"  "=a,b,m")
+        (unspec:X256 [(match_operand:X1024 0 "register_operand" "x,x,x")] UNSPEC_XSTOREQ2))
+   (use (match_operand:SI 2 "nonmemory_operand" ""))]
+  ""
+  "xso.q2%X1 %1 = %0"
+  [(set_attr "type" "store_ext,store_ext_x,store_ext_y")
+   (set_attr "length"       "4,          8,         12")]
+)
+
+(define_insn "kvx_xstore1024q3"
+  [(set (match_operand:X256 1 "memory_operand"  "=a,b,m")
+        (unspec:X256 [(match_operand:X1024 0 "register_operand" "x,x,x")] UNSPEC_XSTOREQ3))
+   (use (match_operand:SI 2 "nonmemory_operand" ""))]
+  ""
+  "xso.q3%X1 %1 = %0"
+  [(set_attr "type" "store_ext,store_ext_x,store_ext_y")
+   (set_attr "length"       "4,          8,         12")]
+)
+
+(define_insn "kvx_xstorec1024q0"
+  [(set (match_operand:X256 1 "memsimple_operand"  "=c,d,e")
+        (unspec:X256 [(match_operand:X1024 0 "register_operand" "x,x,x")
+                      (match_operand:DI 2 "register_operand" "r,r,r")
+                      (match_operand 3 "" "")] UNSPEC_XSTORECQ0))
+   (use (match_operand:SI 4 "nonmemory_operand" ""))
+   (clobber (match_dup 1))]
+  ""
+  "xso.q0%3%X1 %2? %O1 = %0"
+  [(set_attr "type" "store_ext,store_ext_x,store_ext_y")
+   (set_attr "length"       "4,          8,         12")]
+)
+
+(define_insn "kvx_xstorec1024q1"
+  [(set (match_operand:X256 1 "memsimple_operand"  "=c,d,e")
+        (unspec:X256 [(match_operand:X1024 0 "register_operand" "x,x,x")
+                      (match_operand:DI 2 "register_operand" "r,r,r")
+                      (match_operand 3 "" "")] UNSPEC_XSTORECQ1))
+   (use (match_operand:SI 4 "nonmemory_operand" ""))
+   (clobber (match_dup 1))]
+  ""
+  "xso.q1%3%X1 %2? %O1 = %0"
+  [(set_attr "type" "store_ext,store_ext_x,store_ext_y")
+   (set_attr "length"       "4,          8,         12")]
+)
+
+(define_insn "kvx_xstorec1024q2"
+  [(set (match_operand:X256 1 "memsimple_operand"  "=c,d,e")
+        (unspec:X256 [(match_operand:X1024 0 "register_operand" "x,x,x")
+                      (match_operand:DI 2 "register_operand" "r,r,r")
+                      (match_operand 3 "" "")] UNSPEC_XSTORECQ2))
+   (use (match_operand:SI 4 "nonmemory_operand" ""))
+   (clobber (match_dup 1))]
+  ""
+  "xso.q2%3%X1 %2? %O1 = %0"
+  [(set_attr "type" "store_ext,store_ext_x,store_ext_y")
+   (set_attr "length"       "4,          8,         12")]
+)
+
+(define_insn "kvx_xstorec1024q3"
+  [(set (match_operand:X256 1 "memsimple_operand"  "=c,d,e")
+        (unspec:X256 [(match_operand:X1024 0 "register_operand" "x,x,x")
+                      (match_operand:DI 2 "register_operand" "r,r,r")
+                      (match_operand 3 "" "")] UNSPEC_XSTORECQ3))
+   (use (match_operand:SI 4 "nonmemory_operand" ""))
+   (clobber (match_dup 1))]
+  ""
+  "xso.q3%3%X1 %2? %O1 = %0"
+  [(set_attr "type" "store_ext,store_ext_x,store_ext_y")
+   (set_attr "length"       "4,          8,         12")]
 )
 
 
@@ -1533,7 +1746,7 @@
   ""
   "xso%X1 %1 = %0"
   [(set_attr "type" "store_ext,store_ext_x,store_ext_y")
-   (set_attr "length"            "4,               8,              12")]
+   (set_attr "length"       "4,          8,         12")]
 )
 
 (define_insn_and_split "kvx_xstore512"
@@ -1586,14 +1799,14 @@
 (define_insn "kvx_xstorec256"
   [(set (match_operand:X256 1 "memsimple_operand"  "=c,d,e")
         (unspec:X256 [(match_operand:X256 0 "register_operand" "x,x,x")
-                        (match_operand:DI 2 "register_operand" "r,r,r")
-                        (match_operand 3 "" "")] UNSPEC_XSTOREC))
+                      (match_operand:DI 2 "register_operand" "r,r,r")
+                      (match_operand 3 "" "")] UNSPEC_XSTOREC))
    (use (match_operand:SI 4 "nonmemory_operand" ""))
    (clobber (match_dup 1))]
   ""
   "xso%3%X1 %2? %O1 = %0"
   [(set_attr "type" "store_ext,store_ext_x,store_ext_y")
-   (set_attr "length"            "4,               8,              12")]
+   (set_attr "length"       "4,          8,         12")]
 )
 
 (define_expand "kvx_xstorec512"
@@ -2444,3 +2657,51 @@
   [(set_attr "type" "all")
    (set_attr "length" "8")]
 )
+
+
+;; XFMMA444W_0, XFMMA444W_1, XFMMA424D_0, XFMMA424D_1
+
+(define_insn "kvx_xfmma444w_0"
+  [(set (match_operand:X512 0 "register_operand" "=x")
+        (unspec:X512 [(match_operand:X512 1 "register_operand" "x")
+                      (match_operand:X512 2 "register_operand" "x")
+                      (match_operand:X512 3 "register_operand" "0")
+                      (match_operand 4 "" "")] UNSPEC_XFMMA444W_0))]
+  "KV4"
+  "xfmma444w.0%4 %0 = %1, %2"
+  [(set_attr "type" "ext_float")]
+)
+
+(define_insn "kvx_xfmma444w_1"
+  [(set (match_operand:X512 0 "register_operand" "=x")
+        (unspec:X512 [(match_operand:X512 1 "register_operand" "x")
+                      (match_operand:X512 2 "register_operand" "x")
+                      (match_operand:X512 3 "register_operand" "0")
+                      (match_operand 4 "" "")] UNSPEC_XFMMA444W_1))]
+  "KV4"
+  "xfmma444w.1%4 %0 = %1, %2"
+  [(set_attr "type" "ext_float")]
+)
+
+(define_insn "kvx_xfmma424d_0"
+  [(set (match_operand:X1024 0 "register_operand" "=x")
+        (unspec:X1024 [(match_operand:X512 1 "register_operand" "x")
+                       (match_operand:X512 2 "register_operand" "x")
+                       (match_operand:X1024 3 "register_operand" "0")
+                       (match_operand 4 "" "")] UNSPEC_XFMMA424D_0))]
+  "KV4"
+  "xfmma424d.0%4 %0 = %1, %2"
+  [(set_attr "type" "ext_float")]
+)
+
+(define_insn "kvx_xfmma424d_1"
+  [(set (match_operand:X1024 0 "register_operand" "=x")
+        (unspec:X1024 [(match_operand:X512 1 "register_operand" "x")
+                       (match_operand:X512 2 "register_operand" "x")
+                       (match_operand:X1024 3 "register_operand" "0")
+                       (match_operand 4 "" "")] UNSPEC_XFMMA424D_1))]
+  "KV4"
+  "xfmma424d.1%4 %0 = %1, %2"
+  [(set_attr "type" "ext_float")]
+)
+
