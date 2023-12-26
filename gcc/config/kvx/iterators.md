@@ -1382,7 +1382,7 @@
 ])
 
 ;; Iterator for all the 128-bit vector complex integer modes supported both on 
-;; KV3_1 and KV3_2.
+;; KV3_1 and (KV3_2||KV4).
 (define_mode_iterator V128CB [
   V8HI V4SI
 ])

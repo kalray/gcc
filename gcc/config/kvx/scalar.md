@@ -3578,7 +3578,7 @@
   ""
   {
     if (KV3_1)
-      emit_insn (gen_addconj<mode>3 (operands[0], operands[1], gen_rtx_CONST_INT (<MODE>mode, 0)));
+      emit_insn (gen_conj<mode>2_1 (operands[0], operands[1]));
     else if ((KV3_2||KV4))
       emit_insn (gen_conj<mode>2_2 (operands[0], operands[1]));
     else
@@ -3600,9 +3600,9 @@
   [(set (match_operand:CPLX_C 0 "register_operand" "=r")
         (conj:CPLX_C (match_operand:CPLX_C 1 "register_operand" "r")))
    (clobber (match_scratch:CPLX_C 2 "=&r"))]
-  "KV3_2"
+  "(KV3_2||KV4)"
   "#"
-  "KV3_2 && reload_completed"
+  "(KV3_2||KV4) && reload_completed"
   [(set (match_dup 2) (match_dup 1))
    (set (match_dup 0)
         (neg:<MODE> (match_dup 1)))
@@ -4269,6 +4269,7 @@
     DONE;
   }
 )
+
 
 ;; DF
 
