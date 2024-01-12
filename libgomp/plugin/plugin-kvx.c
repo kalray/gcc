@@ -77,6 +77,7 @@
 
 #define MPPA_CV1_SMEM_SIZE 4000000
 #define MPPA_CV2_SMEM_SIZE 8000000
+#define MPPA_DV1_SMEM_SIZE 8000000
 
 static mppa_offload_host_acc_config_t mppa_offload_host_acc_cfg = {
   .board_id = 0,
@@ -873,9 +874,11 @@ kvx_init_agent (int n, int version, bool mppa_initialized)
   if (agent->initialized_p)
     return true;
 
-  if (version == 2)
+  if (version == 0x14)
+    agent->smem_size = MPPA_DV1_SMEM_SIZE;
+  else if (version == 0x23)
     agent->smem_size = MPPA_CV2_SMEM_SIZE;
-  else if (version == 1)
+  else if (version == 0x13)
     agent->smem_size = MPPA_CV1_SMEM_SIZE;
   else
     {
@@ -915,7 +918,8 @@ kvx_init_agent (int n, int version, bool mppa_initialized)
       if (!sim_enabled)
 	{
 	  if (snprintf (*fw_name, BUF_MAX, hw_firmware_path,
-			version == 2 ? "kv3-2/" : "", fw) >= BUF_MAX)
+			version == 0x23 ? "kv3-2/" :
+			version == 0x14 ? "kv4-1/" : "", fw) >= BUF_MAX)
 	    GOMP_PLUGIN_fatal ("Path to the driver too long. (>= 512)");
 	}
       /* Otherwise, lookup the firmware in the kENV of the user.  */
@@ -927,7 +931,8 @@ kvx_init_agent (int n, int version, bool mppa_initialized)
 
 	  if (snprintf
 	      (*fw_name, BUF_MAX, "%s/share/pocl/linux_pcie/%s%s", toolchain,
-	       version == 2 ? "kv3-2/" : "", fw) >= BUF_MAX)
+	       version == 0x23 ? "kv3-2/" :
+	       version == 0x14 ? "kv4-1/" : "", fw) >= BUF_MAX)
 	    KVX_LOG (WARN, "Path to the driver too long. (>= 512)");
 	}
       KVX_LOG (INFO, "firmware: %s\n", *fw_name);
@@ -1068,7 +1073,7 @@ kvx_init_kernel (struct kernel_info *kernel, mppa_offload_sysqueue_t * queue)
 static int
 kvx_get_isa_revision (void *elf_image)
 {
-  return (((char *) elf_image)[0x31] & 0xf0) >> 4;
+  return ((char *) elf_image)[0x31] & 0xff;
 }
 
 static bool
