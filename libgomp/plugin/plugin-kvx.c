@@ -37,7 +37,6 @@
 #include <inttypes.h>
 #include <stdbool.h>
 #include <limits.h>
-#include <hsa.h>
 #include <dlfcn.h>
 #include <signal.h>
 #include "libgomp-plugin.h"
@@ -844,7 +843,6 @@ get_agent_info (int n)
   if (!kvx_context.agents[n].initialized_p)
     {
       GOMP_PLUGIN_error ("Attempt to use an uninitialized KVX MPPA agent.");
-      asm ("int $3");
       return NULL;
     }
   return &kvx_context.agents[n];

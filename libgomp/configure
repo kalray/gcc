@@ -15227,7 +15227,7 @@ if test x"$enable_offload_targets" != x; then
 	;;
       kvx*)
 	case "${target}" in
-	  kvx-cos | x86_64-*-*)
+	  aarch64-* | kvx-cos | riscv-* | x86_64-*-*)
 	    case " ${CC} ${CFLAGS} " in
 	      *" -m32 "* | *" -mx32 "*)
 		# PR libgomp/65099: Currently, we only support offloading in
