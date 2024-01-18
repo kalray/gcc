@@ -7,8 +7,6 @@
 #include "vec.h"
 #endif
 
-#include "kvx-registers.h"
-
 /* Support for a compile-time default arch.  The rules are:
    --with-arch is ignored if -march is specified. */
 #define OPTION_DEFAULT_SPECS {"arch", "%{!march=*:-march=%(VALUE)}"},
