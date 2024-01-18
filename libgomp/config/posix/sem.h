@@ -68,7 +68,6 @@ extern int gomp_sem_getcount (gomp_sem_t *sem);
 
 #else /* HAVE_BROKEN_POSIX_SEMAPHORES  */
 
-extern void abort(void);
 typedef sem_t gomp_sem_t;
 
 static inline void gomp_sem_init (gomp_sem_t *sem, int value)

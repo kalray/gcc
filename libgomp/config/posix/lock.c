@@ -35,8 +35,6 @@
    Solaris requires this for C99 and later.  */
 #define _XOPEN_SOURCE 600
 
-extern void abort(void);
-
 #include "libgomp.h"
 
 #ifdef HAVE_BROKEN_POSIX_SEMAPHORES

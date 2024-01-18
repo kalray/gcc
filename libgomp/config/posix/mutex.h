@@ -28,7 +28,6 @@
 
 #ifndef GOMP_MUTEX_H
 #define GOMP_MUTEX_H 1
-extern void abort(void);
 
 #include <pthread.h>
 
