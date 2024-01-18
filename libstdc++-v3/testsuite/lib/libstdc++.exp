@@ -101,6 +101,8 @@ proc libstdc++_init { testfile } {
     global tool_timeout
     global DEFAULT_CXXFLAGS
     global STATIC_LIBCXXFLAGS
+    global GCC_UNDER_TEST
+    global GXX_UNDER_TEST
 
     # We set LC_ALL and LANG to C so that we get the same error
     # messages as expected.
@@ -304,6 +306,9 @@ proc libstdc++_init { testfile } {
 	set cxxldflags [exec sh $flags_file --cxxldflags]
 	set cc [exec sh $flags_file --build-cc]
 	set includes [exec sh $flags_file --build-includes]
+    } else {
+      set cc  $GCC_UNDER_TEST
+      set cxx $GXX_UNDER_TEST
     }
     append cxxflags " "
     append cxxflags [getenv CXXFLAGS]
