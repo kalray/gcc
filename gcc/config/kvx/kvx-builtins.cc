@@ -716,6 +716,7 @@ enum kvx_builtin
   KVX_BUILTIN_WFXL,
   KVX_BUILTIN_WFXM,
   KVX_BUILTIN_SET,
+  KVX_BUILTIN_SCALL,
   KVX_BUILTIN_AWAIT,
   KVX_BUILTIN_SLEEP,
   KVX_BUILTIN_STOP,
@@ -1902,6 +1903,7 @@ kvx_init_builtins (void)
   ADD_KVX_BUILTIN (WFXL, "wfxl", VOID, UINT8, UINT64); // Control
   ADD_KVX_BUILTIN (WFXM, "wfxm", VOID, UINT8, UINT64); // Control
   ADD_KVX_BUILTIN (SET, "set", VOID, INT32, UINT64); // Control
+  ADD_KVX_BUILTIN_VA (SCALL, "scall", INT64, INT32); // Control
   ADD_KVX_BUILTIN (AWAIT, "await", VOID); // Control
   ADD_KVX_BUILTIN (SLEEP, "sleep", VOID); // Control
   ADD_KVX_BUILTIN (STOP, "stop", VOID); // Control
@@ -3394,6 +3396,43 @@ kvx_expand_builtin_set (rtx target ATTRIBUTE_UNUSED, tree args)
   rtx sys_reg = gen_rtx_REG (DImode, regno);
   emit_insn (gen_kvx_set (sys_reg, arg2));
   return NULL_RTX;
+}
+
+static rtx
+kvx_expand_builtin_scall (rtx target ATTRIBUTE_UNUSED, tree args)
+{
+  int nb_args = call_expr_nargs (args) - 1;
+  if (nb_args > 11)
+    error ("%<__builtin_scall%> can't have more than 11 arguments.");
+
+  rtx scall_no = expand_normal (CALL_EXPR_ARG (args, 0));
+
+  if (GET_CODE (scall_no) != CONST_INT)
+    {
+      scall_no = force_reg (SImode, scall_no);
+      emit_insn (gen_rtx_USE (DImode, scall_no));
+      emit_insn (gen_rtx_CLOBBER (DImode, scall_no));
+    }
+  for (int i = 0; i < nb_args; ++i)
+    {
+      rtx argi = expand_normal (CALL_EXPR_ARG (args, i + 1));
+      machine_mode modi = GET_MODE (argi);
+      rtx regi = gen_rtx_REG (modi == VOIDmode ? SImode : modi, i);
+      emit_move_insn (regi, argi);
+    }
+  for (int i = 0; i < nb_args; ++i)
+    {
+      rtx regi = gen_rtx_REG (DImode, i);
+      emit_insn (gen_rtx_USE (DImode, regi));
+      emit_insn (gen_rtx_CLOBBER (DImode, regi));
+    }
+  emit_insn (gen_kvx_scall (scall_no));
+  for (int i = 0; i < nb_args + 1; ++i)
+    {
+      rtx regi = gen_rtx_REG (DImode, i);
+      emit_insn (gen_rtx_CLOBBER (DImode, regi));
+    }
+  return gen_rtx_REG (DImode, 0);
 }
 
 static rtx
@@ -5761,6 +5800,7 @@ kvx_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
     case KVX_BUILTIN_WFXL: return kvx_expand_builtin_wfxl (target, exp);
     case KVX_BUILTIN_WFXM: return kvx_expand_builtin_wfxm (target, exp);
     case KVX_BUILTIN_SET: return kvx_expand_builtin_set (target, exp);
+    case KVX_BUILTIN_SCALL: return kvx_expand_builtin_scall (target, exp);
     case KVX_BUILTIN_AWAIT: return kvx_expand_builtin_await (target, exp);
     case KVX_BUILTIN_SLEEP: return kvx_expand_builtin_sleep (target, exp);
     case KVX_BUILTIN_STOP: return kvx_expand_builtin_stop (target, exp);

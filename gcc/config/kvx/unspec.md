@@ -39,6 +39,7 @@
         UNSPEC_DEF
         UNSPEC_GET
         UNSPEC_SET
+        UNSPEC_SCALL
         UNSPEC_STSU
         UNSPEC_SBMM8D
         UNSPEC_SBMMT8D

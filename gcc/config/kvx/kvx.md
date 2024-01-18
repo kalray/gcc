@@ -366,6 +366,13 @@
   [(set_attr "type" "all,bcu")]
 )
 
+(define_insn "kvx_scall"
+  [(unspec_volatile:DI [(match_operand:SI 0 "nonmemory_operand" "=r,i")] UNSPEC_SCALL)]
+  ""
+  "scall %0"
+  [(set_attr "type" "all")]
+)
+
 (define_insn "kvx_wfxl"
    [(set (match_operand:DI 0 "system_register_operand" "=SAB,SFR")
          (unspec_volatile:DI [(match_operand:DI 1 "register_operand" "r,r")] UNSPEC_WFXL))]
