@@ -65,6 +65,9 @@ proc plugin-test-execute { plugin_src plugin_tests } {
     global GMPINC
     global PLUGINCC
     global PLUGINCFLAGS
+    global TESTING_IN_BUILD_TREE
+    global GCC_UNDER_TEST
+    global GXX_UNDER_TEST
 
     set basename [file tail $plugin_src]
     set base [file rootname $basename]
@@ -81,11 +84,18 @@ proc plugin-test-execute { plugin_src plugin_tests } {
     # Once we have figured out how/where to package/install GCC header files
     # for general plugin support, we should modify the following include paths
     # accordingly.
-    set gcc_srcdir "$srcdir/../.."
-    set gcc_objdir "$objdir/../../.."
-    set includes "-I. -I${srcdir} -I${gcc_srcdir}/gcc -I${gcc_objdir}/gcc \
-                  -I${gcc_srcdir}/include -I${gcc_srcdir}/libcpp/include \
-                  $GMPINC -I${gcc_objdir}/intl"
+    if { [info exists TESTING_IN_BUILD_TREE] } {
+      set gcc_srcdir "$srcdir/../.."
+      set gcc_objdir "$objdir/../../.."
+      set includes "-I. -I${srcdir} -I${gcc_srcdir}/gcc -I${gcc_objdir}/gcc \
+                    -I${gcc_srcdir}/include -I${gcc_srcdir}/libcpp/include \
+                    $GMPINC -I${gcc_objdir}/intl"
+    } else {
+      set gcc_srcdir $srcdir
+      set gcc_objdir $objdir
+      set plugin_include_dir [exec ${GCC_UNDER_TEST} -print-file-name=plugin]
+      set includes "-I$plugin_include_dir/include"
+    }
 
     if { [ ishost *-*-darwin* ] } {
 	# -mdynamic-no-pic is incompatible with -fPIC.
