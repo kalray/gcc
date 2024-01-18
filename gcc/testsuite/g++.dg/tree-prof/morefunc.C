@@ -1,5 +1,11 @@
 /* { dg-options "-O2 -fno-devirtualize --param=profile-func-internal-id=0 -fdump-ipa-profile-optimized -fdump-ipa-afdo-optimized -Wno-attributes -Wno-coverage-mismatch -Wno-missing-profile" } */
 
+#ifndef __KVX__
+#define N 10000000
+#else
+#define N 10000
+#endif
+
 #include "reorder_class1.h"
 #include "reorder_class2.h"
 
@@ -20,7 +26,7 @@ static __attribute__((always_inline))
 void test1 (A *tc)
 {
   int i;
-  for (i = 0; i < 10000000; i++)
+  for (i = 0; i < N; i++)
      g += tc->foo(); 
    if (g<100) g++;
 }
@@ -29,7 +35,7 @@ static __attribute__((always_inline))
 void test2 (B *tc)
 {
   int i;
-  for (i = 0; i < 10000000; i++)
+  for (i = 0; i < N; i++)
      g += tc->foo();
 }
 
