@@ -181,6 +181,9 @@ public:
 
   /* True if SIZE is known.  */
   bool size_known_p;
+
+  /* True if nontemporal access.  */
+  bool non_temporal_p;
 };
 
 /* Structure used to describe the attributes of a REG in similar way as
@@ -2654,6 +2657,9 @@ do {								        \
 #else
 #define MEM_ADDR_SPACE(RTX) ADDR_SPACE_GENERIC
 #endif
+
+/* For a MEM rtx, true if related accesses are non temporal.  */
+#define MEM_NON_TEMPORAL_P(RTX) (get_mem_attrs (RTX)->non_temporal_p)
 
 /* For a REG rtx, the decl it is known to refer to, if it is known to
    refer to part of a DECL.  */

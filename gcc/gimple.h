@@ -2874,6 +2874,13 @@ gimple_assign_nontemporal_move_p (const gassign *gs)
   return gs->nontemporal_move;
 }
 
+static inline bool
+gimple_assign_nontemporal_move_p (const gimple *gs)
+{
+  const gassign *ass = GIMPLE_CHECK2<const gassign *> (gs);
+  return ass->nontemporal_move;
+}
+
 /* Sets nontemporal move flag of GS to NONTEMPORAL.  */
 
 inline void

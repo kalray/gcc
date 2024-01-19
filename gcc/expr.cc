@@ -10813,6 +10813,8 @@ expand_expr_real_1 (tree exp, rtx target, machine_mode tmode,
 	  set_curr_insn_location (saved_loc);
 	  if (REG_P (r) && !REG_EXPR (r))
 	    set_reg_attrs_for_decl_rtl (SSA_NAME_VAR (exp), r);
+	  if (MEM_P (r) && gimple_assign_nontemporal_move_p (g))
+	    set_mem_non_temporal (r);
 	  return r;
 	}
 
