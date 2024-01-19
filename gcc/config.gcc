@@ -2282,20 +2282,20 @@ iq2000*-*-elf*)
         md_file=iq2000/iq2000.md
         ;;
 kvx-*-elf*)
-	tm_file="${tm_file} elfos.h dbxelf.h kvx/kvx-elf.h newlib-stdint.h"
+	tm_file="${tm_file} elfos.h kvx/kvx-elf.h newlib-stdint.h"
 	tmake_file="kvx/t-kvx kvx/t-elf"
 	;;
 kvx-*-mbr*)
-	tm_file="${tm_file} elfos.h dbxelf.h kvx/kvx-mbr.h newlib-stdint.h"
+	tm_file="${tm_file} elfos.h kvx/kvx-mbr.h newlib-stdint.h"
 	tmake_file="kvx/t-kvx kvx/t-mbr"
 	;;
 kvx-*-cos*)
-	tm_file="${tm_file} elfos.h dbxelf.h kvx/kvx-cos.h newlib-stdint.h"
+	tm_file="${tm_file} elfos.h kvx/kvx-cos.h newlib-stdint.h"
 	tmake_file="kvx/t-kvx kvx/t-cos"
 	extra_options="${extra_options} kvx/kvx-cos.opt"
 	;;
 kvx-*-linux*)
-	tm_file="${tm_file} dbxelf.h elfos.h gnu-user.h linux.h kvx/kvx-linux.h glibc-stdint.h"
+	tm_file="${tm_file} elfos.h gnu-user.h linux.h kvx/kvx-linux.h glibc-stdint.h"
 	tmake_file="${tmake_file} t-linux kvx/t-linux"
 	;;
 lm32-*-elf*)
