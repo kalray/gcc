@@ -1256,6 +1256,36 @@ C_COMMON_OBJS = c-family/c-common.o c-family/c-cppbuiltin.o c-family/c-dump.o \
   c-family/c-ubsan.o c-family/known-headers.o \
   c-family/c-attribs.o c-family/c-warn.o c-family/c-spellcheck.o
 
+ANALYZER_H = \
+  analyzer/engine.h \
+  analyzer/reachability.h \
+  analyzer/state-purge.h \
+  analyzer/analyzer.h \
+  analyzer/svalue.h \
+  analyzer/sm.h \
+  analyzer/pending-diagnostic.h \
+  analyzer/feasible-graph.h \
+  analyzer/function-set.h \
+  analyzer/call-info.h \
+  analyzer/program-state.h \
+  analyzer/analyzer-selftests.h \
+  analyzer/region-model-reachability.h \
+  analyzer/analysis-plan.h \
+  analyzer/analyzer-logging.h \
+  analyzer/complexity.h \
+  analyzer/region-model.h \
+  analyzer/diagnostic-manager.h \
+  analyzer/program-point.h \
+  analyzer/store.h \
+  analyzer/call-string.h \
+  analyzer/bar-chart.h \
+  analyzer/constraint-manager.h \
+  analyzer/checker-path.h \
+  analyzer/exploded-graph.h \
+  analyzer/region.h \
+  analyzer/supergraph.h \
+  analyzer/trimmed-graph.h
+
 # Analyzer object files
 ANALYZER_OBJS = \
 	analyzer/analysis-plan.o \
@@ -3690,7 +3720,7 @@ PLUGIN_HEADERS = $(TREE_H) $(CONFIG_H) $(SYSTEM_H) coretypes.h $(TM_H) \
   hash-set.h dominance.h cfg.h cfgrtl.h cfganal.h cfgbuild.h cfgcleanup.h \
   lcm.h cfgloopmanip.h file-prefix-map.h builtins.def $(INSN_ATTR_H) \
   pass-instances.def params.list $(srcdir)/../include/gomp-constants.h \
-  $(EXPR_H)
+	$(EXPR_H) $(ANALYZER_H)
 
 # generate the 'build fragment' b-header-vars
 s-header-vars: Makefile
@@ -3727,7 +3757,8 @@ install-plugin: installdirs lang.install-plugin s-header-vars install-gengtype
 	  fi; \
 	  case $$path in \
 	  "$(srcdir)"/config/* | "$(srcdir)"/common/config/* \
-	  | "$(srcdir)"/c-family/* | "$(srcdir)"/*.def ) \
+	  | "$(srcdir)"/c-family/* | "$(srcdir)"/*.def \
+	  | "$(srcdir)"/analyzer/* ) \
 	    base=`echo "$$path" | sed -e "s|$$srcdirstrip/||"`;; \
 	  *) base=`basename $$path` ;; \
 	  esac; \

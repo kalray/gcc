@@ -2294,15 +2294,15 @@ iq2000*-*-elf*)
         md_file=iq2000/iq2000.md
         ;;
 kvx-*-elf*)
-	tm_file="${tm_file} kvx/kvx-registers.h elfos.h dbxelf.h kvx/kvx-elf.h newlib-stdint.h"
+	tm_file="${tm_file} kvx/kvx-registers.h elfos.h kvx/kvx-elf.h newlib-stdint.h"
 	tmake_file="kvx/t-kvx kvx/t-elf"
 	;;
 kvx-*-mbr*)
-	tm_file="${tm_file} kvx/kvx-registers.h elfos.h dbxelf.h kvx/kvx-mbr.h newlib-stdint.h"
+	tm_file="${tm_file} kvx/kvx-registers.h elfos.h kvx/kvx-mbr.h newlib-stdint.h"
 	tmake_file="kvx/t-kvx kvx/t-mbr"
 	;;
 kvx-*-cos*)
-	tm_file="${tm_file} kvx/kvx-registers.h elfos.h dbxelf.h kvx/kvx-cos.h newlib-stdint.h"
+	tm_file="${tm_file} kvx/kvx-registers.h elfos.h kvx/kvx-cos.h newlib-stdint.h"
 	tmake_file="kvx/t-kvx kvx/t-cos"
 	extra_options="${extra_options} kvx/kvx-cos.opt"
 	if test x$enable_as_accelerator = xyes; then
