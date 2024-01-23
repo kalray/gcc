@@ -2311,7 +2311,7 @@ kvx-*-cos*)
 	fi
 	;;
 kvx-*-linux*)
-	tm_file="${tm_file} elfos.h gnu-user.h linux.h kvx/kvx-linux.h glibc-stdint.h"
+	tm_file="${tm_file} kvx/kvx-registers.h elfos.h gnu-user.h linux.h kvx/kvx-linux.h glibc-stdint.h"
 	tmake_file="${tmake_file} t-linux kvx/t-kvx kvx/t-linux"
 	;;
 lm32-*-elf*)
