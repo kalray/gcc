@@ -1,10 +1,12 @@
+# Disable pedantic due to unwanted behavior of ISO C++11 with respect
+# to variadic macros called with empty argument list.
 kvx-builtins.o: $(srcdir)/config/kvx/kvx-builtins.cc $(CONFIG_H) \
   $(SYSTEM_H) coretypes.h $(TM_H) $(RTL_H) $(TREE_H) $(RECOG_H) langhooks.h \
   $(DIAGNOSTIC_CORE_H) $(OPTABS_H) $(srcdir)/config/kvx/kvx-modes.def
-	$(COMPILER) -c -Werror $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
-		$(srcdir)/config/kvx/kvx-builtins.cc
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
+	-Wno-pedantic $(srcdir)/config/kvx/kvx-builtins.cc
 
-$(out_object_file): ALL_COMPILERFLAGS += -Werror
+# $(out_object_file): ALL_COMPILERFLAGS += -Werror
 
 CFLAGS-mkoffload.o += $(DRIVER_DEFINES) \
 	-DGCC_INSTALL_NAME=\"$(GCC_INSTALL_NAME)\"

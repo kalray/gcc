@@ -6016,11 +6016,11 @@
             operands[1] = operand_1;
           }
         rtx accum = gen_reg_rtx (V4SFmode);
-        rtx opnd1_0 = gen_rtx_SUBREG (V2SFmode, operands[1], 0);
-        rtx opnd2_0 = gen_rtx_SUBREG (V2SFmode, operands[2], 0);
+        rtx opnd1_0 = simplify_gen_subreg (V2SFmode, operands[1], V4SFmode, 0);
+        rtx opnd2_0 = simplify_gen_subreg (V2SFmode, operands[2], V4SFmode, 0);
         emit_insn (gen_kvx_fmma212w (accum, opnd1_0, opnd2_0, operands[3], modifiers));
-        rtx opnd1_1 = gen_rtx_SUBREG (V2SFmode, operands[1], 8);
-        rtx opnd2_1 = gen_rtx_SUBREG (V2SFmode, operands[2], 8);
+        rtx opnd1_1 = simplify_gen_subreg (V2SFmode, operands[1], V4SFmode, 8);
+        rtx opnd2_1 = simplify_gen_subreg (V2SFmode, operands[2], V4SFmode, 8);
         emit_insn (gen_kvx_fmma212w (operands[0], opnd1_1, opnd2_1, accum, modifiers));
         DONE;
       }
@@ -7377,10 +7377,10 @@
    (match_operand 2 "")]
   ""
   {
-    rtx op1_l = gen_rtx_SUBREG (<HALF>mode, operands[1], 0);
-    rtx op1_m = gen_rtx_SUBREG (<HALF>mode, operands[1], 8);
-    rtx op0_l = gen_rtx_SUBREG (<HWIDE>mode, operands[0], 0);
-    rtx op0_m = gen_rtx_SUBREG (<HWIDE>mode, operands[0], 16);
+    rtx op1_l = simplify_gen_subreg (<HALF>mode, operands[1], <MODE>mode, 0);
+    rtx op1_m = simplify_gen_subreg (<HALF>mode, operands[1], <MODE>mode, 8);
+    rtx op0_l = simplify_gen_subreg (<HWIDE>mode, operands[0], <WIDE>mode, 0);
+    rtx op0_m = simplify_gen_subreg (<HWIDE>mode, operands[0], <WIDE>mode, 16);
     emit_insn (gen_kvx_fwiden<hwidenx> (op0_l, op1_l, operands[2]));
     emit_insn (gen_kvx_fwiden<hwidenx> (op0_m, op1_m, operands[2]));
     DONE;
@@ -7423,10 +7423,10 @@
    (match_operand 2 "")]
   ""
   {
-    rtx op1_l = gen_rtx_SUBREG (<HWIDE>mode, operands[1], 0);
-    rtx op1_m = gen_rtx_SUBREG (<HWIDE>mode, operands[1], 16);
-    rtx op0_l = gen_rtx_SUBREG (<HALF>mode, operands[0], 0);
-    rtx op0_m = gen_rtx_SUBREG (<HALF>mode, operands[0], 8);
+    rtx op1_l = simplify_gen_subreg (<HWIDE>mode, operands[1], <WIDE>mode, 0);
+    rtx op1_m = simplify_gen_subreg (<HWIDE>mode, operands[1], <WIDE>mode, 16);
+    rtx op0_l = simplify_gen_subreg (<HALF>mode, operands[0], <MODE>mode, 0);
+    rtx op0_m = simplify_gen_subreg (<HALF>mode, operands[0], <MODE>mode, 8);
     emit_insn (gen_kvx_fnarrow<htruncx> (op0_l, op1_l, operands[2]));
     emit_insn (gen_kvx_fnarrow<htruncx> (op0_m, op1_m, operands[2]));
     DONE;
