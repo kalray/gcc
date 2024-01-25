@@ -2429,7 +2429,7 @@
         (unspec_volatile:X256 [(match_operand:X256 1 "register_operand" "x")
                                (match_operand 2 "" "")] UNSPEC_XSENDRECVO))]
   "(KV3_2||KV4)"
-  "xsendrecvo%2 %0, %1"
+  "xsendrecvo%2 %1, %0"
   [(set_attr "type" "alu_tiny_sendrecv")]
 )
 
