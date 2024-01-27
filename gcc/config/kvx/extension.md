@@ -1108,38 +1108,6 @@
 )
 
 
-;; XLOADS1024, XLOADSC1024
-
-(define_insn "kvx_xloads1024"
-  [(set (match_operand:X1024 0 "register_operand" "=x,x,x")
-        (unspec:X1024 [(match_operand:X1024 1 "register_operand" "0,0,0")
-                       (match_operand:<CHUNK> 2 "memory_operand" "a,b,m")
-                       (match_operand 3 "" "")] UNSPEC_XLOADS))]
-  ""
-  "xlo%3%X2 %0 = %2"
-  [(set_attr_alternative "type"
-    [(if_then_else (match_operand 3 "uncached_modifier") (const_string "load_ext_uncached") (const_string "load_ext"))
-     (if_then_else (match_operand 3 "uncached_modifier") (const_string "load_ext_uncached_x") (const_string "load_ext_x"))
-     (if_then_else (match_operand 3 "uncached_modifier") (const_string "load_ext_uncached_y") (const_string "load_ext_y"))])
-   (set_attr "length" "4, 8, 12")]
-)
-
-(define_insn "kvx_xloadsc1024"
-  [(set (match_operand:X1024 0 "register_operand" "=x,x,x")
-        (unspec:X1024 [(match_operand:X1024 1 "register_operand" "0,0,0")
-                       (match_operand:<CHUNK> 2 "memsimple_operand" "c,d,e")
-                       (match_operand:DI 3 "register_operand" "r,r,r")
-                       (match_operand 4 "" "")] UNSPEC_XLOADS))]
-  ""
-  "xlo%4%X2 %3? %0 = %O2"
-  [(set_attr_alternative "type"
-    [(if_then_else (match_operand 4 "uncached_modifier") (const_string "load_ext_uncached") (const_string "load_ext"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "load_ext_uncached_x") (const_string "load_ext_x"))
-     (if_then_else (match_operand 4 "uncached_modifier") (const_string "load_ext_uncached_y") (const_string "load_ext_y"))])
-   (set_attr "length" "4, 8, 12")]
-)
-
-
 ;; XLOAD1024Q*, XLOADC1024Q*
 
 (define_insn "kvx_xload1024q0"

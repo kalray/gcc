@@ -552,38 +552,6 @@
    (set_attr "type" "cache, cache_x, cache_y")]
 )
 
-(define_expand "kvx_dzerol"
-  [(unspec [(match_operand 0 "noxsaddr_operand" "")] UNSPEC_DZEROL)
-   (clobber (mem:BLK (scratch)))]
-  ""
-  {
-    if (KV3_1)
-      emit_insn (gen_kvx_dzerol_1 (operands[0]));
-    if ((KV3_2||KV4))
-      {
-        rtx addr0 = gen_reg_rtx (Pmode);
-        emit_insn (gen_rtx_SET (addr0, operands[0]));
-        rtx addr32 = gen_rtx_PLUS (Pmode, addr0, GEN_INT (32));
-        rtvec values = rtvec_alloc (4);
-        for (int i = 0; i < 4; i++)
-          RTVEC_ELT (values, i) = const0_rtx;
-        rtx zero = gen_rtx_CONST_VECTOR (V4DImode, values);
-        emit_move_insn (gen_rtx_MEM (V4DImode, addr0), zero);
-        emit_move_insn (gen_rtx_MEM (V4DImode, addr32), zero);
-      }
-    DONE;
-  }
-)
-
-(define_insn "kvx_dzerol_1"
-  [(unspec [(match_operand 0 "noxsaddr_operand" "Aa,Ab,p")] UNSPEC_DZEROL)
-   (clobber (mem:BLK (scratch)))]
-  "KV3_1"
-  "dzerol%X0 %A0"
-  [(set_attr "length" "4,     8,    12")
-   (set_attr "type" "cache, cache_x, cache_y")]
-)
-
 (define_insn "kvx_tlbdinval"
   [(unspec_volatile [(const_int 0)] UNSPEC_TLBDINVAL)
    (clobber (mem:BLK (scratch)))]

@@ -34,7 +34,6 @@
         UNSPEC_DFLUSHSW
         UNSPEC_FENCE
         UNSPEC_READY
-        UNSPEC_DZEROL
 
         UNSPEC_DEF
         UNSPEC_GET
@@ -173,7 +172,6 @@
         UNSPEC_LOADZX
         UNSPEC_XLOAD
         UNSPEC_XLOADC
-        UNSPEC_XLOADS
         UNSPEC_XLOADQ0
         UNSPEC_XLOADQ1
         UNSPEC_XLOADQ2

@@ -5208,7 +5208,6 @@ kvx_sched_adjust_cost (rtx_insn *cons_insn, int dep_type, rtx_insn *prod_insn,
 		    y = SUBREG_REG (y);
 		  if (x == y)
 		    if (unspec == UNSPEC_LOADC || unspec == UNSPEC_XLOADC
-			|| unspec == UNSPEC_XLOADS
 			|| (unspec >= UNSPEC_XLOADQ0 && unspec <= UNSPEC_XLOADCQ3))
 		      cost = 1;
 		}
