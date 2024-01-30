@@ -83,8 +83,6 @@
 #undef TARGET_HAVE_TLS
 #define TARGET_HAVE_TLS (true)
 
-static bool kvx_scheduling = false;
-
 rtx kvx_link_reg_rtx;
 
 rtx kvx_divmod_zero;
@@ -5118,7 +5116,7 @@ kvx_dependencies_fprint (FILE *file, rtx_insn *insn)
 		    (dep_type == REG_DEP_OUTPUT ? 'O' :
 		      (dep_type == REG_DEP_ANTI ? 'A' :
 			(dep_type == REG_DEP_CONTROL ? 'C' : '?'))));
-      char reg = (!DEP_NONREG(dep) && !DEP_MULTIPLE(dep)) ? 'r': ' ';
+      char reg = DEP_MULTIPLE(dep) ? '*' : (DEP_NONREG(dep) ? ' ': 'r');
       fprintf (file, "\t%c%c-> (insn %d)\n", type, reg, INSN_UID (DEP_CON (dep)));
     }
   fprintf (file, "backward dependences (insn %d)\n", INSN_UID (insn));
@@ -5129,7 +5127,7 @@ kvx_dependencies_fprint (FILE *file, rtx_insn *insn)
 		    (dep_type == REG_DEP_OUTPUT ? 'O' :
 		      (dep_type == REG_DEP_ANTI ? 'A' :
 			(dep_type == REG_DEP_CONTROL ? 'C' : '?'))));
-      char reg = (!DEP_NONREG(dep) && !DEP_MULTIPLE(dep)) ? 'r': ' ';
+      char reg = DEP_MULTIPLE(dep) ? '*' : (DEP_NONREG(dep) ? ' ': 'r');
       fprintf (file, "\t<-%c%c (insn %d)\n", type, reg, INSN_UID (DEP_PRO (dep)));
     }
 }
@@ -5331,12 +5329,10 @@ static struct kvx_sched2
   short *insn_cycle;
   unsigned char *insn_flags;
 } kvx_sched2;
-#define KVX_SCHED2_INSN_HEAD 1
-#define KVX_SCHED2_INSN_START 2
-#define KVX_SCHED2_INSN_STOP 4
-#define KVX_SCHED2_INSN_TAIL 8
-#define KVX_SCHED2_INSN_JUMP 16
-#define KVX_SCHED2_INSN_STALL 32
+#define KVX_SCHED2_INSN_HEAD 1	// Head of scheduling region.
+#define KVX_SCHED2_INSN_START 2	// Start instruction bundle.
+#define KVX_SCHED2_INSN_STOP 4	// Stop instruction bundle.
+#define KVX_SCHED2_INSN_STALL 8	// Stall (scoreboard bug).
 static void
 kvx_sched2_ctor (int max_uid)
 {
@@ -5365,8 +5361,7 @@ kvx_sched_init (FILE *file ATTRIBUTE_UNUSED, int verbose ATTRIBUTE_UNUSED,
     {
       if ((unsigned) kvx_sched2.prev_uid < (unsigned) kvx_sched2.max_uid)
 	{
-	  kvx_sched2.insn_flags[kvx_sched2.prev_uid]
-	    |= KVX_SCHED2_INSN_STOP | KVX_SCHED2_INSN_TAIL;
+	  kvx_sched2.insn_flags[kvx_sched2.prev_uid] |= KVX_SCHED2_INSN_STOP;
 	}
       kvx_sched2.prev_uid = -1;
     }
@@ -5379,25 +5374,9 @@ kvx_sched_finish (FILE *file ATTRIBUTE_UNUSED, int verbose ATTRIBUTE_UNUSED)
     {
       if ((unsigned) kvx_sched2.prev_uid < (unsigned) kvx_sched2.max_uid)
 	{
-	  kvx_sched2.insn_flags[kvx_sched2.prev_uid]
-	    |= KVX_SCHED2_INSN_STOP | KVX_SCHED2_INSN_TAIL;
+	  kvx_sched2.insn_flags[kvx_sched2.prev_uid] |= KVX_SCHED2_INSN_STOP;
 	}
     }
-}
-
-static void
-kvx_sched_init_global (FILE *file ATTRIBUTE_UNUSED,
-		       int verbose ATTRIBUTE_UNUSED, int old_max_uid)
-{
-  kvx_scheduling = true;
-  if (reload_completed)
-    kvx_sched2_ctor (old_max_uid);
-}
-
-static void
-kvx_sched_finish_global (FILE *file ATTRIBUTE_UNUSED,
-			 int verbose ATTRIBUTE_UNUSED)
-{
 }
 
 static int
@@ -5426,15 +5405,12 @@ kvx_sched_dfa_new_cycle (FILE *dump ATTRIBUTE_UNUSED,
 	  kvx_sched2.insn_flags[uid] = KVX_SCHED2_INSN_START;
 	}
 
-      if (JUMP_P (insn) || CALL_P (insn))
-	kvx_sched2.insn_flags[uid] |= KVX_SCHED2_INSN_JUMP;
-
       kvx_sched2.insn_cycle[uid] = clock;
       kvx_sched2.prev_uid = uid;
 
       if (sched_dump && sched_verbose >= 8)
 	fprintf (sched_dump, "kvx_sched_dfa_new_cycle(insn %d) clock=%d last=%d\n",
-		 INSN_UID (insn), clock, last_clock);
+			     INSN_UID (insn), clock, last_clock);
     }
   return 0;
 }
@@ -6552,30 +6528,49 @@ kvx_sched2_fix_insn_issue (rtx_insn *insn, rtx *opvec, int noperands)
     }
 }
 
-static rtx_insn * _cur_final_insn;
+static bool kvx_shaker_enabled = false;
+static char kvx_final_end_bundle[128];
 
+/* Implements FINAL_PRESCAN_INSN.  */
 void
 kvx_final_prescan_insn (rtx_insn *insn)
 {
-  _cur_final_insn = insn;
+  kvx_final_end_bundle[0] = '\0';
+
+  // Fix missing bundle delimiter (because of deleted insn after SCHED2).
+  int uid = INSN_UID (insn);
+  if ((unsigned) uid < (unsigned) kvx_sched2.max_uid
+      && kvx_sched2.insn_cycle && kvx_sched2.insn_cycle[uid] >= 0)
+    {
+      static int prev_uid;
+      static int prev_cycle;
+      static unsigned prev_flags;
+
+      int cycle = kvx_sched2.insn_cycle[uid];
+      unsigned flags = kvx_sched2.insn_flags[uid];
+
+      if (!(flags & KVX_SCHED2_INSN_HEAD) && prev_cycle < cycle)
+	if (!(prev_flags & KVX_SCHED2_INSN_STOP))
+	  {
+	    gcc_assert ((unsigned) prev_uid < (unsigned) kvx_sched2.max_uid);
+	    kvx_sched2.insn_flags[prev_uid] |= KVX_SCHED2_INSN_STOP;
+	    sprintf (kvx_final_end_bundle, ";;\t# (end cycle %d)\t(fixup)\n\t",
+					   prev_cycle);
+	  }
+
+      prev_flags = flags;
+      prev_cycle = cycle;
+      prev_uid = uid;
+    }
 }
 
-const char *
-kvx_asm_output_opcode (FILE *stream, const char * code)
-{
-  if (kvx_sched2.insn_cycle && _cur_final_insn)
-    {
-      int uid = INSN_UID (_cur_final_insn);
 
-      if ((unsigned) uid >= (unsigned) kvx_sched2.max_uid
-	  || kvx_sched2.insn_cycle[uid] < 0)
-	{
-	  if (TARGET_SCHED2_DATES)
-	    fprintf (stream, ";;\t# (unscheduled)\n\t");
-	  else
-	    fprintf (stream, ";;\n\t");
-	}
-    }
+const char *
+kvx_asm_output_opcode (FILE *stream, const char *code)
+{
+  if (!kvx_shaker_enabled && kvx_final_end_bundle[0])
+    fputs(kvx_final_end_bundle, stream);
+
   return code;
 }
 
@@ -6585,15 +6580,15 @@ kvx_asm_final_postscan_insn (FILE *file, rtx_insn *insn,
 			     rtx *opvec ATTRIBUTE_UNUSED,
 			     int noperands ATTRIBUTE_UNUSED)
 {
-  static int prev_bundle;
-  static int jump_bundle;
   int doloop_end = recog_memoized (insn) == CODE_FOR_doloop_end_si
 		   || recog_memoized (insn) == CODE_FOR_doloop_end_di;
 
   if (kvx_sched2.insn_cycle)
     {
-      int uid = INSN_UID (insn);
+      static int prev_cycle;
+      static int jump_cycle;
 
+      int uid = INSN_UID (insn);
       if ((unsigned) uid >= (unsigned) kvx_sched2.max_uid
 	  || kvx_sched2.insn_cycle[uid] < 0)
 	{
@@ -6604,16 +6599,12 @@ kvx_asm_final_postscan_insn (FILE *file, rtx_insn *insn,
 	  return;
 	}
 
-      unsigned flags = kvx_sched2.insn_flags[uid];
-      gcc_assert (!doloop_end || (flags & KVX_SCHED2_INSN_JUMP));
-
       if (KV3_1)
 	kvx_sched2_fix_insn_issue (insn, opvec, noperands);
 
-      if (flags & KVX_SCHED2_INSN_HEAD)
-	prev_bundle = jump_bundle = 0;
-
       int cycle = kvx_sched2.insn_cycle[uid];
+      unsigned flags = kvx_sched2.insn_flags[uid];
+
       if (flags & KVX_SCHED2_INSN_STOP)
 	{
 	  if (TARGET_SCHED2_DATES)
@@ -6621,36 +6612,36 @@ kvx_asm_final_postscan_insn (FILE *file, rtx_insn *insn,
 	      if (!doloop_end)
 		{
 		  const char *stalled = "";
-		  if (kvx_sched2.insn_flags[uid] & KVX_SCHED2_INSN_STALL)
-		    stalled = "(stalled)";
+		  if (flags & KVX_SCHED2_INSN_STALL)
+		    stalled = "\t(stalled)";
 		  fprintf (file, "\t;;\t# (end cycle %d)%s\n", cycle, stalled);
 		}
-	      else if (jump_bundle == prev_bundle)
+	      else if (jump_cycle == prev_cycle)
 		fprintf (file, "\tnop\n\t;;\n");
 	    }
 	  else
 	    {
 	      if (!doloop_end)
 		fprintf (file, "\t;;\n");
-	      else if (jump_bundle == prev_bundle)
+	      else if (jump_cycle == prev_cycle)
 		fprintf (file, "\tnop\n\t;;\n");
 	    }
 	}
 
-      if (kvx_sched2.insn_flags[uid] & KVX_SCHED2_INSN_START)
-	prev_bundle++;
-      if (kvx_sched2.insn_flags[uid] & KVX_SCHED2_INSN_JUMP)
-	jump_bundle = prev_bundle;
-
-      return;
+      prev_cycle = cycle;
+      if (flags & KVX_SCHED2_INSN_HEAD)
+	jump_cycle = -1;
+      if (JUMP_P (insn) || CALL_P (insn))
+	jump_cycle = prev_cycle;
     }
-  if (!kvx_sched2.insn_cycle || !kvx_scheduling)
+  else
     {
       fprintf (file, "\t;;\n");
       if (doloop_end)
 	fprintf (file, "\tnop\n\t;;\n");
-      return;
     }
+
+  return;
 }
 
 /* Implement TARGET_USE_BY_PIECES_INFRASTRUCTURE_P.  */
@@ -8540,8 +8531,8 @@ kvx_loop_unroll_adjust (unsigned nunroll, struct loop *loop)
     fprintf (dump_file, "kvx_loop_unroll_adjust: "
 			"Return nunroll=%d%s\n.", nunroll,
 			(unroll_constant_p ? " [unroll_constant]" :
-			 	(unroll_runtime_p ? " [unroll_runtime]" :
-				 	(unroll_stupid_p ? " [unroll_stupid]" : ""))));
+				(unroll_runtime_p ? " [unroll_runtime]" :
+					(unroll_stupid_p ? " [unroll_stupid]" : ""))));
 
   return nunroll;
 }
@@ -8721,6 +8712,7 @@ kvx_machine_dependent_reorg (void)
     {
       timevar_push (TV_SCHED2);
 
+      kvx_sched2_ctor (get_max_uid () + 1);
       if (flag_selective_scheduling2 && !maybe_skip_selective_scheduling ())
 	run_selective_scheduling ();
       else
@@ -8729,7 +8721,7 @@ kvx_machine_dependent_reorg (void)
       timevar_pop (TV_SCHED2);
     }
 
-  if (kvx_scheduling)
+  if (kvx_sched2.max_uid)
     kvx_fix_debug_for_bundles ();
 
   /* This is needed. Else final pass will crash on debug_insn-s */
@@ -8740,7 +8732,6 @@ kvx_machine_dependent_reorg (void)
       variable_tracking_main ();
       timevar_pop (TV_VAR_TRACKING);
     }
-
 
   df_finish_pass (false);
 }
@@ -8879,15 +8870,16 @@ kvx_option_override (void)
 	case OPT_fstack_limit_register_:
 	  kvx_handle_stack_limit_register_option (opt->arg);
 	  break;
-	  case OPT_fstack_limit_symbol_:
-	    kvx_handle_stack_limit_symbol_option (opt->arg);
-	    break;
-	case OPT_fshaker_seed_:
+	case OPT_fstack_limit_symbol_:
+	  kvx_handle_stack_limit_symbol_option (opt->arg);
 	  break;
-	  default:
-	    gcc_unreachable ();
-	  }
-      }
+	case OPT_fshaker_seed_:
+	  kvx_shaker_enabled = true;
+	  break;
+	default:
+	  gcc_unreachable ();
+	}
+    }
 
 #if 0 // If 1 then gcc/gcc/testsuite/gcc.dg/ipa/iinline-attr.c fails.
   SET_OPTION_IF_UNSET (&global_options, &global_options_set,
@@ -9528,12 +9520,6 @@ kvx_omp_device_kind_arch_isa (enum omp_device_kind_arch_isa trait,
 
 #undef TARGET_SCHED_FINISH
 #define TARGET_SCHED_FINISH kvx_sched_finish
-
-#undef TARGET_SCHED_INIT_GLOBAL
-#define TARGET_SCHED_INIT_GLOBAL kvx_sched_init_global
-
-#undef TARGET_SCHED_FINISH_GLOBAL
-#define TARGET_SCHED_FINISH_GLOBAL kvx_sched_finish_global
 
 #undef TARGET_SCHED_DFA_NEW_CYCLE
 #define TARGET_SCHED_DFA_NEW_CYCLE kvx_sched_dfa_new_cycle

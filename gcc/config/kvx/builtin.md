@@ -2273,6 +2273,32 @@
    (set_attr "length"         "8")]
 )
 
+(define_insn "*kvx_select128s1"
+  [(set (match_operand:V128 0 "register_operand" "=r")
+        (unspec:V128 [(vec_duplicate:V128 (match_operand:ALL64 1 "register_operand" "r"))
+                      (match_operand:V128 2 "register_operand" "0")
+                      (match_operand:DI 3 "register_operand" "r")
+                      (match_operand 4 "" "")] UNSPEC_SELECT))]
+  ""
+  "cmoved%4 %3? %x0 = %1\n\tcmoved%4 %3? %y0 = %1"
+  [(set_attr "type" "alu_thin_x2")
+   (set_attr "length"         "8")]
+)
+
+(define_insn "*kvx_select128c1"
+  [(set (match_operand:V128 0 "register_operand" "=r")
+        (unspec:V128 [(vec_concat:V128
+                        (match_operand:ALL64 1 "register_operand" "r")
+                        (match_dup 1))
+                      (match_operand:V128 2 "register_operand" "0")
+                      (match_operand:DI 3 "register_operand" "r")
+                      (match_operand 4 "" "")] UNSPEC_SELECT))]
+  ""
+  "cmoved%4 %3? %x0 = %1\n\tcmoved%4 %3? %y0 = %1"
+  [(set_attr "type" "alu_thin_x2")
+   (set_attr "length"         "8")]
+)
+
 (define_expand "kvx_select256s"
   [(set (match_operand:V256 0 "register_operand" "")
         (unspec:V256 [(match_operand:V256 1 "register_operand" "")
@@ -2316,6 +2342,42 @@
   {
     return "cmoved%4 %3? %x0 = %x1\n\tcmoved%4 %3? %y0 = %y1\n\t"
            "cmoved%4 %3? %z0 = %z1\n\tcmoved%4 %3? %t0 = %t1";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_insn "*kvx_select256s_2s1"
+  [(set (match_operand:V256 0 "register_operand" "=r")
+        (unspec:V256 [(vec_duplicate:V256 (match_operand:ALL64 1 "register_operand" "r"))
+                      (match_operand:V256 2 "register_operand" "0")
+                      (match_operand:DI 3 "register_operand" "r")
+                      (match_operand 4 "" "")] UNSPEC_SELECT))]
+  "(KV3_2||KV4)"
+  {
+    return "cmoved%4 %3? %x0 = %1\n\tcmoved%4 %3? %y0 = %1\n\t"
+           "cmoved%4 %3? %z0 = %1\n\tcmoved%4 %3? %t0 = %1";
+  }
+  [(set_attr "type" "alu_tiny_x4")
+   (set_attr "length"        "16")]
+)
+
+(define_insn "*kvx_select256s_2c1"
+  [(set (match_operand:V256 0 "register_operand" "=r")
+        (unspec:V256 [(vec_concat:V256
+                        (vec_concat:V128
+                          (match_operand:ALL64 1 "register_operand" "r")
+                          (match_dup 1))
+                        (vec_concat:V128
+                          (match_dup 1)
+                          (match_dup 1)))
+                      (match_operand:V256 2 "register_operand" "0")
+                      (match_operand:DI 3 "register_operand" "r")
+                      (match_operand 4 "" "")] UNSPEC_SELECT))]
+  "(KV3_2||KV4)"
+  {
+    return "cmoved%4 %3? %x0 = %1\n\tcmoved%4 %3? %y0 = %1\n\t"
+           "cmoved%4 %3? %z0 = %1\n\tcmoved%4 %3? %t0 = %1";
   }
   [(set_attr "type" "alu_tiny_x4")
    (set_attr "length"        "16")]

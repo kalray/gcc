@@ -2296,7 +2296,7 @@
   [(set_attr "type" "alu_tiny")]
 )
 
-(define_insn "_nand<mode>3"
+(define_insn "*nand<mode>3"
   [(set (match_operand:S64L 0 "register_operand" "=r")
         (ior:S64L (not:S64L (match_operand:S64L 1 "register_operand" "r"))
                   (not:S64L (match_operand:S64L 2 "register_operand" "r"))))]
@@ -2305,7 +2305,7 @@
   [(set_attr "type" "alu_tiny")]
 )
 
-(define_insn "_andn<mode>3"
+(define_insn "*andn<mode>3"
   [(set (match_operand:S64L 0 "register_operand" "=r")
         (and:S64L (not:S64L (match_operand:S64L 1 "register_operand" "r"))
                   (match_operand:S64L 2 "register_operand" "r")))]
@@ -2323,7 +2323,7 @@
   [(set_attr "type" "alu_tiny")]
 )
 
-(define_insn "_nior<mode>3"
+(define_insn "*nior<mode>3"
   [(set (match_operand:S64L 0 "register_operand" "=r")
         (and:S64L (not:S64L (match_operand:S64L 1 "register_operand" "r"))
                   (not:S64L (match_operand:S64L 2 "register_operand" "r"))))]
@@ -2332,7 +2332,7 @@
   [(set_attr "type" "alu_tiny")]
 )
 
-(define_insn "_iorn<mode>3"
+(define_insn "*iorn<mode>3"
   [(set (match_operand:S64L 0 "register_operand" "=r")
         (ior:S64L (not:S64L (match_operand:S64L 1 "register_operand" "r"))
                   (match_operand:S64L 2 "register_operand" "r")))]
@@ -2350,7 +2350,7 @@
   [(set_attr "type" "alu_tiny")]
 )
 
-(define_insn "_nxor<mode>3"
+(define_insn "*nxor<mode>3"
   [(set (match_operand:S64L 0 "register_operand" "=r")
         (not:S64L (xor:S64L (match_operand:S64L 1 "register_operand" "r")
                             (match_operand:S64L 2 "register_operand" "r"))))]
@@ -3714,7 +3714,7 @@
    (set_attr "length"         "8")]
 )
 
-(define_insn "_nand<mode>3"
+(define_insn "*nand<mode>3"
   [(set (match_operand:V128L 0 "register_operand" "=r")
         (ior:V128L (not:V128L (match_operand:V128L 1 "register_operand" "r"))
                    (not:V128L (match_operand:V128L 2 "register_operand" "r"))))]
@@ -3724,7 +3724,7 @@
    (set_attr "length"         "8")]
 )
 
-(define_insn "_andn<mode>3"
+(define_insn "*andn<mode>3"
   [(set (match_operand:V128L 0 "register_operand" "=r")
         (and:V128L (not:V128L (match_operand:V128L 1 "register_operand" "r"))
                    (match_operand:V128L 2 "register_operand" "r")))]
@@ -3744,7 +3744,7 @@
    (set_attr "length"         "8")]
 )
 
-(define_insn "_nior<mode>3"
+(define_insn "*nior<mode>3"
   [(set (match_operand:V128L 0 "register_operand" "=r")
         (and:V128L (not:V128L (match_operand:V128L 1 "register_operand" "r"))
                    (not:V128L (match_operand:V128L 2 "register_operand" "r"))))]
@@ -3754,7 +3754,7 @@
    (set_attr "length"         "8")]
 )
 
-(define_insn "_iorn<mode>3"
+(define_insn "*iorn<mode>3"
   [(set (match_operand:V128L 0 "register_operand" "=r")
         (ior:V128L (not:V128L (match_operand:V128L 1 "register_operand" "r"))
                    (match_operand:V128L 2 "register_operand" "r")))]
@@ -3774,7 +3774,7 @@
    (set_attr "length"         "8")]
 )
 
-(define_insn "_nxor<mode>3"
+(define_insn "*nxor<mode>3"
   [(set (match_operand:V128L 0 "register_operand" "=r")
         (not:V128L (xor:V128L (match_operand:V128L 1 "register_operand" "r")
                               (match_operand:V128L 2 "register_operand" "r"))))]
@@ -5679,7 +5679,7 @@
    (set_attr "length"        "16")]
 )
 
-(define_insn "_nand<mode>3"
+(define_insn "*nand<mode>3"
   [(set (match_operand:V256L 0 "register_operand" "=r")
         (ior:V256L (not:V256L (match_operand:V256L 1 "register_operand" "r"))
                    (not:V256L (match_operand:V256L 2 "register_operand" "r"))))]
@@ -5692,7 +5692,7 @@
    (set_attr "length"        "16")]
 )
 
-(define_insn "_andn<mode>3"
+(define_insn "*andn<mode>3"
   [(set (match_operand:V256L 0 "register_operand" "=r")
         (and:V256L (not:V256L (match_operand:V256L 1 "register_operand" "r"))
                    (match_operand:V256L 2 "register_operand" "r")))]
@@ -5718,7 +5718,7 @@
    (set_attr "length"        "16")]
 )
 
-(define_insn "_nior<mode>3"
+(define_insn "*nior<mode>3"
   [(set (match_operand:V256L 0 "register_operand" "=r")
         (and:V256L (not:V256L (match_operand:V256L 1 "register_operand" "r"))
                    (not:V256L (match_operand:V256L 2 "register_operand" "r"))))]
@@ -5731,7 +5731,7 @@
    (set_attr "length"        "16")]
 )
 
-(define_insn "_iorn<mode>3"
+(define_insn "*iorn<mode>3"
   [(set (match_operand:V256L 0 "register_operand" "=r")
         (ior:V256L (not:V256L (match_operand:V256L 1 "register_operand" "r"))
                    (match_operand:V256L 2 "register_operand" "r")))]
@@ -5757,7 +5757,7 @@
    (set_attr "length"        "16")]
 )
 
-(define_insn "_nxor<mode>3"
+(define_insn "*nxor<mode>3"
   [(set (match_operand:V256L 0 "register_operand" "=r")
         (not:V256L (xor:V256L (match_operand:V256L 1 "register_operand" "r")
                               (match_operand:V256L 2 "register_operand" "r"))))]
