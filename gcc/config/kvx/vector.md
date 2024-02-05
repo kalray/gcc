@@ -7003,7 +7003,7 @@
 
 (define_expand "div<mode>3"
   [(set (match_operand:VXHF 0 "register_operand" "")
-        (div:VXHF (match_operand:VXHF 1 "register_operand" "")
+        (div:VXHF (match_operand:VXHF 1 "register_float1_operand" "")
                   (match_operand:VXHF 2 "register_operand" "")))]
   ""
   {
@@ -7016,9 +7016,17 @@
         rtx op0 = simplify_gen_subreg (V4HFmode, operands[0], <MODE>mode, offset);
         rtx op1 = simplify_gen_subreg (V4HFmode, operands[1], <MODE>mode, offset);
         rtx op2 = simplify_gen_subreg (V4HFmode, operands[2], <MODE>mode, offset);
-        emit_insn (gen_extendv4hfv4sf2 (temp1, op1));
-        emit_insn (gen_extendv4hfv4sf2 (temp2, op2));
-        emit_insn (gen_divv4sf3 (temp0, temp1, temp2));
+        if (op1 == CONST1_RTX(V4HFmode))
+          {
+            emit_insn (gen_extendv4hfv4sf2 (temp2, op2));
+            emit_insn (gen_divv4sf3 (temp0, CONST1_RTX (V4SFmode), temp2));
+          }
+        else
+          {
+            emit_insn (gen_extendv4hfv4sf2 (temp1, op1));
+            emit_insn (gen_extendv4hfv4sf2 (temp2, op2));
+            emit_insn (gen_divv4sf3 (temp0, temp1, temp2));
+          }
         emit_insn (gen_truncv4sfv4hf2 (op0, temp0));
       }
     DONE;
