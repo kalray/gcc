@@ -2879,6 +2879,8 @@ verify_const_int_arg (rtx arg, int bits, const char *name, const char *where)
 static rtx
 verify_const_uint_arg (rtx arg, int bits, const char *name, const char *where)
 {
+  (void) name;
+  (void) where;
   if (GET_CODE (arg) == CONST_INT && GET_MODE (arg) == VOIDmode)
     {
       unsigned shift = 64 - bits;
@@ -2886,9 +2888,7 @@ verify_const_uint_arg (rtx arg, int bits, const char *name, const char *where)
       if (utmp == (utmp << shift) >> shift)
 	return arg;
     }
-  error ("%<__builtin_kvx_%s%> expects a %d-bit unsigned immediate in %s argument",
-	 name, bits, where);
-  return 0;
+  return NULL_RTX;
 }
 
 __attribute__ ((unused))
@@ -3284,10 +3284,20 @@ unsigned long kvx_xundef_counter;
 static rtx
 kvx_expand_builtin_get (rtx target, tree args)
 {
+  int regno = -1;
+  rtx sys_reg = NULL_RTX;
   rtx arg1 = expand_normal (CALL_EXPR_ARG (args, 0));
-  arg1 = verify_const_uint_arg (arg1, 9, "get", "first");
-  int regno = verify_sfr_regno (INTVAL (arg1), "get", "first");
-  rtx sys_reg = gen_rtx_REG (DImode, regno);
+  if (verify_const_uint_arg (arg1, 9, "get", "first") != NULL_RTX)
+    {
+      arg1 = verify_const_uint_arg (arg1, 9, "get", "first");
+      regno = verify_sfr_regno (INTVAL (arg1), "get", "first");
+      sys_reg = gen_rtx_REG (DImode, regno);
+    }
+  else
+    {
+      sys_reg = force_reg (GET_MODE (arg1), arg1);
+      sys_reg = simplify_gen_subreg (DImode, sys_reg, SImode, 0);
+    }
   if (!target)
     target = gen_reg_rtx (DImode);
   else

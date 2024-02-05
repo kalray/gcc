@@ -343,10 +343,12 @@
 )
 
 (define_insn "kvx_get"
-   [(set (match_operand:DI 0 "register_operand" "=r")
-         (unspec_volatile:DI [(match_operand:DI 1 "system_register_operand" "SFR")] UNSPEC_GET))]
+   [(set (match_operand:DI 0 "register_operand" "=r,r")
+         (unspec_volatile:DI [(match_operand:DI 1 "register_operand" "SFR,r")] UNSPEC_GET))]
    ""
-   "get %0 = %1"
+   "@
+    get %0 = %1
+    iget %0 = %1"
   [(set_attr "type" "bcu_get")]
 )
 
