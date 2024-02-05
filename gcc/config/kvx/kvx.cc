@@ -775,17 +775,17 @@ kvx_extension_mode_p (enum machine_mode mode)
 {
   switch (mode)
     {
-    // 256-bit coprocessor modes
+    // 256-bit extension modes
     case E_V1OImode:
-    // 512-bit coprocessor modes
+    // 512-bit extension modes
     case E_V2OImode:
-    // 1024-bit coprocessor modes
+    // 1024-bit extension modes
     case E_V4OImode:
-    // 2048-bit coprocessor modes
+    // 2048-bit extension modes
     case E_V8OImode:
-    // 4096-bit coprocessor modes
+    // 4096-bit extension modes
     case E_V16OImode:
-    // 8192-bit coprocessor modes
+    // 8192-bit extension modes
     case E_V32OImode:
       return true;
     default:
@@ -1040,10 +1040,12 @@ static void
 kvx_conditional_register_usage (void)
 {
   kvx_link_reg_rtx = gen_rtx_REG (Pmode, KVX_RETURN_POINTER_REGNO);
-  if (KV3_1)
+  if (KV3_1 || KV3_2)
     {
       // On the kv3-1, only 48 coprocessor registers are available.
-      unsigned int regno = KVX_XCR_FIRST_REGNO + (48 * 4);
+      // On the kv3-2, only 64 coprocessor registers are available.
+      unsigned int x256_reg_count = (KV3_1) ? 48 : 64;
+      unsigned int regno = KVX_XCR_FIRST_REGNO + (x256_reg_count * 4);
       for (; regno <= KVX_XCR_LAST_REGNO; regno++)
 	fixed_regs[regno] = call_used_regs[regno] = 1;
     }
