@@ -237,6 +237,8 @@
         UNSPEC_XFMMA444W_1
         UNSPEC_XFMMA424D_0
         UNSPEC_XFMMA424D_1
+
+        UNSPECV_NOP
    ]
 )
 

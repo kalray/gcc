@@ -321,6 +321,13 @@
 [(set_attr "type" "all")]
 )
 
+(define_insn "nop_volatile"
+  [(unspec_volatile [(const_int 0)] UNSPECV_NOP)]
+  ""
+  "nop"
+[(set_attr "type" "all")]
+)
+
 ;; Provide a 37bits offset for 32bits and 64bits for 64bits.
 ;; This may be too much in most of the cases but having smaller
 ;; values may not work in some cases.

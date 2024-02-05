@@ -14,3 +14,5 @@ scall_1 (int scallno)
 
 /* { dg-final { scan-assembler-times "make \\\$r0 = 1" 1 } } */
 /* { dg-final { scan-assembler-times "scall \\\$r1" 1 } } */
+
+/* { dg-final { scan-assembler-times "nop" 2 } } */

@@ -11,3 +11,5 @@ long scall_with_reg (int scall_no)
 }
 
 /* { dg-final { scan-assembler-times "scall \\\$r0" 1 } } */
+
+/* { dg-final { scan-assembler-times "nop" 2 } } */

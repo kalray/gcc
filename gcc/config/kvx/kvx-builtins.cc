@@ -3356,6 +3356,7 @@ kvx_expand_builtin_scall (rtx target ATTRIBUTE_UNUSED, tree args)
       rtx regi = gen_rtx_REG (DImode, i);
       emit_insn (gen_rtx_CLOBBER (DImode, regi));
     }
+  emit_insn (gen_nop_volatile ());
   return gen_rtx_REG (DImode, 0);
 }
 
