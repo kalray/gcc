@@ -9225,3 +9225,47 @@
   }
 )
 
+(define_insn_and_split "andv8di3"
+  [(set (match_operand:V8DI 0 "register_operand" "=r")
+        (and:V8DI (match_operand:V8DI 1 "register_operand" "r")
+                  (match_operand:V8DI 2 "register_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V4DI (match_dup 0) 0)
+        (and:V4DI (subreg:V4DI (match_dup 1) 0)
+                  (subreg:V4DI (match_dup 2) 0)))
+   (set (subreg:V4DI (match_dup 0) 32)
+        (and:V4DI (subreg:V4DI (match_dup 1) 32)
+                  (subreg:V4DI (match_dup 2) 32)))]
+  )
+
+(define_insn_and_split "andv16si3"
+  [(set (match_operand:V16SI 0 "register_operand" "=r")
+        (and:V16SI (match_operand:V16SI 1 "register_operand" "r")
+                   (match_operand:V16SI 2 "register_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V8SI (match_dup 0) 0)
+        (and:V8SI (subreg:V8SI (match_dup 1) 0)
+                  (subreg:V8SI (match_dup 2) 0)))
+   (set (subreg:V8SI (match_dup 0) 32)
+        (and:V8SI (subreg:V8SI (match_dup 1) 32)
+                  (subreg:V8SI (match_dup 2) 32)))]
+  )
+
+(define_insn_and_split "andv32hi3"
+  [(set (match_operand:V32HI 0 "register_operand" "=r")
+        (and:V32HI (match_operand:V32HI 1 "register_operand" "r")
+                   (match_operand:V32HI 2 "register_operand" "r")))]
+  ""
+  "#"
+  "reload_completed"
+  [(set (subreg:V16HI (match_dup 0) 0)
+        (and:V16HI (subreg:V16HI (match_dup 1) 0)
+                  (subreg:V16HI (match_dup 2) 0)))
+   (set (subreg:V16HI (match_dup 0) 32)
+        (and:V16HI (subreg:V16HI (match_dup 1) 32)
+                  (subreg:V16HI (match_dup 2) 32)))]
+  )
