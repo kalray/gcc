@@ -59,11 +59,22 @@
   [(set (match_operand:DI 0 "register_operand" "")
         (match_operator:DI 1 "comparison_operator"
          [(match_operand:TI 2 "register_operand" "")
-          (match_operand:TI 3 "register_operand" "")]))]
+          (match_operand:TI 3 "nonmemory_operand" "")]))]
   ""
   {
-    kvx_lower_comparison (operands[0], operands[1], TImode);
-    DONE;
+    /* Commit cc01a27db5411a4fe354a97b7c86703c5bc81243 changed the lowering
+       strategies for cstore<mode>4.  In order to get the old behavior we
+       fail when comparing against 0 or -1 so that the old logic still
+       applies.  */
+    if (operands[3] == CONST0_RTX (TImode)
+        || operands[3] == CONSTM1_RTX (TImode))
+      FAIL;
+    else
+      {
+        operands[3] = force_reg (TImode, operands[3]);
+        kvx_lower_comparison (operands[0], operands[1], TImode);
+        DONE;
+      }
   }
 )
 
