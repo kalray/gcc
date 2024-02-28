@@ -1,6 +1,12 @@
 // devirt.cc
 /* { dg-options "-O2 -fdump-ipa-profile_estimate -fdump-tree-optimized" } */
 
+#ifndef __KVX__
+#define N 10000000
+#else
+#define N 10000
+#endif
+
 class A {
 public:
   virtual int foo() {
@@ -27,7 +33,7 @@ int main()
 
   A* ap = 0;
 
-  for (i = 0; i < 1000000; i++)
+  for (i = 0; i < N; i++)
   {
 
      if (i%7==0)
