@@ -1,0 +1,7 @@
+{
+  "disable_code_review": [
+    "gcc/config/kvx/kvx_builtins.h",
+    "gcc/config/kvx/kvx_macros.h",
+    "gcc/config/kvx/kvx-registers.h"
+  ]
+}
