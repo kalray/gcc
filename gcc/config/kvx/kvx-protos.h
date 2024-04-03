@@ -84,6 +84,7 @@ extern void kvx_print_operand_address (FILE *file, rtx x);
 
 extern bool kvx_print_punct_valid_p (unsigned char code);
 
+extern bool kvx_syscall_addrspace_p (rtx op);
 extern bool kvx_is_uncached_mem_op_p (rtx op);
 
 extern bool kvx_expand_load_multiple (rtx operands[]);

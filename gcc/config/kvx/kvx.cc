@@ -5740,6 +5740,16 @@ kvx_is_uncached_mem_op_p (rtx x)
 #endif
 }
 
+bool
+kvx_syscall_addrspace_p (rtx x)
+{
+  gcc_assert (MEM_P (x));
+  if (!MEM_P (x))
+    return false;
+
+  return MEM_ADDR_SPACE (x) == KVX_ADDR_SPACE_SYSCALL;
+}
+
 HOST_WIDE_INT
 kvx_const_vector_value (rtx x, int slice)
 {
@@ -7371,7 +7381,7 @@ kvx_addr_space_address_mode (addr_space_t address_space ATTRIBUTE_UNUSED)
 /* Implements TARGET_ADDR_SPACE_LEGITIMATE_ADDRESS_P.  */
 static bool
 kvx_addr_space_legitimate_address_p (machine_mode mode, rtx exp, bool strict,
-				     addr_space_t as ATTRIBUTE_UNUSED)
+				     addr_space_t as)
 {
   switch (as)
     {
@@ -7384,6 +7394,8 @@ kvx_addr_space_legitimate_address_p (machine_mode mode, rtx exp, bool strict,
     case KVX_ADDR_SPACE_SPECULATE:
       return kvx_legitimate_address_p (mode, exp, strict);
 
+    case KVX_ADDR_SPACE_SYSCALL:
+      return mode == DImode || mode == SImode;
     case KVX_ADDR_SPACE_CONVERT:
       return false;
     }

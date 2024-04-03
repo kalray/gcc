@@ -42,6 +42,7 @@
 #include "expr.h"
 #include "langhooks.h"
 #include "emit-rtl.h"
+#include "calls.h"
 
 /* Some useful meta-programming macros.  */
 
@@ -1366,41 +1367,95 @@ kvx_expand_builtin_wfxm (rtx target ATTRIBUTE_UNUSED, tree args)
 }
 
 static rtx
-kvx_expand_builtin_scall (rtx target ATTRIBUTE_UNUSED, tree args)
+kvx_expand_builtin_scall (rtx target, tree exp)
 {
-  int nb_args = call_expr_nargs (args) - 1;
-  if (nb_args > 11)
-    error ("%<__builtin_scall%> can't have more than 11 arguments.");
+  int nargs = call_expr_nargs (exp) - 1;
 
-  rtx scall_no = expand_normal (CALL_EXPR_ARG (args, 0));
+  /* Accept as most 11 arguments, we don't do any argument checking,
+     but calling a syscall with anything other than pointers or integers
+     will lead to ``interesting'' results.  */
+  if (nargs > 11)
+    error ("%<__builtin_kvx_scall%> accepts at most 11 arguments");
 
-  if (GET_CODE (scall_no) != CONST_INT)
+  /* The type of a syscall function, basically anything that returns
+     an uint64_t, and the type of function pointer to a syscall.  */
+  tree fntype = build_function_type (long_integer_type_node, NULL_TREE, true);
+  tree pfntype = build_pointer_type (fntype);
+
+  /* syscallno is either a const_int or an ssa_name whose contents is
+     a const_int, if this is an ssa_name we change its type to make
+     gcc believes its a function pointer to an scall.  Otherwise, we
+     create a MEM_REF around the const_int to achieve the same purpose. */
+  tree syscallno = CALL_EXPR_ARG (exp, 0);
+  if (TREE_CODE (syscallno) == SSA_NAME)
+    TREE_TYPE (syscallno) = build_pointer_type (fntype);
+
+  tree syscall_memref = build2 (MEM_REF, integer_type_node, syscallno,
+				build_int_cst (integer_type_node, 0));
+  tree fn = TREE_CODE (syscallno) == SSA_NAME
+    ? syscallno : build1 (ADDR_EXPR, pfntype, syscall_memref);
+
+  tree *args = XALLOCAVEC (tree, nargs);
+
+  for (int i = 0; i < nargs; ++i)
+    args[i] = (CALL_EXPR_ARG (exp, i + 1));
+
+  tree scall = build_call_array_loc (UNKNOWN_LOCATION, long_integer_type_node,
+				     fn, nargs, args);
+
+  /* We let gcc handle the call expansion.  */
+  if (target)
+    target = expand_call (scall, target, target == const0_rtx);
+  else
+    expand_call (scall, target, target == const0_rtx);
+
+  /* However, we need to fixup gcc's doing since the standard machinery does not
+     like much dealing with raw const_int as addresses, and fails to stick an
+     address space to the memory operand of the call.  */
+  rtx_call_insn *call_insn = last_call_insn ();
+  rtx call = get_call_rtx_from (call_insn);
+
+  if (call && MEM_EXPR (XEXP (call, 0)) != NULL_TREE)
     {
-      scall_no = force_reg (SImode, scall_no);
-      emit_insn (gen_rtx_USE (DImode, scall_no));
-      emit_insn (gen_rtx_CLOBBER (DImode, scall_no));
+      rtx mem = XEXP (call, 0);
+      rtx call_addr = XEXP (mem, 0);
+      set_mem_addr_space (mem, KVX_ADDR_SPACE_SYSCALL);
+      if (TREE_CODE (syscallno) == SSA_NAME && MEM_P (call_addr))
+	goto done;
+
+      /* If the scall no is a const_int and has been indirected in a
+         register, we fetch the def and use and replace the use directly
+         by the const_int. */
+      if (REG_P (call_addr))
+	{
+	  rtx_insn *reg_def;
+	  unsigned tgt_regno = REGNO (call_addr);
+	  for (reg_def = get_last_insn (); reg_def;
+	       reg_def = PREV_INSN (reg_def))
+	    if (GET_CODE (reg_def) == INSN)
+	      {
+		rtx pat = PATTERN (reg_def);
+		if (GET_CODE (pat) == SET
+		    && (GET_CODE (XEXP (pat, 0)) == REG
+			|| GET_CODE (XEXP (pat, 0)) == SUBREG)
+		    && (REGNO (XEXP (pat, 0)) == tgt_regno))
+		  break;
+	      }
+	  if (reg_def)
+	    {
+	      rtx pat = PATTERN (reg_def);
+	      if (GET_CODE (XEXP (pat, 1)) == CONST_INT)
+		XEXP (XEXP (call, 0), 0) = XEXP (pat, 1);
+	    }
+	}
     }
-  for (int i = 0; i < nb_args; ++i)
-    {
-      rtx argi = expand_normal (CALL_EXPR_ARG (args, i + 1));
-      machine_mode modi = GET_MODE (argi);
-      rtx regi = gen_rtx_REG (modi == VOIDmode ? SImode : modi, i);
-      emit_move_insn (regi, argi);
-    }
-  for (int i = 0; i < nb_args; ++i)
-    {
-      rtx regi = gen_rtx_REG (DImode, i);
-      emit_insn (gen_rtx_USE (DImode, regi));
-      emit_insn (gen_rtx_CLOBBER (DImode, regi));
-    }
-  emit_insn (gen_kvx_scall (scall_no));
-  for (int i = 0; i < nb_args + 1; ++i)
-    {
-      rtx regi = gen_rtx_REG (DImode, i);
-      emit_insn (gen_rtx_CLOBBER (DImode, regi));
-    }
+
+  /* A nop, so that even if scall happens to be at the end of an hardware
+     loop, everything is fine. */
   emit_insn (gen_nop_volatile ());
-  return gen_rtx_REG (DImode, 0);
+
+done:
+  return target;
 }
 
 void

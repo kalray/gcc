@@ -782,6 +782,7 @@ extern void kvx_profile_hook (void);
 #define KVX_ADDR_SPACE_PRELOAD 2
 #define KVX_ADDR_SPACE_SPECULATE 3
 #define KVX_ADDR_SPACE_CONVERT 4
+#define KVX_ADDR_SPACE_SYSCALL 5
 
 #define REGISTER_TARGET_PRAGMAS()                                              \
   do                                                                           \
@@ -790,6 +791,7 @@ extern void kvx_profile_hook (void);
       c_register_addr_space ("__preload", KVX_ADDR_SPACE_PRELOAD);             \
       c_register_addr_space ("__speculate", KVX_ADDR_SPACE_SPECULATE);         \
       c_register_addr_space ("__convert", KVX_ADDR_SPACE_CONVERT);             \
+      /* The __syscall address space is for internal use only.  */             \
     }                                                                          \
   while (0)
 

@@ -87,6 +87,14 @@
       (ior (match_operand 0 "register_operand")
            (match_test "satisfies_constraint_H32(op)"))))
 
+(define_predicate "syscall_operand"
+  (match_code "mem")
+{
+    return (GET_CODE (XEXP (op, 0)) == REG
+            || GET_CODE(XEXP (op, 0)) == CONST_INT)
+        && kvx_syscall_addrspace_p (op);
+})
+
 (define_predicate "jump_operand"
   (match_code "mem")
 {

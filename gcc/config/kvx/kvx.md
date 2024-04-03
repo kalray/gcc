@@ -790,6 +790,20 @@
       XEXP (operands[1], 0) = force_reg (Pmode, callee);
 })
 
+(define_insn "*scall_value_<mode>"
+  [(set (match_operand 0 "" "")
+        (call (match_operand:P 1 "syscall_operand" "")
+              (match_operand 2 "" "")))
+   (clobber (reg:DI KVX_RA_REGNO))]
+  ""
+  {
+    if (GET_CODE (XEXP (operands[1], 0)) == REG)
+      operands[1] = XEXP (operands[1], 0);
+    return "scall %1";
+  }
+[(set_attr "type" "all")]
+)
+
 (define_insn "*call_value_<mode>"
   [(set (match_operand 0 "" "")
         (call (match_operand:P 1 "jump_operand" "")
