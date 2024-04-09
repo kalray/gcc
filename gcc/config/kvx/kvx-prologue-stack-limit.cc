@@ -132,10 +132,13 @@ kvx_prologue_stack_limit (function *fun)
       insn
 	= emit_label_before (trap_label,
 			     get_last_bb_insn (stack_overflow_handler));
+      BB_HEAD (stack_overflow_handler) = insn;
       insn = emit_call_insn_after (gen_call (handler, const0_rtx),
 				   get_last_bb_insn (stack_overflow_handler));
       add_reg_note (insn, REG_ARGS_SIZE, const0_rtx);
       add_reg_note (insn, REG_NORETURN, NULL_RTX);
+      emit_barrier_after (insn);
+      BB_END (stack_overflow_handler) = insn;
 
       e1 = make_edge (pre_prologue, stack_overflow_handler, 0);
 
